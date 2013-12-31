@@ -1,11 +1,11 @@
 /*
 
-  JAR's taxonomy combiner.
+  Open Tree Reference Taxonomy (OTT) taxonomy combiner.
 
-  Some people think having multiple classes in one file, or unpackaged
-  classes, is terrible programming style...	 I'll split into multiple
-  files when I'm ready to do so; currently it's much easier to work
-  with in this form.
+  Some people think having multiple classes in one file is terrible
+  programming style...  I'll split this into multiple files when I'm
+  ready to do so; currently it's much easier to work with in this
+  form.
 
   In jython, say:
      from org.opentreeoflife.smasher import Smasher
@@ -53,7 +53,10 @@ public class Smasher {
 
 				if (argv[i].startsWith("--")) {
 
-				        if (argv[i].equals("--jython")) {
+					if (argv[i].equals("--version"))
+						System.out.println("This is smasher, version 000.00.0.000");
+
+					if (argv[i].equals("--jython")) {
 						String[] jargs = {};
 						org.python.util.jython.main(jargs);
 					}
@@ -77,12 +80,13 @@ public class Smasher {
                         union.dumpAuxIds(outprefix);
 					}
 
-					else if (argv[i].equals("--select")) {
+					// Deprecated
+					else if (argv[i].equals("--select") || argv[i].equals("--select1")) {
 						String name = argv[++i];
 						Node root = tax.unique(name);
 						if (root != null) {
 							tax.analyze();    // otherwise they all show up as 'barren'
-							tax.select(root, argv[++i]);
+							tax.select1(root, argv[++i]);
 						}
 					}
 
@@ -226,7 +230,6 @@ abstract class Taxonomy implements Iterable<Node> {
 	Map<String, List<Node>> nameIndex = new HashMap<String, List<Node>>();
 	Map<String, Node> idIndex = new HashMap<String, Node>();
 	Set<Node> roots = new HashSet<Node>(1);
-	int which = -1;
 	protected String tag = null;
 	int nextSequenceNumber = 0;
 	String[] header = null;
@@ -319,20 +322,21 @@ abstract class Taxonomy implements Iterable<Node> {
 		return this.tag;
 	}
 
+	static int globalTaxonomyIdCounter = 1;
+
 	void setTag() {
 		if (this.tag != null) return;
 		List<Node> probe = this.lookup("Caenorhabditis elegans");
-		if (probe == null)
-			this.tag = "tax" + this.which;
-		else {
+		if (probe != null) {
 			String id = probe.get(0).id;
 			if (id.equals("6239")) this.tag = "ncbi";
 			else if (id.equals("2283683")) this.tag = "gbif";
 			else if (id.equals("395048")) this.tag = "ott";
-			else if (id.equals("100968828")) this.tag = "aux";
+			else if (id.equals("100968828")) this.tag = "aux"; // preottol
 			else if (id.equals("4722")) this.tag = "nem"; // testing
-			else this.tag = "tax" + this.which;
 		}
+		if (this.tag == null)
+			this.tag = "tax" + globalTaxonomyIdCounter++;
 	}
 
 	Node highest(String name) {
@@ -389,9 +393,12 @@ abstract class Taxonomy implements Iterable<Node> {
 	static Pattern tabVbarTab = Pattern.compile("\t\\|\t?");
 
 	void loadTaxonomy(String dirname) throws IOException {
-		loadMetadata(dirname + "about.json");
+		this.loadMetadata(dirname + "about.json");
+		this.loadTaxonomyProper(dirname + "taxonomy.tsv");
+		this.loadSynonyms(dirname + "synonyms.tsv");
+	}
 
-        String filename = dirname + "taxonomy.tsv";
+	void loadTaxonomyProper(String filename) throws IOException {
 		FileReader fr = new FileReader(filename);
 		BufferedReader br = new BufferedReader(fr);
 		String str;
@@ -544,7 +551,6 @@ abstract class Taxonomy implements Iterable<Node> {
 								   row + " rows, but only " + 
 								   total + " reachable from roots");
 		}
-		loadSynonyms(dirname + "synonyms.tsv");
 	}
 
 	void loadMetadata(String filename) throws IOException {
@@ -1083,9 +1089,9 @@ abstract class Taxonomy implements Iterable<Node> {
 		ranks.put("no rank", -1);
 	}
 
-	// Called from --select
+	// Called from --select1
 	// TBD: synonyms and about file
-	void select(Node node, String outprefix) throws IOException {
+	void select1(Node node, String outprefix) throws IOException {
 		System.out.println("| Selecting " + node.name);
 		List<Node> it = new ArrayList<Node>(1);
 		it.add(node);
@@ -1314,9 +1320,6 @@ abstract class Taxonomy implements Iterable<Node> {
 }  // End of class Taxonomy
 
 class SourceTaxonomy extends Taxonomy {
-
-	// Used by idsource
-	List<Answer> deprecated = new ArrayList<Answer>();
 
 	SourceTaxonomy() {
 	}
@@ -1558,12 +1561,6 @@ class SourceTaxonomy extends Taxonomy {
 			System.err.println("| Copied " + count + " synonyms");
 	}
 
-	static SourceTaxonomy readTaxonomy(String filename) throws IOException {
-		SourceTaxonomy tax = new SourceTaxonomy();
-		tax.loadTaxonomy(filename);
-		return tax;
-	}
-
 	static SourceTaxonomy parseNewick(String newick) {
 		SourceTaxonomy tax = new SourceTaxonomy();
 		tax.roots.add(tax.newickToNode(newick));
@@ -1602,7 +1599,6 @@ class UnionTaxonomy extends Taxonomy {
 	}
 
 	void mergeIn(SourceTaxonomy source) {
-		source.which = this.sources.size();
 		source.mapInto(this, Criterion.criteria);
 		source.augment(this);
 		source.copySynonyms(this);
@@ -1614,7 +1610,6 @@ class UnionTaxonomy extends Taxonomy {
 	void assignIds(SourceTaxonomy idsource) {
 		this.idsource = idsource;
 		// idsource.tag = "ids";
-		idsource.which = this.sources.size();
 		idsource.mapInto(this, Criterion.idCriteria);
 
 		Node.resetStats();

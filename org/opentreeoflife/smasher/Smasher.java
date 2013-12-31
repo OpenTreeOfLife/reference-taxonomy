@@ -7,7 +7,12 @@
   files when I'm ready to do so; currently it's much easier to work
   with in this form.
 
+  In jython, say:
+     from org.opentreeoflife.smasher import Smasher
+
 */
+
+package org.opentreeoflife.smasher;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -48,7 +53,12 @@ public class Smasher {
 
 				if (argv[i].startsWith("--")) {
 
-					if (argv[i].equals("--jscheme")) {
+				        if (argv[i].equals("--jython")) {
+						String[] jargs = {};
+						org.python.util.jython.main(jargs);
+					}
+
+					else if (argv[i].equals("--jscheme")) {
 						String[] jargs = {};
 						jscheme.REPL.main(jargs);
 					}

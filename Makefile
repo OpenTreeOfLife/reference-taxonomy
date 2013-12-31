@@ -31,25 +31,31 @@ PREOTTOL=../../preottol
 CP=-classpath ".:lib/*"
 JAVA=java $(CP)
 BIG_JAVA=$(JAVA) -Xmx12G
+SMASH=org.opentreeoflife.smasher.Smasher
+CLASS=org/opentreeoflife/smasher/Smasher.class
 
 all: ott
 
-compile: Smasher.class
+compile: $(CLASS)
 
-Smasher.class: Smasher.java lib/jscheme.jar lib/json-simple-1.1.1.jar
-	javac -g $(CP) Smasher.java
+$(CLASS): org/opentreeoflife/smasher/Smasher.java \
+	  lib/jscheme.jar lib/json-simple-1.1.1.jar lib/jython-standalone-2.5.3.jar
+	javac -g $(CP) org/opentreeoflife/smasher/*.java
+
+lib/jython-standalone-2.5.3.jar:
+	wget -O "$@" "http://search.maven.org/remotecontent?filepath=org/python/jython-standalone/2.5.3/jython-standalone-2.5.3.jar"
 
 # --------------------------------------------------------------------------
 
 # Add tax/if/ when it starts to work
 
-OTT_ARGS=Smasher $(SILVA)/ tax/713/ tax/if/ $(NCBI)/ $(GBIF)/ \
+OTT_ARGS=$(SMASH) $(SILVA)/ tax/713/ tax/if/ $(NCBI)/ $(GBIF)/ \
       --edits feed/ott/edits/ \
       --ids tax/prev_ott/ \
       --out tax/ott/
 
 ott: tax/ott/log.tsv
-tax/ott/log.tsv: Smasher.class $(SILVA)/taxonomy.tsv \
+tax/ott/log.tsv: $(CLASS) $(SILVA)/taxonomy.tsv \
 		    tax/if/taxonomy.tsv tax/713/taxonomy.tsv \
 		    $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv \
 		    feed/ott/edits/ott_edits.tsv \
@@ -66,8 +72,8 @@ tax/if/taxonomy.tsv:
 # Create the aux (preottol) mapping in a separate step.
 # How does it know where to write to?
 
-tax/ott/aux.tsv: Smasher.class tax/ott/log.tsv
-	$(BIG_JAVA) Smasher tax/ott/ --aux $(PREOTTOL)/preottol-20121112.processed
+tax/ott/aux.tsv: $(CLASS) tax/ott/log.tsv
+	$(BIG_JAVA) $(SMASH) tax/ott/ --aux $(PREOTTOL)/preottol-20121112.processed
 
 $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 	python process-preottol.py $< $@
@@ -170,8 +176,8 @@ lib/json-simple-1.1.1.jar:
 	  "https://json-simple.googlecode.com/files/json-simple-1.1.1.jar"
 
 # internal tests
-test2: Smasher.class
-	$(JAVA) Smasher --test
+test2: $(CLASS)
+	$(JAVA) $(SMASH) --test
 
 
 ids_report.tsv:
@@ -180,20 +186,20 @@ ids_report.tsv:
 
 short-list.tsv: ids_report.tsv tax/ott/deprecated.tsv
 	grep "\\*" tax/ott/deprecated.tsv | grep -v "excluded" >dep-tmp.tsv
-	$(JAVA) Smasher --join ids_report.tsv dep-tmp.tsv >$@
+	$(JAVA) $(SMASH) --join ids_report.tsv dep-tmp.tsv >$@
 	wc $@
 
 # -----------------------------------------------------------------------------
 # Test: nematodes
 
 # Nematode test
-TEST_ARGS=Smasher tax/nem_ncbi/ tax/nem_gbif/ \
+TEST_ARGS=$(SMASH) tax/nem_ncbi/ tax/nem_gbif/ \
       --edits feed/nem/edits/ \
       --ids tax/prev_nem/ \
       --out tax/nem/
 
 nem: tax/nem/log.tsv
-tax/nem/log.tsv: Smasher.class tax/prev_nem/taxonomy.tsv tax/nem_ncbi/taxonomy.tsv tax/nem_gbif/taxonomy.tsv
+tax/nem/log.tsv: $(CLASS) tax/prev_nem/taxonomy.tsv tax/nem_ncbi/taxonomy.tsv tax/nem_gbif/taxonomy.tsv
 	mkdir -p tax/nem/
 	$(JAVA) $(TEST_ARGS)
 
@@ -208,9 +214,9 @@ tax/nem_gbif/taxonomy.tsv:
 	cp -p $(TAXOMACHINE_EXAMPLE)/nematoda.gbif $@
 
 # little test of --select feature
-tax/nem_dory/taxonomy.tsv: tax/nem/log.tsv Smasher.class
+tax/nem_dory/taxonomy.tsv: tax/nem/log.tsv $(CLASS)
 	mkdir -p `dirname $@`
-	$(JAVA) Smasher --start tax/nem/ --select Dorylaimina tax/nem_dory/
+	$(JAVA) $(SMASH) --start tax/nem/ --select Dorylaimina tax/nem_dory/
 
 # -----------------------------------------------------------------------------
 # Model village: Asterales
@@ -220,24 +226,24 @@ TAXON=Asterales
 # t/tax/prev/taxonomy.tsv: tax/prev_ott/taxonomy.tsv   - correct expensive
 t/tax/prev_aster/taxonomy.tsv: 
 	mkdir -p `dirname $@`
-	$(BIG_JAVA) Smasher tax/prev_ott/ --select2 $(TAXON) --out t/tax/prev_aster/
+	$(BIG_JAVA) $(SMASH) tax/prev_ott/ --select2 $(TAXON) --out t/tax/prev_aster/
 
 # dependency on tax/ncbi/taxonomy.tsv - correct expensive
 t/tax/ncbi_aster/taxonomy.tsv: 
 	mkdir -p `dirname $@`
-	$(BIG_JAVA) Smasher tax/ncbi/ --select2 $(TAXON) --out t/tax/ncbi_aster/
+	$(BIG_JAVA) $(SMASH) tax/ncbi/ --select2 $(TAXON) --out t/tax/ncbi_aster/
 
 # dependency on tax/gbif/taxonomy.tsv - correct but expensive
 t/tax/gbif_aster/taxonomy.tsv: 
 	mkdir -p `dirname $@`
-	$(BIG_JAVA) Smasher tax/gbif/ --select2 $(TAXON) --out t/tax/gbif_aster/
+	$(BIG_JAVA) $(SMASH) tax/gbif/ --select2 $(TAXON) --out t/tax/gbif_aster/
 
-t/tax/aster/taxonomy.tsv: Smasher.class \
+t/tax/aster/taxonomy.tsv: $(CLASS) \
 			  t/tax/ncbi_aster/taxonomy.tsv \
 			  t/tax/gbif_aster/taxonomy.tsv \
 			  t/tax/prev_aster/taxonomy.tsv
 	mkdir -p `dirname $@`
-	$(JAVA) Smasher t/tax/ncbi_aster/ t/tax/gbif_aster/ \
+	$(JAVA) $(SMASH) t/tax/ncbi_aster/ t/tax/gbif_aster/ \
 	     --ids t/tax/prev_aster/ \
 	     --out t/tax/aster/
 

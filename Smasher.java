@@ -2280,8 +2280,9 @@ class Node {
 		if (this.id != null)
 			return new QualifiedId(this.taxonomy.getTag(), this.id);
 		else {
-			System.err.println("! Union nodes don't have qualified ids: " + this);
-			return null;
+            // What if from a Newick string?
+			System.err.println("!? [getQualifiedId] Node has no id: " + this.name);
+			return new QualifiedId("?", this.name);
 		}
 	}
 

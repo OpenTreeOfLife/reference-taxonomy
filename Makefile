@@ -34,9 +34,9 @@ BIG_JAVA=$(JAVA) -Xmx12G
 
 all: ott
 
-compile: Smasher.class lib/jscheme.jar lib/json-simple-1.1.1.jar
+compile: Smasher.class
 
-Smasher.class: Smasher.java
+Smasher.class: Smasher.java lib/jscheme.jar lib/json-simple-1.1.1.jar
 	javac -g $(CP) Smasher.java
 
 # --------------------------------------------------------------------------
@@ -170,7 +170,7 @@ lib/json-simple-1.1.1.jar:
 	  "https://json-simple.googlecode.com/files/json-simple-1.1.1.jar"
 
 # internal tests
-test: Smasher.class
+test2: Smasher.class
 	$(JAVA) Smasher --test
 
 
@@ -217,16 +217,18 @@ tax/nem_dory/taxonomy.tsv: tax/nem/log.tsv Smasher.class
 
 TAXON=Asterales
 
-# t/tax/prev/taxonomy.tsv: tax/prev_ott/taxonomy.tsv   - expensive
-t/tax/prev_aster/taxonomy.tsv: tax/prev_ott/taxonomy.tsv
+# t/tax/prev/taxonomy.tsv: tax/prev_ott/taxonomy.tsv   - correct expensive
+t/tax/prev_aster/taxonomy.tsv: 
 	mkdir -p `dirname $@`
 	$(BIG_JAVA) Smasher tax/prev_ott/ --select2 $(TAXON) --out t/tax/prev_aster/
 
-t/tax/ncbi_aster/taxonomy.tsv: tax/ncbi/taxonomy.tsv
+# dependency on tax/ncbi/taxonomy.tsv - correct expensive
+t/tax/ncbi_aster/taxonomy.tsv: 
 	mkdir -p `dirname $@`
 	$(BIG_JAVA) Smasher tax/ncbi/ --select2 $(TAXON) --out t/tax/ncbi_aster/
 
-t/tax/gbif_aster/taxonomy.tsv: tax/gbif/taxonomy.tsv
+# dependency on tax/gbif/taxonomy.tsv - correct but expensive
+t/tax/gbif_aster/taxonomy.tsv: 
 	mkdir -p `dirname $@`
 	$(BIG_JAVA) Smasher tax/gbif/ --select2 $(TAXON) --out t/tax/gbif_aster/
 
@@ -239,6 +241,7 @@ t/tax/aster/taxonomy.tsv: Smasher.class \
 	     --ids t/tax/prev_aster/ \
 	     --out t/tax/aster/
 
+test: aster
 aster: t/tax/aster/taxonomy.tsv
 
 aster-tarball: t/tax/aster/taxonomy.tsv

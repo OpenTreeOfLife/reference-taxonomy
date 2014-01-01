@@ -16,6 +16,8 @@ package org.opentreeoflife.smasher;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.util.StringTokenizer;
 import java.util.HashSet;
@@ -32,6 +34,8 @@ import java.util.Collections;
 import java.util.Collection;
 import java.io.PrintStream;
 import java.io.File;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import org.json.simple.JSONObject; 
 import org.json.simple.parser.JSONParser; 
 import org.json.simple.parser.ParseException;
@@ -213,15 +217,14 @@ public class Smasher {
 	static Pattern tabPattern = Pattern.compile("\t");
 
 	static Map<String, String[]> readTable(String filename) throws IOException {
-		FileReader fr = new FileReader(filename);
-		BufferedReader br = new BufferedReader(fr);
+		BufferedReader br = Taxonomy.fileReader(filename);
 		String str;
 		Map<String, String[]> rows = new HashMap<String, String[]>();
 		while ((str = br.readLine()) != null) {
 			String[] parts = tabPattern.split(str);
 			rows.put(parts[0], parts);
 		}
-		fr.close();
+		br.close();
 		return rows;
 	}
 }
@@ -392,15 +395,67 @@ abstract class Taxonomy implements Iterable<Node> {
 
 	static Pattern tabVbarTab = Pattern.compile("\t\\|\t?");
 
+    // load | dump all taxonomy files
+
 	void loadTaxonomy(String dirname) throws IOException {
 		this.loadMetadata(dirname + "about.json");
 		this.loadTaxonomyProper(dirname + "taxonomy.tsv");
 		this.loadSynonyms(dirname + "synonyms.tsv");
 	}
 
+	// This gets overridden in the UnionTaxonomy class
+	void dumpAll(String outprefix) throws IOException {
+        new File(outprefix).mkdirs();
+		this.assignNewIds(0);
+		this.analyze();
+		this.dumpNodes(this.roots, outprefix);
+		this.dumpSynonyms(outprefix + "synonyms.tsv");
+		this.dumpMetadata(outprefix + "about.json");
+	}
+
+    // load | dump metadata
+
+	void loadMetadata(String filename) throws IOException {
+		BufferedReader fr;
+		try {
+			fr = Taxonomy.fileReader(filename);
+		} catch (java.io.FileNotFoundException e) {
+			return;
+		}
+		JSONParser parser = new JSONParser();
+		try {
+			Object obj = parser.parse(fr);
+			JSONObject jsonObject = (JSONObject) obj;
+			if (jsonObject == null)
+				System.err.println("!! Opened file " + filename + " but no contents?");
+			else {
+				this.metadata = jsonObject;
+
+				Object prefix = jsonObject.get("prefix");
+				if (prefix != null) {
+					System.out.println("prefix is " + prefix);
+					this.tag = (String)prefix;
+				}
+
+				Object smushp = ((Map)obj).get("smush");
+				if (smushp != null) {
+					System.out.println("smushp is " + smushp);
+					this.smushp = smushp.equals("yes");
+				}
+			}
+
+		} catch (ParseException e) {
+			System.err.println(e);
+		}
+		fr.close();
+	}
+
+	abstract void dumpMetadata(String filename) throws IOException;
+
+    // load | dump taxonomy proper
+
 	void loadTaxonomyProper(String filename) throws IOException {
-		FileReader fr = new FileReader(filename);
-		BufferedReader br = new BufferedReader(fr);
+		BufferedReader br = Taxonomy.fileReader(filename);
 		String str;
 		int row = 0;
 
@@ -462,9 +517,74 @@ abstract class Taxonomy implements Iterable<Node> {
 			if (row % 500000 == 0)
 				System.out.println(row);
 		}
-		fr.close();
+		br.close();
 
+		for (Node node : this.idIndex.values())
+			if (node.name == null) {
+				System.err.println("!! Identifier with no associated name, probably a missing parent: " + node.id);
+				node.setName("undefined:" + node.id);
+			}
+
+        this.smush();
+
+		if (roots.size() == 0)
+			System.err.println("*** No root nodes!");
+		else {
+			if (roots.size() > 1)
+				System.err.println("There are " + roots.size() + " roots");
+			int total = 0;
+			for (Node root : roots)
+				total += root.count();
+			if (row != total)
+				System.err.println(this.getTag() + " is ill-formed: " +
+								   row + " rows, but only " + 
+								   total + " reachable from roots");
+		}
+	}
+
+    // From stackoverflow
+    public static final Pattern DIACRITICS_AND_FRIENDS
+        = Pattern.compile("[\\p{InCombiningDiacriticalMarks}\\p{IsLm}\\p{IsSk}]+");
+    private static String stripDiacritics(String str) {
+        str = Normalizer.normalize(str, Normalizer.Form.NFD);
+        str = DIACRITICS_AND_FRIENDS.matcher(str).replaceAll("");
+        return str;
+    }
+    /*
+    void dumpName(String name) {
+        for (int i = 0; i < name.length(); ++i)
+            System.out.format("%4x ", (int)(name.charAt(i)));
+        System.out.println();
+    }
+    */
+
+    // Fold sibling homonyms together into single taxa.
+
+    void smush() {
 		List<Runnable> todo = new ArrayList<Runnable>();
+
+        // Maps name without diacritics to node with name with diacritics
+        Map<String,Node> upcritic = new HashMap<String,Node>();
+
+        // 1. Find all diacritics
+		for (final Node node : this.idIndex.values()) {
+            String without = stripDiacritics(node.name);
+            if (!without.equals(node.name)) {
+                // System.err.println("Diacritics in " + node.name + " but not in " + without);
+                // dumpName(node.name); dumpName(without);
+                upcritic.put(without, node);
+            }
+        }
+        // 2. Add diacritics to nodes that don't have them, when possible
+		for (final Node node : this.idIndex.values()) {
+            Node probe = upcritic.get(node.name);
+            if (probe != null)
+                // node.name is without diacritics, probe.name is with
+                node.setName(probe.name);
+        }
+        // 3. Add non-diacritic name as synonym of with-diacritic node
+        for (String without : upcritic.keySet())
+            addSynonym(without, upcritic.get(without));
 
 		// Smush taxa that differ only in id.
 		int siblingHomonymCount = 0;
@@ -514,21 +634,15 @@ abstract class Taxonomy implements Iterable<Node> {
 						// has been flushed, try next homonym in the set.
 						break;
 					}
-							}
+                }
 
 		for (Runnable r : todo) r.run();
 
 		if (siblingHomonymCount > 0)
 			System.err.println("" + siblingHomonymCount + " sibling homonyms");
 
-		for (Node node : this.idIndex.values()) {
-			if (node.name == null) {
-				System.err.println("!! Identifier with no associated name, probably a missing parent: " + node.id);
-				node.setName("undefined:" + node.id);
-			}
-		
+		for (Node node : this.idIndex.values())
 			// if (node.parent == null && !roots.contains(node)) ...
-
 			if (node.parent != null) {
 				Node replacement = this.idIndex.get(node.parent.id);
 				if (replacement != node.parent) {
@@ -536,78 +650,72 @@ abstract class Taxonomy implements Iterable<Node> {
 					node.parent = replacement;
 				}
 			}
-		}
+    }
 
-		if (roots.size() == 0)
-			System.err.println("*** No root nodes!");
-		else {
-			if (roots.size() > 1)
-				System.err.println("There are " + roots.size() + " roots");
-			int total = 0;
-			for (Node root : roots)
-				total += root.count();
-			if (row != total)
-				System.err.println(this.getTag() + " is ill-formed: " +
-								   row + " rows, but only " + 
-								   total + " reachable from roots");
+	void dumpNodes(Collection<Node> nodes, String outprefix) throws IOException {
+		PrintStream out = Taxonomy.openw(outprefix + "taxonomy.tsv");
+
+		out.println("uid\t|\tparent_uid\t|\tname\t|\trank\t|\tsourceinfo\t|\tuniqname\t|\tflags\t|\t"
+					// 0	 1				2		 3		  4				 5             6
+					);
+
+		for (Node node : nodes) {
+			if (node == null)
+				System.err.println("null in nodes list!?" );
+			else
+				dumpNode(node, out, true);
 		}
+		out.close();
 	}
 
-	void loadMetadata(String filename) throws IOException {
-		FileReader fr;
-		try {
-			fr = new FileReader(filename);
-		} catch (java.io.FileNotFoundException e) {
-			return;
-		}
-		JSONParser parser = new JSONParser();
-		try {
-			Object obj = parser.parse(fr);
-			JSONObject jsonObject = (JSONObject) obj;
-			if (jsonObject == null)
-				System.err.println("!! Opened file " + filename + " but no contents?");
-			else {
-				this.metadata = jsonObject;
+	// Recursive!
+	void dumpNode(Node node, PrintStream out, boolean rootp) {
+		// 0. uid:
+		out.print((node.id == null ? "?" : node.id) + "\t|\t");
+		// 1. parent_uid:
+		out.print(((node.parent == null || rootp) ? "" : node.parent.id)  + "\t|\t");
+		// 2. name:
+		out.print((node.name == null ? "?" : node.name)
+				  + "\t|\t");
+		// 3. rank:
+		out.print((node.rank == null ? "no rank" : node.rank) + "\t|\t");
 
-				Object prefix = jsonObject.get("prefix");
-				if (prefix != null) {
-					System.out.println("prefix is " + prefix);
-					this.tag = (String)prefix;
-				}
+		// 4. source information
+		// comma-separated list of URI-or-CURIE
+		out.print(node.getSourceIdsString() + "\t|\t");
 
-				Object smushp = ((Map)obj).get("smush");
-				if (smushp != null) {
-					System.out.println("smushp is " + smushp);
-					this.smushp = smushp.equals("yes");
-				}
+		// 5. uniqname
+		out.print(node.uniqueName() + "\t|\t");
+
+		// 6. flags
+		// (node.mode == null ? "" : node.mode)
+		Taxonomy.printFlags(node, out);
+		out.print("\t|\t");
+		// was: out.print(((node.flags != null) ? node.flags : "") + "\t|\t");
+
+		out.println();
+
+		if (node.children != null)
+			for (Node child : node.children) {
+				if (child == null)
+					System.err.println("null in children list!? " + node);
+				else
+					dumpNode(child, out, false);
 			}
-
-		} catch (ParseException e) {
-			System.err.println(e);
-		}
-		fr.close();
 	}
 
-	// Gets overridden in UnionTaxonomy class
-	void dumpAll(String outprefix) throws IOException {
-		this.assignNewIds(0);
-		this.analyze();
-		this.dump(this.roots, outprefix);
-		this.dumpSynonyms(outprefix + "synonyms.tsv");
-		this.dumpMetadata(outprefix + "about.json");
-	}
-
-	abstract void dumpMetadata(String filename) throws IOException;
+    // load | dump synonyms
 
 	void loadSynonyms(String filename) throws IOException {
-		FileReader fr;
+		BufferedReader fr;
 		try {
-			fr = new FileReader(filename);
+			fr = fileReader(filename);
 		} catch (java.io.FileNotFoundException e) {
 			fr = null;
 		}
 		if (fr != null) {
-			BufferedReader br = new BufferedReader(fr);
+			// BufferedReader br = new BufferedReader(fr);
+            BufferedReader br = fr;
 			int count = 0;
 			String str;
 			int syn_column = 1;
@@ -1095,65 +1203,13 @@ abstract class Taxonomy implements Iterable<Node> {
 		System.out.println("| Selecting " + node.name);
 		List<Node> it = new ArrayList<Node>(1);
 		it.add(node);
-		this.dump(it, outprefix);
+		this.dumpNodes(it, outprefix);
 
 		if (this.metadata != null) {
 			PrintStream out = Taxonomy.openw(outprefix + "about.json");
 			out.println(this.metadata);
 			out.close();
 		}
-	}
-
-	void dump(Collection<Node> nodes, String outprefix) throws IOException {
-		PrintStream out = Taxonomy.openw(outprefix + "taxonomy.tsv");
-
-		out.println("uid\t|\tparent_uid\t|\tname\t|\trank\t|\tsourceinfo\t|\tuniqname\t|\tflags\t|\t"
-					// 0	 1				2		 3		  4				 5             6
-					);
-
-		for (Node node : nodes) {
-			if (node == null)
-				System.err.println("null in nodes list!?" );
-			else
-				dumpNode(node, out, true);
-		}
-		out.close();
-	}
-
-	// Recursive!
-	void dumpNode(Node node, PrintStream out, boolean rootp) {
-		// 0. uid:
-		out.print((node.id == null ? "?" : node.id) + "\t|\t");
-		// 1. parent_uid:
-		out.print(((node.parent == null || rootp) ? "" : node.parent.id)  + "\t|\t");
-		// 2. name:
-		out.print((node.name == null ? "?" : node.name)
-				  + "\t|\t");
-		// 3. rank:
-		out.print((node.rank == null ? "no rank" : node.rank) + "\t|\t");
-
-		// 4. source information
-		// comma-separated list of URI-or-CURIE
-		out.print(node.getSourceIdsString() + "\t|\t");
-
-		// 5. uniqname
-		out.print(node.uniqueName() + "\t|\t");
-
-		// 6. flags
-		// (node.mode == null ? "" : node.mode)
-		Taxonomy.printFlags(node, out);
-		out.print("\t|\t");
-		// was: out.print(((node.flags != null) ? node.flags : "") + "\t|\t");
-
-		out.println();
-
-		if (node.children != null)
-			for (Node child : node.children) {
-				if (child == null)
-					System.err.println("null in children list!? " + node);
-				else
-					dumpNode(child, out, false);
-			}
 	}
 
 	// Select subtree rooted at a specified node
@@ -1284,7 +1340,14 @@ abstract class Taxonomy implements Iterable<Node> {
 			out = System.out;
 			System.err.println("Writing to standard output");
 		} else {
-			out = new java.io.PrintStream(new java.io.BufferedOutputStream(new java.io.FileOutputStream(filename)));
+			out = new java.io.PrintStream(new java.io.BufferedOutputStream(new java.io.FileOutputStream(filename)),
+                                          false,
+                                          "UTF-8");
+
+            // PrintStream(OutputStream out, boolean autoFlush, String encoding)
+
+            // PrintStream(new OutputStream(new FileOutputStream(filename, "UTF-8")))
+
 			System.err.println("Writing " + filename);
 		}
 		return out;
@@ -1316,6 +1379,19 @@ abstract class Taxonomy implements Iterable<Node> {
 			}
 		System.out.println("| Highest id after: " + maxid);
 	}
+
+    static BufferedReader fileReader(File filename) throws IOException {
+        return
+            new BufferedReader(new InputStreamReader(new FileInputStream(filename),
+                                                     "UTF-8"));
+    }
+
+    static BufferedReader fileReader(String filename) throws IOException {
+        return
+            new BufferedReader(new InputStreamReader(new FileInputStream(filename),
+                                                     "UTF-8"));
+    }
+
 
 }  // End of class Taxonomy
 
@@ -1539,23 +1615,23 @@ class SourceTaxonomy extends Taxonomy {
 		int count = 0;
 		for (String syn : this.nameIndex.keySet()) {
 			// All of the nodes for which syn is a name:
-			List<Node> fromnodes = this.nameIndex.get(syn);
-			List<Node> tonodes = union.nameIndex.get(syn);
+			List<Node> nodes = this.nameIndex.get(syn);
 
-			// a is a synonym of b, c, and d
-			for (Node node : fromnodes) {
-				// Only mapped nodes can have their names preserved as synonyms
-				if (node.mapped != null) {
-					if (tonodes == null) {
-						tonodes = new ArrayList<Node>(1);
-						union.nameIndex.put(syn, tonodes);
-					}
-					if (!tonodes.contains(node.mapped)) {
-						tonodes.add(node.mapped);
-						++count;
-					}
-				}
-			}
+			for (Node node : nodes)
+
+                // syn is a name for node, in source taxonomy.
+                // It should become a synonym for unode, in union taxonomy.
+
+				if (node.mapped != null && !node.mapped.name.equals(syn)) {
+                    List<Node> unodes = this.nameIndex.get(syn);
+                    if (unodes != null) {
+                        unodes = new ArrayList<Node>(1);
+                        union.nameIndex.put(syn, unodes);
+                    }
+					// if (!unodes.contains(node.mapped)) ...
+                    unodes.add(node.mapped);
+                    ++count;
+                }
 		}
 		if (count > 0)
 			System.err.println("| Copied " + count + " synonyms");
@@ -1800,8 +1876,7 @@ class UnionTaxonomy extends Taxonomy {
 		for (File editfile : editfiles) {
 			if (!editfile.getName().endsWith("~")) {
 				System.out.println("--- Applying edits from " + editfile + " ---");
-				FileReader fr = new FileReader(editfile);
-				BufferedReader br = new BufferedReader(fr);
+				BufferedReader br = Taxonomy.fileReader(editfile);
 				String str;
 				while ((str = br.readLine()) != null) {
 					if (!(str.length()==0) && !str.startsWith("#")) {
@@ -1815,7 +1890,7 @@ class UnionTaxonomy extends Taxonomy {
 						}
 					}
 				}
-				fr.close();
+				br.close();
 			}
 		}
 	}
@@ -1926,13 +2001,14 @@ class UnionTaxonomy extends Taxonomy {
 	// outprefix should end with a / , but I guess . would work too
 
 	void dumpAll(String outprefix) throws IOException {
+        new File(outprefix).mkdirs();
 		this.assignNewIds(0);	// If we've seen an idsource, maybe this has already been done
 		this.analyze();
-		this.dumpLog(outprefix + "log.tsv");
-		this.dump(this.roots, outprefix);
+		this.dumpLog(outprefix + "log.tsv");    // *****
+		this.dumpNodes(this.roots, outprefix);
 		this.dumpSynonyms(outprefix + "synonyms.tsv");
 		this.dumpMetadata(outprefix + "about.json");
-		if (this.idsource != null)
+		if (this.idsource != null)     // *****
 			this.dumpDeprecated(this.idsource, outprefix + "deprecated.tsv");
 	}
 
@@ -2097,8 +2173,16 @@ class Node {
 	}
 
 	void setName(String name) {
-		if (this.name != null)
-			System.err.println("Already named: " + name + " -> " + this.name);
+		if (this.name != null) {
+			System.err.println("Changing name: " + this.name + " -> " + name);
+            if (name.equals(this.name)) return;
+            List<Node> nodes = this.taxonomy.nameIndex.get(this.name);
+            nodes.remove(name);
+            if (nodes.size() == 0) {
+                System.out.println("Removing name from index: " + name);
+                this.taxonomy.nameIndex.remove(name);
+            }
+        }
 		this.name = name;
 		if (name == null)
 			System.err.println("! Setting name to null? " + this);

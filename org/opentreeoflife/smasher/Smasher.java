@@ -242,6 +242,7 @@ abstract class Taxonomy implements Iterable<Node> {
 	Integer infocolumn = null;
 	Integer preottolcolumn = null;
 	JSONObject metadata = null;
+    int taxid = -1234;    // kludge
 
 	boolean smushp = false;
 
@@ -320,12 +321,17 @@ abstract class Taxonomy implements Iterable<Node> {
 		};
 	}
 
+	static int globalTaxonomyIdCounter = 1;
+
 	String getTag() {
 		if (this.tag == null) this.setTag();
-		return this.tag;
+		if (this.tag == null) {
+            if (this.taxid < 0)
+                this.taxid = globalTaxonomyIdCounter++;
+			return "tax" + taxid;
+        } else
+            return this.tag;
 	}
-
-	static int globalTaxonomyIdCounter = 1;
 
 	void setTag() {
 		if (this.tag != null) return;
@@ -338,8 +344,16 @@ abstract class Taxonomy implements Iterable<Node> {
 			else if (id.equals("100968828")) this.tag = "aux"; // preottol
 			else if (id.equals("4722")) this.tag = "nem"; // testing
 		}
-		if (this.tag == null)
-			this.tag = "tax" + globalTaxonomyIdCounter++;
+        // TEMPORARY KLUDGE
+		if (this.tag == null) {
+            List<Node> probe2 = this.lookup("Asterales");
+            if (probe2 != null) {
+                String id = probe2.get(0).id;
+                if (id.equals("4209")) this.tag = "ncbi";
+                if (id.equals("414")) this.tag = "gbif";
+                if (id.equals("1042120")) this.tag = "ott";
+            }
+        }
 	}
 
 	Node highest(String name) {
@@ -400,6 +414,7 @@ abstract class Taxonomy implements Iterable<Node> {
 	void loadTaxonomy(String dirname) throws IOException {
 		this.loadMetadata(dirname + "about.json");
 		this.loadTaxonomyProper(dirname + "taxonomy.tsv");
+        this.smush();
 		this.loadSynonyms(dirname + "synonyms.tsv");
 	}
 
@@ -525,8 +540,6 @@ abstract class Taxonomy implements Iterable<Node> {
 				node.setName("undefined:" + node.id);
 			}
 
-        this.smush();
-
 		if (roots.size() == 0)
 			System.err.println("*** No root nodes!");
 		else {
@@ -559,11 +572,12 @@ abstract class Taxonomy implements Iterable<Node> {
     */
 
     // Fold sibling homonyms together into single taxa.
+    // Optional step.
 
     void smush() {
 		List<Runnable> todo = new ArrayList<Runnable>();
 
-        // Maps name without diacritics to node with name with diacritics
+        // Maps name without diacritics to name with diacritics
         Map<String,String> uncritical = new HashMap<String,String>();
 
         // 1. Find all diacritics
@@ -575,7 +589,10 @@ abstract class Taxonomy implements Iterable<Node> {
                 uncritical.put(without, node.name);
             }
         }
-        // 2. Add diacritics to nodes that don't have them, when possible
+        if (uncritical.size() > 0)
+            System.out.format("| %s names with diacritics\n", uncritical.size());
+        // 2. When a node's name is missing diacritics but could have them,
+        // add them by clobbering the name.  This may create sibling homonyms.
 		for (final Node node : this.idIndex.values()) {
             String with = uncritical.get(node.name);
             if (with != null)
@@ -1973,12 +1990,15 @@ class UnionTaxonomy extends Taxonomy {
         new File(outprefix).mkdirs();
 		this.assignNewIds(0);	// If we've seen an idsource, maybe this has already been done
 		this.analyze();
-		this.dumpLog(outprefix + "log.tsv");    // *****
+		this.dumpMetadata(outprefix + "about.json");
+
+        Set<String> scrutinize = null;
+		if (this.idsource != null) 
+			scrutinize = this.dumpDeprecated(this.idsource, outprefix + "deprecated.tsv");
+		this.dumpLog(outprefix + "log.tsv", scrutinize);
+
 		this.dumpNodes(this.roots, outprefix);
 		this.dumpSynonyms(outprefix + "synonyms.tsv");
-		this.dumpMetadata(outprefix + "about.json");
-		if (this.idsource != null)     // *****
-			this.dumpDeprecated(this.idsource, outprefix + "deprecated.tsv");
 	}
 
     // Overrides method in Taxonomy class
@@ -1998,9 +2018,10 @@ class UnionTaxonomy extends Taxonomy {
 		out.close();
 	}
 
-	void dumpDeprecated(SourceTaxonomy idsource, String filename) throws IOException {
+	Set<String> dumpDeprecated(SourceTaxonomy idsource, String filename) throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
 		out.println("id\tname\tsourceinfo\treason\twitness\treplacement");
+
 		for (String id : idsource.idIndex.keySet()) {
 			Node node = idsource.idIndex.get(id);
 			if (node.mapped != null) continue;
@@ -2026,11 +2047,21 @@ class UnionTaxonomy extends Taxonomy {
 						replacement);
 		}
 		out.close();
+
+        Set<String> scrutinize = new HashSet<String>();
+        for (String name : idsource.nameIndex.keySet())
+            for (Node node : idsource.nameIndex.get(name))
+                if (node.mapped == null) {
+                    scrutinize.add(name);
+                    break;
+                }
+        return scrutinize;
 	}
 
-	// called on union
+	// Called on union taxonomy
+    // scrutinize is a set of names of especial interest (e.g. deprecated)
 
-	void dumpLog(String filename) throws IOException {
+	void dumpLog(String filename, Set<String> scrutinize) throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
 
 		// Strongylidae	nem:3600	yes	same-parent/direct	3600	Strongyloidea	false
@@ -2042,14 +2073,27 @@ class UnionTaxonomy extends Taxonomy {
 					"reason\t" +
 					"witness");
 
-		for (List<Answer> answers : this.logs.values()) {
-			boolean interestingp = false;
-			for (Answer answer : answers)
-				if (answer.isInteresting()) {interestingp = true; break;}
-			if (interestingp)
-				for (Answer answer : answers)
-					out.println(answer.dump());
-		}
+        // this.logs is indexed by taxon name
+        if (false)
+            for (List<Answer> answers : this.logs.values()) {
+                boolean interestingp = false;
+                for (Answer answer : answers)
+                    if (answer.isInteresting()) {interestingp = true; break;}
+                if (interestingp)
+                    for (Answer answer : answers)
+                        out.println(answer.dump());
+            }
+        else
+            for (String name : scrutinize) {
+                List<Answer> answers = this.logs.get(name);
+                if (answers != null)
+                    for (Answer answer : answers)
+                        out.println(answer.dump());
+                else
+                    // usually a silly synonym
+                    // System.out.format("No logging info for name %s\n", name);
+                    ;
+            }
 
 		if (false) {
 			Set<String> seen = new HashSet<String>();

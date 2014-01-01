@@ -564,7 +564,7 @@ abstract class Taxonomy implements Iterable<Node> {
 		List<Runnable> todo = new ArrayList<Runnable>();
 
         // Maps name without diacritics to node with name with diacritics
-        Map<String,Node> upcritic = new HashMap<String,Node>();
+        Map<String,String> uncritical = new HashMap<String,String>();
 
         // 1. Find all diacritics
 		for (final Node node : this.idIndex.values()) {
@@ -572,19 +572,17 @@ abstract class Taxonomy implements Iterable<Node> {
             if (!without.equals(node.name)) {
                 // System.err.println("Diacritics in " + node.name + " but not in " + without);
                 // dumpName(node.name); dumpName(without);
-                upcritic.put(without, node);
+                uncritical.put(without, node.name);
             }
         }
         // 2. Add diacritics to nodes that don't have them, when possible
 		for (final Node node : this.idIndex.values()) {
-            Node probe = upcritic.get(node.name);
-            if (probe != null)
-                // node.name is without diacritics, probe.name is with
-                node.setName(probe.name);
+            String with = uncritical.get(node.name);
+            if (with != null)
+                node.setName(with);
         }
         // 3. Add non-diacritic name as synonym of with-diacritic node
-        for (String without : upcritic.keySet())
-            addSynonym(without, upcritic.get(without));
+        // See below, following smushing!
 
 		// Smush taxa that differ only in id.
 		int siblingHomonymCount = 0;
@@ -625,7 +623,7 @@ abstract class Taxonomy implements Iterable<Node> {
 											for (Node child : new ArrayList<Node>(node.children))
 												// might create new sibling homonyms...
 												child.changeParent(other);
-										node.prune();
+										node.prune();  // removes name from index
 										tax.idIndex.put(node.id, other);
 										other.addSource(node);
 									}});
@@ -650,6 +648,22 @@ abstract class Taxonomy implements Iterable<Node> {
 					node.parent = replacement;
 				}
 			}
+
+        int critcount = 0;
+
+        // 3. Add non-diacritic name as synonym of with-diacritic node
+        for (String without : uncritical.keySet()) {
+            String with = uncritical.get(without);
+            List<Node> nodes = this.nameIndex.get(with);
+            if (nodes != null)
+                for (Node node : nodes) {
+                    // Almost always only one node!!
+                    if (++critcount <= 1 || nodes.size() > 1)
+                        System.out.format("Adding %s as synonym for %s\n", without, node);
+                    addSynonym(without, node);
+                }
+        }
+
     }
 
 	void dumpNodes(Collection<Node> nodes, String outprefix) throws IOException {
@@ -1754,51 +1768,6 @@ class UnionTaxonomy extends Taxonomy {
 
 	// x.getQualifiedId()
 
-	void dumpDeprecated(SourceTaxonomy idsource, String filename) throws IOException {
-		PrintStream out = Taxonomy.openw(filename);
-		out.println("id\tname\tsourceinfo\treason\twitness\treplacement");
-		for (String id : idsource.idIndex.keySet()) {
-			Node node = idsource.idIndex.get(id);
-			if (node.mapped != null) continue;
-			String reason = "?";
-			String witness = "";
-			String replacement = "*";
-			Answer answer = node.deprecationReason;
-			if (!node.id.equals(id)) {
-				reason = "smushed";
-			} else if (answer != null) {
-				// assert answer.x == node
-				reason = answer.reason;
-				if (answer.y != null && answer.value > Answer.DUNNO)
-					replacement = answer.y.id;
-				if (answer.witness != null)
-					witness = answer.witness;
-			}
-			out.println(id + "\t" +
-						node.name + "\t" +
-						node.getSourceIdsString() + "\t" +
-						reason + "\t" +
-						witness + "\t" +
-						replacement);
-		}
-		out.close();
-	}
-
-	void dumpMetadata(String filename)  throws IOException {
-		this.metadata = new JSONObject();
-		List<Object> sourceMetas = new ArrayList<Object>();
-		this.metadata.put("inputs", sourceMetas);
-		for (Taxonomy source : this.sources)
-			if (source.metadata != null)
-				sourceMetas.add(source.metadata);
-			else
-				sourceMetas.add(source.tag);
-		// this.metadata.put("prefix", "ott");
-		PrintStream out = Taxonomy.openw(filename);
-		out.println(this.metadata);
-		out.close();
-	}
-
 	void loadAuxIds(SourceTaxonomy aux) {
 		this.auxsource = aux;
 		aux.mapInto(this, Criterion.idCriteria);
@@ -1997,7 +1966,7 @@ class UnionTaxonomy extends Taxonomy {
 		return fnodes.size() == 0 ? null : fnodes.get(0);
 	}
 
-	// Overriddes method in Taxonomy class
+	// Overrides method in Taxonomy class
 	// outprefix should end with a / , but I guess . would work too
 
 	void dumpAll(String outprefix) throws IOException {
@@ -2010,6 +1979,53 @@ class UnionTaxonomy extends Taxonomy {
 		this.dumpMetadata(outprefix + "about.json");
 		if (this.idsource != null)     // *****
 			this.dumpDeprecated(this.idsource, outprefix + "deprecated.tsv");
+	}
+
+    // Overrides method in Taxonomy class
+
+	void dumpMetadata(String filename)  throws IOException {
+		this.metadata = new JSONObject();
+		List<Object> sourceMetas = new ArrayList<Object>();
+		this.metadata.put("inputs", sourceMetas);
+		for (Taxonomy source : this.sources)
+			if (source.metadata != null)
+				sourceMetas.add(source.metadata);
+			else
+				sourceMetas.add(source.tag);
+		// this.metadata.put("prefix", "ott");
+		PrintStream out = Taxonomy.openw(filename);
+		out.println(this.metadata);
+		out.close();
+	}
+
+	void dumpDeprecated(SourceTaxonomy idsource, String filename) throws IOException {
+		PrintStream out = Taxonomy.openw(filename);
+		out.println("id\tname\tsourceinfo\treason\twitness\treplacement");
+		for (String id : idsource.idIndex.keySet()) {
+			Node node = idsource.idIndex.get(id);
+			if (node.mapped != null) continue;
+			String reason = "?";
+			String witness = "";
+			String replacement = "*";
+			Answer answer = node.deprecationReason;
+			if (!node.id.equals(id)) {
+				reason = "smushed";
+			} else if (answer != null) {
+				// assert answer.x == node
+				reason = answer.reason;
+				if (answer.y != null && answer.value > Answer.DUNNO)
+					replacement = answer.y.id;
+				if (answer.witness != null)
+					witness = answer.witness;
+			}
+			out.println(id + "\t" +
+						node.name + "\t" +
+						node.getSourceIdsString() + "\t" +
+						reason + "\t" +
+						witness + "\t" +
+						replacement);
+		}
+		out.close();
 	}
 
 	// called on union

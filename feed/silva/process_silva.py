@@ -50,7 +50,28 @@ Be aware of a few things -
 import sys
 import re
 import string
+import os, time, json, os.path
 
+
+def writeAboutFile(url, nodesfilename, taxdir):
+	aboutfilename = taxdir+"/about.json"
+	aboutfile = open(aboutfilename,"w")
+	# Get file date from nodes.dmp in downloaddir
+	# os.path.getmtime(file)   => number of seconds since epoch
+	filetime = os.path.getmtime(nodesfilename)
+	tuple_time = time.gmtime(filetime)
+	iso_time = time.strftime("%Y-%m-%dT%H:%M:%S", tuple_time)
+	about = {"type": "source",
+			 "namespace": {"prefix": "silva",
+					   	   "definition": "http://www.arb-silva.de/browser/ssu/silva/",
+					  	   "description": "SILVA Taxonomy"},
+			 "namespaces": [],
+			 "url": url,
+			 "lastModified": iso_time,
+			 "smush": False}
+	aboutfile.write(json.dumps(about))
+	print "Wrote", aboutfilename
+	aboutfile.close()
 
 pathdict = {} #given the sequence identifier, return the taxonomy path
 seqdict = {} #given the taxon name, return (<species id assigned here>,<unique sequence id from SSU ref file>) 
@@ -74,21 +95,27 @@ kill = re.compile('|'.join(['ABEG02010941',  # Caenorhabditis brenneri
 def makePathDict(infilename, outfilename):
 	infile = open(infilename,'rU')
 	outfile = open(outfilename,'w') # I'm writing this out to have the taxonomy separate from the sequences - not necessary
+	inclusive = 0
+	exclusive = 0
 	for line in infile:  #removing plants, animals, fungi, chloroplast and mitochondrial sequences - also specifying Oryza because it is problematic in this version the database (SSURef_NR99_115_tax_silva.fasta).
-		if line[0] == '>' and not re.search(kill,line):	
-			taxlist = []		
-			uid = line.split()[0].strip() # was going to use the species but there are multiple 'unidentified', for example
-			taxlist_1  = line.strip(uid).strip().split(';')
-			uid = uid.lstrip('>')
-			for taxname in taxlist_1:
-				# JAR commented out the following... smasher takes care of these
-			    # if not re.search('Incertae Sedis',tax) and tax not in taxlist:			
-				taxlist.append(taxname)
-			#if 'uncultured' in taxlist:
-			#	taxlist.remove('uncultured') #not sure...
-			pathdict[uid] = taxlist
-			outfile.write(uid + ',' + str(pathdict[uid]) + '\n')
+		if line[0] == '>':
+			inclusive += 1
+			if not re.search(kill,line):
+				exclusive += 1
+				taxlist = []		
+				uid = line.split()[0].strip() # was going to use the species but there are multiple 'unidentified', for example
+				taxlist_1  = line.strip(uid).strip().split(';')
+				uid = uid.lstrip('>')
+				for taxname in taxlist_1:
+					# JAR commented out the following... smasher takes care of these
+					# if not re.search('Incertae Sedis',tax) and tax not in taxlist:			
+					taxlist.append(taxname)
+				#if 'uncultured' in taxlist:
+				#	taxlist.remove('uncultured') #not sure...
+				pathdict[uid] = taxlist
+				outfile.write(uid + ',' + str(pathdict[uid]) + '\n')
 	outfile.close()		
+	print "Silva tips: %s  Exclusive of kill list: %s"%(inclusive, exclusive)
 	return pathdict	
 
 def checkHomonym(uid,taxon,pathdict,olduid,homfilename):
@@ -146,7 +173,9 @@ def processSilva(pathdict, indir, outdir):
 	missing = []
 	blocked = 0
 	internal = 0
+	tips = 0
 	acc_success = 0
+	acc_seen = {}
 
 	uids = [uid for (z, uid) in sorted([(len(uid), uid) for uid in pathdict.keys()])]
 
@@ -164,7 +193,6 @@ def processSilva(pathdict, indir, outdir):
 				taxid = "%s/#%d"%(accession, depth+1)
 				# Use this URL prefix: http://www.arb-silva.de/browser/ssu/silva/
 				internal = internal + 1
-				longname = taxname
 				if depth == 0:  #taxname in ['Bacteria','Eukaryota','Archaea']: 
 					rank = 'domain'
 				else:									
@@ -180,8 +208,6 @@ def processSilva(pathdict, indir, outdir):
 				# Some of the 'uncultured' taxa are incorrectly assigned rank 'class' or 'order'
 				if taxname == 'uncultured':
 					rank = 'no rank'
-				if (longname != taxname):
-					synonyms[longname] = taxid
 				outfile.write("%s\t|\t%s\t|\t%s\t|\t%s\t|\t\t|\t\n" %
 							  (taxid, parentid, taxname, rank))
 
@@ -203,6 +229,7 @@ def processSilva(pathdict, indir, outdir):
 					# What GBIF calls it
 					synonyms['Plantae'] = taxid
 				elif taxname == 'Metazoa':
+					# What GBIF calls it
 					synonyms['Animalia'] = taxid
 				break
 				  
@@ -210,8 +237,12 @@ def processSilva(pathdict, indir, outdir):
 
 	    # Now process this particular tip.
 		# parentid wants to be parent of NCBI taxon, but NCBI taxon might be paraphyletic
+		# N.b. we may encounter the same accession number multiple times
 
 		if parentid != None:
+			tips += 1
+			if not accession in acc_seen:
+				acc_seen[accession] = True
 			if accession in accession_to_ncbi:
 				ncbi = accession_to_ncbi[accession]
 				if ncbi == '*':
@@ -229,10 +260,14 @@ def processSilva(pathdict, indir, outdir):
 				missing.append(accession)
 
 	print "Higher taxa: %d"%internal
-	print "Accession number to NCBI taxon mappings: %d successful, %d blocked, %d missing"%(acc_success, blocked, len(missing))
+	print "Tips: %d"%tips
+	print "Accessions: %d"%len(acc_seen)
+	print "Tip to NCBI taxon mappings: %d successful, %d blocked, %d missing"%(acc_success, blocked, len(missing))
 
 	paraphyletic = []
 	ncbi_count = 0
+
+	# ncbi_silva_parent maps ncbi id to id of parent in silva
 
 	for ncbi in ncbi_silva_parent.keys():
 		parentid = ncbi_silva_parent[ncbi]
@@ -245,8 +280,8 @@ def processSilva(pathdict, indir, outdir):
 						  (taxid, parentid, ncbi_name[ncbi], rank, qid))
 			ncbi_count = ncbi_count + 1
 			# This isn't useful, is it?
-			longname = "%s %s"%(taxname, qid)
-			synonyms[longname] = taxid
+			#longname = "%s %s"%(taxname, qid)
+			#synonyms[longname] = taxid
 		else:
 			paraphyletic.append(ncbi)
 	print "NCBI taxa incorporated: %d"%ncbi_count
@@ -265,9 +300,12 @@ def main():
 	# was: infile = open('SSURef_NR99_115_tax_silva.fasta','rU')
 	indir = sys.argv[1]
 	outdir = sys.argv[2]
+	url = sys.argv[3]
+	fastafilename = indir + '/silva.fasta'
+	writeAboutFile(url, fastafilename, outdir)
 	readNcbi(indir)
 	# readRanks(indir) - no longer used
-	pathdict = makePathDict(indir + '/silva.fasta', outdir + '/silva_taxonly.txt')
+	pathdict = makePathDict(fastafilename, outdir + '/silva_taxonly.txt')
 	processSilva(pathdict, indir, outdir)
 	do_synonyms(outdir)
 	

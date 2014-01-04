@@ -1,0 +1,13 @@
+*~
+*.class
+tmp*
+*.tmp
+smasher/tax/gbif
+smasher/tax/ncbi
+smasher/tax/nem_ncbi
+smasher/tax/nem_gbif
+smasher/tax/nem
+smasher/tax/ott
+smasher/tax/prev_ott
+smasher/feed/*/in
+smasher/feed/*/out

@@ -134,14 +134,16 @@ feed/gbif/in/checklist1.zip:
 
 # Significant tabs !!!
 
+SILVA_URL=https://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/SSURef_NR99_115_tax_silva.fasta.tgz
+
 silva: $(SILVA)/taxonomy.tsv
 $(SILVA)/taxonomy.tsv: feed/silva/process_silva.py feed/silva/in/silva.fasta feed/silva/in/accessionid_to_taxonid.tsv 
 	mkdir -p feed/silva/out
-	python feed/silva/process_silva.py feed/silva/in feed/silva/out
+	python feed/silva/process_silva.py feed/silva/in feed/silva/out "$(SILVA_URL)"
 	mkdir -p $(SILVA)
 	cp -p feed/silva/out/taxonomy.tsv $(SILVA)/
 	cp -p feed/silva/out/synonyms.tsv $(SILVA)/
-	cp -p feed/silva/about.json $(SILVA)/
+	cp -p feed/silva/out/about.json $(SILVA)/
 
 feed/silva/in/accessionid_to_taxonid.tsv: feed/silva/accessionid_to_taxonid.tsv
 	(cd `dirname $@` && ln -sf ../accessionid_to_taxonid.tsv ./)
@@ -152,8 +154,7 @@ feed/silva/in/silva.fasta:
 	mkdir -p `basename $@`
 	wget --output-document=feed/silva/in/tax_ranks.txt \
 	  https://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/tax_ranks_ssu_115.txt
-	wget --output-document=feed/silva/in/silva.fasta.tgz \
-	  https://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/SSURef_NR99_115_tax_silva.fasta.tgz
+	wget --output-document=feed/silva/in/silva.fasta.tgz "$(SILVA_URL)"
 	(cd feed/silva/in && tar xzvf silva.fasta.tgz && mv *silva.fasta silva.fasta)
 
 TARDIR=/raid/www/roots/opentree/ott

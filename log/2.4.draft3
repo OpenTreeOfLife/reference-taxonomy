@@ -1,0 +1,1339 @@
+mkdir -p `dirname feed/silva/in/silva.fasta`
+wget --output-document=feed/silva/in/tax_ranks.txt \
+	  https://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/tax_ranks_ssu_115.txt
+--2014-01-06 11:03:59--  https://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/tax_ranks_ssu_115.txt
+Resolving www.arb-silva.de... 134.102.40.6
+Connecting to www.arb-silva.de|134.102.40.6|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 1150738 (1.1M) [text/plain]
+Saving to: `feed/silva/in/tax_ranks.txt'
+
+100%[======================================>] 1,150,738    602K/s   in 1.9s    
+
+2014-01-06 11:04:07 (602 KB/s) - `feed/silva/in/tax_ranks.txt' saved [1150738/1150738]
+
+ls -l feed/silva/in/tax_ranks.txt
+-rw-r--r-- 1 jar jar 1150738 2013-10-30 07:46 feed/silva/in/tax_ranks.txt
+wget --output-document=feed/silva/in/silva.fasta.tgz "https://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/SSURef_NR99_115_tax_silva.fasta.tgz"
+--2014-01-06 11:04:08--  https://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/SSURef_NR99_115_tax_silva.fasta.tgz
+Resolving www.arb-silva.de... 134.102.40.6
+Connecting to www.arb-silva.de|134.102.40.6|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 205586006 (196M) [text/plain]
+Saving to: `feed/silva/in/silva.fasta.tgz'
+
+100%[======================================>] 205,586,006 4.16M/s   in 36s     
+
+2014-01-06 11:04:44 (5.47 MB/s) - `feed/silva/in/silva.fasta.tgz' saved [205586006/205586006]
+
+ls -l feed/silva/in/silva.fasta.tgz
+-rw-r--r-- 1 jar jar 205586006 2013-09-07 12:18 feed/silva/in/silva.fasta.tgz
+(cd feed/silva/in && tar xzvf silva.fasta.tgz && mv *silva.fasta silva.fasta)
+SSURef_NR99_115_tax_silva.fasta
+mkdir -p `dirname feed/silva/in/accessionid_to_taxonid.tsv`
+(cd `dirname feed/silva/in/accessionid_to_taxonid.tsv` && ln -sf ../accessionid_to_taxonid.tsv ./)
+mkdir -p feed/silva/out
+python feed/silva/process_silva.py feed/silva/in feed/silva/out "https://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/SSURef_NR99_115_tax_silva.fasta.tgz"
+Wrote feed/silva/out/about.json
+Silva tips: 479726  Exclusive of kill list: 479721
+Higher taxa: 5764
+Tips: 445858
+Accessions: 439094
+Tip to NCBI taxon mappings: 442643 successful, 2370 blocked, 845 missing
+NCBI taxa incorporated: 67715
+Paraphyletic NCBI taxa: 1550
+mkdir -p tax/silva
+cp -p feed/silva/out/taxonomy.tsv tax/silva/
+cp -p feed/silva/out/synonyms.tsv tax/silva/
+cp -p feed/silva/out/about.json tax/silva/
+mkdir -p `dirname tax/if/taxonomy.tsv`
+wget --output-document=tax/if/taxonomy.tsv http://files.opentreeoflife.org/ott/IF/taxonomy.tsv
+--2014-01-06 11:05:57--  http://files.opentreeoflife.org/ott/IF/taxonomy.tsv
+Resolving files.opentreeoflife.org... 128.30.16.135
+Connecting to files.opentreeoflife.org|128.30.16.135|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 12804361 (12M) [text/tab-separated-values]
+Saving to: `tax/if/taxonomy.tsv'
+
+100%[======================================>] 12,804,361  29.0M/s   in 0.4s    
+
+2014-01-06 11:05:58 (29.0 MB/s) - `tax/if/taxonomy.tsv' saved [12804361/12804361]
+
+ls -l tax/if/taxonomy.tsv
+-rw-r--r-- 1 jar jar 12804361 2013-12-26 22:52 tax/if/taxonomy.tsv
+mkdir -p `dirname feed/ncbi/in/nodes.dmp`
+tar -C feed/ncbi/in -xzvf feed/ncbi/taxdump.tar.gz
+citations.dmp
+delnodes.dmp
+division.dmp
+gc.prt
+gencode.dmp
+merged.dmp
+names.dmp
+nodes.dmp
+readme.txt
+touch feed/ncbi/in/nodes.dmp
+mkdir -p tax/ncbi.tmp
+python feed/ncbi/process_ncbi_taxonomy_taxdump.py F feed/ncbi/in \
+            /dev/null tax/ncbi.tmp "ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz"
+100000
+200000
+300000
+400000
+500000
+600000
+700000
+800000
+900000
+1000000
+1100000
+100000
+200000
+300000
+400000
+500000
+600000
+700000
+800000
+900000
+1000000
+1100000
+1200000
+1300000
+1400000
+1500000
+1600000
+number of lines:  1655717
+checking functionality of taxonomy
+count lefttocompare
+number of scientific names:  1112016
+number of synonyms:  307712
+rm -rf tax/ncbi
+mv -f tax/ncbi.tmp tax/ncbi
+mkdir -p feed/gbif/in
+wget --output-document=feed/gbif/in/checklist1.zip \
+             http://ecat-dev.gbif.org/repository/export/checklist1.zip
+--2014-01-06 11:07:12--  http://ecat-dev.gbif.org/repository/export/checklist1.zip
+Resolving ecat-dev.gbif.org... 130.226.238.144
+Connecting to ecat-dev.gbif.org|130.226.238.144|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 323093992 (308M) [application/zip]
+Saving to: `feed/gbif/in/checklist1.zip'
+
+100%[======================================>] 323,093,992 9.42M/s   in 41s     
+
+2014-01-06 11:07:53 (7.55 MB/s) - `feed/gbif/in/checklist1.zip' saved [323093992/323093992]
+
+ls -l feed/gbif/in/checklist1.zip
+-rw-r--r-- 1 jar jar 323093992 2013-07-02 05:28 feed/gbif/in/checklist1.zip
+(cd feed/gbif/in && unzip checklist1.zip)
+Archive:  checklist1.zip
+warning:  stripped absolute path spec from /eml.xml
+  inflating: eml.xml                 
+warning:  stripped absolute path spec from /reference.txt
+  inflating: reference.txt           
+warning:  stripped absolute path spec from /distribution.txt
+  inflating: distribution.txt        
+warning:  stripped absolute path spec from /description.txt
+  inflating: description.txt         
+warning:  stripped absolute path spec from /speciesprofile.txt
+  inflating: speciesprofile.txt      
+warning:  stripped absolute path spec from /meta.xml
+  inflating: meta.xml                
+warning:  stripped absolute path spec from /taxon.txt
+  inflating: taxon.txt               
+warning:  stripped absolute path spec from /typesandspecimen.txt
+  inflating: typesandspecimen.txt    
+warning:  stripped absolute path spec from /image.txt
+  inflating: image.txt               
+warning:  stripped absolute path spec from /vernacularname.txt
+  inflating: vernacularname.txt      
+make: *** [feed/gbif/in/taxon.txt] Error 1
+
+
+mkdir -p tax/gbif.tmp
+python feed/gbif/process_gbif_taxonomy.py \
+	       feed/gbif/in/taxon.txt \
+	       /dev/null tax/gbif.tmp
+count skipped
+100000 223411
+200000 487882
+300000 553123
+400000 594651
+500000 617164
+600000 669147
+700000 712475
+800000 733926
+900000 776515
+1000000 919086
+1100000 952942
+1200000 991469
+1300000 1120360
+1400000 1155074
+1500000 1207816
+1600000 1295103
+1700000 1331934
+1800000 1387698
+1900000 1428467
+2000000 1473208
+2100000 1558282
+2200000 1616010
+counting
+getting the parent child duplicates fixed
+IRMNG names deleted: 31249
+top level  8 Viruses
+top level  1 Animalia
+top level  3 Bacteria
+top level  7 Protozoa
+example orphan  3136358 Hieracium pinetophilum
+top level  5 Fungi
+top level  2 Archaea
+top level  4 Chromista
+top level  6 Plantae
+orphans:  1968
+checking the tree structure
+done counting
+100000
+200000
+300000
+400000
+500000
+600000
+700000
+800000
+900000
+1000000
+1100000
+1200000
+1300000
+1400000
+1500000
+1600000
+1700000
+1800000
+1900000
+2000000
+2100000
+2200000
+synonyms
+cp -p feed/gbif/about.json tax/gbif.tmp/
+rm -rf tax/gbif
+mv -f tax/gbif.tmp tax/gbif
+mkdir -p feed/prev_ott/in 
+wget --output-document=feed/prev_ott/in/ott2.3.tgz \
+	  http://files.opentreeoflife.org/ott/ott2.3.tgz
+--2014-01-06 11:26:35--  http://files.opentreeoflife.org/ott/ott2.3.tgz
+Resolving files.opentreeoflife.org... 128.30.16.135
+Connecting to files.opentreeoflife.org|128.30.16.135|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 98459792 (94M) [application/x-gzip]
+Saving to: `feed/prev_ott/in/ott2.3.tgz'
+
+100%[======================================>] 98,459,792  88.7M/s   in 1.1s    
+
+2014-01-06 11:26:36 (88.7 MB/s) - `feed/prev_ott/in/ott2.3.tgz' saved [98459792/98459792]
+
+ls -l feed/prev_ott/in/ott2.3.tgz
+-rw-r--r-- 1 jar jar 98459792 2013-12-04 16:50 feed/prev_ott/in/ott2.3.tgz
+(cd feed/prev_ott/in/ && tar xvf ott2.3.tgz)
+ott/
+ott/synonyms.tsv
+ott/deprecated.tsv
+ott/version.txt
+ott/taxonomy.tsv
+ott/log.tsv
+rm -rf tax/prev_ott
+mkdir -p tax/prev_ott
+mv feed/prev_ott/in/ott*/* tax/prev_ott/
+if [ -e tax/prev_ott/taxonomy ]; then mv tax/prev_ott/taxonomy tax/prev_ott/taxonomy.tsv; fi
+if [ -e tax/prev_ott/synonyms ]; then mv tax/prev_ott/synonyms tax/prev_ott/synonyms.tsv; fi
+rm -rf feed/prev_ott/in
+mkdir -p tax/ott
+
+
+
+jar@varela:/raid/jar/NESCent/reference-taxonomy$ make
+java -classpath ".:lib/*" -Xmx12G org.opentreeoflife.smasher.Smasher tax/silva/ tax/713/ tax/if/ tax/ncbi/ tax/gbif/ --edits feed/ott/edits/ --ids tax/prev_ott/ --out tax/ott/
+--- Reading tax/silva/ ---
+smushp is false
+! No header row
+Tolerating sibling homonym AB497058 => X56575, name = Vibrio campbellii
+Tolerating sibling homonym AB497069 => X70641, name = Vibrio ordalii
+Tolerating sibling homonym X72870 => L09176, name = Clostridium stercorarium subsp. thermolacticum
+Tolerating sibling homonym EF687778 => U44771, name = Mycoplasma ovipneumoniae
+Tolerating sibling homonym HQ407269 => AM397063, name = Wohlfahrtiimonas chitiniclastica
+Tolerating sibling homonym EF015477 => AY683045, name = Methylobacterium oryzae
+Tolerating sibling homonym AJ234059 => X73952, name = Arcanobacterium haemolyticum
+Tolerating sibling homonym X72771 => X72770, name = Methylococcus capsulatus
+Tolerating sibling homonym AB109887 => Z76666, name = Pseudomonas pseudoalcaligenes
+...
+874 sibling homonyms
+| 67718 synonyms
+| 881 homonyms, of which 29 name cousin taxa, 784 name sibling taxa
+--- Mapping tax1 into union ---
+| Names in common: 0
+| Added 67723 synonyms to union
+--- Reading tax/713/ ---
+prefix is study713
+! No header row
+--- Mapping study713 into union ---
+Pinned 2 out of 11
+| Names in common: 4
+| different-division: 1
+| Of 121 nodes in study713: 4 with name in common, of which 3 matched with existing, 1 blocked
+--- Augmenting union with new nodes from study713 ---
+| Started with:		 1 trees, 73480 taxa
+| mapped/tip: 1
+| new/tip: 91
+| new/internal: 27
+| new-homonym/out-division: 1
+| mapped/incompatible: 1
+| mapped/coherent: 1
+| Ended with:		 1 trees, 73480 taxa
+--- Reading tax/if/ ---
+prefix is if
+smushp is true
+! No header row
+!! Identifier with no associated name, probably a missing parent: 10105
+!! Identifier with no associated name, probably a missing parent: 10415
+!! Identifier with no associated name, probably a missing parent: 10282
+!! Identifier with no associated name, probably a missing parent: 7487
+!! Identifier with no associated name, probably a missing parent: 7267
+!! Identifier with no associated name, probably a missing parent: 12058
+!! Identifier with no associated name, probably a missing parent: 901
+!! Identifier with no associated name, probably a missing parent: 5702
+!! Identifier with no associated name, probably a missing parent: 3859
+!! Identifier with no associated name, probably a missing parent: 4813
+!! Identifier with no associated name, probably a missing parent: 16284
+!! Identifier with no associated name, probably a missing parent: not found
+!! Identifier with no associated name, probably a missing parent: 9365
+!! Identifier with no associated name, probably a missing parent: 9237
+!! Identifier with no associated name, probably a missing parent: 8190
+!! Identifier with no associated name, probably a missing parent: 8080
+!! Identifier with no associated name, probably a missing parent: 8924
+!! Identifier with no associated name, probably a missing parent: 8961
+!! Identifier with no associated name, probably a missing parent: 8555
+!! Identifier with no associated name, probably a missing parent: 90402
+!! Identifier with no associated name, probably a missing parent: 17938
+!! Identifier with no associated name, probably a missing parent: 17506
+!! Identifier with no associated name, probably a missing parent: 17030
+!! Identifier with no associated name, probably a missing parent: 17045
+!! Identifier with no associated name, probably a missing parent: 18728
+!! Identifier with no associated name, probably a missing parent: 18640
+!! Identifier with no associated name, probably a missing parent: 2170
+!! Identifier with no associated name, probably a missing parent: 1387
+!! Identifier with no associated name, probably a missing parent: 3563
+Changing name: Metasphaeria cocoes -> Metasphaeria cocoÃ«s
+Changing name: Diplophragmia petsamoensis -> Diplophragmia petsamoÃ«nsis
+Changing name: Calonectria tubaraoensis -> Calonectria tubaraoÃ«nsis
+Smushing sibling homonym 187602 => 174664, name = Aspergillus mollis
+Smushing sibling homonym 187613 => 179455, name = Agaricus ocreatus
+Smushing sibling homonym 172101 => 161362, name = Aecidium cardui
+Smushing sibling homonym 22545 => 22402, name = Trichostroma
+Smushing sibling homonym 172023 => 132849, name = Clitocybe applanata
+Smushing sibling homonym 187562 => 187208, name = Mucor fuscus
+Smushing sibling homonym 187726 => 180525, name = Diaporthe celastrina
+Smushing sibling homonym 22409 => 22387, name = Variolaria
+Smushing sibling homonym 172241 => 158217, name = Mycogone flava
+...
+6281 sibling homonyms
+There are 114 roots
+if is ill-formed: 254844 rows, but only 247048 reachable from roots
+| 41 homonyms, of which 2 name cousin taxa, 2 name sibling taxa
+--- Mapping if into union ---
+Pinned 1 out of 11
+| Names in common: 356
+| unresolved/ambiguous: 3
+| excluded(overlaps): 1
+| incompatible-with: 2
+| Of 247048 nodes in if: 356 with name in common, of which 350 matched with existing, 6 blocked
+--- Augmenting union with new nodes from if ---
+| Started with:		 1 trees, 73480 taxa
+| mapped/tip: 227
+| mapped/coherent: 79
+| new/tip: 235534
+| new/internal: 11098
+| blocked/tip: 2
+| mapped/neutral: 35
+| new-homonym/in-division: 10
+| new/insertion: 13
+| new/tattered: 49
+| mapped/incoherent: 8
+| lose/mooted: 1
+| lose/dispersed: 1
+| new-homonym/out-division: 33
+| mapped/incompatible: 1
+| Ended with:		 73 trees, 73480 taxa
+| Added 643 synonyms to union
+--- Reading tax/ncbi/ ---
+prefix is ncbi
+! No header row
+500000
+1000000
+Tolerating sibling homonym 487343 => 169972, name = environmental samples
+Tolerating sibling homonym 931999 => 412391, name = environmental samples
+Tolerating sibling homonym 675263 => 259321, name = environmental samples
+Tolerating sibling homonym 1289957 => 255778, name = Endoxyla
+Tolerating sibling homonym 699875 => 99260, name = environmental samples
+Tolerating sibling homonym 904971 => 390305, name = environmental samples
+Tolerating sibling homonym 291201 => 111737, name = environmental samples
+Tolerating sibling homonym 296834 => 259321, name = environmental samples
+Tolerating sibling homonym 860775 => 129633, name = environmental samples
+...
+13 sibling homonyms
+Putative synonym metagenomes is the primary name of 408169
+Identifier 68337 unrecognized for synonym Flexistipes group
+Putative synonym environmental samples is the primary name of 211103
+Identifier 118001 unrecognized for synonym Chrysiogenes group
+Putative synonym other sequences is the primary name of 28384
+Identifier 188708 unrecognized for synonym Togobacteria
+Identifier 67799 unrecognized for synonym Thermodesulfobacterium group
+Identifier 1760 unrecognized for synonym Actinomycetes
+Identifier 1760 unrecognized for synonym High GC gram-positive bacteria
+Identifier 1760 unrecognized for synonym high G+C Gram-positive bacteria
+Identifier 1760 unrecognized for synonym high GC Gram+
+Identifier 32061 unrecognized for synonym Chloroflecales
+Identifier 32061 unrecognized for synonym not "Chlorobacteria" Cavalier-Smith 1992
+Identifier 32061 unrecognized for synonym not Chlorobacteria Cavalier-Smith 2002
+Putative synonym environmental samples is the primary name of 50742
+| 264955 synonyms
+| 719 homonyms, of which 3 name cousin taxa, 2 name sibling taxa
+--- Mapping ncbi into union ---
+Pinned 6 out of 11
+| Mapping: Nidularia 2*1 (name #74839)
+| Names in common: 101772
+| different-division: 325
+| excluded(same-ancestor): 47
+| unresolved/ambiguous: 661
+| excluded(same-primary-name): 4
+| unresolved/blocked: 166
+| excluded(overlaps): 9
+| incompatible-with: 50
+| unresolved/contentious: 44
+| Of 1112006 nodes in ncbi: 98615 with name in common, of which 97370 matched with existing, 1245 blocked
+--- Augmenting union with new nodes from ncbi ---
+| No longer a root: (null=if:90276 Oomycota*)
+| No longer a root: (null=if:27856 Avrainvillea*)
+| No longer a root: (null=if:30333 Coelastrum*)
+| No longer a root: (null=if:39055 Cephaleuros*)
+| No longer a root: (null=if:22315 Prototheca*)
+| No longer a root: (null=if:27861 Hassallia*)
+| No longer a root: (null=if:20591 Ulva*)
+| No longer a root: (null=if:34042 Desmococcus*)
+| No longer a root: (null=if:24110 Aneura*)
+| ...
+| Started with:		 73 trees, 73480 taxa
+| new/tip: 912264
+| new/internal: 95973
+| new-homonym/in-division: 1278
+| mapped/tip: 85376
+| new/tattered: 1657
+| mapped/coherent: 6556
+| new/insertion: 2922
+| mapped/incoherent: 1595
+| mapped/neutral: 4404
+| new-homonym/out-division: 4160
+| mapped/incompatible: 1042
+| mapped/internal: 65
+| lose/dispersed: 99
+| blocked/tip: 46
+| lose/mooted: 7
+| Ended with:		 53 trees, 73480 taxa
+| Added 264769 synonyms to union
+--- Reading tax/gbif/ ---
+prefix is gbif
+smushp is yes
+! No header row
+500000
+1000000
+1500000
+2000000
+Changing name: Aiphanes -> AÃ¯phanes
+Changing name: Paraethecerus sexmaculatus -> ParaÃ«thecerus sexmaculatus
+Changing name: Erythrogryllacris buttikoferi -> Erythrogryllacris bÃ¼ttikoferi
+Changing name: Afrogryllacris buttneri -> Afrogryllacris bÃ¼ttneri
+Changing name: Argonauta bottgeri -> Argonauta bÃ¶ttgeri
+Changing name: Tithoes maculatus -> TithoÃ«s maculatus
+Changing name: Tithoes -> TithoÃ«s
+Changing name: Hierochloe repens -> HierochloÃ« repens
+Changing name: Hierochloe redolens -> HierochloÃ« redolens
+Changing name: Hierochloe utriculata -> HierochloÃ« utriculata
+Changing name: Nymphon stromii -> Nymphon strÃ¶mii
+Changing name: Pallenopsis vanhoffeni -> Pallenopsis vanhÃ¶ffeni
+Changing name: Hierochloe australis -> HierochloÃ« australis
+Changing name: Tenodera stotzneri -> Tenodera stÃ¶tzneri
+Changing name: Litaneutria ocularis -> Litaneutria ocÃ¼laris
+Changing name: Diamesa loffleri -> Diamesa lÃ¶ffleri
+Changing name: Hestiasula kastneri -> Hestiasula kÃ¤stneri
+Changing name: Edwardsia claparedi -> Edwardsia claparÃ©di
+Changing name: Aporia oberthuri -> Aporia oberthÃ¼ri
+Changing name: Archidendron kunstleri -> Archidendron kÃ¼nstleri
+Changing name: Oratemnus saigonensis -> Oratemnus saÃ¯gonensis
+Changing name: Cenocoelius eous -> Cenocoelius eÃ¶us
+Changing name: Agaricus hemisoodes -> Agaricus hemisoÃ¶des
+Changing name: Eurysternodes tragardhi -> Eurysternodes trÃ¤gÃ¥rdhi
+Changing name: Phelipara saigonensis -> Phelipara saÃ¯gonensis
+Changing name: Themistonoe cacica -> ThemistonoÃ« cacica
+Changing name: Homoneura paroeca -> Homoneura paroÃ«ca
+Changing name: Turanogryllus eous -> Turanogryllus eÃ¶us
+Changing name: Parocneria tolgi -> Parocneria tÃ¶lgi
+Changing name: Brachycrotaphus buttneri -> Brachycrotaphus bÃ¼ttneri
+Changing name: Mycetophila storai -> Mycetophila storÃ¥i
+Changing name: Heteroepichloe -> HeteroepichloÃ«
+Changing name: Charletonia tragardhi -> Charletonia trÃ¤gÃ¥rdhi
+Changing name: Parepichloe -> ParepichloÃ«
+Changing name: Mycomya storai -> Mycomya storÃ¥i
+Changing name: Clinocera storai -> Clinocera storÃ¥i
+Changing name: Undula paraensis -> Undula paraÃ«nsis
+Changing name: Agloe -> AgloÃ«
+Changing name: Pseudoothrix -> PseudoÃ¶thrix
+Changing name: Parmotrema tsavoense -> Parmotrema tsavoÃ«nse
+Changing name: Ornamentula paraensis -> Ornamentula paraÃ«nsis
+Changing name: Haltidytes ooeides -> Haltidytes ooÃ«ides
+Changing name: Oligonyx insularis -> Oligonyx insÃ¼laris
+Changing name: Moroteuthis lonnbergii -> Moroteuthis lÃ¶nnbergii
+Changing name: Codium guineense -> Codium guineÃ«nse
+Changing name: Caligo oberthurii -> Caligo oberthÃ¼rii
+Changing name: Amathusia schonbergi -> Amathusia schÃ¶nbergi
+Changing name: Gelidium samoense -> Gelidium samoÃ«nse
+Changing name: Caloglossa saigonensis -> Caloglossa saÃ¯gonensis
+Changing name: Drephalys eous -> Drephalys eÃ¶us
+Changing name: Oeneis aello -> Oeneis aÃ«llo
+Changing name: Satyrus pungeleri -> Satyrus pÃ¼ngeleri
+Changing name: Haploesthes -> HaploÃ«sthes
+Changing name: Onthophagus saigonensis -> Onthophagus saÃ¯gonensis
+Changing name: Navicula sohrensis -> Navicula sÃ¶hrensis
+Changing name: Puccinia hypoestis -> Puccinia hypoÃ«stis
+Changing name: Polyrhachis saigonensis -> Polyrhachis saÃ¯gonensis
+Changing name: Elsinoe cinnamomi -> ElsinoÃ« cinnamomi
+Changing name: Elsinoe sacchari -> ElsinoÃ« sacchari
+Changing name: Elsinoe mangiferae -> ElsinoÃ« mangiferae
+Changing name: Cnemidocarpa nordenskjoldi -> Cnemidocarpa nordenskjÃ¶ldi
+Changing name: Aprostocetus meroe -> Aprostocetus merÃ¶e
+Changing name: Dasyuris catadees -> Dasyuris catadeÃ«s
+Changing name: Rhyncaphytoptus alsasuensis -> Rhyncaphytoptus alsasuÃ«nsis
+Changing name: Sunetta meroe -> Sunetta meroÃ«
+Changing name: Spaelotis stotzneri -> Spaelotis stÃ¶tzneri
+Changing name: Krugeria -> KrÃ¼geria
+Changing name: Elsinoe rosarum -> ElsinoÃ« rosarum
+Changing name: Cytospora hippophaes -> Cytospora hippophaÃ«s
+Changing name: Coilia -> CoÃ¯lia
+Changing name: Hemimycena epichloe -> Hemimycena epichloÃ«
+Changing name: Scoparia stotzneri -> Scoparia stÃ¶tzneri
+Changing name: Neotrombicula tragardhiana -> Neotrombicula trÃ¤gÃ¥rdhiana
+Changing name: Megachile saigonensis -> Megachile saÃ¯gonensis
+Changing name: Convoluta bohmigi -> Convoluta bÃ¶hmigi
+Changing name: Iphinoe -> IphinÃ¶e
+Changing name: Frommeella -> FrommeÃ«lla
+Changing name: Citheronia laocoon -> Citheronia laocoÃ¶n
+Changing name: Achnanthes plonensis -> Achnanthes plÃ¶nensis
+Changing name: Tithoes longipennis -> TithoÃ«s longipennis
+Changing name: Tithoes confinis -> TithoÃ«s confinis
+Changing name: Diploospora -> DiploÃ¶spora
+Changing name: Paraethecerus -> ParaÃ«thecerus
+Changing name: Eohaustorius eous -> Eohaustorius eÃ¶us
+Changing name: Dasyhelea storai -> Dasyhelea storÃ¥i
+Changing name: Perissonoe -> PerissonoÃ«
+Changing name: Pseudagloe -> PseudagloÃ«
+Changing name: Dictyota guineensis -> Dictyota guineÃ«nsis
+Changing name: Elsinoe -> ElsinoÃ«
+Changing name: Mycoemilia -> MycoÃ«milia
+Changing name: Laocoon paradoxus -> LaocoÃ¶n paradoxus
+Changing name: Leptogorgia lutkeni -> Leptogorgia lÃ¼tkeni
+Changing name: Lecanora discoensis -> Lecanora discoÃ«nsis
+Changing name: Japewia tornoensis -> Japewia tornoÃ«nsis
+Changing name: Pyxine cocoes -> Pyxine cocoÃ«s
+Changing name: Caloplaca tornoensis -> Caloplaca tornoÃ«nsis
+Changing name: Elliptorhina problematica -> Elliptorhina problemÃ¡tica
+Changing name: Laocoon -> LaocoÃ¶n
+Changing name: Aseroe -> AseroÃ«
+Changing name: Euthlastoblatta vegeta -> Euthlastoblatta vÃ©gÃ©ta
+Changing name: Phyllodromica atlantica -> Phyllodromica atlÃ¡ntica
+Changing name: Colletes eous -> Colletes eÃ¶us
+Changing name: Drapetis storai -> Drapetis storÃ¥i
+Changing name: Acraea buttneri -> Acraea bÃ¼ttneri
+Changing name: Anonyx eous -> Anonyx eÃ¶us
+Changing name: Neofedrizzia tragardhi -> Neofedrizzia trÃ¤gÃ¥rdhi
+Changing name: Euthalia aeetes -> Euthalia aeÃ«tes
+Changing name: Medetera storai -> Medetera storÃ¥i
+Changing name: Coutierella -> CoutiÃ¨rella
+Changing name: Pseudohaje goldii -> Pseudohaje gÃ¶ldii
+Changing name: Falsomesosella saigonensis -> Falsomesosella saÃ¯gonensis
+Changing name: Aporia oberthuri -> Aporia oberthÃ¼ri
+Changing name: Gamasellus tragardhi -> Gamasellus trÃ¤gÃ¥rdhi
+Changing name: Automolis haematoessa -> Automolis haematoÃ«ssa
+Changing name: Jagerskioldia -> JÃ¤gerskiÃ¶ldia
+Changing name: Kollikerina -> KÃ¶llikerina
+Changing name: Mesapamea storai -> Mesapamea storÃ¥i
+Changing name: Pandalus eous -> Pandalus eÃ¶us
+Changing name: Melanargia menetriesi -> Melanargia mÃ©netriÃ©si
+Changing name: Antrodia hippophaes -> Antrodia hippophaÃ«s
+Changing name: Phellinus jezoensis -> Phellinus jezoÃ«nsis
+Changing name: Haddowia aetii -> Haddowia aÃ«tii
+Changing name: Cranae manokwari -> CranaÃ« manokwari
+Changing name: Cranae glabra -> CranaÃ« glabra
+Changing name: Cranae caprai -> CranaÃ« caprai
+Changing name: Cranae kuekenthali -> CranaÃ« kuekenthali
+Changing name: Cranae longipennis -> CranaÃ« longipennis
+Changing name: Cranae emendata -> CranaÃ« emendata
+Changing name: Cranae trivittata -> CranaÃ« trivittata
+Changing name: Cranae rubra -> CranaÃ« rubra
+Changing name: Cranae tibialis -> CranaÃ« tibialis
+Changing name: Cranae luctuosa -> CranaÃ« luctuosa
+Changing name: Cranae pictipennis -> CranaÃ« pictipennis
+Changing name: Cranae nigroreticulata -> CranaÃ« nigroreticulata
+Changing name: Cranae -> CranaÃ«
+Changing name: Cranae patagiata -> CranaÃ« patagiata
+Changing name: Cranae rufipes -> CranaÃ« rufipes
+Changing name: Cranae unistrigata -> CranaÃ« unistrigata
+Changing name: Cranae genjam -> CranaÃ« genjam
+Changing name: Fujimyces oodes -> Fujimyces oÃ¶des
+Changing name: Diplophragmia petsamoensis -> Diplophragmia petsamoÃ«nsis
+Changing name: Miriquidica paanaensis -> Miriquidica paanaÃ«nsis
+Changing name: Lecidea hereroensis -> Lecidea hereroÃ«nsis
+Changing name: Masseeella narasimhanii -> MasseeÃ«lla narasimhanii
+Changing name: Elsinoe solidaginis -> ElsinoÃ« solidaginis
+Changing name: Elsinoe theae -> ElsinoÃ« theae
+Changing name: Elsinoe batatas -> ElsinoÃ« batatas
+Changing name: Elsinoe jasmini -> ElsinoÃ« jasmini
+Changing name: Elsinoe annonae -> ElsinoÃ« annonae
+Changing name: Elsinoe randii -> ElsinoÃ« randii
+Changing name: Elsinoe ledi -> ElsinoÃ« ledi
+Changing name: Graphis geraensis -> Graphis geraÃ«nsis
+Changing name: Phyllophora pseudoceranoides -> Phyllophora pseudoceranoÃ¯des
+Changing name: Callitomis mjobergi -> Callitomis mjÃ¶bergi
+Changing name: Diaporthe hippophaes -> Diaporthe hippophaÃ«s
+Changing name: Hymenopleella hippophaes -> Hymenopleella hippophaÃ«s
+Changing name: Lepteutypa hippophaes -> Lepteutypa hippophaÃ«s
+Changing name: Nais aquatica -> NaÃ¯s aquatica
+Changing name: Neocudoniella jezoensis -> Neocudoniella jezoÃ«nsis
+Changing name: Agylla stotzneri -> Agylla stÃ¶tzneri
+Changing name: Candelariella kuusamoensis -> Candelariella kuusamoÃ«nsis
+Changing name: Xanthoparmelia namaensis -> Xanthoparmelia namaÃ«nsis
+Changing name: Pontocypris chununae -> Pontocypris chunÃ¼nae
+Changing name: Cythere yuniangae -> Cythere yÃ¼niangae
+Changing name: Aurila buhyui -> Aurila buhyÃ¼i
+Changing name: Neocandona yufuiia -> Neocandona yÃ¼fuiia
+Changing name: Cytheroma yueri -> Cytheroma yÃ¼eri
+Changing name: Cornucoquimba shyushuhi -> Cornucoquimba shyÃ¼shuhi
+Changing name: Cerace lemee-pauli -> Cerace lemÃ©e-pauli
+Changing name: Mesodorylaimus szechenyii -> Mesodorylaimus szÃ©chenyii
+Changing name: Nais inornata -> NaÃ¯s inornata
+Changing name: Dryopteris goldiana -> Dryopteris gÃ¶ldiana
+Changing name: Asperoseius baguioensis -> Asperoseius baguioÃ«nsis
+Changing name: Anicetus eous -> Anicetus eÃ¶us
+Changing name: Actias sjoqvisti -> Actias sjÃ¶qvisti
+Changing name: Themistonoe -> ThemistonoÃ«
+Changing name: Helicoon -> HelicoÃ¶n
+Changing name: Helicoonites -> HelicoÃ¶nites
+Changing name: Acraea oberthuri -> Acraea oberthÃ¼ri
+Changing name: Terpsinoe musica -> TerpsinoÃ« musica
+Changing name: Terpsinoe -> TerpsinoÃ«
+Changing name: Terpsinoe americana -> TerpsinoÃ« americana
+Changing name: Ganae -> GanaÃ«
+Changing name: Proeces -> ProÃ«ces
+Changing name: Loxoconcha hsiyu -> Loxoconcha hsiyÃ¼
+Changing name: Xestoleberis yuchiae -> Xestoleberis yÃ¼chiae
+Changing name: Heliophorus stotzneri -> Heliophorus stÃ¶tzneri
+Changing name: Hsiaolina chuntzui -> Hsiaolina chÃ¼ntzui
+Changing name: Epichloe typhina -> EpichloÃ« typhina
+Changing name: Epichloe clarkii -> EpichloÃ« clarkii
+Changing name: Epichloe baconii -> EpichloÃ« baconii
+Changing name: Epichloe festucae -> EpichloÃ« festucae
+Changing name: Epichloe amarillans -> EpichloÃ« amarillans
+Changing name: Epichloe sylvatica -> EpichloÃ« sylvatica
+Changing name: Howeina shului -> Howeina shÃ¼lui
+Changing name: Sidisca hypochloe -> Sidisca hypochloÃ«
+Changing name: Nicolea claparedi -> Nicolea claparÃ©di
+Changing name: Polycirrus eous -> Polycirrus eÃ¶us
+Changing name: Sphacelodes haitiaria -> Sphacelodes haÃ¯tiaria
+Changing name: Gyorffyana -> GyÃ¶rffyana
+Changing name: Laocoon -> LaocoÃ¶n
+Changing name: Loxilobus saigonensis -> Loxilobus saÃ¯gonensis
+Changing name: Eridolius schiodtei -> Eridolius schiÃ¶dtei
+Changing name: Colostygia pungeleri -> Colostygia pÃ¼ngeleri
+Changing name: Cosmorhoe neelys -> Cosmorhoe neÃ«lys
+Changing name: Beroe -> BerÃ¶e
+Changing name: Electrophaes chrysophaes -> Electrophaes chrysophaÃ«s
+Changing name: Proteuclasta stotzneri -> Proteuclasta stÃ¶tzneri
+Changing name: Coleophora buttneri -> Coleophora bÃ¼ttneri
+Changing name: Xenochroma palimpais -> Xenochroma palimpaÃ¯s
+Changing name: Panorpa stotzneri -> Panorpa stÃ¶tzneri
+Changing name: Drepanogynis athroopsegma -> Drepanogynis athroÃ¶psegma
+Changing name: Abarenicola claparedi -> Abarenicola claparÃ©di
+Changing name: Gnophos stotzneri -> Gnophos stÃ¶tzneri
+Changing name: Onychiurus eous -> Onychiurus eÃ¶us
+Changing name: Asteridiella entebbeensis -> Asteridiella entebbeÃ«nsis
+Changing name: Polyzonus saigonensis -> Polyzonus saÃ¯gonensis
+Changing name: Spinther wireni -> Spinther wirÃ©ni
+Changing name: Heterarmia buttneri -> Heterarmia bÃ¼ttneri
+Changing name: Achelous -> AcheloÃ¼s
+Changing name: Ochrolechia szatalaensis -> Ochrolechia szatalaÃ«nsis
+Changing name: Enarmonia decor -> Enarmonia dÃ©cor
+Changing name: Anopheles bustamentei -> Anopheles bustamentÃ©i
+Changing name: Hyllisia saigonensis -> Hyllisia saÃ¯gonensis
+Changing name: Hippophae -> HippophaÃ«
+Changing name: Hierochloe odorata -> HierochloÃ« odorata
+Changing name: Hierochloe pauciflora -> HierochloÃ« pauciflora
+Changing name: Hierochloe alpina -> HierochloÃ« alpina
+Changing name: Hierochloe -> HierochloÃ«
+Changing name: Thaumaleus claparedi -> Thaumaleus claparÃ©di
+Changing name: Uromyces aloes -> Uromyces aloÃ«s
+Changing name: Tetraedriella -> TetraÃ«driella
+Changing name: Elsinoe brasiliensis -> ElsinoÃ« brasiliensis
+Changing name: Stactobia storai -> Stactobia storÃ¥i
+Changing name: Aseroe arachnoidea -> AseroÃ« arachnoidea
+Changing name: Tilapia buttikoferi -> Tilapia bÃ¼ttikoferi
+Changing name: Damalis saigonensis -> Damalis saÃ¯gonensis
+Changing name: Hypersypnoides congoensis -> Hypersypnoides congoÃ«nsis
+Changing name: Syfania oberthuri -> Syfania oberthÃ¼ri
+Changing name: Porphyrinia gueneei -> Porphyrinia guenÃ©ei
+Changing name: Leucochlaena horhammeri -> Leucochlaena hÃ¶rhammeri
+Changing name: Dasychira plotzi -> Dasychira plÃ¶tzi
+Changing name: Eloria gueneei -> Eloria guenÃ©ei
+Changing name: Praemastus cymothoe -> Praemastus cymothoÃ«
+Changing name: Eilema honei -> Eilema hÃ¶nei
+Changing name: Phryganopteryx saalmulleri -> Phryganopteryx saalmÃ¼lleri
+Changing name: Lithosarctia honei -> Lithosarctia hÃ¶nei
+Changing name: Ocnogyna oberthuri -> Ocnogyna oberthÃ¼ri
+Changing name: Peridea oberthuri -> Peridea oberthÃ¼ri
+Changing name: Scalmicauda hosemanni -> Scalmicauda hÃ¶semanni
+Changing name: Hypasura honei -> Hypasura hÃ¶nei
+Changing name: Monosyntaxis samoensis -> Monosyntaxis samoÃ«nsis
+Changing name: Amata uelleburgensis -> Amata uÃ«lleburgensis
+Changing name: Scopula sjostedti -> Scopula sjÃ¶stedti
+Changing name: Apicia oberthuri -> Apicia oberthÃ¼ri
+Changing name: Pseudopanthera oberthuri -> Pseudopanthera oberthÃ¼ri
+Changing name: Artemidora alpherakyi -> Artemidora alphÃ©rakyi
+Changing name: Haplolabida sjostedti -> Haplolabida sjÃ¶stedti
+Changing name: Hydrelia sjostedti -> Hydrelia sjÃ¶stedti
+Changing name: Neocoenyra fulleborni -> Neocoenyra fÃ¼lleborni
+Changing name: Neope oberthuri -> Neope oberthÃ¼ri
+Changing name: Euploea guerini -> Euploea guÃ©rini
+Changing name: Acraea kukenthali -> Acraea kÃ¼kenthali
+Changing name: Ebnerodes tolgi -> Ebnerodes tÃ¶lgi
+Changing name: Krugeria ramosa -> KrÃ¼geria ramosa
+Changing name: Phellinus hippophaeicola -> Phellinus hippophaÃ«icola
+Changing name: Frommeella tormentillae -> FrommeÃ«lla tormentillae
+Changing name: Aseroe rubra -> AseroÃ« rubra
+Changing name: Xoes egeria -> XoÃ«s egeria
+Changing name: Xoes -> XoÃ«s
+Changing name: Dothidea hippophaes -> Dothidea hippophaÃ«s
+Changing name: Elsinoe veneta -> ElsinoÃ« veneta
+Changing name: Elsinoe australis -> ElsinoÃ« australis
+Changing name: Elsinoe fawcettii -> ElsinoÃ« fawcettii
+Changing name: Elsinoe phaseoli -> ElsinoÃ« phaseoli
+Changing name: Elsinoe ampelina -> ElsinoÃ« ampelina
+Changing name: Sphinx oberthuri -> Sphinx oberthÃ¼ri
+Changing name: Asiadodis yunnanensis -> Asiadodis yÃ¼nnanensis
+Changing name: Helicoon reticulatum -> HelicoÃ¶n reticulatum
+Changing name: Helicoon chlamydosporum -> HelicoÃ¶n chlamydosporum
+Changing name: Helicoon pluriseptatum -> HelicoÃ¶n pluriseptatum
+Changing name: Helicoon ellipticum -> HelicoÃ¶n ellipticum
+Changing name: Helicoon richonis -> HelicoÃ¶n richonis
+Changing name: Helicoon fuscosporum -> HelicoÃ¶n fuscosporum
+Changing name: Sphaerosyllis claparedi -> Sphaerosyllis claparÃ©di
+Changing name: Masseeella -> MasseeÃ«lla
+Changing name: Protodrilus jagersteni -> Protodrilus jÃ¤gersteni
+Changing name: Butschliella -> BÃ¼tschliella
+Smushing sibling homonym 5938900 => 2941277, name = Archidendron kÃ¼nstleri
+Smushing sibling homonym 4805323 => 2117806, name = Nymphon strÃ¶mii
+Smushing sibling homonym 4805258 => 2117457, name = Pallenopsis vanhÃ¶ffeni
+Smushing sibling homonym 7293115 => 3039284, name = HippophaÃ«
+Smushing sibling homonym 6525063 => 4590405, name = Sunetta meroÃ«
+Smushing sibling homonym 5457645 => 5455027, name = Agaricus hemisoÃ¶des
+Smushing sibling homonym 6911494 => 4541136, name = Neotrombicula trÃ¤gÃ¥rdhiana
+Smushing sibling homonym 7325111 => 7325110, name = Dichanthium saccharoides saccharoides
+Smushing sibling homonym 4896682 => 2562625, name = HeteroepichloÃ«
+...
+225 sibling homonyms
+gbif is ill-formed: 2257729 rows, but only 2257504 reachable from roots
+Putative synonym Mycothyridium vestitum is the primary name of 5953789
+Putative synonym Porina alba is the primary name of 7086902
+Putative synonym Pyrenula chilensis is the primary name of 7187161
+| 894779 synonyms
+| 3647 homonyms, of which 55 name cousin taxa, 68 name sibling taxa
+--- Mapping gbif into union ---
+Pinned 7 out of 11
+| Mapping: Nematoda 1*1 (name #104)
+| Trying ad-hoc mismatch rule: (gbif:3269382 Ciliophora)
+| Trying ad-hoc match rule: (gbif:10 Ciliophora)
+| Trying ad-hoc mismatch rule: (gbif:4983431. Foraminifera)
+| Mapping: Grubea 2*1 (name #28253)
+| Mapping: Brunneria 2*1 (name #41753)
+| Mapping: Arthrospira platensis 1*3 (name #54339)
+| Mapping: Lotus 2*1 (name #85258)
+| Mapping: Hypolithus 2*1 (name #151367)
+| Mapping: Phacus pleuronectes 2*1 (name #184223)
+| Mapping: Pestalotia flavidula 1*2 (name #298521)
+| Mapping: Graphis tricosa 1*2 (name #479077)
+| Trying ad-hoc match rule: (gbif:389 Foraminiferida)
+| Names in common: 525878
+| excluded(overlaps): 114
+| different-division: 2767
+| incompatible-with: 152
+| excluded(same-rank): 5
+| unresolved/ambiguous: 55
+| unresolved/contentious: 308
+| ad-hoc-not: 2
+| unresolved/blocked: 311
+| excluded(same-ancestor): 1817
+| excluded(same-primary-name): 59
+| lost-race-to-union(same-ancestor): 4723
+| lost-race-to-union(overlaps): 52
+| lost-race-to-union(same-rank): 738
+| lost-race-to-union(name-in-common): 138
+| eschew-tattered: 12
+| lost-race-to-union(same-primary-name): 1
+| Of 2257504 nodes in gbif: 482939 with name in common, of which 475176 matched with existing, 7763 blocked
+--- Augmenting union with new nodes from gbif ---
+| No longer a root: (null=if:22209. Labyrinthorhiza*)
+| No longer a root: (null=if:39050 Byssus*)
+| No longer a root: (null=if:21224 Pelicothallos*)
+| No longer a root: (null=if:10381 Veralucia*)
+| No longer a root: (null=if:27352 Spiroidium*)
+| No longer a root: (null=if:99001 Protozoa*)
+| No longer a root: (null=if:22008 Adlerocystis*)
+| No longer a root: (null=if:27353 Proactinomyces*)
+| No longer a root: (null=if:7529 Cerasterias*)
+| ...
+| Started with:		 53 trees, 73480 taxa
+| mapped/tip: 407953
+| blocked/tip: 5633
+| new/tip: 1644184
+| mapped/coherent: 58392
+| mapped/neutral: 7620
+| new/internal: 123877
+| mapped/incoherent: 5026
+| new/insertion: 1994
+| new/tattered: 1960
+| new-homonym/in-division: 986
+| new-homonym/out-division: 2268
+| lose/mooted: 187
+| mapped/incompatible: 493
+| lose/dispersed: 31
+| mapped/internal: 154
+| Ended with:		 24 trees, 73480 taxa
+| Added 866504 synonyms to union
+--- Applying edits from feed/ott/edits/flag-test.tsv ---
+--- Applying edits from feed/ott/edits/misplaced-kingdoms.tsv ---
+--- Applying edits from feed/ott/edits/lost-from-gbif.tsv ---
+--- Applying edits from feed/ott/edits/fungal-species.tsv ---
+(add) Warning: taxon already present: Acanthotrema frischii
+(add) Warning: taxon already present: Agaricus tlaxcalensis
+(add) Warning: taxon already present: Botrytis sinoallii
+(add) Warning: taxon already present: Brigantiaea sorediata
+(add) Warning: taxon already present: Cantharellus texensis
+(add) Warning: taxon already present: Chrysothrix caesia
+(add) Parent name Epichloe not found in context Fungi
+(add) Parent name Epichloe liyangensis not found in context Fungi
+(add) Warning: taxon already present: Flavoparmelia caperatula
+(add) Warning: taxon already present: Marasmiellus celebanticus
+(add) Warning: taxon already present: Melanelixia glabratula
+(add) Warning: taxon already present: Muscodor sutura
+(add) Warning: taxon already present: Ophiostoma crescericum
+(add) Warning: taxon already present: Ophiostoma euskadiense
+(add) Warning: taxon already present: Ophiostoma nebulare
+(add) Warning: taxon already present: Paraconiothyrium babiogorense
+(add) Warning: taxon already present: Paraphysoderma
+(add) Warning: taxon already present: Paraphysoderma sedebokerense
+(add) Warning: taxon already present: Periglandula turbinae
+(add) Warning: taxon already present: Phyllosticta cavendishii
+(add) Warning: taxon already present: Phyllosticta hostae
+(add) Warning: taxon already present: Phyllosticta schimae
+(add) Warning: taxon already present: Plectosphaerella delsorboi
+(add) Warning: taxon already present: Plectosphaerella oratosquillae
+(add) Warning: taxon already present: Pluteus stenotrichus
+(add) Warning: taxon already present: Pluteus sublaevigatus
+(add) Warning: taxon already present: Podosphaera filipendulae
+(add) Warning: taxon already present: Psilachnum staphyleae
+(add) Warning: taxon already present: Ramichloridium mali
+? Ambiguous taxon name: Rhodotorula
+(add) Warning: taxon already present: Rhodotorula rosulata
+(add) Warning: taxon already present: Schizotrema zebrinum
+(add) Warning: taxon already present: Sclerostagonospora cycadis
+(add) Warning: taxon already present: Spiroplana
+(add)  ... with a different parent: Pezizomycotina not Pleosporales
+(add) Warning: taxon already present: Spiroplana centripeta
+(add) Warning: taxon already present: Trichoderma brunneoviride
+(add) Warning: taxon already present: Volvariella nullicystidiata
+(add) Warning: taxon already present: Volvariella nivea
+(add) Warning: taxon already present: Lignosus hainanensis
+(add) Parent name Hyaloperonospora not found in context Oomycetes
+--- Applying edits from feed/ott/edits/ott_edits.tsv ---
+--- Applying edits from feed/ott/edits/misc_edits.tsv ---
+(move) Note: already in the right place: Dermatobotrys
+(move) Note: already in the right place: Rehmannia
+(move) Note: already in the right place: Stemodiopsis
+(move) Note: already in the right place: Micranthemum
+(move) Note: already in the right place: Bryodes
+--- Reading tax/prev_ott/ ---
+! No header row
+500000
+1000000
+1500000
+2000000
+2500000
+3000000
+Changing name: Pseudohaje goldii -> Pseudohaje gÃ¶ldii
+Changing name: Gyorffyana -> GyÃ¶rffyana
+Changing name: Spinther wireni -> Spinther wirÃ©ni
+Changing name: Achnanthes plonensis -> Achnanthes plÃ¶nensis
+Changing name: Oxychloe haumaniana -> OxychloÃ« haumaniana
+Changing name: Oxychloe castellanosii -> OxychloÃ« castellanosii
+Changing name: Protodrilus jagersteni -> Protodrilus jÃ¤gersteni
+Changing name: Chondrostylis kunstleri -> Chondrostylis kÃ¼nstleri
+Changing name: Coilia -> CoÃ¯lia
+Changing name: Polyzonus saigonensis -> Polyzonus saÃ¯gonensis
+Changing name: Heteroepichloe -> HeteroepichloÃ«
+Changing name: Elsinoe araliae -> ElsinoÃ« araliae
+Changing name: Sphinx oberthuri -> Sphinx oberthÃ¼ri
+Changing name: Anicetus eous -> Anicetus eÃ¶us
+Changing name: Helicoon fuscosporum -> HelicoÃ¶n fuscosporum
+Changing name: Zignoella -> ZignoÃ«lla
+Changing name: Epichloe yangzii -> EpichloÃ« yangzii
+Changing name: Phelipara saigonensis -> Phelipara saÃ¯gonensis
+Changing name: Agloe -> AgloÃ«
+Changing name: Aseroe -> AseroÃ«
+Changing name: Navicula sohrensis -> Navicula sÃ¶hrensis
+Changing name: Aseroe rubra -> AseroÃ« rubra
+Changing name: Sphaerosyllis claparedi -> Sphaerosyllis claparÃ©di
+Changing name: Perissonoe -> PerissonoÃ«
+Changing name: Terpsinoe americana -> TerpsinoÃ« americana
+Changing name: Clinocera storai -> Clinocera storÃ¥i
+Changing name: Japewia tornoensis -> Japewia tornoÃ«nsis
+Changing name: Hypersypnoides congoensis -> Hypersypnoides congoÃ«nsis
+Changing name: Candelariella kuusamoensis -> Candelariella kuusamoÃ«nsis
+Changing name: Gnophos stotzneri -> Gnophos stÃ¶tzneri
+Changing name: Elsinoe jasmini -> ElsinoÃ« jasmini
+Changing name: Elsinoe theae -> ElsinoÃ« theae
+Changing name: Elsinoe cinnamomi -> ElsinoÃ« cinnamomi
+Changing name: Elsinoe batatas -> ElsinoÃ« batatas
+Changing name: Elsinoe solidaginis -> ElsinoÃ« solidaginis
+Changing name: Laocoon paradoxus -> LaocoÃ¶n paradoxus
+Changing name: Laocoon -> LaocoÃ¶n
+Changing name: Elsinoe ledi -> ElsinoÃ« ledi
+Changing name: Elsinoe mangiferae -> ElsinoÃ« mangiferae
+Changing name: Elsinoe sacchari -> ElsinoÃ« sacchari
+Changing name: Elsinoe rosarum -> ElsinoÃ« rosarum
+Changing name: Elsinoe annonae -> ElsinoÃ« annonae
+Changing name: Elsinoe randii -> ElsinoÃ« randii
+Changing name: Ornamentula paraensis -> Ornamentula paraÃ«nsis
+Changing name: Sphacelodes haitiaria -> Sphacelodes haÃ¯tiaria
+Changing name: Drapetis storai -> Drapetis storÃ¥i
+Changing name: Epichloe festucae -> EpichloÃ« festucae
+Changing name: Tithoes longipennis -> TithoÃ«s longipennis
+Changing name: Leucochlaena horhammeri -> Leucochlaena hÃ¶rhammeri
+Changing name: Charletonia tragardhi -> Charletonia trÃ¤gÃ¥rdhi
+Changing name: Eohaustorius eous -> Eohaustorius eÃ¶us
+Changing name: Masseeella -> MasseeÃ«lla
+Changing name: Masseeella narasimhanii -> MasseeÃ«lla narasimhanii
+Changing name: Pseudopanthera oberthuri -> Pseudopanthera oberthÃ¼ri
+Changing name: Argonauta bottgeri -> Argonauta bÃ¶ttgeri
+Changing name: Neotrombicula tragardhiana -> Neotrombicula trÃ¤gÃ¥rdhiana
+Changing name: Parepichloe cinerea -> ParepichloÃ« cinerea
+Changing name: Parepichloe -> ParepichloÃ«
+Changing name: Parepichloe cynodontis -> ParepichloÃ« cynodontis
+Changing name: Tithoes confinis -> TithoÃ«s confinis
+Changing name: Stactobia storai -> Stactobia storÃ¥i
+Changing name: Anonyx eous -> Anonyx eÃ¶us
+Changing name: Syfania oberthuri -> Syfania oberthÃ¼ri
+Changing name: Cytospora hippophaes -> Cytospora hippophaÃ«s
+Changing name: Thismia aseroe -> Thismia aseroÃ«
+Changing name: Nais aquatica -> NaÃ¯s aquatica
+Changing name: Allium noeanum -> Allium noÃ«anum
+Changing name: Proeces -> ProÃ«ces
+Changing name: Medetera storai -> Medetera storÃ¥i
+Changing name: Diaporthe hippophaes -> Diaporthe hippophaÃ«s
+Changing name: Asteridiella entebbeensis -> Asteridiella entebbeÃ«nsis
+Changing name: Drephalys eous -> Drephalys eÃ¶us
+Changing name: Epichloe amarillans -> EpichloÃ« amarillans
+Changing name: Lecidea hereroensis -> Lecidea hereroÃ«nsis
+Changing name: Xanthoparmelia namaensis -> Xanthoparmelia namaÃ«nsis
+Changing name: Rhyncaphytoptus alsasuensis -> Rhyncaphytoptus alsasuÃ«nsis
+Changing name: Mycoemilia scoparia -> MycoÃ«milia scoparia
+Changing name: Scoparia stotzneri -> Scoparia stÃ¶tzneri
+Changing name: Nymphon stromii -> Nymphon strÃ¶mii
+Changing name: Pallenopsis vanhoffeni -> Pallenopsis vanhÃ¶ffeni
+Changing name: Euploea guerini -> Euploea guÃ©rini
+Changing name: Oratemnus saigonensis -> Oratemnus saÃ¯gonensis
+Changing name: Dasyhelea storai -> Dasyhelea storÃ¥i
+Changing name: Ebnerodes tolgi -> Ebnerodes tÃ¶lgi
+Changing name: Onychiurus eous -> Onychiurus eÃ¶us
+Changing name: Aporia oberthuri -> Aporia oberthÃ¼ri
+Changing name: Ochrolechia szatalaensis -> Ochrolechia szatalaÃ«nsis
+Changing name: Diamesa loffleri -> Diamesa lÃ¶ffleri
+Changing name: Dictyota guineensis -> Dictyota guineÃ«nsis
+Changing name: Mycoemilia -> MycoÃ«milia
+Changing name: Colletes eous -> Colletes eÃ¶us
+Changing name: Epichloe brachyelytri -> EpichloÃ« brachyelytri
+Changing name: Epichloe bromicola -> EpichloÃ« bromicola
+Changing name: Acraea buttneri -> Acraea bÃ¼ttneri
+Changing name: Acraea kukenthali -> Acraea kÃ¼kenthali
+Changing name: Clonostachys epichloe -> Clonostachys epichloÃ«
+Changing name: Sunetta meroe -> Sunetta meroÃ«
+Changing name: Cenocoelius eous -> Cenocoelius eÃ¶us
+Changing name: Verrucaria chiloensis -> Verrucaria chiloÃ«nsis
+Changing name: Helicoon -> HelicoÃ¶n
+Changing name: Helicoon chlamydosporum -> HelicoÃ¶n chlamydosporum
+Changing name: Helicoon ellipticum -> HelicoÃ¶n ellipticum
+Changing name: Helicoon reticulatum -> HelicoÃ¶n reticulatum
+Changing name: Helicoon pluriseptatum -> HelicoÃ¶n pluriseptatum
+Changing name: Hippophae -> HippophaÃ«
+Changing name: Polycirrus eous -> Polycirrus eÃ¶us
+Changing name: Nicolea claparedi -> Nicolea claparÃ©di
+Changing name: Aseroe arachnoidea -> AseroÃ« arachnoidea
+Changing name: Botryocladia monoica -> Botryocladia monoÃ¯ca
+Changing name: Moroteuthis lonnbergii -> Moroteuthis lÃ¶nnbergii
+Changing name: Porphyrinia gueneei -> Porphyrinia guenÃ©ei
+Changing name: Themistonoe -> ThemistonoÃ«
+Changing name: Themistonoe cacica -> ThemistonoÃ« cacica
+Changing name: Graphis geraensis -> Graphis geraÃ«nsis
+Changing name: Hierochloe utriculata -> HierochloÃ« utriculata
+Changing name: Hierochloe repens -> HierochloÃ« repens
+Changing name: Cnemidocarpa nordenskjoldi -> Cnemidocarpa nordenskjÃ¶ldi
+Changing name: Helicoon -> HelicoÃ¶n
+Changing name: Scalmicauda hosemanni -> Scalmicauda hÃ¶semanni
+Changing name: Gamasellus tragardhi -> Gamasellus trÃ¤gÃ¥rdhi
+Changing name: Pomatocalpa kunstleri -> Pomatocalpa kÃ¼nstleri
+Changing name: Hierochloe -> HierochloÃ«
+Changing name: Sidisca hypochloe -> Sidisca hypochloÃ«
+Changing name: Helicoonites -> HelicoÃ¶nites
+Changing name: Elsinoe eucalypticola -> ElsinoÃ« eucalypticola
+Changing name: Beroe -> BerÃ¶e
+Changing name: Paraethecerus sexmaculatus -> ParaÃ«thecerus sexmaculatus
+Changing name: Paraethecerus -> ParaÃ«thecerus
+Changing name: Iphinoe -> IphinÃ¶e
+Changing name: Enarmonia decor -> Enarmonia dÃ©cor
+Changing name: Hyllisia saigonensis -> Hyllisia saÃ¯gonensis
+Changing name: Licuala kunstleri -> Licuala kÃ¼nstleri
+Changing name: Agaricus hemisoodes -> Agaricus hemisoÃ¶des
+Changing name: Hemimycena epichloe -> Hemimycena epichloÃ«
+Changing name: Cerace lemee-pauli -> Cerace lemÃ©e-pauli
+Changing name: Tetraedriella -> TetraÃ«driella
+Changing name: Astrocystis cocoes -> Astrocystis cocoÃ«s
+Changing name: Convoluta bohmigi -> Convoluta bÃ¶hmigi
+Changing name: Abarenicola claparedi -> Abarenicola claparÃ©di
+Changing name: Xenochroma palimpais -> Xenochroma palimpaÃ¯s
+Changing name: Euthalia aeetes -> Euthalia aeÃ«tes
+Changing name: Epichloe elymi -> EpichloÃ« elymi
+Changing name: Thaumaleus claparedi -> Thaumaleus claparÃ©di
+Changing name: Epichloe glyceriae -> EpichloÃ« glyceriae
+Changing name: Elsinoe australis -> ElsinoÃ« australis
+Changing name: Elsinoe -> ElsinoÃ«
+Changing name: Oxychloe andina -> OxychloÃ« andina
+Changing name: Oxychloe -> OxychloÃ«
+Changing name: Phalaenopsis kunstleri -> Phalaenopsis kÃ¼nstleri
+Changing name: Polyrhachis saigonensis -> Polyrhachis saÃ¯gonensis
+Changing name: Aprostocetus meroe -> Aprostocetus merÃ¶e
+Changing name: Proteuclasta stotzneri -> Proteuclasta stÃ¶tzneri
+Changing name: Aiphanes -> AÃ¯phanes
+Changing name: Terpsinoe -> TerpsinoÃ«
+Changing name: Terpsinoe musica -> TerpsinoÃ« musica
+Changing name: Haploesthes -> HaploÃ«sthes
+Changing name: Homoneura paroeca -> Homoneura paroÃ«ca
+Changing name: Erythrogryllacris buttikoferi -> Erythrogryllacris bÃ¼ttikoferi
+Changing name: Afrogryllacris buttneri -> Afrogryllacris bÃ¼ttneri
+Changing name: Mesodorylaimus szechenyii -> Mesodorylaimus szÃ©chenyii
+Changing name: Pseudotetraedriella -> PseudotetraÃ«driella
+Changing name: Elliptorhina problematica -> Elliptorhina problemÃ¡tica
+Changing name: Neocoenyra fulleborni -> Neocoenyra fÃ¼lleborni
+Changing name: Ganae -> GanaÃ«
+Changing name: Tenodera stotzneri -> Tenodera stÃ¶tzneri
+Changing name: Litaneutria ocularis -> Litaneutria ocÃ¼laris
+Changing name: Phyllodromica atlantica -> Phyllodromica atlÃ¡ntica
+Changing name: Coutierella -> CoutiÃ¨rella
+Changing name: Aurila buhyui -> Aurila buhyÃ¼i
+Changing name: Cytheroma yueri -> Cytheroma yÃ¼eri
+Changing name: Xestoleberis yuchiae -> Xestoleberis yÃ¼chiae
+Changing name: Cythere yuniangae -> Cythere yÃ¼niangae
+Changing name: Epichloe sylvatica -> EpichloÃ« sylvatica
+Changing name: Cornucoquimba shyushuhi -> Cornucoquimba shyÃ¼shuhi
+Changing name: Hsiaolina chuntzui -> Hsiaolina chÃ¼ntzui
+Changing name: Neocandona yufuiia -> Neocandona yÃ¼fuiia
+Changing name: Kollikerina -> KÃ¶llikerina
+Changing name: Loxoconcha hsiyu -> Loxoconcha hsiyÃ¼
+Changing name: Howeina shului -> Howeina shÃ¼lui
+Changing name: Helicoon richonis -> HelicoÃ¶n richonis
+Changing name: Agylla stotzneri -> Agylla stÃ¶tzneri
+Changing name: Krugeria -> KrÃ¼geria
+Changing name: Krugeria ramosa -> KrÃ¼geria ramosa
+Changing name: Diplophragmia petsamoensis -> Diplophragmia petsamoÃ«nsis
+Changing name: Archidendron kunstleri -> Archidendron kÃ¼nstleri
+Changing name: Caloglossa saigonensis -> Caloglossa saÃ¯gonensis
+Changing name: Phyllophora pseudoceranoides -> Phyllophora pseudoceranoÃ¯des
+Changing name: Tithoes maculatus -> TithoÃ«s maculatus
+Changing name: Tithoes -> TithoÃ«s
+Changing name: Mycetophila storai -> Mycetophila storÃ¥i
+Changing name: Falsomesosella saigonensis -> Falsomesosella saÃ¯gonensis
+Changing name: Mycomya storai -> Mycomya storÃ¥i
+Changing name: Pestalotiopsis aloes -> Pestalotiopsis aloÃ«s
+Changing name: Panorpa stotzneri -> Panorpa stÃ¶tzneri
+Changing name: Xoes -> XoÃ«s
+Changing name: Xoes egeria -> XoÃ«s egeria
+Changing name: Pontocypris chununae -> Pontocypris chunÃ¼nae
+Changing name: Oxychloe bisexualis -> OxychloÃ« bisexualis
+Changing name: Dasyuris catadees -> Dasyuris catadeÃ«s
+Changing name: Peridea oberthuri -> Peridea oberthÃ¼ri
+Changing name: Artemidora alpherakyi -> Artemidora alphÃ©rakyi
+Changing name: Haplolabida sjostedti -> Haplolabida sjÃ¶stedti
+Changing name: Dasychira plotzi -> Dasychira plÃ¶tzi
+Changing name: Eloria gueneei -> Eloria guenÃ©ei
+Changing name: Elsinoe eucalyptorum -> ElsinoÃ« eucalyptorum
+Changing name: Elsinoe banksiae -> ElsinoÃ« banksiae
+Changing name: Aporia oberthuri -> Aporia oberthÃ¼ri
+Changing name: Leptogorgia lutkeni -> Leptogorgia lÃ¼tkeni
+Changing name: Colostygia pungeleri -> Colostygia pÃ¼ngeleri
+Changing name: Cosmorhoe neelys -> Cosmorhoe neÃ«lys
+Changing name: Electrophaes chrysophaes -> Electrophaes chrysophaÃ«s
+Changing name: Apicia oberthuri -> Apicia oberthÃ¼ri
+Changing name: Hypasura honei -> Hypasura hÃ¶nei
+Changing name: Monosyntaxis samoensis -> Monosyntaxis samoÃ«nsis
+Changing name: Helicoon -> HelicoÃ¶n
+Changing name: Edwardsia claparedi -> Edwardsia claparÃ©di
+Changing name: Hydrelia sjostedti -> Hydrelia sjÃ¶stedti
+Changing name: Automolis haematoessa -> Automolis haematoÃ«ssa
+Changing name: Amata uelleburgensis -> Amata uÃ«lleburgensis
+Changing name: Eilema honei -> Eilema hÃ¶nei
+Changing name: Pseudoothrix -> PseudoÃ¶thrix
+Changing name: Elsinoe verbenae -> ElsinoÃ« verbenae
+Changing name: Elsinoe mimosae -> ElsinoÃ« mimosae
+Changing name: Coleophora buttneri -> Coleophora bÃ¼ttneri
+Changing name: Parocneria tolgi -> Parocneria tÃ¶lgi
+Changing name: Lecanora discoensis -> Lecanora discoÃ«nsis
+Changing name: Phryganopteryx saalmulleri -> Phryganopteryx saalmÃ¼lleri
+Changing name: Lithosarctia honei -> Lithosarctia hÃ¶nei
+Changing name: Ocnogyna oberthuri -> Ocnogyna oberthÃ¼ri
+Changing name: Nais inornata -> NaÃ¯s inornata
+Changing name: Haltidytes ooeides -> Haltidytes ooÃ«ides
+Changing name: Undula paraensis -> Undula paraÃ«nsis
+Changing name: Balansia epichloe -> Balansia epichloÃ«
+Changing name: Megachile saigonensis -> Megachile saÃ¯gonensis
+Changing name: Caloplaca tornoensis -> Caloplaca tornoÃ«nsis
+Changing name: Frommeella -> FrommeÃ«lla
+Changing name: Asiadodis yunnanensis -> Asiadodis yÃ¼nnanensis
+Changing name: Jagerskioldia -> JÃ¤gerskiÃ¶ldia
+Changing name: Euthlastoblatta vegeta -> Euthlastoblatta vÃ©gÃ©ta
+Changing name: Puccinia hypoestis -> Puccinia hypoÃ«stis
+Changing name: Lepteutypa hippophaes -> Lepteutypa hippophaÃ«s
+Changing name: Praemastus cymothoe -> Praemastus cymothoÃ«
+Changing name: Callitomis mjobergi -> Callitomis mjÃ¶bergi
+Changing name: Hymenopleella hippophaes -> Hymenopleella hippophaÃ«s
+Changing name: Eurysternodes tragardhi -> Eurysternodes trÃ¤gÃ¥rdhi
+Changing name: Brahmaea tancrei -> Brahmaea tancrÃ©i
+Changing name: Oligonyx insularis -> Oligonyx insÃ¼laris
+Changing name: Eridolius schiodtei -> Eridolius schiÃ¶dtei
+Changing name: Hestiasula kastneri -> Hestiasula kÃ¤stneri
+Changing name: Satyrus pungeleri -> Satyrus pÃ¼ngeleri
+Changing name: Neofedrizzia tragardhi -> Neofedrizzia trÃ¤gÃ¥rdhi
+Changing name: Oeneis aello -> Oeneis aÃ«llo
+Changing name: Asperoseius baguioensis -> Asperoseius baguioÃ«nsis
+Changing name: Neope oberthuri -> Neope oberthÃ¼ri
+Changing name: Amathusia schonbergi -> Amathusia schÃ¶nbergi
+Changing name: Laocoon -> LaocoÃ¶n
+Changing name: Onthophagus saigonensis -> Onthophagus saÃ¯gonensis
+Changing name: Melanargia menetriesi -> Melanargia mÃ©netriÃ©si
+Changing name: Coutierella tonkinensis -> CoutiÃ¨rella tonkinensis
+Changing name: Pandalus eous -> Pandalus eÃ¶us
+Changing name: Heteroepichloe bambusae -> HeteroepichloÃ« bambusae
+Changing name: Heteroepichloe sasae -> HeteroepichloÃ« sasae
+Changing name: Scopula sjostedti -> Scopula sjÃ¶stedti
+Changing name: Epichloe baconii -> EpichloÃ« baconii
+Changing name: Epichloe clarkii -> EpichloÃ« clarkii
+Changing name: Scaphochlamys kunstleri -> Scaphochlamys kÃ¼nstleri
+Changing name: Helichrysum noeanum -> Helichrysum noÃ«anum
+Changing name: Helicoon gigantisporum -> HelicoÃ¶n gigantisporum
+Changing name: Heliophorus stotzneri -> Heliophorus stÃ¶tzneri
+Changing name: Codium guineense -> Codium guineÃ«nse
+Changing name: Cranae -> CranaÃ«
+Changing name: Cranae nigroreticulata -> CranaÃ« nigroreticulata
+Changing name: Cranae pictipennis -> CranaÃ« pictipennis
+Changing name: Cranae luctuosa -> CranaÃ« luctuosa
+Changing name: Caligo oberthurii -> Caligo oberthÃ¼rii
+Changing name: Elsinoe proteae -> ElsinoÃ« proteae
+Changing name: Elsinoe leucospermi -> ElsinoÃ« leucospermi
+Changing name: Bauhinia saigonensis -> Bauhinia saÃ¯gonensis
+Changing name: Gelidium samoense -> Gelidium samoÃ«nse
+Changing name: Drepanogynis athroopsegma -> Drepanogynis athroÃ¶psegma
+Changing name: Cranae genjam -> CranaÃ« genjam
+Changing name: Cranae patagiata -> CranaÃ« patagiata
+Changing name: Cranae rufipes -> CranaÃ« rufipes
+Changing name: Cranae unistrigata -> CranaÃ« unistrigata
+Changing name: Cranae rubra -> CranaÃ« rubra
+Changing name: Cranae trivittata -> CranaÃ« trivittata
+Changing name: Cranae kuekenthali -> CranaÃ« kuekenthali
+Changing name: Cranae emendata -> CranaÃ« emendata
+Changing name: Cranae longipennis -> CranaÃ« longipennis
+Changing name: Cranae caprai -> CranaÃ« caprai
+Changing name: Cranae manokwari -> CranaÃ« manokwari
+Changing name: Cranae glabra -> CranaÃ« glabra
+Changing name: Damalis saigonensis -> Damalis saÃ¯gonensis
+Changing name: Callithomia alexirrhoe -> Callithomia alexirrhoÃ«
+Changing name: Brachycrotaphus buttneri -> Brachycrotaphus bÃ¼ttneri
+Changing name: Cranae tibialis -> CranaÃ« tibialis
+Changing name: Heterarmia buttneri -> Heterarmia bÃ¼ttneri
+Changing name: Citheronia laocoon -> Citheronia laocoÃ¶n
+Changing name: Iphinoe -> IphinÃ¶e
+Changing name: Actias sjoqvisti -> Actias sjÃ¶qvisti
+Changing name: Parmotrema tsavoense -> Parmotrema tsavoÃ«nse
+Changing name: Loxilobus saigonensis -> Loxilobus saÃ¯gonensis
+Changing name: Antrodia hippophaes -> Antrodia hippophaÃ«s
+Changing name: Mesapamea storai -> Mesapamea storÃ¥i
+Changing name: Neocudoniella jezoensis -> Neocudoniella jezoÃ«nsis
+Changing name: Hierochloe australis -> HierochloÃ« australis
+Changing name: Achelous -> AcheloÃ¼s
+Changing name: Pyxine cocoes -> Pyxine cocoÃ«s
+Changing name: Haddowia aetii -> Haddowia aÃ«tii
+Changing name: Turanogryllus eous -> Turanogryllus eÃ¶us
+Changing name: Armillaria jezoensis -> Armillaria jezoÃ«nsis
+Changing name: Elsinoe veneta -> ElsinoÃ« veneta
+Changing name: Miriquidica paanaensis -> Miriquidica paanaÃ«nsis
+Changing name: Elsinoe phaseoli -> ElsinoÃ« phaseoli
+Changing name: Uromyces aloes -> Uromyces aloÃ«s
+Changing name: Spaelotis stotzneri -> Spaelotis stÃ¶tzneri
+Changing name: Anopheles bustamentei -> Anopheles bustamentÃ©i
+Changing name: Pseudagloe -> PseudagloÃ«
+Changing name: Butschliella -> BÃ¼tschliella
+Changing name: Fujimyces oodes -> Fujimyces oÃ¶des
+Changing name: Diploospora -> DiploÃ¶spora
+Tolerating sibling homonym 4120536 => 4120535, name = Pseudohaje gÃ¶ldii
+Tolerating sibling homonym 4988068 => 4988061, name = Spinther wirÃ©ni
+Tolerating sibling homonym 3832244 => 989945, name = Armillaria jezoÃ«nsis
+Tolerating sibling homonym 2813338 => 2813136, name = Achnanthes plÃ¶nensis
+Tolerating sibling homonym 4985533 => 4985512, name = Protodrilus jÃ¤gersteni
+Tolerating sibling homonym 3092622 => 3092565, name = Sphinx oberthÃ¼ri
+Tolerating sibling homonym 4082337 => 51476, name = Phaeographina
+Tolerating sibling homonym 3965007 => 747778, name = OxychloÃ«
+Tolerating sibling homonym 3118697 => 818557, name = Callithomia alexirrhoÃ«
+...
+910 sibling homonyms
+| 1530877 synonyms
+| 4882 homonyms, of which 203 name cousin taxa, 881 name sibling taxa
+--- Mapping ott into union ---
+Pinned 11 out of 11
+!! Badly homonymic: environmental samples 3664*3687
+!! Badly homonymic: Incertae Sedis 20*20
+!! Badly homonymic: uncultured 236*237
+!! Badly homonymic: Order Incertae Sedis 18*18
+!! Badly homonymic: Family Incertae Sedis 43*43
+!! Badly homonymic: mycorrhizal samples 11*11
+| Mapping: Stenocalyx 2*2 (name #238531)
+!! Badly homonymic: Rhodotorula 11*11
+| Mapping: Bifidobacterium gallicum 1*3 (name #417145)
+| Mapping: Nematoda 1*1 (name #512951)
+| Mapping: Loxophyllum 2*2 (name #603765)
+| Mapping: Diplocystaceae 1*2 (name #686255)
+| Mapping: Peziza luteonitens 2*1 (name #751221)
+| Mapping: Scaphidium 2*2 (name #841974)
+| Mapping: Phyllachora maculans 2*1 (name #928443)
+| Mapping: Tulipa urumiensis 2*2 (name #1021282)
+| Mapping: Trautvetteria grandis 2*2 (name #1179772)
+| Mapping: Coleonema 2*2 (name #1301372)
+| Mapping: Heteropholis 2*2 (name #1398008)
+| Mapping: Echinochloa glabrescens 2*2 (name #1485203)
+| Mapping: Eucalanus pseudattenuatus 2*2 (name #1721125)
+| Mapping: Pteroporus 2*2 (name #1888226)
+| Mapping: Polypria 2*2 (name #2005237)
+| Mapping: Melipona illustris 2*2 (name #2357148)
+| Mapping: Raimondia 2*2 (name #2620565)
+| Mapping: Scaridae 3*2 (name #3000217)
+| Mapping: Leocarpus atrovirens 1*2 (name #3054919)
+| Mapping: Polyporus greenei 1*2 (name #3056368)
+| Mapping: Pholiotina carbonaria 1*2 (name #3057635)
+| Mapping: Gonohymenia sinaica 1*2 (name #3059156)
+| Mapping: Parmelia confoederata 1*2 (name #3060366)
+| Mapping: Calicium aciculare 1*2 (name #3061420)
+| Mapping: Cercospora tabernaemontanae 1*2 (name #3062951)
+| Mapping: Megalopyge bissesa 1*2 (name #3064419)
+| Mapping: Omphalina rickenii 1*2 (name #3278778)
+| Mapping: Neocandona yufuiia 2*1 (name #3517737)
+!! Badly homonymic: tsetse fly 13*13
+| Mapping: Acanthochiton 2*2 (name #3759932)
+| Mapping: Achirus bilineatus 1*2 (name #4012783)
+!! Badly homonymic: Algerian barb 13*13
+| Names in common: 4234397
+| unresolved/ambiguous: 534
+| unresolved/blocked: 336
+| unresolved/contentious: 1079
+| incompatible-with: 60
+| excluded(same-ancestor): 142
+| excluded(overlaps): 69
+| excluded(same-qualified-id): 88
+| lost-race-to-union(same-ancestor): 297
+| excluded(same-primary-name): 15
+| different-division: 135
+| excluded(same-rank): 2
+| lost-race-to-union(overlaps): 13
+| lost-race-to-union(same-qualified-id): 12
+| lost-race-to-union(same-rank): 27
+| eschew-tattered: 112
+| Of 3066373 nodes in ott: 3065926 with name in common, of which 3064083 matched with existing, 1843 blocked
+--- Assigning ids to union starting with ott ---
+| Highest id before: 5267058
+| Highest id after: 5308080
+| note/different-source: 73162
+| keeping-id: 2990610
+| note/different-source-id: 344
+| new-id: 41022
+| Highest id before: 5308080
+| Highest id after: 5308080
+** Ranks out of order: (3655460=gbif:4872229 Ophiurinidae*) family has child (258604=ncbi:133711 Ophiurina*) suborder
+** Ranks out of order: (182610=ncbi:351107 Cryptobranchia*) genus has child (4958364=gbif:4304694. Calycidorididae*) family
+** Ranks out of order: (2850721=gbif:4587706 Nuculoidea*) genus has child (2850730=gbif:4587862 Nucularcidae*) family
+** Ranks out of order: (4969615=gbif:3252101 Rhynchonellidae*) family has child (795939=ncbi:151154 Rhynchonelloidea*) superfamily
+** Ranks out of order: (4163996=gbif:4865225 Chonetoidea*) genus has child (4163997=gbif:4869637 Chonostrophiidae*) family
+** Ranks out of order: (1041449=ncbi:6849 Limulus*) genus has child (5128446=gbif:3267257 Strabopidae*) family
+** Ranks out of order: (4796811=if:99034 Aconchulinida*) genus has child (5157203=gbif:6789158. Paulinellideae*) family
+Writing tax/ott/log.tsv
+Writing tax/ott/taxonomy.tsv
+Writing tax/ott/synonyms.tsv
+!? Confused Berendtia laevigata
+Writing tax/ott/about.json
+Writing tax/ott/deprecated.tsv
+echo 2.4.draft3 >tax/ott/version.txt
+
+
+
+
+short list:
+
+112716	2448	Flavobacterium johnsoniae	ncbi:986,gbif:3228875	unresolved/blocked	incompatible-with,incompatible-with,incompatible-with,eschew-tattered	*
+187939	2419	Potentilla	gbif:5365261	unresolved/blocked	incompatible-with,eschew-tattered	*
+363496	791	Coprobia	ncbi:352881,gbif:7258189	unresolved/ambiguous	if:990,ncbi:352881,gbif:7258189	*
+414273	1497	Rhizoctonia	ncbi:5573	unresolved/contentious	ott:5262185,ott:4097018	*
+682412	791	Octospora	ncbi:80259,gbif:2554686	unresolved/ambiguous	if:3549,gbif:2554686	*
+412514	2540	Endothia gyrosa	ncbi:40263	unresolved/ambiguous	if:510066,if:531339	*
+474506	2448	Escherichia coli	ncbi:562,gbif:6110934	unresolved/blocked	incompatible-with,incompatible-with,incompatible-with,eschew-tattered	*
+555419	1731	Hypoxylon intermedium	ncbi:110540	unresolved/ambiguous	if:443470,if:315708	*
+744510	2448	Photobacterium profundum	ncbi:74109,gbif:3222392	unresolved/blocked	incompatible-with,incompatible-with,eschew-tattered	*
+3809983	1157	Psathyrella hypertropicalis	gbif:7243633	different-division	Fungi	*
+314114	1645	Letharia	ncbi:112415,gbif:2605402	unresolved/ambiguous	if:2814,gbif:2605402	*
+4054900	2377	Endoxyla operculata	ncbi:1289959	unresolved/ambiguous	if:496479,if:293533	*
+619503	665	Fomitiporia tsugina	ncbi:1148179	unresolved/contentious	ott:33764	*
+439149	977	Oblongichytrium	ncbi:420539,gbif:3202638	unresolved/blocked	eschew-tattered,eschew-tattered	*
+566058	1195	Podosphaera phaseoli	ncbi:119610	unresolved/contentious	ott:312686	*
+1022742	1040	Microglossum	ncbi:45436	unresolved/contentious	ott:4926329	*
+299190	2448	Methanobrevibacter smithii	ncbi:2173,gbif:1000108	unresolved/blocked	incompatible-with,incompatible-with,incompatible-with,eschew-tattered	*
+177349	438	Puccinia caricis	ncbi:367880	unresolved/ambiguous	if:243502,if:156990	*
+1019298	868	Seimatosporium	ncbi:162418,gbif:2575071	unresolved/ambiguous	if:9865,gbif:2575071	*
+1089930	1692	Sphaerotheca cucurbitae	ncbi:57464	unresolved/contentious	ott:312686	*
+536966	2448	Erysipelotrichaceae	ncbi:128827	unresolved/blocked	incompatible-with,incompatible-with,eschew-tattered	*
+256121	2448	Escherichia albertii	ncbi:208962,gbif:5427575	unresolved/blocked	incompatible-with,incompatible-with,eschew-tattered	*
+890068	861	Stomiopeltis	ncbi:218402,gbif:2613260	unresolved/ambiguous	if:5274,gbif:2613260	*
+924617	2445	Ceratomyxa	gbif:2269597	unresolved/blocked	incompatible-with,eschew-tattered	*
+407689	2448	[Clostridium] difficile	ncbi:1496,gbif:3226608	unresolved/blocked	incompatible-with,incompatible-with,eschew-tattered	*
+1051703	2597	Xerocomus rubellus	ncbi:73893	unresolved/contentious	ott:49490	*
+1051702	2597	Xerocomus pruinatus	ncbi:73892	unresolved/contentious	ott:789635	*
+740345	831	Tilletiopsis	ncbi:165802	unresolved/contentious	ott:738715,ott:63206	*
+760530	1151	Gnomoniopsis comari	ncbi:440563	unresolved/contentious	ott:760534	*
+491284	2448	Pseudomonas aeruginosa	ncbi:287,gbif:3223154	unresolved/blocked	incompatible-with,incompatible-with,eschew-tattered	*
+448048	2597	Fomitiporia maxonii	ncbi:447966	unresolved/contentious	ott:33764	*
+448037	2597	Fomitiporia dryophila	ncbi:447964	unresolved/contentious	ott:33764	*
+448038	2597	Fomitiporia langloisii	ncbi:447965	unresolved/contentious	ott:33764	*
+974703	765	Penicillium farinosum	ncbi:211765	unresolved/ambiguous	if:206172,if:156563	*
+794850	2597	Clitopilus popinalis	ncbi:693818	unresolved/contentious	ott:250997	*
+514694	2471	Teratosphaeria molleriana	ncbi:112493,gbif:2625004	incompatible-with	Readeriella molleriana	*
+434506	438	Calocybe naucoria	ncbi:117012	unresolved/contentious	ott:990712	*
+991955	2597	Cystodermella granulosa	ncbi:511160,gbif:2535164	incompatible-with	Cystodermella granulosa var. ambrosii	*
+898589	313	Ochromonas	ncbi:2985,gbif:3194590	unresolved/blocked	incompatible-with,incompatible-with,eschew-tattered,eschew-tattered	*
+63206	242	Tilletiopsis	ncbi:58913	unresolved/contentious	ott:740345,ott:738715	*

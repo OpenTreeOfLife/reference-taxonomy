@@ -455,7 +455,7 @@ abstract class Taxonomy implements Iterable<Node> {
 				Object smushp = ((Map)obj).get("smush");
 				if (smushp != null) {
 					System.out.println("smushp is " + smushp);
-					this.smushp = smushp.equals("yes");
+					this.smushp = smushp.equals("yes") || smushp == Boolean.TRUE;
 				}
 			}
 
@@ -808,21 +808,21 @@ abstract class Taxonomy implements Iterable<Node> {
 		}
 	}
 
-	// Returns true if synonym present
+	// Returns true if a change was made
 
-	void addSynonym(String syn, Node node) {
+	boolean addSynonym(String syn, Node node) {
 		if (node.taxonomy != this)
 			System.err.println("!? Synonym for a node that's not in this taxonomy: " + syn + " " + node);
 		List<Node> nodes = this.nameIndex.get(syn);
 		if (nodes != null) {
 			if (nodes.contains(node))
-				return;    //lots of these System.err.println("Redundant synonymy: " + id + " " + syn);
+				return false;    //lots of these System.err.println("Redundant synonymy: " + id + " " + syn);
 		} else {
 			nodes = new ArrayList<Node>(1);
 			this.nameIndex.put(syn, nodes);
 		}
 		nodes.add(node);
-		return;
+		return true;
 	}
 
 	void dumpSynonyms(String filename) throws IOException {
@@ -1493,11 +1493,15 @@ class SourceTaxonomy extends Taxonomy {
 					{ seen.add(name); todo.add(name); }
 
 			int incommon = 0;
+			int homcount = 0;
 			for (String name : todo) {
+				boolean painful = name.equals("Nematoda");
 				List<Node> unodes = union.nameIndex.get(name);
 				if (unodes != null) {
 					++incommon;
 					List<Node> nodes = this.nameIndex.get(name);
+					if (((nodes.size() > 1 || unodes.size() > 1) && (++homcount % 1000 == 0)) || painful)
+						System.out.format("| Mapping: %s %s*%s (name #%s)\n", name, nodes.size(), unodes.size(), incommon);
 					new Matrix(name, nodes, unodes).run(criteria);
 				}
 			}
@@ -1644,28 +1648,22 @@ class SourceTaxonomy extends Taxonomy {
 	//  and vice versa.
 	void copySynonyms(UnionTaxonomy union) {
 		int count = 0;
+
+		// For each name in source taxonomy...
 		for (String syn : this.nameIndex.keySet()) {
-			// All of the nodes for which syn is a name:
-			List<Node> nodes = this.nameIndex.get(syn);
 
-			for (Node node : nodes)
+			// For each node that the name names...
+			for (Node node : this.nameIndex.get(syn))
 
-                // syn is a name for node, in source taxonomy.
-                // It should become a synonym for unode, in union taxonomy.
-
+				// If that node maps to a union node with a different name....
 				if (node.mapped != null && !node.mapped.name.equals(syn)) {
-                    List<Node> unodes = this.nameIndex.get(syn);
-                    if (unodes != null) {
-                        unodes = new ArrayList<Node>(1);
-                        union.nameIndex.put(syn, unodes);
-                    }
-					// if (!unodes.contains(node.mapped)) ...
-                    unodes.add(node.mapped);
-                    ++count;
+					// then the name is a synonym of the union node too
+					if (union.addSynonym(syn, node.mapped))
+						++count;
                 }
 		}
 		if (count > 0)
-			System.err.println("| Copied " + count + " synonyms");
+			System.err.println("| Added " + count + " synonyms to union");
 	}
 
 	static SourceTaxonomy parseNewick(String newick) {
@@ -3192,6 +3190,8 @@ class Matrix {
 		this.unodes = unodes;
 		m = nodes.size();
 		n = unodes.size();
+		if (m*n > 100)
+		    System.out.format("!! Badly homonymic: %s %s*%s\n", name, m, n);
 	}
 
 	void clear() {

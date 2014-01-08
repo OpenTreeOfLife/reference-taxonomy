@@ -1,3 +1,16 @@
+For 2.4.draft3 (2014-01-06):
+
+* Fixed a bug in synonym processing (it copied from source taxonomy to
+  union taxonomy incorrectly)
+* Fixed some problems with SILVA synonyms file
+* Support for diacritics, folding together sibling taxa whose names
+  differ only in diacritic marks
+* Beginnings of jython scripting support
+* The NCBI and GBIF subsets needed to build the 'model village'
+  (Asterales) taxonomy
+* Updated NCBI of course
+
+-----
 For 2.4.draft2 (2013-12-22):
 
 The synonyms.tsv file now has four columns; 'type' column is new.

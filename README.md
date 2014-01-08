@@ -1,5 +1,6 @@
 
 Placeholder for documentation for 'smasher', the taxonomy combiner.
+See file NEWS.md for release notes.
 
 Taxonomies are represented as directories, see 
 https://github.com/OpenTreeOfLife/opentree/wiki/Interim-taxonomy-file-format

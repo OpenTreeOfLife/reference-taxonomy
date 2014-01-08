@@ -5,7 +5,7 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.4.draft2
+WHICH=2.4.draft3
 PREV_WHICH=2.3
 
 #  $^ = all prerequisites
@@ -44,6 +44,7 @@ $(CLASS): org/opentreeoflife/smasher/Smasher.java \
 
 lib/jython-standalone-2.5.3.jar:
 	wget -O "$@" "http://search.maven.org/remotecontent?filepath=org/python/jython-standalone/2.5.3/jython-standalone-2.5.3.jar"
+	@ls -l $@
 
 # --------------------------------------------------------------------------
 
@@ -60,14 +61,22 @@ tax/ott/log.tsv: $(CLASS) $(SILVA)/taxonomy.tsv \
 		    $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv \
 		    feed/ott/edits/ott_edits.tsv \
 		    tax/prev_ott/taxonomy.tsv
-	mkdir -p tax/ott
+	@mkdir -p tax/ott
 	$(BIG_JAVA) $(OTT_ARGS)
 	echo $(WHICH) >tax/ott/version.txt
 
+tax/if/foo: tax/if/taxonomy.tsv tax/if/synonyms.tsv
+	cp -p feed/if/about.json tax/if/
+
 tax/if/taxonomy.tsv:
-	mkdir -p `dirname $@`
-	wget --output-document=$@ http://files.opentreeoflife.org/ott/IF/taxonomy.txt
-	wget --output-document=tax/if/synonyms.tsv http://files.opentreeoflife.org/ott/IF/synonyms.txt
+	@mkdir -p `dirname $@`
+	wget --output-document=$@ http://files.opentreeoflife.org/ott/IF/taxonomy.tsv
+	@ls -l $@
+
+tax/if/synonyms.tsv:
+	@mkdir -p `dirname $@`
+	wget --output-document=$@ http://files.opentreeoflife.org/ott/IF/synonyms.tsv
+	@ls -l $@
 
 # Create the aux (preottol) mapping in a separate step.
 # How does it know where to write to?
@@ -79,12 +88,13 @@ $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 	python process-preottol.py $< $@
 
 tax/prev_ott/taxonomy.tsv:
-	mkdir -p feed/prev_ott/in 
+	@mkdir -p feed/prev_ott/in 
 	wget --output-document=feed/prev_ott/in/ott$(PREV_WHICH).tgz \
 	  http://files.opentreeoflife.org/ott/ott$(PREV_WHICH).tgz
+	@ls -l feed/prev_ott/in/ott$(PREV_WHICH).tgz
 	(cd feed/prev_ott/in/ && tar xvf ott$(PREV_WHICH).tgz)
 	rm -rf tax/prev_ott
-	mkdir -p tax/prev_ott
+	@mkdir -p tax/prev_ott
 	mv feed/prev_ott/in/ott*/* tax/prev_ott/
 	if [ -e tax/prev_ott/taxonomy ]; then mv tax/prev_ott/taxonomy tax/prev_ott/taxonomy.tsv; fi
 	if [ -e tax/prev_ott/synonyms ]; then mv tax/prev_ott/synonyms tax/prev_ott/synonyms.tsv; fi
@@ -97,26 +107,27 @@ NCBI_URL="ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz"
 
 ncbi: $(NCBI)/taxonomy.tsv
 $(NCBI)/taxonomy.tsv: feed/ncbi/in/nodes.dmp feed/ncbi/process_ncbi_taxonomy_taxdump.py 
-	mkdir -p $(NCBI).tmp
+	@mkdir -p $(NCBI).tmp
 	python feed/ncbi/process_ncbi_taxonomy_taxdump.py F feed/ncbi/in \
             /dev/null $(NCBI).tmp $(NCBI_URL)
 	rm -rf $(NCBI)
 	mv -f $(NCBI).tmp $(NCBI)
 
 feed/ncbi/in/nodes.dmp: feed/ncbi/taxdump.tar.gz
-	mkdir -p `dirname $@`
+	@mkdir -p `dirname $@`
 	tar -C feed/ncbi/in -xzvf feed/ncbi/taxdump.tar.gz
 	touch $@
 
 feed/ncbi/taxdump.tar.gz:
-	mkdir -p feed/ncbi
-	wget --output-document=feed/ncbi/taxdump.tar.gz $(NCBI_URL)
+	@mkdir -p feed/ncbi
+	wget --output-document=$@ $(NCBI_URL)
+	@ls -l $@
 
 # Formerly, where it says /dev/null, we had ../data/gbif/ignore.txt
 
 gbif: $(GBIF)/taxonomy.tsv
 $(GBIF)/taxonomy.tsv: feed/gbif/in/taxon.txt feed/gbif/process_gbif_taxonomy.py
-	mkdir -p $(GBIF).tmp
+	@mkdir -p $(GBIF).tmp
 	python feed/gbif/process_gbif_taxonomy.py \
 	       feed/gbif/in/taxon.txt \
 	       /dev/null $(GBIF).tmp
@@ -128,9 +139,10 @@ feed/gbif/in/taxon.txt: feed/gbif/in/checklist1.zip
 	(cd feed/gbif/in && unzip checklist1.zip)
 
 feed/gbif/in/checklist1.zip:
-	mkdir -p feed/gbif/in
+	@mkdir -p feed/gbif/in
 	wget --output-document=$@ \
              http://ecat-dev.gbif.org/repository/export/checklist1.zip
+	@ls -l $@
 
 # Significant tabs !!!
 
@@ -138,23 +150,26 @@ SILVA_URL=https://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports
 
 silva: $(SILVA)/taxonomy.tsv
 $(SILVA)/taxonomy.tsv: feed/silva/process_silva.py feed/silva/in/silva.fasta feed/silva/in/accessionid_to_taxonid.tsv 
-	mkdir -p feed/silva/out
+	@mkdir -p feed/silva/out
 	python feed/silva/process_silva.py feed/silva/in feed/silva/out "$(SILVA_URL)"
-	mkdir -p $(SILVA)
+	@mkdir -p $(SILVA)
 	cp -p feed/silva/out/taxonomy.tsv $(SILVA)/
 	cp -p feed/silva/out/synonyms.tsv $(SILVA)/
 	cp -p feed/silva/out/about.json $(SILVA)/
 
 feed/silva/in/accessionid_to_taxonid.tsv: feed/silva/accessionid_to_taxonid.tsv
+	@mkdir -p `dirname $@`
 	(cd `dirname $@` && ln -sf ../accessionid_to_taxonid.tsv ./)
 
 # Silva 115: 206M uncompresses to 817M
 
 feed/silva/in/silva.fasta:
-	mkdir -p `basename $@`
+	@mkdir -p `dirname $@`
 	wget --output-document=feed/silva/in/tax_ranks.txt \
 	  https://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/tax_ranks_ssu_115.txt
+	@ls -l feed/silva/in/tax_ranks.txt
 	wget --output-document=feed/silva/in/silva.fasta.tgz "$(SILVA_URL)"
+	@ls -l feed/silva/in/silva.fasta.tgz
 	(cd feed/silva/in && tar xzvf silva.fasta.tgz && mv *silva.fasta silva.fasta)
 
 TARDIR=/raid/www/roots/opentree/ott
@@ -163,7 +178,7 @@ tarball: tax/ott/log.tsv
 	(cd tax && \
 	 tar czvf $(TARDIR)/ott$(WHICH).tgz.tmp ott && \
 	 mv $(TARDIR)/ott$(WHICH).tgz.tmp $(TARDIR)/ott$(WHICH).tgz )
-	echo "Don't forget to bump the version number"
+	@echo "Don't forget to bump the version number"
 
 # This predates use of git on norbert...
 #norbert:
@@ -175,6 +190,7 @@ tarball: tax/ott/log.tsv
 lib/json-simple-1.1.1.jar:
 	wget --output-document=$@ --no-check-certificate \
 	  "https://json-simple.googlecode.com/files/json-simple-1.1.1.jar"
+	@ls -l $@
 
 # internal tests
 test2: $(CLASS)
@@ -190,6 +206,12 @@ short-list.tsv: ids_report.tsv tax/ott/deprecated.tsv
 	$(JAVA) $(SMASH) --join ids_report.tsv dep-tmp.tsv >$@
 	wc $@
 
+clean:
+	rm -rf feed/*/in
+	rm -rf tax/if tax/ncbi tax/prev_nem tax/silva
+	rm -f $(CLASS)
+	rm -f feed/ncbi/taxdump.tar.gz
+
 # -----------------------------------------------------------------------------
 # Test: nematodes
 
@@ -201,22 +223,22 @@ TEST_ARGS=$(SMASH) tax/nem_ncbi/ tax/nem_gbif/ \
 
 nem: tax/nem/log.tsv
 tax/nem/log.tsv: $(CLASS) tax/prev_nem/taxonomy.tsv tax/nem_ncbi/taxonomy.tsv tax/nem_gbif/taxonomy.tsv
-	mkdir -p tax/nem/
+	@mkdir -p tax/nem/
 	$(JAVA) $(TEST_ARGS)
 
 # Inputs to the nem test
 
 tax/nem_ncbi/taxonomy.tsv:
-	mkdir -p `dirname $@`
+	@mkdir -p `dirname $@`
 	cp -p $(TAXOMACHINE_EXAMPLE)/nematoda.ncbi $@
 
 tax/nem_gbif/taxonomy.tsv:
-	mkdir -p `dirname $@`
+	@mkdir -p `dirname $@`
 	cp -p $(TAXOMACHINE_EXAMPLE)/nematoda.gbif $@
 
 # little test of --select feature
 tax/nem_dory/taxonomy.tsv: tax/nem/log.tsv $(CLASS)
-	mkdir -p `dirname $@`
+	@mkdir -p `dirname $@`
 	$(JAVA) $(SMASH) --start tax/nem/ --select Dorylaimina tax/nem_dory/
 
 # -----------------------------------------------------------------------------
@@ -226,24 +248,24 @@ TAXON=Asterales
 
 # t/tax/prev/taxonomy.tsv: tax/prev_ott/taxonomy.tsv   - correct expensive
 t/tax/prev_aster/taxonomy.tsv: 
-	mkdir -p `dirname $@`
+	@mkdir -p `dirname $@`
 	$(BIG_JAVA) $(SMASH) tax/prev_ott/ --select2 $(TAXON) --out t/tax/prev_aster/
 
 # dependency on tax/ncbi/taxonomy.tsv - correct expensive
 t/tax/ncbi_aster/taxonomy.tsv: 
-	mkdir -p `dirname $@`
+	@mkdir -p `dirname $@`
 	$(BIG_JAVA) $(SMASH) tax/ncbi/ --select2 $(TAXON) --out t/tax/ncbi_aster/
 
 # dependency on tax/gbif/taxonomy.tsv - correct but expensive
 t/tax/gbif_aster/taxonomy.tsv: 
-	mkdir -p `dirname $@`
+	@mkdir -p `dirname $@`
 	$(BIG_JAVA) $(SMASH) tax/gbif/ --select2 $(TAXON) --out t/tax/gbif_aster/
 
 t/tax/aster/taxonomy.tsv: $(CLASS) \
 			  t/tax/ncbi_aster/taxonomy.tsv \
 			  t/tax/gbif_aster/taxonomy.tsv \
 			  t/tax/prev_aster/taxonomy.tsv
-	mkdir -p `dirname $@`
+	@mkdir -p `dirname $@`
 	$(JAVA) $(SMASH) t/tax/ncbi_aster/ t/tax/gbif_aster/ \
 	     --ids t/tax/prev_aster/ \
 	     --out t/tax/aster/

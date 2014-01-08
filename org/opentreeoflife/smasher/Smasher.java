@@ -70,6 +70,10 @@ public class Smasher {
 						jscheme.REPL.main(jargs);
 					}
 
+					else if (argv[i].equals("--deforest")) {
+						tax.deforestate();
+					}
+
 					else if (argv[i].equals("--ids")) {
 						// To smush or not to smush?
 						UnionTaxonomy union = tax.promote(); tax = union;
@@ -662,7 +666,7 @@ abstract class Taxonomy implements Iterable<Node> {
 		for (Node node : nodes) {
 			if (node == null)
 				System.err.println("null in nodes list!?" );
-			else
+			else if (!node.prunedp)
 				dumpNode(node, out, true);
 		}
 		out.close();
@@ -799,7 +803,7 @@ abstract class Taxonomy implements Iterable<Node> {
 		out.println("name\t|\tuid\t|\ttype\t|\tuniqname\t|\t");
 		for (String name : this.nameIndex.keySet())
 			for (Node node : this.nameIndex.get(name))
-				if (!node.name.equals(name)) {
+				if (!node.prunedp && !node.name.equals(name)) {
 					String uniq = node.uniqueName();
 					if (uniq.length() == 0) uniq = node.name;
 					out.println(name + "\t|\t" +
@@ -1254,6 +1258,29 @@ abstract class Taxonomy implements Iterable<Node> {
 			System.err.println("Missing or ambiguous name: " + designator);
 			return null;
 		}
+	}
+
+	void deforestate() {
+		List<Node> rootsList = new ArrayList<Node>(this.roots);
+		if (rootsList.size() <= 1) return;
+		Collections.sort(rootsList, new Comparator<Node>() {
+				public int compare(Node x, Node y) {
+					return y.count() - x.count();
+				}
+			});
+		Node biggest = rootsList.get(0);
+		int count1 = biggest.count();
+		int count2 = rootsList.get(1).count();
+		if (rootsList.size() >= 2 && count1 < count2*1000)
+			System.err.format("*** Nontrivial forest: biggest is %s, 2nd biggest is %s\n", count1, count2);
+		else
+			System.out.format("| Deforesting: keeping biggest (%s), 2nd biggest is %s\n", count1, count2);
+		for (Node root : rootsList)
+			if (!root.equals(biggest))
+				root.prune();
+		this.roots = new HashSet<Node>(1);
+		this.roots.add(biggest);
+		System.out.format("| Removed %s smaller trees\n", rootsList.size()-1);
 	}
 
 	// -------------------- Newick stuff --------------------
@@ -2093,6 +2120,7 @@ class Node {
 	List<QualifiedId> sourceIds = null;
 	Answer deprecationReason = null;
 	Answer blockedp = null;
+	boolean prunedp = false;
 
 	int properFlags = 0, inheritedFlags = 0, rankAsInt = 0;
 
@@ -3011,11 +3039,16 @@ class Node {
 			this.taxonomy.nameIndex.remove(this.name);
 		if (this.id != null)
 			this.taxonomy.idIndex.remove(this.id);
+		this.prunedp = true;
 	}
 
 	String uniqueName() {
 		List<Node> nodes = this.taxonomy.lookup(this.name);
-		if (nodes == null) { System.err.println("!? Confused " + this.name); return "?"; }
+		if (nodes == null) {
+			System.err.format("!? Confused: %s in %s\n", this.name,
+							  this.parent == null ? "(roots)" : this.parent.name);
+			return "?";
+		}
 		for (Node other : nodes)
 			if (other != this && other.name.equals(this.name)) {
 				Node i = this.informative();
@@ -3113,7 +3146,8 @@ class Node {
 	}
 }
 
-// Consider all possible assignments
+// For each source node, consider all possible union nodes it might map to
+// TBD: Exclude nodes that have 'prunedp' flag set
 
 class Matrix {
 

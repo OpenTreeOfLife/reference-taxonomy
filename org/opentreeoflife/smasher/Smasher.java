@@ -580,11 +580,15 @@ abstract class Taxonomy implements Iterable<Node> {
             }
         }
         // 2. Add diacritics to nodes that don't have them, when possible
+		int ncc = 0;
 		for (final Node node : this.idIndex.values()) {
             Node probe = upcritic.get(node.name);
-            if (probe != null)
+            if (probe != null) {
                 // node.name is without diacritics, probe.name is with
+				if (++ncc < 10)
+					System.err.format("Changing name: %s -> %s\n", node.name, probe.name);
                 node.setName(probe.name);
+			}
         }
         // 3. Add non-diacritic name as synonym of with-diacritic node
         for (String without : upcritic.keySet())
@@ -959,15 +963,14 @@ abstract class Taxonomy implements Iterable<Node> {
 								child.properFlags |= SIBLING_HIGHER; //e.g. genus with family sibling
 						}
 					}
-
-					// Extra informational check.  See if ranks are inverted.
-					if (myrank >= 0 && myrank > highrank)
-						// The myrank == highrank case is weird too; there are about 200 of those.
-						System.err.println("** Ranks out of order: " +
-										   node + " " + node.rank + " has child " +
-										   highchild + " " + highchild.rank);
 				}
 			}
+			// Extra informational check.  See if ranks are inverted.
+			if (highrank >= 0 && myrank > highrank)
+				// The myrank == highrank case is weird too; there are about 200 of those.
+				System.err.println("** Ranks out of order: " +
+								   node + " " + node.rank + " has child " +
+								   highchild + " " + highchild.rank);
 		}
 		return myrank;
 	}
@@ -1496,7 +1499,8 @@ class SourceTaxonomy extends Taxonomy {
 				if (unodes != null) {
 					++incommon;
 					List<Node> nodes = this.nameIndex.get(name);
-					if (((nodes.size() > 1 || unodes.size() > 1) && (++homcount % 1000 == 0)) || painful)
+					if (false &&
+						(((nodes.size() > 1 || unodes.size() > 1) && (++homcount % 1000 == 0)) || painful))
 						System.out.format("| Mapping: %s %s*%s (name #%s)\n", name, nodes.size(), unodes.size(), incommon);
 					new Matrix(name, nodes, unodes).run(criteria);
 				}
@@ -2200,7 +2204,6 @@ class Node {
 
 	void setName(String name) {
 		if (this.name != null) {
-			System.err.println("Changing name: " + this.name + " -> " + name);
             if (name.equals(this.name)) return;
             List<Node> nodes = this.taxonomy.nameIndex.get(this.name);
             nodes.remove(name);

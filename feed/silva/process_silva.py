@@ -61,10 +61,12 @@ def writeAboutFile(url, nodesfilename, taxdir):
 	filetime = os.path.getmtime(nodesfilename)
 	tuple_time = time.gmtime(filetime)
 	iso_time = time.strftime("%Y-%m-%dT%H:%M:%S", tuple_time)
+	# This is pretty much garbage, pending overhaul of the metadata feature.
 	about = {"type": "source",
 			 "namespace": {"prefix": "silva",
 					   	   "definition": "http://www.arb-silva.de/browser/ssu/silva/",
 					  	   "description": "SILVA Taxonomy"},
+			 "prefix": "silva",
 			 "namespaces": [],
 			 "url": url,
 			 "lastModified": iso_time,

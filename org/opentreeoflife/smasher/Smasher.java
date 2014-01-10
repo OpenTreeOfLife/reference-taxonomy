@@ -454,6 +454,8 @@ abstract class Taxonomy implements Iterable<Node> {
 		fr.close();
 	}
 
+	static String NO_RANK = null;
+
 	abstract void dumpMetadata(String filename) throws IOException;
 
     // load | dump taxonomy proper
@@ -489,8 +491,8 @@ abstract class Taxonomy implements Iterable<Node> {
 				String id = parts[0];
 				String name = parts[2];
 				String rank = parts[3];
-				if (rank.length() == 0 || rank.equals("node.rank"))
-					rank = null;
+				if (rank.length() == 0 || rank.equals("no rank"))
+					rank = NO_RANK;
 
 				String parentId = parts[1];
 				if (parentId.equals("null")) parentId = "";  // Index Fungorum
@@ -606,8 +608,8 @@ abstract class Taxonomy implements Iterable<Node> {
 					int c = other.id.length() - node.id.length();
 					if ((c < 0 || (c == 0 && other.id.compareTo(node.id) < 0)) &&
 						node.parent == other.parent &&
-						(node.rank == null ?
-						 other.rank == null :
+						(node.rank == Taxonomy.NO_RANK ?
+						 other.rank == Taxonomy.NO_RANK :
 						 node.rank.equals(other.rank))) {
 
 						// node and other are sibling homonyms.
@@ -686,7 +688,7 @@ abstract class Taxonomy implements Iterable<Node> {
 		out.print((node.name == null ? "?" : node.name)
 				  + "\t|\t");
 		// 3. rank:
-		out.print((node.rank == null ? "no rank" : node.rank) + "\t|\t");
+		out.print((node.rank == Taxonomy.NO_RANK ? "no rank" : node.rank) + "\t|\t");
 
 		// 4. source information
 		// comma-separated list of URI-or-CURIE
@@ -1341,7 +1343,7 @@ abstract class Taxonomy implements Iterable<Node> {
 				}
 				for (Node child : children)
 					node.addChild(child);
-				node.rank = (children.size() > 0) ? null : "species";
+				node.rank = (children.size() > 0) ? Taxonomy.NO_RANK : "species";
 				return node;
 			} else
 				return null;
@@ -2161,7 +2163,8 @@ class Node {
 		this.setName(parts[2]);
 		if (parts.length >= 4) {
 			this.rank = parts[3];
-			if (this.rank.length() == 0) this.rank = null;
+			if (this.rank.length() == 0 || this.rank.equals("no rank"))
+				this.rank = Taxonomy.NO_RANK;
 			else if (Taxonomy.ranks.get(this.rank) == null)
 				System.err.println("!! Unrecognized rank: " + this.rank + " " + this.id);
 		}
@@ -2332,7 +2335,7 @@ class Node {
 		this.mapped = unode;
 
 		if (unode.name == null) unode.setName(this.name);
-		if (unode.rank == null)
+		if (unode.rank == Taxonomy.NO_RANK)
 			unode.rank = this.rank; // !?
 		unode.comapped = this;
 
@@ -3520,16 +3523,19 @@ abstract class Criterion {
 			public String toString() { return "same-qualified-id"; }
 			Answer assess(Node x, Node y) {
 				// x is source node, y is union node.
+				// Two cases:
+				// 1. Mapping x=NCBI to y=union(SILVA): y.sourceIds contains x.id
+				// 2. Mapping idsource to union: x.sourceIds contains ncbi:123
 				// compare x.id to y.sourcenode.id
+				QualifiedId xid = x.getQualifiedId();
+				for (QualifiedId ysourceid : y.sourceIds)
+					if (xid.equals(ysourceid))
+						return Answer.yes(x, y, "same-qualified-id-1", null);
 				if (x.sourceIds != null)
-					for (QualifiedId oldsource : x.sourceIds)
-						for (QualifiedId newsource : y.sourceIds)
-							if (oldsource.prefix.equals(newsource.prefix)) {
-								if (oldsource.equals(newsource))
-									return Answer.yes(x, y, "same-qualified-id", null);
-								else
-									; //return Answer.no(x, y, "different-qualified-id", null);
-							}
+					for (QualifiedId xsourceid : x.sourceIds)
+						for (QualifiedId ysourceid : y.sourceIds)
+							if (xsourceid.equals(ysourceid))
+								return Answer.yes(x, y, "same-qualified-id-2", null);
 				return Answer.NOINFO;
 			}
 		};
@@ -3556,7 +3562,8 @@ abstract class Criterion {
 			Answer assess(Node x, Node y) {
 				if ((x == null ?
 					 x == y :
-					 x.rank.equals(y.rank)))
+					 (x.rank != Taxonomy.NO_RANK &&
+					  x.rank.equals(y.rank))))
 					// Evidence of difference, but not good enough to overturn name evidence
 					return Answer.weakYes(x, y, "same-rank", x.rank);
 				else

@@ -265,9 +265,11 @@ t/tax/gbif_aster/taxonomy.tsv:
 t/tax/aster/taxonomy.tsv: $(CLASS) \
 			  t/tax/ncbi_aster/taxonomy.tsv \
 			  t/tax/gbif_aster/taxonomy.tsv \
-			  t/tax/prev_aster/taxonomy.tsv
+			  t/tax/prev_aster/taxonomy.tsv \
+			  t/edits/edits.tsv
 	@mkdir -p `dirname $@`
 	$(JAVA) $(SMASH) t/tax/ncbi_aster/ t/tax/gbif_aster/ \
+	     --edits t/edits/ \
 	     --ids t/tax/prev_aster/ \
 	     --out t/tax/aster/
 

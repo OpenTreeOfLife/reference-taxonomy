@@ -1955,6 +1955,7 @@ class UnionTaxonomy extends Taxonomy {
 		}
 	}
 
+    //      command	name	rank	parent	context	sourceInfo
 	// E.g. add	Acanthotrema frischii	species	Acanthotrema	Fungi	IF:516851
 
 	void applyOneEdit(String[] row) {
@@ -2025,6 +2026,12 @@ class UnionTaxonomy extends Taxonomy {
 				System.err.println("(flag) No taxon to flag: " + name);
 			else
 				existing.properFlags |= Taxonomy.FLAGGED;
+
+		} else if (command.equals("incertae_sedis")) {
+			if (existing == null)
+				System.err.println("(flag) No taxon to flag: " + name);
+			else
+				existing.properFlags |= Taxonomy.INCERTAE_SEDIS;
 
 		} else if (command.equals("synonym")) {
 			// TBD: error checking

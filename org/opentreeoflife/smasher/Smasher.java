@@ -905,7 +905,7 @@ abstract class Taxonomy implements Iterable<Node> {
 	static final int MAJOR_RANK_CONFLICT = 2048;
 	static final int TATTERED 			 = 4096;
 	static final int ANYSPECIES			 = 8192;
-	static final int FLAGGED			 = 8192 * 2;
+	static final int FLAGGED			 = 8192 * 2; //or forced_visible
 
 	// Returns the node's rank (as an int).  In general the return
 	// value should be >= parentRank, but conceivably funny things
@@ -1107,7 +1107,7 @@ abstract class Taxonomy implements Iterable<Node> {
 
 		if ((node.properFlags & FLAGGED) != 0) {
 			if (needComma) out.print(","); else needComma = true;
-			out.print("flagged");
+			out.print("forced_visible");
 		}
 
 		if ((node.inheritedFlags & SPECIFIC) != 0) {

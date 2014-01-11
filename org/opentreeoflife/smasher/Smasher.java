@@ -74,6 +74,10 @@ public class Smasher {
 						tax.deforestate();
 					}
 
+					else if (argv[i].equals("--chop")) {
+						tax = tax.chop(300, 3000);
+					}
+
 					else if (argv[i].equals("--ids")) {
 						// To smush or not to smush?
 						UnionTaxonomy union = tax.promote(); tax = union;
@@ -246,6 +250,7 @@ abstract class Taxonomy implements Iterable<Node> {
 	Integer infocolumn = null;
 	Integer preottolcolumn = null;
 	JSONObject metadata = null;
+    int taxid = -1234;    // kludge
 
 	boolean smushp = false;
 
@@ -324,12 +329,17 @@ abstract class Taxonomy implements Iterable<Node> {
 		};
 	}
 
+	static int globalTaxonomyIdCounter = 1;
+
 	String getTag() {
 		if (this.tag == null) this.setTag();
-		return this.tag;
+		if (this.tag == null) {
+            if (this.taxid < 0)
+                this.taxid = globalTaxonomyIdCounter++;
+			return "tax" + taxid;
+        } else
+            return this.tag;
 	}
-
-	static int globalTaxonomyIdCounter = 1;
 
 	void setTag() {
 		if (this.tag != null) return;
@@ -342,8 +352,16 @@ abstract class Taxonomy implements Iterable<Node> {
 			else if (id.equals("100968828")) this.tag = "aux"; // preottol
 			else if (id.equals("4722")) this.tag = "nem"; // testing
 		}
-		if (this.tag == null)
-			this.tag = "tax" + globalTaxonomyIdCounter++;
+        // TEMPORARY KLUDGE
+		if (this.tag == null) {
+            List<Node> probe2 = this.lookup("Asterales");
+            if (probe2 != null) {
+                String id = probe2.get(0).id;
+                if (id.equals("4209")) this.tag = "ncbi";
+                if (id.equals("414")) this.tag = "gbif";
+                if (id.equals("1042120")) this.tag = "ott";
+            }
+        }
 	}
 
 	Node highest(String name) {
@@ -404,6 +422,7 @@ abstract class Taxonomy implements Iterable<Node> {
 	void loadTaxonomy(String dirname) throws IOException {
 		this.loadMetadata(dirname + "about.json");
 		this.loadTaxonomyProper(dirname + "taxonomy.tsv");
+        this.smush();
 		this.loadSynonyms(dirname + "synonyms.tsv");
 	}
 
@@ -531,8 +550,6 @@ abstract class Taxonomy implements Iterable<Node> {
 				node.setName("undefined:" + node.id);
 			}
 
-        this.smush();
-
 		if (roots.size() == 0)
 			System.err.println("*** No root nodes!");
 		else {
@@ -565,12 +582,13 @@ abstract class Taxonomy implements Iterable<Node> {
     */
 
     // Fold sibling homonyms together into single taxa.
+    // Optional step.
 
     void smush() {
 		List<Runnable> todo = new ArrayList<Runnable>();
 
-        // Maps name without diacritics to node with name with diacritics
-        Map<String,Node> upcritic = new HashMap<String,Node>();
+        // Maps name without diacritics to name with diacritics
+        Map<String,String> uncritical = new HashMap<String,String>();
 
         // 1. Find all diacritics
 		for (final Node node : this.idIndex.values()) {
@@ -578,23 +596,25 @@ abstract class Taxonomy implements Iterable<Node> {
             if (!without.equals(node.name)) {
                 // System.err.println("Diacritics in " + node.name + " but not in " + without);
                 // dumpName(node.name); dumpName(without);
-                upcritic.put(without, node);
+                uncritical.put(without, node.name);
             }
         }
-        // 2. Add diacritics to nodes that don't have them, when possible
+        if (uncritical.size() > 0)
+            System.out.format("| %s names with diacritics\n", uncritical.size());
+        // 2. When a node's name is missing diacritics but could have them,
+        // add them by clobbering the name.  This may create sibling homonyms.
 		int ncc = 0;
 		for (final Node node : this.idIndex.values()) {
-            Node probe = upcritic.get(node.name);
+            String probe = uncritical.get(node.name);
             if (probe != null) {
                 // node.name is without diacritics, probe.name is with
 				if (++ncc < 10)
-					System.err.format("Changing name: %s -> %s\n", node.name, probe.name);
-                node.setName(probe.name);
+					System.err.format("Changing name: %s -> %s\n", node.name, probe);
+                node.setName(probe);
 			}
         }
         // 3. Add non-diacritic name as synonym of with-diacritic node
-        for (String without : upcritic.keySet())
-            addSynonym(without, upcritic.get(without));
+        // See below, following smushing!
 
 		// Smush taxa that differ only in id.
 		int siblingHomonymCount = 0;
@@ -635,7 +655,7 @@ abstract class Taxonomy implements Iterable<Node> {
 											for (Node child : new ArrayList<Node>(node.children))
 												// might create new sibling homonyms...
 												child.changeParent(other);
-										node.prune();
+										node.prune();  // removes name from index
 										tax.idIndex.put(node.id, other);
 										other.addSource(node);
 									}});
@@ -660,6 +680,22 @@ abstract class Taxonomy implements Iterable<Node> {
 					node.parent = replacement;
 				}
 			}
+
+        int critcount = 0;
+
+        // 3. Add non-diacritic name as synonym of with-diacritic node
+        for (String without : uncritical.keySet()) {
+            String with = uncritical.get(without);
+            List<Node> nodes = this.nameIndex.get(with);
+            if (nodes != null)
+                for (Node node : nodes) {
+                    // Almost always only one node!!
+                    if (++critcount <= 1 || nodes.size() > 1)
+                        System.out.format("Adding %s as synonym for %s\n", without, node);
+                    addSynonym(without, node);
+                }
+        }
+
     }
 
 	void dumpNodes(Collection<Node> nodes, String outprefix) throws IOException {
@@ -1265,6 +1301,45 @@ abstract class Taxonomy implements Iterable<Node> {
 		}
 	}
 
+    Taxonomy chop(int m, int n) throws java.io.IOException {
+        Taxonomy tax = new SourceTaxonomy();
+        List<Node> cuttings = new ArrayList<Node>();
+        Node root = null;
+        for (Node r : this.roots) root = r;    //bad kludge. uniroot assumed
+        Node newroot = chop(root, m, n, cuttings, tax);
+        tax.roots.add(newroot);
+        System.err.format("Cuttings: %s Residue: %s\n", cuttings.size(), newroot.size());
+
+        // Temp kludge ... ought to be able to specify the file name
+        String outprefix = "chop/";
+        new File(outprefix).mkdirs();
+        for (Node cutting : cuttings) {
+            PrintStream out = 
+                openw(outprefix + cutting.name.replaceAll(" ", "_") + ".tre");
+            StringBuffer buf = new StringBuffer();
+			cutting.appendNewickTo(buf);
+            out.print(buf.toString());
+            out.close();
+        }
+        return tax;
+    }
+
+    // List of nodes for which N/3 < size <= N < parent size
+
+    Node chop(Node node, int m, int n, List<Node> chopped, Taxonomy tax) {
+        int c = node.count();
+        Node newnode = node.dup(tax);
+        if (m < c && c <= n) {
+            newnode.setName(newnode.name + " (" + node.size() + ")");
+            chopped.add(node);
+        } else if (node.children != null)
+            for (Node child : node.children) {
+                Node newchild = chop(child, m, n, chopped, tax);
+                newnode.addChild(newchild);
+            }
+        return newnode;
+    }
+
 	void deforestate() {
 		List<Node> rootsList = new ArrayList<Node>(this.roots);
 		if (rootsList.size() <= 1) return;
@@ -1423,7 +1498,6 @@ abstract class Taxonomy implements Iterable<Node> {
             new BufferedReader(new InputStreamReader(new FileInputStream(filename),
                                                      "UTF-8"));
     }
-
 
 }  // End of class Taxonomy
 
@@ -1785,51 +1859,6 @@ class UnionTaxonomy extends Taxonomy {
 
 	// x.getQualifiedId()
 
-	void dumpDeprecated(SourceTaxonomy idsource, String filename) throws IOException {
-		PrintStream out = Taxonomy.openw(filename);
-		out.println("id\tname\tsourceinfo\treason\twitness\treplacement");
-		for (String id : idsource.idIndex.keySet()) {
-			Node node = idsource.idIndex.get(id);
-			if (node.mapped != null) continue;
-			String reason = "?";
-			String witness = "";
-			String replacement = "*";
-			Answer answer = node.deprecationReason;
-			if (!node.id.equals(id)) {
-				reason = "smushed";
-			} else if (answer != null) {
-				// assert answer.x == node
-				reason = answer.reason;
-				if (answer.y != null && answer.value > Answer.DUNNO)
-					replacement = answer.y.id;
-				if (answer.witness != null)
-					witness = answer.witness;
-			}
-			out.println(id + "\t" +
-						node.name + "\t" +
-						node.getSourceIdsString() + "\t" +
-						reason + "\t" +
-						witness + "\t" +
-						replacement);
-		}
-		out.close();
-	}
-
-	void dumpMetadata(String filename)  throws IOException {
-		this.metadata = new JSONObject();
-		List<Object> sourceMetas = new ArrayList<Object>();
-		this.metadata.put("inputs", sourceMetas);
-		for (Taxonomy source : this.sources)
-			if (source.metadata != null)
-				sourceMetas.add(source.metadata);
-			else
-				sourceMetas.add(source.tag);
-		// this.metadata.put("prefix", "ott");
-		PrintStream out = Taxonomy.openw(filename);
-		out.println(this.metadata);
-		out.close();
-	}
-
 	void loadAuxIds(SourceTaxonomy aux) {
 		this.auxsource = aux;
 		aux.mapInto(this, Criterion.idCriteria);
@@ -2028,24 +2057,85 @@ class UnionTaxonomy extends Taxonomy {
 		return fnodes.size() == 0 ? null : fnodes.get(0);
 	}
 
-	// Overriddes method in Taxonomy class
+	// Overrides method in Taxonomy class
 	// outprefix should end with a / , but I guess . would work too
 
 	void dumpAll(String outprefix) throws IOException {
         new File(outprefix).mkdirs();
 		this.assignNewIds(0);	// If we've seen an idsource, maybe this has already been done
 		this.analyze();
-		this.dumpLog(outprefix + "log.tsv");    // *****
+		this.dumpMetadata(outprefix + "about.json");
+
+        Set<String> scrutinize = null;
+		if (this.idsource != null) 
+			scrutinize = this.dumpDeprecated(this.idsource, outprefix + "deprecated.tsv");
+		this.dumpLog(outprefix + "log.tsv", scrutinize);
+
 		this.dumpNodes(this.roots, outprefix);
 		this.dumpSynonyms(outprefix + "synonyms.tsv");
-		this.dumpMetadata(outprefix + "about.json");
-		if (this.idsource != null)     // *****
-			this.dumpDeprecated(this.idsource, outprefix + "deprecated.tsv");
 	}
 
-	// called on union
+    // Overrides method in Taxonomy class
 
-	void dumpLog(String filename) throws IOException {
+	void dumpMetadata(String filename)  throws IOException {
+		this.metadata = new JSONObject();
+		List<Object> sourceMetas = new ArrayList<Object>();
+		this.metadata.put("inputs", sourceMetas);
+		for (Taxonomy source : this.sources)
+			if (source.metadata != null)
+				sourceMetas.add(source.metadata);
+			else
+				sourceMetas.add(source.tag);
+		// this.metadata.put("prefix", "ott");
+		PrintStream out = Taxonomy.openw(filename);
+		out.println(this.metadata);
+		out.close();
+	}
+
+	Set<String> dumpDeprecated(SourceTaxonomy idsource, String filename) throws IOException {
+		PrintStream out = Taxonomy.openw(filename);
+		out.println("id\tname\tsourceinfo\treason\twitness\treplacement");
+
+		for (String id : idsource.idIndex.keySet()) {
+			Node node = idsource.idIndex.get(id);
+			if (node.mapped != null) continue;
+			String reason = "?";
+			String witness = "";
+			String replacement = "*";
+			Answer answer = node.deprecationReason;
+			if (!node.id.equals(id)) {
+				reason = "smushed";
+			} else if (answer != null) {
+				// assert answer.x == node
+				reason = answer.reason;
+				if (answer.y != null && answer.value > Answer.DUNNO)
+					replacement = answer.y.id;
+				if (answer.witness != null)
+					witness = answer.witness;
+			}
+			out.println(id + "\t" +
+						node.name + "\t" +
+						node.getSourceIdsString() + "\t" +
+						reason + "\t" +
+						witness + "\t" +
+						replacement);
+		}
+		out.close();
+
+        Set<String> scrutinize = new HashSet<String>();
+        for (String name : idsource.nameIndex.keySet())
+            for (Node node : idsource.nameIndex.get(name))
+                if (node.mapped == null) {
+                    scrutinize.add(name);
+                    break;
+                }
+        return scrutinize;
+	}
+
+	// Called on union taxonomy
+    // scrutinize is a set of names of especial interest (e.g. deprecated)
+
+	void dumpLog(String filename, Set<String> scrutinize) throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
 
 		// Strongylidae	nem:3600	yes	same-parent/direct	3600	Strongyloidea	false
@@ -2057,14 +2147,27 @@ class UnionTaxonomy extends Taxonomy {
 					"reason\t" +
 					"witness");
 
-		for (List<Answer> answers : this.logs.values()) {
-			boolean interestingp = false;
-			for (Answer answer : answers)
-				if (answer.isInteresting()) {interestingp = true; break;}
-			if (interestingp)
-				for (Answer answer : answers)
-					out.println(answer.dump());
-		}
+        // this.logs is indexed by taxon name
+        if (false)
+            for (List<Answer> answers : this.logs.values()) {
+                boolean interestingp = false;
+                for (Answer answer : answers)
+                    if (answer.isInteresting()) {interestingp = true; break;}
+                if (interestingp)
+                    for (Answer answer : answers)
+                        out.println(answer.dump());
+            }
+        else
+            for (String name : scrutinize) {
+                List<Answer> answers = this.logs.get(name);
+                if (answers != null)
+                    for (Answer answer : answers)
+                        out.println(answer.dump());
+                else
+                    // usually a silly synonym
+                    // System.out.format("No logging info for name %s\n", name);
+                    ;
+            }
 
 		if (false) {
 			Set<String> seen = new HashSet<String>();
@@ -3078,14 +3181,21 @@ class Node {
 		}
 	};
 
+    // Duplicate single node
+
+    Node dup(Taxonomy tax) {
+		Node dup = new Node(tax);
+		dup.setName(this.name);
+		dup.setId(this.id);
+		dup.rank = this.rank;
+		dup.sourceIds = this.sourceIds;
+        return dup;
+    }
+
 	// Copy subtree
 
     Node select(Taxonomy tax) {
-		Node sam = new Node(tax);
-		sam.setName(this.name);
-		sam.setId(this.id);
-		sam.rank = this.rank;
-		sam.sourceIds = this.sourceIds;
+		Node sam = this.dup(tax);
 		this.mapped = sam;
 		if (this.children != null)
 			for (Node child : this.children) {
@@ -3100,13 +3210,7 @@ class Node {
 
     Node sample(int k, Taxonomy tax) {
 		if (k <= 0) return null;
-
-		// Always include this node ?
-		Node sam = new Node(tax);
-		sam.setName(this.name);
-		sam.setId(this.id);
-		sam.rank = this.rank;
-		sam.sourceIds = this.sourceIds;
+		Node sam = this.dup(tax);
 
 		// Assume k <= n.
 		// We want to select k descendents out of the n that are available.

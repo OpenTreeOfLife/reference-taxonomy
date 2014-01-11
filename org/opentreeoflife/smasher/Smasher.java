@@ -70,6 +70,14 @@ public class Smasher {
 						jscheme.REPL.main(jargs);
 					}
 
+					else if (argv[i].equals("--deforest")) {
+						tax.deforestate();
+					}
+
+					else if (argv[i].equals("--chop")) {
+						tax = tax.chop(300, 3000);
+					}
+
 					else if (argv[i].equals("--ids")) {
 						// To smush or not to smush?
 						UnionTaxonomy union = tax.promote(); tax = union;
@@ -593,10 +601,15 @@ abstract class Taxonomy implements Iterable<Node> {
             System.out.format("| %s names with diacritics\n", uncritical.size());
         // 2. When a node's name is missing diacritics but could have them,
         // add them by clobbering the name.  This may create sibling homonyms.
+		int ncc = 0;
 		for (final Node node : this.idIndex.values()) {
-            String with = uncritical.get(node.name);
-            if (with != null)
-                node.setName(with);
+            String probe = uncritical.get(node.name);
+            if (probe != null) {
+                // node.name is without diacritics, probe.name is with
+				if (++ncc < 10)
+					System.err.format("Changing name: %s -> %s\n", node.name, probe);
+                node.setName(probe);
+			}
         }
         // 3. Add non-diacritic name as synonym of with-diacritic node
         // See below, following smushing!
@@ -693,7 +706,7 @@ abstract class Taxonomy implements Iterable<Node> {
 		for (Node node : nodes) {
 			if (node == null)
 				System.err.println("null in nodes list!?" );
-			else
+			else if (!node.prunedp)
 				dumpNode(node, out, true);
 		}
 		out.close();
@@ -830,7 +843,7 @@ abstract class Taxonomy implements Iterable<Node> {
 		out.println("name\t|\tuid\t|\ttype\t|\tuniqname\t|\t");
 		for (String name : this.nameIndex.keySet())
 			for (Node node : this.nameIndex.get(name))
-				if (!node.name.equals(name)) {
+				if (!node.prunedp && !node.name.equals(name)) {
 					String uniq = node.uniqueName();
 					if (uniq.length() == 0) uniq = node.name;
 					out.println(name + "\t|\t" +
@@ -986,15 +999,14 @@ abstract class Taxonomy implements Iterable<Node> {
 								child.properFlags |= SIBLING_HIGHER; //e.g. genus with family sibling
 						}
 					}
-
-					// Extra informational check.  See if ranks are inverted.
-					if (myrank >= 0 && myrank > highrank)
-						// The myrank == highrank case is weird too; there are about 200 of those.
-						System.err.println("** Ranks out of order: " +
-										   node + " " + node.rank + " has child " +
-										   highchild + " " + highchild.rank);
 				}
 			}
+			// Extra informational check.  See if ranks are inverted.
+			if (highrank >= 0 && myrank > highrank)
+				// The myrank == highrank case is weird too; there are about 200 of those.
+				System.err.println("** Ranks out of order: " +
+								   node + " " + node.rank + " has child " +
+								   highchild + " " + highchild.rank);
 		}
 		return myrank;
 	}
@@ -1287,6 +1299,68 @@ abstract class Taxonomy implements Iterable<Node> {
 		}
 	}
 
+    Taxonomy chop(int m, int n) throws java.io.IOException {
+        Taxonomy tax = new SourceTaxonomy();
+        List<Node> cuttings = new ArrayList<Node>();
+        Node root = null;
+        for (Node r : this.roots) root = r;    //bad kludge. uniroot assumed
+        Node newroot = chop(root, m, n, cuttings, tax);
+        tax.roots.add(newroot);
+        System.err.format("Cuttings: %s Residue: %s\n", cuttings.size(), newroot.size());
+
+        // Temp kludge ... ought to be able to specify the file name
+        String outprefix = "chop/";
+        new File(outprefix).mkdirs();
+        for (Node cutting : cuttings) {
+            PrintStream out = 
+                openw(outprefix + cutting.name.replaceAll(" ", "_") + ".tre");
+            StringBuffer buf = new StringBuffer();
+			cutting.appendNewickTo(buf);
+            out.print(buf.toString());
+            out.close();
+        }
+        return tax;
+    }
+
+    // List of nodes for which N/3 < size <= N < parent size
+
+    Node chop(Node node, int m, int n, List<Node> chopped, Taxonomy tax) {
+        int c = node.count();
+        Node newnode = node.dup(tax);
+        if (m < c && c <= n) {
+            newnode.setName(newnode.name + " (" + node.size() + ")");
+            chopped.add(node);
+        } else if (node.children != null)
+            for (Node child : node.children) {
+                Node newchild = chop(child, m, n, chopped, tax);
+                newnode.addChild(newchild);
+            }
+        return newnode;
+    }
+
+	void deforestate() {
+		List<Node> rootsList = new ArrayList<Node>(this.roots);
+		if (rootsList.size() <= 1) return;
+		Collections.sort(rootsList, new Comparator<Node>() {
+				public int compare(Node x, Node y) {
+					return y.count() - x.count();
+				}
+			});
+		Node biggest = rootsList.get(0);
+		int count1 = biggest.count();
+		int count2 = rootsList.get(1).count();
+		if (rootsList.size() >= 2 && count1 < count2*1000)
+			System.err.format("*** Nontrivial forest: biggest is %s, 2nd biggest is %s\n", count1, count2);
+		else
+			System.out.format("| Deforesting: keeping biggest (%s), 2nd biggest is %s\n", count1, count2);
+		for (Node root : rootsList)
+			if (!root.equals(biggest))
+				root.prune();
+		this.roots = new HashSet<Node>(1);
+		this.roots.add(biggest);
+		System.out.format("| Removed %s smaller trees\n", rootsList.size()-1);
+	}
+
 	// -------------------- Newick stuff --------------------
 	// Render this taxonomy as a Newick string.
 	// This feature is very primitive and only for debugging purposes!
@@ -1423,7 +1497,6 @@ abstract class Taxonomy implements Iterable<Node> {
                                                      "UTF-8"));
     }
 
-
 }  // End of class Taxonomy
 
 class SourceTaxonomy extends Taxonomy {
@@ -1500,7 +1573,8 @@ class SourceTaxonomy extends Taxonomy {
 				if (unodes != null) {
 					++incommon;
 					List<Node> nodes = this.nameIndex.get(name);
-					if (((nodes.size() > 1 || unodes.size() > 1) && (++homcount % 1000 == 0)) || painful)
+					if (false &&
+						(((nodes.size() > 1 || unodes.size() > 1) && (++homcount % 1000 == 0)) || painful))
 						System.out.format("| Mapping: %s %s*%s (name #%s)\n", name, nodes.size(), unodes.size(), incommon);
 					new Matrix(name, nodes, unodes).run(criteria);
 				}
@@ -2153,6 +2227,7 @@ class Node {
 	List<QualifiedId> sourceIds = null;
 	Answer deprecationReason = null;
 	Answer blockedp = null;
+	boolean prunedp = false;
 
 	int properFlags = 0, inheritedFlags = 0, rankAsInt = 0;
 
@@ -2232,7 +2307,6 @@ class Node {
 
 	void setName(String name) {
 		if (this.name != null) {
-			System.err.println("Changing name: " + this.name + " -> " + name);
             if (name.equals(this.name)) return;
             List<Node> nodes = this.taxonomy.nameIndex.get(this.name);
             nodes.remove(name);
@@ -3071,11 +3145,16 @@ class Node {
 			this.taxonomy.nameIndex.remove(this.name);
 		if (this.id != null)
 			this.taxonomy.idIndex.remove(this.id);
+		this.prunedp = true;
 	}
 
 	String uniqueName() {
 		List<Node> nodes = this.taxonomy.lookup(this.name);
-		if (nodes == null) { System.err.println("!? Confused " + this.name); return "?"; }
+		if (nodes == null) {
+			System.err.format("!? Confused: %s in %s\n", this.name,
+							  this.parent == null ? "(roots)" : this.parent.name);
+			return "?";
+		}
 		for (Node other : nodes)
 			if (other != this && other.name.equals(this.name)) {
 				Node i = this.informative();
@@ -3099,14 +3178,21 @@ class Node {
 		}
 	};
 
+    // Duplicate single node
+
+    Node dup(Taxonomy tax) {
+		Node dup = new Node(tax);
+		dup.setName(this.name);
+		dup.setId(this.id);
+		dup.rank = this.rank;
+		dup.sourceIds = this.sourceIds;
+        return dup;
+    }
+
 	// Copy subtree
 
     Node select(Taxonomy tax) {
-		Node sam = new Node(tax);
-		sam.setName(this.name);
-		sam.setId(this.id);
-		sam.rank = this.rank;
-		sam.sourceIds = this.sourceIds;
+		Node sam = this.dup(tax);
 		this.mapped = sam;
 		if (this.children != null)
 			for (Node child : this.children) {
@@ -3121,13 +3207,7 @@ class Node {
 
     Node sample(int k, Taxonomy tax) {
 		if (k <= 0) return null;
-
-		// Always include this node ?
-		Node sam = new Node(tax);
-		sam.setName(this.name);
-		sam.setId(this.id);
-		sam.rank = this.rank;
-		sam.sourceIds = this.sourceIds;
+		Node sam = this.dup(tax);
 
 		// Assume k <= n.
 		// We want to select k descendents out of the n that are available.
@@ -3173,7 +3253,8 @@ class Node {
 	}
 }
 
-// Consider all possible assignments
+// For each source node, consider all possible union nodes it might map to
+// TBD: Exclude nodes that have 'prunedp' flag set
 
 class Matrix {
 

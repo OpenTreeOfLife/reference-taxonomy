@@ -163,6 +163,7 @@ synonyms = {}
 ncbi_silva_parent = {}
 ncbi_sample_accession = {}
 ncbi_name = {}
+ncbi_to_accession_unique = {}
 
 def processSilva(pathdict, indir, outdir):
 	rank = 'no rank' #for now
@@ -256,16 +257,43 @@ def processSilva(pathdict, indir, outdir):
 						ncbi_silva_parent[ncbi] = parentid
 						ncbi_sample_accession[ncbi] = accession
 						ncbi_name[ncbi] = path[len(path)-1]
+					if ncbi in ncbi_to_accession_unique:
+						if ncbi_to_accession_unique[ncbi] != ncbi:
+							ncbi_to_accession_unique[ncbi] = None
+					else:
+						ncbi_to_accession_unique[ncbi] = accession
 			else:
 				missing.append(accession)
 
 	print "Higher taxa: %d"%internal
 	print "Tips: %d"%tips
-	print "Accessions: %d"%len(acc_seen)
+	print "Accessions: %d  Mapped to NCBI: %d"%(len(acc_seen), len(accession_to_ncbi))
 	print "Tip to NCBI taxon mappings: %d successful, %d blocked, %d missing"%(acc_success, blocked, len(missing))
+
+	n2aunique = 0
+	for ncbi in ncbi_to_accession_unique:
+		if ncbi_to_accession_unique[ncbi] != None:
+			n2aunique += 1
+	print "NCBI taxa with unique accessions: %s"%(n2aunique)
+
+	name_to_ncbi_unique = {}
+	for ncbi in ncbi_name:
+		name = ncbi_name[ncbi]
+		if name in name_to_ncbi_unique:
+			if name_to_ncbi_unique[name] != ncbi:
+				name_to_ncbi_unique[name] = None
+		else:
+			name_to_ncbi_unique[name] = ncbi
+			
+	nameful = len(ncbi_name)
+	uniquely = len(name_to_ncbi_unique)
+	print "NCBI taxa: %d  Unambiguous: %d  Ambiguous: %d"%(nameful, uniquely, nameful - uniquely)
 
 	paraphyletic = []
 	ncbi_count = 0
+	case1 = 0
+	case2 = 0
+	case3 = 0
 
 	# ncbi_silva_parent maps ncbi id to id of parent in silva
 
@@ -276,16 +304,27 @@ def processSilva(pathdict, indir, outdir):
 			rank = 'no rank'    # rank will be set from NCBI
 			qid = "ncbi:%s" % ncbi
 			synonyms[qid] = taxid
+			name = ncbi_name[ncbi]
 			outfile.write("%s\t|\t%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n" %
-						  (taxid, parentid, ncbi_name[ncbi], rank, qid))
+						  (taxid, parentid, name, rank, qid))
 			ncbi_count = ncbi_count + 1
 			# This isn't useful, is it?
 			#longname = "%s %s"%(taxname, qid)
 			#synonyms[longname] = taxid
+			if ncbi in ncbi_to_accession_unique and ncbi_to_accession_unique[ncbi] != None:
+				if name in name_to_ncbi_unique and name_to_ncbi_unique[name] != None:
+					case1 += 1
+				else:
+					case2 += 1
+			else:
+				case3 += 1
 		else:
 			paraphyletic.append(ncbi)
-	print "NCBI taxa incorporated: %d"%ncbi_count
-	print "Paraphyletic NCBI taxa: %d"%len(paraphyletic)    #1536
+	print "NCBI taxa incorporated: %d"%(ncbi_count)
+	print "Paraphyletic NCBI taxa: %d"%(len(paraphyletic))    #e.g. 1536
+	print "Taxa with unambiguous name and unique accession: %s"%(case1)
+	print "Taxa with ambiguous name and unique accession: %s"%(case2)
+	print "Taxa with multiple accessions: %s"%(case3)
 
 	outfile.close()
 	

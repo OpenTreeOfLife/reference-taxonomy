@@ -1197,7 +1197,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 		return buf.toString();
 	}
 
-	void dumpNewick(String outfile) throws java.io.IOException {
+	public void dumpNewick(String outfile) throws java.io.IOException {
 		PrintStream out = openw(outfile);
 		out.print(this.toNewick());
 		out.close();
@@ -1320,33 +1320,40 @@ public abstract class Taxonomy implements Iterable<Node> {
 
 	// Apply a set of edits to the union taxonomy
 
-	void edit(String dirname) throws IOException {
+	public void edit(String dirname) throws IOException {
 		File[] editfiles = new File(dirname).listFiles();
         if (editfiles == null) {
             System.err.println("No edit files in " + dirname);
             return;
         }
-		for (File editfile : editfiles) {
+		for (File editfile : editfiles)
 			if (!editfile.getName().endsWith("~")) {
-				System.out.println("--- Applying edits from " + editfile + " ---");
-				BufferedReader br = Taxonomy.fileReader(editfile);
-				String str;
-				while ((str = br.readLine()) != null) {
-					if (!(str.length()==0) && !str.startsWith("#")) {
-						String[] row = tabPattern.split(str);
-						if (row.length > 0 &&
-							!row[0].equals("command")) { // header row!
-							if (row.length != 6)
-								System.err.println("Ill-formed command: " + str);
-							else
-								applyOneEdit(row);
-						}
-					}
-				}
-				br.close();
-			}
-		}
+                applyEdits(editfile);
+            }
 	}
+
+    // Apply edits from one file
+    public void applyEdits(String editfile) throws IOException {
+        applyEdits(new File(editfile));
+    }
+    public void applyEdits(File editfile) throws IOException {
+        System.out.println("--- Applying edits from " + editfile + " ---");
+        BufferedReader br = Taxonomy.fileReader(editfile);
+        String str;
+        while ((str = br.readLine()) != null) {
+            if (!(str.length()==0) && !str.startsWith("#")) {
+                String[] row = tabPattern.split(str);
+                if (row.length > 0 &&
+                    !row[0].equals("command")) { // header row!
+                    if (row.length != 6)
+                        System.err.println("Ill-formed command: " + str);
+                    else
+                        applyOneEdit(row);
+                }
+            }
+        }
+        br.close();
+    }
 
     //      command	name	rank	parent	context	sourceInfo
 	// E.g. add	Acanthotrema frischii	species	Acanthotrema	Fungi	IF:516851
@@ -1456,6 +1463,24 @@ public abstract class Taxonomy implements Iterable<Node> {
 		}
 		return fnodes.size() == 0 ? null : fnodes.get(0);
 	}
+
+    // Convenience method for jython scripting
+    public static UnionTaxonomy unite(List<Taxonomy> taxos) {
+        UnionTaxonomy union = new UnionTaxonomy();
+        for (Taxonomy tax: taxos)
+            if (tax instanceof SourceTaxonomy)
+                union.mergeIn((SourceTaxonomy)tax);
+            else
+                System.err.println("** Expected a source taxonomy: " + tax);
+        return union;
+    }
+
+    // Convenience method for jython scripting
+    // Overridden in class UnionTaxonomy
+	public void assignIds(SourceTaxonomy idsource) {
+        ((UnionTaxonomy)this).assignIds(idsource);
+    }
+
 
     // Utilities
 
@@ -1755,7 +1780,7 @@ class UnionTaxonomy extends Taxonomy {
 
 	// Assign ids, harvested from idsource and new ones as needed, to nodes in union.
 
-	void assignIds(SourceTaxonomy idsource) {
+	public void assignIds(SourceTaxonomy idsource) {
 		this.idsource = idsource;
 		// idsource.tag = "ids";
 		idsource.mapInto(this, Criterion.idCriteria);

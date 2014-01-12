@@ -11,10 +11,7 @@ package org.opentreeoflife.smasher;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,8 +20,11 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.io.PrintStream;
 import java.io.File;
+import org.python.util.InteractiveConsole;
 
 public class Smasher {
+
+    static InteractiveConsole j = null;
 
 	public static void main(String argv[]) throws Exception {
 
@@ -44,11 +44,8 @@ public class Smasher {
 					if (argv[i].equals("--version"))
 						System.out.println("This is smasher, version 000.00.0.000");
 
-					if (argv[i].equals("--jython")) {
-						String[] jargs = {};
-                        System.out.println("Consider doing: from org.opentreeoflife.smasher import Taxonomy");
-						org.python.util.jython.main(jargs);
-					}
+					if (argv[i].equals("--jython"))
+                        jython(argv[++i]);
 
 					else if (argv[i].equals("--jscheme")) {
 						String[] jargs = {};
@@ -148,11 +145,21 @@ public class Smasher {
 					}
 				}
 			}
-		}
+		} else
+            jython("-");
 	}
 
-	static void test() {
+    static void jython(String source) {
+        if (j == null) j = new InteractiveConsole();
+        System.out.println("Consider doing: from org.opentreeoflife.smasher import Taxonomy");
+        // was: String[] jargs = {}; org.python.util.jython.main(jargs);
+        if (source.equals("-"))
+            j.interact();
+        else
+            j.execfile(source);
+    }
 
+	static void test() {
 		Taxonomy tax = SourceTaxonomy.parseNewick("(a,b,(e,f)c)d");
 		for (Node node : tax)
 			System.out.println(node);

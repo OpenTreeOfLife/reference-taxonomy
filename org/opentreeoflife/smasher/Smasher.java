@@ -20,11 +20,12 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.io.PrintStream;
 import java.io.File;
+import org.python.util.PythonInterpreter;
+import org.python.util.InteractiveInterpreter;
 import org.python.util.InteractiveConsole;
+import org.python.util.ReadlineConsole;
 
 public class Smasher {
-
-    static InteractiveConsole j = null;
 
 	public static void main(String argv[]) throws Exception {
 
@@ -150,13 +151,15 @@ public class Smasher {
 	}
 
     static void jython(String source) {
-        if (j == null) j = new InteractiveConsole();
-        System.out.println("Consider doing: from org.opentreeoflife.smasher import Taxonomy");
-        // was: String[] jargs = {}; org.python.util.jython.main(jargs);
-        if (source.equals("-"))
-            j.interact();
-        else
+        if (source.equals("-")) {
+            System.out.println("Consider doing: from org.opentreeoflife.smasher import Taxonomy");
+            // This doesn't work
+            // InteractiveInterpreter j = new InteractiveInterpreter(); j.interact();
+            String[] jargs = {}; org.python.util.jython.main(jargs);
+        } else {
+            PythonInterpreter j = new PythonInterpreter();
             j.execfile(source);
+        }
     }
 
 	static void test() {

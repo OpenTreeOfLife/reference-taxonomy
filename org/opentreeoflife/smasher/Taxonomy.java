@@ -185,7 +185,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 		int sibhoms = 0;
 		int cousinhoms = 0;
 		for (String name : nameIndex.keySet()) {
-			List<Node> nodes = nameIndex.get(name);
+			List<Node> nodes = this.nameIndex.get(name);
 			if (nodes.size() > 1) {
 				boolean homsp = false;
 				boolean sibhomsp = false;
@@ -1366,17 +1366,26 @@ public abstract class Taxonomy implements Iterable<Node> {
 		String contextName = row[4];
 		String sourceInfo = row[5];
 
-		Node parent = filterByContext(parentName, contextName);
-		if (parent == null) {
+		List<Node> parents = filterByContext(parentName, contextName);
+		if (parents == null) {
 			System.err.println("(add) Parent name " + parentName
-							   + " not found in context " + contextName);
+							   + " missing in context " + contextName);
 			return;
 		}
+		if (parents.size() > 1)
+			System.err.println("? Ambiguous parent name: " + parentName);
+        Node parent = parents.get(0);
 
 		if (!parent.name.equals(parentName))
 			System.err.println("(add) Warning: parent taxon name is a synonym: " + parentName);
 
-		Node existing = filterByContext(name, contextName);
+		List<Node> existings = filterByContext(name, contextName);
+        Node existing = null;
+		if (existings != null) {
+            if (existings.size() > 1)
+                System.err.println("? Ambiguous taxon name: " + name);
+            existing = existings.get(0);
+        }
 
 		if (command.equals("add")) {
 			if (existing != null) {
@@ -1444,7 +1453,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 			System.err.println("Unrecognized edit command: " + command);
 	}
 
-	Node filterByContext(String taxonName, String contextName) {
+	List<Node> filterByContext(String taxonName, String contextName) {
 		List<Node> nodes = this.lookup(taxonName);
 		if (nodes == null) return null;
 		List<Node> fnodes = new ArrayList<Node>(1);
@@ -1457,14 +1466,15 @@ public abstract class Taxonomy implements Iterable<Node> {
 					break;
 				}
 		}
-		if (fnodes.size() > 1) {
-			System.err.println("? Ambiguous taxon name: " + taxonName);
-			return fnodes.get(0);
-		}
-		return fnodes.size() == 0 ? null : fnodes.get(0);
+		return fnodes.size() == 0 ? null : fnodes;
 	}
 
-    // Convenience method for jython scripting
+    // ----- Convenience methods for jython scripting -----
+
+    public static Taxonomy newTaxonomy() {
+        return new UnionTaxonomy();
+    }
+
     public static UnionTaxonomy unite(List<Taxonomy> taxos) {
         UnionTaxonomy union = new UnionTaxonomy();
         for (Taxonomy tax: taxos)
@@ -1475,14 +1485,79 @@ public abstract class Taxonomy implements Iterable<Node> {
         return union;
     }
 
-    // Convenience method for jython scripting
+    public void absorb(SourceTaxonomy tax, String tag) {
+        tax.tag = tag;
+        ((UnionTaxonomy)this).mergeIn(tax);
+    }
+
     // Overridden in class UnionTaxonomy
 	public void assignIds(SourceTaxonomy idsource) {
         ((UnionTaxonomy)this).assignIds(idsource);
     }
 
+    // Look up a taxon by name.  Must be unique in the taxonomy.
+    public Node taxon(String name) {
+        Node node = this.unique(name);
+        if (node == null)
+            System.err.format("Missing or ambiguous taxon: %s\n", name);
+        return node;
+    }
 
-    // Utilities
+    public Node taxon(String name, String context) {
+        List<Node> nodes = filterByContext(name, context);
+        if (nodes == null) {
+            System.err.format("Missing taxon: %s in context %s\n", name, context);
+            return null;
+        } else if (nodes.size() > 1) {
+            System.err.format("Ambiguous taxon: %s in context %s\n", name, context);
+            return null;
+        }
+        return nodes.get(0);
+    }
+
+    public void same(Node node1, Node node2) {
+        Node unode, snode;
+        if (node1.taxonomy instanceof UnionTaxonomy) {
+            unode = node1;
+            snode = node2;
+        } else if (node2.taxonomy instanceof UnionTaxonomy) {
+            unode = node2;
+            snode = node1;
+        } else if (node1.mapped != null) {
+            unode = node1.mapped;
+            snode = node2;
+        } else if (node2.mapped != null) {
+            unode = node2.mapped;
+            snode = node1;
+        } else {
+            System.err.format("** One of the two nodes must be already mapped to the union taxonomy: %s %s\n",
+                              node1, node2);
+            return;
+        }
+        if (snode.mapped == unode) return;    // Already equated
+        if (!(snode.taxonomy instanceof SourceTaxonomy)) {
+            System.err.format("** One of the two nodes must come from a source taxonomy: %s %s\n", unode, snode);
+            return;
+        }
+        if (unode.comapped != null) {    // see reset() - should never happen
+            System.err.format("** The union node already has something mapped to it: %s\n", unode);
+            return;
+        }
+        if (snode.mapped != null) {
+            System.err.format("** The source is already mapped: %s\n", snode);
+            return;
+        }
+        snode.unifyWith(unode);
+    }
+
+    public void describe() {
+        System.out.format("%s ids, %s roots, %s names\n",
+                          this.idIndex.size(),
+                          this.roots.size(),
+                          this.nameIndex.size());
+    }
+
+    // ----- Utilities -----
 
     static BufferedReader fileReader(File filename) throws IOException {
         return
@@ -1518,13 +1593,7 @@ class SourceTaxonomy extends Taxonomy {
 
 			int beforeCount = union.nameIndex.size();
 
-			for (Node root: union.roots) {
-				// Clear out gumminess from previous merges
-				root.reset();
-
-				// Prepare for subsumption checks
-				root.assignBrackets();
-			}
+            // this.reset();
 
 			this.pin(union);
 
@@ -1771,10 +1840,21 @@ class UnionTaxonomy extends Taxonomy {
 		return this;
 	}
 
+    void reset() {
+        this.nextSequenceNumber = 0;
+        for (Node root: this.roots) {
+            // Clear out gumminess from previous merges
+            root.reset();
+            // Prepare for subsumption checks
+            root.assignBrackets();
+        }
+    }
+
 	void mergeIn(SourceTaxonomy source) {
 		source.mapInto(this, Criterion.criteria);
 		source.augment(this);
 		source.copySynonyms(this);
+        this.reset();           // ??? see Taxonomy.same()
 		Node.windyp = true; //kludge
 	}
 
@@ -2106,7 +2186,7 @@ class Node {
 
 	// Clear out temporary stuff from union nodes
 	void reset() {
-		this.mapped = null;    // always null anyhow
+		// this.mapped = null;    // always null anyhow
 		this.comapped = null;
 		this.division = null;
 		this.novelp = false;

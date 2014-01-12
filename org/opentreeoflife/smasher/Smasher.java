@@ -46,6 +46,7 @@ public class Smasher {
 
 					if (argv[i].equals("--jython")) {
 						String[] jargs = {};
+                        System.out.println("Consider doing: from org.opentreeoflife.smasher import Taxonomy");
 						org.python.util.jython.main(jargs);
 					}
 

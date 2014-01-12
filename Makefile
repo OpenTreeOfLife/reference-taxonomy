@@ -39,6 +39,7 @@ all: ott
 compile: $(CLASS)
 
 $(CLASS): org/opentreeoflife/smasher/Smasher.java \
+	  org/opentreeoflife/smasher/Taxonomy.java \
 	  lib/jscheme.jar lib/json-simple-1.1.1.jar lib/jython-standalone-2.5.3.jar
 	javac -g $(CP) org/opentreeoflife/smasher/*.java
 

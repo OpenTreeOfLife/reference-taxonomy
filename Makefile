@@ -263,16 +263,26 @@ t/tax/gbif_aster/taxonomy.tsv:
 	@mkdir -p `dirname $@`
 	$(BIG_JAVA) $(SMASH) tax/gbif/ --select2 $(TAXON) --out t/tax/gbif_aster/
 
-t/tax/aster/taxonomy.tsv: $(CLASS) \
-			  t/tax/ncbi_aster/taxonomy.tsv \
-			  t/tax/gbif_aster/taxonomy.tsv \
-			  t/tax/prev_aster/taxonomy.tsv \
-			  t/edits/edits.tsv
+# Previously:
+#t/tax/aster/taxonomy.tsv: $(CLASS) \
+#                          t/tax/ncbi_aster/taxonomy.tsv \
+#                          t/tax/gbif_aster/taxonomy.tsv \
+#                          t/tax/prev_aster/taxonomy.tsv \
+#                          t/edits/edits.tsv
+#        @mkdir -p `dirname $@`
+#        $(JAVA) $(SMASH) t/tax/ncbi_aster/ t/tax/gbif_aster/ \
+#             --edits t/edits/ \
+#             --ids t/tax/prev_aster/ \
+#             --out t/tax/aster/
+
+# New:
+t/tax/aster/taxonomy.tsv: $(CLASS) t/aster.py \
+                          t/tax/ncbi_aster/taxonomy.tsv \
+                          t/tax/gbif_aster/taxonomy.tsv \
+                          t/tax/prev_aster/taxonomy.tsv \
+                          t/edits/edits.tsv
 	@mkdir -p `dirname $@`
-	$(JAVA) $(SMASH) t/tax/ncbi_aster/ t/tax/gbif_aster/ \
-	     --edits t/edits/ \
-	     --ids t/tax/prev_aster/ \
-	     --out t/tax/aster/
+	$(JAVA) $(SMASH) --jython t/aster.py
 
 test: aster
 aster: t/tax/aster/taxonomy.tsv

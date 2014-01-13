@@ -755,12 +755,14 @@ public abstract class Taxonomy implements Iterable<Node> {
     }
 
 	void analyze() {
-        // NCBI only
-		for (Node root : this.roots)
-			analyzeOTUs(root, 0);	// mutates the tree
-        // GBIF and IF only
-		for (Node root : this.roots)
-			analyzeRankConflicts(root, true);
+		if (false) {
+			// NCBI only
+			for (Node root : this.roots)
+				analyzeOTUs(root, 0);	// mutates the tree
+			// GBIF and IF only
+			for (Node root : this.roots)
+				analyzeRankConflicts(root, true);
+		}
         // All
 		for (Node root : this.roots)
 			analyzeRankConflicts(root, false);
@@ -893,17 +895,20 @@ public abstract class Taxonomy implements Iterable<Node> {
 		node.inheritedFlags |= inheritedFlags;
 		boolean elidep = false;
 
-		if (unclassifiedRegex.matcher(node.name).find()) {// Rule 3+5
-			node.properFlags |= UNCLASSIFIED;
-			elidep = true;
-		}
-		if (environmentalRegex.matcher(node.name).find()) {// Rule 3+5
-			node.properFlags |= ENVIRONMENTAL;
-			elidep = true;
-		}
-		if (incertae_sedisRegex.matcher(node.name).find()) {// Rule 3+5
-			node.properFlags |= INCERTAE_SEDIS;
-			elidep = true;
+		if (node.children != null) {
+
+			if (unclassifiedRegex.matcher(node.name).find()) {// Rule 3+5
+				node.properFlags |= UNCLASSIFIED;
+				elidep = true;
+			}
+			if (environmentalRegex.matcher(node.name).find()) {// Rule 3+5
+				node.properFlags |= ENVIRONMENTAL;
+				elidep = true;
+			}
+			if (incertae_sedisRegex.matcher(node.name).find()) {// Rule 3+5
+				node.properFlags |= INCERTAE_SEDIS;
+				elidep = true;
+			}
 		}
 
 		int bequest = inheritedFlags | node.properFlags;		// What the children inherit
@@ -2387,7 +2392,12 @@ class Node {
 
 	// Homonym discounting synonyms
 	boolean isHomonym() {
-		for (Node alt : this.taxonomy.nameIndex.get(this.name))
+		List<Node> alts = this.taxonomy.nameIndex.get(this.name);
+		if (alts == null) {
+			System.err.println("Name not indexed !? " + this.name);
+			return false;
+		}
+		for (Node alt : alts)
 			if (alt != this && alt.name.equals(this.name))
 				return true;
 		return false;
@@ -2433,7 +2443,7 @@ class Node {
 			//unode.addComment(this.comment);
 			this.comment = null;
 		}
-        unode.properFlags |= this.properFlags;
+        unode.properFlags &= this.properFlags;
 	}
 
 	// Recursive descent over source taxonomy

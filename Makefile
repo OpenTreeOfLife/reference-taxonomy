@@ -5,7 +5,7 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.4.draft6
+WHICH=2.4.draft7
 PREV_WHICH=2.3
 
 #  $^ = all prerequisites
@@ -73,7 +73,7 @@ tax/ott/log.tsv: $(CLASS) feed/ott/ott.py $(SILVA)/taxonomy.tsv \
 		    feed/ott/edits/ott_edits.tsv \
 		    tax/prev_ott/taxonomy.tsv
 	@mkdir -p tax/ott
-	$(BIG_JAVA) --jython feed/ott/ott.py
+	$(BIG_JAVA) $(SMASH) --jython feed/ott/ott.py
 	echo $(WHICH) >tax/ott/version.txt
 
 tax/if/foo: tax/if/taxonomy.tsv tax/if/synonyms.tsv

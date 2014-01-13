@@ -58,13 +58,22 @@ OTT_ARGS=$(SMASH) $(SILVA)/ tax/713/ tax/if/ $(NCBI)/ $(GBIF)/ \
       --out tax/ott/
 
 ott: tax/ott/log.tsv
-tax/ott/log.tsv: $(CLASS) $(SILVA)/taxonomy.tsv \
+ztax/ott/log.tsv: $(CLASS) $(SILVA)/taxonomy.tsv \
 		    tax/if/taxonomy.tsv tax/713/taxonomy.tsv \
 		    $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv \
 		    feed/ott/edits/ott_edits.tsv \
 		    tax/prev_ott/taxonomy.tsv
 	@mkdir -p tax/ott
 	$(BIG_JAVA) $(OTT_ARGS)
+	echo $(WHICH) >tax/ott/version.txt
+
+tax/ott/log.tsv: $(CLASS) feed/ott/ott.py $(SILVA)/taxonomy.tsv \
+		    tax/if/taxonomy.tsv tax/713/taxonomy.tsv \
+		    $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv \
+		    feed/ott/edits/ott_edits.tsv \
+		    tax/prev_ott/taxonomy.tsv
+	@mkdir -p tax/ott
+	$(BIG_JAVA) --jython feed/ott/ott.py
 	echo $(WHICH) >tax/ott/version.txt
 
 tax/if/foo: tax/if/taxonomy.tsv tax/if/synonyms.tsv

@@ -742,11 +742,34 @@ public abstract class Taxonomy implements Iterable<Node> {
 	   incertae sedis
 	*/
 
+    // NCBI only (not SILVA)
+    public void analyzeOTUs() {
+		for (Node root : this.roots)
+			analyzeOTUs(root, 0);	// mutates the tree
+    }
+
+    // GBIF and IF only
+    public void analyzeMajorRankConflicts() {
+		for (Node root : this.roots)
+			analyzeRankConflicts(root, true);
+    }
+
 	void analyze() {
+        // NCBI only
 		for (Node root : this.roots)
-			analyzeRankConflicts(root);
+			analyzeOTUs(root, 0);	// mutates the tree
+        // GBIF and IF only
 		for (Node root : this.roots)
-			analyze(root, 0);	// mutates the tree
+			analyzeRankConflicts(root, true);
+        // All
+		for (Node root : this.roots)
+			analyzeRankConflicts(root, false);
+        // All
+		for (Node root : this.roots)
+			analyzeContainers(root, 0);
+        // All
+		for (Node root : this.roots)
+            analyzeBarren(root);
 	}
 
 	static final int NOT_OTU             =    1;
@@ -758,17 +781,17 @@ public abstract class Taxonomy implements Iterable<Node> {
 	static final int SPECIFIC     	     =   64;
 	static final int EDITED     	     =  128;
 	static final int SIBLING_LOWER       =  512;
-	static final int SIBLING_HIGHER      = 1024;
-	static final int MAJOR_RANK_CONFLICT = 2048;
-	static final int TATTERED 			 = 4096;
-	static final int ANYSPECIES			 = 8192;
-	static final int FLAGGED			 = 8192 * 2; //or forced_visible
+	static final int SIBLING_HIGHER      =   1 * 1024;
+	static final int MAJOR_RANK_CONFLICT =   2 * 1024;
+	static final int TATTERED 			 =   4 * 1024;
+	static final int ANYSPECIES			 =   8 * 1024;
+	static final int FORCED_VISIBLE		 =  16 * 1024;
 
 	// Returns the node's rank (as an int).  In general the return
 	// value should be >= parentRank, but conceivably funny things
 	// could happen when combinings taxonomies.
 
-	static int analyzeRankConflicts(Node node) {
+	static int analyzeRankConflicts(Node node, boolean majorp) {
 		Integer m = -1;			// "no rank" = -1
 		if (node.rank != null) {
 			m = ranks.get(node.rank);
@@ -789,7 +812,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 			// Preorder traversal
 			// In the process, calculate rank of highest child
 			for (Node child : node.children) {
-				int rank = analyzeRankConflicts(child);
+				int rank = analyzeRankConflicts(child, majorp);
 				if (rank >= 0) {
 					if (rank < highrank) { highrank = rank; highchild = child; }
 					if (rank > lowrank)  lowrank = rank;
@@ -812,14 +835,15 @@ public abstract class Taxonomy implements Iterable<Node> {
 						if (sibrank < lowrank)  // if child is higher rank than some sibling...
 							// a family that has a sibling that's a genus
 							// SIBLING_LOWER means 'has a sibling with lower rank'
-							child.properFlags |= SIBLING_LOWER; //e.g. family with genus sibling
+                            if (!majorp)
+                                child.properFlags |= SIBLING_LOWER; //e.g. family with genus sibling
 						if (sibrank > highrank) {  // if lower rank than some sibling
 							int y = (sibrank + 99) / 100; //genus->genus, subfamily->genus
-							if (y > x+1)
+							if (y > x+1 && majorp)
 								// e.g. a genus that has an order as a sibling
 								child.properFlags |= MAJOR_RANK_CONFLICT;
-							else
-								child.properFlags |= SIBLING_HIGHER; //e.g. genus with family sibling
+                            if (!majorp)
+                                child.properFlags |= SIBLING_HIGHER; //e.g. genus with family sibling
 						}
 					}
 				}
@@ -840,11 +864,11 @@ public abstract class Taxonomy implements Iterable<Node> {
 	//     (where in some cases the ancestor may later be 'elided' so
 	//     not an ancestor any more)
 
-	static void analyze(Node node, int inheritedFlags) {
+    // Flags to set for NCBI but not SILVA
+
+	static void analyzeOTUs(Node node, int inheritedFlags) {
 		// Before
 		node.inheritedFlags |= inheritedFlags;
-		boolean anyspeciesp = false;     // Any descendant is a species?
-		boolean elidep = false;
 
 		// Prepare for recursive descent
 		if (notOtuRegex.matcher(node.name).find()) 
@@ -853,6 +877,21 @@ public abstract class Taxonomy implements Iterable<Node> {
 			node.properFlags |= HYBRID;
 		if (viralRegex.matcher(node.name).find()) 
 			node.properFlags |= VIRAL;
+
+		int bequest = inheritedFlags | node.properFlags;		// What the children inherit
+
+		// Recursive descent
+		if (node.children != null)
+			for (Node child : node.children)
+				analyzeOTUs(child, bequest);
+	}
+
+    // Flags to set for all taxonomies.  Also elide container pseudo-taxa
+
+	static void analyzeContainers(Node node, int inheritedFlags) {
+		// Before
+		node.inheritedFlags |= inheritedFlags;
+		boolean elidep = false;
 
 		if (unclassifiedRegex.matcher(node.name).find()) {// Rule 3+5
 			node.properFlags |= UNCLASSIFIED;
@@ -866,33 +905,41 @@ public abstract class Taxonomy implements Iterable<Node> {
 			node.properFlags |= INCERTAE_SEDIS;
 			elidep = true;
 		}
-		if (node.rank != null &&
-			(node.rank.equals("species") || node.rank.equals("sample"))) {
-			node.properFlags |= SPECIFIC;
-			anyspeciesp = true;
-		}
 
 		int bequest = inheritedFlags | node.properFlags;		// What the children inherit
 
 		// Recursive descent
 		if (node.children != null)
-			for (Node child : new ArrayList<Node>(node.children)) {
-				analyze(child, bequest);
-				if ((child.properFlags & ANYSPECIES) != 0) anyspeciesp = true;
-			}
+			for (Node child : new ArrayList<Node>(node.children))
+				analyzeContainers(child, bequest);
 
 		// After
-		if (anyspeciesp) node.properFlags |= ANYSPECIES;
-		if (elidep) elide(node);
+		if (elidep) {
+            // Splice the node out of the hierarchy, but leave it as a
+            // residual terminal non-OTU node.
+            if (node.children != null && node.parent != null)
+                for (Node child : new ArrayList<Node>(node.children))
+                    child.changeParent(node.parent);
+            node.properFlags |= NOT_OTU;
+        }
 	}
 
-	// Splice the node out of the hierarchy, but leave it as a
-	// residual terminal non-OTU node
-	static void elide(Node node) {
-		if (node.children != null && node.parent != null)
-			for (Node child : new ArrayList<Node>(node.children))
-				child.changeParent(node.parent);
-		node.properFlags |= NOT_OTU;
+    // Set the ANYSPECIES flag of any taxon that is a species or has
+    // one below it
+
+	static void analyzeBarren(Node node) {
+		boolean anyspeciesp = false;     // Any descendant is a species?
+		if (node.rank != null &&
+			(node.rank.equals("species") || node.rank.equals("sample"))) {
+			node.properFlags |= SPECIFIC;
+			anyspeciesp = true;
+		}
+        if (node.children != null)
+			for (Node child : node.children) {
+				analyzeBarren(child);
+				if ((child.properFlags & ANYSPECIES) != 0) anyspeciesp = true;
+			}
+		if (anyspeciesp) node.properFlags |= ANYSPECIES;
 	}
 
 	static void printFlags(Node node, PrintStream out) {
@@ -911,6 +958,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 			out.print("hybrid");
 		}
 
+        // Containers
 		if ((node.properFlags & INCERTAE_SEDIS) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("incertae_sedis_direct");
@@ -934,7 +982,11 @@ public abstract class Taxonomy implements Iterable<Node> {
 			out.print("environmental");
 		}
 
-		if ((node.properFlags & SIBLING_HIGHER) != 0) {
+		if ((node.properFlags & MAJOR_RANK_CONFLICT) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("major_rank_conflict_direct");
+		}
+		else if ((node.properFlags & SIBLING_HIGHER) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("sibling_higher");
 		}
@@ -943,15 +995,12 @@ public abstract class Taxonomy implements Iterable<Node> {
 			out.print("sibling_lower");
 		}
 
-		if ((node.properFlags & MAJOR_RANK_CONFLICT) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("major_rank_conflict_direct");
-		}
 		if ((node.inheritedFlags & MAJOR_RANK_CONFLICT) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("major_rank_conflict_inherited");
 		}
 
+        // Misc
 		if ((node.properFlags & TATTERED) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("tattered");
@@ -962,7 +1011,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 			out.print("edited");
 		}
 
-		if ((node.properFlags & FLAGGED) != 0) {
+		if ((node.properFlags & FORCED_VISIBLE) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("forced_visible");
 		}
@@ -978,8 +1027,10 @@ public abstract class Taxonomy implements Iterable<Node> {
 	
 	static Pattern notOtuRegex =
 		Pattern.compile(
+						"\\bunidentified\\b|" +
+						"\\bunknown\\b|" +
+						"\\bmetagenome\\b|" +    // SILVA has a bunch of these
 						"\\bother sequences\\b|" +
-						"\\bmetagenome\\b|" +
 						"\\bartificial\\b|" +
 						"\\blibraries\\b|" +
 						"\\bbogus duplicates\\b|" +
@@ -987,8 +1038,6 @@ public abstract class Taxonomy implements Iterable<Node> {
 						"\\binsertion sequences\\b|" +
 						"\\bmidvariant sequence\\b|" +
 						"\\btransposons\\b|" +
-						"\\bunknown\\b|" +
-						"\\bunidentified\\b|" +
 						"\\bunclassified sequences\\b|" +
 						"\\bsp\\.$"
 						);
@@ -1434,7 +1483,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 			if (existing == null)
 				System.err.println("(flag) No taxon to flag: " + name);
 			else
-				existing.properFlags |= Taxonomy.FLAGGED;
+				existing.properFlags |= Taxonomy.FORCED_VISIBLE;
 
 		} else if (command.equals("incertae_sedis")) {
 			if (existing == null)
@@ -2384,6 +2433,7 @@ class Node {
 			//unode.addComment(this.comment);
 			this.comment = null;
 		}
+        unode.properFlags |= this.properFlags;
 	}
 
 	// Recursive descent over source taxonomy
@@ -2452,6 +2502,7 @@ class Node {
 	Node augment(UnionTaxonomy union) {
 
 		Node newnode = null;
+        int newflags = 0;
 
 		if (this.children == null) {
 			if (this.mapped != null) {
@@ -2530,7 +2581,7 @@ class Node {
 				for (Node augChild: newChildren)
 					newnode.addChild(augChild);
 
-				newnode.properFlags |= Taxonomy.TATTERED;
+                newflags |= Taxonomy.TATTERED;
 				union.logAndMark(Answer.yes(this, null, "new/tattered", null));
 				// fall through
 
@@ -2570,7 +2621,9 @@ class Node {
 							break;
 						}
 					}
-				this.unifyWith(newnode);	   // sets name
+                newnode.properFlags = -1;
+				this.unifyWith(newnode);	   // sets name and properFlag
+                newnode.properFlags |= newflags;
 			} else if (this.mapped != newnode)
 				System.out.println("Whazza? " + this + " ... " + newnode);
 			newnode.addSource(this);
@@ -3086,7 +3139,7 @@ class Node {
 			this.taxonomy.nameIndex.remove(this.name);
 		if (this.id != null)
 			this.taxonomy.idIndex.remove(this.id);
-		this.prunedp = true;
+		this.prunedp = true;  // kludge for indexes
 	}
 
 	String uniqueName() {

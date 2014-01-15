@@ -1544,6 +1544,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
         return union;
     }
 
+    // Merge a source taxonomy into this taxonomy
     public void absorb(SourceTaxonomy tax, String tag) {
         tax.tag = tag;
         ((UnionTaxonomy)this).mergeIn(tax);
@@ -1574,8 +1575,17 @@ public abstract class Taxonomy implements Iterable<Taxon> {
         return nodes.get(0);
     }
 
+    public Taxon newTaxon(String name, String rank, String sourceIds) {
+        Taxon t = new Taxon(this);
+        t.setName(name);
+        t.rank = rank;
+        t.setSourceIds(sourceIds);
+        return t;
+    }
+
     public void same(Taxon node1, Taxon node2) {
         Taxon unode, snode;
+        if (node1 == null || node2 == null) return; // Error already reported?
         if (node1.taxonomy instanceof UnionTaxonomy) {
             unode = node1;
             snode = node2;
@@ -1645,7 +1655,7 @@ class SourceTaxonomy extends Taxonomy {
 
 		if (this.roots.size() > 0) {
 
-			Node.resetStats();
+			Taxon.resetStats();
 			System.out.println("--- Mapping " + this.getTag() + " into union ---");
 
 			union.sources.add(this);
@@ -1708,7 +1718,7 @@ class SourceTaxonomy extends Taxonomy {
 			}
 			System.out.println("| Names in common: " + incommon);
 
-			Node.printStats();
+			Taxon.printStats();
 
 			// Report on how well the merge went.
 			this.mappingReport(union);
@@ -1719,7 +1729,7 @@ class SourceTaxonomy extends Taxonomy {
 
 	void mappingReport(UnionTaxonomy union) {
 
-		if (Node.windyp) {
+		if (Taxon.windyp) {
 
 			int total = 0;
 			int nonamematch = 0;
@@ -1798,7 +1808,7 @@ class SourceTaxonomy extends Taxonomy {
 		if (this.roots.size() > 0) {
 
 			// Add heretofore unmapped nodes to union
-			if (Node.windyp)
+			if (Taxon.windyp)
 				System.out.println("--- Augmenting union with new nodes from " + this.getTag() + " ---");
 			int startcount = union.count();
 			int startroots = union.roots.size();
@@ -1832,10 +1842,10 @@ class SourceTaxonomy extends Taxonomy {
 				if (unode.parent == null && !union.roots.contains(unode))
 					System.err.println("| Missing root: " + unode);
 
-			if (Node.windyp) {
+			if (Taxon.windyp) {
 				System.out.println("| Started with:		 " +
 								   startroots + " trees, " + startcount + " taxa");
-				Node.augmentationReport();
+				Taxon.augmentationReport();
 				System.out.println("| Ended with:		 " +
 								   union.roots.size() + " trees, " + union.count() + " taxa");
 			}
@@ -1914,7 +1924,7 @@ class UnionTaxonomy extends Taxonomy {
 		source.augment(this);
 		source.copySynonyms(this);
         this.reset();           // ??? see Taxonomy.same()
-		Node.windyp = true; //kludge
+		Taxon.windyp = true; //kludge
 	}
 
 	// Assign ids, harvested from idsource and new ones as needed, to nodes in union.
@@ -1924,7 +1934,7 @@ class UnionTaxonomy extends Taxonomy {
 		// idsource.tag = "ids";
 		idsource.mapInto(this, Criterion.idCriteria);
 
-		Node.resetStats();
+		Taxon.resetStats();
 		System.out.println("--- Assigning ids to union starting with " + idsource.getTag() + " ---");
 
 		// Phase 1: recycle previously assigned ids.
@@ -1935,7 +1945,7 @@ class UnionTaxonomy extends Taxonomy {
 					System.err.println("Map/comap don't commute: " + node + " " + unode);
 				Answer answer = assessSource(node, unode);
 				if (answer.value >= Answer.DUNNO)
-					Node.markEvent("keeping-id");
+					Taxon.markEvent("keeping-id");
 				else
 					this.logAndMark(answer);
 				unode.setId(node.id);
@@ -1947,7 +1957,7 @@ class UnionTaxonomy extends Taxonomy {
 		this.assignNewIds(sourcemax);
 		// remember, this = union, idsource = previous version of ott
 
-		Node.printStats();		// Taxon id clash
+		Taxon.printStats();		// Taxon id clash
 	}
 
 	// Cf. assignIds()
@@ -1999,7 +2009,7 @@ class UnionTaxonomy extends Taxonomy {
 		throws IOException
 	{
 		System.out.println("--- Comparing new auxiliary id mappings with old ones ---");
-		Node.resetStats();		// Taxon id clash
+		Taxon.resetStats();		// Taxon id clash
 		PrintStream out = Taxonomy.openw(filename);
 		Set<String> seen = new HashSet<String>();
 		for (Taxon idnode : idsource) 
@@ -2024,7 +2034,7 @@ class UnionTaxonomy extends Taxonomy {
 							  ((auxnode == null || auxnode.mapped == null) ? "" : auxnode.mapped.id)
 							  + "\t" +
 							  reason + "\n");
-					Node.markEvent("reason");
+					Taxon.markEvent("reason");
 					seen.add(idstring);
 				}
 			}
@@ -2039,9 +2049,9 @@ class UnionTaxonomy extends Taxonomy {
 						   auxnode.mapped.getSourceIdsString())
 						  + "\t" +
 						  "new" + "\n");
-			Node.markEvent("new-aux-mapping");
+			Taxon.markEvent("new-aux-mapping");
 		}
-		Node.printStats();
+		Taxon.printStats();
 		out.close();
 	}
 
@@ -2204,7 +2214,7 @@ class UnionTaxonomy extends Taxonomy {
 	}
 	void logAndMark(Answer answer) {
 		this.log(answer);
-		Node.markEvent(answer.reason);
+		Taxon.markEvent(answer.reason);
 	}
 	void logAndReport(Answer answer) {
 		this.log(answer);

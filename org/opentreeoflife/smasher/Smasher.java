@@ -35,7 +35,7 @@ public class Smasher {
 
 			Taxonomy tax = null;
 			boolean anyfile = false;
-			Node.windyp = false;
+			Taxon.windyp = false;
 			String outprefix = null;
 
 			for (int i = 0; i < argv.length; ++i) {

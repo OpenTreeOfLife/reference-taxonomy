@@ -40,6 +40,7 @@ compile: $(CLASS)
 
 $(CLASS): org/opentreeoflife/smasher/Smasher.java \
 	  org/opentreeoflife/smasher/Taxonomy.java \
+	  org/opentreeoflife/smasher/Taxon.java \
 	  lib/jscheme.jar lib/json-simple-1.1.1.jar lib/jython-standalone-2.5.3.jar
 	javac -g $(CP) org/opentreeoflife/smasher/*.java
 
@@ -285,7 +286,7 @@ t/tax/gbif_aster/taxonomy.tsv:
 #             --out t/tax/aster/
 
 # New:
-t/tax/aster/taxonomy.tsv: $(CLASS) t/aster.py \
+t/tax/aster/taxonomy.tsv: compile t/aster.py \
                           t/tax/ncbi_aster/taxonomy.tsv \
                           t/tax/gbif_aster/taxonomy.tsv \
                           t/tax/prev_aster/taxonomy.tsv \

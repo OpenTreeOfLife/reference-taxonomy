@@ -333,7 +333,7 @@ public class Taxon {
 		if (this.children == null) {
 			if (this.mapped != null) {
 				newnode = this.mapped;
-				Node.markEvent("mapped/tip");
+				Taxon.markEvent("mapped/tip");
 			} else if (this.deprecationReason != null &&
 					   // Create homonym iff it's an unquestionably bad match
 					   this.deprecationReason.value > Answer.HECK_NO) {
@@ -522,7 +522,7 @@ public class Taxon {
 			// No evidence of sameness [except maybe parent agreement]
 			if (loser == null) {
 				if (newp)
-					Node.markEvent("mapped/internal"); // Exact topology match
+					Taxon.markEvent("mapped/internal"); // Exact topology match
 				else
 					// No evidence of differentness
 					// cf. "by-elimination" - could actually be a homonym
@@ -623,7 +623,7 @@ public class Taxon {
 			System.out.println("| " + note + ": " + eventStats.get(note));
 		}
 		// Reset...
-		Node.resetStats();
+		Taxon.resetStats();
 	}
 
 	static void resetStats() {
@@ -948,7 +948,7 @@ public class Taxon {
 	};
 
 	// Delete this node and all of its descendents.
-	void prune() {
+	public void prune() {
 		if (this.children != null) {
 			for (Taxon child : new ArrayList<Taxon>(children))
 				child.prune();
@@ -1071,4 +1071,73 @@ public class Taxon {
 
 		return sam;
 	}
+
+    // ----- Methods intended for use in jython scripts -----
+
+    // Patch system commands are add, move, synonym, prune, fold, flag
+
+    // tax.add(newTaxon("Bos bos", "species", "data:,foo"))
+
+    public void add(Taxon newchild) {
+        if (newchild == null)
+            return;             // Error already reported.
+        else if (this.children != null && this.children.contains(newchild))
+            System.err.format("%s is already a daughter of %s\n", newchild, this);
+        else if (newchild.parent != null)
+            System.err.format("%s can't be added because it is already in the tree\n", newchild, this);
+        else {
+            newchild.properFlags |= Taxonomy.EDITED;
+            this.addChild(newchild);
+        }
+    }
+
+    public void steal(Taxon newchild) {
+        if (newchild == null)
+            return;             // Error already reported.
+        else if (this.children != null && this.children.contains(newchild))
+            System.err.format("%s is already a daughter of %s\n", newchild, this);
+        else {
+            newchild.properFlags |= Taxonomy.EDITED;
+            newchild.changeParent(this);
+        }
+    }
+
+    public void synonym(String name) {
+        this.taxonomy.addSynonym(name, this);
+    }
+
+    public void rename(String name) {
+        String oldname = this.name;
+        this.setName(name);
+        this.taxonomy.addSynonym(oldname, this);  // awkward
+    }
+
+    // prune() is elsewhere
+
+    public void elide() {
+        if (this.children != null)
+            System.err.format("%s has no children\n", this);
+        else if (this.parent == null)
+            System.err.format("%s is a root\n", this);
+        else {
+            for (Taxon child : new ArrayList<Taxon>(this.children))
+                child.changeParent(this.parent);
+            this.prune();
+        }
+    }
+
+    // Move all of B's children to A, and make B a synonym of A
+
+    public void absorb(Taxon other) {
+        if (other.children != null)
+            for (Taxon child: other.children)
+                child.changeParent(this.parent);
+        this.synonym(other.name);   // Not sure this is a good idea
+        other.prune();
+    }
+
+    public void forceVisible() {
+        this.properFlags |= Taxonomy.FORCED_VISIBLE;
+    }
+
 }

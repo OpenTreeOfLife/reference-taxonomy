@@ -5,7 +5,7 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.4.draft7
+WHICH=2.4.draft8
 PREV_WHICH=2.3
 
 #  $^ = all prerequisites
@@ -79,7 +79,7 @@ tax/ott/log.tsv: $(CLASS) feed/ott/ott.py $(SILVA)/taxonomy.tsv \
 tax/if/foo: tax/if/taxonomy.tsv tax/if/synonyms.tsv
 	cp -p feed/if/about.json tax/if/
 
-tax/if/taxonomy.tsv:
+tax/if/taxonomy.tsv: tax/if/synonyms.tsv
 	@mkdir -p `dirname $@`
 	wget --output-document=$@ http://files.opentreeoflife.org/ott/IF/taxonomy.tsv
 	@ls -l $@

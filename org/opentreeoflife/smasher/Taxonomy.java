@@ -934,10 +934,12 @@ public abstract class Taxonomy implements Iterable<Node> {
 
 	static void analyzeBarren(Node node) {
 		boolean anyspeciesp = false;     // Any descendant is a species?
-		if (node.rank != null &&
-			(node.rank.equals("species") || node.rank.equals("sample"))) {
-			node.properFlags |= SPECIFIC;
-			anyspeciesp = true;
+		if (node.rank != null) {
+			Integer rank = ranks.get(node.rank);
+			if (rank != null && rank >= SPECIES_RANK) {
+				node.properFlags |= SPECIFIC;
+				anyspeciesp = true;
+			}
 		}
         if (node.children != null)
 			for (Node child : node.children) {
@@ -1104,7 +1106,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 		 "subvariety",
 		 "forma",
 		 "subform",
-		 "sample"},
+		 "samples"},
 	};
 
 	static Map<String, Integer> ranks = new HashMap<String, Integer>();
@@ -1115,7 +1117,10 @@ public abstract class Taxonomy implements Iterable<Node> {
 				ranks.put(rankStrings[i][j], (i+1)*100 + j*10);
 		}
 		ranks.put("no rank", -1);
+		SPECIES_RANK = ranks.get("species");
 	}
+
+	static int SPECIES_RANK = -1; // ranks.get("species");
 
 	// Called from --select1
 	// TBD: synonyms and about file
@@ -1523,7 +1528,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 		return fnodes.size() == 0 ? null : fnodes;
 	}
 
-    // ----- Convenience methods for jython scripting -----
+    // ----- Methods for use in jython scripts -----
 
     public static Taxonomy newTaxonomy() {
         return new UnionTaxonomy();
@@ -1549,7 +1554,7 @@ public abstract class Taxonomy implements Iterable<Node> {
         ((UnionTaxonomy)this).assignIds(idsource);
     }
 
-    // Look up a taxon by name.  Must be unique in the taxonomy.
+    // Look up a taxon by name or unique id.  Name must be unique in the taxonomy.
     public Node taxon(String name) {
         Node node = this.unique(name);
         if (node == null)
@@ -2435,8 +2440,9 @@ class Node {
 		this.mapped = unode;
 
 		if (unode.name == null) unode.setName(this.name);
-		if (unode.rank == Taxonomy.NO_RANK)
-			unode.rank = this.rank; // !?
+		if (this.rank != Taxonomy.NO_RANK)
+			if (unode.rank == Taxonomy.NO_RANK || unode.rank.equals("samples"))
+				unode.rank = this.rank;
 		unode.comapped = this;
 
 		if (this.comment != null) { // cf. deprecate()

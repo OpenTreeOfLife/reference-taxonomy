@@ -303,7 +303,7 @@ def processSilva(pathdict, indir, outdir):
 		parentid = ncbi_silva_parent[ncbi]
 		if parentid != None:
 			taxid = ncbi_sample_accession[ncbi]    # becomes URL
-			rank = 'no rank'    # rank will be set from NCBI
+			rank = 'samples'    # rank will be set from NCBI
 			qid = "ncbi:%s" % ncbi
 			synonyms[qid] = taxid
 			name = ncbi_name[ncbi]

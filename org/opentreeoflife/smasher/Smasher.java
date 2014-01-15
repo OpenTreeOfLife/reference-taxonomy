@@ -78,7 +78,7 @@ public class Smasher {
 					// Deprecated
 					else if (argv[i].equals("--select") || argv[i].equals("--select1")) {
 						String name = argv[++i];
-						Node root = tax.unique(name);
+						Taxon root = tax.unique(name);
 						if (root != null) {
 							tax.analyze();    // otherwise they all show up as 'barren'
 							tax.select1(root, argv[++i]);
@@ -164,7 +164,7 @@ public class Smasher {
 
 	static void test() {
 		Taxonomy tax = SourceTaxonomy.parseNewick("(a,b,(e,f)c)d");
-		for (Node node : tax)
+		for (Taxon node : tax)
 			System.out.println(node);
 	}
 

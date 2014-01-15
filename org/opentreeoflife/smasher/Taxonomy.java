@@ -39,10 +39,10 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser; 
 import org.json.simple.parser.ParseException;
 
-public abstract class Taxonomy implements Iterable<Node> {
-	Map<String, List<Node>> nameIndex = new HashMap<String, List<Node>>();
-	Map<String, Node> idIndex = new HashMap<String, Node>();
-	Set<Node> roots = new HashSet<Node>(1);
+public abstract class Taxonomy implements Iterable<Taxon> {
+	Map<String, List<Taxon>> nameIndex = new HashMap<String, List<Taxon>>();
+	Map<String, Taxon> idIndex = new HashMap<String, Taxon>();
+	Set<Taxon> roots = new HashSet<Taxon>(1);
 	protected String tag = null;
 	int nextSequenceNumber = 0;
 	String[] header = null;
@@ -64,12 +64,12 @@ public abstract class Taxonomy implements Iterable<Node> {
 
 	public abstract UnionTaxonomy promote();
 
-	public List<Node> lookup(String name) {
+	public List<Taxon> lookup(String name) {
 		return this.nameIndex.get(name);
 	}
 
-	public Node unique(String name) {
-		List<Node> probe = this.nameIndex.get(name);
+	public Taxon unique(String name) {
+		List<Taxon> probe = this.nameIndex.get(name);
 		// TBD: Maybe rule out synonyms?
 		if (probe != null && probe.size() == 1)
 			return probe.get(0);
@@ -77,11 +77,11 @@ public abstract class Taxonomy implements Iterable<Node> {
 			return this.idIndex.get(name);
 	}
 
-	void addToIndex(Node node) {
+	void addToIndex(Taxon node) {
 		String name = node.name;
-		List<Node> nodes = this.nameIndex.get(name);
+		List<Taxon> nodes = this.nameIndex.get(name);
 		if (nodes == null) {
-			nodes = new ArrayList<Node>(1); //default is 10
+			nodes = new ArrayList<Taxon>(1); //default is 10
 			this.nameIndex.put(name, nodes);
 		}
 		nodes.add(node);
@@ -92,7 +92,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 	public int count() {
 		if (cachedCount > 0) return cachedCount;
 		int total = 0;
-		for (Node root : this.roots)
+		for (Taxon root : this.roots)
 			total += root.count();
 		cachedCount = total;
 		return total;
@@ -100,13 +100,13 @@ public abstract class Taxonomy implements Iterable<Node> {
 
 	// Iterate over all nodes reachable from roots
 
-	public Iterator<Node> iterator() {
-		final List<Iterator<Node>> its = new ArrayList<Iterator<Node>>();
+	public Iterator<Taxon> iterator() {
+		final List<Iterator<Taxon>> its = new ArrayList<Iterator<Taxon>>();
 		its.add(this.roots.iterator());
-		final Node[] current = new Node[1]; // locative
+		final Taxon[] current = new Taxon[1]; // locative
 		current[0] = null;
 
-		return new Iterator<Node>() {
+		return new Iterator<Taxon>() {
 			public boolean hasNext() {
 				if (current[0] != null) return true;
 				while (true) {
@@ -115,8 +115,8 @@ public abstract class Taxonomy implements Iterable<Node> {
 					else its.remove(0);
 				}
 			}
-			public Node next() {
-				Node node = current[0];
+			public Taxon next() {
+				Taxon node = current[0];
 				if (node != null)
 					current[0] = null;
 				else
@@ -145,7 +145,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 
 	void setTag() {
 		if (this.tag != null) return;
-		List<Node> probe = this.lookup("Caenorhabditis elegans");
+		List<Taxon> probe = this.lookup("Caenorhabditis elegans");
 		if (probe != null) {
 			String id = probe.get(0).id;
 			if (id.equals("6239")) this.tag = "ncbi";
@@ -156,7 +156,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 		}
         // TEMPORARY KLUDGE
 		if (this.tag == null) {
-            List<Node> probe2 = this.lookup("Asterales");
+            List<Taxon> probe2 = this.lookup("Asterales");
             if (probe2 != null) {
                 String id = probe2.get(0).id;
                 if (id.equals("4209")) this.tag = "ncbi";
@@ -166,12 +166,12 @@ public abstract class Taxonomy implements Iterable<Node> {
         }
 	}
 
-	Node highest(String name) {
-		Node best = null;
-		List<Node> l = this.lookup(name);
+	Taxon highest(String name) {
+		Taxon best = null;
+		List<Taxon> l = this.lookup(name);
 		if (l != null) {
 			int depth = 1 << 30;
-			for (Node node : l)
+			for (Taxon node : l)
 				if (node.getDepth() < depth) {
 					depth = node.getDepth();
 					best = node;
@@ -185,13 +185,13 @@ public abstract class Taxonomy implements Iterable<Node> {
 		int sibhoms = 0;
 		int cousinhoms = 0;
 		for (String name : nameIndex.keySet()) {
-			List<Node> nodes = this.nameIndex.get(name);
+			List<Taxon> nodes = this.nameIndex.get(name);
 			if (nodes.size() > 1) {
 				boolean homsp = false;
 				boolean sibhomsp = false;
 				boolean cuzhomsp = false;
-				for (Node n1: nodes)
-					for (Node n2: nodes) {
+				for (Taxon n1: nodes)
+					for (Taxon n2: nodes) {
 						int c = n1.id.length() - n2.id.length();
 						if ((c < 0 || (c == 0 && n1.id.compareTo(n2.id) < 0)) &&
 							n1.name.equals(name) &&
@@ -341,17 +341,17 @@ public abstract class Taxonomy implements Iterable<Node> {
 					parentId = "";
 				}
 
-				Node node = this.idIndex.get(id);
+				Taxon node = this.idIndex.get(id);
 				if (node == null) {
 					// node was created earlier because it's the parent of some other node.
-					node = new Node(this);
+					node = new Taxon(this);
 					node.setId(id); // stores into this.idIndex
 				}
 
 				if (parentId.length() > 0) {
-					Node parent = this.idIndex.get(parentId);
+					Taxon parent = this.idIndex.get(parentId);
 					if (parent == null) {
-						parent = new Node(this);	 //don't know parent's name yet
+						parent = new Taxon(this);	 //don't know parent's name yet
 						parent.setId(parentId);
 					}
 					parent.addChild(node);
@@ -365,7 +365,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 		}
 		br.close();
 
-		for (Node node : this.idIndex.values())
+		for (Taxon node : this.idIndex.values())
 			if (node.name == null) {
 				System.err.println("!! Identifier with no associated name, probably a missing parent: " + node.id);
 				node.setName("undefined:" + node.id);
@@ -377,7 +377,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 			if (roots.size() > 1)
 				System.err.println("There are " + roots.size() + " roots");
 			int total = 0;
-			for (Node root : roots)
+			for (Taxon root : roots)
 				total += root.count();
 			if (row != total)
 				System.err.println(this.getTag() + " is ill-formed: " +
@@ -412,7 +412,7 @@ public abstract class Taxonomy implements Iterable<Node> {
         Map<String,String> uncritical = new HashMap<String,String>();
 
         // 1. Find all diacritics
-		for (final Node node : this.idIndex.values()) {
+		for (final Taxon node : this.idIndex.values()) {
             String without = stripDiacritics(node.name);
             if (!without.equals(node.name)) {
                 // System.err.println("Diacritics in " + node.name + " but not in " + without);
@@ -425,7 +425,7 @@ public abstract class Taxonomy implements Iterable<Node> {
         // 2. When a node's name is missing diacritics but could have them,
         // add them by clobbering the name.  This may create sibling homonyms.
 		int ncc = 0;
-		for (final Node node : this.idIndex.values()) {
+		for (final Taxon node : this.idIndex.values()) {
             String probe = uncritical.get(node.name);
             if (probe != null) {
                 // node.name is without diacritics, probe.name is with
@@ -439,12 +439,12 @@ public abstract class Taxonomy implements Iterable<Node> {
 
 		// Smush taxa that differ only in id.
 		int siblingHomonymCount = 0;
-		for (final Node node : this.idIndex.values())
+		for (final Taxon node : this.idIndex.values())
 
 			if (node.name != null && node.parent != null)
 
 				// Search for a homonym node that can replace node
-				for (final Node other : this.lookup(node.name)) {
+				for (final Taxon other : this.lookup(node.name)) {
 
 					int c = other.id.length() - node.id.length();
 					if ((c < 0 || (c == 0 && other.id.compareTo(node.id) < 0)) &&
@@ -473,7 +473,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 								{
 									public void run() {
 										if (node.children != null)
-											for (Node child : new ArrayList<Node>(node.children))
+											for (Taxon child : new ArrayList<Taxon>(node.children))
 												// might create new sibling homonyms...
 												child.changeParent(other);
 										node.prune();  // removes name from index
@@ -492,10 +492,10 @@ public abstract class Taxonomy implements Iterable<Node> {
 		if (siblingHomonymCount > 0)
 			System.err.println("" + siblingHomonymCount + " sibling homonyms");
 
-		for (Node node : this.idIndex.values())
+		for (Taxon node : this.idIndex.values())
 			// if (node.parent == null && !roots.contains(node)) ...
 			if (node.parent != null) {
-				Node replacement = this.idIndex.get(node.parent.id);
+				Taxon replacement = this.idIndex.get(node.parent.id);
 				if (replacement != node.parent) {
 					System.err.println("Post-smushing kludge: " + node.parent.id + " => " + replacement.id);
 					node.parent = replacement;
@@ -507,9 +507,9 @@ public abstract class Taxonomy implements Iterable<Node> {
         // 3. Add non-diacritic name as synonym of with-diacritic node
         for (String without : uncritical.keySet()) {
             String with = uncritical.get(without);
-            List<Node> nodes = this.nameIndex.get(with);
+            List<Taxon> nodes = this.nameIndex.get(with);
             if (nodes != null)
-                for (Node node : nodes) {
+                for (Taxon node : nodes) {
                     // Almost always only one node!!
                     if (++critcount <= 1 || nodes.size() > 1)
                         System.out.format("Adding %s as synonym for %s\n", without, node);
@@ -519,14 +519,14 @@ public abstract class Taxonomy implements Iterable<Node> {
 
     }
 
-	void dumpNodes(Collection<Node> nodes, String outprefix) throws IOException {
+	void dumpNodes(Collection<Taxon> nodes, String outprefix) throws IOException {
 		PrintStream out = Taxonomy.openw(outprefix + "taxonomy.tsv");
 
 		out.println("uid\t|\tparent_uid\t|\tname\t|\trank\t|\tsourceinfo\t|\tuniqname\t|\tflags\t|\t"
 					// 0	 1				2		 3		  4				 5             6
 					);
 
-		for (Node node : nodes) {
+		for (Taxon node : nodes) {
 			if (node == null)
 				System.err.println("null in nodes list!?" );
 			else if (!node.prunedp)
@@ -536,7 +536,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 	}
 
 	// Recursive!
-	void dumpNode(Node node, PrintStream out, boolean rootp) {
+	void dumpNode(Taxon node, PrintStream out, boolean rootp) {
 		// 0. uid:
 		out.print((node.id == null ? "?" : node.id) + "\t|\t");
 		// 1. parent_uid:
@@ -563,7 +563,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 		out.println();
 
 		if (node.children != null)
-			for (Node child : node.children) {
+			for (Taxon child : node.children) {
 				if (child == null)
 					System.err.println("null in children list!? " + node);
 				else
@@ -615,7 +615,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 					String type = (parts.length >= type_column ?
 								   parts[type_column] :
 								   "");
-					Node node = this.idIndex.get(id);
+					Taxon node = this.idIndex.get(id);
 					if (type.equals("in-part")) continue;
 					if (type.equals("includes")) continue;
 					if (type.equals("type material")) continue;
@@ -646,15 +646,15 @@ public abstract class Taxonomy implements Iterable<Node> {
 
 	// Returns true if a change was made
 
-	public boolean addSynonym(String syn, Node node) {
+	public boolean addSynonym(String syn, Taxon node) {
 		if (node.taxonomy != this)
 			System.err.println("!? Synonym for a node that's not in this taxonomy: " + syn + " " + node);
-		List<Node> nodes = this.nameIndex.get(syn);
+		List<Taxon> nodes = this.nameIndex.get(syn);
 		if (nodes != null) {
 			if (nodes.contains(node))
 				return false;    //lots of these System.err.println("Redundant synonymy: " + id + " " + syn);
 		} else {
-			nodes = new ArrayList<Node>(1);
+			nodes = new ArrayList<Taxon>(1);
 			this.nameIndex.put(syn, nodes);
 		}
 		nodes.add(node);
@@ -665,7 +665,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 		PrintStream out = Taxonomy.openw(filename);
 		out.println("name\t|\tuid\t|\ttype\t|\tuniqname\t|\t");
 		for (String name : this.nameIndex.keySet())
-			for (Node node : this.nameIndex.get(name))
+			for (Taxon node : this.nameIndex.get(name))
 				if (!node.prunedp && !node.name.equals(name)) {
 					String uniq = node.uniqueName();
 					if (uniq.length() == 0) uniq = node.name;
@@ -744,33 +744,33 @@ public abstract class Taxonomy implements Iterable<Node> {
 
     // NCBI only (not SILVA)
     public void analyzeOTUs() {
-		for (Node root : this.roots)
+		for (Taxon root : this.roots)
 			analyzeOTUs(root, 0);	// mutates the tree
     }
 
     // GBIF and IF only
     public void analyzeMajorRankConflicts() {
-		for (Node root : this.roots)
+		for (Taxon root : this.roots)
 			analyzeRankConflicts(root, true);
     }
 
 	void analyze() {
 		if (false) {
 			// NCBI only
-			for (Node root : this.roots)
+			for (Taxon root : this.roots)
 				analyzeOTUs(root, 0);	// mutates the tree
 			// GBIF and IF only
-			for (Node root : this.roots)
+			for (Taxon root : this.roots)
 				analyzeRankConflicts(root, true);
 		}
         // All
-		for (Node root : this.roots)
+		for (Taxon root : this.roots)
 			analyzeRankConflicts(root, false);
         // All
-		for (Node root : this.roots)
+		for (Taxon root : this.roots)
 			analyzeContainers(root, 0);
         // All
-		for (Node root : this.roots)
+		for (Taxon root : this.roots)
             analyzeBarren(root);
 	}
 
@@ -793,7 +793,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 	// value should be >= parentRank, but conceivably funny things
 	// could happen when combinings taxonomies.
 
-	static int analyzeRankConflicts(Node node, boolean majorp) {
+	static int analyzeRankConflicts(Taxon node, boolean majorp) {
 		Integer m = -1;			// "no rank" = -1
 		if (node.rank != null) {
 			m = ranks.get(node.rank);
@@ -809,11 +809,11 @@ public abstract class Taxonomy implements Iterable<Node> {
 
 			int highrank = Integer.MAX_VALUE; // highest rank among all children
 			int lowrank = -1;
-			Node highchild = null;
+			Taxon highchild = null;
 
 			// Preorder traversal
 			// In the process, calculate rank of highest child
-			for (Node child : node.children) {
+			for (Taxon child : node.children) {
 				int rank = analyzeRankConflicts(child, majorp);
 				if (rank >= 0) {
 					if (rank < highrank) { highrank = rank; highchild = child; }
@@ -830,7 +830,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 					// Suppose the parent is a class. We're looking at relative ranks of the children...
 					// Two cases: order/family (minor), order/genus (major)
 					int x = highrank / 100;       //e.g. order
-					for (Node child : node.children) {
+					for (Taxon child : node.children) {
 						int sibrank = child.rankAsInt;     //e.g. family or genus
 						if (sibrank < 0) continue;		   // skip "no rank" children
 						// we know sibrank >= highrank
@@ -860,7 +860,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 		return myrank;
 	}
 
-	// Each Node has two parallel sets of flags: 
+	// Each Taxon has two parallel sets of flags: 
 	//   proper - applies particularly to this node
 	//   inherited - applies to this node because it applies to an ancestor
 	//     (where in some cases the ancestor may later be 'elided' so
@@ -868,7 +868,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 
     // Flags to set for NCBI but not SILVA
 
-	static void analyzeOTUs(Node node, int inheritedFlags) {
+	static void analyzeOTUs(Taxon node, int inheritedFlags) {
 		// Before
 		node.inheritedFlags |= inheritedFlags;
 
@@ -884,13 +884,13 @@ public abstract class Taxonomy implements Iterable<Node> {
 
 		// Recursive descent
 		if (node.children != null)
-			for (Node child : node.children)
+			for (Taxon child : node.children)
 				analyzeOTUs(child, bequest);
 	}
 
     // Flags to set for all taxonomies.  Also elide container pseudo-taxa
 
-	static void analyzeContainers(Node node, int inheritedFlags) {
+	static void analyzeContainers(Taxon node, int inheritedFlags) {
 		// Before
 		node.inheritedFlags |= inheritedFlags;
 		boolean elidep = false;
@@ -915,7 +915,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 
 		// Recursive descent
 		if (node.children != null)
-			for (Node child : new ArrayList<Node>(node.children))
+			for (Taxon child : new ArrayList<Taxon>(node.children))
 				analyzeContainers(child, bequest);
 
 		// After
@@ -923,7 +923,7 @@ public abstract class Taxonomy implements Iterable<Node> {
             // Splice the node out of the hierarchy, but leave it as a
             // residual terminal non-OTU node.
             if (node.children != null && node.parent != null)
-                for (Node child : new ArrayList<Node>(node.children))
+                for (Taxon child : new ArrayList<Taxon>(node.children))
                     child.changeParent(node.parent);
             node.properFlags |= NOT_OTU;
         }
@@ -932,7 +932,7 @@ public abstract class Taxonomy implements Iterable<Node> {
     // Set the ANYSPECIES flag of any taxon that is a species or has
     // one below it
 
-	static void analyzeBarren(Node node) {
+	static void analyzeBarren(Taxon node) {
 		boolean anyspeciesp = false;     // Any descendant is a species?
 		if (node.rank != null) {
 			Integer rank = ranks.get(node.rank);
@@ -942,14 +942,14 @@ public abstract class Taxonomy implements Iterable<Node> {
 			}
 		}
         if (node.children != null)
-			for (Node child : node.children) {
+			for (Taxon child : node.children) {
 				analyzeBarren(child);
 				if ((child.properFlags & ANYSPECIES) != 0) anyspeciesp = true;
 			}
 		if (anyspeciesp) node.properFlags |= ANYSPECIES;
 	}
 
-	static void printFlags(Node node, PrintStream out) {
+	static void printFlags(Taxon node, PrintStream out) {
 		boolean needComma = false;
 		if ((((node.properFlags | node.inheritedFlags) & NOT_OTU) != 0)
 			|| ((node.inheritedFlags & ENVIRONMENTAL) != 0)) {
@@ -1124,9 +1124,9 @@ public abstract class Taxonomy implements Iterable<Node> {
 
 	// Called from --select1
 	// TBD: synonyms and about file
-	void select1(Node node, String outprefix) throws IOException {
+	void select1(Taxon node, String outprefix) throws IOException {
 		System.out.println("| Selecting " + node.name);
-		List<Node> it = new ArrayList<Node>(1);
+		List<Taxon> it = new ArrayList<Taxon>(1);
 		it.add(node);
 		this.dumpNodes(it, outprefix);
 
@@ -1140,17 +1140,17 @@ public abstract class Taxonomy implements Iterable<Node> {
 	// Select subtree rooted at a specified node
 
 	public Taxonomy select(String designator) {
-		Node sel = this.unique(designator);
+		Taxon sel = this.unique(designator);
 		if (sel != null) {
 			Taxonomy tax2 = new SourceTaxonomy();
-			Node selection = sel.select(tax2);
+			Taxon selection = sel.select(tax2);
 			System.out.println("| Selection has " + selection.count() + " taxa");
 			tax2.roots.add(selection);
 
 			// Synonyms
 			int in = 0, out = 0;
 			for (String name : this.nameIndex.keySet())
-				for (Node node : this.nameIndex.get(name)) {
+				for (Taxon node : this.nameIndex.get(name)) {
 					if (node.mapped != null) {
 						tax2.addSynonym(name, node.mapped);
 						++in;
@@ -1167,10 +1167,10 @@ public abstract class Taxonomy implements Iterable<Node> {
 	}
 
 	public Taxonomy sample(String designator, int count) {
-		Node sel = this.unique(designator);
+		Taxon sel = this.unique(designator);
 		if (sel != null) {
 			Taxonomy tax2 = new SourceTaxonomy();
-			Node sample = sel.sample(count, tax2);
+			Taxon sample = sel.sample(count, tax2);
 			System.out.println("| Sample has " + sample.count() + " taxa");
 			tax2.roots.add(sample);
 			// TBD: synonyms ?
@@ -1183,17 +1183,17 @@ public abstract class Taxonomy implements Iterable<Node> {
 
     public Taxonomy chop(int m, int n) throws java.io.IOException {
         Taxonomy tax = new SourceTaxonomy();
-        List<Node> cuttings = new ArrayList<Node>();
-        Node root = null;
-        for (Node r : this.roots) root = r;    //bad kludge. uniroot assumed
-        Node newroot = chop(root, m, n, cuttings, tax);
+        List<Taxon> cuttings = new ArrayList<Taxon>();
+        Taxon root = null;
+        for (Taxon r : this.roots) root = r;    //bad kludge. uniroot assumed
+        Taxon newroot = chop(root, m, n, cuttings, tax);
         tax.roots.add(newroot);
         System.err.format("Cuttings: %s Residue: %s\n", cuttings.size(), newroot.size());
 
         // Temp kludge ... ought to be able to specify the file name
         String outprefix = "chop/";
         new File(outprefix).mkdirs();
-        for (Node cutting : cuttings) {
+        for (Taxon cutting : cuttings) {
             PrintStream out = 
                 openw(outprefix + cutting.name.replaceAll(" ", "_") + ".tre");
             StringBuffer buf = new StringBuffer();
@@ -1206,39 +1206,39 @@ public abstract class Taxonomy implements Iterable<Node> {
 
     // List of nodes for which N/3 < size <= N < parent size
 
-    Node chop(Node node, int m, int n, List<Node> chopped, Taxonomy tax) {
+    Taxon chop(Taxon node, int m, int n, List<Taxon> chopped, Taxonomy tax) {
         int c = node.count();
-        Node newnode = node.dup(tax);
+        Taxon newnode = node.dup(tax);
         if (m < c && c <= n) {
             newnode.setName(newnode.name + " (" + node.size() + ")");
             chopped.add(node);
         } else if (node.children != null)
-            for (Node child : node.children) {
-                Node newchild = chop(child, m, n, chopped, tax);
+            for (Taxon child : node.children) {
+                Taxon newchild = chop(child, m, n, chopped, tax);
                 newnode.addChild(newchild);
             }
         return newnode;
     }
 
 	public void deforestate() {
-		List<Node> rootsList = new ArrayList<Node>(this.roots);
+		List<Taxon> rootsList = new ArrayList<Taxon>(this.roots);
 		if (rootsList.size() <= 1) return;
-		Collections.sort(rootsList, new Comparator<Node>() {
-				public int compare(Node x, Node y) {
+		Collections.sort(rootsList, new Comparator<Taxon>() {
+				public int compare(Taxon x, Taxon y) {
 					return y.count() - x.count();
 				}
 			});
-		Node biggest = rootsList.get(0);
+		Taxon biggest = rootsList.get(0);
 		int count1 = biggest.count();
 		int count2 = rootsList.get(1).count();
 		if (rootsList.size() >= 2 && count1 < count2*1000)
 			System.err.format("*** Nontrivial forest: biggest is %s, 2nd biggest is %s\n", count1, count2);
 		else
 			System.out.format("| Deforesting: keeping biggest (%s), 2nd biggest is %s\n", count1, count2);
-		for (Node root : rootsList)
+		for (Taxon root : rootsList)
 			if (!root.equals(biggest))
 				root.prune();
-		this.roots = new HashSet<Node>(1);
+		this.roots = new HashSet<Taxon>(1);
 		this.roots.add(biggest);
 		System.out.format("| Removed %s smaller trees\n", rootsList.size()-1);
 	}
@@ -1249,7 +1249,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 
 	public String toNewick() {
 		StringBuffer buf = new StringBuffer();
-		for (Node root: this.roots) {
+		for (Taxon root: this.roots) {
 			root.appendNewickTo(buf);
 			buf.append(";");
 		}
@@ -1264,7 +1264,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 
 	// Parse Newick yielding nodes
 
-	Node newickToNode(String newick) {
+	Taxon newickToNode(String newick) {
 		java.io.PushbackReader in = new java.io.PushbackReader(new java.io.StringReader(newick));
 		try {
 			return this.newickToNode(in);
@@ -1275,12 +1275,12 @@ public abstract class Taxonomy implements Iterable<Node> {
 
 	// TO BE DONE: Implement ; for reading forests
 
-	Node newickToNode(java.io.PushbackReader in) throws java.io.IOException {
+	Taxon newickToNode(java.io.PushbackReader in) throws java.io.IOException {
 		int c = in.read();
 		if (c == '(') {
-			List<Node> children = new ArrayList<Node>();
+			List<Taxon> children = new ArrayList<Taxon>();
 			{
-				Node child;
+				Taxon child;
 				while ((child = newickToNode(in)) != null) {
 					children.add(child);
 					int d = in.read();
@@ -1289,14 +1289,14 @@ public abstract class Taxonomy implements Iterable<Node> {
 						System.out.println("shouldn't happen: " + d);
 				}
 			}
-			Node node = newickToNode(in); // get postfix name, x in (a,b)x
+			Taxon node = newickToNode(in); // get postfix name, x in (a,b)x
 			if (node != null || children.size() > 0) {
 				if (node == null) {
-					node = new Node(this);
+					node = new Taxon(this);
 					// kludge
 					node.setName("");
 				}
-				for (Node child : children)
+				for (Taxon child : children)
 					node.addChild(child);
 				node.rank = (children.size() > 0) ? Taxonomy.NO_RANK : "species";
 				return node;
@@ -1308,7 +1308,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 				if (c < 0 || c == ')' || c == ',') {
 					if (c >= 0) in.unread(c);
 					if (buf.length() > 0) {
-						Node node = new Node(this);
+						Taxon node = new Taxon(this);
 						node.rank = "species";
 						node.setName(buf.toString());
 						return node;
@@ -1342,7 +1342,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 
 	long maxid() {
 		long id = -1;
-		for (Node node : this) {
+		for (Taxon node : this) {
 			long idAsLong;
 			try {
 				idAsLong = Long.parseLong(node.id);
@@ -1358,7 +1358,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 		long maxid = this.maxid();
 		if (sourcemax > maxid) maxid = sourcemax;
 		System.out.println("| Highest id before: " + maxid);
-		for (Node node : this)
+		for (Taxon node : this)
 			if (node.id == null) {
 				node.setId(Long.toString(++maxid));
 				//node.addComment("new");
@@ -1425,7 +1425,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 		String contextName = row[4];
 		String sourceInfo = row[5];
 
-		List<Node> parents = filterByContext(parentName, contextName);
+		List<Taxon> parents = filterByContext(parentName, contextName);
 		if (parents == null) {
 			System.err.println("(add) Parent name " + parentName
 							   + " missing in context " + contextName);
@@ -1433,13 +1433,13 @@ public abstract class Taxonomy implements Iterable<Node> {
 		}
 		if (parents.size() > 1)
 			System.err.println("? Ambiguous parent name: " + parentName);
-        Node parent = parents.get(0);
+        Taxon parent = parents.get(0);
 
 		if (!parent.name.equals(parentName))
 			System.err.println("(add) Warning: parent taxon name is a synonym: " + parentName);
 
-		List<Node> existings = filterByContext(name, contextName);
-        Node existing = null;
+		List<Taxon> existings = filterByContext(name, contextName);
+        Taxon existing = null;
 		if (existings != null) {
             if (existings.size() > 1)
                 System.err.println("? Ambiguous taxon name: " + name);
@@ -1453,7 +1453,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 					System.err.println("(add)  ... with a different parent: " +
 									   existing.parent.name + " not " + parentName);
 			} else {
-				Node node = new Node(this);
+				Taxon node = new Taxon(this);
 				node.setName(name);
 				node.rank = rank;
 				node.setSourceIds(sourceInfo);
@@ -1483,7 +1483,7 @@ public abstract class Taxonomy implements Iterable<Node> {
 				System.err.println("(fold) No taxon to fold: " + name);
 			else {
 				if (existing.children != null)
-					for (Node child: existing.children)
+					for (Taxon child: existing.children)
 						child.changeParent(parent);
 				addSynonym(name, parent);
 				existing.prune();
@@ -1512,14 +1512,14 @@ public abstract class Taxonomy implements Iterable<Node> {
 			System.err.println("Unrecognized edit command: " + command);
 	}
 
-	List<Node> filterByContext(String taxonName, String contextName) {
-		List<Node> nodes = this.lookup(taxonName);
+	List<Taxon> filterByContext(String taxonName, String contextName) {
+		List<Taxon> nodes = this.lookup(taxonName);
 		if (nodes == null) return null;
-		List<Node> fnodes = new ArrayList<Node>(1);
-		for (Node node : nodes) {
+		List<Taxon> fnodes = new ArrayList<Taxon>(1);
+		for (Taxon node : nodes) {
 			if (!node.name.equals(taxonName)) continue;
 			// Follow ancestor chain to see whether this node is in the context
-			for (Node chain = node; chain != null; chain = chain.parent)
+			for (Taxon chain = node; chain != null; chain = chain.parent)
 				if (chain.name.equals(contextName)) {
 					fnodes.add(node);
 					break;
@@ -1555,15 +1555,15 @@ public abstract class Taxonomy implements Iterable<Node> {
     }
 
     // Look up a taxon by name or unique id.  Name must be unique in the taxonomy.
-    public Node taxon(String name) {
-        Node node = this.unique(name);
+    public Taxon taxon(String name) {
+        Taxon node = this.unique(name);
         if (node == null)
             System.err.format("Missing or ambiguous taxon: %s\n", name);
         return node;
     }
 
-    public Node taxon(String name, String context) {
-        List<Node> nodes = filterByContext(name, context);
+    public Taxon taxon(String name, String context) {
+        List<Taxon> nodes = filterByContext(name, context);
         if (nodes == null) {
             System.err.format("Missing taxon: %s in context %s\n", name, context);
             return null;
@@ -1574,8 +1574,8 @@ public abstract class Taxonomy implements Iterable<Node> {
         return nodes.get(0);
     }
 
-    public void same(Node node1, Node node2) {
-        Node unode, snode;
+    public void same(Taxon node1, Taxon node2) {
+        Taxon unode, snode;
         if (node1.taxonomy instanceof UnionTaxonomy) {
             unode = node1;
             snode = node2;
@@ -1668,21 +1668,21 @@ class SourceTaxonomy extends Taxonomy {
 			Set<String> seen = new HashSet<String>();
 			List<String> todo = new ArrayList<String>();
 			// true / true
-			for (Node node : this)
+			for (Taxon node : this)
 				if (!seen.contains(node.name)) {
-					List<Node> unodes = union.nameIndex.get(node.name);
+					List<Taxon> unodes = union.nameIndex.get(node.name);
 					if (unodes != null)
-						for (Node unode : unodes)
+						for (Taxon unode : unodes)
 							if (unode.name.equals(node.name))
 								{ seen.add(node.name); todo.add(node.name); break; }
 				}
 			// true / synonym
-			for (Node node : union)
+			for (Taxon node : union)
 				if (this.nameIndex.get(node.name) != null &&
 					!seen.contains(node.name))
 					{ seen.add(node.name); todo.add(node.name); }
 			// synonym / true
-			for (Node node : this)
+			for (Taxon node : this)
 				if (union.nameIndex.get(node.name) != null &&
 					!seen.contains(node.name))
 					{ seen.add(node.name); todo.add(node.name); }
@@ -1696,10 +1696,10 @@ class SourceTaxonomy extends Taxonomy {
 			int homcount = 0;
 			for (String name : todo) {
 				boolean painful = name.equals("Nematoda");
-				List<Node> unodes = union.nameIndex.get(name);
+				List<Taxon> unodes = union.nameIndex.get(name);
 				if (unodes != null) {
 					++incommon;
-					List<Node> nodes = this.nameIndex.get(name);
+					List<Taxon> nodes = this.nameIndex.get(name);
 					if (false &&
 						(((nodes.size() > 1 || unodes.size() > 1) && (++homcount % 1000 == 0)) || painful))
 						System.out.format("| Mapping: %s %s*%s (name #%s)\n", name, nodes.size(), unodes.size(), incommon);
@@ -1729,7 +1729,7 @@ class SourceTaxonomy extends Taxonomy {
 
 			// Could do a breakdown of matches and nonmatches by reason
 
-			for (Node node : this) {
+			for (Taxon node : this) {
 				++total;
 				if (union.lookup(node.name) == null)
 					++nonamematch;
@@ -1772,14 +1772,14 @@ class SourceTaxonomy extends Taxonomy {
 		int count = 0;
 		for (int i = 0; i < pins.length; ++i) {
 			String names[] = pins[i];
-			Node n1 = null, n2 = null;
+			Taxon n1 = null, n2 = null;
 			// For each pinnable name, look for it in both taxonomies
 			// under all possible synonyms
 			for (int j = 0; j < names.length; ++j) {
 				String name = names[j];
-				Node m1 = this.highest(name);
+				Taxon m1 = this.highest(name);
 				if (m1 != null) n1 = m1;
-				Node m2 = union.highest(name);
+				Taxon m2 = union.highest(name);
 				if (m2 != null) n2 = m2;
 			}
 			if (n1 != null && n2 != null) {
@@ -1803,10 +1803,10 @@ class SourceTaxonomy extends Taxonomy {
 			int startcount = union.count();
 			int startroots = union.roots.size();
 
-			for (Node root : this.roots) {
+			for (Taxon root : this.roots) {
 
 				// 'augment' always returns a node in the union tree, or null
-				Node newroot = root.augment(union);
+				Taxon newroot = root.augment(union);
 
 				if (newroot != null && newroot.parent == null && !union.roots.contains(newroot))
 					union.roots.add(newroot);
@@ -1815,8 +1815,8 @@ class SourceTaxonomy extends Taxonomy {
 			int tidied = 0;
 
 			// Tidy up the root set:
-			List<Node> losers = new ArrayList<Node>();
-			for (Node root : union.roots)
+			List<Taxon> losers = new ArrayList<Taxon>();
+			for (Taxon root : union.roots)
 				if (root.parent != null) {
 					losers.add(root);
 					if (++tidied < 10)
@@ -1824,11 +1824,11 @@ class SourceTaxonomy extends Taxonomy {
 					else if (tidied == 10)
 						System.out.println("| ...");
 				}
-			for (Node loser : losers)
+			for (Taxon loser : losers)
 				union.roots.remove(loser);
 
 			// Sanity check:
-			for (Node unode : union)
+			for (Taxon unode : union)
 				if (unode.parent == null && !union.roots.contains(unode))
 					System.err.println("| Missing root: " + unode);
 
@@ -1854,7 +1854,7 @@ class SourceTaxonomy extends Taxonomy {
 		for (String syn : this.nameIndex.keySet()) {
 
 			// For each node that the name names...
-			for (Node node : this.nameIndex.get(syn))
+			for (Taxon node : this.nameIndex.get(syn))
 
 				// If that node maps to a union node with a different name....
 				if (node.mapped != null && !node.mapped.name.equals(syn)) {
@@ -1901,7 +1901,7 @@ class UnionTaxonomy extends Taxonomy {
 
     void reset() {
         this.nextSequenceNumber = 0;
-        for (Node root: this.roots) {
+        for (Taxon root: this.roots) {
             // Clear out gumminess from previous merges
             root.reset();
             // Prepare for subsumption checks
@@ -1928,8 +1928,8 @@ class UnionTaxonomy extends Taxonomy {
 		System.out.println("--- Assigning ids to union starting with " + idsource.getTag() + " ---");
 
 		// Phase 1: recycle previously assigned ids.
-		for (Node node : idsource) {
-			Node unode = node.mapped;
+		for (Taxon node : idsource) {
+			Taxon unode = node.mapped;
 			if (unode != null) {
 				if (unode.comapped != node)
 					System.err.println("Map/comap don't commute: " + node + " " + unode);
@@ -1954,7 +1954,7 @@ class UnionTaxonomy extends Taxonomy {
 	// x is a source node drawn from the idsource taxonomy file.
 	// y is the union node it might or might not map to.
 
-	static Answer assessSource(Node x, Node y) {
+	static Answer assessSource(Taxon x, Taxon y) {
 		QualifiedId ref = x.putativeSourceRef();
 		if (ref != null) {
 			String putativeSourceTag = ref.prefix;
@@ -2002,12 +2002,12 @@ class UnionTaxonomy extends Taxonomy {
 		Node.resetStats();		// Taxon id clash
 		PrintStream out = Taxonomy.openw(filename);
 		Set<String> seen = new HashSet<String>();
-		for (Node idnode : idsource) 
+		for (Taxon idnode : idsource) 
 			if (idnode.mapped != null) {
 				String idstringfield = idnode.auxids;
 				if (idstringfield.length() == 0) continue;
 				for (String idstring : idstringfield.split(",")) {
-					Node auxnode = aux.idIndex.get(idstring);
+					Taxon auxnode = aux.idIndex.get(idstring);
 					String reason;
 					if (auxnode == null)
 						reason = "not-found-in-aux-source";
@@ -2029,7 +2029,7 @@ class UnionTaxonomy extends Taxonomy {
 				}
 			}
 		
-		for (Node auxnode : aux) {
+		for (Taxon auxnode : aux) {
 			if (auxnode.mapped != null && !seen.contains(auxnode.id))
 				out.print("" + auxnode.id
 						  + "\t" +
@@ -2094,7 +2094,7 @@ class UnionTaxonomy extends Taxonomy {
 		out.println("id\tname\tsourceinfo\treason\twitness\treplacement");
 
 		for (String id : idsource.idIndex.keySet()) {
-			Node node = idsource.idIndex.get(id);
+			Taxon node = idsource.idIndex.get(id);
 			if (node.mapped != null) continue;
 			String reason = "?";
 			String witness = "";
@@ -2121,7 +2121,7 @@ class UnionTaxonomy extends Taxonomy {
 
         Set<String> scrutinize = new HashSet<String>();
         for (String name : idsource.nameIndex.keySet())
-            for (Node node : idsource.nameIndex.get(name))
+            for (Taxon node : idsource.nameIndex.get(name))
                 if (node.mapped == null) {
                     scrutinize.add(name);
                     break;
@@ -2168,7 +2168,7 @@ class UnionTaxonomy extends Taxonomy {
 
 		if (false) {
 			Set<String> seen = new HashSet<String>();
-			for (Node node : this)	// preorder
+			for (Taxon node : this)	// preorder
 				if (!seen.contains(node.name)) {
 					List<Answer> answers = this.logs.get(node.name);
 					if (answers == null) continue; //shouldn't happen
@@ -2213,1069 +2213,19 @@ class UnionTaxonomy extends Taxonomy {
 
 }
 
-// or, Taxon
-
-class Node {
-	String id = null;
-	Node parent = null;
-	String name, rank = null;
-	List<Node> children = null;
-	Taxonomy taxonomy;			// For subsumption checks etc.
-	String auxids = null;		// preottol id from taxonomy file, if any
-	int size = -1;
-	List<QualifiedId> sourceIds = null;
-	Answer deprecationReason = null;
-	Answer blockedp = null;
-	boolean prunedp = false;
-
-	int properFlags = 0, inheritedFlags = 0, rankAsInt = 0;
-
-	// State during merge operation
-	Node mapped = null;			// source node -> union node
-	Node comapped = null;		// union node -> source node
-	boolean novelp = false;     // added to union in last round?
-	private String division = null;
-
-	static boolean windyp = true;
-
-	Node(Taxonomy tax) {
-		this.taxonomy = tax;
-		this.novelp = true;
-	}
-
-	// Clear out temporary stuff from union nodes
-	void reset() {
-		// this.mapped = null;    // always null anyhow
-		this.comapped = null;
-		this.division = null;
-		this.novelp = false;
-		resetBrackets();
-		if (children != null)
-			for (Node child : children)
-				child.reset();
-	}
-
-
-	// parts = fields from row of dump file
-	// uid	|	parent_uid	|	name	|	rank	|	source	|	sourceid
-	//		|	sourcepid	|	uniqname	|	preottol_id	|	
-	void init(String[] parts) {
-		this.setName(parts[2]);
-		if (parts.length >= 4) {
-			this.rank = parts[3];
-			if (this.rank.length() == 0 || this.rank.equals("no rank"))
-				this.rank = Taxonomy.NO_RANK;
-			else if (Taxonomy.ranks.get(this.rank) == null)
-				System.err.println("!! Unrecognized rank: " + this.rank + " " + this.id);
-		}
-		// TBD: map source+sourceId when present (deprecated),
-		// parse sourceInfo when present
-
-		if (this.taxonomy.infocolumn != null) {
-			if (parts.length <= this.taxonomy.infocolumn)
-				System.err.println("Missing sourceinfo column: " + this.id);
-			else {
-				String info = parts[this.taxonomy.infocolumn];
-				if (info != null && info.length() > 0)
-					this.setSourceIds(info);
-			}
-		}
-
-		else if (this.taxonomy.sourcecolumn != null &&
-			this.taxonomy.sourceidcolumn != null) {
-			List<QualifiedId> qids = new ArrayList<QualifiedId>(1);
-			qids.add(new QualifiedId(parts[this.taxonomy.sourcecolumn],
-									 parts[this.taxonomy.sourceidcolumn]));
-		}
-
-		if (this.taxonomy.preottolcolumn != null)
-			this.auxids = parts[this.taxonomy.preottolcolumn];
-
-	}
-
-	static Pattern commaPattern = Pattern.compile(",");
-
-	void setSourceIds(String info) {
-		if (info.equals("null")) return;    // glitch in OTT 2.2
-		String[] ids = commaPattern.split(info);
-		if (ids.length > 0) {
-			this.sourceIds = new ArrayList(ids.length);
-			for (String qid : ids)
-				this.addSourceId(new QualifiedId(qid));
-		}
-	}
-
-	void setName(String name) {
-		if (this.name != null) {
-            if (name.equals(this.name)) return;
-            List<Node> nodes = this.taxonomy.nameIndex.get(this.name);
-            nodes.remove(name);
-            if (nodes.size() == 0) {
-                System.out.println("Removing name from index: " + name);
-                this.taxonomy.nameIndex.remove(name);
-            }
-        }
-		this.name = name;
-		if (name == null)
-			System.err.println("! Setting name to null? " + this);
-		else
-			this.taxonomy.addToIndex(this);
-	}
-
-	void setId(String id) {
-		if (this.id == null) {
-			this.id = id;
-			this.taxonomy.idIndex.put(id, this);
-		} else
-			System.err.println("Attempt to replace id " + this.id + " with " + id);
-	}
-
-	Node getParent() {
-		return parent;
-	}
-
-	void addChild(Node child) {
-		if (child.taxonomy != this.taxonomy) {
-			this.report("Attempt to add child in different taxonomy", child);
-			Node.backtrace();
-		} else if (child.parent != null) {
-			if (this.report("Attempt to steal child !!??", child))
-				Node.backtrace();
-		} else if (child == this) {
-			if (this.report("Attempt to create self-loop !!??", child))
-				Node.backtrace();
-		} else {
-			child.parent = this;
-			if (this.children == null)
-				this.children = new ArrayList<Node>();
-			this.children.add(child);
-		}
-	}
-
-	static void backtrace() {
-		try {
-			throw new Exception("Backtrace");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	void changeParent(Node newparent) {
-		Node p = this.parent;
-		this.parent = null;
-		p.children.remove(this);
-		if (p.children.size() == 0)
-			p.children = null;
-		newparent.addChild(this);
-	}
-
-	// Go upwards and cache on the way back down
-	String getDivision() {
-		if (this.division == null) {
-			if (this.parent == null)
-				this.division = null;
-			else
-				this.division = this.parent.getDivision();
-		}
-		return this.division;
-	}
-
-	void setDivision(String division) {
-		if (this.division != null)
-			this.report("!? changing divisions doesn't work");
-		this.division = division;
-	}
-
-	// Nearest ancestor having a name that's not a prefix of ours... and isn't also a homonym
-	Node informative() {
-		Node up = this.parent;
-		while (up != null &&
-			   (this.name.startsWith(up.name) || up.taxonomy.lookup(up.name).size() > 1))
-			up = up.parent;
-		return up;
-	}
-
-	// Homonym discounting synonyms
-	boolean isHomonym() {
-		List<Node> alts = this.taxonomy.nameIndex.get(this.name);
-		if (alts == null) {
-			System.err.println("Name not indexed !? " + this.name);
-			return false;
-		}
-		for (Node alt : alts)
-			if (alt != this && alt.name.equals(this.name))
-				return true;
-		return false;
-	}
-
-	//out.println("uid\t|\tparent_uid\t|\tname\t|\trank\t|\t" +
-	//			"source\t|\tsourceid\t|\tsourcepid\t|\tuniqname\t|\tpreottol_id\t|\t");
-
-	// Note: There can be multiple sources, separated by commas.
-	// However, the first one in the list is the original source.
-	// The others are merely inferred to be identical.
-
-	QualifiedId putativeSourceRef() {
-		if (this.sourceIds != null)
-			return this.sourceIds.get(0);
-		else
-			return null;
-	}
-
-	// unode is a node in the union taxonomy, possibly fresh
-
-	void unifyWith(Node unode) {
-		if (this.mapped == unode) return; // redundant
-		if (this.mapped != null) {
-			// Shouldn't happen - assigning single source taxon to two
-			//	different union taxa
-			if (this.report("Already assigned to node in union:", unode))
-				Node.backtrace();
-			return;
-		}
-		if (unode.comapped != null) {
-			// Union node has already been matched to, but synonyms are OK
-			this.report("Union node already mapped tog, creating synonym", unode);
-		}
-		this.mapped = unode;
-
-		if (unode.name == null) unode.setName(this.name);
-		if (this.rank != Taxonomy.NO_RANK)
-			if (unode.rank == Taxonomy.NO_RANK || unode.rank.equals("samples"))
-				unode.rank = this.rank;
-		unode.comapped = this;
-
-		if (this.comment != null) { // cf. deprecate()
-			//unode.addComment(this.comment);
-			this.comment = null;
-		}
-        unode.properFlags &= this.properFlags;
-	}
-
-	// Recursive descent over source taxonomy
-
-	static void augmentationReport() {
-		if (Node.windyp)
-			Node.printStats();
-	}
-
-	// Add most of the otherwise unmapped nodes to the union taxonomy,
-	// either as new names, fragmented taxa, or (occasionally)
-	// new homonyms, or vertical insertions.
-
-	// This node is already mapped, but it may get new children.
-
-	String comment = null;	   // the reason(s) that it is what it is (or isn't)
-
-	void addComment(String comment) {
-		if (this.mapped != null)
-			this.mapped.addComment(comment);
-		if (this.comment == null)
-			this.comment = comment;
-		else if (this.comment != null)
-			this.comment = this.comment + " " + comment;
-	}
-
-	// Best if node is *not* from the union... the ids don't display well
-
-	void addComment(String comment, Node node) {
-		this.addComment(comment + "(" + node.getQualifiedId() + ")");
-	}
-
-	void addComment(String comment, String name) {
-		if (name == null)		// witness
-			this.addComment(comment);
-		else
-			this.addComment(comment + "(" + name + ")");
-	}
-
-	void addSourceId(QualifiedId qid) {
-		if (this.sourceIds == null)
-			this.sourceIds = new ArrayList<QualifiedId>(1);
-		if (!this.sourceIds.contains(qid))
-			this.sourceIds.add(qid);
-	}
-
-	void addSource(Node source) {
-		addSourceId(source.getQualifiedId());
-		// Accumulate ...
-		if (source.sourceIds != null)
-			for (QualifiedId qid : source.sourceIds)
-				addSourceId(qid);
-	}
-
-	QualifiedId getQualifiedId() {
-		if (this.id != null)
-			return new QualifiedId(this.taxonomy.getTag(), this.id);
-		else {
-            // What if from a Newick string?
-			System.err.println("!? [getQualifiedId] Node has no id: " + this.name);
-			return new QualifiedId("?", this.name);
-		}
-	}
-
-	// Method on Node, called for every node in the source taxonomy
-	Node augment(UnionTaxonomy union) {
-
-		Node newnode = null;
-        int newflags = 0;
-
-		if (this.children == null) {
-			if (this.mapped != null) {
-				newnode = this.mapped;
-				Node.markEvent("mapped/tip");
-			} else if (this.deprecationReason != null &&
-					   // Create homonym iff it's an unquestionably bad match
-					   this.deprecationReason.value > Answer.HECK_NO) {
-				union.logAndMark(Answer.no(this, null, "blocked/tip", null));
-			} else {
-				newnode = new Node(union);
-				// heckYes is uninteresting
-				union.logAndMark(Answer.heckYes(this, newnode, "new/tip", null));
-			}
-		} else {
-
-			// The children fall into four classes
-			//	A. Those that map to the "right" place (e.g. 'winner')
-			//	B. Those that map to the "wrong" place (e.g. 'loser')
-			//	C. Those that don't map - new additions to the union tree
-			//  D. Those that get dropped for some reason ('mooted')
-			// oldChildren includes both A and B
-			// newChildren = C
-			// The affinities of those in C might be divided between A and B...
-			// thus if B is nonempty (there is a 'loser') class C is called
-			// 'ambiguous'
-
-			List<Node> oldChildren = new ArrayList<Node>();  //parent != null
-			List<Node> newChildren = new ArrayList<Node>();  //parent == null
-			// Recursion step
-			for (Node child: this.children) {
-				Node augChild = child.augment(union);
-				if (augChild != null) {
-					if (augChild.parent == null)
-						newChildren.add(augChild);
-					else
-						oldChildren.add(augChild);
-				}
-			}
-
-			if (this.mapped != null) {
-				for (Node augChild : newChildren)
-					// *** This is where the Protozoa/Chromista trouble arises. ***
-					// *** They are imported, then set as children of 'life'. ***
-					this.mapped.addChild(augChild);
-				this.reportOnMapping(union, (newChildren.size() == 0));
-				newnode = this.mapped;
-
-			} else if (oldChildren.size() == 0) {
-				// New children only... just copying new stuff to union
-				if (newChildren.size() > 0) {
-					newnode = new Node(union);
-					for (Node augChild: newChildren)
-						newnode.addChild(augChild);    // ????
-					union.logAndMark(Answer.heckYes(this, newnode, "new/internal", null));
-				} else
-					union.logAndMark(Answer.no(this, null, "lose/mooted", null));
-				// fall through
-
-			} else if (this.refinementp(oldChildren, newChildren)) {
-
-					// Move the new internal node over to union taxonomy.
-					// It will end up becoming a descendent of oldParent.
-					newnode = new Node(union);
-					for (Node nu : newChildren) newnode.addChild(nu);
-					for (Node old : oldChildren) old.changeParent(newnode);   // Detach!!
-					// 'yes' is interesting, 'heckYes' isn't
-					union.logAndMark(Answer.yes(this, null, "new/insertion", null));
-					// fall through
-
-			} else if (newChildren.size() > 0) {
-				// Paraphyletic.
-				// Leave the old children where they are.
-				// Put the new children in a "tattered" incertae-sedis-like container.
-				newnode = new Node(union);
-				for (Node augChild: newChildren)
-					newnode.addChild(augChild);
-
-                newflags |= Taxonomy.TATTERED;
-				union.logAndMark(Answer.yes(this, null, "new/tattered", null));
-				// fall through
-
-			} else if (false && newChildren.size() == 0) {   // && oldChildren.size() == 0 ?
-				// If there are oldchildren and so on, we have an insertion opportunity (Silva??)
-				if (this.deprecationReason != null &&
-					this.deprecationReason.value > Answer.HECK_NO)
-					union.logAndMark(Answer.no(this, null, "blocked/internal", null));
-				else
-					union.logAndMark(Answer.no(this, null, "lose/mooted2", null));
-
-			} else {
-				// >= 1 old children, 0 new children
-				// something funny's happening here... maybe the parent should be marked incertae sedis??
-				union.logAndMark(Answer.no(this, null, "lose/dispersed", null));
-			}
-		}
-
-		if (newnode != null) {
-			if (this.mapped == null) {
-
-				// Report on homonymy.
-				// Either this is a name not before occurring in the union,
-				//	 or the corresponding node(s) in union has been rejected
-				//	 as a match.
-				// Do this check before the unifyWith call, for prettier diagnostics.
-				List<Node> losers = union.lookup(this.name);
-				if (losers != null)
-					for (Node loser : losers) {
-						if (loser.name.equals(this.name)) {
-							if (this.getDivision() == loser.getDivision())   //double check
-								union.logAndMark(Answer.no(this, loser, "new-homonym/in-division",
-														   this.getDivision()));
-							else
-								union.logAndMark(Answer.no(this, loser, "new-homonym/out-division",
-														   this.getDivision() + "=>" + loser.getDivision()));
-							break;
-						}
-					}
-                newnode.properFlags = -1;
-				this.unifyWith(newnode);	   // sets name and properFlag
-                newnode.properFlags |= newflags;
-			} else if (this.mapped != newnode)
-				System.out.println("Whazza? " + this + " ... " + newnode);
-			newnode.addSource(this);
-		}
-
-		return newnode;						 // = this.mapped
-	}
-
-	// If all of the old children have the same parent,
-	// AND that parent is the nearest old ancestor of all the new children,
-	// then we can add the old children to the new taxon,
-	// which (if all goes well) will get inserted back into the union tree
-	// under the old parent.
-
-	// This is a cheat because some of the old children's siblings
-	// might be more correctly classified as belonging to the new
-	// taxon, rather than being siblings.  So we might want to
-	// further qualify this.  (Rule is essential for mapping NCBI
-	// onto Silva.)
-
-	// Caution: See https://github.com/OpenTreeOfLife/opentree/issues/73 ...
-	// family as child of subfamily is confusing.
-	// ranks.get(node1.rank) <= ranks.get(node2.rank) ....
-
-	boolean refinementp(List<Node> oldChildren, List<Node> newChildren) {
-		Node oldParent = null;
-		for (Node old : oldChildren) {
-			// old has a nonnull parent, by contruction
-			if (oldParent == null) oldParent = old.parent;
-			else if (old.parent != oldParent) return false;
-		}
-		for (Node nu : newChildren) {
-			// alternatively, could do some kind of MRCA
-			Node anc = this.parent;
-			while (anc != null && anc.mapped == null)
-				anc = anc.parent;
-			if (anc == null)     // ran past root of tree
-				return false;
-			else if (anc.mapped != oldParent)
-				return false;    	// Paraphyletic
-		}
-		return true;
-	}
-
-	// pulled out of previous method to make it easier to read
-	void reportOnMapping(UnionTaxonomy union, boolean newp) {
-		Node newnode = null;
-
-		// --- Classify & report on what has just happened ---
-		// TBD: Maybe decorate the newChildren with info about the match?...
-		Node loser = this.antiwitness(this.mapped);
-		Node winner = this.witness(this.mapped);
-		if (winner != null) {
-			// Evidence of sameness [maybe parent agreement, or not]
-			if (loser == null)
-				// No evidence of differentness
-				// cf. "is-subsumed-by" - compatible extension
-				// (35,351)
-				// heckYes = uninteresting
-				union.logAndMark(Answer.heckYes(this, newnode, "mapped/coherent", null));
-			else {
-				// Evidence of differentness
-				// cf. "overlaps" ("type 1")
-				// (1,482)
-				union.logAndMark(Answer.yes(this, newnode, "mapped/incoherent", winner.name));
-				//if (newnode != null)   // This seems wrong somehow
-				//	newnode.mode = "incoherent"; // or "paraphyletic" ?
-			}
-		} else {
-			// No evidence of sameness [except maybe parent agreement]
-			if (loser == null) {
-				if (newp)
-					Node.markEvent("mapped/internal"); // Exact topology match
-				else
-					// No evidence of differentness
-					// cf. "by-elimination" - could actually be a homonym
-					// (7,093 occurrences, as of 2013-04-24, of which 571 'essential')
-					// (all but 94 of which have shared parents...)
-					union.logAndMark(Answer.noinfo(this, newnode, "mapped/neutral", null));
-			} else
-				// Evidence of differentness
-				// This case is rare, because it's ruled out in
-				// Criterion.subsumption, cf. "incompatible-with" ("type 2")
-				// (52 times, as of 2013-04-24, + 13 unmapped)
-				// Still arises when agreement on parent
-				union.logAndMark(Answer.no(this, newnode, "mapped/incompatible", null));
-		}
-		// --- End classify & report ---
-	}
-
-	// Mainly for debugging
-
-	public String toString() {
-		return this.toString(null);
-	}
-
-	String toString(Node other) {
-		String twinkie = "";
-		if (this.mapped != null || this.comapped != null)
-			twinkie = "*";
-		else if (other != null &&
-				 other.taxonomy != this.taxonomy &&
-				 other.taxonomy.lookup(this.name) != null)
-			twinkie = "+";		// Name in common
-
-		String ids;
-		QualifiedId ref = this.putativeSourceRef();
-		if (ref != null)		// this is from idsource
-			ids = this.id + "=" + ref;
-		else {
-			ids = this.getSourceIdsString();
-			if (ids.length() == 0)
-				ids = this.getQualifiedId().toString();
-			else				// this is from union
-				ids = "{" + ids + "}";
-		}
-
-		return 
-			"(" + ids +
-			(this.children == null ? "." : "") +
-			" " + this.name +
-			twinkie +				// tbd: indicate division top with "#" 
-			(this.comment != null ? (" " + this.comment) : "") +
-			")";
-	}
-
-	// Returns a string of the form prefix:id,prefix:id,...
-	// Generally called on a union taxonomy node
-
-	String getSourceIdsString() {
-		String answer = null;
-		List<QualifiedId> qids = this.sourceIds;
-		if (qids != null) {
-			for (QualifiedId qid : qids) {
-				if (answer == null)
-					answer = qid.toString();
-				else
-					answer = answer + "," + qid.toString();
-			}
-		}
-		// else answer = getQualifiedId().toString() ... ?
-		if (answer != null)
-			return answer;
-		else
-			// callers expect non-null
-			return "";
-	}
-
-	// Event monitoring
-
-	static Map<String, Long> eventStats = new HashMap<String, Long>();
-	static List<String> eventStatNames = new ArrayList<String>();
-
-	static boolean startReport(String note) {
-		Long probe = eventStats.get(note);
-		long count;
-		if (probe == null) {
-			eventStatNames.add(note);
-			count = 0;
-		} else
-			count = probe;
-		eventStats.put(note, count+(long)1);
-		if (count <= 10) {
-			return true;
-		} else
-			return false;
-	}
-
-	static void printStats() {
-		for (String note : eventStatNames) { // In order added
-			System.out.println("| " + note + ": " + eventStats.get(note));
-		}
-		// Reset...
-		Node.resetStats();
-	}
-
-	static void resetStats() {
-		eventStats = new HashMap<String, Long>();
-		eventStatNames = new ArrayList();
-	}
-
-	// convenience variants
-
-	static boolean markEvent(String note) {
-		return startReport(note);
-	}
-
-	boolean report(String note, Node othernode) {
-		return this.report(note, othernode, null);
-	}
-
-	boolean report(String note, Node othernode, String witness) {
-		if (startReport(note)) {
-			System.out.println("| " + note);
-			this.report1("", othernode);
-			if (othernode != null)
-				othernode.report1("", this);
-			if (witness != null)
-				System.out.println("| " + witness);
-			System.out.println();
-			return true;
-		}
-		return false;
-	}
-
-	boolean report(String note, List<Node> others) {
-		if (startReport(note)) {
-			System.out.println("| " + note);
-			this.report1("", null);
-			for (Node othernode : others)
-				othernode.report1("", others.get(0));
-			System.out.println();
-			return true;
-		}
-		return false;
-	}
-
-	void report(String tag) {
-		if (startReport(tag))
-			report1(tag, null);
-	}
-
-	void report1(String tag, Node other) {
-		String output = "";
-		int i = 0;
-		boolean seenmapped = false;
-		for (Node n = this; n != null; n = n.parent) {
-			if (++i < 4 || (!seenmapped && (n.mapped != null || n.comapped != null))) {
-				if (n.mapped != null || n.comapped != null)
-					seenmapped = true;
-				output += " " + n.toString(other);
-			}
-			else if (i == 4)
-				output += " ...";
-		}
-		System.out.println(" " + tag + " " + output);
-	}
-
-	// N.b. this is in source taxonomy, match is in union
-	boolean separationReport(String note, Node match) {
-		if (startReport(note)) {
-			System.out.println(note);
-
-			Node nearestMapped = this;			 // in source taxonomy
-			Node nearestMappedMapped = this;	 // in union taxonomy
-
-			if (this.taxonomy != match.taxonomy) {
-				if (!(this.taxonomy instanceof SourceTaxonomy) ||
-					!(match.taxonomy instanceof UnionTaxonomy)) {
-					this.report("Type dysfunction", match);
-					return true;
-				}
-				// Need to cross from source taxonomy over into the union one
-				while (nearestMapped != null && nearestMapped.mapped == null)
-					nearestMapped = nearestMapped.parent;
-				if (nearestMapped == null) {
-					this.report("No matches, can't compute mrca", match);
-					return true;
-				}
-				nearestMappedMapped = nearestMapped.mapped;
-				if (nearestMappedMapped.taxonomy != match.taxonomy) {
-					this.report("Not in matched taxonomies", match);
-					return true;
-				}
-			}
-
-			Node mrca = match.mrca(nearestMappedMapped); // in union tree
-			if (mrca == null) {
-				this.report("In unconnected trees !?", match);
-				return true;
-			}
-
-			// Number of steps in source tree before crossing over
-			int d0 = this.measureDepth() - nearestMapped.measureDepth();
-
-			// Steps from source node up to mrca
-			int d1 = d0 + (nearestMappedMapped.measureDepth() - mrca.measureDepth());
-			int d2 = match.measureDepth() - mrca.measureDepth();
-			int d3 = (d2 > d1 ? d2 : d1);
-			String spaces = "															 ";
-			Node n1 = this;
-			for (int i = d3 - d1; i <= d3; ++i) {
-				if (n1 == nearestMapped)
-					n1 = nearestMappedMapped;
-				System.out.println("  " + spaces.substring(0, i) + n1.toString(match));
-				n1 = n1.parent;
-			}
-			Node n2 = match;
-			for (int i = d3 - d2; i <= d3; ++i) {
-				System.out.println("  " + spaces.substring(0, i) + n2.toString(this));
-				n2 = n2.parent;
-			}
-			if (n1 != n2)
-				System.err.println("Bug: " + n1 + " != " + n2);
-			return true;
-		}
-		return false;
-	}
-
-	String elaboratedString(Taxonomy tax) {
-		if (this.mapped != null)
-			return this.toString();
-		else {
-			boolean h = (tax.unique(this.name) != null);
-			return this.toString() +  (h ? "?" : "");
-		}
-	}
-
-	// Number of child-less nodes at and below this node.
-
-	int size() {
-		if (size < 1) {
-			size = 1;
-			if (children != null)
-				for (Node child: children)
-					size += child.size();
-		}
-		return size;
-	}
-
-	// Brute force count of nodes (more reliable than size() in presence of change)
-	int count() {
-		int count = 1;
-		if (this.children != null)
-			for (Node child : this.children)
-				count += child.count();
-		return count;
-	}
-
-	static final int NOT_SET = -7; // for source nodes
-
-	int seq = NOT_SET;		// Self
-	int start = NOT_SET;	// First taxon included not including self
-	int end = NOT_SET;		// Next taxon *not* included
-
-	void resetBrackets() {			  // for union nodes
-		this.seq = NOT_SET;			  // Self
-		this.start = NOT_SET;	// First taxon included not including self
-		this.end = NOT_SET;					   // Next taxon *not* included
-	}
-
-	// Applied to a union node
-	void assignBrackets() {
-		// Only consider names in common ???
-		this.seq = this.taxonomy.nextSequenceNumber++;
-		this.start = this.taxonomy.nextSequenceNumber;
-		if (this.children != null)
-			for (Node child : this.children)
-				child.assignBrackets();
-		this.end = this.taxonomy.nextSequenceNumber;
-	}
-
-	// Applied to a source node
-	void getBracket(Taxonomy union) {
-		if (this.end == NOT_SET) {
-			Node unode = union.unique(this.name);
-			if (unode != null)
-				this.seq = unode.seq; // Else leave seq as NOT_SET
-			if (this.children != null) {
-				int start = Integer.MAX_VALUE;
-				int end = -1;
-				for (Node child : this.children) {
-					child.getBracket(union);
-					if (child.start < start) start = child.start;
-					if (child.end > end) end = child.end;
-					if (child.seq != NOT_SET) {
-						if (child.seq < start) start = child.seq;
-						if (child.seq > end) end = child.seq+1;
-					}
-				}
-				this.start = start;
-				this.end = end;
-			}
-		}
-	}
-
-	// Cheaper test, without seeking a witness
-	boolean isNotSubsumedBy(Node unode) {
-		this.getBracket(unode.taxonomy);
-		return this.start < unode.start || this.end > unode.end; // spills out?
-	}
-
-	// Look for a member of this source taxon that's not a member of the union taxon,
-	// but is a member of some other union taxon.
-	Node antiwitness(Node unode) {
-		getBracket(unode.taxonomy);
-		if (this.start >= unode.start && this.end <= unode.end)
-			return null;
-		else if (this.children != null) { // it *will* be nonnull actually
-			for (Node child : this.children)
-				if (child.seq != NOT_SET && (child.seq < unode.start || child.seq >= unode.end))
-					return child;
-				else {
-					Node a = child.antiwitness(unode);
-					if (a != null) return a;
-				}
-		}
-		return null;			// Shouldn't happen
-	}
-
-	// Look for a member of the source taxon that's also a member of the union taxon.
-	Node witness(Node unode) { // assumes is subsumed by unode
-		getBracket(unode.taxonomy);
-		if (this.start >= unode.end || this.end <= unode.start) // Nonoverlapping => lose
-			return null;
-		else if (this.children != null) { // it *will* be nonnull actually
-			for (Node child : this.children)
-				if (child.seq != NOT_SET && (child.seq >= unode.start && child.seq < unode.end))
-					return child;
-				else {
-					Node a = child.witness(unode);
-					if (a != null) return a;
-				}
-		}
-		return null;			// Shouldn't happen
-	}
-
-	// Find a near-ancestor (parent, grandparent, etc) node that's in
-	// common with the other taxonomy
-	Node scan(Taxonomy other) {
-		Node up = this.parent;
-
-		// Cf. informative() method
-		// Without this we get ambiguities when the taxon is a species
-		while (up != null && up.name != null && this.name.startsWith(up.name))
-			up = up.parent;
-
-		while (up != null && up.name != null && other.lookup(up.name) == null)
-			up = up.parent;
-
-		if (up != null && up.name == null) {
-			System.err.println("!? Null name: " + up + " ancestor of " + this);
-			Node u = this;
-			while (u != null) {
-				System.err.println(u);
-				u = u.parent;
-			}
-		}
-		return up;
-	}
-
-	int depth = -1;
-	int getDepth() {
-		if (this.depth < 0) {
-			if (this.parent == null)
-				this.depth = 0;
-			else
-				this.depth = this.parent.getDepth() + 1;
-		}
-		return this.depth;
-	}
-	int measureDepth() {		// Robust in presence of insertions
-		if (this.parent == null)
-			this.depth = 0;
-		else
-			this.depth = this.parent.measureDepth() + 1;
-		return this.depth;
-	}
-
-	Node mrca(Node b) {
-		if (b == null) return null; // Shouldn't happen, but...
-		else {
-			Node a = this;
-			while (a.getDepth() > b.getDepth())
-				a = a.parent;
-			while (b.getDepth() > a.getDepth())
-				b = b.parent;
-			while (a != b) {
-				a = a.parent;
-				b = b.parent;
-			}
-			return a;
-		}
-	}
-
-	void appendNewickTo(StringBuffer buf) {
-		if (this.children != null) {
-			buf.append("(");
-			Collections.sort(this.children, compareNodes);
-			Node last = children.get(this.children.size()-1);
-			for (Node child : children) {
-				child.appendNewickTo(buf);
-				if (child != last)
-					buf.append(",");
-			}
-			buf.append(")");
-		}
-		if (this.name != null)
-			buf.append(name.replace('(','[').replace(')',']').replace(':','?'));
-	}
-
-	static Comparator<Node> compareNodes = new Comparator<Node>() {
-		public int compare(Node x, Node y) {
-			return x.name.compareTo(y.name);
-		}
-	};
-
-	// Delete this node and all of its descendents.
-	void prune() {
-		if (this.children != null) {
-			for (Node child : new ArrayList<Node>(children))
-				child.prune();
-			this.children = null;
-		}
-		if (this.parent != null) {
-			this.parent.children.remove(this);
-			this.parent.properFlags |= Taxonomy.EDITED;
-			this.parent = null;
-		}
-		List nodes = this.taxonomy.nameIndex.get(this.name);
-		nodes.remove(this);
-		if (nodes.size() == 0)
-			this.taxonomy.nameIndex.remove(this.name);
-		if (this.id != null)
-			this.taxonomy.idIndex.remove(this.id);
-		this.prunedp = true;  // kludge for indexes
-	}
-
-	String uniqueName() {
-		List<Node> nodes = this.taxonomy.lookup(this.name);
-		if (nodes == null) {
-			System.err.format("!? Confused: %s in %s\n", this.name,
-							  this.parent == null ? "(roots)" : this.parent.name);
-			return "?";
-		}
-		for (Node other : nodes)
-			if (other != this && other.name.equals(this.name)) {
-				Node i = this.informative();
-				if ((i != other.informative() &&
-					 i != null &&
-					 !this.name.endsWith(" sp."))) {
-					String urank = "";
-					if (this.rank != null) urank = this.rank + " ";
-					String irank = "";
-					if (i.rank != null) irank = i.rank + " ";
-					return this.name + " (" + urank + "in " + irank + i.name + ")";
-				} else
-					return this.name + " (" + this.getSourceIdsString() + ")";
-			}
-		return "";
-	}
-
-	static Comparator<Node> compareNodesBySize = new Comparator<Node>() {
-		public int compare(Node x, Node y) {
-			return x.count() - y.count();
-		}
-	};
-
-    // Duplicate single node
-
-    Node dup(Taxonomy tax) {
-		Node dup = new Node(tax);
-		dup.setName(this.name);
-		dup.setId(this.id);
-		dup.rank = this.rank;
-		dup.sourceIds = this.sourceIds;
-        return dup;
-    }
-
-	// Copy subtree
-
-    Node select(Taxonomy tax) {
-		Node sam = this.dup(tax);
-		this.mapped = sam;
-		if (this.children != null)
-			for (Node child : this.children) {
-				Node c = child.select(tax);
-				sam.addChild(c);
-			}
-		return sam;
-	}
-
-	// The nodes of the resulting tree are a subset of size k of the
-	// nodes from the input tree, sampled proportionally.
-
-    Node sample(int k, Taxonomy tax) {
-		if (k <= 0) return null;
-		Node sam = this.dup(tax);
-
-		// Assume k <= n.
-		// We want to select k descendents out of the n that are available.
-
-		int n = this.count() ;
-	
-		// n1 ranges from 0 up to n-1    (the 1 is for the taxon itself)
-		// k1 ranges from 0 up to k-1    (the 1 is for sam)
-		// k1 : n1 :: k2 : n2 :: k : n
-		// k2 = (k*n) / n2
-		int n1 = 1;
-		int k1 = 1;
-
-		if (this.children != null) {
-			java.util.Collections.sort(this.children, compareNodesBySize);
-			for (Node child : this.children) {
-
-				if (k1 >= k) break;    // redundant?
-
-				int n2 = n1 + child.count();
-
-				// Number of children we want to have after sampling
-				// From k2 : n2 :: k : n
-				int k2 = (n2 == n ? k : (k * n2) / n);
-				if (false)  //this.name.contains("cellular life")
-					System.out.println("? " + 
-									   k1 + " : " + k2 + " : " + k + " :: " +
-									   n1 + " : " + n2 + " : " + n + " " + child.name);
-				int dk = k2 - k1;
-
-				// Number of children to request
-				Node c = child.sample(dk, tax);
-				if (c != null) {
-					sam.addChild(c);
-					k1 += c.count();
-				}
-				n1 = n2;
-
-			}
-		}
-
-		return sam;
-	}
-}
-
 // For each source node, consider all possible union nodes it might map to
 // TBD: Exclude nodes that have 'prunedp' flag set
 
 class Matrix {
 
 	String name;
-	List<Node> nodes;
-	List<Node> unodes;
+	List<Taxon> nodes;
+	List<Taxon> unodes;
 	int m;
 	int n;
 	Answer[][] suppressp;
 
-	Matrix(String name, List<Node> nodes, List<Node> unodes) {
+	Matrix(String name, List<Taxon> nodes, List<Taxon> unodes) {
 		this.name = name;
 		this.nodes = nodes;
 		this.unodes = unodes;
@@ -3298,9 +2248,9 @@ class Matrix {
 
 		// Log the fact that there are synonyms involved in these comparisons
 		if (false)
-			for (Node node : nodes)
+			for (Taxon node : nodes)
 				if (!node.name.equals(name)) {
-					Node unode = unodes.get(0);
+					Taxon unode = unodes.get(0);
 					((UnionTaxonomy)unode.taxonomy).logAndMark(Answer.noinfo(node, unode, "synonym(s)", node.name));
 					break;
 				}
@@ -3327,10 +2277,10 @@ class Matrix {
 		Answer[] uanswer = new Answer[n];
 
 		for (int i = 0; i < m; ++i) { // For each source node...
-			Node x = nodes.get(i);
+			Taxon x = nodes.get(i);
 			for (int j = 0; j < n; ++j) {  // Find a union node to map it to...
 				if (suppressp[i][j] != null) continue;
-				Node y = unodes.get(j);
+				Taxon y = unodes.get(j);
 				Answer z = criterion.assess(x, y);
 				if (z.value == Answer.DUNNO)
 					continue;
@@ -3358,8 +2308,8 @@ class Matrix {
 				int j = uniq[i];
 				// Avoid assigning two source nodes to the same union node (synonym creation)...
 				if (uuniq[j] >= 0 && suppressp[i][j] == null) {
-					Node x = nodes.get(i); // == uuniq[j]
-					Node y = unodes.get(j);
+					Taxon x = nodes.get(i); // == uuniq[j]
+					Taxon y = unodes.get(j);
 
 					// Block out column, to prevent other source nodes from mapping to the same union node
 					for (int ii = 0; ii < m; ++ii)
@@ -3403,7 +2353,7 @@ class Matrix {
 	// Record reasons for mapping failure - for each unmapped source node, why didn't it map?
 	void postmortem() {
 		for (int i = 0; i < m; ++i) {
-			Node node = nodes.get(i);
+			Taxon node = nodes.get(i);
 			// Suppress synonyms
 			if (node.mapped == null) {
 				int alts = 0;    // how many union nodes might we have gone to?
@@ -3420,7 +2370,7 @@ class Matrix {
 					String w = null;
 					for (int ii = 0; ii < m; ++ii)
 						if (suppressp[ii][altj] == null) {
-							Node rival = nodes.get(ii);    // in source taxonomy or idsource
+							Taxon rival = nodes.get(ii);    // in source taxonomy or idsource
 							if (rival == node) continue;
 							// if (rival.mapped == null) continue;  // ???
 							QualifiedId qid = rival.getQualifiedId();
@@ -3435,7 +2385,7 @@ class Matrix {
 					String w = null;
 					for (int j = 0; j < n; ++j)
 						if (suppressp[i][j] == null) {
-							Node candidate = unodes.get(j);    // in union taxonomy
+							Taxon candidate = unodes.get(j);    // in union taxonomy
 							// if (candidate.comapped == null) continue;  // ???
 							if (candidate.sourceIds == null)
 								System.err.println("?!! No source ids: " + candidate);
@@ -3491,7 +2441,7 @@ class Matrix {
 
 abstract class Criterion {
 
-	abstract Answer assess(Node x, Node y);
+	abstract Answer assess(Taxon x, Taxon y);
 
 	// Ciliophora = ncbi:5878 = gbif:10 != gbif:3269382
 	static QualifiedId[][] exceptions = {
@@ -3510,7 +2460,7 @@ abstract class Criterion {
 	static Criterion adHoc =
 		new Criterion() {
 			public String toString() { return "ad-hoc"; }
-			Answer assess(Node x, Node y) {
+			Answer assess(Taxon x, Taxon y) {
 				String xtag = x.taxonomy.getTag();
 				for (QualifiedId[] exception : exceptions) {
 					// x is from gbif, y is union
@@ -3540,7 +2490,7 @@ abstract class Criterion {
 	static Criterion division =
 		new Criterion() {
 			public String toString() { return "same-division"; }
-			Answer assess(Node x, Node y) {
+			Answer assess(Taxon x, Taxon y) {
 				String xdiv = x.getDivision();
 				String ydiv = y.getDivision();
 				if (xdiv == ydiv)
@@ -3556,7 +2506,7 @@ abstract class Criterion {
 	static Criterion eschewTattered =
 		new Criterion() {
 			public String toString() { return "eschew-tattered"; }
-			Answer assess(Node x, Node y) {
+			Answer assess(Taxon x, Taxon y) {
 				if ((y.properFlags & Taxonomy.TATTERED) != 0 //from a previous merge
 					&& y.isHomonym()
 					)  
@@ -3571,9 +2521,9 @@ abstract class Criterion {
 	static Criterion lineage =
 		new Criterion() {
 			public String toString() { return "same-ancestor"; }
-			Answer assess(Node x, Node y) {
-				Node y0 = y.scan(x.taxonomy);	  // ignore names not known in both taxonomies
-				Node x0 = x.scan(y.taxonomy);
+			Answer assess(Taxon x, Taxon y) {
+				Taxon y0 = y.scan(x.taxonomy);	  // ignore names not known in both taxonomies
+				Taxon x0 = x.scan(y.taxonomy);
 				if (x0 == null || y0 == null)
 					return Answer.NOINFO;
 
@@ -3596,7 +2546,7 @@ abstract class Criterion {
 			}
 		};
 
-	static boolean online(String name, Node node) {
+	static boolean online(String name, Taxon node) {
 		for ( ; node != null; node = node.parent)
 			if (node.name.equals(name)) return true;
 		return false;
@@ -3605,9 +2555,9 @@ abstract class Criterion {
 	static Criterion subsumption =
 		new Criterion() {
 			public String toString() { return "overlaps"; }
-			Answer assess(Node x, Node y) {
-				Node a = x.antiwitness(y);
-				Node b = x.witness(y);
+			Answer assess(Taxon x, Taxon y) {
+				Taxon a = x.antiwitness(y);
+				Taxon b = x.witness(y);
 				if (b != null) { // good
 					if (a == null)	// good
 						// 2859
@@ -3632,7 +2582,7 @@ abstract class Criterion {
 	static Criterion compareSourceIds =
 		new Criterion() {
 			public String toString() { return "same-qualified-id"; }
-			Answer assess(Node x, Node y) {
+			Answer assess(Taxon x, Taxon y) {
 				// x is source node, y is union node.
 				// Two cases:
 				// 1. Mapping x=NCBI to y=union(SILVA): y.sourceIds contains x.id
@@ -3655,7 +2605,7 @@ abstract class Criterion {
 	static Criterion knowDivision =
 		new Criterion() {
 			public String toString() { return "same-division-knowledge"; }
-			Answer assess(Node x, Node y) {
+			Answer assess(Taxon x, Taxon y) {
 				String xdiv = x.getDivision();
 				String ydiv = y.getDivision();
 				if (xdiv != ydiv) // One might be null
@@ -3670,7 +2620,7 @@ abstract class Criterion {
 	static Criterion byRank =
 		new Criterion() {
 			public String toString() { return "same-rank"; }
-			Answer assess(Node x, Node y) {
+			Answer assess(Taxon x, Taxon y) {
 				if ((x == null ?
 					 x == y :
 					 (x.rank != Taxonomy.NO_RANK &&
@@ -3685,7 +2635,7 @@ abstract class Criterion {
 	static Criterion byPrimaryName =
 		new Criterion() {
 			public String toString() { return "same-primary-name"; }
-			Answer assess(Node x, Node y) {
+			Answer assess(Taxon x, Taxon y) {
 				if (x.name.equals(y.name))
 					return Answer.weakYes(x, y, "same-primary-name", x.name);
 				else
@@ -3698,7 +2648,7 @@ abstract class Criterion {
 	static Criterion elimination =
 		new Criterion() {
 			public String toString() { return "name-in-common"; }
-			Answer assess(Node x, Node y) {
+			Answer assess(Taxon x, Taxon y) {
 				return Answer.weakYes(x, y, "name-in-common", null);
 			}
 		};
@@ -3725,12 +2675,12 @@ abstract class Criterion {
 
 
 class Answer {
-	Node x, y;					// The question is: Should x be mapped to y?
+	Taxon x, y;					// The question is: Should x be mapped to y?
 	int value;					// YES, NO, etc.
 	String reason;
 	String witness;
 	//gate c14
-	Answer(Node x, Node y, int value, String reason, String witness) {
+	Answer(Taxon x, Taxon y, int value, String reason, String witness) {
 		this.x = x; this.y = y;
 		this.value = value;
 		this.reason = reason;
@@ -3745,31 +2695,31 @@ class Answer {
 	static final int NO = -2;
 	static final int HECK_NO = -3;
 
-	static Answer heckYes(Node x, Node y, String reason, String witness) { // Uninteresting
+	static Answer heckYes(Taxon x, Taxon y, String reason, String witness) { // Uninteresting
 		return new Answer(x, y, HECK_YES, reason, witness);
 	}
 
-	static Answer yes(Node x, Node y, String reason, String witness) {
+	static Answer yes(Taxon x, Taxon y, String reason, String witness) {
 		return new Answer(x, y, YES, reason, witness);
 	}
 
-	static Answer weakYes(Node x, Node y, String reason, String witness) {
+	static Answer weakYes(Taxon x, Taxon y, String reason, String witness) {
 		return new Answer(x, y, WEAK_YES, reason, witness);
 	}
 
-	static Answer noinfo(Node x, Node y, String reason, String witness) {
+	static Answer noinfo(Taxon x, Taxon y, String reason, String witness) {
 		return new Answer(x, y, DUNNO, reason, witness);
 	}
 
-	static Answer weakNo(Node x, Node y, String reason, String witness) {
+	static Answer weakNo(Taxon x, Taxon y, String reason, String witness) {
 		return new Answer(x, y, WEAK_NO, reason, witness);
 	}
 
-	static Answer no(Node x, Node y, String reason, String witness) {
+	static Answer no(Taxon x, Taxon y, String reason, String witness) {
 		return new Answer(x, y, NO, reason, witness);
 	}
 
-	static Answer heckNo(Node x, Node y, String reason, String witness) {
+	static Answer heckNo(Taxon x, Taxon y, String reason, String witness) {
 		return new Answer(x, y, HECK_NO, reason, witness);
 	}
 
@@ -3802,10 +2752,10 @@ class Answer {
 	}
 
 	// How many taxa would we lose if we didn't import this part of the tree?
-	int lossage(Node node) {
+	int lossage(Taxon node) {
 		int n = 1;
 		if (node.children != null)
-			for (Node child : node.children)
+			for (Taxon child : node.children)
 				if (child.mapped == null || child.mapped.novelp)
 					n += lossage(child);
 		return n;

@@ -224,6 +224,11 @@ clean:
 	rm -f $(CLASS)
 	rm -f feed/ncbi/taxdump.tar.gz
 
+z: feed/ott/chromista-spreadsheet.py
+feed/ott/chromista-spreadsheet.py: feed/ott/chromista-spreadsheet.csv feed/ott/process-chromista-spreadsheet.py
+	python feed/ott/process-chromista-spreadsheet.py \
+           <feed/ott/chromista-spreadsheet.csv >feed/ott/chromista-spreadsheet.py
+
 # -----------------------------------------------------------------------------
 # Test: nematodes
 

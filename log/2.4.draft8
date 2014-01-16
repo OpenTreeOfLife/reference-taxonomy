@@ -1,0 +1,1232 @@
+java -classpath ".:lib/*" -Xmx12G org.opentreeoflife.smasher.Smasher --jython feed/ott/ott.py
+--- Reading tax/silva/ ---
+prefix is silva
+smushp is false
+! No header row
+| 5 names with diacritics
+Tolerating sibling homonym AB497058 => X56575, name = Vibrio campbellii
+Tolerating sibling homonym AB497069 => X70641, name = Vibrio ordalii
+Tolerating sibling homonym X72870 => L09176, name = Clostridium stercorarium subsp. thermolacticum
+Tolerating sibling homonym EF687778 => U44771, name = Mycoplasma ovipneumoniae
+Tolerating sibling homonym HQ407269 => AM397063, name = Wohlfahrtiimonas chitiniclastica
+Tolerating sibling homonym EF015477 => AY683045, name = Methylobacterium oryzae
+Tolerating sibling homonym AJ234059 => X73952, name = Arcanobacterium haemolyticum
+Tolerating sibling homonym X72771 => X72770, name = Methylococcus capsulatus
+Tolerating sibling homonym AB109887 => Z76666, name = Pseudomonas pseudoalcaligenes
+...
+874 sibling homonyms
+Adding Synergistetes bacterium enrichment culture clone DhR2/LM-F01 as synonym for (HQ012836=ncbi:875975. Synergistetes bacterium enrichment culture clone DhR^2/LM-F01)
+| 67718 synonyms
+| 881 homonyms, of which 29 name cousin taxa, 784 name sibling taxa
+--- Mapping silva into union ---
+| Names in common: 0
+| Added 67723 synonyms to union
+--- Reading tax/713/ ---
+prefix is study713
+! No header row
+--- Mapping study713 into union ---
+Pinned 2 out of 11
+| Names in common: 4
+| different-division: 1
+| Of 121 nodes in study713: 4 with name in common, of which 3 matched with existing, 1 blocked
+--- Augmenting union with new nodes from study713 ---
+| Started with:		 1 trees, 73480 taxa
+| mapped/tip: 1
+| new/tip: 91
+| new/internal: 27
+| new-homonym/out-division: 1
+| mapped/incompatible: 1
+| mapped/coherent: 1
+| Ended with:		 1 trees, 73480 taxa
+--- Reading tax/if/ ---
+prefix is if
+smushp is true
+! No header row
+!! Identifier with no associated name, probably a missing parent: 10105
+!! Identifier with no associated name, probably a missing parent: 10415
+!! Identifier with no associated name, probably a missing parent: 10282
+!! Identifier with no associated name, probably a missing parent: 7487
+!! Identifier with no associated name, probably a missing parent: 7267
+!! Identifier with no associated name, probably a missing parent: 12058
+!! Identifier with no associated name, probably a missing parent: 901
+!! Identifier with no associated name, probably a missing parent: 5702
+!! Identifier with no associated name, probably a missing parent: 3859
+!! Identifier with no associated name, probably a missing parent: 4813
+!! Identifier with no associated name, probably a missing parent: 16284
+!! Identifier with no associated name, probably a missing parent: not found
+!! Identifier with no associated name, probably a missing parent: 9365
+!! Identifier with no associated name, probably a missing parent: 9237
+!! Identifier with no associated name, probably a missing parent: 8190
+!! Identifier with no associated name, probably a missing parent: 8080
+!! Identifier with no associated name, probably a missing parent: 8924
+!! Identifier with no associated name, probably a missing parent: 8961
+!! Identifier with no associated name, probably a missing parent: 8555
+!! Identifier with no associated name, probably a missing parent: 90402
+!! Identifier with no associated name, probably a missing parent: 17938
+!! Identifier with no associated name, probably a missing parent: 17506
+!! Identifier with no associated name, probably a missing parent: 17030
+!! Identifier with no associated name, probably a missing parent: 17045
+!! Identifier with no associated name, probably a missing parent: 18728
+!! Identifier with no associated name, probably a missing parent: 18640
+!! Identifier with no associated name, probably a missing parent: 2170
+!! Identifier with no associated name, probably a missing parent: 1387
+!! Identifier with no associated name, probably a missing parent: 3563
+There are 114 roots
+if is ill-formed: 254844 rows, but only 253322 reachable from roots
+| 646 names with diacritics
+Changing name: Metasphaeria cocoes -> Metasphaeria cocoÃ«s
+Changing name: Diplophragmia petsamoensis -> Diplophragmia petsamoÃ«nsis
+Changing name: Calonectria tubaraoensis -> Calonectria tubaraoÃ«nsis
+Smushing sibling homonym 187602 => 174664, name = Aspergillus mollis
+Smushing sibling homonym 187613 => 179455, name = Agaricus ocreatus
+Smushing sibling homonym 172101 => 161362, name = Aecidium cardui
+Smushing sibling homonym 22545 => 22402, name = Trichostroma
+Smushing sibling homonym 172023 => 132849, name = Clitocybe applanata
+Smushing sibling homonym 187562 => 187208, name = Mucor fuscus
+Smushing sibling homonym 187726 => 180525, name = Diaporthe celastrina
+Smushing sibling homonym 22409 => 22387, name = Variolaria
+Smushing sibling homonym 172241 => 158217, name = Mycogone flava
+...
+6281 sibling homonyms
+Adding Elsinoe ilicis as synonym for (if:297127. ElsinoÃ« ilicis)
+Putative synonym Inonotus nidus-pici is the primary name of 298991
+Identifier 449411 unrecognized for synonym Usnea dasypoga
+Identifier 246945 unrecognized for synonym Boletus erythroteron
+Putative synonym Coprinellus minutisporus is the primary name of 518739
+Identifier 194560 unrecognized for synonym Helvella vesiculosa
+Putative synonym Roccella ceruchis is the primary name of 569445
+Identifier 499436 unrecognized for synonym Phaeomyces kuwaitiensis
+Identifier 246945 unrecognized for synonym Boletus erythrentheron
+Putative synonym Leptosphaeria arrhenatheri is the primary name of 160600
+Putative synonym Tympanis laricina is the primary name of 153407
+Identifier 233779 unrecognized for synonym Leucoloma livida
+Identifier 194560 unrecognized for synonym Urnula minor
+Identifier 465253 unrecognized for synonym Russula incarnata
+Identifier 218372 unrecognized for synonym Fusoma pini
+Identifier 194560 unrecognized for synonym Peziza stevensoniana
+Putative synonym Peronospora erythraeae is the primary name of 264235
+Identifier 218372 unrecognized for synonym Fusidium udum
+Putative synonym Hymenochaete nigricans is the primary name of 223292
+Putative synonym Stemphylium cannabinum is the primary name of 339652
+...
+| 2266 synonyms
+| 41 homonyms, of which 2 name cousin taxa, 2 name sibling taxa
+--- Mapping if into union ---
+Pinned 1 out of 11
+| Names in common: 356
+| unresolved/ambiguous: 3
+| excluded(overlaps): 1
+| incompatible-with: 2
+| Of 247048 nodes in if: 356 with name in common, of which 350 matched with existing, 6 blocked
+--- Augmenting union with new nodes from if ---
+| Started with:		 1 trees, 73480 taxa
+| mapped/tip: 227
+| new/tip: 235534
+| mapped/coherent: 79
+| new/internal: 11095
+| blocked/tip: 2
+| mapped/neutral: 35
+| new/tattered: 49
+| new-homonym/out-division: 33
+| mapped/incompatible: 1
+| lose/dispersed: 11
+| lose/mooted: 4
+| new/insertion: 3
+| mapped/incoherent: 8
+| new-homonym/in-division: 10
+| Ended with:		 73 trees, 73480 taxa
+| Added 2885 synonyms to union
+--- Reading tax/ncbi/ ---
+prefix is ncbi
+! No header row
+500000
+1000000
+| 25 names with diacritics
+Tolerating sibling homonym 487343 => 169972, name = environmental samples
+Tolerating sibling homonym 931999 => 412391, name = environmental samples
+Tolerating sibling homonym 675263 => 259321, name = environmental samples
+Tolerating sibling homonym 1289957 => 255778, name = Endoxyla
+Tolerating sibling homonym 699875 => 99260, name = environmental samples
+Tolerating sibling homonym 904971 => 390305, name = environmental samples
+Tolerating sibling homonym 291201 => 111737, name = environmental samples
+Tolerating sibling homonym 296834 => 259321, name = environmental samples
+Tolerating sibling homonym 860775 => 129633, name = environmental samples
+...
+13 sibling homonyms
+Adding Dehalococcoides sp. enrichment culture clone DhR2/LM-E08 as synonym for (ncbi:875969. Dehalococcoides sp. enrichment culture clone DhR^2/LM-E08)
+Putative synonym metagenomes is the primary name of 408169
+Identifier 68337 unrecognized for synonym Flexistipes group
+Putative synonym environmental samples is the primary name of 211103
+Identifier 118001 unrecognized for synonym Chrysiogenes group
+Putative synonym other sequences is the primary name of 28384
+Identifier 188708 unrecognized for synonym Togobacteria
+Identifier 67799 unrecognized for synonym Thermodesulfobacterium group
+Identifier 1760 unrecognized for synonym Actinomycetes
+Identifier 1760 unrecognized for synonym High GC gram-positive bacteria
+Identifier 1760 unrecognized for synonym high G+C Gram-positive bacteria
+Identifier 1760 unrecognized for synonym high GC Gram+
+Identifier 32061 unrecognized for synonym Chloroflecales
+Identifier 32061 unrecognized for synonym not "Chlorobacteria" Cavalier-Smith 1992
+Identifier 32061 unrecognized for synonym not Chlorobacteria Cavalier-Smith 2002
+Putative synonym environmental samples is the primary name of 50742
+| 264955 synonyms
+| 719 homonyms, of which 3 name cousin taxa, 2 name sibling taxa
+--- Mapping ncbi into union ---
+Pinned 6 out of 11
+| Names in common: 101818
+| different-division: 321
+| excluded(same-ancestor): 47
+| unresolved/ambiguous: 47
+| excluded(same-primary-name): 4
+| unresolved/blocked: 166
+| excluded(overlaps): 9
+| incompatible-with: 51
+| unresolved/contentious: 43
+| lost-race-to-union(same-ancestor): 2
+| Of 1112006 nodes in ncbi: 98624 with name in common, of which 97979 matched with existing, 645 blocked
+--- Augmenting union with new nodes from ncbi ---
+| No longer a root: (null=if:27868 Riccia*)
+| No longer a root: (null=if:12190 Polyangium*)
+| No longer a root: (null=if:24110 Aneura*)
+| No longer a root: (null=if:39055 Cephaleuros*)
+| No longer a root: (null=if:27847 Trentepohlia*)
+| No longer a root: (null=if:24033 Ralfsia*)
+| No longer a root: (null=if:20591 Ulva*)
+| No longer a root: (null=if:34042 Desmococcus*)
+| No longer a root: (null=if:22315 Prototheca*)
+| ...
+| Started with:		 73 trees, 73480 taxa
+| new/tip: 912254
+| new/internal: 95282
+| new-homonym/in-division: 652
+| mapped/tip: 85420
+| new/tattered: 1596
+| mapped/coherent: 6543
+| new/insertion: 1869
+| lose/dispersed: 1224
+| lose/mooted: 118
+| mapped/incoherent: 1603
+| mapped/neutral: 4975
+| new-homonym/out-division: 3938
+| mapped/incompatible: 1042
+| mapped/internal: 68
+| blocked/tip: 12
+| Ended with:		 53 trees, 73480 taxa
+| Added 264513 synonyms to union
+--- Reading tax/gbif/ ---
+prefix is gbif
+smushp is yes
+! No header row
+500000
+1000000
+1500000
+2000000
+| 1191 names with diacritics
+Changing name: Aiphanes -> AÃ¯phanes
+Changing name: Paraethecerus sexmaculatus -> ParaÃ«thecerus sexmaculatus
+Changing name: Erythrogryllacris buttikoferi -> Erythrogryllacris bÃ¼ttikoferi
+Changing name: Afrogryllacris buttneri -> Afrogryllacris bÃ¼ttneri
+Changing name: Argonauta bottgeri -> Argonauta bÃ¶ttgeri
+Changing name: Tithoes maculatus -> TithoÃ«s maculatus
+Changing name: Tithoes -> TithoÃ«s
+Changing name: Hierochloe repens -> HierochloÃ« repens
+Changing name: Hierochloe redolens -> HierochloÃ« redolens
+Smushing sibling homonym 5938900 => 2941277, name = Archidendron kÃ¼nstleri
+Smushing sibling homonym 4805323 => 2117806, name = Nymphon strÃ¶mii
+Smushing sibling homonym 4805258 => 2117457, name = Pallenopsis vanhÃ¶ffeni
+Smushing sibling homonym 7293115 => 3039284, name = HippophaÃ«
+Smushing sibling homonym 6525063 => 4590405, name = Sunetta meroÃ«
+Smushing sibling homonym 5457645 => 5455027, name = Agaricus hemisoÃ¶des
+Smushing sibling homonym 6911494 => 4541136, name = Neotrombicula trÃ¤gÃ¥rdhiana
+Smushing sibling homonym 7325111 => 7325110, name = Dichanthium saccharoides saccharoides
+Smushing sibling homonym 4896682 => 2562625, name = HeteroepichloÃ«
+...
+225 sibling homonyms
+Adding Actinote terpsinoe as synonym for (gbif:1901053. Actinote terpsinoÃ«)
+Adding Elsinoe sacchari as synonym for (gbif:3499164. ElsinoÃ« sacchari)
+Adding Elsinoe sacchari as synonym for (gbif:6123807. ElsinoÃ« sacchari)
+Adding Helicoon ellipticum as synonym for (gbif:2613685. HelicoÃ¶n ellipticum)
+Adding Helicoon ellipticum as synonym for (gbif:4910720. HelicoÃ¶n ellipticum)
+Adding Elsinoe australis as synonym for (gbif:2613156. ElsinoÃ« australis)
+Adding Elsinoe australis as synonym for (gbif:5894336. ElsinoÃ« australis)
+Adding Helicoonites as synonym for (gbif:3551882 HelicoÃ¶nites)
+Adding Helicoonites as synonym for (gbif:4900316. HelicoÃ¶nites)
+Adding Paraethecerus sexmaculatus as synonym for (gbif:1158207. ParaÃ«thecerus sexmaculatus)
+Adding Paraethecerus sexmaculatus as synonym for (gbif:5007071. ParaÃ«thecerus sexmaculatus)
+Adding Elsinoe theae as synonym for (gbif:2613147. ElsinoÃ« theae)
+Adding Elsinoe theae as synonym for (gbif:6549280. ElsinoÃ« theae)
+Adding Pseudoothrix as synonym for (gbif:4668370. PseudoÃ¶thrix)
+Adding Pseudoothrix as synonym for (gbif:4335256 PseudoÃ¶thrix)
+Adding Hierochloe australis as synonym for (gbif:6084765. HierochloÃ« australis)
+Adding Hierochloe australis as synonym for (gbif:4123183. HierochloÃ« australis)
+Adding Cranae genjam as synonym for (gbif:5976689. CranaÃ« genjam)
+Adding Cranae genjam as synonym for (gbif:1702050. CranaÃ« genjam)
+Adding Tithoes confinis as synonym for (gbif:6270073. TithoÃ«s confinis)
+Adding Tithoes confinis as synonym for (gbif:1134574. TithoÃ«s confinis)
+Adding Tithoes maculatus as synonym for (gbif:6270077. TithoÃ«s maculatus)
+Adding Tithoes maculatus as synonym for (gbif:4738944. TithoÃ«s maculatus)
+Adding Hierochloe odorata as synonym for (gbif:6431530. HierochloÃ« odorata)
+Adding Hierochloe odorata as synonym for (gbif:2703336. HierochloÃ« odorata)
+Adding Hierochloe pauciflora as synonym for (gbif:6431526. HierochloÃ« pauciflora)
+Adding Hierochloe pauciflora as synonym for (gbif:2703333. HierochloÃ« pauciflora)
+Adding Elsinoe brasiliensis as synonym for (gbif:2613159. ElsinoÃ« brasiliensis)
+Adding Elsinoe brasiliensis as synonym for (gbif:6107883. ElsinoÃ« brasiliensis)
+Adding Cranae glabra as synonym for (gbif:5976695. CranaÃ« glabra)
+Adding Cranae glabra as synonym for (gbif:1702067. CranaÃ« glabra)
+Adding Cranae patagiata as synonym for (gbif:1702060. CranaÃ« patagiata)
+Adding Cranae patagiata as synonym for (gbif:1702055. CranaÃ« patagiata)
+Adding Hierochloe alpina as synonym for (gbif:6431569. HierochloÃ« alpina)
+Adding Hierochloe alpina as synonym for (gbif:2703347. HierochloÃ« alpina)
+Adding Helicoon fuscosporum as synonym for (gbif:2613688. HelicoÃ¶n fuscosporum)
+Adding Helicoon fuscosporum as synonym for (gbif:4910719. HelicoÃ¶n fuscosporum)
+Adding Helicoon reticulatum as synonym for (gbif:2613689. HelicoÃ¶n reticulatum)
+Adding Helicoon reticulatum as synonym for (gbif:4910723. HelicoÃ¶n reticulatum)
+Adding Iphinoe as synonym for (gbif:4571613. IphinÃ¶e)
+Adding Iphinoe as synonym for (gbif:2215300 IphinÃ¶e)
+Adding Laocoon paradoxus as synonym for (gbif:2621836. LaocoÃ¶n paradoxus)
+Adding Laocoon paradoxus as synonym for (gbif:5820572. LaocoÃ¶n paradoxus)
+Adding Cranae rubra as synonym for (gbif:5976708. CranaÃ« rubra)
+Adding Cranae rubra as synonym for (gbif:1702065. CranaÃ« rubra)
+Adding Elsinoe veneta as synonym for (gbif:2613134. ElsinoÃ« veneta)
+Adding Elsinoe veneta as synonym for (gbif:5894337. ElsinoÃ« veneta)
+Adding Hierochloe repens as synonym for (gbif:6084767. HierochloÃ« repens)
+Adding Hierochloe repens as synonym for (gbif:4122332. HierochloÃ« repens)
+Adding Hierochloe redolens as synonym for (gbif:7324974. HierochloÃ« redolens)
+Adding Hierochloe redolens as synonym for (gbif:4122361. HierochloÃ« redolens)
+Adding Cranae tibialis as synonym for (gbif:1702077. CranaÃ« tibialis)
+Adding Cranae tibialis as synonym for (gbif:1702075. CranaÃ« tibialis)
+Adding Butschliella as synonym for (gbif:4919066 BÃ¼tschliella)
+Adding Butschliella as synonym for (gbif:3202498 BÃ¼tschliella)
+Adding Cranae trivittata as synonym for (gbif:5976709. CranaÃ« trivittata)
+Adding Cranae trivittata as synonym for (gbif:1702064. CranaÃ« trivittata)
+Adding Helicoon pluriseptatum as synonym for (gbif:2613687. HelicoÃ¶n pluriseptatum)
+Adding Helicoon pluriseptatum as synonym for (gbif:4910722. HelicoÃ¶n pluriseptatum)
+Adding Themistonoe cacica as synonym for (gbif:1124497. ThemistonoÃ« cacica)
+Adding Themistonoe cacica as synonym for (gbif:1124496. ThemistonoÃ« cacica)
+Adding Aporia oberthuri as synonym for (6880126=gbif:6880151. Aporia oberthÃ¼ri)
+Adding Aporia oberthuri as synonym for (gbif:5137762. Aporia oberthÃ¼ri)
+Adding Cranae caprai as synonym for (gbif:5976688. CranaÃ« caprai)
+Adding Cranae caprai as synonym for (gbif:1702068. CranaÃ« caprai)
+Adding Cranae longipennis as synonym for (gbif:5976705. CranaÃ« longipennis)
+Adding Cranae longipennis as synonym for (gbif:1702061. CranaÃ« longipennis)
+Adding Achelous as synonym for (gbif:6458829. AcheloÃ¼s)
+Adding Achelous as synonym for (gbif:4307394 AcheloÃ¼s)
+Adding Terpsinoe musica as synonym for (gbif:6539645. TerpsinoÃ« musica)
+Adding Terpsinoe musica as synonym for (gbif:4275288. TerpsinoÃ« musica)
+Adding Helicoon richonis as synonym for (gbif:2613683. HelicoÃ¶n richonis)
+Adding Helicoon richonis as synonym for (gbif:4910718. HelicoÃ¶n richonis)
+Adding Elsinoe rosarum as synonym for (gbif:2613173. ElsinoÃ« rosarum)
+Adding Elsinoe rosarum as synonym for (gbif:6096448. ElsinoÃ« rosarum)
+Adding Aseroe arachnoidea as synonym for (gbif:7245011. AseroÃ« arachnoidea)
+Adding Aseroe arachnoidea as synonym for (gbif:5899259. AseroÃ« arachnoidea)
+Adding Elsinoe randii as synonym for (gbif:2613129. ElsinoÃ« randii)
+Adding Elsinoe randii as synonym for (gbif:6549277. ElsinoÃ« randii)
+Adding Masseeella narasimhanii as synonym for (gbif:2517659. MasseeÃ«lla narasimhanii)
+Adding Masseeella narasimhanii as synonym for (gbif:6549286. MasseeÃ«lla narasimhanii)
+Adding Elsinoe fawcettii as synonym for (gbif:2613163. ElsinoÃ« fawcettii)
+Adding Elsinoe fawcettii as synonym for (gbif:5894344. ElsinoÃ« fawcettii)
+Adding Elsinoe cinnamomi as synonym for (gbif:3499063. ElsinoÃ« cinnamomi)
+Adding Elsinoe cinnamomi as synonym for (gbif:6123806. ElsinoÃ« cinnamomi)
+Adding Cranae rufipes as synonym for (gbif:5976693. CranaÃ« rufipes)
+Adding Cranae rufipes as synonym for (gbif:1702053. CranaÃ« rufipes)
+Adding Cranae luctuosa as synonym for (gbif:5976707. CranaÃ« luctuosa)
+Adding Cranae luctuosa as synonym for (gbif:1702049. CranaÃ« luctuosa)
+Adding Elsinoe mangiferae as synonym for (gbif:2613140. ElsinoÃ« mangiferae)
+Adding Elsinoe mangiferae as synonym for (gbif:6123805. ElsinoÃ« mangiferae)
+Adding Hierochloe utriculata as synonym for (gbif:7324968. HierochloÃ« utriculata)
+Adding Hierochloe utriculata as synonym for (gbif:4122208. HierochloÃ« utriculata)
+Adding Frommeella tormentillae as synonym for (gbif:2516507. FrommeÃ«lla tormentillae)
+Adding Frommeella tormentillae as synonym for (gbif:4911636. FrommeÃ«lla tormentillae)
+Adding Helicoon chlamydosporum as synonym for (gbif:2613682. HelicoÃ¶n chlamydosporum)
+Adding Helicoon chlamydosporum as synonym for (gbif:4910721. HelicoÃ¶n chlamydosporum)
+Adding Xoes egeria as synonym for (gbif:6267734. XoÃ«s egeria)
+Adding Xoes egeria as synonym for (gbif:1110757. XoÃ«s egeria)
+Adding Cranae unistrigata as synonym for (gbif:5976706. CranaÃ« unistrigata)
+Adding Cranae unistrigata as synonym for (gbif:1702051. CranaÃ« unistrigata)
+Adding Laocoon as synonym for (2621835=gbif:3269763 LaocoÃ¶n)
+Adding Laocoon as synonym for (gbif:3255032. LaocoÃ¶n)
+Adding Tithoes longipennis as synonym for (gbif:6270072. TithoÃ«s longipennis)
+Adding Tithoes longipennis as synonym for (gbif:1134568. TithoÃ«s longipennis)
+Adding Cranae nigroreticulata as synonym for (gbif:5976701. CranaÃ« nigroreticulata)
+Adding Cranae nigroreticulata as synonym for (gbif:1702046. CranaÃ« nigroreticulata)
+Adding Cranae pictipennis as synonym for (gbif:5976702. CranaÃ« pictipennis)
+Adding Cranae pictipennis as synonym for (gbif:1702044. CranaÃ« pictipennis)
+Adding Aseroe rubra as synonym for (gbif:2524024. AseroÃ« rubra)
+Adding Aseroe rubra as synonym for (gbif:4911642. AseroÃ« rubra)
+Adding Elsinoe annonae as synonym for (gbif:2613155. ElsinoÃ« annonae)
+Adding Elsinoe annonae as synonym for (gbif:6549276. ElsinoÃ« annonae)
+Adding Cranae emendata as synonym for (gbif:1702063. CranaÃ« emendata)
+Adding Cranae emendata as synonym for (gbif:1702062. CranaÃ« emendata)
+Adding Krugeria ramosa as synonym for (gbif:5967780. KrÃ¼geria ramosa)
+Adding Krugeria ramosa as synonym for (gbif:6915853. KrÃ¼geria ramosa)
+Adding Cranae manokwari as synonym for (gbif:5976700. CranaÃ« manokwari)
+Adding Cranae manokwari as synonym for (gbif:1702066. CranaÃ« manokwari)
+Adding Elsinoe phaseoli as synonym for (gbif:2613177. ElsinoÃ« phaseoli)
+Adding Elsinoe phaseoli as synonym for (gbif:5894342. ElsinoÃ« phaseoli)
+Adding Elsinoe solidaginis as synonym for (gbif:2613154. ElsinoÃ« solidaginis)
+Adding Elsinoe solidaginis as synonym for (gbif:6549283. ElsinoÃ« solidaginis)
+Adding Elsinoe batatas as synonym for (gbif:2613144. ElsinoÃ« batatas)
+Adding Elsinoe batatas as synonym for (gbif:6549281. ElsinoÃ« batatas)
+Adding Elsinoe ampelina as synonym for (gbif:2613150. ElsinoÃ« ampelina)
+Adding Elsinoe ampelina as synonym for (gbif:5894340. ElsinoÃ« ampelina)
+Adding Terpsinoe americana as synonym for (gbif:4376688. TerpsinoÃ« americana)
+Adding Terpsinoe americana as synonym for (gbif:4275287. TerpsinoÃ« americana)
+Adding Elsinoe jasmini as synonym for (gbif:2613146. ElsinoÃ« jasmini)
+Adding Elsinoe jasmini as synonym for (gbif:6549275. ElsinoÃ« jasmini)
+Adding Elsinoe ledi as synonym for (gbif:2613142. ElsinoÃ« ledi)
+Adding Elsinoe ledi as synonym for (gbif:6549278. ElsinoÃ« ledi)
+Adding Cranae kuekenthali as synonym for (gbif:1702074. CranaÃ« kuekenthali)
+Adding Cranae kuekenthali as synonym for (gbif:1702069. CranaÃ« kuekenthali)
+Putative synonym Mycothyridium vestitum is the primary name of 5953789
+Putative synonym Porina alba is the primary name of 7086902
+Putative synonym Pyrenula chilensis is the primary name of 7187161
+| 894779 synonyms
+| 3647 homonyms, of which 55 name cousin taxa, 68 name sibling taxa
+** Ranks out of order: (gbif:4865225 Chonetoidea) genus has child (gbif:4869637 Chonostrophiidae) family
+** Ranks out of order: (gbif:1010609 Limulus) genus has child (gbif:3267257 Strabopidae) family
+** Ranks out of order: (gbif:2050173 Alydus calcaratus) species has child (gbif:3265607 Camptopus) genus
+** Ranks out of order: (gbif:4587706 Nuculoidea) genus has child (gbif:4587862 Nucularcidae) family
+--- Mapping gbif into union ---
+Pinned 7 out of 11
+| Trying ad-hoc mismatch rule: (gbif:3269382 Ciliophora)
+| Trying ad-hoc match rule: (gbif:10 Ciliophora*)
+| Trying ad-hoc mismatch rule: (gbif:4983431. Foraminifera)
+| Trying ad-hoc match rule: (gbif:389 Foraminiferida*)
+| Names in common: 527293
+| excluded(overlaps): 115
+| different-division: 2762
+| incompatible-with: 146
+| excluded(same-rank): 7
+| unresolved/ambiguous: 50
+| ad-hoc-not: 2
+| unresolved/blocked: 312
+| excluded(same-ancestor): 1791
+| unresolved/contentious: 302
+| excluded(same-primary-name): 59
+| lost-race-to-union(same-ancestor): 5237
+| lost-race-to-union(overlaps): 52
+| lost-race-to-union(same-rank): 1370
+| lost-race-to-union(name-in-common): 7
+| eschew-tattered: 12
+| lost-race-to-union(same-primary-name): 1
+| Of 2257504 nodes in gbif: 483642 with name in common, of which 474902 matched with existing, 8740 blocked
+--- Augmenting union with new nodes from gbif ---
+| No longer a root: (null=if:22215 Lepocolla*)
+| No longer a root: (null=if:505982 Bulbotrichia*)
+| No longer a root: (null=if:27353 Proactinomyces*)
+| No longer a root: (null=if:22056 BusseÃ«lla*)
+| No longer a root: (null=if:39050 Byssus*)
+| No longer a root: (null=if:22209. Labyrinthorhiza*)
+| No longer a root: (null=if:22307 Plocaria*)
+| No longer a root: (null=if:10381 Veralucia*)
+| No longer a root: (null=if:27910 Protonema*)
+| ...
+| Started with:		 53 trees, 73480 taxa
+| mapped/tip: 407988
+| blocked/tip: 6633
+| new/tip: 1643149
+| mapped/coherent: 58071
+| mapped/neutral: 7577
+| new/internal: 123945
+| mapped/incoherent: 5085
+| lose/dispersed: 2095
+| new/tattered: 2042
+| new-homonym/in-division: 917
+| new-homonym/out-division: 2160
+| new/insertion: 66
+| lose/mooted: 210
+| mapped/incompatible: 490
+| mapped/internal: 153
+| Ended with:		 24 trees, 73480 taxa
+| Added 865699 synonyms to union
+--- Applying edits from feed/ott/edits/flag-test.tsv ---
+--- Applying edits from feed/ott/edits/misplaced-kingdoms.tsv ---
+--- Applying edits from feed/ott/edits/lost-from-gbif.tsv ---
+--- Applying edits from feed/ott/edits/fungal-species.tsv ---
+(add) Warning: taxon already present: Acanthotrema frischii
+(add) Warning: taxon already present: Agaricus tlaxcalensis
+(add) Warning: taxon already present: Botrytis sinoallii
+(add) Warning: taxon already present: Brigantiaea sorediata
+(add) Warning: taxon already present: Cantharellus texensis
+(add) Warning: taxon already present: Chrysothrix caesia
+(add) Parent name Epichloe missing in context Fungi
+(add) Parent name Epichloe liyangensis missing in context Fungi
+(add) Warning: taxon already present: Flavoparmelia caperatula
+(add) Warning: taxon already present: Marasmiellus celebanticus
+(add) Warning: taxon already present: Melanelixia glabratula
+(add) Warning: taxon already present: Muscodor sutura
+(add) Warning: taxon already present: Ophiostoma crescericum
+(add) Warning: taxon already present: Ophiostoma euskadiense
+(add) Warning: taxon already present: Ophiostoma nebulare
+(add) Warning: taxon already present: Paraconiothyrium babiogorense
+(add) Warning: taxon already present: Paraphysoderma
+(add) Warning: taxon already present: Paraphysoderma sedebokerense
+(add) Warning: taxon already present: Periglandula turbinae
+(add) Warning: taxon already present: Phyllosticta cavendishii
+(add) Warning: taxon already present: Phyllosticta hostae
+(add) Warning: taxon already present: Phyllosticta schimae
+(add) Warning: taxon already present: Plectosphaerella delsorboi
+(add) Warning: taxon already present: Plectosphaerella oratosquillae
+(add) Warning: taxon already present: Pluteus stenotrichus
+(add) Warning: taxon already present: Pluteus sublaevigatus
+(add) Warning: taxon already present: Podosphaera filipendulae
+(add) Warning: taxon already present: Psilachnum staphyleae
+(add) Warning: taxon already present: Ramichloridium mali
+? Ambiguous parent name: Rhodotorula
+(add) Warning: taxon already present: Rhodotorula rosulata
+(add) Warning: taxon already present: Schizotrema zebrinum
+(add) Warning: taxon already present: Sclerostagonospora cycadis
+(add) Warning: taxon already present: Spiroplana
+(add)  ... with a different parent: Pezizomycotina not Pleosporales
+(add) Warning: taxon already present: Spiroplana centripeta
+(add) Warning: taxon already present: Trichoderma brunneoviride
+(add) Warning: taxon already present: Volvariella nullicystidiata
+(add) Warning: taxon already present: Volvariella nivea
+(add) Warning: taxon already present: Lignosus hainanensis
+(add) Parent name Hyaloperonospora missing in context Oomycetes
+--- Applying edits from feed/ott/edits/ott_edits.tsv ---
+--- Applying edits from feed/ott/edits/misc_edits.tsv ---
+(move) Note: already in the right place: Dermatobotrys
+(move) Note: already in the right place: Rehmannia
+(move) Note: already in the right place: Stemodiopsis
+(move) Note: already in the right place: Micranthemum
+(move) Note: already in the right place: Bryodes
+| Deforesting: keeping biggest (3100411), 2nd biggest is 20
+| Removed 23 smaller trees
+--- Reading tax/prev_ott/ ---
+! No header row
+500000
+1000000
+1500000
+2000000
+2500000
+3000000
+| 1202 names with diacritics
+Changing name: Pseudohaje goldii -> Pseudohaje gÃ¶ldii
+Changing name: Gyorffyana -> GyÃ¶rffyana
+Changing name: Spinther wireni -> Spinther wirÃ©ni
+Changing name: Achnanthes plonensis -> Achnanthes plÃ¶nensis
+Changing name: Oxychloe haumaniana -> OxychloÃ« haumaniana
+Changing name: Oxychloe castellanosii -> OxychloÃ« castellanosii
+Changing name: Protodrilus jagersteni -> Protodrilus jÃ¤gersteni
+Changing name: Chondrostylis kunstleri -> Chondrostylis kÃ¼nstleri
+Changing name: Coilia -> CoÃ¯lia
+Tolerating sibling homonym 4120536 => 4120535, name = Pseudohaje gÃ¶ldii
+Tolerating sibling homonym 4988068 => 4988061, name = Spinther wirÃ©ni
+Tolerating sibling homonym 3832244 => 989945, name = Armillaria jezoÃ«nsis
+Tolerating sibling homonym 2813338 => 2813136, name = Achnanthes plÃ¶nensis
+Tolerating sibling homonym 4985533 => 4985512, name = Protodrilus jÃ¤gersteni
+Tolerating sibling homonym 3092622 => 3092565, name = Sphinx oberthÃ¼ri
+Tolerating sibling homonym 4082337 => 51476, name = Phaeographina
+Tolerating sibling homonym 3965007 => 747778, name = OxychloÃ«
+Tolerating sibling homonym 3118697 => 818557, name = Callithomia alexirrhoÃ«
+...
+910 sibling homonyms
+Adding Actinote terpsinoe as synonym for (3113486=gbif:1901053. Actinote terpsinoÃ«)
+Adding Sunetta meroe as synonym for (2858528=gbif:6525063. Sunetta meroÃ«)
+Adding Sunetta meroe as synonym for (2858527=gbif:4590405. Sunetta meroÃ«)
+Adding Elsinoe sacchari as synonym for (3717401=gbif:3499164. ElsinoÃ« sacchari)
+Adding Elsinoe sacchari as synonym for (4930977=gbif:6123807. ElsinoÃ« sacchari)
+Adding Leucochlaena horhammeri as synonym for (4258310=gbif:1775336. Leucochlaena hÃ¶rhammeri)
+Adding Leucochlaena horhammeri as synonym for (4258315=gbif:5977378. Leucochlaena hÃ¶rhammeri)
+Adding Heterarmia buttneri as synonym for (5030772=gbif:7209988. Heterarmia bÃ¼ttneri)
+Adding Heterarmia buttneri as synonym for (3074511=gbif:1977997. Heterarmia bÃ¼ttneri)
+Adding Helichrysum noeanum as synonym for (3899013=gbif:6077258. Helichrysum noÃ«anum)
+Adding Helichrysum noeanum as synonym for (574610=ncbi:261792. Helichrysum noÃ«anum)
+Adding Helicoon ellipticum as synonym for (4071458=gbif:2613685. HelicoÃ¶n ellipticum)
+Adding Helicoon ellipticum as synonym for (4071550=gbif:4910720. HelicoÃ¶n ellipticum)
+Adding Panorpa stotzneri as synonym for (5089320=gbif:7197383. Panorpa stÃ¶tzneri)
+Adding Panorpa stotzneri as synonym for (3429120=gbif:5981635. Panorpa stÃ¶tzneri)
+Adding Elsinoe australis as synonym for (3717389=gbif:2613156. ElsinoÃ« australis)
+Adding Elsinoe australis as synonym for (700615=ncbi:40998. ElsinoÃ« australis)
+Adding Oxychloe haumaniana as synonym for (3965009=gbif:2700574. OxychloÃ« haumaniana)
+Adding Oxychloe haumaniana as synonym for (469190=ncbi:291278. OxychloÃ« haumaniana)
+Adding Diamesa loffleri as synonym for (5036456=gbif:7198209. Diamesa lÃ¶ffleri)
+Adding Diamesa loffleri as synonym for (4468498=gbif:1452613. Diamesa lÃ¶ffleri)
+Adding Asteridiella entebbeensis as synonym for (3709307=gbif:7255604. Asteridiella entebbeÃ«nsis)
+Adding Asteridiella entebbeensis as synonym for (3709818=gbif:7255480. Asteridiella entebbeÃ«nsis)
+Adding Phyllophora pseudoceranoides as synonym for (4013974=gbif:5823000. Phyllophora pseudoceranoÃ¯des)
+Adding Phyllophora pseudoceranoides as synonym for (207347=ncbi:508189. Phyllophora pseudoceranoÃ¯des)
+Adding Porphyrinia gueneei as synonym for (4248809=gbif:1784207. Porphyrinia guenÃ©ei)
+Adding Porphyrinia gueneei as synonym for (4248982=gbif:5977379. Porphyrinia guenÃ©ei)
+Adding Leptogorgia lutkeni as synonym for (3678029=gbif:2264114. Leptogorgia lÃ¼tkeni)
+Adding Leptogorgia lutkeni as synonym for (3678056=gbif:4882212. Leptogorgia lÃ¼tkeni)
+Adding Aurila buhyui as synonym for (2964755=gbif:6128283. Aurila buhyÃ¼i)
+Adding Aurila buhyui as synonym for (2964766=gbif:6469592. Aurila buhyÃ¼i)
+Adding Navicula sohrensis as synonym for (2818335=gbif:5822686. Navicula sÃ¶hrensis)
+Adding Navicula sohrensis as synonym for (2817186=gbif:6124644. Navicula sÃ¶hrensis)
+Adding Undula paraensis as synonym for (2844657=gbif:4351275. Undula paraÃ«nsis)
+Adding Undula paraensis as synonym for (2844640=gbif:2254932. Undula paraÃ«nsis)
+Adding Pestalotiopsis aloes as synonym for (3692587=gbif:3462603. Pestalotiopsis aloÃ«s)
+Adding Pestalotiopsis aloes as synonym for (119683=ncbi:393279. Pestalotiopsis aloÃ«s)
+Adding Pseudohaje goldii as synonym for (4120536=gbif:5960951. Pseudohaje gÃ¶ldii)
+Adding Pseudohaje goldii as synonym for (4120535=gbif:2469835. Pseudohaje gÃ¶ldii)
+Adding Coutierella tonkinensis as synonym for (5090033=gbif:7194559. CoutiÃ¨rella tonkinensis)
+Adding Coutierella tonkinensis as synonym for (861755=ncbi:580152. CoutiÃ¨rella tonkinensis)
+Adding Cythere yuniangae as synonym for (2964351=gbif:6128040. Cythere yÃ¼niangae)
+Adding Cythere yuniangae as synonym for (2964401=gbif:6469866. Cythere yÃ¼niangae)
+Adding Perissonoe as synonym for (2819218=gbif:4920689. PerissonoÃ«)
+Adding Perissonoe as synonym for (2819212=gbif:4892025 PerissonoÃ«)
+Adding Ganae as synonym for (4607074=gbif:1169939. GanaÃ«)
+Adding Ganae as synonym for (4662655=gbif:4762588. GanaÃ«)
+Adding Apicia oberthuri as synonym for (4278959=gbif:1967546. Apicia oberthÃ¼ri)
+Adding Apicia oberthuri as synonym for (4278914=gbif:5977294. Apicia oberthÃ¼ri)
+Adding Helicoonites as synonym for (4093713=gbif:3551882 HelicoÃ¶nites)
+Adding Helicoonites as synonym for (4114927=gbif:4900316. HelicoÃ¶nites)
+Adding Melanargia menetriesi as synonym for (3105820=gbif:1916569. Melanargia mÃ©netriÃ©si)
+Adding Melanargia menetriesi as synonym for (3105744=gbif:1916582. Melanargia mÃ©netriÃ©si)
+Adding Paraethecerus sexmaculatus as synonym for (4561352=gbif:1158207. ParaÃ«thecerus sexmaculatus)
+Adding Paraethecerus sexmaculatus as synonym for (5045511=gbif:5007071. ParaÃ«thecerus sexmaculatus)
+Adding Hsiaolina chuntzui as synonym for (2966478=gbif:6128126. Hsiaolina chÃ¼ntzui)
+Adding Hsiaolina chuntzui as synonym for (2965463=gbif:6470477. Hsiaolina chÃ¼ntzui)
+Adding Helicoon gigantisporum as synonym for (4071463=gbif:3541704. HelicoÃ¶n gigantisporum)
+Adding Helicoon gigantisporum as synonym for (442610=ncbi:314161. HelicoÃ¶n gigantisporum)
+Adding Elsinoe theae as synonym for (3717456=gbif:2613147. ElsinoÃ« theae)
+Adding Elsinoe theae as synonym for (4930984=gbif:6549280. ElsinoÃ« theae)
+Adding Archidendron kunstleri as synonym for (3919244=gbif:5938900. Archidendron kÃ¼nstleri)
+Adding Archidendron kunstleri as synonym for (3919251=gbif:2941277. Archidendron kÃ¼nstleri)
+Adding Loxilobus saigonensis as synonym for (5021318=gbif:7197398. Loxilobus saÃ¯gonensis)
+Adding Loxilobus saigonensis as synonym for (3506723=gbif:1680051. Loxilobus saÃ¯gonensis)
+Adding Charletonia tragardhi as synonym for (5109733=gbif:6919322. Charletonia trÃ¤gÃ¥rdhi)
+Adding Charletonia tragardhi as synonym for (3534050=gbif:4653551. Charletonia trÃ¤gÃ¥rdhi)
+Adding Hestiasula kastneri as synonym for (4176487=gbif:6258152. Hestiasula kÃ¤stneri)
+Adding Hestiasula kastneri as synonym for (4176489=gbif:1406404. Hestiasula kÃ¤stneri)
+Adding Hemimycena epichloe as synonym for (3823873=gbif:2527554. Hemimycena epichloÃ«)
+Adding Hemimycena epichloe as synonym for (3823876=gbif:6095761. Hemimycena epichloÃ«)
+Adding Cornucoquimba shyushuhi as synonym for (2966132=gbif:6128296. Cornucoquimba shyÃ¼shuhi)
+Adding Cornucoquimba shyushuhi as synonym for (2965347=gbif:6469433. Cornucoquimba shyÃ¼shuhi)
+Adding Diaporthe hippophaes as synonym for (3699216=gbif:2567803. Diaporthe hippophaÃ«s)
+Adding Diaporthe hippophaes as synonym for (3698765=gbif:5952600. Diaporthe hippophaÃ«s)
+Adding Xanthoparmelia namaensis as synonym for (3771287=gbif:3408042. Xanthoparmelia namaÃ«nsis)
+Adding Xanthoparmelia namaensis as synonym for (4928489=gbif:7186922. Xanthoparmelia namaÃ«nsis)
+Adding Epichloe festucae as synonym for (4058918=gbif:2562759. EpichloÃ« festucae)
+Adding Epichloe festucae as synonym for (137209=ncbi:35717 EpichloÃ« festucae)
+Adding Caligo oberthurii as synonym for (3103908=gbif:1918079. Caligo oberthÃ¼rii)
+Adding Caligo oberthurii as synonym for (3103907=gbif:6234416. Caligo oberthÃ¼rii)
+Adding Fujimyces oodes as synonym for (4092188=gbif:2591807. Fujimyces oÃ¶des)
+Adding Fujimyces oodes as synonym for (4092189=gbif:5954358. Fujimyces oÃ¶des)
+Adding Elsinoe mimosae as synonym for (3717331=gbif:3499149. ElsinoÃ« mimosae)
+Adding Elsinoe mimosae as synonym for (849088=ncbi:1125790. ElsinoÃ« mimosae)
+Adding Themistonoe as synonym for (3389528=gbif:1124495 ThemistonoÃ«)
+Adding Themistonoe as synonym for (3389532=gbif:4575930 ThemistonoÃ«)
+Adding Pseudoothrix as synonym for (4706292=gbif:4668370. PseudoÃ¶thrix)
+Adding Pseudoothrix as synonym for (2956864=gbif:4335256 PseudoÃ¶thrix)
+Adding Graphis geraensis as synonym for (3786430=gbif:5475151. Graphis geraÃ«nsis)
+Adding Graphis geraensis as synonym for (3785991=gbif:5953372. Graphis geraÃ«nsis)
+Adding Ebnerodes tolgi as synonym for (3495530=gbif:5976684. Ebnerodes tÃ¶lgi)
+Adding Ebnerodes tolgi as synonym for (3495701=gbif:1698773. Ebnerodes tÃ¶lgi)
+Adding Hierochloe australis as synonym for (4731520=gbif:6084765. HierochloÃ« australis)
+Adding Hierochloe australis as synonym for (533163=ncbi:389631. HierochloÃ« australis)
+Adding Cerace lemee-pauli as synonym for (3057466=gbif:5976934. Cerace lemÃ©e-pauli)
+Adding Cerace lemee-pauli as synonym for (3059445=gbif:1745910. Cerace lemÃ©e-pauli)
+Adding Cranae genjam as synonym for (3500789=gbif:5976689. CranaÃ« genjam)
+Adding Cranae genjam as synonym for (3502433=gbif:1702050. CranaÃ« genjam)
+Adding Epichloe sylvatica as synonym for (4058908=gbif:2562761. EpichloÃ« sylvatica)
+Adding Epichloe sylvatica as synonym for (380242=ncbi:79593. EpichloÃ« sylvatica)
+Adding Tithoes confinis as synonym for (3406199=gbif:6270073. TithoÃ«s confinis)
+Adding Tithoes confinis as synonym for (3404487=gbif:1134574. TithoÃ«s confinis)
+Adding Falsomesosella saigonensis as synonym for (5045473=gbif:7201765. Falsomesosella saÃ¯gonensis)
+Adding Falsomesosella saigonensis as synonym for (3396154=gbif:1106820. Falsomesosella saÃ¯gonensis)
+Adding Tithoes maculatus as synonym for (3406194=gbif:6270077. TithoÃ«s maculatus)
+Adding Tithoes maculatus as synonym for (3393702=gbif:4738944. TithoÃ«s maculatus)
+Adding Polycirrus eous as synonym for (4974971=gbif:6154211. Polycirrus eÃ¶us)
+Adding Polycirrus eous as synonym for (4974998=gbif:2324697. Polycirrus eÃ¶us)
+Adding Elsinoe proteae as synonym for (3717338=gbif:3499064. ElsinoÃ« proteae)
+Adding Elsinoe proteae as synonym for (988780=ncbi:97463. ElsinoÃ« proteae)
+Adding Acraea buttneri as synonym for (5028591=gbif:7206724. Acraea bÃ¼ttneri)
+Adding Acraea buttneri as synonym for (3112985=gbif:5136276. Acraea bÃ¼ttneri)
+Adding Enarmonia decor as synonym for (3059280=gbif:1744342. Enarmonia dÃ©cor)
+Adding Enarmonia decor as synonym for (3055785=gbif:6219850. Enarmonia dÃ©cor)
+Adding Peridea oberthuri as synonym for (3212167=gbif:1822332. Peridea oberthÃ¼ri)
+Adding Peridea oberthuri as synonym for (3212181=gbif:5977331. Peridea oberthÃ¼ri)
+Adding Sphinx oberthuri as synonym for (3092565=gbif:5124186. Sphinx oberthÃ¼ri)
+Adding Sphinx oberthuri as synonym for (3092622=gbif:5976888. Sphinx oberthÃ¼ri)
+Adding Mesodorylaimus szechenyii as synonym for (3589636=gbif:6484834. Mesodorylaimus szÃ©chenyii)
+Adding Mesodorylaimus szechenyii as synonym for (5001701=gbif:7017236. Mesodorylaimus szÃ©chenyii)
+Adding Spinther wireni as synonym for (4988068=gbif:4308554. Spinther wirÃ©ni)
+Adding Spinther wireni as synonym for (4988061=gbif:2318672. Spinther wirÃ©ni)
+Adding Japewia tornoensis as synonym for (3774186=gbif:2607973. Japewia tornoÃ«nsis)
+Adding Japewia tornoensis as synonym for (133094=ncbi:400698. Japewia tornoÃ«nsis)
+Adding Diploospora as synonym for (4087637=gbif:3549982 DiploÃ¶spora)
+Adding Diploospora as synonym for (4092860=gbif:4894653. DiploÃ¶spora)
+Adding Scopula sjostedti as synonym for (3079541=gbif:5145249. Scopula sjÃ¶stedti)
+Adding Scopula sjostedti as synonym for (3079509=gbif:5977301. Scopula sjÃ¶stedti)
+Adding Cranae glabra as synonym for (3504167=gbif:5976695. CranaÃ« glabra)
+Adding Cranae glabra as synonym for (3503092=gbif:1702067. CranaÃ« glabra)
+Adding Cranae patagiata as synonym for (3503104=gbif:1702060. CranaÃ« patagiata)
+Adding Cranae patagiata as synonym for (3502434=gbif:1702055. CranaÃ« patagiata)
+Adding Syfania oberthuri as synonym for (4253335=gbif:1790751. Syfania oberthÃ¼ri)
+Adding Syfania oberthuri as synonym for (4253337=gbif:5977351. Syfania oberthÃ¼ri)
+Adding Pandalus eous as synonym for (4665843=gbif:6283232. Pandalus eÃ¶us)
+Adding Pandalus eous as synonym for (577697=ncbi:298721. Pandalus eÃ¶us)
+Adding Cranae as synonym for (3500790=gbif:4403828 CranaÃ«)
+Adding Cranae as synonym for (3501195=gbif:1702043 CranaÃ«)
+Adding Botryocladia monoica as synonym for (4013096=gbif:4375850. Botryocladia monoÃ¯ca)
+Adding Botryocladia monoica as synonym for (781135=ncbi:220758. Botryocladia monoÃ¯ca)
+Adding Kollikerina as synonym for (3681639=gbif:4878639. KÃ¶llikerina)
+Adding Kollikerina as synonym for (3681618=gbif:4878651. KÃ¶llikerina)
+Adding Onychiurus eous as synonym for (5011514=gbif:6184787. Onychiurus eÃ¶us)
+Adding Onychiurus eous as synonym for (5011522=gbif:5166985. Onychiurus eÃ¶us)
+Adding Mycomya storai as synonym for (5035127=gbif:7198228. Mycomya storÃ¥i)
+Adding Mycomya storai as synonym for (4492539=gbif:1613384. Mycomya storÃ¥i)
+Adding Citheronia laocoon as synonym for (3100975=gbif:5976894. Citheronia laocoÃ¶n)
+Adding Citheronia laocoon as synonym for (3100976=gbif:1865578. Citheronia laocoÃ¶n)
+Adding Hypasura honei as synonym for (3188598=gbif:1807275. Hypasura hÃ¶nei)
+Adding Hypasura honei as synonym for (3185748=gbif:5977332. Hypasura hÃ¶nei)
+Adding Damalis saigonensis as synonym for (5034547=gbif:7198237. Damalis saÃ¯gonensis)
+Adding Damalis saigonensis as synonym for (4438856=gbif:5977689. Damalis saÃ¯gonensis)
+Adding Pontocypris chununae as synonym for (2961539=gbif:6127894. Pontocypris chunÃ¼nae)
+Adding Pontocypris chununae as synonym for (2961526=gbif:6469156. Pontocypris chunÃ¼nae)
+Adding Haddowia aetii as synonym for (3803622=gbif:2549923. Haddowia aÃ«tii)
+Adding Haddowia aetii as synonym for (3803616=gbif:5954450. Haddowia aÃ«tii)
+Adding Helicoon fuscosporum as synonym for (4071472=gbif:2613688. HelicoÃ¶n fuscosporum)
+Adding Helicoon fuscosporum as synonym for (461503=ncbi:319390. HelicoÃ¶n fuscosporum)
+Adding Helicoon reticulatum as synonym for (4071471=gbif:2613689. HelicoÃ¶n reticulatum)
+Adding Helicoon reticulatum as synonym for (4071553=gbif:4910723. HelicoÃ¶n reticulatum)
+Adding Proeces as synonym for (4615029=gbif:1209896. ProÃ«ces)
+Adding Proeces as synonym for (4609854=gbif:4405243 ProÃ«ces)
+Adding Anopheles bustamentei as synonym for (4476234=gbif:5979046. Anopheles bustamentÃ©i)
+Adding Anopheles bustamentei as synonym for (4476215=gbif:1650713. Anopheles bustamentÃ©i)
+Adding Iphinoe as synonym for (2929722=gbif:4571613. IphinÃ¶e)
+Adding Iphinoe as synonym for (647842=ncbi:94534 IphinÃ¶e)
+Adding Iphinoe as synonym for (852707=ncbi:988814 IphinÃ¶e)
+Adding Laocoon paradoxus as synonym for (4074880=gbif:2621836. LaocoÃ¶n paradoxus)
+Adding Laocoon paradoxus as synonym for (4930911=gbif:5820572. LaocoÃ¶n paradoxus)
+Adding Pseudotetraedriella as synonym for (4922239=gbif:6789196. PseudotetraÃ«driella)
+Adding Pseudotetraedriella as synonym for (423009=ncbi:425075 PseudotetraÃ«driella)
+Adding Hymenopleella hippophaes as synonym for (4051654=gbif:2575066. Hymenopleella hippophaÃ«s)
+Adding Hymenopleella hippophaes as synonym for (4051655=gbif:5952697. Hymenopleella hippophaÃ«s)
+Adding Litaneutria ocularis as synonym for (5019625=gbif:6930209. Litaneutria ocÃ¼laris)
+Adding Litaneutria ocularis as synonym for (3483995=gbif:1406069. Litaneutria ocÃ¼laris)
+Adding Heteroepichloe sasae as synonym for (4059021=gbif:2562629. HeteroepichloÃ« sasae)
+Adding Heteroepichloe sasae as synonym for (949525=ncbi:166593. HeteroepichloÃ« sasae)
+Adding Terpsinoe as synonym for (2819536=gbif:4376687 TerpsinoÃ«)
+Adding Terpsinoe as synonym for (556741=ncbi:1003136 TerpsinoÃ«)
+Adding Parepichloe as synonym for (4058954=gbif:2562575 ParepichloÃ«)
+Adding Parepichloe as synonym for (634256=ncbi:61173 ParepichloÃ«)
+Adding Paraethecerus as synonym for (4561351=gbif:1158205 ParaÃ«thecerus)
+Adding Paraethecerus as synonym for (5045510=gbif:3260244 ParaÃ«thecerus)
+Adding Agylla stotzneri as synonym for (5029229=gbif:7211734. Agylla stÃ¶tzneri)
+Adding Agylla stotzneri as synonym for (3182291=gbif:5117976. Agylla stÃ¶tzneri)
+Adding Aprostocetus meroe as synonym for (5036970=gbif:7217440. Aprostocetus merÃ¶e)
+Adding Aprostocetus meroe as synonym for (3312897=gbif:1387919. Aprostocetus merÃ¶e)
+Adding Callithomia alexirrhoe as synonym for (3118697=gbif:1902823. Callithomia alexirrhoÃ«)
+Adding Callithomia alexirrhoe as synonym for (818557=ncbi:471025 Callithomia alexirrhoÃ«)
+Adding Cranae rubra as synonym for (3504719=gbif:5976708. CranaÃ« rubra)
+Adding Cranae rubra as synonym for (3503114=gbif:1702065. CranaÃ« rubra)
+Adding Neotrombicula tragardhiana as synonym for (5105089=gbif:6911494. Neotrombicula trÃ¤gÃ¥rdhiana)
+Adding Neotrombicula tragardhiana as synonym for (3532418=gbif:4541136. Neotrombicula trÃ¤gÃ¥rdhiana)
+Adding Chondrostylis kunstleri as synonym for (3914948=gbif:5939719. Chondrostylis kÃ¼nstleri)
+Adding Chondrostylis kunstleri as synonym for (230733=ncbi:344414. Chondrostylis kÃ¼nstleri)
+Adding Elsinoe veneta as synonym for (3717469=gbif:2613134. ElsinoÃ« veneta)
+Adding Elsinoe veneta as synonym for (405881=ncbi:45306. ElsinoÃ« veneta)
+Adding Asiadodis yunnanensis as synonym for (4177574=gbif:1405539. Asiadodis yÃ¼nnanensis)
+Adding Asiadodis yunnanensis as synonym for (4177573=gbif:5976886. Asiadodis yÃ¼nnanensis)
+Adding Mycoemilia as synonym for (3686238=gbif:2559471 MycoÃ«milia)
+Adding Mycoemilia as synonym for (183906=ncbi:417183 MycoÃ«milia)
+Adding Hierochloe repens as synonym for (4731521=gbif:6084767. HierochloÃ« repens)
+Adding Hierochloe repens as synonym for (3951096=gbif:4122332. HierochloÃ« repens)
+Adding Callitomis mjobergi as synonym for (3185577=gbif:1811356. Callitomis mjÃ¶bergi)
+Adding Callitomis mjobergi as synonym for (3190274=gbif:6197514. Callitomis mjÃ¶bergi)
+Adding Heliophorus stotzneri as synonym for (5028937=gbif:7208748. Heliophorus stÃ¶tzneri)
+Adding Heliophorus stotzneri as synonym for (3145495=gbif:1923634. Heliophorus stÃ¶tzneri)
+Adding Oeneis aello as synonym for (3107374=gbif:5128334. Oeneis aÃ«llo)
+Adding Oeneis aello as synonym for (3107325=gbif:6231906. Oeneis aÃ«llo)
+Adding Aiphanes as synonym for (3949276=gbif:7314215. AÃ¯phanes)
+Adding Aiphanes as synonym for (221930=ncbi:131248 AÃ¯phanes)
+Adding Coilia as synonym for (3628592=gbif:4353891. CoÃ¯lia)
+Adding Coilia as synonym for (502176=ncbi:286536 CoÃ¯lia)
+Adding Howeina shului as synonym for (2963542=gbif:6127936. Howeina shÃ¼lui)
+Adding Howeina shului as synonym for (2963459=gbif:6470899. Howeina shÃ¼lui)
+Adding Cranae tibialis as synonym for (3503965=gbif:1702077. CranaÃ« tibialis)
+Adding Cranae tibialis as synonym for (3503963=gbif:1702075. CranaÃ« tibialis)
+Adding Nicolea claparedi as synonym for (4974899=gbif:7189639. Nicolea claparÃ©di)
+Adding Nicolea claparedi as synonym for (4974909=gbif:2324873. Nicolea claparÃ©di)
+Adding Colostygia pungeleri as synonym for (3086262=gbif:1988699. Colostygia pÃ¼ngeleri)
+Adding Colostygia pungeleri as synonym for (3086270=gbif:6213216. Colostygia pÃ¼ngeleri)
+Adding Elsinoe banksiae as synonym for (3717329=gbif:3499108. ElsinoÃ« banksiae)
+Adding Elsinoe banksiae as synonym for (432198=ncbi:97461. ElsinoÃ« banksiae)
+Adding Uromyces aloes as synonym for (3845957=gbif:2515656. Uromyces aloÃ«s)
+Adding Uromyces aloes as synonym for (721503=ncbi:413147. Uromyces aloÃ«s)
+Adding Lepteutypa hippophaes as synonym for (3692936=gbif:2574617. Lepteutypa hippophaÃ«s)
+Adding Lepteutypa hippophaes as synonym for (3692941=gbif:5952704. Lepteutypa hippophaÃ«s)
+Adding Brachycrotaphus buttneri as synonym for (5021528=gbif:7197705. Brachycrotaphus bÃ¼ttneri)
+Adding Brachycrotaphus buttneri as synonym for (3503687=gbif:5098661. Brachycrotaphus bÃ¼ttneri)
+Adding Parepichloe cinerea as synonym for (4058955=gbif:3450151. ParepichloÃ« cinerea)
+Adding Parepichloe cinerea as synonym for (634258=ncbi:61174. ParepichloÃ« cinerea)
+Adding Stactobia storai as synonym for (5026689=gbif:7197982. Stactobia storÃ¥i)
+Adding Stactobia storai as synonym for (3021829=gbif:1432140. Stactobia storÃ¥i)
+Adding Satyrus pungeleri as synonym for (3107007=gbif:5134232. Satyrus pÃ¼ngeleri)
+Adding Satyrus pungeleri as synonym for (3106714=gbif:6232119. Satyrus pÃ¼ngeleri)
+Adding Amathusia schonbergi as synonym for (3108966=gbif:5130246. Amathusia schÃ¶nbergi)
+Adding Amathusia schonbergi as synonym for (3108996=gbif:6232521. Amathusia schÃ¶nbergi)
+Adding Bauhinia saigonensis as synonym for (5147896=gbif:7225366. Bauhinia saÃ¯gonensis)
+Adding Bauhinia saigonensis as synonym for (850709=ncbi:653080. Bauhinia saÃ¯gonensis)
+Adding Epichloe brachyelytri as synonym for (4058922=gbif:3449867. EpichloÃ« brachyelytri)
+Adding Epichloe brachyelytri as synonym for (905108=ncbi:79589 EpichloÃ« brachyelytri)
+Adding Epichloe yangzii as synonym for (4058914=gbif:3449855. EpichloÃ« yangzii)
+Adding Epichloe yangzii as synonym for (272669=ncbi:344613. EpichloÃ« yangzii)
+Adding Xenochroma palimpais as synonym for (4281036=gbif:5149993. Xenochroma palimpaÃ¯s)
+Adding Xenochroma palimpais as synonym for (4281037=gbif:6119538. Xenochroma palimpaÃ¯s)
+Adding Eloria gueneei as synonym for (3215016=gbif:1818792. Eloria guenÃ©ei)
+Adding Eloria gueneei as synonym for (3215046=gbif:5977328. Eloria guenÃ©ei)
+Adding Polyzonus saigonensis as synonym for (5045112=gbif:7201602. Polyzonus saÃ¯gonensis)
+Adding Polyzonus saigonensis as synonym for (3367445=gbif:1153885. Polyzonus saÃ¯gonensis)
+Adding Parmotrema tsavoense as synonym for (3768219=gbif:2606251. Parmotrema tsavoÃ«nse)
+Adding Parmotrema tsavoense as synonym for (3768035=gbif:3407528. Parmotrema tsavoÃ«nse)
+Adding Artemidora alpherakyi as synonym for (4273388=gbif:1967692. Artemidora alphÃ©rakyi)
+Adding Artemidora alpherakyi as synonym for (4273391=gbif:5977287. Artemidora alphÃ©rakyi)
+Adding Homoneura paroeca as synonym for (4417416=gbif:5979626. Homoneura paroÃ«ca)
+Adding Homoneura paroeca as synonym for (4417211=gbif:1572167. Homoneura paroÃ«ca)
+Adding Sphacelodes haitiaria as synonym for (3068938=gbif:1990596. Sphacelodes haÃ¯tiaria)
+Adding Sphacelodes haitiaria as synonym for (3068942=gbif:6216399. Sphacelodes haÃ¯tiaria)
+Adding Dasychira plotzi as synonym for (3215969=gbif:1821248. Dasychira plÃ¶tzi)
+Adding Dasychira plotzi as synonym for (3215976=gbif:5977329. Dasychira plÃ¶tzi)
+Adding Neocudoniella jezoensis as synonym for (4042371=gbif:3486737. Neocudoniella jezoÃ«nsis)
+Adding Neocudoniella jezoensis as synonym for (4042372=gbif:5952993. Neocudoniella jezoÃ«nsis)
+Adding Amata uelleburgensis as synonym for (3183642=gbif:1808327. Amata uÃ«lleburgensis)
+Adding Amata uelleburgensis as synonym for (3183520=gbif:5977338. Amata uÃ«lleburgensis)
+Adding Heteroepichloe bambusae as synonym for (4059022=gbif:2562626. HeteroepichloÃ« bambusae)
+Adding Heteroepichloe bambusae as synonym for (949527=ncbi:166592. HeteroepichloÃ« bambusae)
+Adding Sphaerosyllis claparedi as synonym for (4982514=gbif:7189751. Sphaerosyllis claparÃ©di)
+Adding Sphaerosyllis claparedi as synonym for (4982531=gbif:2310006. Sphaerosyllis claparÃ©di)
+Adding Pomatocalpa kunstleri as synonym for (3975910=gbif:5952242. Pomatocalpa kÃ¼nstleri)
+Adding Pomatocalpa kunstleri as synonym for (101657=ncbi:331232. Pomatocalpa kÃ¼nstleri)
+Adding Monosyntaxis samoensis as synonym for (3189635=gbif:1815717. Monosyntaxis samoÃ«nsis)
+Adding Monosyntaxis samoensis as synonym for (3185750=gbif:5977335. Monosyntaxis samoÃ«nsis)
+Adding Cenocoelius eous as synonym for (4547470=gbif:6250139. Cenocoelius eÃ¶us)
+Adding Cenocoelius eous as synonym for (4547466=gbif:1263717. Cenocoelius eÃ¶us)
+Adding Turanogryllus eous as synonym for (4184889=gbif:6254519. Turanogryllus eÃ¶us)
+Adding Turanogryllus eous as synonym for (4184876=gbif:1721798. Turanogryllus eÃ¶us)
+Adding Argonauta bottgeri as synonym for (2868113=gbif:5963134. Argonauta bÃ¶ttgeri)
+Adding Argonauta bottgeri as synonym for (2868109=gbif:5189603. Argonauta bÃ¶ttgeri)
+Adding Colletes eous as synonym for (3275101=gbif:6252831. Colletes eÃ¶us)
+Adding Colletes eous as synonym for (184867=ncbi:420715. Colletes eÃ¶us)
+Adding Astrocystis cocoes as synonym for (3694385=gbif:3459856. Astrocystis cocoÃ«s)
+Adding Astrocystis cocoes as synonym for (420291=ncbi:190943. Astrocystis cocoÃ«s)
+Adding Elliptorhina problematica as synonym for (5019779=gbif:6929203. Elliptorhina problemÃ¡tica)
+Adding Elliptorhina problematica as synonym for (3482011=gbif:1994203. Elliptorhina problemÃ¡tica)
+Adding Nais inornata as synonym for (3704278=gbif:5252273. NaÃ¯s inornata)
+Adding Nais inornata as synonym for (305451=ncbi:85920. NaÃ¯s inornata)
+Adding Epichloe amarillans as synonym for (4058916=gbif:2562760. EpichloÃ« amarillans)
+Adding Epichloe amarillans as synonym for (369201=ncbi:42805 EpichloÃ« amarillans)
+Adding Pseudagloe as synonym for (5152537=gbif:4923493. PseudagloÃ«)
+Adding Pseudagloe as synonym for (5152538=gbif:4892112 PseudagloÃ«)
+Adding Hypersypnoides congoensis as synonym for (4256269=gbif:1771543. Hypersypnoides congoÃ«nsis)
+Adding Hypersypnoides congoensis as synonym for (4256266=gbif:5977355. Hypersypnoides congoÃ«nsis)
+Adding Loxoconcha hsiyu as synonym for (2963593=gbif:6127786. Loxoconcha hsiyÃ¼)
+Adding Loxoconcha hsiyu as synonym for (2963751=gbif:6471241. Loxoconcha hsiyÃ¼)
+Adding Caloglossa saigonensis as synonym for (5155250=gbif:7228552. Caloglossa saÃ¯gonensis)
+Adding Caloglossa saigonensis as synonym for (1018793=ncbi:210849. Caloglossa saÃ¯gonensis)
+Adding Actias sjoqvisti as synonym for (3100484=gbif:1865673. Actias sjÃ¶qvisti)
+Adding Actias sjoqvisti as synonym for (3100470=gbif:6210777. Actias sjÃ¶qvisti)
+Adding Dasyuris catadees as synonym for (4270867=gbif:1976877. Dasyuris catadeÃ«s)
+Adding Dasyuris catadees as synonym for (4270881=gbif:4702958. Dasyuris catadeÃ«s)
+Adding Butschliella as synonym for (2825329=gbif:4919066 BÃ¼tschliella)
+Adding Butschliella as synonym for (5155055=gbif:3202498 BÃ¼tschliella)
+Adding Haploesthes as synonym for (4727522=gbif:7336137. HaploÃ«sthes)
+Adding Haploesthes as synonym for (787538=ncbi:176538 HaploÃ«sthes)
+Adding Cranae trivittata as synonym for (3504722=gbif:5976709. CranaÃ« trivittata)
+Adding Cranae trivittata as synonym for (3503113=gbif:1702064. CranaÃ« trivittata)
+Adding Nais aquatica as synonym for (3704277=gbif:5482910. NaÃ¯s aquatica)
+Adding Nais aquatica as synonym for (3704276=gbif:5952494. NaÃ¯s aquatica)
+Adding Achnanthes plonensis as synonym for (2813136=gbif:4920773. Achnanthes plÃ¶nensis)
+Adding Achnanthes plonensis as synonym for (2813338=gbif:4377003. Achnanthes plÃ¶nensis)
+Adding Cnemidocarpa nordenskjoldi as synonym for (3646406=gbif:6486716. Cnemidocarpa nordenskjÃ¶ldi)
+Adding Cnemidocarpa nordenskjoldi as synonym for (4940683=gbif:7009364. Cnemidocarpa nordenskjÃ¶ldi)
+Adding Helicoon as synonym for (4071456=gbif:2572803 HelicoÃ¶n)
+Adding Helicoon as synonym for (4071549=gbif:4900318 HelicoÃ¶n)
+Adding Helicoon as synonym for (392129=ncbi:1278157 HelicoÃ¶n)
+Adding Helicoon as synonym for (309936=ncbi:53389 HelicoÃ¶n)
+Adding Euthlastoblatta vegeta as synonym for (5019808=gbif:6928360. Euthlastoblatta vÃ©gÃ©ta)
+Adding Euthlastoblatta vegeta as synonym for (4178012=gbif:1999431. Euthlastoblatta vÃ©gÃ©ta)
+Adding Beroe as synonym for (3684215=gbif:3243054. BerÃ¶e)
+Adding Beroe as synonym for (471718=ncbi:10199 BerÃ¶e)
+Adding Erythrogryllacris buttikoferi as synonym for (3484877=gbif:5976678. Erythrogryllacris bÃ¼ttikoferi)
+Adding Erythrogryllacris buttikoferi as synonym for (3484936=gbif:1726215. Erythrogryllacris bÃ¼ttikoferi)
+Adding Cosmorhoe neelys as synonym for (3086385=gbif:1970198. Cosmorhoe neÃ«lys)
+Adding Cosmorhoe neelys as synonym for (3086387=gbif:6213246. Cosmorhoe neÃ«lys)
+Adding Heteroepichloe as synonym for (4059020=gbif:2562625 HeteroepichloÃ«)
+Adding Heteroepichloe as synonym for (791786=ncbi:197784 HeteroepichloÃ«)
+Adding Epichloe baconii as synonym for (4058917=gbif:2562758. EpichloÃ« baconii)
+Adding Epichloe baconii as synonym for (128044=ncbi:47801 EpichloÃ« baconii)
+Adding Onthophagus saigonensis as synonym for (5066952=gbif:7201422. Onthophagus saÃ¯gonensis)
+Adding Onthophagus saigonensis as synonym for (3329261=gbif:1090230. Onthophagus saÃ¯gonensis)
+Adding Moroteuthis lonnbergii as synonym for (4953883=gbif:7187522. Moroteuthis lÃ¶nnbergii)
+Adding Moroteuthis lonnbergii as synonym for (836317=ncbi:392301. Moroteuthis lÃ¶nnbergii)
+Adding Oxychloe as synonym for (3965007=gbif:2700573 OxychloÃ«)
+Adding Oxychloe as synonym for (747778=ncbi:13623 OxychloÃ«)
+Adding Helicoon pluriseptatum as synonym for (4071459=gbif:2613687. HelicoÃ¶n pluriseptatum)
+Adding Helicoon pluriseptatum as synonym for (4071552=gbif:4910722. HelicoÃ¶n pluriseptatum)
+Adding Oratemnus saigonensis as synonym for (5123018=gbif:7195194. Oratemnus saÃ¯gonensis)
+Adding Oratemnus saigonensis as synonym for (3580202=gbif:2126416. Oratemnus saÃ¯gonensis)
+Adding Themistonoe cacica as synonym for (3389530=gbif:1124497. ThemistonoÃ« cacica)
+Adding Themistonoe cacica as synonym for (3389531=gbif:1124496. ThemistonoÃ« cacica)
+Adding Euploea guerini as synonym for (3117171=gbif:5136519. Euploea guÃ©rini)
+Adding Euploea guerini as synonym for (3116860=gbif:5977174. Euploea guÃ©rini)
+Adding Allium noeanum as synonym for (3994034=gbif:5950272. Allium noÃ«anum)
+Adding Allium noeanum as synonym for (679987=ncbi:165641. Allium noÃ«anum)
+Adding Aporia oberthuri as synonym for (5145550=gbif:6880126. Aporia oberthÃ¼ri)
+Adding Aporia oberthuri as synonym for (5145610=gbif:6880151. Aporia oberthÃ¼ri)
+Adding Aporia oberthuri as synonym for (3135274=gbif:5137762. Aporia oberthÃ¼ri)
+Adding Cranae caprai as synonym for (3500791=gbif:5976688. CranaÃ« caprai)
+Adding Cranae caprai as synonym for (3503099=gbif:1702068. CranaÃ« caprai)
+Adding Cranae longipennis as synonym for (3504709=gbif:5976705. CranaÃ« longipennis)
+Adding Cranae longipennis as synonym for (3503106=gbif:1702061. CranaÃ« longipennis)
+Adding Hyllisia saigonensis as synonym for (5045251=gbif:7202168. Hyllisia saÃ¯gonensis)
+Adding Hyllisia saigonensis as synonym for (3382972=gbif:1156314. Hyllisia saÃ¯gonensis)
+Adding Achelous as synonym for (4668740=gbif:6458829. AcheloÃ¼s)
+Adding Achelous as synonym for (661145=ncbi:600334 AcheloÃ¼s)
+Adding Caloplaca tornoensis as synonym for (3778603=gbif:3431238. Caloplaca tornoÃ«nsis)
+Adding Caloplaca tornoensis as synonym for (3778480=gbif:4281404. Caloplaca tornoÃ«nsis)
+Adding Scaphochlamys kunstleri as synonym for (3946780=gbif:5950008. Scaphochlamys kÃ¼nstleri)
+Adding Scaphochlamys kunstleri as synonym for (576141=ncbi:97759 Scaphochlamys kÃ¼nstleri)
+Adding Cytospora hippophaes as synonym for (3698037=gbif:3446863. Cytospora hippophaÃ«s)
+Adding Cytospora hippophaes as synonym for (3698291=gbif:6096340. Cytospora hippophaÃ«s)
+Adding Terpsinoe musica as synonym for (2819535=gbif:6539645. TerpsinoÃ« musica)
+Adding Terpsinoe musica as synonym for (556739=silva:HQ912682. TerpsinoÃ« musica)
+Adding Nymphon stromii as synonym for (3582249=gbif:2117806. Nymphon strÃ¶mii)
+Adding Nymphon stromii as synonym for (3582028=gbif:4805323. Nymphon strÃ¶mii)
+Adding Helicoon richonis as synonym for (4071461=gbif:2613683. HelicoÃ¶n richonis)
+Adding Helicoon richonis as synonym for (653507=ncbi:319398. HelicoÃ¶n richonis)
+Adding Elsinoe rosarum as synonym for (3717449=gbif:2613173. ElsinoÃ« rosarum)
+Adding Elsinoe rosarum as synonym for (4930975=gbif:6096448. ElsinoÃ« rosarum)
+Adding Oxychloe andina as synonym for (3965008=gbif:2700579. OxychloÃ« andina)
+Adding Oxychloe andina as synonym for (747770=ncbi:13624. OxychloÃ« andina)
+Adding Epichloe clarkii as synonym for (4058905=gbif:2562772. EpichloÃ« clarkii)
+Adding Epichloe clarkii as synonym for (128045=ncbi:47802. EpichloÃ« clarkii)
+Adding Clonostachys epichloe as synonym for (4059085=gbif:2561030. Clonostachys epichloÃ«)
+Adding Clonostachys epichloe as synonym for (410020=ncbi:122421. Clonostachys epichloÃ«)
+Adding Agloe as synonym for (5152466=gbif:4923487. AgloÃ«)
+Adding Agloe as synonym for (4734746=gbif:4923486. AgloÃ«)
+Adding Miriquidica paanaensis as synonym for (3777251=gbif:3397958. Miriquidica paanaÃ«nsis)
+Adding Miriquidica paanaensis as synonym for (3763811=gbif:7187021. Miriquidica paanaÃ«nsis)
+Adding Lecanora discoensis as synonym for (3775431=gbif:3398348. Lecanora discoÃ«nsis)
+Adding Lecanora discoensis as synonym for (3775372=gbif:4281329. Lecanora discoÃ«nsis)
+Adding Parepichloe cynodontis as synonym for (4058956=gbif:3450149. ParepichloÃ« cynodontis)
+Adding Parepichloe cynodontis as synonym for (634261=ncbi:61175. ParepichloÃ« cynodontis)
+Adding Aseroe arachnoidea as synonym for (4100312=gbif:7245011. AseroÃ« arachnoidea)
+Adding Aseroe arachnoidea as synonym for (343484=ncbi:104334. AseroÃ« arachnoidea)
+Adding Euthalia aeetes as synonym for (3120944=gbif:6232601. Euthalia aeÃ«tes)
+Adding Euthalia aeetes as synonym for (3120848=gbif:5130942. Euthalia aeÃ«tes)
+Adding Convoluta bohmigi as synonym for (3663256=gbif:4307560. Convoluta bÃ¶hmigi)
+Adding Convoluta bohmigi as synonym for (3663270=gbif:2499197. Convoluta bÃ¶hmigi)
+Adding Coleophora buttneri as synonym for (5026900=gbif:7213724. Coleophora bÃ¼ttneri)
+Adding Coleophora buttneri as synonym for (3220228=gbif:5121039. Coleophora bÃ¼ttneri)
+Adding Antrodia hippophaes as synonym for (3801143=gbif:2542592. Antrodia hippophaÃ«s)
+Adding Antrodia hippophaes as synonym for (3801111=gbif:5954645. Antrodia hippophaÃ«s)
+Adding Xoes as synonym for (3380050=gbif:6267733 XoÃ«s)
+Adding Xoes as synonym for (3399778=gbif:1110756 XoÃ«s)
+Adding Elsinoe randii as synonym for (3717384=gbif:2613129. ElsinoÃ« randii)
+Adding Elsinoe randii as synonym for (4930973=gbif:6549277. ElsinoÃ« randii)
+Adding Eurysternodes tragardhi as synonym for (5100801=gbif:6887359. Eurysternodes trÃ¤gÃ¥rdhi)
+Adding Eurysternodes tragardhi as synonym for (5100800=gbif:5800745. Eurysternodes trÃ¤gÃ¥rdhi)
+Adding Masseeella narasimhanii as synonym for (3851540=gbif:2517659. MasseeÃ«lla narasimhanii)
+Adding Masseeella narasimhanii as synonym for (4934661=gbif:6549286. MasseeÃ«lla narasimhanii)
+Adding Electrophaes chrysophaes as synonym for (3086447=gbif:1976180. Electrophaes chrysophaÃ«s)
+Adding Electrophaes chrysophaes as synonym for (3086437=gbif:6213356. Electrophaes chrysophaÃ«s)
+Adding Krugeria as synonym for (3538758=gbif:4772691 KrÃ¼geria)
+Adding Krugeria as synonym for (5114077=gbif:2131653 KrÃ¼geria)
+Adding Licuala kunstleri as synonym for (3947663=gbif:5950050. Licuala kÃ¼nstleri)
+Adding Licuala kunstleri as synonym for (105388=ncbi:115489. Licuala kÃ¼nstleri)
+Adding Elsinoe cinnamomi as synonym for (3717447=gbif:3499063. ElsinoÃ« cinnamomi)
+Adding Elsinoe cinnamomi as synonym for (4930983=gbif:6123806. ElsinoÃ« cinnamomi)
+Adding Gelidium samoense as synonym for (4009985=gbif:6452449. Gelidium samoÃ«nse)
+Adding Gelidium samoense as synonym for (4009960=gbif:2662712. Gelidium samoÃ«nse)
+Adding Gnophos stotzneri as synonym for (5031044=gbif:7209965. Gnophos stÃ¶tzneri)
+Adding Gnophos stotzneri as synonym for (3068813=gbif:1969495. Gnophos stÃ¶tzneri)
+Adding Epichloe glyceriae as synonym for (4058907=gbif:3449862. EpichloÃ« glyceriae)
+Adding Epichloe glyceriae as synonym for (89725=ncbi:79591 EpichloÃ« glyceriae)
+Adding Elsinoe eucalypticola as synonym for (3717379=gbif:5954064. ElsinoÃ« eucalypticola)
+Adding Elsinoe eucalypticola as synonym for (758272=ncbi:673161. ElsinoÃ« eucalypticola)
+Adding Oxychloe castellanosii as synonym for (3965010=gbif:2700576. OxychloÃ« castellanosii)
+Adding Oxychloe castellanosii as synonym for (469193=ncbi:291277. OxychloÃ« castellanosii)
+Adding Gamasellus tragardhi as synonym for (5101847=gbif:6887065. Gamasellus trÃ¤gÃ¥rdhi)
+Adding Gamasellus tragardhi as synonym for (3521822=gbif:2185477. Gamasellus trÃ¤gÃ¥rdhi)
+Adding Ochrolechia szatalaensis as synonym for (3783113=gbif:2600231. Ochrolechia szatalaÃ«nsis)
+Adding Ochrolechia szatalaensis as synonym for (1042790=ncbi:129512. Ochrolechia szatalaÃ«nsis)
+Adding Asperoseius baguioensis as synonym for (3524326=gbif:5967774. Asperoseius baguioÃ«nsis)
+Adding Asperoseius baguioensis as synonym for (5103565=gbif:6885867. Asperoseius baguioÃ«nsis)
+Adding Oxychloe bisexualis as synonym for (3965011=gbif:2700582. OxychloÃ« bisexualis)
+Adding Oxychloe bisexualis as synonym for (714584=ncbi:253149. OxychloÃ« bisexualis)
+Adding Verrucaria chiloensis as synonym for (3759040=gbif:5490926. Verrucaria chiloÃ«nsis)
+Adding Verrucaria chiloensis as synonym for (832513=ncbi:473363. Verrucaria chiloÃ«nsis)
+Adding Elsinoe leucospermi as synonym for (3717406=gbif:3499075. ElsinoÃ« leucospermi)
+Adding Elsinoe leucospermi as synonym for (988781=ncbi:97462. ElsinoÃ« leucospermi)
+Adding Afrogryllacris buttneri as synonym for (5021950=gbif:7197957. Afrogryllacris bÃ¼ttneri)
+Adding Afrogryllacris buttneri as synonym for (3485127=gbif:1726556. Afrogryllacris bÃ¼ttneri)
+Adding Neocoenyra fulleborni as synonym for (3123757=gbif:1913437. Neocoenyra fÃ¼lleborni)
+Adding Neocoenyra fulleborni as synonym for (3124983=gbif:5977139. Neocoenyra fÃ¼lleborni)
+Adding Elsinoe verbenae as synonym for (3717452=gbif:3499086. ElsinoÃ« verbenae)
+Adding Elsinoe verbenae as synonym for (849090=ncbi:1125791. ElsinoÃ« verbenae)
+Adding Cytheroma yueri as synonym for (2964799=gbif:6127852. Cytheroma yÃ¼eri)
+Adding Cytheroma yueri as synonym for (2964822=gbif:6469380. Cytheroma yÃ¼eri)
+Adding Thaumaleus claparedi as synonym for (5092632=gbif:7219137. Thaumaleus claparÃ©di)
+Adding Thaumaleus claparedi as synonym for (2945453=gbif:2110864. Thaumaleus claparÃ©di)
+Adding Acraea kukenthali as synonym for (3113309=gbif:5135567. Acraea kÃ¼kenthali)
+Adding Acraea kukenthali as synonym for (3113186=gbif:5977176. Acraea kÃ¼kenthali)
+Adding Eilema honei as synonym for (3183178=gbif:5116709. Eilema hÃ¶nei)
+Adding Eilema honei as synonym for (3183246=gbif:5977348. Eilema hÃ¶nei)
+Adding Drapetis storai as synonym for (5031903=gbif:7198225. Drapetis storÃ¥i)
+Adding Drapetis storai as synonym for (4343486=gbif:1456918. Drapetis storÃ¥i)
+Adding Praemastus cymothoe as synonym for (3188515=gbif:1805363. Praemastus cymothoÃ«)
+Adding Praemastus cymothoe as synonym for (3190152=gbif:5977347. Praemastus cymothoÃ«)
+Adding Thismia aseroe as synonym for (3968805=gbif:5950023. Thismia aseroÃ«)
+Adding Thismia aseroe as synonym for (324024=ncbi:167627. Thismia aseroÃ«)
+Adding Balansia epichloe as synonym for (3700557=gbif:2562732. Balansia epichloÃ«)
+Adding Balansia epichloe as synonym for (306623=ncbi:51584. Balansia epichloÃ«)
+Adding Jagerskioldia as synonym for (3592828=gbif:4350582. JÃ¤gerskiÃ¶ldia)
+Adding Jagerskioldia as synonym for (3592827=gbif:4629992. JÃ¤gerskiÃ¶ldia)
+Adding Ornamentula paraensis as synonym for (2844212=gbif:4351249. Ornamentula paraÃ«nsis)
+Adding Ornamentula paraensis as synonym for (744042=ncbi:1274495. Ornamentula paraÃ«nsis)
+Adding Codium guineense as synonym for (4002220=gbif:5823104. Codium guineÃ«nse)
+Adding Codium guineense as synonym for (4002161=gbif:5729832. Codium guineÃ«nse)
+Adding Phyllodromica atlantica as synonym for (5019802=gbif:6928441. Phyllodromica atlÃ¡ntica)
+Adding Phyllodromica atlantica as synonym for (3482842=gbif:1998886. Phyllodromica atlÃ¡ntica)
+Adding Cranae rufipes as synonym for (3503463=gbif:5976693. CranaÃ« rufipes)
+Adding Cranae rufipes as synonym for (3502432=gbif:1702053. CranaÃ« rufipes)
+Adding Cranae luctuosa as synonym for (3504715=gbif:5976707. CranaÃ« luctuosa)
+Adding Cranae luctuosa as synonym for (3501205=gbif:1702049. CranaÃ« luctuosa)
+Adding Armillaria jezoensis as synonym for (3832244=gbif:3341245. Armillaria jezoÃ«nsis)
+Adding Armillaria jezoensis as synonym for (989945=ncbi:74785. Armillaria jezoÃ«nsis)
+Adding Aseroe as synonym for (4100306=gbif:2524041 AseroÃ«)
+Adding Aseroe as synonym for (958192=ncbi:104333 AseroÃ«)
+Adding Elsinoe mangiferae as synonym for (3717315=gbif:2613140. ElsinoÃ« mangiferae)
+Adding Elsinoe mangiferae as synonym for (4930976=gbif:6123805. ElsinoÃ« mangiferae)
+Adding Lecidea hereroensis as synonym for (3763128=gbif:3437347. Lecidea hereroÃ«nsis)
+Adding Lecidea hereroensis as synonym for (4928634=gbif:7187059. Lecidea hereroÃ«nsis)
+Adding Drepanogynis athroopsegma as synonym for (3070217=gbif:1973195. Drepanogynis athroÃ¶psegma)
+Adding Drepanogynis athroopsegma as synonym for (3070191=gbif:6118902. Drepanogynis athroÃ¶psegma)
+Adding Hierochloe utriculata as synonym for (4731522=gbif:7324968. HierochloÃ« utriculata)
+Adding Hierochloe utriculata as synonym for (3951094=gbif:4122208. HierochloÃ« utriculata)
+Adding Mycetophila storai as synonym for (5035143=gbif:7198227. Mycetophila storÃ¥i)
+Adding Mycetophila storai as synonym for (4494471=gbif:1613908. Mycetophila storÃ¥i)
+Adding Neofedrizzia tragardhi as synonym for (5104711=gbif:6888785. Neofedrizzia trÃ¤gÃ¥rdhi)
+Adding Neofedrizzia tragardhi as synonym for (5104716=gbif:4664201. Neofedrizzia trÃ¤gÃ¥rdhi)
+Adding Parocneria tolgi as synonym for (3216763=gbif:5977326. Parocneria tÃ¶lgi)
+Adding Parocneria tolgi as synonym for (3218331=gbif:1819017. Parocneria tÃ¶lgi)
+Adding Hydrelia sjostedti as synonym for (3082816=gbif:5146300. Hydrelia sjÃ¶stedti)
+Adding Hydrelia sjostedti as synonym for (3082830=gbif:5977284. Hydrelia sjÃ¶stedti)
+Adding Anonyx eous as synonym for (2983007=gbif:6283657. Anonyx eÃ¶us)
+Adding Anonyx eous as synonym for (2982990=gbif:5177933. Anonyx eÃ¶us)
+Adding Lithosarctia honei as synonym for (3188381=gbif:1817951. Lithosarctia hÃ¶nei)
+Adding Lithosarctia honei as synonym for (3189849=gbif:5977346. Lithosarctia hÃ¶nei)
+Adding Spaelotis stotzneri as synonym for (5029712=gbif:7213056. Spaelotis stÃ¶tzneri)
+Adding Spaelotis stotzneri as synonym for (3206490=gbif:1774331. Spaelotis stÃ¶tzneri)
+Adding Masseeella as synonym for (3851541=gbif:2517656 MasseeÃ«lla)
+Adding Masseeella as synonym for (4934660=gbif:6713405 MasseeÃ«lla)
+Adding Hierochloe as synonym for (4731518=gbif:6431507 HierochloÃ«)
+Adding Hierochloe as synonym for (345745=ncbi:286618 HierochloÃ«)
+Adding Medetera storai as synonym for (5031769=gbif:7198236. Medetera storÃ¥i)
+Adding Medetera storai as synonym for (4335914=gbif:1608491. Medetera storÃ¥i)
+Adding Megachile saigonensis as synonym for (5037025=gbif:7216106. Megachile saÃ¯gonensis)
+Adding Megachile saigonensis as synonym for (3265187=gbif:1335497. Megachile saÃ¯gonensis)
+Adding Puccinia hypoestis as synonym for (3842213=gbif:3377676. Puccinia hypoÃ«stis)
+Adding Puccinia hypoestis as synonym for (3842691=gbif:6124250. Puccinia hypoÃ«stis)
+Adding Helicoon chlamydosporum as synonym for (4071473=gbif:2613682. HelicoÃ¶n chlamydosporum)
+Adding Helicoon chlamydosporum as synonym for (4071551=gbif:4910721. HelicoÃ¶n chlamydosporum)
+Adding Xoes egeria as synonym for (3380051=gbif:6267734. XoÃ«s egeria)
+Adding Xoes egeria as synonym for (3399781=gbif:1110757. XoÃ«s egeria)
+Adding Ocnogyna oberthuri as synonym for (3190686=gbif:1805099. Ocnogyna oberthÃ¼ri)
+Adding Ocnogyna oberthuri as synonym for (3189850=gbif:5977349. Ocnogyna oberthÃ¼ri)
+Adding Phalaenopsis kunstleri as synonym for (3975997=gbif:5952125. Phalaenopsis kÃ¼nstleri)
+Adding Phalaenopsis kunstleri as synonym for (969673=ncbi:212076. Phalaenopsis kÃ¼nstleri)
+Adding Neocandona yufuiia as synonym for (2962312=gbif:6128209. Neocandona yÃ¼fuiia)
+Adding Neocandona yufuiia as synonym for (2962094=gbif:6469244. Neocandona yÃ¼fuiia)
+Adding Agaricus hemisoodes as synonym for (3822134=gbif:5457645. Agaricus hemisoÃ¶des)
+Adding Agaricus hemisoodes as synonym for (3820366=gbif:5455027. Agaricus hemisoÃ¶des)
+Adding Cranae unistrigata as synonym for (3503693=gbif:5976706. CranaÃ« unistrigata)
+Adding Cranae unistrigata as synonym for (3502431=gbif:1702051. CranaÃ« unistrigata)
+Adding Mycoemilia scoparia as synonym for (3686239=gbif:2559472. MycoÃ«milia scoparia)
+Adding Mycoemilia scoparia as synonym for (1094627=ncbi:417184. MycoÃ«milia scoparia)
+Adding Rhyncaphytoptus alsasuensis as synonym for (5110624=gbif:6921246. Rhyncaphytoptus alsasuÃ«nsis)
+Adding Rhyncaphytoptus alsasuensis as synonym for (3539365=gbif:4545000. Rhyncaphytoptus alsasuÃ«nsis)
+Adding Frommeella as synonym for (3841151=gbif:2516498 FrommeÃ«lla)
+Adding Frommeella as synonym for (3841104=gbif:4891442 FrommeÃ«lla)
+Adding Abarenicola claparedi as synonym for (4977330=gbif:7190031. Abarenicola claparÃ©di)
+Adding Abarenicola claparedi as synonym for (83376=ncbi:273051. Abarenicola claparÃ©di)
+Adding Laocoon as synonym for (4074879=gbif:2621835 LaocoÃ¶n)
+Adding Laocoon as synonym for (4930910=gbif:3269763 LaocoÃ¶n)
+Adding Laocoon as synonym for (2970031=gbif:3255032. LaocoÃ¶n)
+Adding Xestoleberis yuchiae as synonym for (2964206=gbif:6128092. Xestoleberis yÃ¼chiae)
+Adding Xestoleberis yuchiae as synonym for (2964223=gbif:6471429. Xestoleberis yÃ¼chiae)
+Adding Tithoes longipennis as synonym for (3406198=gbif:6270072. TithoÃ«s longipennis)
+Adding Tithoes longipennis as synonym for (3400320=gbif:1134568. TithoÃ«s longipennis)
+Adding Hippophae as synonym for (3907941=gbif:7293115. HippophaÃ«)
+Adding Hippophae as synonym for (644046=ncbi:48233 HippophaÃ«)
+Adding Candelariella kuusamoensis as synonym for (3760596=gbif:7250624. Candelariella kuusamoÃ«nsis)
+Adding Candelariella kuusamoensis as synonym for (4930177=gbif:7186798. Candelariella kuusamoÃ«nsis)
+Adding Proteuclasta stotzneri as synonym for (5028319=gbif:7214635. Proteuclasta stÃ¶tzneri)
+Adding Proteuclasta stotzneri as synonym for (3174095=gbif:1887356. Proteuclasta stÃ¶tzneri)
+Adding Pyxine cocoes as synonym for (3765580=gbif:2609303. Pyxine cocoÃ«s)
+Adding Pyxine cocoes as synonym for (3765500=gbif:4281360. Pyxine cocoÃ«s)
+Adding Elsinoe eucalyptorum as synonym for (3717330=gbif:3499126. ElsinoÃ« eucalyptorum)
+Adding Elsinoe eucalyptorum as synonym for (430561=ncbi:407948. ElsinoÃ« eucalyptorum)
+Adding Epichloe bromicola as synonym for (4058901=gbif:3449875. EpichloÃ« bromicola)
+Adding Epichloe bromicola as synonym for (905106=ncbi:79588 EpichloÃ« bromicola)
+Adding Cranae nigroreticulata as synonym for (3503691=gbif:5976701. CranaÃ« nigroreticulata)
+Adding Cranae nigroreticulata as synonym for (3501204=gbif:1702046. CranaÃ« nigroreticulata)
+Adding Polyrhachis saigonensis as synonym for (5037115=gbif:7218155. Polyrhachis saÃ¯gonensis)
+Adding Polyrhachis saigonensis as synonym for (3259753=gbif:1318293. Polyrhachis saÃ¯gonensis)
+Adding Edwardsia claparedi as synonym for (5141532=gbif:7188930. Edwardsia claparÃ©di)
+Adding Edwardsia claparedi as synonym for (3673828=gbif:5183996. Edwardsia claparÃ©di)
+Adding Pallenopsis vanhoffeni as synonym for (3582402=gbif:2117457. Pallenopsis vanhÃ¶ffeni)
+Adding Pallenopsis vanhoffeni as synonym for (3582468=gbif:4805258. Pallenopsis vanhÃ¶ffeni)
+Adding Cranae pictipennis as synonym for (3504714=gbif:5976702. CranaÃ« pictipennis)
+Adding Cranae pictipennis as synonym for (3501202=gbif:1702044. CranaÃ« pictipennis)
+Adding Aseroe rubra as synonym for (4100318=gbif:2524024. AseroÃ« rubra)
+Adding Aseroe rubra as synonym for (1039043=ncbi:355724. AseroÃ« rubra)
+Adding Elsinoe as synonym for (3717271=gbif:2613125 ElsinoÃ«)
+Adding Elsinoe as synonym for (700619=ncbi:40996 ElsinoÃ«)
+Adding Clinocera storai as synonym for (5031912=gbif:7198562. Clinocera storÃ¥i)
+Adding Clinocera storai as synonym for (4342257=gbif:1582924. Clinocera storÃ¥i)
+Adding Gyorffyana as synonym for (5153136=gbif:4923575. GyÃ¶rffyana)
+Adding Gyorffyana as synonym for (4735163=gbif:4907456 GyÃ¶rffyana)
+Adding Mesapamea storai as synonym for (3209854=gbif:1788434. Mesapamea storÃ¥i)
+Adding Mesapamea storai as synonym for (3209843=gbif:4534439. Mesapamea storÃ¥i)
+Adding Brahmaea tancrei as synonym for (3102028=gbif:1869368. Brahmaea tancrÃ©i)
+Adding Brahmaea tancrei as synonym for (1021301=ncbi:469246. Brahmaea tancrÃ©i)
+Adding Elsinoe annonae as synonym for (3717390=gbif:2613155. ElsinoÃ« annonae)
+Adding Elsinoe annonae as synonym for (4930972=gbif:6549276. ElsinoÃ« annonae)
+Adding Cranae emendata as synonym for (3503110=gbif:1702063. CranaÃ« emendata)
+Adding Cranae emendata as synonym for (3503108=gbif:1702062. CranaÃ« emendata)
+Adding Automolis haematoessa as synonym for (3184940=gbif:5115284. Automolis haematoÃ«ssa)
+Adding Automolis haematoessa as synonym for (3186557=gbif:5115252. Automolis haematoÃ«ssa)
+Adding Krugeria ramosa as synonym for (3538757=gbif:5967780. KrÃ¼geria ramosa)
+Adding Krugeria ramosa as synonym for (5114078=gbif:6915853. KrÃ¼geria ramosa)
+Adding Diplophragmia petsamoensis as synonym for (4064582=gbif:3299821. Diplophragmia petsamoÃ«nsis)
+Adding Diplophragmia petsamoensis as synonym for (4064581=gbif:3553103. Diplophragmia petsamoÃ«nsis)
+Adding Phryganopteryx saalmulleri as synonym for (3184441=gbif:1815797. Phryganopteryx saalmÃ¼lleri)
+Adding Phryganopteryx saalmulleri as synonym for (3189848=gbif:5977345. Phryganopteryx saalmÃ¼lleri)
+Adding Phelipara saigonensis as synonym for (5045124=gbif:7201731. Phelipara saÃ¯gonensis)
+Adding Phelipara saigonensis as synonym for (3362636=gbif:1123175. Phelipara saÃ¯gonensis)
+Adding Cranae manokwari as synonym for (3504718=gbif:5976700. CranaÃ« manokwari)
+Adding Cranae manokwari as synonym for (3503093=gbif:1702066. CranaÃ« manokwari)
+Adding Oligonyx insularis as synonym for (5019449=gbif:6930646. Oligonyx insÃ¼laris)
+Adding Oligonyx insularis as synonym for (5019452=gbif:6725713. Oligonyx insÃ¼laris)
+Adding Protodrilus jagersteni as synonym for (4985533=gbif:5716212. Protodrilus jÃ¤gersteni)
+Adding Protodrilus jagersteni as synonym for (4985512=gbif:5197634. Protodrilus jÃ¤gersteni)
+Adding Elsinoe phaseoli as synonym for (3717454=gbif:2613177. ElsinoÃ« phaseoli)
+Adding Elsinoe phaseoli as synonym for (663857=ncbi:390893. ElsinoÃ« phaseoli)
+Adding Elsinoe solidaginis as synonym for (3717414=gbif:2613154. ElsinoÃ« solidaginis)
+Adding Elsinoe solidaginis as synonym for (4930981=gbif:6549283. ElsinoÃ« solidaginis)
+Adding Elsinoe batatas as synonym for (3717457=gbif:2613144. ElsinoÃ« batatas)
+Adding Elsinoe batatas as synonym for (4930982=gbif:6549281. ElsinoÃ« batatas)
+Adding Dictyota guineensis as synonym for (2820256=gbif:6539318. Dictyota guineÃ«nsis)
+Adding Dictyota guineensis as synonym for (2820289=gbif:5423495. Dictyota guineÃ«nsis)
+Adding Haltidytes ooeides as synonym for (2844235=gbif:4351250. Haltidytes ooÃ«ides)
+Adding Haltidytes ooeides as synonym for (2844234=gbif:2255039. Haltidytes ooÃ«ides)
+Adding Terpsinoe americana as synonym for (2819548=gbif:4376688. TerpsinoÃ« americana)
+Adding Terpsinoe americana as synonym for (2819527=gbif:4275287. TerpsinoÃ« americana)
+Adding Tithoes as synonym for (3406195=gbif:6270071 TithoÃ«s)
+Adding Tithoes as synonym for (3393700=gbif:4738943 TithoÃ«s)
+Adding Haplolabida sjostedti as synonym for (4273978=gbif:1960409. Haplolabida sjÃ¶stedti)
+Adding Haplolabida sjostedti as synonym for (4273980=gbif:5977283. Haplolabida sjÃ¶stedti)
+Adding Elsinoe jasmini as synonym for (3717461=gbif:2613146. ElsinoÃ« jasmini)
+Adding Elsinoe jasmini as synonym for (4930980=gbif:6549275. ElsinoÃ« jasmini)
+Adding Zignoella as synonym for (4054616=gbif:2560819 ZignoÃ«lla)
+Adding Zignoella as synonym for (418027=ncbi:197715 ZignoÃ«lla)
+Adding Sidisca hypochloe as synonym for (4242733=gbif:1824251. Sidisca hypochloÃ«)
+Adding Sidisca hypochloe as synonym for (4242732=gbif:6114127. Sidisca hypochloÃ«)
+Adding Tetraedriella as synonym for (4922080=gbif:4920923. TetraÃ«driella)
+Adding Tetraedriella as synonym for (4027126=gbif:3201373 TetraÃ«driella)
+Adding Elsinoe araliae as synonym for (3717347=gbif:3499068. ElsinoÃ« araliae)
+Adding Elsinoe araliae as synonym for (1038026=ncbi:881651. ElsinoÃ« araliae)
+Adding Dasyhelea storai as synonym for (5036280=gbif:7198226. Dasyhelea storÃ¥i)
+Adding Dasyhelea storai as synonym for (4461349=gbif:1636116. Dasyhelea storÃ¥i)
+Adding Drephalys eous as synonym for (3063949=gbif:6204684. Drephalys eÃ¶us)
+Adding Drephalys eous as synonym for (3063948=gbif:1942363. Drephalys eÃ¶us)
+Adding Scalmicauda hosemanni as synonym for (4244147=gbif:1827181. Scalmicauda hÃ¶semanni)
+Adding Scalmicauda hosemanni as synonym for (4244122=gbif:5977330. Scalmicauda hÃ¶semanni)
+Adding Elsinoe ledi as synonym for (3717373=gbif:2613142. ElsinoÃ« ledi)
+Adding Elsinoe ledi as synonym for (4930978=gbif:6549278. ElsinoÃ« ledi)
+Adding Neope oberthuri as synonym for (3108047=gbif:1914751. Neope oberthÃ¼ri)
+Adding Neope oberthuri as synonym for (3108088=gbif:5977147. Neope oberthÃ¼ri)
+Adding Cranae kuekenthali as synonym for (3503962=gbif:1702074. CranaÃ« kuekenthali)
+Adding Cranae kuekenthali as synonym for (3503100=gbif:1702069. CranaÃ« kuekenthali)
+Adding Eridolius schiodtei as synonym for (3282163=gbif:5975220. Eridolius schiÃ¶dtei)
+Adding Eridolius schiodtei as synonym for (3282111=gbif:1286006. Eridolius schiÃ¶dtei)
+Adding Anicetus eous as synonym for (3318193=gbif:6253484. Anicetus eÃ¶us)
+Adding Anicetus eous as synonym for (3316788=gbif:1375823. Anicetus eÃ¶us)
+Adding Coutierella as synonym for (5090032=gbif:7194560 CoutiÃ¨rella)
+Adding Coutierella as synonym for (918486=ncbi:580075 CoutiÃ¨rella)
+Adding Pseudopanthera oberthuri as synonym for (3069782=gbif:1954573. Pseudopanthera oberthÃ¼ri)
+Adding Pseudopanthera oberthuri as synonym for (3069769=gbif:5977298. Pseudopanthera oberthÃ¼ri)
+Adding Tenodera stotzneri as synonym for (5019555=gbif:7204688. Tenodera stÃ¶tzneri)
+Adding Tenodera stotzneri as synonym for (3483902=gbif:1405585. Tenodera stÃ¶tzneri)
+Adding Epichloe elymi as synonym for (4058899=gbif:3449871. EpichloÃ« elymi)
+Adding Epichloe elymi as synonym for (745528=ncbi:55200 EpichloÃ« elymi)
+Adding Eohaustorius eous as synonym for (2984813=gbif:6283635. Eohaustorius eÃ¶us)
+Adding Eohaustorius eous as synonym for (2984795=gbif:2217032. Eohaustorius eÃ¶us)
+Adding Scoparia stotzneri as synonym for (5028151=gbif:7214686. Scoparia stÃ¶tzneri)
+Adding Scoparia stotzneri as synonym for (3161148=gbif:5126929. Scoparia stÃ¶tzneri)
+| 1530877 synonyms
+| 4882 homonyms, of which 203 name cousin taxa, 881 name sibling taxa
+--- Mapping ott into union ---
+Pinned 11 out of 11
+!! Badly homonymic: environmental samples 3664*3431
+!! Badly homonymic: Incertae Sedis 20*20
+!! Badly homonymic: uncultured 236*237
+!! Badly homonymic: Order Incertae Sedis 18*18
+!! Badly homonymic: Family Incertae Sedis 43*43
+!! Badly homonymic: mycorrhizal samples 11*11
+!! Badly homonymic: Rhodotorula 11*11
+!! Badly homonymic: tsetse fly 13*13
+!! Badly homonymic: Algerian barb 13*13
+| Names in common: 4231811
+| unresolved/ambiguous: 796
+| unresolved/contentious: 1101
+| unresolved/blocked: 775
+| incompatible-with: 99
+| excluded(same-rank): 3
+| excluded(same-ancestor): 225
+| different-division: 278
+| excluded(overlaps): 75
+| excluded(same-qualified-id): 168
+| excluded(same-primary-name): 15
+| lost-race-to-union(overlaps): 45
+| lost-race-to-union(same-ancestor): 1150
+| lost-race-to-union(same-qualified-id): 20
+| lost-race-to-union(same-rank): 583
+| eschew-tattered: 104
+| Of 3066373 nodes in ott: 3063613 with name in common, of which 3059666 matched with existing, 3925 blocked
+--- Assigning ids to union starting with ott ---
+| Highest id before: 5267058
+| Highest id after: 5307745
+| keeping-id: 3049873
+| note/different-source-id: 8873
+| note/different-source: 984
+| new-id: 40687
+| Highest id before: 5307745
+| Highest id after: 5307745
+** Ranks out of order: (4948698=ncbi:1338366 Cladistia*) genus has child (458427=ncbi:8288 Polypteriformes*) order
+** Ranks out of order: (3655460=gbif:4872229 Ophiurinidae*) family has child (258604=ncbi:133711 Ophiurina*) suborder
+** Ranks out of order: (182610=ncbi:351107 Cryptobranchia*) genus has child (4958364=gbif:4304694. Calycidorididae*) family
+** Ranks out of order: (2850721=gbif:4587706 Nuculoidea*) genus has child (2850730=gbif:4587862 Nucularcidae*) family
+** Ranks out of order: (4969615=gbif:3252101 Rhynchonellidae*) family has child (795939=ncbi:151154 Rhynchonelloidea*) superfamily
+** Ranks out of order: (4163996=gbif:4865225 Chonetoidea*) genus has child (4163997=gbif:4869637 Chonostrophiidae*) family
+** Ranks out of order: (150283=ncbi:881521 Alydus calcaratus*) species has child (5022513=gbif:3265607 Camptopus*) genus
+** Ranks out of order: (639810=ncbi:33353 Leptopodomorpha*) genus has child (232685=ncbi:236430 Aepophilidae*) family
+** Ranks out of order: (866089=ncbi:33365 Clypeorrhyncha*) genus has child (627449=ncbi:33368 Membracoidea*) superfamily
+** Ranks out of order: (323135=ncbi:153011 Asphondyliidi*) genus has child (323134=ncbi:153010 Asphondyliini*) tribe
+** Ranks out of order: (496622=ncbi:52723 Cecidomyiidi*) genus has child (318540=ncbi:71814 Cecidomyiini*) tribe
+** Ranks out of order: (36637=ncbi:44543 Nyssorhynchus*) subgenus has child (905897=ncbi:874512 Myzorhynchella*) genus
+** Ranks out of order: (557466=ncbi:44534 Cellia*) subgenus has child (13908=ncbi:262669 Paramyzomyia*) genus
+** Ranks out of order: (610085=ncbi:71543 Lebiomorpha*) genus has child (996666=ncbi:60748 Lachnophorini*) tribe
+** Ranks out of order: (896768=ncbi:96841 Flabellifera*) genus has child (704129=ncbi:155695 Corallanidae*) family
+** Ranks out of order: (69277=ncbi:92068 Hydracarina*) genus has child (103239=ncbi:257019 Hygrobatoidea*) superfamily
+** Ranks out of order: (1041449=ncbi:6849 Limulus*) genus has child (5128446=gbif:3267257 Strabopidae*) family
+** Ranks out of order: (874786=ncbi:166251 Eukalyptorhynchia*) genus has child (52264=ncbi:297398 Cicerinidae*) family
+** Ranks out of order: (302424=silva:L26446/#4 Ciliophora*) genus has child (940284=silva:L31517/#5 Postciliodesmatophora*) subphylum
+** Ranks out of order: (5246810=silva:AB191418/#4 Protalveolata*) class has child (1008711=silva:AB721060/#5 Chromerida*) phylum
+** Ranks out of order: (936399=silva:X86094/#5 Foraminifera*) class has child (137898=ncbi:212500 Xenophyophora*) phylum
+** Ranks out of order: (45752=silva:AB178580/#5 Acantharia*) genus has child (45760=silva:AB178580/#6 Symphyacanthida*) order
+** Ranks out of order: (4972641=silva:X86094/#4 Retaria*) genus has child (936399=silva:X86094/#5 Foraminifera*) class
+** Ranks out of order: (547775=silva:AB594754 Salmonella enterica subsp. enterica*) subspecies has child (1017410=ncbi:140099 Salmonella enterica subsp. enterica serovar Virginia*) species
+** Ranks out of order: (4796811=if:99034 Aconchulinida*) genus has child (5157203=gbif:6789158. Paulinellideae*) family
+Writing tax/ott/about.json
+Writing tax/ott/deprecated.tsv
+Writing tax/ott/log.tsv
+Writing tax/ott/taxonomy.tsv
+Writing tax/ott/synonyms.tsv
+echo 2.4.draft8 >tax/ott/version.txt

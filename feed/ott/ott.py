@@ -1,6 +1,10 @@
 # Jython script to build the Open Tree reference taxonomy
 
+import sys
+
 from org.opentreeoflife.smasher import Taxonomy
+sys.path.append("feed/ott/")
+from chromista_spreadsheet import fixtaxonomy
 
 ott = Taxonomy.newTaxonomy()
 
@@ -33,12 +37,7 @@ ott.same(ncbi.taxon('29178'), gbif.taxon('389'))  # Foraminifera
 gbif.analyzeMajorRankConflicts()
 ott.absorb(gbif, 'gbif')
 
-# From the 'Chromista AND Protozoa' spreadsheet
-# See WORMS
-ott.taxon('Foraminifera').take(ott.taxon('Nodulinella'))
-# See WORMS.  Unfortunately Ammoniinae is not in OTT
-# ott.taxon('Ammoniinae').take(ott.taxon('Asiarotalia'))
-# etc. etc.
+# Doesn't work yet - fixtaxonomy(ott)
 
 ott.edit('feed/ott/edits/')
 ott.deforestate()

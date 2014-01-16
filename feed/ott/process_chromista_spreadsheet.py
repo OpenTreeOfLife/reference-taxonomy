@@ -6,6 +6,8 @@ import csv, string
 with open('feed/ott/chromista-spreadsheet.csv', 'rb') as csvfile:
     csvreader = csv.reader(csvfile)
     csvreader.next()
+    print '# coding=utf-8'
+    print
     print "def fixtaxonomy(tax):"
     for row in csvreader:
         taxon = row[0].strip()

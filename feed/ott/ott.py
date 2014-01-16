@@ -2,30 +2,46 @@
 
 from org.opentreeoflife.smasher import Taxonomy
 
-tax = Taxonomy.newTaxonomy()
+ott = Taxonomy.newTaxonomy()
 
 silva = Taxonomy.getTaxonomy('tax/silva/')
-tax.absorb(silva, "silva")
+ott.absorb(silva, 'silva')
 
-s713  = Taxonomy.getTaxonomy('tax/713/')
-tax.absorb(s713, "study713")
+study713  = Taxonomy.getTaxonomy('tax/713/')
+ott.absorb(study713, 'study713')
 
 fung  = Taxonomy.getTaxonomy('tax/if/')
 # fung.smush()
 fung.analyzeMajorRankConflicts()
-tax.absorb(fung, "if")
+ott.absorb(fung, 'if')
 
 ncbi  = Taxonomy.getTaxonomy('tax/ncbi/')
+ott.same(ncbi.taxon('Cyanobacteria'), silva.taxon('D88288/#3'))
+
 ncbi.analyzeOTUs()
-tax.absorb(ncbi, "ncbi")
+ott.absorb(ncbi, 'ncbi')
+
+# Misspelling in GBIF
+# ott.taxon("Torricelliaceae").synonym("Toricelliaceae")
 
 gbif  = Taxonomy.getTaxonomy('tax/gbif/')
+ott.same(gbif.taxon('Cyanobacteria'), silva.taxon('D88288/#3'))
+ott.same(ncbi.taxon('5878'), gbif.taxon('10'))	  # Ciliophora
+ott.same(ncbi.taxon('29178'), gbif.taxon('389'))  # Foraminifera
+
 # gbif.smush()
 gbif.analyzeMajorRankConflicts()
-tax.absorb(gbif, "gbif")
+ott.absorb(gbif, 'gbif')
 
-tax.edit('feed/ott/edits/')
-tax.deforestate()
-tax.assignIds(Taxonomy.getTaxonomy('tax/prev_ott/'))
-tax.dump("tax/ott/")
+# From the 'Chromista AND Protozoa' spreadsheet
+# See WORMS
+ott.taxon('Foraminifera').take(ott.taxon('Nodulinella'))
+# See WORMS.  Unfortunately Ammoniinae is not in OTT
+# ott.taxon('Ammoniinae').take(ott.taxon('Asiarotalia'))
+# etc. etc.
+
+ott.edit('feed/ott/edits/')
+ott.deforestate()
+ott.assignIds(Taxonomy.getTaxonomy('tax/prev_ott/'))
+ott.dump('tax/ott/')
 

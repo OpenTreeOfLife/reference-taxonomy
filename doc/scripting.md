@@ -83,26 +83,33 @@ correctness of the change.
 Add a new taxon as a daughter of a given one: (would be used with newTaxon)
 
     taxon.add(othertaxon)
-    e.g. ott.taxon("Parentia").add(ott.newTaxon("Parentia daughtera"))
+    e.g.
+    # From http://www.marinespecies.org/aphia.php?p=taxdetails&id=557120
+    ott.taxon("Parentia").add(ott.newTaxon("Parentia daughtera"))
 
 Detach an existing taxon as a daughter from its current location,
 adding it as a daughter of a different parent:
 
-    taxon.steal(othertaxon)
-    e.g. ott.taxon("Parentia").add(ott.taxon("Parentia daughtera"))
+    taxon.take(othertaxon)
+    e.g. 
+    # From http://www.marinespecies.org/aphia.php?p=taxdetails&id=556811
+    ott.taxon("Ammoniinae").take(ott.taxon("Asiarotalia"))
 
 Unify two taxa, pooling their children and adding the name of the
-second as a synonym for the first
+second as a synonym for the first (i.e. the names are synonyms, but
+not previously recorded as such):
 
     taxon.absorb(othertaxon)
-    e.g. ott.taxon("Parentia").add(ott.taxon("Parentiola"))
+    e.g. 
+    # From http://www.marinespecies.org/aphia.php?p=taxdetails&id=557120
+    ott.taxon("Parentia").add(ott.taxon("Parentiola"))
 
-Delete a taxon and all of its descendents
+Delete a taxon and all of its descendents:
 
     taxon.prune()
 
 Delete a taxon, moving all of its children up one level (e.g. delete a
-subfamily making all of its genus children children of the family)
+subfamily making all of its genus children children of the family):
 
     taxon.elide()
 
@@ -111,6 +118,8 @@ Select a subset of a taxonomy:
     taxonomy.select(taxon)
 
 This returns a new taxonomy whose root is (a copy of) the given taxon.
+
+(TBD: Need a way to add a root or change the root.)
 
 Alignment
 =========

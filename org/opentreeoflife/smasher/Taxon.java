@@ -459,39 +459,41 @@ public class Taxon {
 	}
 
 	// If all of the old children have the same parent,
-	// AND that parent is the nearest old ancestor of all the new children,
-	// then we can add the old children to the new taxon,
+	// AND that parent is the nearest old ancestor of this node,
+	// then we can add the old children to a new union taxon,
 	// which (if all goes well) will get inserted back into the union tree
 	// under the old parent.
 
 	// This is a cheat because some of the old children's siblings
 	// might be more correctly classified as belonging to the new
 	// taxon, rather than being siblings.  So we might want to
-	// further qualify this.  (Rule is essential for mapping NCBI
-	// onto Silva.)
+	// further qualify this.
+
+	// (This rule is essential for mapping NCBI onto Silva.)
 
 	// Caution: See https://github.com/OpenTreeOfLife/opentree/issues/73 ...
 	// family as child of subfamily is confusing.
 	// ranks.get(node1.rank) <= ranks.get(node2.rank) ....
 
 	boolean refinementp(List<Taxon> oldChildren, List<Taxon> newChildren) {
+		if (this.mapped != null) return false;    // shouldn't happen, just sayin'
+
 		Taxon oldParent = null;
 		for (Taxon old : oldChildren) {
 			// old has a nonnull parent, by contruction
 			if (oldParent == null) oldParent = old.parent;
 			else if (old.parent != oldParent) return false;
 		}
-		for (Taxon nu : newChildren) {
-			// alternatively, could do some kind of MRCA
-			Taxon anc = this.parent;
-			while (anc != null && anc.mapped == null)
-				anc = anc.parent;
-			if (anc == null)     // ran past root of tree
-				return false;
-			else if (anc.mapped != oldParent)
-				return false;    	// Paraphyletic
-		}
-		return true;
+		if (oldParent == null) return false;  // just sayin'
+
+		// If this node's nearest mapped ancestor is the common parent
+		// of all of the 'oldChildren' then this node can be
+		// 'inserted' into the union hierarchy.
+
+		Taxon anc = this.parent;
+		while (anc != null && anc.mapped == null) anc = anc.parent;
+		if (anc == null) return false;     // ran past root of tree
+		else return anc.mapped == oldParent;
 	}
 
 	// pulled out of previous method to make it easier to read
@@ -1082,6 +1084,8 @@ public class Taxon {
     public void add(Taxon newchild) {
         if (newchild == null)
             return;             // Error already reported.
+		else if (this.taxonomy != newchild.taxonomy)
+            System.err.format("%s and %s aren't in the same taxonomy\n", newchild, this);
         else if (this.children != null && this.children.contains(newchild))
             System.err.format("%s is already a daughter of %s\n", newchild, this);
         else if (newchild.parent != null)
@@ -1092,9 +1096,11 @@ public class Taxon {
         }
     }
 
-    public void steal(Taxon newchild) {
+    public void take(Taxon newchild) {
         if (newchild == null)
             return;             // Error already reported.
+		else if (this.taxonomy != newchild.taxonomy)
+            System.err.format("%s and %s aren't in the same taxonomy\n", newchild, this);
         else if (this.children != null && this.children.contains(newchild))
             System.err.format("%s is already a daughter of %s\n", newchild, this);
         else {
@@ -1130,6 +1136,10 @@ public class Taxon {
     // Move all of B's children to A, and make B a synonym of A
 
     public void absorb(Taxon other) {
+		if (this.taxonomy != other.taxonomy) {
+            System.err.format("%s and %s aren't in the same taxonomy\n", other, this);
+			return;
+		}
         if (other.children != null)
             for (Taxon child: other.children)
                 child.changeParent(this.parent);
@@ -1146,5 +1156,33 @@ public class Taxon {
     }
 
     // add a tree to the forest?
+
+	// For interactive debugging
+
+	public void show() {
+		System.out.format("%s(%s)\n %s size:%s\n    ", this.name, this.id, this.rank, this.count());
+		int qount = 0;
+		for (Taxon t = this.parent; t != null; t = t.parent) {
+			if (++qount < 10) {
+				System.out.format("%s(%s) ", t.name, t.id);
+				if (t.parent != null) System.out.print(" << ");
+			} else if (qount == 10)
+				System.out.print("...");
+		}
+		System.out.println();
+		if (this.children != null) {
+			java.util.Collections.sort(this.children, compareNodesBySize);
+			int count = 0;
+			for (Taxon child : this.children)
+				if (++count < 10)
+					System.out.format("  %s(%s) %s\n", child.name, child.id, child.rank);
+				else if (count == 10)
+					System.out.format("  ...\n");
+		}
+		// Very inefficient, but this is not in an inner loop
+		for (String name : this.taxonomy.nameIndex.keySet())
+			if (this.taxonomy.nameIndex.get(name).contains(this) && !name.equals(this.name))
+				System.out.format("Synonym: %s\n", name);
+	}
 
 }

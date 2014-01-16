@@ -1140,4 +1140,10 @@ public class Taxon {
         this.properFlags |= Taxonomy.FORCED_VISIBLE;
     }
 
+    public void incertaeSedis() {
+        this.properFlags |= Taxonomy.INCERTAE_SEDIS;
+    }
+
+    // add a tree to the forest?
+
 }

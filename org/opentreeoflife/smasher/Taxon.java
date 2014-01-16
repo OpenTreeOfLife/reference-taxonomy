@@ -1006,6 +1006,7 @@ public class Taxon {
 		dup.setId(this.id);
 		dup.rank = this.rank;
 		dup.sourceIds = this.sourceIds;
+        dup.properFlags = this.properFlags;
         return dup;
     }
 

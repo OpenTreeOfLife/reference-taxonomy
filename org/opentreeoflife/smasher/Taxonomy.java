@@ -1140,7 +1140,10 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	// Select subtree rooted at a specified node
 
 	public Taxonomy select(String designator) {
-		Taxon sel = this.unique(designator);
+        return select(this.unique(designator));
+    }
+    
+	public Taxonomy select(Taxon sel) {
 		if (sel != null) {
 			Taxonomy tax2 = new SourceTaxonomy();
 			Taxon selection = sel.select(tax2);
@@ -1161,7 +1164,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 			return tax2;
 		} else {
-			System.err.println("Missing or ambiguous name: " + designator);
+			System.err.println("Missing or ambiguous name: " + sel);
 			return null;
 		}
 	}

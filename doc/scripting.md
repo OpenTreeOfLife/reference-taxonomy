@@ -17,6 +17,10 @@ The build process is invoked as follows
 Builds of the entire reference taxonomy require a fair amount of
 memory; I've been using -Xmx12G.  See the Makefile for more information.
 
+You can also interact with the jython interpreter and do all of the
+below operations at the command line, just by invoking Smasher without
+arguments.
+
 Taxonomies
 ==========
 
@@ -39,6 +43,10 @@ see wiki).  There can be as many of these retrievals as you like.
 The second argument to 'absorb' will be the prefix to be used to
 notate identifiers that came from the ncbi taxonomy, e.g. 'ncbi:1234'
 
+To write the taxonomy to a directory:
+
+    ott.dump("mytaxonomy/")
+
 Taxa
 ====
 
@@ -55,8 +63,13 @@ Use the first form if that name is unique within the taxonomy.  If the
 name is ambiguous (a homonym), use the second form, which provides
 context.  The context can be any ancestor of the intended taxon.
 
-To add a new taxon, provide its name, rank, and source information.
-The source information should be a URL specific to that taxon.
+It is also possible to use a taxon identifier:
+
+    ott.taxon("173133")
+
+To add a new taxon, just provide its name, rank, and source
+information.  The source information should be a URL that is specific
+to that taxon.
 
     ott.newTaxon("Euacris", "genus", "http://mongotax.org/12345")
 
@@ -93,6 +106,12 @@ subfamily making all of its genus children children of the family)
 
     taxon.elide()
 
+Select a subset of a taxonomy:
+
+    taxonomy.select(taxon)
+
+This returns a new taxonomy whose root is (a copy of) the given taxon.
+
 Alignment
 =========
 
@@ -105,8 +124,8 @@ match, but sometimes doing it manually is needed.
 
 One of the arguments should be from a taxonomy that is about to be
 'absorbed' but hasn't been yet, and the other should be from the
-taxonomy under construction (or vice versa), after it has had other
-source taxonomies absorbed into it.
+taxonomy under construction, after it has had other source taxonomies
+absorbed into it.
 
     same(gbif.taxon("Plantae"), ott.taxon("Viridiplantae"))
     ott.absorb(gbif)

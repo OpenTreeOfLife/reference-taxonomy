@@ -851,7 +851,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				}
 			}
 			// Extra informational check.  See if ranks are inverted.
-			if (highrank >= 0 && myrank > highrank)
+			if (majorp && highrank >= 0 && myrank > highrank)
 				// The myrank == highrank case is weird too; there are about 200 of those.
 				System.err.println("** Ranks out of order: " +
 								   node + " " + node.rank + " has child " +
@@ -1560,10 +1560,20 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
     // Look up a taxon by name or unique id.  Name must be unique in the taxonomy.
     public Taxon taxon(String name) {
-        Taxon node = this.unique(name);
-        if (node == null)
-            System.err.format("Missing or ambiguous taxon: %s\n", name);
-        return node;
+		List<Taxon> probe = this.nameIndex.get(name);
+		// TBD: Maybe rule out synonyms?
+		if (probe != null) {
+			if (probe.size() == 1)
+				return probe.get(0);
+			else {
+				System.err.format("Ambiguous taxon name: %s\n", name);
+				return null;
+			}
+		}
+		Taxon byId = this.idIndex.get(name);
+        if (byId == null)
+            System.err.format("No taxon found with this name: %s\n", name);
+        return byId;
     }
 
     public Taxon taxon(String name, String context) {
@@ -2167,7 +2177,7 @@ class UnionTaxonomy extends Taxonomy {
                     for (Answer answer : answers)
                         out.println(answer.dump());
             }
-        else
+        else if (scrutinize != null)
             for (String name : scrutinize) {
                 List<Answer> answers = this.logs.get(name);
                 if (answers != null)

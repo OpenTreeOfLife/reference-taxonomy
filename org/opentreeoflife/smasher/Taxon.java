@@ -259,7 +259,8 @@ public class Taxon {
 			//unode.addComment(this.comment);
 			this.comment = null;
 		}
-        unode.properFlags &= this.properFlags;
+		if (this.taxonomy != ((UnionTaxonomy)(unode.taxonomy)).idsource)
+			unode.properFlags &= this.properFlags;
 	}
 
 	// Recursive descent over source taxonomy
@@ -1183,6 +1184,11 @@ public class Taxon {
 		for (String name : this.taxonomy.nameIndex.keySet())
 			if (this.taxonomy.nameIndex.get(name).contains(this) && !name.equals(this.name))
 				System.out.format("Synonym: %s\n", name);
+		if (this.properFlags > 0 || this.inheritedFlags > 0) {
+			System.out.print("Flags: ");
+			this.taxonomy.printFlags(this, System.out);
+			System.out.println();
+		}
 	}
 
 }

@@ -1566,23 +1566,23 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			if (probe.size() == 1)
 				return probe.get(0);
 			else {
-				System.err.format("Ambiguous taxon name: %s\n", name);
+				System.err.format("** Ambiguous taxon name: %s\n", name);
 				return null;
 			}
 		}
 		Taxon byId = this.idIndex.get(name);
         if (byId == null)
-            System.err.format("No taxon found with this name: %s\n", name);
+            System.err.format("** No taxon found with this name: %s\n", name);
         return byId;
     }
 
     public Taxon taxon(String name, String context) {
         List<Taxon> nodes = filterByContext(name, context);
         if (nodes == null) {
-            System.err.format("Missing taxon: %s in context %s\n", name, context);
+            System.err.format("** No taxon with name %s in context %s\n", name, context);
             return null;
         } else if (nodes.size() > 1) {
-            System.err.format("Ambiguous taxon: %s in context %s\n", name, context);
+            System.err.format("** Ambiguous taxon name %s in context %s\n", name, context);
             return null;
         }
         return nodes.get(0);
@@ -2520,6 +2520,9 @@ abstract class Criterion {
 				return Answer.NOINFO;
 			}
 		};
+
+	// Failure case: matching where there should be no match: Buchnera, Burkea
+	// Taxon y is bacteria or protozoan, taxon x is a plant
 
 	static Criterion division =
 		new Criterion() {

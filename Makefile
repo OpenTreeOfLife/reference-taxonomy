@@ -63,6 +63,7 @@ ztax/ott/log.tsv: $(CLASS) $(SILVA)/taxonomy.tsv \
 		    tax/if/taxonomy.tsv tax/713/taxonomy.tsv \
 		    $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv \
 		    feed/ott/edits/ott_edits.tsv \
+		    feed/ott/chromista_spreadsheet.py \
 		    tax/prev_ott/taxonomy.tsv
 	@mkdir -p tax/ott
 	$(BIG_JAVA) $(OTT_ARGS)

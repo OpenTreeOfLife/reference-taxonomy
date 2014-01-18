@@ -952,11 +952,7 @@ public class Taxon {
 
 	// Delete this node and all of its descendents.
 	public void prune() {
-		if (this.children != null) {
-			for (Taxon child : new ArrayList<Taxon>(children))
-				child.prune();
-			this.children = null;
-		}
+		this.trim();
 		if (this.parent != null) {
 			this.parent.children.remove(this);
 			this.parent.properFlags |= Taxonomy.EDITED;
@@ -969,6 +965,14 @@ public class Taxon {
 		if (this.id != null)
 			this.taxonomy.idIndex.remove(this.id);
 		this.prunedp = true;  // kludge for indexes
+	}
+
+	public void trim() {
+		if (this.children != null) {
+			for (Taxon child : new ArrayList<Taxon>(children))
+				child.prune();
+			this.children = null;
+		}
 	}
 
 	String uniqueName() {
@@ -1086,11 +1090,11 @@ public class Taxon {
         if (newchild == null)
             return;             // Error already reported.
 		else if (this.taxonomy != newchild.taxonomy)
-            System.err.format("%s and %s aren't in the same taxonomy\n", newchild, this);
+            System.err.format("** %s and %s aren't in the same taxonomy\n", newchild, this);
         else if (this.children != null && this.children.contains(newchild))
-            System.err.format("%s is already a daughter of %s\n", newchild, this);
+            System.err.format("** %s is already a daughter of %s\n", newchild, this);
         else if (newchild.parent != null)
-            System.err.format("%s can't be added because it is already in the tree\n", newchild, this);
+            System.err.format("** %s can't be added because it is already in the tree\n", newchild, this);
         else {
             newchild.properFlags |= Taxonomy.EDITED;
             this.addChild(newchild);
@@ -1101,9 +1105,11 @@ public class Taxon {
         if (newchild == null)
             return;             // Error already reported.
 		else if (this.taxonomy != newchild.taxonomy)
-            System.err.format("%s and %s aren't in the same taxonomy\n", newchild, this);
+            System.err.format("** %s and %s aren't in the same taxonomy\n", newchild, this);
         else if (this.children != null && this.children.contains(newchild))
-            System.err.format("%s is already a daughter of %s\n", newchild, this);
+            System.err.format("** %s is already a daughter of %s\n", newchild, this);
+		else if (newchild == this)
+            System.err.format("** A taxon cannot be its own daughter: %s\n", newchild, this);
         else {
             newchild.properFlags |= Taxonomy.EDITED;
             newchild.changeParent(this);
@@ -1124,9 +1130,9 @@ public class Taxon {
 
     public void elide() {
         if (this.children != null)
-            System.err.format("%s has no children\n", this);
+            System.err.format("** %s has no children\n", this);
         else if (this.parent == null)
-            System.err.format("%s is a root\n", this);
+            System.err.format("** %s is a root\n", this);
         else {
             for (Taxon child : new ArrayList<Taxon>(this.children))
                 child.changeParent(this.parent);
@@ -1138,7 +1144,7 @@ public class Taxon {
 
     public void absorb(Taxon other) {
 		if (this.taxonomy != other.taxonomy) {
-            System.err.format("%s and %s aren't in the same taxonomy\n", other, this);
+            System.err.format("** %s and %s aren't in the same taxonomy\n", other, this);
 			return;
 		}
         if (other.children != null)
@@ -1184,11 +1190,16 @@ public class Taxon {
 		for (String name : this.taxonomy.nameIndex.keySet())
 			if (this.taxonomy.nameIndex.get(name).contains(this) && !name.equals(this.name))
 				System.out.format("Synonym: %s\n", name);
+		if (this.sourceIds != null) {
+			if (this.sourceIds.size() == 1)
+				System.out.format("Source: %s\n", this.getSourceIdsString());
+			else
+				System.out.format("Sources: %s\n", this.getSourceIdsString());
+		}
 		if (this.properFlags > 0 || this.inheritedFlags > 0) {
 			System.out.print("Flags: ");
 			this.taxonomy.printFlags(this, System.out);
 			System.out.println();
 		}
 	}
-
 }

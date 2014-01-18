@@ -8,12 +8,12 @@ with open('feed/ott/chromista-spreadsheet.csv', 'rb') as csvfile:
     csvreader.next()
     print '# coding=utf-8'
     print
-    print 'def fixonetaxon(proposed, taxon):'
+    print 'def fixonetaxon(tax, taxon, current, proposed):'
     print '    prop = tax.taxon(proposed)'
     print '    if prop != None:'
-    print '        prop.take(tax.taxon(taxon))'
+    print '        prop.take(tax.taxon(taxon, current))'
     print
-    print "def fixtaxonomy(tax):"
+    print "def fixChromista(tax):"
     for row in csvreader:
         taxon = row[0].strip()
         currentparent = row[1].strip()
@@ -25,7 +25,7 @@ with open('feed/ott/chromista-spreadsheet.csv', 'rb') as csvfile:
             print '    # See %s'%(reference)
             if notes != '':
                 print '    # %s'%(notes)
-            print "    fixonetaxon('%s', '%s')"%(proposed, taxon)
+            print "    fixonetaxon(tax, '%s', '%s', '%s')"%(taxon, currentparent, proposed)
             if 'incertae sedis' in notes:
-                print "    incertaeSedis(tax.taxon('%s'))"%(taxon)
+                print "    tax.taxon('%s').incertaeSedis()"%(taxon)
             print ''

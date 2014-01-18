@@ -54,8 +54,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	JSONObject metadata = null;
     int taxid = -1234;    // kludge
 
-	boolean smushp = false;
-
 	Taxonomy() { }
 
 	public String toString() {
@@ -243,7 +241,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	public void loadTaxonomy(String dirname) throws IOException {
 		this.loadMetadata(dirname + "about.json");
 		this.loadTaxonomyProper(dirname + "taxonomy.tsv");
-        this.smush();
 		this.loadSynonyms(dirname + "synonyms.tsv");
 	}
 
@@ -280,12 +277,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 					System.out.println("prefix is " + prefix);
 					this.tag = (String)prefix;
 				}
-
-				Object smushp = ((Map)obj).get("smush");
-				if (smushp != null) {
-					System.out.println("smushp is " + smushp);
-					this.smushp = smushp.equals("yes") || smushp == Boolean.TRUE;
-				}
 			}
 
 		} catch (ParseException e) {
@@ -304,6 +295,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		BufferedReader br = Taxonomy.fileReader(filename);
 		String str;
 		int row = 0;
+		int normalizations = 0;
 
 		// how to get this right?
 		// Map<String,String> idReplacements = new HashMap<String,String>();
@@ -329,10 +321,12 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 						System.out.println("! No header row");
 				}
 				String id = parts[0];
-				String name = parts[2];
+				String rawname = parts[2];
 				String rank = parts[3];
 				if (rank.length() == 0 || rank.equals("no rank"))
 					rank = NO_RANK;
+
+				String name = normalizeName(rawname);
 
 				String parentId = parts[1];
 				if (parentId.equals("null")) parentId = "";  // Index Fungorum
@@ -357,13 +351,20 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 					parent.addChild(node);
 				} else
 					roots.add(node);
+				node.setName(name);
 				node.init(parts); // does setName
+				if (!name.equals(rawname)) {
+					addSynonym(rawname, node);
+					++normalizations;
+				}
 			}
 			++row;
 			if (row % 500000 == 0)
 				System.out.println(row);
 		}
 		br.close();
+		if (normalizations > 0)
+			System.out.format("| %s names normalized\n", normalizations);
 
 		for (Taxon node : this.idIndex.values())
 			if (node.name == null) {
@@ -389,7 +390,14 @@ public abstract class Taxonomy implements Iterable<Taxon> {
     // From stackoverflow
     public static final Pattern DIACRITICS_AND_FRIENDS
         = Pattern.compile("[\\p{InCombiningDiacriticalMarks}\\p{IsLm}\\p{IsSk}]+");
-    private static String stripDiacritics(String str) {
+
+	// TO BE DONE:
+	//   Umlaut letters of German origin (not diaresis) need to have an added 'e'
+	//     ... but there's no way to determine this automatically.
+	//	   Xestoleberis yüchiae is not of Germanic origin.
+	//   Convert upper case letters to lower case
+ 	//      e.g. genus Pechuel-Loeschea  -- but these are all barren.
+    private static String normalizeName(String str) {
         str = Normalizer.normalize(str, Normalizer.Form.NFD);
         str = DIACRITICS_AND_FRIENDS.matcher(str).replaceAll("");
         return str;
@@ -407,35 +415,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
     public void smush() {
 		List<Runnable> todo = new ArrayList<Runnable>();
-
-        // Maps name without diacritics to name with diacritics
-        Map<String,String> uncritical = new HashMap<String,String>();
-
-        // 1. Find all diacritics
-		for (final Taxon node : this.idIndex.values()) {
-            String without = stripDiacritics(node.name);
-            if (!without.equals(node.name)) {
-                // System.err.println("Diacritics in " + node.name + " but not in " + without);
-                // dumpName(node.name); dumpName(without);
-                uncritical.put(without, node.name);
-            }
-        }
-        if (uncritical.size() > 0)
-            System.out.format("| %s names with diacritics\n", uncritical.size());
-        // 2. When a node's name is missing diacritics but could have them,
-        // add them by clobbering the name.  This may create sibling homonyms.
-		int ncc = 0;
-		for (final Taxon node : this.idIndex.values()) {
-            String probe = uncritical.get(node.name);
-            if (probe != null) {
-                // node.name is without diacritics, probe.name is with
-				if (++ncc < 10)
-					System.err.format("Changing name: %s -> %s\n", node.name, probe);
-                node.setName(probe);
-			}
-        }
-        // 3. Add non-diacritic name as synonym of with-diacritic node
-        // See below, following smushing!
 
 		// Smush taxa that differ only in id.
 		int siblingHomonymCount = 0;
@@ -457,30 +436,26 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 						// deprecate node, replace it with other.
 
 						if (++siblingHomonymCount < 10)
-							System.err.println((smushp ?
-												"Smushing" :
-												"Tolerating") +
+							System.err.println("| Smushing" +
 											   " sibling homonym " + node.id +
 											   " => " + other.id +
 											   ", name = " + node.name);
 						else if (siblingHomonymCount == 10)
 							System.err.println("...");
 
-						if (smushp) {
-							// There might be references to this id from the synonyms file
-							final Taxonomy tax = this;
-							todo.add(new Runnable() //ConcurrentModificationException
-								{
-									public void run() {
-										if (node.children != null)
-											for (Taxon child : new ArrayList<Taxon>(node.children))
-												// might create new sibling homonyms...
-												child.changeParent(other);
-										node.prune();  // removes name from index
-										tax.idIndex.put(node.id, other);
-										other.addSource(node);
-									}});
-						}
+						// There might be references to this id from the synonyms file
+						final Taxonomy tax = this;
+						todo.add(new Runnable() //ConcurrentModificationException
+							{
+								public void run() {
+									if (node.children != null)
+										for (Taxon child : new ArrayList<Taxon>(node.children))
+											// might create new sibling homonyms...
+											child.changeParent(other);
+									node.prune();  // removes name from index
+									tax.idIndex.put(node.id, other);
+									other.addSource(node);
+								}});
 						// No need to keep searching for appropriate homonym, node
 						// has been flushed, try next homonym in the set.
 						break;
@@ -490,7 +465,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		for (Runnable r : todo) r.run();
 
 		if (siblingHomonymCount > 0)
-			System.err.println("" + siblingHomonymCount + " sibling homonyms");
+			System.err.println("" + siblingHomonymCount + " sibling homonyms folded");
+
+		// Fix parent pointers when they point to pruned sibling homonyms
 
 		for (Taxon node : this.idIndex.values())
 			// if (node.parent == null && !roots.contains(node)) ...
@@ -501,22 +478,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 					node.parent = replacement;
 				}
 			}
-
-        int critcount = 0;
-
-        // 3. Add non-diacritic name as synonym of with-diacritic node
-        for (String without : uncritical.keySet()) {
-            String with = uncritical.get(without);
-            List<Taxon> nodes = this.nameIndex.get(with);
-            if (nodes != null)
-                for (Taxon node : nodes) {
-                    // Almost always only one node!!
-                    if (++critcount <= 1 || nodes.size() > 1)
-                        System.out.format("Adding %s as synonym for %s\n", without, node);
-                    addSynonym(without, node);
-                }
-        }
-
     }
 
 	void dumpNodes(Collection<Taxon> nodes, String outprefix) throws IOException {
@@ -788,6 +749,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	static final int TATTERED 			 =   4 * 1024;
 	static final int ANYSPECIES			 =   8 * 1024;
 	static final int FORCED_VISIBLE		 =  16 * 1024;
+	static final int HIDDEN		      	 =  32 * 1024;
 
 	// Returns the node's rank (as an int).  In general the return
 	// value should be >= parentRank, but conceivably funny things
@@ -987,6 +949,10 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		if ((node.properFlags & ENVIRONMENTAL) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("environmental");
+		}
+		if ((node.properFlags & HIDDEN) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("hidden");
 		}
 
 		if ((node.properFlags & MAJOR_RANK_CONFLICT) != 0) {

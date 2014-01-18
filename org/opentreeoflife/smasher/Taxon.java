@@ -1,11 +1,5 @@
 package org.opentreeoflife.smasher;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,13 +11,7 @@ import java.util.Iterator;
 import java.util.Comparator;
 import java.util.Collections;
 import java.util.Collection;
-import java.io.PrintStream;
 import java.io.File;
-import java.text.Normalizer;
-import java.text.Normalizer.Form;
-import org.json.simple.JSONObject; 
-import org.json.simple.parser.JSONParser; 
-import org.json.simple.parser.ParseException;
 
 public class Taxon {
 	String id = null;
@@ -70,7 +58,6 @@ public class Taxon {
 	// uid	|	parent_uid	|	name	|	rank	|	source	|	sourceid
 	//		|	sourcepid	|	uniqname	|	preottol_id	|	
 	void init(String[] parts) {
-		this.setName(parts[2]);
 		if (parts.length >= 4) {
 			this.rank = parts[3];
 			if (this.rank.length() == 0 || this.rank.equals("no rank"))
@@ -1092,7 +1079,7 @@ public class Taxon {
 		else if (this.taxonomy != newchild.taxonomy)
             System.err.format("** %s and %s aren't in the same taxonomy\n", newchild, this);
         else if (this.children != null && this.children.contains(newchild))
-            System.err.format("** %s is already a daughter of %s\n", newchild, this);
+            System.err.format("** %s is already a child of %s\n", newchild, this);
         else if (newchild.parent != null)
             System.err.format("** %s can't be added because it is already in the tree\n", newchild, this);
         else {
@@ -1107,14 +1094,22 @@ public class Taxon {
 		else if (this.taxonomy != newchild.taxonomy)
             System.err.format("** %s and %s aren't in the same taxonomy\n", newchild, this);
         else if (this.children != null && this.children.contains(newchild))
-            System.err.format("** %s is already a daughter of %s\n", newchild, this);
+            System.err.format("** %s is already a child of %s\n", newchild, this);
 		else if (newchild == this)
-            System.err.format("** A taxon cannot be its own daughter: %s\n", newchild, this);
+            System.err.format("** A taxon cannot be its own parent: %s\n", newchild, this);
         else {
             newchild.properFlags |= Taxonomy.EDITED;
             newchild.changeParent(this);
         }
     }
+
+	public void hideDescendants() {
+		if (this.children != null)
+			for (Taxon child : this.children) {
+				child.properFlags = Taxonomy.HIDDEN;
+				child.hideDescendants();
+			}
+	}
 
     public void synonym(String name) {
         this.taxonomy.addSynonym(name, this);

@@ -1597,6 +1597,14 @@ public abstract class Taxonomy implements Iterable<Taxon> {
     }
 
     public void same(Taxon node1, Taxon node2) {
+		sameness(node1, node2, true);
+	}
+
+	public void notSame(Taxon node1, Taxon node2) {
+		sameness(node1, node2, false);
+	}
+
+	public void sameness(Taxon node1, Taxon node2, boolean polarity) {
         Taxon unode, snode;
         if (node1 == null || node2 == null) return; // Error already reported?
         if (node1.taxonomy instanceof UnionTaxonomy) {
@@ -1621,15 +1629,18 @@ public abstract class Taxonomy implements Iterable<Taxon> {
             System.err.format("** One of the two nodes must come from a source taxonomy: %s %s\n", unode, snode);
             return;
         }
-        if (unode.comapped != null) {    // see reset() - should never happen
-            System.err.format("** The union node already has something mapped to it: %s\n", unode);
-            return;
-        }
         if (snode.mapped != null) {
             System.err.format("** The source is already mapped: %s\n", snode);
             return;
         }
-        snode.unifyWith(unode);
+		if (polarity)
+			snode.unifyWith(unode);
+		else {
+			Taxon evader = new Taxon(unode.taxonomy);
+			evader.properFlags = -1;    // cf. augment()
+			snode.unifyWith(evader);
+			evader.addSource(snode);
+		}
     }
 
     public void describe() {

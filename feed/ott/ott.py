@@ -12,6 +12,7 @@ silva = Taxonomy.getTaxonomy('tax/silva/')
 ott.absorb(silva, 'silva')
 
 study713  = Taxonomy.getTaxonomy('tax/713/')
+ott.notSame(study713.taxon('Buchnera'), silva.taxon('Buchnera'))
 ott.absorb(study713, 'study713')
 
 fung  = Taxonomy.getTaxonomy('tax/if/')
@@ -21,6 +22,7 @@ ott.absorb(fung, 'if')
 
 ncbi  = Taxonomy.getTaxonomy('tax/ncbi/')
 ott.same(ncbi.taxon('Cyanobacteria'), silva.taxon('D88288/#3'))
+ott.notSame(ncbi.taxon('Burkea'), fung.taxon('Burkea'))
 
 ncbi.analyzeOTUs()
 ott.absorb(ncbi, 'ncbi')

@@ -1,0 +1,573 @@
+make tarball
+javac -g -classpath ".:lib/*" org/opentreeoflife/smasher/*.java
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+java -classpath ".:lib/*" -Xmx12G org.opentreeoflife.smasher.Smasher --jython feed/ott/ott.py
+--- Reading tax/silva/ ---
+prefix is silva
+! No header row
+| 5 names normalized
+| 67718 synonyms
+| 881 homonyms, of which 29 name cousin taxa, 784 name sibling taxa
+--- Mapping silva into union ---
+| Names in common: 0
+| Added 67723 synonyms to union
+--- Reading tax/713/ ---
+prefix is study713
+! No header row
+--- Mapping study713 into union ---
+Pinned 1 out of 11
+| Names in common: 2
+| Of 119 nodes in study713: 2 with name in common, of which 1 matched with existing, 0 blocked
+--- Augmenting union with new nodes from study713 ---
+| Started with:		 1 trees, 73480 taxa
+| new/tip: 90
+| new/internal: 27
+| mapped/tip: 1
+| mapped/neutral: 1
+| Ended with:		 1 trees, 73480 taxa
+--- Reading tax/if/ ---
+prefix is if
+! No header row
+| 650 names normalized
+!! Identifier with no associated name, probably a missing parent: 10105
+!! Identifier with no associated name, probably a missing parent: 10415
+!! Identifier with no associated name, probably a missing parent: 10282
+!! Identifier with no associated name, probably a missing parent: 7487
+!! Identifier with no associated name, probably a missing parent: 7267
+!! Identifier with no associated name, probably a missing parent: 12058
+!! Identifier with no associated name, probably a missing parent: 901
+!! Identifier with no associated name, probably a missing parent: 5702
+!! Identifier with no associated name, probably a missing parent: 3859
+!! Identifier with no associated name, probably a missing parent: 4813
+!! Identifier with no associated name, probably a missing parent: 16284
+!! Identifier with no associated name, probably a missing parent: not found
+!! Identifier with no associated name, probably a missing parent: 9365
+!! Identifier with no associated name, probably a missing parent: 9237
+!! Identifier with no associated name, probably a missing parent: 8190
+!! Identifier with no associated name, probably a missing parent: 8080
+!! Identifier with no associated name, probably a missing parent: 8924
+!! Identifier with no associated name, probably a missing parent: 8961
+!! Identifier with no associated name, probably a missing parent: 8555
+!! Identifier with no associated name, probably a missing parent: 90402
+!! Identifier with no associated name, probably a missing parent: 17938
+!! Identifier with no associated name, probably a missing parent: 17506
+!! Identifier with no associated name, probably a missing parent: 17030
+!! Identifier with no associated name, probably a missing parent: 17045
+!! Identifier with no associated name, probably a missing parent: 18728
+!! Identifier with no associated name, probably a missing parent: 18640
+!! Identifier with no associated name, probably a missing parent: 2170
+!! Identifier with no associated name, probably a missing parent: 1387
+!! Identifier with no associated name, probably a missing parent: 3563
+There are 114 roots
+if is ill-formed: 254844 rows, but only 253322 reachable from roots
+Putative synonym Inonotus nidus-pici is the primary name of 298991
+Identifier 449411 unrecognized for synonym Usnea dasypoga
+Identifier 246945 unrecognized for synonym Boletus erythroteron
+Putative synonym Coprinellus minutisporus is the primary name of 518739
+Identifier 194560 unrecognized for synonym Helvella vesiculosa
+Putative synonym Roccella ceruchis is the primary name of 569445
+Identifier 499436 unrecognized for synonym Phaeomyces kuwaitiensis
+Identifier 246945 unrecognized for synonym Boletus erythrentheron
+Putative synonym Leptosphaeria arrhenatheri is the primary name of 160600
+Putative synonym Tympanis laricina is the primary name of 153407
+Identifier 233779 unrecognized for synonym Leucoloma livida
+Identifier 194560 unrecognized for synonym Urnula minor
+Identifier 465253 unrecognized for synonym Russula incarnata
+Identifier 218372 unrecognized for synonym Fusoma pini
+Identifier 194560 unrecognized for synonym Peziza stevensoniana
+Putative synonym Peronospora erythraeae is the primary name of 264235
+Identifier 218372 unrecognized for synonym Fusidium udum
+Putative synonym Hymenochaete nigricans is the primary name of 223292
+Putative synonym Stemphylium cannabinum is the primary name of 339652
+...
+| 2266 synonyms
+| 5541 homonyms, of which 2 name cousin taxa, 5503 name sibling taxa
+| Smushing sibling homonym 187602 => 174664, name = Aspergillus mollis
+| Smushing sibling homonym 187613 => 179455, name = Agaricus ocreatus
+| Smushing sibling homonym 172101 => 161362, name = Aecidium cardui
+| Smushing sibling homonym 22545 => 22402, name = Trichostroma
+| Smushing sibling homonym 172023 => 132849, name = Clitocybe applanata
+| Smushing sibling homonym 187562 => 187208, name = Mucor fuscus
+| Smushing sibling homonym 187726 => 180525, name = Diaporthe celastrina
+| Smushing sibling homonym 22409 => 22387, name = Variolaria
+| Smushing sibling homonym 172241 => 158217, name = Mycogone flava
+...
+6291 sibling homonyms folded
+--- Mapping if into union ---
+Pinned 1 out of 11
+| Names in common: 356
+| unresolved/ambiguous: 3
+| excluded(overlaps): 1
+| incompatible-with: 2
+| Of 247038 nodes in if: 356 with name in common, of which 350 matched with existing, 6 blocked
+--- Augmenting union with new nodes from if ---
+| Started with:		 1 trees, 73480 taxa
+| new/tip: 235524
+| mapped/tip: 227
+| mapped/coherent: 79
+| new/internal: 11095
+| blocked/tip: 2
+| mapped/neutral: 35
+| lose/dispersed: 11
+| new/tattered: 49
+| new-homonym/in-division: 10
+| new/insertion: 3
+| lose/mooted: 4
+| mapped/incoherent: 8
+| new-homonym/out-division: 33
+| mapped/incompatible: 1
+| Ended with:		 73 trees, 73480 taxa
+| Added 2872 synonyms to union
+--- Reading tax/ncbi/ ---
+prefix is ncbi
+! No header row
+500000
+1000000
+| 25 names normalized
+Putative synonym metagenomes is the primary name of 408169
+Identifier 68337 unrecognized for synonym Flexistipes group
+Putative synonym environmental samples is the primary name of 211103
+Identifier 118001 unrecognized for synonym Chrysiogenes group
+Putative synonym other sequences is the primary name of 28384
+Identifier 188708 unrecognized for synonym Togobacteria
+Identifier 67799 unrecognized for synonym Thermodesulfobacterium group
+Identifier 1760 unrecognized for synonym Actinomycetes
+Identifier 1760 unrecognized for synonym High GC gram-positive bacteria
+Identifier 1760 unrecognized for synonym high G+C Gram-positive bacteria
+Identifier 1760 unrecognized for synonym high GC Gram+
+Identifier 32061 unrecognized for synonym Chloroflecales
+Identifier 32061 unrecognized for synonym not "Chlorobacteria" Cavalier-Smith 1992
+Identifier 32061 unrecognized for synonym not Chlorobacteria Cavalier-Smith 2002
+Putative synonym environmental samples is the primary name of 50742
+| 264955 synonyms
+| 719 homonyms, of which 3 name cousin taxa, 2 name sibling taxa
+--- Mapping ncbi into union ---
+Pinned 6 out of 11
+| Names in common: 101818
+| different-division: 321
+| excluded(same-ancestor): 47
+| unresolved/ambiguous: 47
+| excluded(same-primary-name): 4
+| unresolved/blocked: 166
+| excluded(overlaps): 9
+| incompatible-with: 51
+| unresolved/contentious: 43
+| lost-race-to-union(same-ancestor): 3
+| Of 1112006 nodes in ncbi: 98624 with name in common, of which 97977 matched with existing, 646 blocked
+--- Augmenting union with new nodes from ncbi ---
+| No longer a root: (null=if:27847 Trentepohlia*)
+| No longer a root: (null=if:24080 Friedmannia*)
+| No longer a root: (null=if:22165 Girardia*)
+| No longer a root: (null=if:24061 Tylotus*)
+| No longer a root: (null=if:24033 Ralfsia*)
+| No longer a root: (null=if:22315 Prototheca*)
+| No longer a root: (null=if:24078 Calophyllum*)
+| No longer a root: (null=if:34042 Desmococcus*)
+| No longer a root: (null=if:27868 Riccia*)
+| ...
+| Started with:		 73 trees, 73480 taxa
+| new/tip: 912254
+| new/internal: 95283
+| new-homonym/in-division: 653
+| mapped/tip: 85419
+| new/tattered: 1595
+| mapped/coherent: 6543
+| new/insertion: 1869
+| lose/dispersed: 1224
+| lose/mooted: 118
+| mapped/incoherent: 1603
+| mapped/neutral: 4975
+| new-homonym/out-division: 3939
+| mapped/incompatible: 1042
+| mapped/internal: 68
+| blocked/tip: 13
+| Ended with:		 53 trees, 73480 taxa
+| Added 264513 synonyms to union
+--- Reading tax/gbif/ ---
+prefix is gbif
+! No header row
+500000
+1000000
+1500000
+2000000
+| 1191 names normalized
+Putative synonym Uredo iyoensis is the primary name of 3383107
+Putative synonym Pleurotus eous is the primary name of 3329732
+Putative synonym Mycothyridium vestitum is the primary name of 5953789
+Putative synonym Lecanora valamoensis is the primary name of 3401196
+Putative synonym Dermatocarpon gorzegnoense is the primary name of 5492976
+Putative synonym Phyllosticta epichloes is the primary name of 3514726
+Putative synonym Mycosphaerella cocoes is the primary name of 3506058
+Putative synonym Tilletia buchloeana is the primary name of 3372212
+Putative synonym Ustilago buchloes is the primary name of 3369808
+Putative synonym Sarcogyne kotiluotensis is the primary name of 5473762
+Putative synonym Phyllosticta leucothoes is the primary name of 2612006
+Putative synonym Porina alba is the primary name of 7086902
+Putative synonym Acarospora tromsoensis is the primary name of 3414223
+Putative synonym Stenella leucothoes is the primary name of 5502773
+Putative synonym Exobasidium leucothoes is the primary name of 3371964
+Putative synonym Valsa cocoes is the primary name of 5481989
+Putative synonym Pyrenula chilensis is the primary name of 7187161
+Putative synonym Lecidea kotiluotensis is the primary name of 3435274
+Putative synonym Hydrolithon samoense is the primary name of 4376255
+...
+| 894754 synonyms
+| 3870 homonyms, of which 116 name cousin taxa, 232 name sibling taxa
+| Smushing sibling homonym 5938900 => 2941277, name = Archidendron kunstleri
+| Smushing sibling homonym 4805323 => 2117806, name = Nymphon stromii
+| Smushing sibling homonym 4805258 => 2117457, name = Pallenopsis vanhoffeni
+| Smushing sibling homonym 5137340 => 5136414, name = Euploea bandaensis
+| Smushing sibling homonym 7293115 => 3039284, name = Hippophae
+| Smushing sibling homonym 6525063 => 4590405, name = Sunetta meroe
+| Smushing sibling homonym 5457645 => 5455027, name = Agaricus hemisoodes
+| Smushing sibling homonym 6911494 => 4541136, name = Neotrombicula tragardhiana
+| Smushing sibling homonym 7324615 => 2703631, name = Calamochloe
+...
+239 sibling homonyms folded
+** Ranks out of order: (gbif:4865225 Chonetoidea) genus has child (gbif:4869637 Chonostrophiidae) family
+** Ranks out of order: (gbif:1010609 Limulus) genus has child (gbif:3267257 Strabopidae) family
+** Ranks out of order: (gbif:2050173 Alydus calcaratus) species has child (gbif:3265607 Camptopus) genus
+** Ranks out of order: (gbif:4587706 Nuculoidea) genus has child (gbif:4587862 Nucularcidae) family
+--- Mapping gbif into union ---
+Pinned 7 out of 11
+| Trying ad-hoc mismatch rule: (gbif:3269382 Ciliophora)
+| Trying ad-hoc match rule: (gbif:10 Ciliophora*)
+| Trying ad-hoc mismatch rule: (gbif:4983431. Foraminifera)
+| Trying ad-hoc match rule: (gbif:389 Foraminiferida*)
+| Names in common: 527282
+| excluded(overlaps): 113
+| different-division: 2761
+| incompatible-with: 144
+| excluded(same-rank): 7
+| unresolved/ambiguous: 50
+| ad-hoc-not: 2
+| unresolved/blocked: 312
+| excluded(same-ancestor): 1752
+| unresolved/contentious: 248
+| excluded(same-primary-name): 59
+| lost-race-to-union(same-ancestor): 5243
+| lost-race-to-union(overlaps): 52
+| lost-race-to-union(same-rank): 1370
+| lost-race-to-union(name-in-common): 7
+| eschew-tattered: 12
+| lost-race-to-union(same-primary-name): 1
+| Of 2257490 nodes in gbif: 483696 with name in common, of which 474967 matched with existing, 8729 blocked
+--- Augmenting union with new nodes from gbif ---
+| No longer a root: (null=if:25437 Phyllocardium*)
+| No longer a root: (null=if:39050 Byssus*)
+| No longer a root: (null=if:27863 Palmella*)
+| No longer a root: (null=if:22307 Plocaria*)
+| No longer a root: (null=if:22209. Labyrinthorhiza*)
+| No longer a root: (null=if:505982 Bulbotrichia*)
+| No longer a root: (null=if:21004. Actinomycites*)
+| No longer a root: (null=if:20352 Myceliochytrium*)
+| No longer a root: (null=if:25226 Pascherinema*)
+| ...
+| Started with:		 53 trees, 73480 taxa
+| mapped/tip: 408004
+| blocked/tip: 6610
+| new/tip: 1643151
+| mapped/coherent: 58071
+| mapped/neutral: 7575
+| new/internal: 123940
+| mapped/incoherent: 5087
+| lose/dispersed: 2094
+| new/tattered: 2041
+| new-homonym/in-division: 916
+| new-homonym/out-division: 2161
+| new/insertion: 66
+| lose/mooted: 210
+| mapped/incompatible: 490
+| mapped/internal: 151
+| Ended with:		 24 trees, 73480 taxa
+| Added 865508 synonyms to union
+** Ambiguous taxon name: Lagynidae
+** A taxon cannot be its own parent: (null=gbif:4906319 Coscinophragmatidae)
+** No taxon found with this name: Fucistia
+** No taxon found with this name: Cassidulinidea
+** No taxon found with this name: Discorbidea
+** No taxon found with this name: Discorbidea
+** Ambiguous taxon name: Lagynidae
+** No taxon found with this name: Alveolinidea
+** No taxon found with this name: Verneuilinidea
+** No taxon found with this name: Miliolacea
+** No taxon found with this name: Verneuilinidea
+** Ambiguous taxon name: Lagynidae
+** No taxon found with this name: Discorbidea
+** Ambiguous taxon name: Miliolina
+** No taxon found with this name: Astrorhizidea
+** No taxon found with this name: Chrysalidinidea
+** No taxon found with this name: Allogromiida
+** No taxon found with this name: Allogromiida
+** No taxon found with this name: Spirillinina
+** No taxon found with this name: Rotaliporidea
+** No taxon found with this name: Trochammininae
+** No taxon found with this name: Nodosariidea
+** No taxon found with this name: Nubecularioidea
+** No taxon found with this name: Nodosariidea
+** No taxon found with this name: Bolivinoidea
+** No taxon found with this name: Moravamminoidea
+** No taxon found with this name: Ammosphaeroidininae
+** No taxon found with this name: Coscinophragmatidea
+** A taxon cannot be its own parent: (null=gbif:4382128 Komokiidae)
+** No taxon found with this name: Bolivinidea
+** No taxon found with this name: Hantkeninidea
+** No taxon found with this name: Polymorphinidea
+** No taxon found with this name: Stilostomellidea
+** No taxon found with this name: Chilostomellidea
+** No taxon found with this name: Placididea
+** No taxon found with this name: Discorbinellidea
+** No taxon found with this name: Lituolidea
+** No taxon found with this name: Astrorhizidea
+** No taxon found with this name: Ataxophragmiidea
+** A taxon cannot be its own parent: (null=gbif:4894729 Rhapydioninidae)
+** No taxon found with this name: Textulariidea
+** No taxon found with this name: Planorbulinidea
+** No taxon found with this name: Nodosariidea
+** No taxon found with this name: Buliminidea
+** No taxon found with this name: Glabratellidea
+** No taxon found with this name: Fursenkoinoidea
+** No taxon found with this name: Anoecida
+** A taxon cannot be its own parent: (null=gbif:4906370 Cornuspiridae)
+** No taxon found with this name: Nonionidea
+** Ambiguous taxon name: Lagynidae
+** Ambiguous taxon name: Lagynidae
+** Ambiguous taxon name: Lagynidae
+** Ambiguous taxon name: Lagynidae
+** No taxon found with this name: Discorbidea
+** No taxon found with this name: Caucasininae
+** No taxon found with this name: Discorbidea
+** No taxon found with this name: Baggininae
+** No taxon found with this name: Lituotuboidea
+** No taxon found with this name: Hippocrepinidea
+** Ambiguous taxon name: Lagynidae
+** No taxon found with this name: Spiroplectamminidea
+** No taxon found with this name: Recurvoidoidea
+** No taxon found with this name: Nubeculariidea
+** No taxon found with this name: Recurvoidoidea
+--- Applying edits from feed/ott/edits/flag-test.tsv ---
+--- Applying edits from feed/ott/edits/misplaced-kingdoms.tsv ---
+--- Applying edits from feed/ott/edits/lost-from-gbif.tsv ---
+--- Applying edits from feed/ott/edits/fungal-species.tsv ---
+(add) Warning: taxon already present: Acanthotrema frischii
+(add) Warning: taxon already present: Agaricus tlaxcalensis
+(add) Warning: taxon already present: Botrytis sinoallii
+(add) Warning: taxon already present: Brigantiaea sorediata
+(add) Warning: taxon already present: Cantharellus texensis
+(add) Warning: taxon already present: Chrysothrix caesia
+(add) Warning: taxon already present: Epichloe liyangensis
+(add) Warning: taxon already present: Flavoparmelia caperatula
+(add) Warning: taxon already present: Marasmiellus celebanticus
+(add) Warning: taxon already present: Melanelixia glabratula
+(add) Warning: taxon already present: Muscodor sutura
+(add) Warning: taxon already present: Ophiostoma crescericum
+(add) Warning: taxon already present: Ophiostoma euskadiense
+(add) Warning: taxon already present: Ophiostoma nebulare
+(add) Warning: taxon already present: Paraconiothyrium babiogorense
+(add) Warning: taxon already present: Paraphysoderma
+(add) Warning: taxon already present: Paraphysoderma sedebokerense
+(add) Warning: taxon already present: Periglandula turbinae
+(add) Warning: taxon already present: Phyllosticta cavendishii
+(add) Warning: taxon already present: Phyllosticta hostae
+(add) Warning: taxon already present: Phyllosticta schimae
+(add) Warning: taxon already present: Plectosphaerella delsorboi
+(add) Warning: taxon already present: Plectosphaerella oratosquillae
+(add) Warning: taxon already present: Pluteus stenotrichus
+(add) Warning: taxon already present: Pluteus sublaevigatus
+(add) Warning: taxon already present: Podosphaera filipendulae
+(add) Warning: taxon already present: Psilachnum staphyleae
+(add) Warning: taxon already present: Ramichloridium mali
+? Ambiguous parent name: Rhodotorula
+(add) Warning: taxon already present: Rhodotorula rosulata
+(add) Warning: taxon already present: Schizotrema zebrinum
+(add) Warning: taxon already present: Sclerostagonospora cycadis
+(add) Warning: taxon already present: Spiroplana
+(add)  ... with a different parent: Pezizomycotina not Pleosporales
+(add) Warning: taxon already present: Spiroplana centripeta
+(add) Warning: taxon already present: Trichoderma brunneoviride
+(add) Warning: taxon already present: Volvariella nullicystidiata
+(add) Warning: taxon already present: Volvariella nivea
+(add) Warning: taxon already present: Lignosus hainanensis
+(add) Parent name Hyaloperonospora missing in context Oomycetes
+--- Applying edits from feed/ott/edits/ott_edits.tsv ---
+--- Applying edits from feed/ott/edits/misc_edits.tsv ---
+(move) Note: already in the right place: Dermatobotrys
+(move) Note: already in the right place: Rehmannia
+(move) Note: already in the right place: Stemodiopsis
+(move) Note: already in the right place: Micranthemum
+(move) Note: already in the right place: Bryodes
+| Deforesting: keeping biggest (3100398), 2nd biggest is 20
+| Removed 23 smaller trees
+--- Reading tax/prev_ott/ ---
+! No header row
+500000
+1000000
+1500000
+2000000
+2500000
+3000000
+| 1202 names normalized
+Putative synonym Ustilago buchloes is the primary name of 3837958
+Putative synonym Allantoporthe leucothoes is the primary name of 4052846
+Putative synonym Leptopeziza mindanaoensis is the primary name of 3713722
+Putative synonym Dermatocarpon gorzegnoense is the primary name of 3759817
+Putative synonym Aspicilia valamoensis is the primary name of 3783543
+Putative synonym Phyllosticta epichloes is the primary name of 3745368
+Putative synonym Lecanora valamoensis is the primary name of 3775589
+Putative synonym Ustilago isoetis is the primary name of 3837896
+Putative synonym Calyptella nabambissoensis is the primary name of 3828237
+Putative synonym Stenella leucothoes is the primary name of 4076132
+Putative synonym Acarospora tromsoensis is the primary name of 3788382
+Putative synonym Phyllosticta leucothoes is the primary name of 3747620
+Putative synonym Phomopsis leucothoes is the primary name of 3697355
+Putative synonym Puccinia buchloes is the primary name of 3842930
+Putative synonym Lecidea kotiluotensis is the primary name of 3763474
+Putative synonym Mycosphaerella cocoes is the primary name of 3726003
+Putative synonym Graphis yaucoensis is the primary name of 3786492
+Putative synonym Pleurotus eous is the primary name of 3831566
+Putative synonym Valsa cocoes is the primary name of 3697031
+...
+| 1530854 synonyms
+| 4882 homonyms, of which 203 name cousin taxa, 881 name sibling taxa
+--- Mapping ott into union ---
+Pinned 11 out of 11
+!! Badly homonymic: environmental samples 3664*3431
+!! Badly homonymic: Incertae Sedis 20*20
+!! Badly homonymic: uncultured 236*237
+!! Badly homonymic: Order Incertae Sedis 18*18
+!! Badly homonymic: Family Incertae Sedis 43*43
+!! Badly homonymic: mycorrhizal samples 11*11
+!! Badly homonymic: Rhodotorula 11*11
+!! Badly homonymic: tsetse fly 13*13
+!! Badly homonymic: Algerian barb 13*13
+| Names in common: 4231654
+| unresolved/ambiguous: 794
+| unresolved/contentious: 617
+| unresolved/blocked: 774
+| incompatible-with: 96
+| excluded(same-rank): 3
+| excluded(same-ancestor): 221
+| different-division: 278
+| excluded(overlaps): 49
+| excluded(same-qualified-id): 181
+| excluded(same-primary-name): 20
+| lost-race-to-union(overlaps): 46
+| lost-race-to-union(same-ancestor): 1159
+| lost-race-to-union(same-qualified-id): 16
+| lost-race-to-union(same-rank): 580
+| eschew-tattered: 104
+| Of 3066373 nodes in ott: 3063623 with name in common, of which 3059765 matched with existing, 3836 blocked
+--- Assigning ids to union starting with ott ---
+| Highest id before: 5267058
+| Highest id after: 5307635
+| keeping-id: 3049992
+| note/different-source-id: 8853
+| note/different-source: 982
+| new-id: 40577
+| Highest id before: 5307635
+| Highest id after: 5307635
+Writing tax/ott/about.json
+Writing tax/ott/deprecated.tsv
+Writing tax/ott/log.tsv
+Writing tax/ott/taxonomy.tsv
+Writing tax/ott/synonyms.tsv
+echo 2.4.draft10 >tax/ott/version.txt
+(cd tax && \
+	 tar czvf /raid/www/roots/opentree/ott/ott2.4.draft10.tgz.tmp ott && \
+	 mv /raid/www/roots/opentree/ott/ott2.4.draft10.tgz.tmp /raid/www/roots/opentree/ott/ott2.4.draft10.tgz )
+ott/
+ott/synonyms.tsv
+ott/deprecated.tsv
+ott/version.txt
+ott/taxonomy.tsv
+ott/log.tsv
+ott/version.txt~
+ott/about.json
+Don't forget to bump the version number
+
+short list:
+
+112716	2448	Flavobacterium johnsoniae	ncbi:986,gbif:3228875	unresolved/blocked	incompatible-with,incompatible-with,incompatible-with,eschew-tattered	*
+877156	1046	Teratosphaeria readeriellophora	ncbi:306883,gbif:3505447	incompatible-with	Readeriella readeriellophora	*
+324024	1020	Thismia aseroe	ncbi:167627	unresolved/contentious	ott:3968805	*
+187939	2419	Potentilla	gbif:5365261	unresolved/blocked	incompatible-with,eschew-tattered	*
+701761	2448	Raphidiopsis brookii	ncbi:668331	?		*
+380202	1378	Phacelocarpaceae	ncbi:35196,gbif:9016	?		*
+380205	1378	Nizymeniaceae	ncbi:35193,gbif:6169	?		*
+832513	438	Verrucaria chiloensis	ncbi:473363	unresolved/contentious	ott:3759040	*
+1018793	438	Caloglossa saigonensis	ncbi:210849,gbif:2662179	unresolved/contentious	ott:5155250	*
+414273	1497	Rhizoctonia	ncbi:5573	unresolved/contentious	ott:5262185,ott:4097018	*
+4064109	2419	Ceratophyllum	gbif:7247947	unresolved/blocked	different-division,eschew-tattered	*
+133094	532	Japewia tornoensis	ncbi:400698,gbif:4281321	unresolved/contentious	ott:3774186	*
+474506	2448	Escherichia coli	ncbi:562,gbif:6110934	unresolved/blocked	incompatible-with,incompatible-with,incompatible-with,eschew-tattered	*
+4780319	2448	Polymorphum gilvum	ncbi:991904	?		*
+831970	427	Campanella	ncbi:71870,gbif:2512830	unresolved/blocked	different-division,eschew-tattered,different-division,eschew-tattered	*
+744510	2448	Photobacterium profundum	ncbi:74109,gbif:3222392	unresolved/blocked	incompatible-with,incompatible-with,eschew-tattered	*
+4796399	2448	Aciduliprofundum boonei	ncbi:379547	?		*
+4767590	2542	Bacteroidetes oral taxon 274	ncbi:652708	?		*
+1032974	2448	Aromatoleum aromaticum	ncbi:551760	?		*
+420291	2602	Astrocystis cocoes	ncbi:190943	unresolved/contentious	ott:3694385	*
+101657	438	Pomatocalpa kunstleri	ncbi:331232	unresolved/contentious	ott:3975910	*
+73516	2182	Stegobolus	ncbi:463637,gbif:2601675	?		*
+252855	695	Cryptothelium	ncbi:714579,gbif:7089178	?		*
+1023851	2542	Shigella flexneri 5	ncbi:373383	?		*
+4018890	2448	[Bacteroides] pectinophilus	ncbi:384638,gbif:3228379	incompatible-with	[Bacteroides] pectinophilus ATCC 43243	*
+4795760	2448	Methylacidiphilum infernorum	ncbi:511746	?		*
+3663256	1955	Convoluta bohmigi	gbif:4307560	unresolved/contentious	ott:3663270	*
+790543	1116	Berendtia	ncbi:255907	incompatible-with	Berendtia rugosa	*
+741713	1378	Mychodeophyllaceae	ncbi:257583,gbif:9006	?		*
+690912	2542	Shigella flexneri 2a	ncbi:42897	?		*
+585488	1378	Cubiculosporaceae	ncbi:257562,gbif:8999	?		*
+566630	2430	Haliommatidium	ncbi:65580,gbif:4906113	incompatible-with	Haliommatidium sp.	*
+5148985	1779	Oreogrammitis	gbif:7177267	?		*
+578483	2448	[Eubacterium] yurii	ncbi:39498,gbif:3226394	incompatible-with	Eubacterium yurii subsp. margaretiae	*
+1022742	1040	Microglossum	ncbi:45436	unresolved/contentious	ott:4926329,ott:4927979	*
+758272	1329	Elsinoe eucalypticola	ncbi:673161	unresolved/contentious	ott:3717379	*
+299190	2448	Methanobrevibacter smithii	ncbi:2173,gbif:1000108	unresolved/blocked	incompatible-with,incompatible-with,incompatible-with,eschew-tattered	*
+3688880	343	Rhadinomyces	gbif:2610758	?		*
+148740	2221	Hydnellum	ncbi:68815,gbif:2522201	unresolved/ambiguous	if:17782,if:17781	*
+405881	2382	Elsinoe veneta	ncbi:45306,gbif:5894337	unresolved/contentious	ott:3717469	*
+901744	438	Raineriophrys	ncbi:299832	?		*
+430561	858	Elsinoe eucalyptorum	ncbi:407948	unresolved/contentious	ott:3717330	*
+663857	2382	Elsinoe phaseoli	ncbi:390893,gbif:5894342	unresolved/contentious	ott:3717454	*
+4777083	2542	Candidatus Accumulibacter phosphatis	ncbi:327160	?		*
+546820	1722	Diplophrys marina	ncbi:160256,gbif:5424021	?		*
+1065039	2448	Eubacterium saphenum	ncbi:51123	?		*
+1042790	956	Ochrolechia szatalaensis	ncbi:129512,gbif:3412481	unresolved/contentious	ott:3783113	*
+1065295	1378	Tichocarpaceae	ncbi:38385,gbif:9023	?		*
+988608	2448	Dechloromonas aromatica	ncbi:259537	?		*
+988781	1711	Elsinoe leucospermi	ncbi:97462	unresolved/contentious	ott:3717406	*
+31984	2448	Nitrospira	gbif:89	unresolved/ambiguous	silva:X82558/#6,silva:M79383/#3	*
+256121	2448	Escherichia albertii	ncbi:208962,gbif:5427575	unresolved/blocked	incompatible-with,incompatible-with,eschew-tattered	*
+128045	2486	Epichloe clarkii	ncbi:47802,gbif:4909558	unresolved/contentious	ott:4058905	*
+305451	1747	Nais inornata	ncbi:85920,gbif:5711429	unresolved/contentious	ott:3704278	*
+924617	2445	Ceratomyxa	gbif:2269597	unresolved/blocked	incompatible-with,eschew-tattered	*
+146850	2542	Clostridium perfringens B	ncbi:451751	?		*
+407689	2448	[Clostridium] difficile	ncbi:1496,gbif:3226608	unresolved/blocked	incompatible-with,incompatible-with,eschew-tattered	*
+3949279	175	Leucothrinax	gbif:2731965	?		*
+740345	831	Tilletiopsis	ncbi:165802	unresolved/contentious	ott:738715,ott:63206	*
+1064662	1378	Sebdeniaceae	ncbi:50885,gbif:9027	?		*
+781804	2418	Salpingoeca pyxidium	ncbi:473812	?		*
+272669	2486	Epichloe yangzii	ncbi:344613	unresolved/contentious	ott:4058914	*
+1036834	1378	Sphaerococcaceae	ncbi:31465,gbif:9022	?		*
+306623	2499	Balansia epichloe	ncbi:51584	unresolved/contentious	ott:3700557	*
+891495	2448	Acidovorax ebreus	ncbi:721785	?		*
+221632	2448	Clostridium asparagiforme	ncbi:333367	?		*
+599681	1378	Rhodothamniellaceae	ncbi:39579,gbif:4947	?		*
+425026	530	Stagonosporopsis andigena	ncbi:749883,gbif:5262146	unresolved/ambiguous	if:152755,if:413810	*
+760530	1151	Gnomoniopsis comari	ncbi:440563	unresolved/contentious	ott:760534	*
+491284	2448	Pseudomonas aeruginosa	ncbi:287,gbif:3223154	unresolved/blocked	incompatible-with,incompatible-with,eschew-tattered	*
+881826	1378	Balliaceae	ncbi:123990,gbif:8967	?		*
+991154	310	Spirotrichonymphella	ncbi:285702	?		*
+794850	2597	Clitopilus popinalis	ncbi:693818	unresolved/contentious	ott:250997	*
+386985	2542	Clostridium botulinum B1	ncbi:591968	?		*
+700615	2494	Elsinoe australis	ncbi:40998,gbif:5894336	unresolved/contentious	ott:3717389	*
+700619	1711	Elsinoe	ncbi:40996,gbif:4884899	unresolved/contentious	ott:3717271	*
+991955	2597	Cystodermella granulosa	ncbi:511160,gbif:2535164	unresolved/blocked	incompatible-with,incompatible-with	*
+1057274	747	Cyphellopsis	ncbi:139265,gbif:2530457	unresolved/blocked	eschew-tattered,eschew-tattered	*
+592947	1230	Seculamonas	ncbi:221723	?		*
+754485	2542	Clostridium perfringens D	ncbi:107819	?		*
+898589	313	Ochromonas	ncbi:2985,gbif:3194590	unresolved/blocked	incompatible-with,incompatible-with,eschew-tattered,eschew-tattered	*
+574610	1821	Helichrysum noeanum	ncbi:261792	unresolved/contentious	ott:3899013	*
+63206	242	Tilletiopsis	ncbi:58913	unresolved/contentious	ott:740345,ott:738715	*

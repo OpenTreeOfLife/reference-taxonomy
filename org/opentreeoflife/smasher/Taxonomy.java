@@ -715,41 +715,46 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			analyzeRankConflicts(root, true);
     }
 
+	// Final analysis, after assembling entire taxonomy, before writing it out
 	void analyze() {
-		if (false) {
-			// NCBI only
-			for (Taxon root : this.roots)
-				analyzeOTUs(root, 0);	// mutates the tree
-			// GBIF and IF only
-			for (Taxon root : this.roots)
-				analyzeRankConflicts(root, true);
-		}
-        // All
 		for (Taxon root : this.roots)
 			analyzeRankConflicts(root, false);
-        // All
 		for (Taxon root : this.roots)
 			analyzeContainers(root, 0);
-        // All
 		for (Taxon root : this.roots)
             analyzeBarren(root);
 	}
 
+	// Set during assembly
+	static final int TATTERED 			 =   4 * 1024;    // combine using |
+	static final int FORCED_VISIBLE		 =  16 * 1024;	  // combine using |
+	static final int EDITED     	     = 128; 		  // combine using |
+	static final int HIDDEN		      	 =  32 * 1024;    // combine using &
+
+	// Parent-dependent.  Retain value
+	static final int MAJOR_RANK_CONFLICT =   2 * 1024;
+
+	// NCBI - individually troublesome - not sticky - combine using &
 	static final int NOT_OTU             =    1;
 	static final int HYBRID          	 =    2;
 	static final int VIRAL          	 =    4;
+
+	// Final analysis...
+	// Containers - unconditionally so.
 	static final int UNCLASSIFIED 	  	 =    8;
 	static final int ENVIRONMENTAL 	  	 =   16;
 	static final int INCERTAE_SEDIS 	 =   32;
-	static final int SPECIFIC     	     =   64;
-	static final int EDITED     	     =  128;
+
+	// Australopithecus
 	static final int SIBLING_LOWER       =  512;
 	static final int SIBLING_HIGHER      =   1 * 1024;
-	static final int MAJOR_RANK_CONFLICT =   2 * 1024;
-	static final int TATTERED 			 =   4 * 1024;
+
+	// Is 'species' or lower rank ('infraspecific' when inherited)
+	// Unconditional ?
+	static final int SPECIFIC     	     =   64;
+
+	// Opposite of 'barren' - propagated upward
 	static final int ANYSPECIES			 =   8 * 1024;
-	static final int FORCED_VISIBLE		 =  16 * 1024;
-	static final int HIDDEN		      	 =  32 * 1024;
 
 	// Returns the node's rank (as an int).  In general the return
 	// value should be >= parentRank, but conceivably funny things
@@ -828,7 +833,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	//     (where in some cases the ancestor may later be 'elided' so
 	//     not an ancestor any more)
 
-    // Flags to set for NCBI but not SILVA
+	// analyzeOTUs: set taxon flags based on name, leading to dubious
+	// taxa being hidden.
+    // We use this for NCBI but not for SILVA.
 
 	static void analyzeOTUs(Taxon node, int inheritedFlags) {
 		// Before
@@ -1330,7 +1337,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		for (Taxon node : this)
 			if (node.id == null) {
 				node.setId(Long.toString(++maxid));
-				//node.addComment("new");
 				node.markEvent("new-id");
 			}
 		System.out.println("| Highest id after: " + maxid);
@@ -1555,6 +1561,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
     }
 
     public Taxon newTaxon(String name, String rank, String sourceIds) {
+		if (this.lookup(name) != null)
+			System.err.format("** Warning: A taxon by the name of %s already exists\n", name);
         Taxon t = new Taxon(this);
         t.setName(name);
         t.rank = rank;
@@ -1603,8 +1611,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			snode.unifyWith(unode);
 		else {
 			Taxon evader = new Taxon(unode.taxonomy);
-			evader.properFlags = -1;    // cf. augment()
-			snode.unifyWith(evader);
+			snode.unifyWithNew(evader);
 			evader.addSource(snode);
 		}
     }
@@ -1786,7 +1793,6 @@ class SourceTaxonomy extends Taxonomy {
 				n1.setDivision(names[0]);
 				n2.setDivision(names[0]);
 				n1.unifyWith(n2); // hmm.  TBD: move this out of here
-				//n2.addComment("is-division", n1);
 				++count;
 			}
 		}

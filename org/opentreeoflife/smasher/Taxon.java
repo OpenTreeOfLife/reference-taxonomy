@@ -219,9 +219,31 @@ public class Taxon {
 			return null;
 	}
 
-	// unode is a node in the union taxonomy, possibly fresh
+	// The union node unode is fresh, merely a copy of the source
+	// node.
+
+	void unifyWithNew(Taxon unode) {
+		this.unifyWithAux(unode);
+		unode.properFlags = this.properFlags;
+	}
+
+	// unode is a preexisting node in the union taxonomy.
 
 	void unifyWith(Taxon unode) {
+		this.unifyWithAux(unode);
+		int before = unode.properFlags;
+		// Most flags are combined using &
+		unode.properFlags &= this.properFlags;
+		// A few are combined using |
+		unode.properFlags |=
+			((before | this.properFlags) &
+			 (Taxonomy.FORCED_VISIBLE | Taxonomy.TATTERED | Taxonomy.EDITED));
+		// This one is anomalous
+		unode.properFlags |=
+			(before & Taxonomy.MAJOR_RANK_CONFLICT);
+	}
+
+	void unifyWithAux(Taxon unode) {
 		if (this.mapped == unode) return; // redundant
 		if (this.mapped != null) {
 			// Shouldn't happen - assigning single source taxon to two
@@ -241,13 +263,6 @@ public class Taxon {
 			if (unode.rank == Taxonomy.NO_RANK || unode.rank.equals("samples"))
 				unode.rank = this.rank;
 		unode.comapped = this;
-
-		if (this.comment != null) { // cf. deprecate()
-			//unode.addComment(this.comment);
-			this.comment = null;
-		}
-		if (this.taxonomy != ((UnionTaxonomy)(unode.taxonomy)).idsource)
-			unode.properFlags &= this.properFlags;
 	}
 
 	// Recursive descent over source taxonomy
@@ -260,32 +275,6 @@ public class Taxon {
 	// Add most of the otherwise unmapped nodes to the union taxonomy,
 	// either as new names, fragmented taxa, or (occasionally)
 	// new homonyms, or vertical insertions.
-
-	// This node is already mapped, but it may get new children.
-
-	String comment = null;	   // the reason(s) that it is what it is (or isn't)
-
-	void addComment(String comment) {
-		if (this.mapped != null)
-			this.mapped.addComment(comment);
-		if (this.comment == null)
-			this.comment = comment;
-		else if (this.comment != null)
-			this.comment = this.comment + " " + comment;
-	}
-
-	// Best if node is *not* from the union... the ids don't display well
-
-	void addComment(String comment, Taxon node) {
-		this.addComment(comment + "(" + node.getQualifiedId() + ")");
-	}
-
-	void addComment(String comment, String name) {
-		if (name == null)		// witness
-			this.addComment(comment);
-		else
-			this.addComment(comment + "(" + name + ")");
-	}
 
 	void addSourceId(QualifiedId qid) {
 		if (this.sourceIds == null)
@@ -382,7 +371,16 @@ public class Taxon {
 					// It will end up becoming a descendent of oldParent.
 					newnode = new Taxon(union);
 					for (Taxon nu : newChildren) newnode.addChild(nu);
-					for (Taxon old : oldChildren) old.changeParent(newnode);   // Detach!!
+					for (Taxon old : oldChildren) {
+						// Delete the Taxonomy.MAJOR_RANK_CONFLICT flag if we're
+						// providing a home for these things??!
+						old.changeParent(newnode);   // Detach!!
+						if ((this.properFlags & Taxonomy.MAJOR_RANK_CONFLICT) == 0) {
+							if ((old.properFlags & Taxonomy.MAJOR_RANK_CONFLICT) != 0)
+								System.err.format("| Removing major rank conflict: %s\n", old);
+							old.properFlags &= ~Taxonomy.MAJOR_RANK_CONFLICT;
+						}
+					}
 					// 'yes' is interesting, 'heckYes' isn't
 					union.logAndMark(Answer.yes(this, null, "new/insertion", null));
 					// fall through
@@ -435,8 +433,7 @@ public class Taxon {
 							break;
 						}
 					}
-                newnode.properFlags = -1;
-				this.unifyWith(newnode);	   // sets name and properFlag
+				this.unifyWithNew(newnode);	   // sets name and properFlag
                 newnode.properFlags |= newflags;
 			} else if (this.mapped != newnode)
 				System.out.println("Whazza? " + this + " ... " + newnode);
@@ -481,7 +478,12 @@ public class Taxon {
 		Taxon anc = this.parent;
 		while (anc != null && anc.mapped == null) anc = anc.parent;
 		if (anc == null) return false;     // ran past root of tree
-		else return anc.mapped == oldParent;
+		if (anc.mapped != oldParent) return false;
+		if ((this.properFlags & Taxonomy.HIDDEN) != 0) {
+			// System.out.format("Would be refinement if not hidden: %s\n", this);
+			return false;
+		}
+		return true;
 	}
 
 	// pulled out of previous method to make it easier to read
@@ -562,7 +564,6 @@ public class Taxon {
 			(this.children == null ? "." : "") +
 			" " + this.name +
 			twinkie +				// tbd: indicate division top with "#" 
-			(this.comment != null ? (" " + this.comment) : "") +
 			")";
 	}
 

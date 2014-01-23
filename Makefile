@@ -5,7 +5,7 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.4.draft12
+WHICH=2.4.draft13
 PREV_WHICH=2.3
 
 #  $^ = all prerequisites
@@ -59,19 +59,10 @@ OTT_ARGS=$(SMASH) $(SILVA)/ tax/713/ tax/if/ $(NCBI)/ $(GBIF)/ \
       --out tax/ott/
 
 ott: tax/ott/log.tsv
-ztax/ott/log.tsv: $(CLASS) $(SILVA)/taxonomy.tsv \
-		    tax/if/taxonomy.tsv tax/713/taxonomy.tsv \
-		    $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv \
-		    feed/ott/edits/ott_edits.tsv \
-		    feed/ott/chromista_spreadsheet.py \
-		    tax/prev_ott/taxonomy.tsv
-	@mkdir -p tax/ott
-	$(BIG_JAVA) $(OTT_ARGS)
-	echo $(WHICH) >tax/ott/version.txt
-
 tax/ott/log.tsv: $(CLASS) feed/ott/ott.py $(SILVA)/taxonomy.tsv \
 		    tax/if/taxonomy.tsv tax/713/taxonomy.tsv \
 		    $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv \
+		    tax/irmng/taxonomy.tsv \
 		    feed/ott/edits/ott_edits.tsv \
 		    tax/prev_ott/taxonomy.tsv
 	@mkdir -p tax/ott
@@ -156,6 +147,24 @@ feed/gbif/in/checklist1.zip:
 	wget --output-document=$@ \
              http://ecat-dev.gbif.org/repository/export/checklist1.zip
 	@ls -l $@
+
+irmng: tax/irmng/taxonomy.tsv
+
+tax/irmng/taxonomy.tsv: feed/irmng/process_irmng.py \
+          feed/irmng/in/IRMNG_DWC_20140113.csv feed/irmng/process_irmng.py
+	@mkdir -p `dirname $@`
+	python feed/irmng/process_irmng.py \
+	   feed/irmng/in/IRMNG_DWC_20140113.csv \
+	   feed/irmng/in/IRMNG_DWC_SP_PROFILE_20140113.csv \
+	   > tax/irmng/taxonomy.tsv
+
+feed/irmng/in/IRMNG_DWC_20140113.csv: feed/irmng/in/IRMNG_DWC.zip
+	(cd feed/irmng/in; unzip IRMNG_DWC.zip)
+
+feed/irmng/in/IRMNG_DWC.zip:
+	@mkdir -p `dirname $@`
+	wget --output-document=$@.tmp "http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip"
+	mv $@.tmp $@
 
 # Significant tabs !!!
 

@@ -50,6 +50,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	Integer sourcecolumn = null;
 	Integer sourceidcolumn = null;
 	Integer infocolumn = null;
+	Integer flagscolumn = null;
 	Integer preottolcolumn = null;
 	JSONObject metadata = null;
     int taxid = -1234;    // kludge
@@ -315,6 +316,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 						this.sourcecolumn = headerx.get("source");
 						this.sourceidcolumn = headerx.get("sourceid");
 						this.infocolumn = headerx.get("sourceinfo");
+						this.flagscolumn = headerx.get("flags");
 						this.preottolcolumn = headerx.get("preottol_id");
 						continue;
 					} else
@@ -356,6 +358,11 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				if (!name.equals(rawname)) {
 					addSynonym(rawname, node);
 					++normalizations;
+				}
+				if (this.flagscolumn != null) {
+					if (parts[this.flagscolumn].contains("extinct"))
+						// kludge. could be _direct or _inherited
+						node.properFlags |= Taxonomy.EXTINCT;
 				}
 			}
 			++row;
@@ -426,7 +433,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				for (final Taxon other : this.lookup(node.name)) {
 
 					int c = other.id.length() - node.id.length();
-					if ((c < 0 || (c == 0 && other.id.compareTo(node.id) < 0)) &&
+					if (other.name.equals(node.name) &&
+						(c < 0 || (c == 0 && other.id.compareTo(node.id) < 0)) &&
 						node.parent == other.parent &&
 						(node.rank == Taxonomy.NO_RANK ?
 						 other.rank == Taxonomy.NO_RANK :
@@ -729,6 +737,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	static final int TATTERED 			 =   4 * 1024;    // combine using |
 	static final int FORCED_VISIBLE		 =  16 * 1024;	  // combine using |
 	static final int EDITED     	     = 128; 		  // combine using |
+	static final int EXTINCT     	     =  64 * 1024;	  // combine using |
 	static final int HIDDEN		      	 =  32 * 1024;    // combine using &
 
 	// Parent-dependent.  Retain value
@@ -915,6 +924,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				analyzeBarren(child);
 				if ((child.properFlags & ANYSPECIES) != 0) anyspeciesp = true;
 			}
+		else if (node.rank == Taxonomy.NO_RANK)
+			anyspeciesp = true;
 		if (anyspeciesp) node.properFlags |= ANYSPECIES;
 	}
 
@@ -989,6 +1000,15 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		if ((node.properFlags & EDITED) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("edited");
+		}
+
+		if ((node.properFlags & EXTINCT) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("extinct_direct");
+		}
+		if ((node.inheritedFlags & EXTINCT) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("extinct_inherited");
 		}
 
 		if ((node.properFlags & FORCED_VISIBLE) != 0) {
@@ -2494,7 +2514,7 @@ abstract class Criterion {
 		};
 
 	// Failure case: matching where there should be no match: Buchnera, Burkea
-	// Taxon y is bacteria or protozoan, taxon x is a plant
+	// Taxon y is protozoan, taxon x is a plant
 
 	static Criterion division =
 		new Criterion() {
@@ -2504,9 +2524,12 @@ abstract class Criterion {
 				String ydiv = y.getDivision();
 				if (xdiv == ydiv)
 					return Answer.NOINFO;
-				else if (xdiv != null && ydiv != null) {
-					Answer a = Answer.heckNo(x, y, "different-division", xdiv);
-					return a;
+				else if (xdiv != null) {
+					if (ydiv == null) {
+						//System.err.format("No half-sided division exclusion: %s %s\n", x, y);
+						return Answer.NOINFO;
+					}
+					return Answer.heckNo(x, y, "different-division", xdiv);
 				} else
 					return Answer.NOINFO;
 			}

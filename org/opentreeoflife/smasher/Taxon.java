@@ -237,7 +237,8 @@ public class Taxon {
 		// A few are combined using |
 		unode.properFlags |=
 			((before | this.properFlags) &
-			 (Taxonomy.FORCED_VISIBLE | Taxonomy.TATTERED | Taxonomy.EDITED));
+			 (Taxonomy.FORCED_VISIBLE | Taxonomy.TATTERED |
+			  Taxonomy.EDITED | Taxonomy.EXTINCT));
 		// This one is anomalous
 		unode.properFlags |=
 			(before & Taxonomy.MAJOR_RANK_CONFLICT);
@@ -376,7 +377,8 @@ public class Taxon {
 						// providing a home for these things??!
 						old.changeParent(newnode);   // Detach!!
 						if ((this.properFlags & Taxonomy.MAJOR_RANK_CONFLICT) == 0) {
-							if ((old.properFlags & Taxonomy.MAJOR_RANK_CONFLICT) != 0)
+							if ((old.properFlags & Taxonomy.MAJOR_RANK_CONFLICT) != 0
+								&& ((old.name.hashCode() % 200) == 17))
 								System.err.format("| Removing major rank conflict: %s\n", old);
 							old.properFlags &= ~Taxonomy.MAJOR_RANK_CONFLICT;
 						}

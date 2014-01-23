@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
 	aboutfilename = taxdir+"/about.json"
 	aboutfile = open(aboutfilename,"w")
-	aboutfile.write('{ "prefix" "ncbi",\n')
+	aboutfile.write('{ "prefix": "ncbi",\n')
 	aboutfile.write('  "prefixDefinition": "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=",\n')
 	aboutfile.write('  "description": "NCBI Taxonomy",\n')
 	# Get file date from nodes.dmp in downloaddir

@@ -120,6 +120,11 @@ public class Smasher {
 						tax.dumpNewick(outfile);
 					}
 
+                    // Read a .tre file
+                    else if (argv[i].equals("--intre")) {
+                        tax = Taxonomy.getNewick(argv[++i]);
+                    }
+
 					else if (argv[i].equals("--newick")) {
 						System.out.println(" -> " + tax.toNewick());
 					}

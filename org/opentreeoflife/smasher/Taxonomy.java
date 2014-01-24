@@ -191,8 +191,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				boolean cuzhomsp = false;
 				for (Taxon n1: nodes)
 					for (Taxon n2: nodes) {
-						int c = n1.id.length() - n2.id.length();
-						if ((c < 0 || (c == 0 && n1.id.compareTo(n2.id) < 0)) &&
+						if (compareTaxa(n1, n2) < 0 &&
 							n1.name.equals(name) &&
 							n2.name.equals(name)) {
 							homsp = true;
@@ -216,6 +215,16 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		}
 	}
 
+    int compareTaxa(Taxon n1, Taxon n2) {
+        if (n1.id == null || n2.id == null) return 0;
+        int q1 = (n1.children == null ? 0 : n1.children.size());
+        int q2 = (n2.children == null ? 0 : n2.children.size());
+        if (q1 != q2) return q1 - q2;
+        int c = n1.id.length() - n2.id.length();
+        if (c != 0) return c;
+        return n1.id.compareTo(n2.id);
+    }
+
 	static Pattern tabVbarTab = Pattern.compile("\t\\|\t?");
 
     // DWIMmish - does Newick is strings starts with paren, otherwise
@@ -236,6 +245,28 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		tax.investigateHomonyms();
         return tax;
 	}
+
+	public static SourceTaxonomy getTaxonomy(String designator, String tag)
+        throws IOException {
+        SourceTaxonomy tax = getTaxonomy(designator);
+        tax.tag = tag;
+        return tax;
+    }
+
+	public static SourceTaxonomy getNewick(String filename) throws IOException {
+		SourceTaxonomy tax = new SourceTaxonomy();
+		BufferedReader br = Taxonomy.fileReader(filename);
+        tax.roots.add(tax.newickToNode(new java.io.PushbackReader(br)));
+		tax.investigateHomonyms();
+        tax.assignNewIds(0);    // foo
+        return tax;
+	}
+
+	public static SourceTaxonomy getNewick(String filename, String tag) throws IOException {
+		SourceTaxonomy tax = getNewick(filename);
+        tax.tag = tag;
+        return tax;
+    }
 
     // load | dump all taxonomy files
 
@@ -432,13 +463,12 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				// Search for a homonym node that can replace node
 				for (final Taxon other : this.lookup(node.name)) {
 
-					int c = other.id.length() - node.id.length();
 					if (other.name.equals(node.name) &&
-						(c < 0 || (c == 0 && other.id.compareTo(node.id) < 0)) &&
 						node.parent == other.parent &&
 						(node.rank == Taxonomy.NO_RANK ?
 						 other.rank == Taxonomy.NO_RANK :
-						 node.rank.equals(other.rank))) {
+						 node.rank.equals(other.rank)) &&
+						compareTaxa(other, node) < 0) {
 
 						// node and other are sibling homonyms.
 						// deprecate node, replace it with other.
@@ -1293,7 +1323,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 					node.setName("");
 				}
 				for (Taxon child : children)
-					node.addChild(child);
+                    if (!child.name.startsWith("null"))
+                        node.addChild(child);
 				node.rank = (children.size() > 0) ? Taxonomy.NO_RANK : "species";
 				return node;
 			} else
@@ -1301,12 +1332,11 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		} else {
 			StringBuffer buf = new StringBuffer();
 			while (true) {
-				if (c < 0 || c == ')' || c == ',') {
+				if (c < 0 || c == ')' || c == ',' || c == ';') {
 					if (c >= 0) in.unread(c);
 					if (buf.length() > 0) {
 						Taxon node = new Taxon(this);
-						node.rank = "species";
-						node.setName(buf.toString());
+						initNewickNode(node, buf.toString());
 						return node;
 					} else return null;
 				} else {
@@ -1316,6 +1346,27 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			}
 		}
 	}
+
+    // Specially hacked to support the Hibbett 2007 spreadsheet
+    void initNewickNode(Taxon node, String label) {
+        // Drop the branch length, if present
+        int pos = label.indexOf(':');
+        if (pos >= 0) label = label.substring(0, pos);
+        // Strip quotes put there by Mesquite
+        if (label.startsWith("'"))
+            label = label.substring(1);
+        if (label.endsWith("'"))
+            label = label.substring(0,label.length()-1);
+        // Ad hoc rank syntax Class=Amphibia
+        pos = label.indexOf('=');
+        if (pos > 0) {
+            node.rank = label.substring(0,pos).toLowerCase();
+            node.setName(label.substring(pos+1));
+        } else {
+            node.rank = Taxonomy.NO_RANK;
+            node.setName(label);
+        }
+    }
 
 	static PrintStream openw(String filename) throws IOException {
 		PrintStream out;
@@ -1540,8 +1591,14 @@ public abstract class Taxonomy implements Iterable<Taxon> {
     }
 
     // Merge a source taxonomy into this taxonomy
+    // Deprecated
     public void absorb(SourceTaxonomy tax, String tag) {
         tax.tag = tag;
+        this.absorb(tax);
+    }
+
+    // Not deprecated (prefix now passed to getTaxonomy)
+    public void absorb(SourceTaxonomy tax) {
         ((UnionTaxonomy)this).mergeIn(tax);
     }
 

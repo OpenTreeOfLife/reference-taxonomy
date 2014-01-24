@@ -1,0 +1,16 @@
+There should be two Cyanobacteria, not three
+
+There should be two Buchnera, not one
+
+Should be major_rank_conflict, if GBIF is hidden:
+  Amerostege, Anomothallus, Cleistocybe
+
+Should be major_rank_conflict:
+  Actycus
+
+Should not be barren:
+  Prochlorococcus marinus str. PAC1
+and ideally it should be linked to SILVA, but who knows.
+
+Veronica
+  is not extinct

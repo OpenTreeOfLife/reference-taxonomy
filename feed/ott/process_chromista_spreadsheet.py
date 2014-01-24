@@ -9,16 +9,21 @@ with open('feed/ott/chromista-spreadsheet.csv', 'rb') as csvfile:
     print '# coding=utf-8'
     print
     print 'def fixonetaxon(tax, taxon, current, proposed):'
+    print '    curr = tax.taxon(taxon, current)'
     print '    prop = tax.taxon(proposed)'
-    print '    if prop != None:'
-    print '        prop.take(tax.taxon(taxon, current))'
+    print '    if (prop != None) and (curr != None) and (curr.getParent() != prop):'
+    print '        if (curr.getParent() != tax.taxon(current)):'
+    print '            print "** Parent altered by IRMNG:", curr, curr.getParent(), prop'
+    print '        else:'
+    print '            prop.take(curr)'
     print
+
     print "def fixChromista(tax):"
     for row in csvreader:
         taxon = row[0].strip()
         currentparent = row[1].strip()
         proposed = row[2].strip()
-        if taxon != '' and proposed != '':
+        if taxon != '' and proposed != '' and not ('incertae' in proposed):
             reference = row[3].strip()
             notes = row[4].strip()
 

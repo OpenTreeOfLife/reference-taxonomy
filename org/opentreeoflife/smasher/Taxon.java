@@ -127,7 +127,7 @@ public class Taxon {
 			System.err.println("Attempt to replace id " + this.id + " with " + id);
 	}
 
-	Taxon getParent() {
+	public Taxon getParent() {
 		return parent;
 	}
 

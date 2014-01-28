@@ -7,15 +7,15 @@ from chromista_spreadsheet import fixChromista
 
 ott = Taxonomy.newTaxonomy()
 
+h2007 = Taxonomy.getNewick('feed/h2007/tree.tre', 'h2007')
+ott.absorb(h2007)
+
 silva = Taxonomy.getTaxonomy('tax/silva/', 'silva')
 ott.absorb(silva)
 
 study713  = Taxonomy.getTaxonomy('tax/713/', 'study713')
 ott.notSame(study713.taxon('Buchnera'), silva.taxon('Buchnera'))
 ott.absorb(study713)
-
-h2007 = Taxonomy.getNewick('feed/h2007/tree.tre', 'h2007')
-ott.absorb(h2007)
 
 fung  = Taxonomy.getTaxonomy('tax/if/', 'if')
 fung.smush()
@@ -31,6 +31,10 @@ ott.notSame(ncbi.taxon('Perezia'), fung.taxon('Perezia'))
 ncbi.analyzeOTUs()
 ott.absorb(ncbi)
 
+# 2014-01-27 Joseph: Quiscalus is incorrectly in Fringillidae instead
+# of Icteridae.  NCBI is wrong, GBIF is correct.
+ott.taxon('Icteridae').take(ott.taxon('Quiscalus', 'Fringillidae'))
+
 # Misspelling in GBIF
 # ott.taxon("Torricelliaceae").synonym("Toricelliaceae")
 
@@ -43,12 +47,18 @@ ott.same(ncbi.taxon('29178'), gbif.taxon('389'))  # Foraminifera
 gbif.analyzeMajorRankConflicts()
 ott.absorb(gbif)
 
+ott.taxon('Parulidae').take(ott.taxon('Myiothlypis', 'Passeriformes'))
+
 irmng = Taxonomy.getTaxonomy('tax/irmng/', 'irmng')
 irmng.smush()
 irmng.taxon('Fungi').hideDescendants()
 ott.same(gbif.taxon('3172047'), irmng.taxon('1381293'))  # Veronica
 irmng.analyzeMajorRankConflicts()
 ott.absorb(irmng)
+
+ott.taxon('Thamnophilus bernardi').absorb(ott.taxon('Sakesphorus bernardi'))
+ott.taxon('Thamnophilus melanonotus').absorb(ott.taxon('Sakesphorus melanonotus'))
+ott.taxon('Thamnophilus melanothorax').absorb(ott.taxon('Sakesphorus melanothorax'))
 
 fixChromista(ott)
 

@@ -158,9 +158,8 @@ public class Smasher {
     static void jython(String source) {
         if (source.equals("-")) {
             System.out.format("Consider doing:\nfrom org.opentreeoflife.smasher import Taxonomy\n");
-            // This doesn't work
-            // InteractiveInterpreter j = new InteractiveInterpreter(); j.interact();
-            String[] jargs = {}; org.python.util.jython.main(jargs);
+			org.python.util.InteractiveConsole j = new org.python.util.JLineConsole();
+			j.interact();
         } else {
             PythonInterpreter j = new PythonInterpreter();
             j.execfile(source);

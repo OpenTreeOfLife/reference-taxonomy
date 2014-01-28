@@ -1026,6 +1026,10 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("tattered");
 		}
+		if ((node.inheritedFlags & TATTERED) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("tattered_inherited");
+		}
 
 		if ((node.properFlags & EDITED) != 0) {
 			if (needComma) out.print(","); else needComma = true;

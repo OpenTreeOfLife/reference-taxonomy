@@ -1,3 +1,18 @@
+For 2.4.draft15 (2014-01-28):
+
+* Hibbett 2007 upper fungal taxonomy
+* Spreadsheet of assignments for Chromista and Protozoa (in progress)
+* "Deforestation" removes all but one tree
+* Improved rank merging
+* "major rank conflict" flagging is now restricted to IF and GBIF
+* IRMNG and extinct determinations
+* Fixed a bug in 'refinementp' that led to spurious taxon insertions
+* Diacritic normalization (normal form is without diacritics)
+
+* Scripting via jython
+* A suite of operators is now available for use from jython scripts
+
+-----
 For 2.4.draft3 (2014-01-06):
 
 * Fixed a bug in synonym processing (it copied from source taxonomy to

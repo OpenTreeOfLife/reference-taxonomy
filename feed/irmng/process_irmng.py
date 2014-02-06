@@ -46,13 +46,13 @@ not_extinct = ['1530',     # Actinopterygii
 			   '1531',	   # Sarcopterygii
 			   '10565',    # Saurischia
 			   '11919',	   # Didelphimorphia
-			   '1170022',  # Tipuloidea
-			   '1340611',  # Retaria
-			   '1124871',  # Labyrinthulomycetes
-			   '102024',   # Ophiurinidae
-			   '1064058',  # Rhynchonelloidea
+			   #'1170022',  # Tipuloidea
+			   #'1340611',  # Retaria
+			   #'1124871',  # Labyrinthulomycetes [Labyrinthomorpha??]
+			   #'102024',   # Ophiurinidae - problem is Ophiurina
+			   #'1064058',  # Rhynchonelloidea genus/superfamily
 			   '1021564',  # Cruciplacolithus
-			   '1114655',  # Tetrasphaera
+			   #'1114655',  # Tetrasphaera - different from GBIF
 			   ]
 
 with open(sys.argv[2], 'rb') as csvfile:

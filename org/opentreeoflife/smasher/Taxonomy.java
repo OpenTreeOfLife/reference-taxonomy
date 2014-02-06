@@ -620,16 +620,16 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 					if (type.equals("type material")) continue;
 					if (type.equals("authority")) continue;    // keep?
 					if (node == null) {
-						if (++losers < 20)
+						if (++losers < 10)
 							System.err.println("Identifier " + id + " unrecognized for synonym " + syn);
-						else if (losers == 20)
+						else if (losers == 10)
 							System.err.println("...");
 						continue;
 					}
 					if (node.name.equals(syn)) {
-						if (++losers < 20)
+						if (++losers < 10)
 							System.err.println("Putative synonym " + syn + " is the primary name of " + id);
-						else if (losers == 20)
+						else if (losers == 10)
 							System.err.println("...");
 						continue;
 					}
@@ -903,28 +903,25 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		node.inheritedFlags |= inheritedFlags;
 		boolean elidep = false;
 
-		if (node.children != null) {
-
-			if (unclassifiedRegex.matcher(node.name).find()) {// Rule 3+5
-				node.properFlags |= UNCLASSIFIED;
-				elidep = true;
-			}
-			if (environmentalRegex.matcher(node.name).find()) {// Rule 3+5
-				node.properFlags |= ENVIRONMENTAL;
-				elidep = true;
-			}
-			if (incertae_sedisRegex.matcher(node.name).find()) {// Rule 3+5
-				node.properFlags |= INCERTAE_SEDIS;
-				elidep = true;
-			}
+		if (unclassifiedRegex.matcher(node.name).find()) {// Rule 3+5
+			node.properFlags |= UNCLASSIFIED;
+			elidep = true;
+		}
+		if (environmentalRegex.matcher(node.name).find()) {// Rule 3+5
+			node.properFlags |= ENVIRONMENTAL;
+			elidep = true;
+		}
+		if (incertae_sedisRegex.matcher(node.name).find()) {// Rule 3+5
+			node.properFlags |= INCERTAE_SEDIS;
+			elidep = true;
 		}
 
-		int bequest = inheritedFlags | node.properFlags;		// What the children inherit
-
 		// Recursive descent
-		if (node.children != null)
+		if (node.children != null) {
+			int bequest = inheritedFlags | node.properFlags;		// What the children inherit
 			for (Taxon child : new ArrayList<Taxon>(node.children))
 				analyzeContainers(child, bequest);
+		}
 
 		// After
 		if (elidep) {
@@ -949,12 +946,15 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				anyspeciesp = true;
 			}
 		}
-        if (node.children != null)
+        if (node.children != null) {
+			boolean allextinct = true;     // Any descendant is extant?
 			for (Taxon child : node.children) {
 				analyzeBarren(child);
 				if ((child.properFlags & ANYSPECIES) != 0) anyspeciesp = true;
+				if ((child.properFlags & EXTINCT) == 0) allextinct = false;
 			}
-		else if (node.rank == Taxonomy.NO_RANK)
+			if (allextinct) node.properFlags |= EXTINCT;
+		} else if (node.rank == Taxonomy.NO_RANK)
 			anyspeciesp = true;
 		if (anyspeciesp) node.properFlags |= ANYSPECIES;
 	}
@@ -1091,7 +1091,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		Pattern.compile(
 						"\\bmycorrhizal samples\\b|" +
 						"\\buncultured\\b|" +
-						"\\bunclassified\\b|" +
+						"\\b[Uu]nclassified\\b|" +
 						"\\bendophyte\\b|" +
 						"\\bendophytic\\b"
 						);
@@ -1634,11 +1634,27 @@ public abstract class Taxonomy implements Iterable<Taxon> {
         if (nodes == null) {
             System.err.format("** No taxon with name %s in context %s\n", name, context);
             return null;
-        } else if (nodes.size() > 1) {
-            System.err.format("** Ambiguous taxon name %s in context %s\n", name, context);
-            return null;
+        } else if (nodes.size() == 1)
+			return nodes.get(0);
+		else {
+			Taxon candidate = null;
+			// Chaetognatha
+			for (Taxon node : nodes)
+				if (node.parent != null && node.parent.name.equals(context))
+					if (candidate == null)
+						candidate = node;
+					else {
+						candidate = null;
+						break;
+					}
+			if (candidate != null)
+				return candidate;
+			else {
+				System.err.format("** Ambiguous taxon name %s in context %s\n", name, context);
+				return null;
+			}
         }
-        return nodes.get(0);
+
     }
 
     public Taxon newTaxon(String name, String rank, String sourceIds) {
@@ -1646,7 +1662,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			System.err.format("** Warning: A taxon by the name of %s already exists\n", name);
         Taxon t = new Taxon(this);
         t.setName(name);
-        t.rank = rank;
+		if (!rank.equals("no rank"))
+			t.rank = rank;
         t.setSourceIds(sourceIds);
         return t;
     }
@@ -2153,6 +2170,7 @@ class UnionTaxonomy extends Taxonomy {
         Set<String> scrutinize = null;
 		if (this.idsource != null) 
 			scrutinize = this.dumpDeprecated(this.idsource, outprefix + "deprecated.tsv");
+		scrutinize.add("Methanococcus maripaludis");
 		this.dumpLog(outprefix + "log.tsv", scrutinize);
 
 		this.dumpNodes(this.roots, outprefix);

@@ -223,14 +223,24 @@ public class Taxon {
 	// node.
 
 	void unifyWithNew(Taxon unode) {
-		this.unifyWithAux(unode);
+		this.reallyUnifyWith(unode);
+		if (unode.name == null) unode.setName(this.name);
+		if (unode.rank == Taxonomy.NO_RANK) unode.rank = this.rank;
 		unode.properFlags = this.properFlags;
 	}
 
 	// unode is a preexisting node in the union taxonomy.
 
 	void unifyWith(Taxon unode) {
-		this.unifyWithAux(unode);
+		this.reallyUnifyWith(unode);
+
+		if (this.taxonomy == ((UnionTaxonomy)(unode.taxonomy)).idsource)
+			return;
+
+		if (this.rank != Taxonomy.NO_RANK)
+			if (unode.rank == Taxonomy.NO_RANK || unode.rank.equals("samples"))
+				unode.rank = this.rank;
+
 		int before = unode.properFlags;
 		// Most flags are combined using &
 		unode.properFlags &= this.properFlags;
@@ -244,10 +254,10 @@ public class Taxon {
 			(before & Taxonomy.MAJOR_RANK_CONFLICT);
 	}
 
-	void unifyWithAux(Taxon unode) {
+	void reallyUnifyWith(Taxon unode) {
 		if (this.mapped == unode) return; // redundant
 		if (this.mapped != null) {
-			// Shouldn't happen - assigning single source taxon to two
+			// Shouldn't happen - assigning a single source taxon to two
 			//	different union taxa
 			if (this.report("Already assigned to node in union:", unode))
 				Taxon.backtrace();
@@ -258,11 +268,6 @@ public class Taxon {
 			this.report("Union node already mapped tog, creating synonym", unode);
 		}
 		this.mapped = unode;
-
-		if (unode.name == null) unode.setName(this.name);
-		if (this.rank != Taxonomy.NO_RANK)
-			if (unode.rank == Taxonomy.NO_RANK || unode.rank.equals("samples"))
-				unode.rank = this.rank;
 		unode.comapped = this;
 	}
 
@@ -1106,6 +1111,11 @@ public class Taxon {
         }
     }
 
+	public void hide() {
+		this.properFlags = Taxonomy.HIDDEN;
+		this.hideDescendants();
+	}
+
 	public void hideDescendants() {
 		if (this.children != null)
 			for (Taxon child : this.children) {
@@ -1120,20 +1130,23 @@ public class Taxon {
 
     public void rename(String name) {
         String oldname = this.name;
-        this.setName(name);
-        this.taxonomy.addSynonym(oldname, this);  // awkward
+		if (!oldname.equals(name)) {
+			this.setName(name);
+			this.taxonomy.addSynonym(oldname, this);  // awkward
+		}
     }
 
     // prune() is elsewhere
 
     public void elide() {
-        if (this.children != null)
-            System.err.format("** %s has no children\n", this);
-        else if (this.parent == null)
+        if (this.parent == null)
             System.err.format("** %s is a root\n", this);
-        else {
-            for (Taxon child : new ArrayList<Taxon>(this.children))
-                child.changeParent(this.parent);
+		else {
+			if (this.children == null)
+				System.err.format("** Warning: %s has no children\n", this);
+			else
+				for (Taxon child : new ArrayList<Taxon>(this.children))
+					child.changeParent(this.parent);
             this.prune();
         }
     }
@@ -1141,14 +1154,16 @@ public class Taxon {
     // Move all of B's children to A, and make B a synonym of A
 
     public void absorb(Taxon other) {
+		if (other == null) return; //error already reported
 		if (this.taxonomy != other.taxonomy) {
             System.err.format("** %s and %s aren't in the same taxonomy\n", other, this);
 			return;
 		}
         if (other.children != null)
-            for (Taxon child: other.children)
+            for (Taxon child : new ArrayList<Taxon>(other.children))
+				// beware concurrent modification
                 child.changeParent(this.parent);
-        this.synonym(other.name);   // Not sure this is a good idea
+        //this.synonym(other.name);   // Not sure this is a good idea
         other.prune();
     }
 
@@ -1159,6 +1174,10 @@ public class Taxon {
     public void incertaeSedis() {
         this.properFlags |= Taxonomy.INCERTAE_SEDIS;
     }
+
+	public void extinct() {
+        this.properFlags |= Taxonomy.EXTINCT;
+	}
 
     // add a tree to the forest?
 

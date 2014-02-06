@@ -5,7 +5,7 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.4.draft15
+WHICH=2.4.draft18
 PREV_WHICH=2.3
 
 #  $^ = all prerequisites
@@ -69,10 +69,7 @@ tax/ott/log.tsv: $(CLASS) feed/ott/ott.py $(SILVA)/taxonomy.tsv \
 	$(BIG_JAVA) $(SMASH) --jython feed/ott/ott.py
 	echo $(WHICH) >tax/ott/version.txt
 
-tax/if/foo: tax/if/taxonomy.tsv tax/if/synonyms.tsv
-	cp -p feed/if/about.json tax/if/
-
-tax/if/taxonomy.tsv: tax/if/synonyms.tsv
+tax/if/taxonomy.tsv: tax/if/synonyms.tsv tax/if/about.json
 	@mkdir -p `dirname $@`
 	wget --output-document=$@ http://files.opentreeoflife.org/ott/IF/taxonomy.tsv
 	@ls -l $@
@@ -81,6 +78,10 @@ tax/if/synonyms.tsv:
 	@mkdir -p `dirname $@`
 	wget --output-document=$@ http://files.opentreeoflife.org/ott/IF/synonyms.tsv
 	@ls -l $@
+
+tax/if/about.json:
+	@mkdir -p `dirname $@`
+	cp -p feed/if/about.json tax/if/
 
 # Create the aux (preottol) mapping in a separate step.
 # How does it know where to write to?

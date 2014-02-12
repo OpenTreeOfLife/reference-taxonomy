@@ -15,3 +15,12 @@
 # E.g. (without the # signs)
 #command	name	rank	parent	context	sourceInfo
 #add	Acanthotrema frischii	species	Acanthotrema	Fungi	if:516851
+
+command	name	rank	Parent	context	sourceinfo
+move	Oligotrichida 	order	Spirotrichea	class	GBIF: 388
+move	Metacyclididae	family	Tintinnida	order	GBIF: 6143093
+move	Petalotrichidae	family	Tintinnida	order	GBIF: 6570
+move	Halteriida	order	Stichotrichia	subclass	GBIF: 6142494
+move	Fenchelia	genus	Scuticociliatida	subclass	GBIF: 4894402
+move	Phacodinium	genus	Heterotrichea	class	SILVA: AJ277877/#7
+move	Rhizomastix libera	species	Archamoebae	no rank	NCBI: 1211407

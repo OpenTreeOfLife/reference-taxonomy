@@ -15,3 +15,9 @@
 # E.g. (without the # signs)
 #command	name	rank	parent	context	sourceInfo
 #add	Acanthotrema frischii	species	Acanthotrema	Fungi	if:516851
+#move	Oligotrichida 	class	Spirotrichea
+#move	Metacyclididae	order	Tintinnida
+#move	Petalotrichidae	order	Tintinnida
+#move	Halteriida	subclass	Stichotrichia
+#move	Fenchelia	subclass	Scuticociliatida
+#move	Phacodinium	class	Heterotrichea

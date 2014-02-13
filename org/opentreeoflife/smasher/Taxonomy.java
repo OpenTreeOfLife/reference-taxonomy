@@ -1098,7 +1098,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	static Pattern environmentalRegex = Pattern.compile("\\benvironmental\\b");
 
-	static Pattern incertae_sedisRegex = Pattern.compile("\\bincertae sedis\\b|\\bIncertae sedis\\b|\\bIncertae Sedis\\b");
+	static Pattern incertae_sedisRegex =
+		Pattern.compile("\\bincertae sedis\\b|\\bIncertae sedis\\b|\\bIncertae Sedis\\b|(unallocated)");
 
 	static String[][] rankStrings = {
 		{"domain",

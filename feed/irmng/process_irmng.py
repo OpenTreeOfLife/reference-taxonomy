@@ -20,6 +20,7 @@ with open(sys.argv[1], 'rb') as csvfile:
 	for row in csvreader:
 		taxonid = row[0]
 		longname = row[1]
+		auth = row[2]
 		genus = row[3]
 		family = row[5]
 		rank = row[6]
@@ -36,9 +37,13 @@ with open(sys.argv[1], 'rb') as csvfile:
 			name = genus
 		elif rank == 'family':
 			name = family
-		else:	
+		elif len(auth) > 0 and longname.endswith(auth):
+			name = longname[0:len(longname)-len(auth)-1]
+		else:
 			name = longname
 		taxa[taxonid] = (parent, name, rank)
+
+# "10704","Decapoda Latreille, 1802","Latreille, 1802",,,,"order",,,,,,,"Malacostraca","1190","cf. Decapoda (Mollusca)","01-01-2012","ICZN"
 
 extinctp = {}
 

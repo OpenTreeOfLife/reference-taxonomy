@@ -138,8 +138,8 @@ ott.taxon('Scapaniaceae').absorb(ott.taxon('Lophoziaceae'))
 
 #  Make an order Boraginales that contains Boraginaceae + Hydrophyllaceae
 #  http://dx.doi.org/10.1111/cla.12061
-ott.taxon('Hydrophyllaceae').absorb(ott.taxon('Boraginaceae'))
-ott.taxon('Boraginales').take(ott.taxon('Hydrophyllaceae'))
+ott.taxon('Boraginaceae').absorb(ott.taxon('Hydrophyllaceae'))
+ott.taxon('Boraginales').take(ott.taxon('Boraginaceae'))
 ott.taxon('lamiids').take(ott.taxon('Boraginales'))
 
 # Vahlia 26024 <- Vahliaceae 23372 <- lammids 596112 (was incertae sedis)
@@ -165,7 +165,6 @@ ott.taxon('Magnoliophyta').take(ott.taxon('Archaefructus'))
 ott.taxon('eudicotyledons').take(ott.taxon('Phyllites'))
 
 ott.taxon('Oleaceae').extinct()
-
 
 # Finish up
 

@@ -7,6 +7,7 @@
 # If you want to put multiple sourceInfos, separate with commas,
 # without any intervening spaces.
 # Rank should be in lower case; use 'no rank' if unknown or rank-free.
+# Provide citations, URLs, or other evidence in comments.
 #
 # Commands are add, move, synonym, prune, fold, flag
 #
@@ -15,12 +16,4 @@
 # E.g. (without the # signs)
 #command	name	rank	parent	context	sourceInfo
 #add	Acanthotrema frischii	species	Acanthotrema	Fungi	if:516851
-
-command	name	rank	Parent	context	sourceinfo
-move	Oligotrichida 	order	Spirotrichea	class	GBIF: 388
-move	Metacyclididae	family	Tintinnida	order	GBIF: 6143093
-move	Petalotrichidae	family	Tintinnida	order	GBIF: 6570
-move	Halteriida	order	Stichotrichia	subclass	GBIF: 6142494
-move	Fenchelia	genus	Scuticociliatida	subclass	GBIF: 4894402
-move	Phacodinium	genus	Heterotrichea	class	SILVA: AJ277877/#7
-move	Rhizomastix libera	species	Archamoebae	no rank	NCBI: 1211407
+#

@@ -423,6 +423,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 								   row + " rows, but only " + 
 								   total + " reachable from roots");
 		}
+		this.elideDubiousIntermediateTaxa();
 	}
 
     // From stackoverflow
@@ -447,6 +448,28 @@ public abstract class Taxonomy implements Iterable<Taxon> {
         System.out.println();
     }
     */
+
+	void elideDubiousIntermediateTaxa() {
+		Set<Taxon> dubious = new HashSet<Taxon>();
+		for (Taxon node : this)
+			if (node.parent != null &&
+				node.parent.children.size() == 1 &&
+				node.children != null)
+				if (incertae_sedisRegex.matcher(node.name).find())
+					dubious.add(node);
+				else if (node.parent.name.equals(node.name))
+					dubious.add(node);
+		for (Taxon node: dubious) {
+			System.out.format("! Eliding %s in %s, %s children\n",
+							  node.name,
+							  node.parent.name,
+							  (node.children == null ?
+							   "no" :
+							   node.children.size())
+							  );
+			node.elide();
+		}
+	}
 
     // Fold sibling homonyms together into single taxa.
     // Optional step.
@@ -1098,7 +1121,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	static Pattern environmentalRegex = Pattern.compile("\\benvironmental\\b");
 
-	static Pattern incertae_sedisRegex = Pattern.compile("\\bincertae sedis\\b|\\bIncertae sedis\\b|\\bIncertae Sedis\\b");
+	static Pattern incertae_sedisRegex =
+		Pattern.compile("\\bincertae sedis\\b|\\bIncertae sedis\\b|\\bIncertae Sedis\\b|(unallocated)");
 
 	static String[][] rankStrings = {
 		{"domain",
@@ -1468,25 +1492,25 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	// E.g. add	Acanthotrema frischii	species	Acanthotrema	Fungi	IF:516851
 
 	void applyOneEdit(String[] row) {
-		String command = row[0];
-		String name = row[1];
-		String rank = row[2];
-		String parentName = row[3];
-		String contextName = row[4];
-		String sourceInfo = row[5];
+		String command = row[0].trim();
+		String name = row[1].trim();
+		String rank = row[2].trim();
+		String parentName = row[3].trim();
+		String contextName = row[4].trim();
+		String sourceInfo = row[5].trim();
 
 		List<Taxon> parents = filterByContext(parentName, contextName);
 		if (parents == null) {
-			System.err.println("(add) Parent name " + parentName
+			System.err.println("! Parent name " + parentName
 							   + " missing in context " + contextName);
 			return;
 		}
 		if (parents.size() > 1)
 			System.err.println("? Ambiguous parent name: " + parentName);
-        Taxon parent = parents.get(0);
+        Taxon parent = parents.get(0);    //this.taxon(parentName, contextName)
 
 		if (!parent.name.equals(parentName))
-			System.err.println("(add) Warning: parent taxon name is a synonym: " + parentName);
+			System.err.println("! Warning: parent taxon name is a synonym: " + parentName);
 
 		List<Taxon> existings = filterByContext(name, contextName);
         Taxon existing = null;
@@ -1498,9 +1522,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 		if (command.equals("add")) {
 			if (existing != null) {
-				System.err.println("(add) Warning: taxon already present: " + name);
+				System.err.println("! (add) Warning: taxon already present: " + name);
 				if (existing.parent != parent)
-					System.err.println("(add)  ... with a different parent: " +
+					System.err.println("! (add)  ... with a different parent: " +
 									   existing.parent.name + " not " + parentName);
 			} else {
 				Taxon node = new Taxon(this);
@@ -1512,10 +1536,10 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			}
 		} else if (command.equals("move")) {
 			if (existing == null)
-				System.err.println("(move) No taxon to move: " + name);
+				System.err.println("! (move) No taxon to move: " + name);
 			else {
 				if (existing.parent == parent)
-					System.err.println("(move) Note: already in the right place: " + name);
+					System.err.println("! (move) Note: already in the right place: " + name);
 				else {
 					// TBD: CYCLE PREVENTION!
 					existing.changeParent(parent);
@@ -1524,13 +1548,13 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			}
 		} else if (command.equals("prune")) {
 			if (existing == null)
-				System.err.println("(prune) No taxon to prune: " + name);
+				System.err.println("! (prune) No taxon to prune: " + name);
 			else
 				existing.prune();
 
 		} else if (command.equals("fold")) {
 			if (existing == null)
-				System.err.println("(fold) No taxon to fold: " + name);
+				System.err.println("! (fold) No taxon to fold: " + name);
 			else {
 				if (existing.children != null)
 					for (Taxon child: existing.children)
@@ -1576,6 +1600,65 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				}
 		}
 		return fnodes.size() == 0 ? null : fnodes;
+	}
+
+	public void parentChildHomonymReport() {
+		for (Taxon node : this)
+			if (node.parent != null &&
+				node.parent.name.equals(node.name))
+				System.out.format("%s\t%s%s\n",
+								  node.name,
+								  node.getSourceIdsString(),
+								  (node.children == null ?
+								   "\tNO CHILDREN" :
+								   (node.children.size() == 1 ?
+									"\tONE CHILD" :
+									(node.parent.children.size() == 1 ?
+									 // This is the important case
+									 "\tNO COUSINS" : "")))
+								  );
+	}
+
+	// ea vs. ae
+	// ioideae vs. oidae
+	// ceae vs. cae
+	// deae vs. dae
+
+	public void spellingVariationReport() {
+		for (String name : this.nameIndex.keySet())
+			if (name.endsWith("ae")) {
+				List<Taxon> sheep = this.lookup(name);
+				if (sheep == null) continue;
+				{   boolean win = false;
+					for (Taxon n : sheep) if (n.name.equals(name)) win = true;
+					if (!win) continue;   }
+
+				String namea = name.substring(0,name.length()-2) + "ea";
+				List<Taxon> goats = this.lookup(namea);
+				if (goats == null) continue;
+				{   boolean win = false;
+					for (Taxon n : goats) if (n.name.equals(namea)) win = true;
+					if (!win) continue;   }
+
+				if (sheep != null && goats != null) {
+					for (Taxon sh : sheep)
+						if (sh.name.equals(name))
+							for (Taxon gt : goats)
+								if (gt.name.equals(namea)) {
+									String shp = (sh.parent != null ? sh.parent.name : "(root)");
+									String gtp = (gt.parent != null ? gt.parent.name : "(root)");
+									System.out.format("%s in %s from %s ",
+													  sh.name,
+													  shp,
+													  sh.getSourceIdsString());
+									System.out.format(" %s%s in %s from %s\n",
+													  (shp.equals(gtp) ? "* " : ""),
+													  gt.name,
+													  gtp,
+													  gt.getSourceIdsString());
+								}
+				}
+			}
 	}
 
     // ----- Methods for use in jython scripts -----

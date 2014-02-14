@@ -1,6 +1,5 @@
 Taxon  ,Current Parent,Proposed Parent,Reference,Notes,,,http://ec2-54-212-144-245.us-west-2.compute.amazonaws.com/opentree/argus/otol.draft.22@4/cellular-organisms
 Nodulinella,Chromista,Foraminifera,WORMS,,,,
-Adlerocystis,Chromista,Fungi,http://www.mycobank.org/,genus may not be valid,,,
 Alfredinidae,Chromista,Asterigerinidae,WORMS,Proposed parent is not in OTT,Asterigerinidae is in OTT,,
 Almaenidae,Chromista,Nonionoidea,WORMS,,,,
 Radiozoa,Chromista,Rhizaria,WORMS,,,,

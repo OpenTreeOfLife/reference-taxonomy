@@ -1,0 +1,10 @@
+#command	name	rank	parent	context	sourceinfo
+# Changes provided by Dail Laughinghouse on 12 February 2014
+move	Oligotrichida	order	Spirotrichea	life	gbif:388
+move	Metacyclididae	family	Tintinnida	life	gbif:6143093
+move	Petalotrichidae	family	Tintinnida	life	gbif:6570
+move	Halteriida	order	Stichotrichia	life	gbif:6142494
+# JAR corrected 'Scuticociliata' to 'Scuticociliatia'
+move	Fenchelia	genus	Scuticociliatia	life	gbif:4894402
+move	Phacodinium	genus	Heterotrichea	life	silva:AJ277877/#7
+move	Rhizomastix libera	species	Archamoebae	life	ncbi:1211407

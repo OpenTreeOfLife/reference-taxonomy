@@ -14,9 +14,9 @@ import java.util.Collection;
 import java.io.File;
 
 public class Taxon {
-	String id = null;
-	Taxon parent = null;
-	String name, rank = null;
+	public String id = null;
+	public Taxon parent = null;
+	public String name, rank = null;
 	List<Taxon> children = null;
 	Taxonomy taxonomy;			// For subsumption checks etc.
 	String auxids = null;		// preottol id from taxonomy file, if any
@@ -1152,6 +1152,7 @@ public class Taxon {
     }
 
     // Move all of B's children to A, and make B a synonym of A
+	// Same as take + elide ?
 
     public void absorb(Taxon other) {
 		if (other == null) return; //error already reported

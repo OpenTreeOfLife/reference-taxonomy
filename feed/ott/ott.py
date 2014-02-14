@@ -11,6 +11,14 @@ h2007 = Taxonomy.getNewick('feed/h2007/tree.tre', 'h2007')
 ott.absorb(h2007)
 
 silva = Taxonomy.getTaxonomy('tax/silva/', 'silva')
+# Arbitrary choices here to eliminate ambiguities down the road
+# Note order dependence between the following two
+silva.taxon('Intramacronucleata','Intramacronucleata').rename('Intramacronucleata inf.')
+silva.taxon('Spirotrichea','Intramacronucleata inf.').rename('Spirotrichea inf.')
+silva.taxon('Cyanobacteria','Bacteria').rename('Cyanobacteria sup.')
+silva.taxon('Actinobacteria','Bacteria').rename('Actinobacteria sup.')
+silva.taxon('Acidobacteria','Bacteria').rename('Acidobacteria sup.')
+silva.taxon('Ochromonas','Ochromonadales').rename('Ochromonas sup.')
 ott.absorb(silva)
 
 study713  = Taxonomy.getTaxonomy('tax/713/', 'study713')
@@ -24,12 +32,11 @@ ott.absorb(fung)
 
 ncbi  = Taxonomy.getTaxonomy('tax/ncbi/', 'ncbi')
 ncbi.taxon('Fungi').hideDescendants()
-ott.same(ncbi.taxon('Cyanobacteria'), silva.taxon('D88288/#3'))
+#ott.same(ncbi.taxon('Cyanobacteria'), silva.taxon('D88288/#3'))
 ott.notSame(ncbi.taxon('Burkea'), fung.taxon('Burkea'))
 ott.notSame(ncbi.taxon('Coscinium'), fung.taxon('Coscinium'))
 ott.notSame(ncbi.taxon('Perezia'), fung.taxon('Perezia'))
-# This one should be temporary, might change with SILVA 117.
-ott.same(silva.taxon('X85212/#6'), ncbi.taxon('Tetrasphaera','Intrasporangiaceae'))
+ott.same(silva.taxon('Tetrasphaera','Intrasporangiaceae'), ncbi.taxon('Tetrasphaera','Intrasporangiaceae'))
 ncbi.analyzeOTUs()
 ott.absorb(ncbi)
 
@@ -43,7 +50,7 @@ ott.taxon('Icteridae').take(ott.taxon('Quiscalus', 'Fringillidae'))
 gbif  = Taxonomy.getTaxonomy('tax/gbif/', 'gbif')
 gbif.smush()
 gbif.taxon('Fungi').hideDescendants()
-ott.same(gbif.taxon('Cyanobacteria'), silva.taxon('D88288/#3'))
+ott.same(gbif.taxon('Cyanobacteria'), silva.taxon('Cyanobacteria','Cyanobacteria')) #'D88288/#3'
 ott.same(ncbi.taxon('5878'), gbif.taxon('10'))	  # Ciliophora
 ott.same(ncbi.taxon('29178'), gbif.taxon('389'))  # Foraminifera
 ott.same(ncbi.taxon('Tetrasphaera','Intrasporangiaceae'), gbif.taxon('Tetrasphaera','Intrasporangiaceae'))
@@ -113,6 +120,12 @@ ott.taxon('Pteridophyta','Chloroplastida').incertaeSedis()
 ott.taxon('Gymnospermophyta','Chloroplastida').incertaeSedis()
 
 fixChromista(ott)
+
+# From Laura and Dail on 5 Feb 2014
+ott.taxon('Chlamydiae/Verrucomicrobia group').rename('Verrucomicrobia group')
+ott.taxon('Diatomea').rename('Bacillariophyta')
+ott.taxon('Heterolobosea','Discicristata').absorb(ott.taxon('Heterolobosea','Percolozoa'))
+ott.taxon('Excavata','Eukaryota').take(ott.taxon('Oxymonadida','Eukaryota'))
 
 # Work in progress - Joseph
 ott.taxon('Reptilia').hide()

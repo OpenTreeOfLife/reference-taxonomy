@@ -1,3 +1,13 @@
+2.4.draft19 (2014-02-27):
+
+* Microbes from GBIF and IRMNG now suppressed
+* Deal with bogus 'incertae sedis' taxa in SILVA
+* Deal with trivial parent/child homonyms in SILVA
+* Remove spurious authority strings from IRMNG order names
+* License and contributors files
+* hide(), extinct(), etc.
+
+-----
 For 2.4.draft15 (2014-01-28):
 
 * Hibbett 2007 upper fungal taxonomy

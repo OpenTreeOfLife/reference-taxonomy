@@ -11,6 +11,8 @@ h2007 = Taxonomy.getNewick('feed/h2007/tree.tre', 'h2007')
 ott.absorb(h2007)
 
 silva = Taxonomy.getTaxonomy('tax/silva/', 'silva')
+
+# Deal with parent/child homonyms
 # Arbitrary choices here to eliminate ambiguities down the road
 # Note order dependence between the following two
 silva.taxon('Intramacronucleata','Intramacronucleata').rename('Intramacronucleata inf.')
@@ -19,6 +21,7 @@ silva.taxon('Cyanobacteria','Bacteria').rename('Cyanobacteria sup.')
 silva.taxon('Actinobacteria','Bacteria').rename('Actinobacteria sup.')
 silva.taxon('Acidobacteria','Bacteria').rename('Acidobacteria sup.')
 silva.taxon('Ochromonas','Ochromonadales').rename('Ochromonas sup.')
+silva.taxon('Tetrasphaera','Tetrasphaera').rename('Tetrasphaera inf.')
 ott.absorb(silva)
 
 study713  = Taxonomy.getTaxonomy('tax/713/', 'study713')
@@ -36,7 +39,6 @@ ncbi.taxon('Fungi').hideDescendants()
 ott.notSame(ncbi.taxon('Burkea'), fung.taxon('Burkea'))
 ott.notSame(ncbi.taxon('Coscinium'), fung.taxon('Coscinium'))
 ott.notSame(ncbi.taxon('Perezia'), fung.taxon('Perezia'))
-ott.same(silva.taxon('Tetrasphaera','Intrasporangiaceae'), ncbi.taxon('Tetrasphaera','Intrasporangiaceae'))
 ncbi.analyzeOTUs()
 ott.absorb(ncbi)
 
@@ -49,8 +51,17 @@ ott.taxon('Icteridae').take(ott.taxon('Quiscalus', 'Fringillidae'))
 
 gbif  = Taxonomy.getTaxonomy('tax/gbif/', 'gbif')
 gbif.smush()
+
+# Fungi suppressed at David Hibbett's request
 gbif.taxon('Fungi').hideDescendants()
-ott.same(gbif.taxon('Cyanobacteria'), silva.taxon('Cyanobacteria','Cyanobacteria')) #'D88288/#3'
+
+# Microbes suppressed at Laura Katz's request
+gbif.taxon('Bacteria','life').hideDescendants()
+gbif.taxon('Protozoa','life').hideDescendants()
+gbif.taxon('Archaea','life').hideDescendants()
+gbif.taxon('Chromista','life').hideDescendants()
+
+#ott.same(gbif.taxon('Cyanobacteria'), silva.taxon('Cyanobacteria','Cyanobacteria')) #'D88288/#3'
 ott.same(ncbi.taxon('5878'), gbif.taxon('10'))	  # Ciliophora
 ott.same(ncbi.taxon('29178'), gbif.taxon('389'))  # Foraminifera
 ott.same(ncbi.taxon('Tetrasphaera','Intrasporangiaceae'), gbif.taxon('Tetrasphaera','Intrasporangiaceae'))
@@ -82,6 +93,17 @@ ott.same(gbif.taxon('6101461'), irmng.taxon('1170022')) # genus Tipuloidea
 ott.same(ncbi.taxon('Tetrasphaera','Intrasporangiaceae'), irmng.taxon('Tetrasphaera','Intrasporangiaceae'))
 ott.same(gbif.taxon('Gorkadinium','Dinophyceae'), irmng.taxon('Gorkadinium','Dinophyceae'))
 irmng.analyzeMajorRankConflicts()
+
+irmng.taxon('Unaccepted').hide()
+
+# Fungi suppressed at David Hibbett's request
+gbif.taxon('Fungi').hideDescendants()
+
+# Microbes suppressed at Laura Katz's request
+irmng.taxon('Bacteria','life').hideDescendants()
+irmng.taxon('Protista','life').hideDescendants()
+irmng.taxon('Archaea','life').hideDescendants()
+
 ott.absorb(irmng)
 
 ott.taxon('Thamnophilus bernardi').absorb(ott.taxon('Sakesphorus bernardi'))
@@ -179,10 +201,16 @@ ott.taxon('eudicotyledons').take(ott.taxon('Phyllites'))
 
 ott.taxon('Oleaceae').extinct()
 
+# Bryan Drew 2014-02-13
+# http://dx.doi.org/10.1007/978-3-540-31051-8_2
+ott.taxon('Alseuosmiaceae').take(ott.taxon('Platyspermation'))
+
 # Finish up
 
 ott.edit('feed/ott/edits/')
 ott.deforestate()
 ott.assignIds(Taxonomy.getTaxonomy('tax/prev_ott/'))
-ott.dump('tax/ott/')
 
+ott.parentChildHomonymReport()
+
+ott.dump('tax/ott/')

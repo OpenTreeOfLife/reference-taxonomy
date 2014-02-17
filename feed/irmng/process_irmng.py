@@ -91,10 +91,13 @@ for taxonid in taxa:
 print >>sys.stderr, "Non-extinct taxa with extinct parent:", count
 
 print '%s\t|\t%s\t|\t%s\t|\t%s\t|\t%s\t|\t'%('uid', 'parent_uid', 'name', 'rank', 'flags')
+print '%s\t|\t%s\t|\t%s\t|\t%s\t|\t%s\t|\t'%('0', '', 'life', 'no rank', '')
 for taxonid in taxa:
 	(parent, name, rank) = taxa[taxonid]
 	if parent in synonyms:
 		parent = synonyms[parent]
+	if parent == '':
+		parent = '0'
 	flags = ''
 	if taxonid in extinctp:
 		flags = 'extinct'

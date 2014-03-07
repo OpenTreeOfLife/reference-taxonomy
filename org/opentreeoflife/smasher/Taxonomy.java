@@ -86,14 +86,10 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		nodes.add(node);
 	}
 
-	int cachedCount = -1;
-
 	public int count() {
-		if (cachedCount > 0) return cachedCount;
 		int total = 0;
 		for (Taxon root : this.roots)
 			total += root.count();
-		cachedCount = total;
 		return total;
 	}
 
@@ -1242,7 +1238,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
         for (Taxon r : this.roots) root = r;    //bad kludge. uniroot assumed
         Taxon newroot = chop(root, m, n, cuttings, tax);
         tax.roots.add(newroot);
-        System.err.format("Cuttings: %s Residue: %s\n", cuttings.size(), newroot.size());
+        System.err.format("Cuttings: %s Residue: %s\n", cuttings.size(), newroot.count());
 
         // Temp kludge ... ought to be able to specify the file name
         String outprefix = "chop/";
@@ -1264,7 +1260,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
         int c = node.count();
         Taxon newnode = node.dup(tax);
         if (m < c && c <= n) {
-            newnode.setName(newnode.name + " (" + node.size() + ")");
+            newnode.setName(newnode.name + " (" + node.count() + ")");
             chopped.add(node);
         } else if (node.children != null)
             for (Taxon child : node.children) {

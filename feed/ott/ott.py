@@ -30,6 +30,10 @@ ott.absorb(study713)
 
 fung  = Taxonomy.getTaxonomy('tax/if/', 'if')
 fung.smush()
+
+# 2014-03-07 Prevent a false match
+ott.notSame(silva.taxon('Phaeosphaeria'), fung.taxon('Phaeosphaeria'))
+
 fung.analyzeMajorRankConflicts()
 ott.absorb(fung)
 
@@ -204,6 +208,30 @@ ott.taxon('Oleaceae').extinct()
 # Bryan Drew 2014-02-13
 # http://dx.doi.org/10.1007/978-3-540-31051-8_2
 ott.taxon('Alseuosmiaceae').take(ott.taxon('Platyspermation'))
+
+# JAR 2014-02-24
+for name in ['Homo sapiens neanderthalensis',
+			 'Homo sapiens ssp. Denisova',
+			 'Homo habilis',
+			 'Homo erectus',
+			 'Homo cepranensis',
+			 'Homo georgicus',
+			 'Homo floresiensis',
+			 'Homo kenyaensis',
+			 'Homo rudolfensis',
+			 'Homo antecessor',
+			 'Homo ergaster',
+			 'Homo okotensis']:
+	ott.taxon(name).extinct()
+
+# JAR 2014-03-07 hack to prevent H.s. from being extinct
+hss = ott.newTaxon('Homo sapiens sapiens', 'subspecies', 'https://en.wikipedia.org/wiki/Homo_sapiens_sapiens')
+ott.taxon('Homo sapiens').take(hss)
+hss.hide()
+
+# Tribolium is incertae sedis in NCBI but we want it to not be hidden.
+# Placement in Tenebrioninae is according to http://bugguide.net/node/view/152 .
+ott.taxon('Tenebrioninae').take(ott.taxon('Tribolium','Coleoptera'))
 
 # Finish up
 

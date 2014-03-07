@@ -20,7 +20,7 @@ public class Taxon {
 	List<Taxon> children = null;
 	Taxonomy taxonomy;			// For subsumption checks etc.
 	String auxids = null;		// preottol id from taxonomy file, if any
-	int size = -1;
+	int count = -1;
 	List<QualifiedId> sourceIds = null;
 	Answer deprecationReason = null;
 	Answer blockedp = null;
@@ -146,6 +146,7 @@ public class Taxon {
 			if (this.children == null)
 				this.children = new ArrayList<Taxon>();
 			this.children.add(child);
+			this.resetCount();  //force recalculation
 		}
 	}
 
@@ -160,9 +161,12 @@ public class Taxon {
 	void changeParent(Taxon newparent) {
 		Taxon p = this.parent;
 		this.parent = null;
-		p.children.remove(this);
-		if (p.children.size() == 0)
-			p.children = null;
+		if (p != null) {
+			p.children.remove(this);
+			if (p.children.size() == 0)
+				p.children = null;
+			p.resetCount();
+		}
 		newparent.addChild(this);
 	}
 
@@ -758,23 +762,23 @@ public class Taxon {
 
 	// Number of child-less nodes at and below this node.
 
-	int size() {
-		if (size < 1) {
-			size = 1;
+	int count() {
+		if (this.count < 1) {
+			this.count = 1;
 			if (children != null)
 				for (Taxon child: children)
-					size += child.size();
+					this.count += child.count();
 		}
-		return size;
+		return this.count;
 	}
 
-	// Brute force count of nodes (more reliable than size() in presence of change)
-	int count() {
-		int count = 1;
-		if (this.children != null)
-			for (Taxon child : this.children)
-				count += child.count();
-		return count;
+	void resetCount() {
+		Taxon n = this;
+		while (n.count > 0) {
+			n.count = -1;
+			if (n.parent == null) break;
+			n = n.parent;
+		}
 	}
 
 	static final int NOT_SET = -7; // for source nodes
@@ -945,11 +949,12 @@ public class Taxon {
 		}
 	};
 
-	// Delete this node and all of its descendents.
+	// Delete this node and all of its descendants.
 	public void prune() {
 		this.trim();
 		if (this.parent != null) {
 			this.parent.children.remove(this);
+			this.parent.resetCount();
 			this.parent.properFlags |= Taxonomy.EDITED;
 			this.parent = null;
 		}
@@ -962,6 +967,7 @@ public class Taxon {
 		this.prunedp = true;  // kludge for indexes
 	}
 
+	// Delete all of this node's descendants.
 	public void trim() {
 		if (this.children != null) {
 			for (Taxon child : new ArrayList<Taxon>(children))

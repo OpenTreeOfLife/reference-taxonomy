@@ -1170,7 +1170,7 @@ public class Taxon {
             for (Taxon child : new ArrayList<Taxon>(other.children))
 				// beware concurrent modification
                 child.changeParent(this.parent);
-        //this.synonym(other.name);   // Not sure this is a good idea
+        this.synonym(other.name);   // Not sure this is a good idea
         other.prune();
     }
 
@@ -1184,6 +1184,11 @@ public class Taxon {
 
 	public void extinct() {
         this.properFlags |= Taxonomy.EXTINCT;
+	}
+
+	public void extant() {
+		for (Taxon node = this; node != null; node = node.parent)
+			this.properFlags &= ~Taxonomy.EXTINCT;
 	}
 
     // add a tree to the forest?

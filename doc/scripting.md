@@ -1,108 +1,164 @@
+# Writing scripts that build taxonomies
 
-The taxonomy build is drive by scripts written in jython.  You can see
-examples in these two locations:
+The 'smasher' program builds taxonomies.  It was written to support
+builds of the Open Tree Reference Taxonomy, but is a general purpose
+tool.  The build process is driven by scripts written in Jython.  You
+can see examples of such scripts in these two locations:
 
     t/aster.py
     feed/ott/ott.py
 
-The first step in a script is to gain access to the needed scripting
-primitives:
+## Running Smasher
 
-    from org.opentreeoflife.smasher import Taxonomy
+To use Smasher, you should clone the reference-taxonomy repository on github:
 
-The build process is invoked as follows
+    git clone git@github.com:OpenTreeOfLife/reference-taxonomy.git
+
+You can of course clone using https: instead of ssh, see 
+[here](https://github.com/OpenTreeOfLife/reference-taxonomy).
+
+To compile Smasher, which is a Java program:
+
+    make compile
+
+(Don't just say 'make' unless you want to build the reference
+taxonomy!  Not for casual use.)
+
+Smasher is invoked as follows
 
     java -classpath ".:lib/*" org.opentreeoflife.smasher.Smasher --jython script.py
 
-Builds of the entire reference taxonomy require a fair amount of
-memory; I've been using -Xmx12G.  See the Makefile for more information.
+where the current directory is the home directory of the repository
+clone, and script.py is the name of a script file.
 
-You can also interact with the jython interpreter and do all of the
-below operations at the command line, just by invoking Smasher without
-arguments.
+For convenience you might want to define a shell alias
 
-Taxonomies
-==========
+    alias smash='java -classpath ".:lib/*" org.opentreeoflife.smasher.Smasher'
+
+You can also interact with the Jython interpreter and play with the
+library interactively, just by invoking Smasher without arguments.
+
+## Using the library
+
+The first step in any build script is to gain access to the Taxonomy
+library:
+
+    from org.opentreeoflife.smasher import Taxonomy
+
+## Taxonomies
 
 Initiate the build by creating a new Taxonomy object:
 
-    ott = Taxonomy.newTaxonomy()
+    tax = Taxonomy.newTaxonomy()
 
 Taxonomies are usually built starting with one or more existing
 taxonomies (although they needn't be):
 
-    ncbi = Taxonomy.getTaxonomy('t/tax/ncbi_aster/')
+    ncbi = Taxonomy.getTaxonomy('t/tax/ncbi_aster/', 'ncbi')
 
 fetches a taxonomy from files (in the format specified by this tool,
 see wiki).  There can be as many of these retrievals as you like.
 
+The first argument is a directory name and must end in a '/'.
+
+The second argument is a short tag that will appear in the
+'sourceinfo' column of the final taxonomy file to notate identifiers
+that came from that taxonomy, e.g. 'ncbi:1234'.
+
+The format of taxonomy files is given [here](https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Interim-taxonomy-file-format).
+
+Taxonomies can also be read and written in Newick syntax.
+
+    h2007 = Taxonomy.getNewick('feed/h2007/tree.tre', 'h2007')
+
 'absorb' merges the given taxonomy into the one under construction.
 
-    ott.absorb(ncbi, 'ncbi')
-
-The second argument to 'absorb' will be the prefix to be used to
-notate identifiers that came from the ncbi taxonomy, e.g. 'ncbi:1234'
+    tax.absorb(ncbi)
 
 To write the taxonomy to a directory:
 
-    ott.dump("mytaxonomy/")
+    tax.dump('mytaxonomy/')
 
-Taxa
-====
+The direcroty name must end with '/'.  The taxonomy is written to
+'mytaxonomy/taxonomy.tsv', synonyms file to 'mytaxonomy/synonyms.tsv',
+and so on.
+
+Taxonomies can also be written as Newick:
+
+    tax.dumpNewick('mytaxonomy.tre')
+
+but beware that this loses all information about synonyms and sources.
+Also beware that if the taxonomy contains homonyms, the Newick file
+will contain multiple nodes with the same label, and most tools that
+consume Newick don't like this.
+
+## Referring to taxa
 
 A number of scripting commands take taxa as parameters.  There are two
 ways to specify a taxon: by finding it in a taxonomy, or by creating
 it anew.
 
-taxon() looks up a taxon in a taxonomy.  It takes two forms:
+The taxon() method looks up a taxon in a taxonomy.  It takes two
+forms:
 
-    ott.taxon("Pseudacris")
-    ott.taxon("Pseudacris", "Anura")
+    ott.taxon('Pseudacris')
+    ott.taxon('Pseudacris', 'Anura')
 
 Use the first form if that name is unique within the taxonomy.  If the
 name is ambiguous (a homonym), use the second form, which provides
 context.  The context can be any ancestor of the intended taxon.
 
-It is also possible to use a taxon identifier:
+A variant on this is to specify any descendent of the taxon, as
+opposed to ancestor:
 
-    ott.taxon("173133")
+    ott.taxonThatContains('Anura', 'Pseudacris') #designates Anura
 
-To add a new taxon, just provide its name, rank, and source
-information.  The source information should be a URL that is specific
-to that taxon.
+It is also possible to use a taxon identifier in a source taxonomy:
 
-    ott.newTaxon("Euacris", "genus", "http://mongotax.org/12345")
+    ncbi.taxon('173133')
 
-Surgery
-=======
+but this is brittle as identifiers may change from one version of a
+source taxonomy to another.
 
-Whenever doing surgery please leave a comment in the script with a
-pointer (i.e. a URL) to some evidence or source of evidence for the
-correctness of the change.
+To add a new taxon, provide its name, rank, and source information to
+the newTaxon() method.  The source information should be a URL or
+CURIE that is specific to that taxon.
+
+    ott.newTaxon('Euacris', 'genus', 'http://mongotax.org/12345')
+
+If the taxon has no particular rank, put 'no rank'.
+
+## Surgery
+
+Whenever doing surgery please leave a pointer (i.e. a URL) to some
+evidence or source of evidence for the correctness of the change.  If
+this doesn't go in as the source information in a newTaxon() call, put
+it in a comment.  (Probably the evidence should be an argument to the
+various surgery commands; maybe later.)
 
 Add a new taxon as a daughter of a given one: (would be used with newTaxon)
 
     taxon.add(othertaxon)
     e.g.
-    # From http://www.marinespecies.org/aphia.php?p=taxdetails&id=557120
-    ott.taxon("Parentia").add(ott.newTaxon("Parentia daughtera"))
+    ott.taxon('Parentia').add(ott.newTaxon('Parentia daughtera', 
+       'species', 'http://www.marinespecies.org/aphia.php?p=taxdetails&id=557120'))
 
-Detach an existing taxon as a daughter from its current location,
-adding it as a daughter of a different parent:
+Detach an existing taxon from its current location, and add it as a
+daughter of a different parent:
 
     taxon.take(othertaxon)
     e.g. 
     # From http://www.marinespecies.org/aphia.php?p=taxdetails&id=556811
-    ott.taxon("Ammoniinae").take(ott.taxon("Asiarotalia"))
+    ott.taxon('Ammoniinae').take(ott.taxon('Asiarotalia'))
 
-Unify two taxa, pooling their children and adding the name of the
-second as a synonym for the first (i.e. the names are synonyms, but
-not previously recorded as such):
+Move the children of taxon A into taxon B, and make B be a synonym of
+A.  (I.e. the names are synonyms, but not previously recorded as
+such):
 
     taxon.absorb(othertaxon)
     e.g. 
     # From http://www.marinespecies.org/aphia.php?p=taxdetails&id=557120
-    ott.taxon("Parentia").add(ott.taxon("Parentiola"))
+    ott.taxon('Parentia').add(ott.taxon('Parentiola'))
 
 Delete a taxon and all of its descendents:
 
@@ -119,45 +175,67 @@ Select a subset of a taxonomy:
 
 This returns a new taxonomy whose root is (a copy of) the given taxon.
 
-(TBD: Need a way to add a root or change the root.)
+(TBD: Need a way to add a root to the forest, or change the root.)
 
-Alignment
-=========
+## Alignment
 
-When merging taxonomies it may be desirable to manually specify that
-taxon X in taxonomy A is the same as taxon Y in taxonomy B.
+When merging taxonomies ('absorb') sometimes the automatic alignment
+logic makes mistakes.  It is then desirable to manually specify that
+taxon X in taxonomy A is the same as taxon Y in taxonomy B, or not.
 Ordinarily this happens automatically, when the names and topology
 match, but sometimes doing it manually is needed.
 
-    same(tax1, tax2)
+    tax.same(tax1, tax2)
+    tax.notSame(tax1, tax2)
 
 One of the arguments should be from a taxonomy that is about to be
 'absorbed' but hasn't been yet, and the other should be from the
 taxonomy under construction, after it has had other source taxonomies
-absorbed into it.
+absorbed into it.  The taxa may occur in either order.
 
-    same(gbif.taxon("Plantae"), ott.taxon("Viridiplantae"))
+    same(gbif.taxon('Plantae'), ott.taxon('Viridiplantae'))
     ott.absorb(gbif)
 
+Should the need arise you can find out what a source taxon maps to:
 
-Annotation
-==========
+    tax2.absorb(tax1)
+    tax2.image(tax1.taxon('Sample'))
 
-Add a synonym
 
-    taxon.synonym("Alternate name")
+## Annotation
 
-Rename a taxon, leaving old name behind as a synonym
+Add a synonym:
 
-    taxon.rename("Newname")
+    taxon.synonym('Alternate name')
+
+Rename a taxon, leaving old name behind as a synonym:
+
+    taxon.rename('Newname')
 
 Mark a taxon as being 'incertae sedis' i.e. not classified.  It will
 be retained for use in OTU matching but will not show up in the
-browsable tree unless mentioned in a source tree.
+browsable tree unless mentioned in a source tree:
 
     taxon.incertaeSedis()
 
-Force an 'incertae sedis' taxon to become visible in spite of previous
-information.
+Mark as extinct:
+
+    taxon.extinct()
+
+Force an 'incertae sedis' or otherwise hidden taxon to become visible
+in spite of other information:
 
     taxon.forceVisible()
+
+Mark a taxon as 'hidden' so that it can be suppressed by tools downstream:
+
+    taxon.hide()
+
+## Debugging
+
+Not much here yet, just
+
+    taxon.show()
+
+Displays information about this taxon: its lineage and children, sources,
+flags, etc.

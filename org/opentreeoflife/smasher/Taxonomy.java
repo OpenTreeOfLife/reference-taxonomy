@@ -1495,7 +1495,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		String contextName = row[4].trim();
 		String sourceInfo = row[5].trim();
 
-		List<Taxon> parents = filterByContext(parentName, contextName);
+		List<Taxon> parents = filterByAncestor(parentName, contextName);
 		if (parents == null) {
 			System.err.println("! Parent name " + parentName
 							   + " missing in context " + contextName);
@@ -1508,7 +1508,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		if (!parent.name.equals(parentName))
 			System.err.println("! Warning: parent taxon name is a synonym: " + parentName);
 
-		List<Taxon> existings = filterByContext(name, contextName);
+		List<Taxon> existings = filterByAncestor(name, contextName);
         Taxon existing = null;
 		if (existings != null) {
             if (existings.size() > 1)
@@ -1582,7 +1582,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			System.err.println("Unrecognized edit command: " + command);
 	}
 
-	List<Taxon> filterByContext(String taxonName, String contextName) {
+	List<Taxon> filterByAncestor(String taxonName, String contextName) {
 		List<Taxon> nodes = this.lookup(taxonName);
 		if (nodes == null) return null;
 		List<Taxon> fnodes = new ArrayList<Taxon>(1);
@@ -1592,6 +1592,22 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			for (Taxon chain = node; chain != null; chain = chain.parent)
 				if (chain.name.equals(contextName)) {
 					fnodes.add(node);
+					break;
+				}
+		}
+		return fnodes.size() == 0 ? null : fnodes;
+	}
+
+	List<Taxon> filterByDescendant(String taxonName, String descendantName) {
+		List<Taxon> nodes = this.lookup(descendantName);
+		if (nodes == null) return null;
+		List<Taxon> fnodes = new ArrayList<Taxon>(1);
+		for (Taxon node : nodes) {
+			if (!node.name.equals(descendantName)) continue;
+			// Follow ancestor chain to see whether this node is an ancestor
+			for (Taxon chain = node; chain != null; chain = chain.parent)
+				if (chain.name.equals(taxonName)) {
+					fnodes.add(chain);
 					break;
 				}
 		}
@@ -1709,7 +1725,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
     }
 
     public Taxon taxon(String name, String context) {
-        List<Taxon> nodes = filterByContext(name, context);
+        List<Taxon> nodes = filterByAncestor(name, context);
         if (nodes == null) {
             System.err.format("** No taxon with name %s in context %s\n", name, context);
             return null;
@@ -1729,7 +1745,35 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			if (candidate != null)
 				return candidate;
 			else {
-				System.err.format("** Ambiguous taxon name %s in context %s\n", name, context);
+				System.err.format("** Ancestor %s does not disambiguate %s\n", context, name);
+				return null;
+			}
+        }
+
+    }
+
+    public Taxon taxonThatContains(String name, String descendant) {
+        List<Taxon> nodes = filterByDescendant(name, descendant);
+        if (nodes == null) {
+            System.err.format("** No taxon with name %s with ancestor %s\n", descendant, name);
+            return null;
+        } else if (nodes.size() == 1)
+			return nodes.get(0);
+		else {
+			Taxon candidate = null;
+			// Chaetognatha
+			for (Taxon node : nodes)
+				if (node.parent != null && node.parent.name.equals(name))
+					if (candidate == null)
+						candidate = node.parent;
+					else {
+						candidate = null;
+						break;
+					}
+			if (candidate != null)
+				return candidate;
+			else {
+				System.err.format("** Descendant %s does not disambiguate %s\n", descendant, name);
 				return null;
 			}
         }
@@ -1792,6 +1836,22 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			evader.addSource(snode);
 		}
     }
+
+	// The image of a taxon under an alignment.
+	public Taxon image(Taxon subject) {
+		if (subject.taxonomy == this)
+			return subject;
+		Taxon m = subject.mapped;
+		if (m == null) {
+			System.err.format("** Taxon is not mapped: %s\n", subject);
+			return null;
+		}
+		if (m.taxonomy != this) {
+			System.err.format("** Taxon is not mapped into given taxonomy: %s %s\n", subject, this);
+			return null;
+		}
+		return m;
+	}
 
     public void describe() {
         System.out.format("%s ids, %s roots, %s names\n",

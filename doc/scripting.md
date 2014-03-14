@@ -24,6 +24,10 @@ Smasher is a Java program so it requires some version of Java to be installed.  
 (Don't just say 'make' unless you want to build the reference
 taxonomy!  That takes a while and is not to be done casually.)
 
+You can test that Smasher functions with
+
+    make test
+
 Smasher is invoked as follows
 
     java -classpath ".:lib/*" org.opentreeoflife.smasher.Smasher --jython script.py
@@ -52,20 +56,21 @@ Initiate the build by creating a new Taxonomy object:
     tax = Taxonomy.newTaxonomy()
 
 Taxonomies are usually built starting with one or more existing
-taxonomies (although they needn't be):
+taxonomies (although they needn't be), obtained as follows:
 
     ncbi = Taxonomy.getTaxonomy('t/tax/ncbi_aster/', 'ncbi')
 
-fetches a taxonomy from files (in the format specified by this tool,
+which fetches a taxonomy from files (in the format specified by this tool,
 see wiki).  There can be as many of these retrievals as you like.
 
-The first argument is a directory name and must end in a '/'.
+The first argument is a directory name and must end in a '/'.  
+The directory must contain a file 'taxonomy.tsv'.
 
 The second argument is a short tag that will appear in the
-'sourceinfo' column of the final taxonomy file to notate identifiers
+'sourceinfo' column of the final taxonomy file to notate the source of taxa
 that came from that taxonomy, e.g. 'ncbi:1234'.
 
-The format of taxonomy files is given [here](https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Interim-taxonomy-file-format).
+The format of taxonomy files (taxonomy.tsv and so on) is given [here](https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Interim-taxonomy-file-format).
 
 Taxonomies can also be read and written in Newick syntax.
 
@@ -79,7 +84,7 @@ To write the taxonomy to a directory:
 
     tax.dump('mytaxonomy/')
 
-The direcroty name must end with '/'.  The taxonomy is written to
+The directory name must end with '/'.  The taxonomy is written to
 'mytaxonomy/taxonomy.tsv', synonyms file to 'mytaxonomy/synonyms.tsv',
 and so on.
 
@@ -106,7 +111,7 @@ forms:
 
 Use the first form if that name is unique within the taxonomy.  If the
 name is ambiguous (a homonym), use the second form, which provides
-context.  The context can be any ancestor of the intended taxon.
+context.  The context can be any ancestor of the intended taxon that is not shared with the other homonyms.
 
 A variant on this is to specify any descendent of the taxon, as
 opposed to ancestor:
@@ -130,10 +135,10 @@ If the taxon has no particular rank, put 'no rank'.
 
 ## Surgery
 
-Whenever doing surgery please leave a pointer (i.e. a URL) to some
+Whenever making ad hoc modifications to the taxonomy please leave a pointer (i.e. a URL) to some
 evidence or source of evidence for the correctness of the change.  If
-this doesn't go in as the source information in a newTaxon() call, put
-it in a comment.  (Probably the evidence should be an argument to the
+the evidence doesn't go in as the source information in a newTaxon() call, put
+it in a comment in the script file.  (Probably the evidence should be an argument to the
 various surgery commands; maybe later.)
 
 Add a new taxon as a daughter of a given one: (would be used with newTaxon)
@@ -152,17 +157,21 @@ daughter of a different parent:
     ott.taxon('Ammoniinae').take(ott.taxon('Asiarotalia'))
 
 Move the children of taxon A into taxon B, and make B be a synonym of
-A.  (I.e. the names are synonyms, but not previously recorded as
+A:  (I.e. the names are synonyms, but not previously recorded as
 such):
 
     taxon.absorb(othertaxon)
     e.g. 
     # From http://www.marinespecies.org/aphia.php?p=taxdetails&id=557120
-    ott.taxon('Parentia').add(ott.taxon('Parentiola'))
+    ott.taxon('Parentia').absorb(ott.taxon('Parentiola'))
 
-Delete a taxon and all of its descendents:
+Delete a taxon and all of its descendants:
 
     taxon.prune()
+
+Delete all the descendants of a given taxon: (this is useful for grafting one taxonomy into another)
+
+    taxon.trim()
 
 Delete a taxon, moving all of its children up one level (e.g. delete a
 subfamily making all of its genus children children of the family):
@@ -179,24 +188,26 @@ This returns a new taxonomy whose root is (a copy of) the given taxon.
 
 ## Alignment
 
-When merging taxonomies ('absorb') sometimes the automatic alignment
+Taxonomy alignment ('absorb') establishes correspondences between taxa in taxonomy A with taxa in taxonomy B, based on taxon names and topology.  Most of the complexity of this operation has to do with the handling of homonyms.
+Sometimes the automatic alignment
 logic makes mistakes.  It is then desirable to manually specify that
-taxon X in taxonomy A is the same as taxon Y in taxonomy B, or not.
-Ordinarily this happens automatically, when the names and topology
-match, but sometimes doing it manually is needed.
+taxon X in taxonomy A is the same as taxon X in taxonomy B (they are not homonyms), or not (they *are* homonyms).
 
     tax.same(tax1, tax2)
     tax.notSame(tax1, tax2)
+      e.g.
+    tax.same(A.taxon("X"), B.taxon("X"))
 
-One of the arguments should be from a taxonomy that is about to be
+These methods are a bit fussy.
+One of the arguments to same or notSame should be a taxon from a taxonomy that is about to be
 'absorbed' but hasn't been yet, and the other should be from the
 taxonomy under construction, after it has had other source taxonomies
-absorbed into it.  The taxa may occur in either order.
+absorbed into it.  (Equivalently it is possible to specify a taxon in a taxonomy that has already been 'absorbed'.)  The taxa may occur in either order.
 
     same(gbif.taxon('Plantae'), ott.taxon('Viridiplantae'))
     ott.absorb(gbif)
 
-Should the need arise you can find out what a source taxon maps to:
+Should the need arise you can find out what a source taxon maps to, using image():
 
     tax2.absorb(tax1)
     tax2.image(tax1.taxon('Sample'))

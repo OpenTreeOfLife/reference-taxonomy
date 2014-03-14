@@ -17,12 +17,12 @@ To use Smasher, you should clone the reference-taxonomy repository on github:
 You can of course clone using https: instead of ssh, see 
 [here](https://github.com/OpenTreeOfLife/reference-taxonomy).
 
-To compile Smasher, which is a Java program:
+Smasher is a Java program so it requires some version of Java to be installed.  It has been tested with Java 1.6 and 1.7.  To compile Smasher:
 
     make compile
 
 (Don't just say 'make' unless you want to build the reference
-taxonomy!  Not for casual use.)
+taxonomy!  That takes a while and is not to be done casually.)
 
 Smasher is invoked as follows
 

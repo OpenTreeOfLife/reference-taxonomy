@@ -14,14 +14,6 @@
 
 package org.opentreeoflife.smasher;
 
-
-// adds for SKOS export
-import org.semanticweb.skos.*;
-import org.semanticweb.skosapibinding.SKOSManager;
-import org.semanticweb.skosapibinding.SKOSFormatExt;
-import java.net.URI;
-// end adds for SKOS export
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileInputStream;
@@ -41,11 +33,15 @@ import java.util.Collections;
 import java.util.Collection;
 import java.io.PrintStream;
 import java.io.File;
+import java.net.URI;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import org.json.simple.JSONObject; 
 import org.json.simple.parser.JSONParser; 
 import org.json.simple.parser.ParseException;
+import org.semanticweb.skos.*;
+import org.semanticweb.skosapibinding.SKOSManager;
+import org.semanticweb.skosapibinding.SKOSFormatExt;
 
 public abstract class Taxonomy implements Iterable<Taxon> {
     static final String SKOS_BASE_URI = "http://purl.obolibrary.org/obo/OTT_";

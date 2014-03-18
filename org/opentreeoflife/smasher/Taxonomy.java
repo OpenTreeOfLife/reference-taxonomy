@@ -581,12 +581,12 @@ public abstract class Taxonomy implements Iterable<Taxon> {
                 SKOSDataFactory df = manager.getSKOSDataFactory();
                 SKOSConceptScheme conceptScheme = df.getSKOSConceptScheme(URI.create(SKOS_BASE_URI));
                 SKOSEntityAssertion entityAssertion1 = df.getSKOSEntityAssertion(conceptScheme);
-
-            List<SKOSChange> addAssertions = new ArrayList<SKOSChange>();
-            addAssertions.add (new AddAssertion(dataset, entityAssertion1));
-            
-            manager.applyChanges(addAssertions);
-
+                
+                List<SKOSChange> addAssertions = new ArrayList<SKOSChange>();
+                addAssertions.add (new AddAssertion(dataset, entityAssertion1));
+                
+                manager.applyChanges(addAssertions);
+                
                 
                 for (Taxon node : nodes) {
                     if (node == null) {

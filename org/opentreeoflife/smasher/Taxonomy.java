@@ -14,6 +14,14 @@
 
 package org.opentreeoflife.smasher;
 
+
+// adds for SKOS export
+import org.semanticweb.skos.*;
+import org.semanticweb.skosapibinding.SKOSManager;
+import org.semanticweb.skosapibinding.SKOSFormatExt;
+import java.net.URI;
+// end adds for SKOS export
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileInputStream;
@@ -40,7 +48,9 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 public abstract class Taxonomy implements Iterable<Taxon> {
-	Map<String, List<Taxon>> nameIndex = new HashMap<String, List<Taxon>>();
+    static final String SKOS_BASE_URI = "http://purl.obolibrary.org/obo/OTT_";
+
+    Map<String, List<Taxon>> nameIndex = new HashMap<String, List<Taxon>>();
 	Map<String, Taxon> idIndex = new HashMap<String, Taxon>();
 	Set<Taxon> roots = new HashSet<Taxon>(1);
 	protected String tag = null;
@@ -274,12 +284,12 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	// This gets overridden in the UnionTaxonomy class
 	public void dump(String outprefix) throws IOException {
-        new File(outprefix).mkdirs();
-		this.assignNewIds(0);
-		this.analyze();
-		this.dumpNodes(this.roots, outprefix);
-		this.dumpSynonyms(outprefix + "synonyms.tsv");
-		this.dumpMetadata(outprefix + "about.json");
+            new File(outprefix).mkdirs();
+            this.assignNewIds(0);
+            this.analyze();
+            this.dumpNodesSkos(this.roots, outprefix);
+            this.dumpSynonyms(outprefix + "synonyms.tsv");
+            this.dumpMetadata(outprefix + "about.json");
 	}
 
     // load | dump metadata
@@ -553,6 +563,111 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		out.close();
 	}
 
+        void dumpNodesSkos(Collection<Taxon> nodes, String outprefix) throws IOException {
+            try {
+                SKOSManager manager = new SKOSManager();
+                SKOSDataset dataset = manager.createSKOSDataset(URI.create(SKOS_BASE_URI));
+                SKOSDataFactory df = manager.getSKOSDataFactory();
+                SKOSConceptScheme conceptScheme = df.getSKOSConceptScheme(URI.create(SKOS_BASE_URI));
+                SKOSEntityAssertion entityAssertion1 = df.getSKOSEntityAssertion(conceptScheme);
+
+            List<SKOSChange> addAssertions = new ArrayList<SKOSChange>();
+            addAssertions.add (new AddAssertion(dataset, entityAssertion1));
+            
+            manager.applyChanges(addAssertions);
+
+                
+                for (Taxon node : nodes) {
+                    if (node == null) {
+                        System.err.println("null in nodes list!?" );
+                    }
+                    else if (!node.prunedp) {
+                        dumpNodeSkos(node, manager, dataset, true);
+                    }
+                }
+                
+                // save the dataset to a file in RDF/XML format
+                File outFile = new File(outprefix + "taxonomy.skos");
+                System.err.println("Writing " + outFile.getPath());
+                manager.save(dataset, SKOSFormatExt.RDFXML, URI.create("file:" + outFile.getAbsolutePath()));
+                
+            } catch (SKOSCreationException e) {
+                e.printStackTrace();
+            } catch (SKOSChangeException e) {
+                e.printStackTrace(); 
+            } catch (SKOSStorageException e) {
+                e.printStackTrace(); 
+            }
+        }
+
+
+	// Recursive!
+	void dumpNodeSkos(Taxon node, SKOSManager manager, SKOSDataset dataset, boolean rootp) throws SKOSChangeException {
+            SKOSDataFactory df = manager.getSKOSDataFactory();
+            SKOSConceptScheme conceptScheme = df.getSKOSConceptScheme(URI.create(SKOS_BASE_URI));
+            List<SKOSChange> addAssertions = new ArrayList<SKOSChange>();
+            
+            // node concept
+            SKOSConcept nodeConcept = df.getSKOSConcept(URI.create(SKOS_BASE_URI + "#" + node.id));
+            SKOSEntityAssertion nodeAssertion = df.getSKOSEntityAssertion(nodeConcept);
+            addAssertions.add (new AddAssertion(dataset, nodeAssertion));
+
+            // node is in scheme
+            SKOSObjectRelationAssertion nodeRelation = df.getSKOSObjectRelationAssertion(nodeConcept, df.getSKOSInSchemeProperty(), conceptScheme);
+            addAssertions.add (new AddAssertion(dataset, nodeRelation));
+
+            // node parent
+            if(node.parent != null && node.parent.id != null) {
+                SKOSConcept nodeParentConcept = df.getSKOSConcept(URI.create(SKOS_BASE_URI + "#" + node.parent.id));
+                nodeRelation = df.getSKOSObjectRelationAssertion(nodeConcept, df.getSKOSBroaderProperty(), nodeParentConcept);
+                addAssertions.add (new AddAssertion(dataset, nodeRelation));
+            }
+            
+            // node name 
+            /*
+              /// commented out because there were problems creating the literal value for the name
+              
+                SKOSEntity a = nodeConcept;
+                SKOSAnnotation b = df.getSKOSAnnotation(df.getSKOSPrefLabelProperty().getURI(), df.getSKOSUntypedConstant(node.name, "en"));
+                SKOSAnnotationAssertion nodeLabelAnnotation = df.getSKOSAnnotationAssertion(a, b);
+                addAssertions.add (new AddAssertion(dataset, nodeLabelAnnotation));
+            }
+            */
+
+
+            /*
+              // other items from dumpNode that need to be output as SKOS
+              
+		// 3. rank:
+		out.print((node.rank == Taxonomy.NO_RANK ? "no rank" : node.rank) + "\t|\t");
+                
+		// 4. source information
+		// comma-separated list of URI-or-CURIE
+		out.print(node.getSourceIdsString() + "\t|\t");
+                
+		// 5. uniqname
+		out.print(node.uniqueName() + "\t|\t");
+                
+		// 6. flags
+		// (node.mode == null ? "" : node.mode)
+		Taxonomy.printFlags(node, out);
+            */
+
+            
+            // add all assertions to the document
+            manager.applyChanges(addAssertions);
+            
+            
+            if (node.children != null) {
+                for (Taxon child : node.children) {
+                    if (child == null)
+                        System.err.println("null in children list!? " + node);
+                    else
+                        dumpNodeSkos(child, manager, dataset, false);
+                }
+            }
+	}
+        
 	// Recursive!
 	void dumpNode(Taxon node, PrintStream out, boolean rootp) {
 		// 0. uid:
@@ -2301,18 +2416,18 @@ class UnionTaxonomy extends Taxonomy {
 	// outprefix should end with a / , but I guess . would work too
 
 	public void dump(String outprefix) throws IOException {
-        new File(outprefix).mkdirs();
+            new File(outprefix).mkdirs();
 		this.assignNewIds(0);	// If we've seen an idsource, maybe this has already been done
 		this.analyze();
 		this.dumpMetadata(outprefix + "about.json");
 
-        Set<String> scrutinize = null;
+                Set<String> scrutinize = null;
 		if (this.idsource != null) 
 			scrutinize = this.dumpDeprecated(this.idsource, outprefix + "deprecated.tsv");
 		scrutinize.add("Methanococcus maripaludis");
 		this.dumpLog(outprefix + "log.tsv", scrutinize);
 
-		this.dumpNodes(this.roots, outprefix);
+		this.dumpNodesSkos(this.roots, outprefix);
 		this.dumpSynonyms(outprefix + "synonyms.tsv");
 	}
 

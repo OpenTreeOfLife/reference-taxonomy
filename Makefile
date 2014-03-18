@@ -308,7 +308,7 @@ t/tax/aster/taxonomy.tsv: compile t/aster.py \
                           t/tax/prev_aster/taxonomy.tsv \
                           t/edits/edits.tsv
 	@mkdir -p `dirname $@`
-	$(JAVA) $(SMASH) --jython t/aster.py
+	$(BIG_JAVA) $(SMASH) --jython t/aster.py
 
 test: aster
 aster: t/tax/aster/taxonomy.tsv

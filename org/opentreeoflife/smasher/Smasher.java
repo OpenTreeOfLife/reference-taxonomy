@@ -3,7 +3,7 @@
   Open Tree Reference Taxonomy (OTT) taxonomy combiner.
 
   In jython, say:
-     from org.opentreeoflife.smasher import Smasher
+	 from org.opentreeoflife.smasher import Smasher
 
 */
 
@@ -46,7 +46,7 @@ public class Smasher {
 						System.out.println("This is smasher, version 000.00.0.000");
 
 					if (argv[i].equals("--jython"))
-                        jython(argv[++i]);
+						jython(argv[++i]);
 
 					else if (argv[i].equals("--jscheme")) {
 						String[] jargs = {};
@@ -72,7 +72,7 @@ public class Smasher {
 						UnionTaxonomy union = tax.promote(); tax = union;
 						SourceTaxonomy auxsource = Taxonomy.getTaxonomy(argv[++i]);
 						union.loadAuxIds(auxsource);
-                        union.dumpAuxIds(outprefix);
+						union.dumpAuxIds(outprefix);
 					}
 
 					// Deprecated
@@ -80,7 +80,7 @@ public class Smasher {
 						String name = argv[++i];
 						Taxon root = tax.unique(name);
 						if (root != null) {
-							tax.analyze();    // otherwise they all show up as 'barren'
+							tax.analyze();	  // otherwise they all show up as 'barren'
 							tax.select1(root, argv[++i]);
 						}
 					}
@@ -104,8 +104,14 @@ public class Smasher {
 
 					//-----
 					else if (argv[i].equals("--out")) {
-						outprefix = argv[++i];  // see --aux
-						tax.dump(outprefix);
+						outprefix = argv[++i];	// see --aux
+						tax.dump(outprefix, "\t|\t");
+					}
+
+                    // what to call this ??
+					else if (argv[i].equals("--outt")) {
+						outprefix = argv[++i];	// see --aux
+						tax.dump(outprefix, "\t");
 					}
 
 					else if (argv[i].equals("--test"))
@@ -120,10 +126,10 @@ public class Smasher {
 						tax.dumpNewick(outfile);
 					}
 
-                    // Read a .tre file
-                    else if (argv[i].equals("--intre")) {
-                        tax = Taxonomy.getNewick(argv[++i]);
-                    }
+					// Read a .tre file
+					else if (argv[i].equals("--intre")) {
+						tax = Taxonomy.getNewick(argv[++i]);
+					}
 
 					else if (argv[i].equals("--newick")) {
 						System.out.println(" -> " + tax.toNewick());
@@ -152,19 +158,19 @@ public class Smasher {
 				}
 			}
 		} else
-            jython("-");
+			jython("-");
 	}
 
-    static void jython(String source) {
-        if (source.equals("-")) {
-            System.out.format("Consider doing:\nfrom org.opentreeoflife.smasher import Taxonomy\n");
+	static void jython(String source) {
+		if (source.equals("-")) {
+			System.out.format("Consider doing:\nfrom org.opentreeoflife.smasher import Taxonomy\n");
 			org.python.util.InteractiveConsole j = new org.python.util.JLineConsole();
 			j.interact();
-        } else {
-            PythonInterpreter j = new PythonInterpreter();
-            j.execfile(source);
-        }
-    }
+		} else {
+			PythonInterpreter j = new PythonInterpreter();
+			j.execfile(source);
+		}
+	}
 
 	static void test() {
 		Taxonomy tax = SourceTaxonomy.parseNewick("(a,b,(e,f)c)d");

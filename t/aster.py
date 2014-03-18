@@ -42,4 +42,4 @@ sp.prune()
 tax.assignIds(Taxonomy.getTaxonomy('t/tax/prev_aster/'))
 
 # Write the model taxonomy out to a set of files
-tax.dump("t/tax/aster/")
+tax.dump('t/tax/aster/', '\t')

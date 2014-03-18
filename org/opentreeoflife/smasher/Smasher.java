@@ -105,7 +105,13 @@ public class Smasher {
 					//-----
 					else if (argv[i].equals("--out")) {
 						outprefix = argv[++i];	// see --aux
-						tax.dump(outprefix);
+						tax.dump(outprefix, "\t|\t");
+					}
+
+                    // what to call this ??
+					else if (argv[i].equals("--outt")) {
+						outprefix = argv[++i];	// see --aux
+						tax.dump(outprefix, "\t");
 					}
 
 					else if (argv[i].equals("--test"))

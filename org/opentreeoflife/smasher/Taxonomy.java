@@ -274,14 +274,18 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	}
 
 	// This gets overridden in the UnionTaxonomy class
-	public void dump(String outprefix) throws IOException {
+	public void dump(String outprefix, String sep) throws IOException {
 		new File(outprefix).mkdirs();
 		this.assignNewIds(0);
 		this.analyze();
-		this.dumpNodes(this.roots, outprefix);
-		this.dumpSynonyms(outprefix + "synonyms.tsv");
+		this.dumpNodes(this.roots, outprefix, sep);
+		this.dumpSynonyms(outprefix + "synonyms.tsv", sep);
 		this.dumpMetadata(outprefix + "about.json");
 	}
+
+	public void dump(String outprefix) throws IOException {
+        this.dump(outprefix, "\t|\t");  //backward compatible
+    }
 
 	// load | dump metadata
 
@@ -547,46 +551,47 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			}
 	}
 
-	void dumpNodes(Collection<Taxon> nodes, String outprefix) throws IOException {
+	void dumpNodes(Collection<Taxon> nodes, String outprefix, String sep) throws IOException {
 		PrintStream out = Taxonomy.openw(outprefix + "taxonomy.tsv");
 
-		out.println("uid\t|\tparent_uid\t|\tname\t|\trank\t|\tsourceinfo\t|\tuniqname\t|\tflags\t|\t"
-					// 0	 1				2		 3		  4				 5			   6
+		out.format("uid%sparent_uid%sname%srank%ssourceinfo%suniqname%sflags%s\n",
+					// 0   1		2	  3     4	   		 5		   6
+                   sep, sep, sep, sep, sep, sep, sep
 					);
 
 		for (Taxon node : nodes) {
 			if (node == null)
 				System.err.println("null in nodes list!?" );
 			else if (!node.prunedp)
-				dumpNode(node, out, true);
+				dumpNode(node, out, true, sep);
 		}
 		out.close();
 	}
 
 	// Recursive!
-	void dumpNode(Taxon node, PrintStream out, boolean rootp) {
+	void dumpNode(Taxon node, PrintStream out, boolean rootp, String sep) {
 		// 0. uid:
-		out.print((node.id == null ? "?" : node.id) + "\t|\t");
+		out.print((node.id == null ? "?" : node.id) + sep);
 		// 1. parent_uid:
-		out.print(((node.parent == null || rootp) ? "" : node.parent.id)  + "\t|\t");
+		out.print(((node.parent == null || rootp) ? "" : node.parent.id)  + sep);
 		// 2. name:
 		out.print((node.name == null ? "?" : node.name)
-				  + "\t|\t");
+				  + sep);
 		// 3. rank:
-		out.print((node.rank == Taxonomy.NO_RANK ? "no rank" : node.rank) + "\t|\t");
+		out.print((node.rank == Taxonomy.NO_RANK ? "no rank" : node.rank) + sep);
 
 		// 4. source information
 		// comma-separated list of URI-or-CURIE
-		out.print(node.getSourceIdsString() + "\t|\t");
+		out.print(node.getSourceIdsString() + sep);
 
 		// 5. uniqname
-		out.print(node.uniqueName() + "\t|\t");
+		out.print(node.uniqueName() + sep);
 
 		// 6. flags
 		// (node.mode == null ? "" : node.mode)
 		Taxonomy.printFlags(node, out);
-		out.print("\t|\t");
-		// was: out.print(((node.flags != null) ? node.flags : "") + "\t|\t");
+		out.print(sep);
+		// was: out.print(((node.flags != null) ? node.flags : "") + sep);
 
 		out.println();
 
@@ -595,7 +600,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				if (child == null)
 					System.err.println("null in children list!? " + node);
 				else
-					dumpNode(child, out, false);
+					dumpNode(child, out, false, sep);
 			}
 	}
 
@@ -699,7 +704,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		return true;
 	}
 
-	void dumpSynonyms(String filename) throws IOException {
+	void dumpSynonyms(String filename, String sep) throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
 		out.println("name\t|\tuid\t|\ttype\t|\tuniqname\t|\t");
 		for (String name : this.nameIndex.keySet())
@@ -707,11 +712,11 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				if (!node.prunedp && !node.name.equals(name)) {
 					String uniq = node.uniqueName();
 					if (uniq.length() == 0) uniq = node.name;
-					out.println(name + "\t|\t" +
-								node.id + "\t|\t" +
-								"" + "\t|\t" + // type, could be "synonym" etc.
+					out.println(name + sep +
+								node.id + sep +
+								"" + sep + // type, could be "synonym" etc.
 								name + " (synonym for " + uniq + ")" +
-								"\t|\t");
+								sep);
 				}
 		out.close();
 	}
@@ -1195,7 +1200,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		System.out.println("| Selecting " + node.name);
 		List<Taxon> it = new ArrayList<Taxon>(1);
 		it.add(node);
-		this.dumpNodes(it, outprefix);
+		this.dumpNodes(it, outprefix, "\t|\t");
 
 		if (this.metadata != null) {
 			PrintStream out = Taxonomy.openw(outprefix + "about.json");
@@ -2320,7 +2325,7 @@ class UnionTaxonomy extends Taxonomy {
 	// Overrides dump method in class Taxonomy.
 	// outprefix should end with a / , but I guess . would work too
 
-	public void dump(String outprefix) throws IOException {
+	public void dump(String outprefix, String sep) throws IOException {
 		new File(outprefix).mkdirs();
 		this.assignNewIds(0);	// If we've seen an idsource, maybe this has already been done
 		this.analyze();
@@ -2332,8 +2337,8 @@ class UnionTaxonomy extends Taxonomy {
 		scrutinize.add("Methanococcus maripaludis");
 		this.dumpLog(outprefix + "log.tsv", scrutinize);
 
-		this.dumpNodes(this.roots, outprefix);
-		this.dumpSynonyms(outprefix + "synonyms.tsv");
+		this.dumpNodes(this.roots, outprefix, sep);
+		this.dumpSynonyms(outprefix + "synonyms.tsv", sep);
 	}
 
 	// Overrides method in Taxonomy class

@@ -222,6 +222,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	}
 
 	static Pattern tabVbarTab = Pattern.compile("\t\\|\t?");
+	static Pattern tabOnly = Pattern.compile("\t");
 
 	// DWIMmish - does Newick is strings starts with paren, otherwise
 	// loads from directory
@@ -328,8 +329,17 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		// how to get this right?
 		// Map<String,String> idReplacements = new HashMap<String,String>();
 
+        Pattern pat = null;
+
 		while ((str = br.readLine()) != null) {
-			String[] parts = tabVbarTab.split(str + "!");	 // Java loses
+            if (pat == null) {
+                String[] parts = tabOnly.split(str + "!");	 // Java loses
+                if (parts[1].equals("|"))
+                    pat = tabVbarTab;
+                else
+                    pat = tabOnly;
+            }
+			String[] parts = pat.split(str + "!");	 // Java loses
 			if (parts.length < 3) {
 				System.out.println("Bad row: " + row + " has " + parts.length + " parts");
 			} else {
@@ -608,8 +618,18 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			int type_column = Integer.MAX_VALUE;
 			int row = 0;
 			int losers = 0;
+            Pattern pat = null;
 			while ((str = br.readLine()) != null) {
-				String[] parts = tabVbarTab.split(str);
+
+				if (pat == null) {
+					String[] parts = tabOnly.split(str + "!");	 // Java loses
+					if (parts[1].equals("|"))
+						pat = tabVbarTab;
+					else
+						pat = tabOnly;
+				}
+
+				String[] parts = pat.split(str);
 				// uid | name | type | ? |
 				// 36602	|	Sorbus alnifolia	|	synonym	|	|	
 				if (parts.length >= 2) {

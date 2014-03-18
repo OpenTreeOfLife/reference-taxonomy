@@ -88,6 +88,12 @@ The directory name must end with '/'.  The taxonomy is written to
 'mytaxonomy/taxonomy.tsv', synonyms file to 'mytaxonomy/synonyms.tsv',
 and so on.
 
+The one-argument form dump(filename) generates files with columns
+separated by tab-verticalbar-tab.  To generate with columns simply
+separated by tabs, use
+
+    tax.dump('mytaxonomy/', '\t')
+
 Taxonomies can also be written as Newick:
 
     tax.dumpNewick('mytaxonomy.tre')

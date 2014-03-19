@@ -2,7 +2,7 @@
 
 from org.opentreeoflife.smasher import Taxonomy
 import sys
-sys.path.append("feed/ott/")
+sys.path.append("feed/misc/")
 from chromista_spreadsheet import fixChromista
 
 ott = Taxonomy.newTaxonomy()

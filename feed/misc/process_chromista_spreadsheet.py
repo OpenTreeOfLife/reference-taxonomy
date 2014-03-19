@@ -1,9 +1,9 @@
 # The 'project' with the emphasis on the second syllable, as in a
 # relational algebra projection.
 
-import csv, string
+import csv, string, sys
 
-with open('feed/ott/chromista-spreadsheet.csv', 'rb') as csvfile:
+with open(sys.argv[1], 'rb') as csvfile:
     csvreader = csv.reader(csvfile)
     csvreader.next()
     print '# coding=utf-8'

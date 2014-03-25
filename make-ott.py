@@ -289,6 +289,9 @@ hss.hide()
 # Is this cheating?
 ott.taxon('Tenebrioninae').take(ott.taxon('Tribolium','Coleoptera'))
 
+# Bryan Drew 2014-03-20 http://dx.doi.org/10.1186/1471-2148-14-23
+ott.taxon('Pentapetalae').take(ott.taxon('Vitales'))
+
 # Finish up
 
 # "Old" patch system

@@ -141,8 +141,10 @@ $(GBIF)/taxonomy.tsv: feed/gbif/in/taxon.txt feed/gbif/process_gbif_taxonomy.py
 	rm -rf $(GBIF)
 	mv -f $(GBIF).tmp $(GBIF)
 
+# The '|| true' is because unzip erroneously returns status code 1
+# when there are warnings.
 feed/gbif/in/taxon.txt: feed/gbif/in/checklist1.zip
-	(cd feed/gbif/in && unzip checklist1.zip)
+	(cd feed/gbif/in && (unzip checklist1.zip || true))
 
 feed/gbif/in/checklist1.zip:
 	@mkdir -p feed/gbif/in

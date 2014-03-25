@@ -2,7 +2,7 @@
 
 from org.opentreeoflife.smasher import Taxonomy
 import sys
-sys.path.append("feed/ott/")
+sys.path.append("feed/misc/")
 from chromista_spreadsheet import fixChromista
 
 ott = Taxonomy.newTaxonomy()
@@ -288,6 +288,9 @@ hss.hide()
 # Placement in Tenebrioninae is according to http://bugguide.net/node/view/152 .
 # Is this cheating?
 ott.taxon('Tenebrioninae').take(ott.taxon('Tribolium','Coleoptera'))
+
+# Bryan Drew 2014-03-20 http://dx.doi.org/10.1186/1471-2148-14-23
+ott.taxon('Pentapetalae').take(ott.taxon('Vitales'))
 
 # Finish up
 

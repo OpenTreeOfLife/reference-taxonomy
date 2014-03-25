@@ -5,8 +5,8 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.4
-PREV_WHICH=2.3
+WHICH=2.5draft1
+PREV_WHICH=2.4
 
 #  $^ = all prerequisites
 #  $< = first prerequisite
@@ -59,14 +59,15 @@ OTT_ARGS=$(SMASH) $(SILVA)/ tax/713/ tax/if/ $(NCBI)/ $(GBIF)/ \
       --out tax/ott/
 
 ott: tax/ott/log.tsv
-tax/ott/log.tsv: $(CLASS) feed/ott/ott.py $(SILVA)/taxonomy.tsv \
+tax/ott/log.tsv: $(CLASS) make-ott.py $(SILVA)/taxonomy.tsv \
 		    tax/if/taxonomy.tsv tax/713/taxonomy.tsv \
 		    $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv \
 		    tax/irmng/taxonomy.tsv \
 		    feed/ott/edits/ott_edits.tsv \
-		    tax/prev_ott/taxonomy.tsv
+		    tax/prev_ott/taxonomy.tsv \
+		    feed/misc/chromista_spreadsheet.py
 	@mkdir -p tax/ott
-	$(BIG_JAVA) $(SMASH) --jython feed/ott/ott.py
+	$(BIG_JAVA) $(SMASH) --jython make-ott.py
 	echo $(WHICH) >tax/ott/version.txt
 
 tax/if/taxonomy.tsv: tax/if/synonyms.tsv tax/if/about.json
@@ -140,8 +141,10 @@ $(GBIF)/taxonomy.tsv: feed/gbif/in/taxon.txt feed/gbif/process_gbif_taxonomy.py
 	rm -rf $(GBIF)
 	mv -f $(GBIF).tmp $(GBIF)
 
+# The '|| true' is because unzip erroneously returns status code 1
+# when there are warnings.
 feed/gbif/in/taxon.txt: feed/gbif/in/checklist1.zip
-	(cd feed/gbif/in && unzip checklist1.zip)
+	(cd feed/gbif/in && (unzip checklist1.zip || true))
 
 feed/gbif/in/checklist1.zip:
 	@mkdir -p feed/gbif/in
@@ -235,10 +238,10 @@ clean:
 	rm -f $(CLASS)
 	rm -f feed/ncbi/taxdump.tar.gz
 
-z: feed/ott/chromista_spreadsheet.py
-feed/ott/chromista_spreadsheet.py: feed/ott/chromista-spreadsheet.csv feed/ott/process_chromista_spreadsheet.py
-	python feed/ott/process_chromista_spreadsheet.py \
-           <feed/ott/chromista-spreadsheet.csv >feed/ott/chromista_spreadsheet.py
+z: feed/misc/chromista_spreadsheet.py
+feed/misc/chromista_spreadsheet.py: feed/misc/chromista-spreadsheet.csv feed/misc/process_chromista_spreadsheet.py
+	python feed/misc/process_chromista_spreadsheet.py \
+           <feed/imsc/chromista-spreadsheet.csv >feed/misc/chromista_spreadsheet.py
 
 # -----------------------------------------------------------------------------
 # Test: nematodes

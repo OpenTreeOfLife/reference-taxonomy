@@ -29,7 +29,17 @@ silva.taxon('Ochromonas','Ochromonadales').rename('Ochromonas sup.')
 silva.taxon('Tetrasphaera','Tetrasphaera').rename('Tetrasphaera inf.')
 ott.absorb(silva)
 
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/30
+for name in ['GAL08', 'GOUTA4', 'JL-ETNP-Z39', 'Kazan-3B-28',
+			 'LD1-PA38', 'MVP-21', 'NPL-UPA2', 'OC31', 'RsaHF231',
+			 'S2R-29', 'SBYG-2791', 'SM2F11', 'WCHB1-60', 'T58',
+			 'LKM74', 'LEMD255', 'CV1-B1-93', 'H1-10', 'H26-1',
+			 'M1-18D08', 'D4P07G08', 'DH147-EKD10', 'LG25-05',
+			 'NAMAKO-1', 'RT5iin25', 'SA1-3C06']:
+    ott.taxon(name).elide()
+
 # Lamiales taxonomy from study 713
+# http://dx.doi.org/10.1186/1471-2148-10-352
 study713  = Taxonomy.getTaxonomy('tax/713/', 'study713')
 ott.notSame(study713.taxon('Buchnera'), silva.taxon('Buchnera'))
 ott.absorb(study713)
@@ -42,19 +52,27 @@ fung.smush()
 # 2014-03-07 Prevent a false match
 ott.notSame(silva.taxon('Phaeosphaeria'), fung.taxon('Phaeosphaeria'))
 
-# JAR 2014-03-11 after scouring Mycobank and IRMNG
-fung.taxon('Trichosporon').absorb(fung.taxon('Chlamydotomus'))
-fung.taxon('Chlamydotomus beigelii').rename('Trichosporon beigelii')
-# Don't know what to do about this one.  Not in Mycobank or
-# IRMNG... I don't know whether the T.c. name is valid.  Leave as is I guess
-# fung.taxon('Chlamydotomus cellaris').rename('Trichosporon cellaris')
-
 # analyzeMajorRankConflicts sets the "major_rank_conflict" flag when
 # intermediate ranks are missing (e.g. a family that's a child of a
 # class)
 fung.analyzeMajorRankConflicts()
 
 ott.absorb(fung)
+
+# Problem: Chamydotomus is an incertae sedis child of Fungi.
+# http://www.mycobank.org/BioloMICS.aspx?Link=T&TableKey=14682616000000067&Rec=35058&Fields=All
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/20
+Cb = ott.taxon('Chlamydotomus beigelii')
+Cb.rename('Trichosporon beigelii')
+ott.taxon('Trichosporon').take(Cb)
+
+# Don't know what to do about Chlamydotomus cellaris or the genus.
+# Genus is not in Mycobank or IRMNG... and I don't know whether T. cellaris
+# would be valid.  Leave as is I guess, and set incertae sedis
+		 
+ott.taxon('Chlamydotomus').incertaeSedis()
+# fung.taxon('Chlamydotomus cellaris').rename('Trichosporon cellaris')
+
 
 # NCBI Taxonomy
 ncbi  = Taxonomy.getTaxonomy('tax/ncbi/', 'ncbi')
@@ -113,10 +131,14 @@ ott.notSame(ncbi.taxon('Rhynchonelloidea'), gbif.taxon('Rhynchonelloidea'))
 ott.notSame(ncbi.taxon('Neoptera'), gbif.taxon('Neoptera', 'Diptera'))
 ott.notSame(gbif.taxon('6101461'), ncbi.taxon('Tipuloidea')) # genus Tipuloidea
 ott.notSame(silva.taxon('GN013951'), gbif.taxon('Gorkadinium')) #Tetrasphaera
+
+# Joseph 2013-07-23 https://github.com/OpenTreeOfLife/opentree/issues/62
+ott.same(ncbi.taxon('Myospalax'), gbif.taxon('Myospalax'))
+
 gbif.analyzeMajorRankConflicts()
 ott.absorb(gbif)
 
-# Joseph 2014-01-27
+# Joseph 2014-01-27 https://code.google.com/p/gbif-ecat/issues/detail?id=104
 ott.taxon('Parulidae').take(ott.taxon('Myiothlypis', 'Passeriformes'))
 # I don't get why this one isn't a major_rank_conflict !?
 ott.taxon('Blattaria').take(ott.taxon('Phyllodromiidae'))
@@ -137,8 +159,6 @@ ott.same(gbif.taxon('Gorkadinium','Dinophyceae'), irmng.taxon('Gorkadinium','Din
 irmng.analyzeMajorRankConflicts()
 
 irmng.taxon('Unaccepted').hide()
-
-# Finished loading source taxonomies.  Now patch things up.
 
 # Microbes suppressed at Laura Katz's request
 irmng.taxon('Bacteria','life').hideDescendants()
@@ -173,10 +193,14 @@ ott.taxon('Brachyhyops').extinct()
 # ott.taxon('Adlerocystis').show()  - it's Chromista ...
 # Index Fungorum says Adlerocystis is Chromista, but I don't believe it
 # ott.taxon('Chromista').take(ott.taxon('Adlerocystis','Fungi'))
-ott.taxon('Protozoa').take(ott.taxon('Amylophagus','Fungi'))#parasitic, Paddy
 
 # Adlerocystis seems to be a fungus, but unclassified - JAR 2014-03-10
 ott.taxon('Adlerocystis').incertaeSedis()
+
+# "No clear identity has emerged"
+#  http://forestis.rsvs.ulaval.ca/REFERENCES_X/phylogeny.arizona.edu/tree/eukaryotes/accessory/parasitic.html
+# Need to hide it because it clutters top level of Fungi
+ott.taxon('Amylophagus','Fungi').incertaeSedis()
 
 # Bad synonym - Tony Rees 2014-01-28
 ott.taxon('Lemania pluvialis').prune()
@@ -291,6 +315,17 @@ ott.taxon('Tenebrioninae').take(ott.taxon('Tribolium','Coleoptera'))
 
 # Bryan Drew 2014-03-20 http://dx.doi.org/10.1186/1471-2148-14-23
 ott.taxon('Pentapetalae').take(ott.taxon('Vitales'))
+
+# Bryan Drew 2014-03-14 http://dx.doi.org/10.1186/1471-2148-14-23
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/24
+ott.taxon('Charophyceae').elide()
+ott.taxon('Embryophyta').elide()
+ott.taxon('Coleochaetophyceae').elide()
+
+# Dail 2014-03-20
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/29
+# Note misspelling in SILVA
+ott.taxon('Freshwayer Opisthokonta').rename('Freshwater Microbial Opisthokonta')
 
 # Finish up
 

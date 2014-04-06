@@ -377,6 +377,7 @@ public class Taxon {
 
 			} else if (this.refinementp(oldChildren, newChildren)) {
 
+
 					// Move the new internal node over to union taxonomy.
 					// It will end up becoming a descendent of oldParent.
 					newnode = new Taxon(union);
@@ -494,6 +495,13 @@ public class Taxon {
 			// System.out.format("Would be refinement if not hidden: %s\n", this);
 			return false;
 		}
+
+		// Don't make something incertae sedis if it wasn't already
+		if (Taxonomy.incertae_sedisRegex.matcher(this.name).find()) {
+			System.err.format("That was a close one: %s\n", this);
+			return false;
+		}
+
 		return true;
 	}
 
@@ -1119,7 +1127,13 @@ public class Taxon {
 
 	public void hide() {
 		this.properFlags = Taxonomy.HIDDEN;
-		this.hideDescendants();
+		this.hideDescendants();  // shouldn't be needed, consider removing
+	}
+
+	public void unhide() {
+		this.properFlags &= ~Taxonomy.HIDDEN;
+		if (this.parent != null)
+			this.parent.unhide();
 	}
 
 	public void hideDescendants() {
@@ -1162,6 +1176,7 @@ public class Taxon {
 
 	public void absorb(Taxon other) {
 		if (other == null) return; //error already reported
+		if (other == this) return;
 		if (this.taxonomy != other.taxonomy) {
 			System.err.format("** %s and %s aren't in the same taxonomy\n", other, this);
 			return;

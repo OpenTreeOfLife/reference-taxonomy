@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# Author: Stephen Smith
+
 # Arguments:
 #	download - T or F - whether or not to download the tar.gz file from NCBI
 #	downloaddir - where to find (or put) the tar.gz and its contents
@@ -287,9 +289,15 @@ if __name__ == "__main__":
 			nametowrite = nm_storage[i]
 
 		# if it is the root node then we need to make its parent id blank and rename it "life"
-		if nametowrite.strip() == "root":
+		if nametowrite == "root":
 			nametowrite = "life"
 			prid = ""
+		elif nametowrite == 'environmental samples':
+			nametowrite = nm_storage[pid[i]] + ' ' + nametowrite
+			if nametowrite not in synonyms:
+				synonyms[i] = []
+			# kludge, would be better to change synonyms table representation
+			synonyms[i].append('%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n' % (i, 'environmental samples', '', 'synonym'))
 		rankwrite = nrank[id]
 		outfile.write(id+"\t|\t"+prid+"\t|\t"+nametowrite+"\t|\t"+rankwrite+"\t|\t\n")
 

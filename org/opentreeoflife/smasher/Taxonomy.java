@@ -1849,13 +1849,19 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			System.err.format("** One of the two nodes must come from a source taxonomy: %s %s\n", unode, snode);
 			return;
 		}
-		if (snode.mapped != null) {
-			System.err.format("** The source is already mapped: %s\n", snode);
-			return;
-		}
-		if (polarity)
+		if (polarity) {
+			if (snode.mapped != null) {
+				if (snode.mapped != unode)
+					System.err.format("** The taxa have already been determined to be different: %s\n", snode);
+				return;
+			}
 			snode.unifyWith(unode);
-		else {
+		} else {
+			if (snode.mapped != null) {
+				if (snode.mapped == unode)
+					System.err.format("** The taxa have already been determined to be the same: %s\n", snode);
+				return;
+			}
 			Taxon evader = new Taxon(unode.taxonomy);
 			snode.unifyWithNew(evader);
 			evader.addSource(snode);
@@ -1955,6 +1961,8 @@ class SourceTaxonomy extends Taxonomy {
 				if (union.nameIndex.get(node.name) != null &&
 					!seen.contains(node.name))
 					{ seen.add(node.name); todo.add(node.name); }
+			// This one probably just generates noise
+			if (false)
 			// synonym / synonym
 			for (String name : this.nameIndex.keySet())
 				if (union.nameIndex.get(name) != null &&
@@ -2929,7 +2937,7 @@ abstract class Criterion {
 		};
 
 	static Criterion[] criteria = { adHoc, division,
-									eschewTattered,
+									// eschewTattered,
 									lineage, subsumption,
 									compareSourceIds,
 									// knowDivision,

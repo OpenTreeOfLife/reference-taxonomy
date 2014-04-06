@@ -27,15 +27,23 @@ silva.taxon('Actinobacteria','Bacteria').rename('Actinobacteria sup.')
 silva.taxon('Acidobacteria','Bacteria').rename('Acidobacteria sup.')
 silva.taxon('Ochromonas','Ochromonadales').rename('Ochromonas sup.')
 silva.taxon('Tetrasphaera','Tetrasphaera').rename('Tetrasphaera inf.')
+
+# SILVA's placement of Rozella as a sibling of Fungi is contradicted
+# by Hibbett 2007, which puts it under Fungi.  Hibbett gets priority.
+# We make the change to SILVA to prevent Nucletmycea from being
+# labeled 'tattered'.
+silva.taxon('Fungi').take(silva.taxon('Rozella'))
+
 ott.absorb(silva)
 
 # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/30
+# https://github.com/OpenTreeOfLife/feedback/issues/5
 for name in ['GAL08', 'GOUTA4', 'JL-ETNP-Z39', 'Kazan-3B-28',
 			 'LD1-PA38', 'MVP-21', 'NPL-UPA2', 'OC31', 'RsaHF231',
 			 'S2R-29', 'SBYG-2791', 'SM2F11', 'WCHB1-60', 'T58',
 			 'LKM74', 'LEMD255', 'CV1-B1-93', 'H1-10', 'H26-1',
 			 'M1-18D08', 'D4P07G08', 'DH147-EKD10', 'LG25-05',
-			 'NAMAKO-1', 'RT5iin25', 'SA1-3C06']:
+			 'NAMAKO-1', 'RT5iin25', 'SA1-3C06', 'DH147-EKD23']:
     ott.taxon(name).elide()
 
 # Lamiales taxonomy from study 713
@@ -90,6 +98,7 @@ ott.notSame(ncbi.taxon('Perezia'), fung.taxon('Perezia'))
 # analyzeOTUs sets flags on questionable taxa ("unclassified",
 #  hybrids, and so on) to allow the option of suppression downstream
 ncbi.analyzeOTUs()
+
 ott.absorb(ncbi)
 
 # 2014-01-27 Joseph: Quiscalus is incorrectly in Fringillidae instead
@@ -133,7 +142,12 @@ ott.notSame(gbif.taxon('6101461'), ncbi.taxon('Tipuloidea')) # genus Tipuloidea
 ott.notSame(silva.taxon('GN013951'), gbif.taxon('Gorkadinium')) #Tetrasphaera
 
 # Joseph 2013-07-23 https://github.com/OpenTreeOfLife/opentree/issues/62
-ott.same(ncbi.taxon('Myospalax'), gbif.taxon('Myospalax'))
+gbif.taxon('Myospalax','Muridae').absorb(gbif.taxon('2439119'))
+
+# Rick Ree 2014-03-28 https://github.com/OpenTreeOfLife/reference-taxonomy/issues/37
+ott.same(ncbi.taxon('Calothrix', 'Rivulariaceae'), gbif.taxon('Calothrix', 'Rivulariaceae'))
+ott.same(ncbi.taxon('Chlorella', 'Chlorellaceae'), gbif.taxon('Chlorella', 'Chlorellaceae'))
+ott.same(ncbi.taxon('Myrmecia', 'Microthamniales'), gbif.taxon('Myrmecia', 'Microthamniales'))
 
 gbif.analyzeMajorRankConflicts()
 ott.absorb(gbif)
@@ -166,6 +180,7 @@ irmng.taxon('Protista','life').hideDescendants()
 irmng.taxon('Archaea','life').hideDescendants()
 
 ott.absorb(irmng)
+
 
 # Finished loading source taxonomies.  Now patch things up.
 
@@ -318,15 +333,60 @@ ott.taxon('Pentapetalae').take(ott.taxon('Vitales'))
 
 # Bryan Drew 2014-03-14 http://dx.doi.org/10.1186/1471-2148-14-23
 # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/24
-ott.taxon('Charophyceae').elide()
-ott.taxon('Embryophyta').elide()
-ott.taxon('Coleochaetophyceae').elide()
+ott.taxon('Streptophytina').elide()
 
 # Dail 2014-03-20
 # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/29
 # Note misspelling in SILVA
 ott.taxon('Freshwayer Opisthokonta').rename('Freshwater Microbial Opisthokonta')
 
+# JAR 2014-03-31 just poking around
+# Many of these would be handled by major_rank_conflict if it worked
+# http://tolweb.org/tree?group=Temnospondyli
+ott.taxon('Temnospondyli').extinct()
+# https://en.wikipedia.org/wiki/Eobatrachus
+ott.taxon('Eobatrachus').extinct()
+# https://en.wikipedia.org/wiki/Vulcanobatrachus
+ott.taxon('Vulcanobatrachus').extinct()
+# https://en.wikipedia.org/wiki/Beelzebufo
+ott.taxon('Beelzebufo').extinct()
+# https://en.wikipedia.org/wiki/Iridotriton
+ott.taxon('Iridotriton').extinct()
+# https://en.wikipedia.org/wiki/Baurubatrachus
+ott.taxon('Baurubatrachus').extinct()
+
+# Dail 2014-03-31 https://github.com/OpenTreeOfLife/feedback/issues/5
+ott.taxon('Katablepharidophyta').hide()
+
+# Dail 2014-03-31 https://github.com/OpenTreeOfLife/feedback/issues/4
+# no evidence given
+ott.taxonThatContains('Bacteria', 'Lentisphaerae').take(ott.taxon('Lentisphaerae'))
+
+# David Hibbett 2014-04-02 misspelling in h2007 file
+# (Dacrymecetales is 'no rank', Dacrymycetes is a class)
+if ott.taxon('Dacrymecetales') != None:
+	ott.taxon('Dacrymecetales').rename('Dacrymycetes')
+
+# Dail https://github.com/OpenTreeOfLife/feedback/issues/6
+ott.taxon('Telonema').synonym('Teleonema')
+
+# Joseph https://github.com/OpenTreeOfLife/reference-taxonomy/issues/43
+ott.taxon('Lorisiformes').take(ott.taxon('Lorisidae'))
+
+# Romina https://github.com/OpenTreeOfLife/reference-taxonomy/issues/42
+ott.taxon('Cyphellopsis','Cyphellaceae').unhide()
+ott.taxon('Cyphellopsis','Cyphellaceae').absorb(ott.taxon('Cyphellopsis','Niaceae'))
+ott.taxon('Diaporthaceae').take(ott.taxon('Phomopsis'))
+ott.taxon('Valsaceae').take(ott.taxon('Valsa'))
+ott.taxon('Agaricaceae').take(ott.taxon('Cystoderma'))
+ott.taxon('Hypocreaceae').take(ott.taxon('Hypocrea'))
+
+# Fold Norops into Anolis
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/31
+# TBD: Change species names from Norops X to Anolis X for all X
+ott.taxon('Anolis').take(ott.taxon('Norops'))
+
+# -----------------------------------------------------------------------------
 # Finish up
 
 # "Old" patch system
@@ -336,7 +396,15 @@ ott.edit('feed/ott/edits/')
 ott.deforestate()
 
 # Assign OTT ids to all taxa, re-using old ids when possible
-ott.assignIds(Taxonomy.getTaxonomy('tax/prev_ott/'))
+ids = Taxonomy.getTaxonomy('tax/prev_ott/')
+
+# JAR manual intervention to preserve ids
+# These OTUs cases came up as ambiguous. Keep old ids.
+ott.same(ids.taxon('4107132'), fung.taxon('11060')) #Cryptococcus
+ott.same(ids.taxon('339002'), ncbi.taxon('3071')) #Chlorella
+ott.same(ids.taxon('342868'), ncbi.taxon('56708')) #Tetraphyllidea
+
+ott.assignIds(ids)
 
 ott.parentChildHomonymReport()
 

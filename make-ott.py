@@ -9,7 +9,14 @@ ott = Taxonomy.newTaxonomy()
 
 # Hibbett 2007 updated upper fungal taxonomy
 h2007 = Taxonomy.getNewick('feed/h2007/tree.tre', 'h2007')
+
+# 2014-04-08 Misspelling
+h2007.taxon('Chaetothryriomycetidae').rename('Chaetothyriomycetidae')
+
 ott.absorb(h2007)
+
+# h2007/if synonym https://github.com/OpenTreeOfLife/reference-taxonomy/issues/40
+ott.taxon('Urocystales').synonym('Urocystidales')
 
 # SILVA microbial taxonomy
 silva = Taxonomy.getTaxonomy('tax/silva/', 'silva')
@@ -60,6 +67,20 @@ fung.smush()
 # 2014-03-07 Prevent a false match
 ott.notSame(silva.taxon('Phaeosphaeria'), fung.taxon('Phaeosphaeria'))
 
+# 2014-04-08 This was causing Agaricaceae to become 'tattered'
+ott.notSame(silva.taxon('Morganella'), fung.taxon('Morganella'))
+
+# 2014-04-08 More IF/SILVA bad matches (probably sample contamination)
+for name in ["Trichoderma harzianum",
+			 "Acantharia",
+			 "Bogoriella",
+			 "Steinia",
+			 "Sclerotinia homoeocarpa",
+			 "Epiphloea",
+			 "Campanella",
+			 "Lacrymaria"]:
+	ott.notSame(silva.taxon(name), fung.taxon(name))
+
 # analyzeMajorRankConflicts sets the "major_rank_conflict" flag when
 # intermediate ranks are missing (e.g. a family that's a child of a
 # class)
@@ -67,7 +88,7 @@ fung.analyzeMajorRankConflicts()
 
 ott.absorb(fung)
 
-# Problem: Chamydotomus is an incertae sedis child of Fungi.
+# Problem: Chlamydotomus is an incertae sedis child of Fungi.
 # http://www.mycobank.org/BioloMICS.aspx?Link=T&TableKey=14682616000000067&Rec=35058&Fields=All
 # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/20
 Cb = ott.taxon('Chlamydotomus beigelii')
@@ -142,7 +163,8 @@ ott.notSame(gbif.taxon('6101461'), ncbi.taxon('Tipuloidea')) # genus Tipuloidea
 ott.notSame(silva.taxon('GN013951'), gbif.taxon('Gorkadinium')) #Tetrasphaera
 
 # Joseph 2013-07-23 https://github.com/OpenTreeOfLife/opentree/issues/62
-gbif.taxon('Myospalax','Muridae').absorb(gbif.taxon('2439119'))
+# GBIF has two copies of Myospalax
+gbif.taxon('6006429').absorb(gbif.taxon('2439119'))
 
 # Rick Ree 2014-03-28 https://github.com/OpenTreeOfLife/reference-taxonomy/issues/37
 ott.same(ncbi.taxon('Calothrix', 'Rivulariaceae'), gbif.taxon('Calothrix', 'Rivulariaceae'))
@@ -377,14 +399,26 @@ ott.taxon('Lorisiformes').take(ott.taxon('Lorisidae'))
 ott.taxon('Cyphellopsis','Cyphellaceae').unhide()
 ott.taxon('Cyphellopsis','Cyphellaceae').absorb(ott.taxon('Cyphellopsis','Niaceae'))
 ott.taxon('Diaporthaceae').take(ott.taxon('Phomopsis'))
-ott.taxon('Valsaceae').take(ott.taxon('Valsa'))
-ott.taxon('Agaricaceae').take(ott.taxon('Cystoderma'))
-ott.taxon('Hypocreaceae').take(ott.taxon('Hypocrea'))
+ott.taxon('Valsaceae').take(ott.taxon('Valsa', 'Fungi'))
+ott.taxon('Agaricaceae').take(ott.taxon('Cystoderma','Fungi'))
+ott.taxon('Hypocrea').absorb(ott.taxonThatContains('Trichoderma', 'Trichoderma raseum'))
+# Invert the synonym relationship
+ott.taxon('Trichoderma deliquescens').rename('Hypocrea lutea')
 
 # Fold Norops into Anolis
 # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/31
 # TBD: Change species names from Norops X to Anolis X for all X
-ott.taxon('Anolis').take(ott.taxon('Norops'))
+ott.taxon('Anolis').absorb(ott.taxon('Norops', 'Iguanidae'))
+
+# JAR 2014-4-08 - these are in study OTUs - see IRMNG
+ott.taxon('Inseliellum').extant()
+ott.taxon('Conus', 'Gastropoda').extant()
+ott.taxon('Patelloida').extant()
+ott.taxon('Phyllanthus', 'Phyllanthaceae').extant()
+ott.taxon('Stelis','Orchidaceae').extant()
+ott.taxon('Chloris', 'Poaceae').extant()
+ott.taxon('Acropora', 'Acroporidae').extant()
+
 
 # -----------------------------------------------------------------------------
 # Finish up

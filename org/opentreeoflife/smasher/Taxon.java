@@ -32,7 +32,7 @@ public class Taxon {
 	Taxon mapped = null;			// source node -> union node
 	Taxon comapped = null;		// union node -> source node
 	boolean novelp = false;		// added to union in last round?
-	private String division = null;
+	String division = null;
 
 	static boolean windyp = true;
 
@@ -251,11 +251,14 @@ public class Taxon {
 		// A few are combined using |
 		unode.properFlags |=
 			((before | this.properFlags) &
-			 (Taxonomy.FORCED_VISIBLE | Taxonomy.TATTERED |
-			  Taxonomy.EDITED | Taxonomy.EXTINCT));
-		// This one is anomalous
+			 (Taxonomy.FORCED_VISIBLE | 
+			  Taxonomy.EDITED |
+			  Taxonomy.EXTINCT));
+		// This one is anomalous.  Propagate these flags from original setting
+		// ignoring how they're set in the merged taxon.
 		unode.properFlags |=
-			(before & Taxonomy.MAJOR_RANK_CONFLICT);
+			(before & (Taxonomy.MAJOR_RANK_CONFLICT |
+					   Taxonomy.TATTERED));
 	}
 
 	void reallyUnifyWith(Taxon unode) {
@@ -404,6 +407,15 @@ public class Taxon {
 				newnode = new Taxon(union);
 				for (Taxon augChild: newChildren)
 					newnode.addChild(augChild);
+
+				if (this.taxonomy.tag.equals("if")) {
+					boolean javasux = false;
+					for (Taxon p = this.parent; p != null; p = p.parent)
+						if (p.name.equals("Fungi")) { javasux = true; break; }
+					if (javasux)
+						for (Taxon o : oldChildren)
+							System.err.format("** %s losing %s to %s\n", this, o, o.parent);
+				}
 
 				newflags |= Taxonomy.TATTERED;
 				union.logAndMark(Answer.yes(this, null, "new/tattered", null));
@@ -1121,6 +1133,7 @@ public class Taxon {
 			System.err.format("** A taxon cannot be its own parent: %s\n", newchild, this);
 		else {
 			newchild.properFlags |= Taxonomy.EDITED;
+			newchild.properFlags &= ~(Taxonomy.MAJOR_RANK_CONFLICT | Taxonomy.INCERTAE_SEDIS);
 			newchild.changeParent(this);
 		}
 	}

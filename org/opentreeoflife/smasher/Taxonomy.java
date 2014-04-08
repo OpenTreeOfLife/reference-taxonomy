@@ -281,6 +281,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		this.dumpNodes(this.roots, outprefix, sep);
 		this.dumpSynonyms(outprefix + "synonyms.tsv", sep);
 		this.dumpMetadata(outprefix + "about.json");
+		this.dumpHidden(outprefix + "hidden.tsv");
 	}
 
 	public void dump(String outprefix) throws IOException {
@@ -721,6 +722,28 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		out.close();
 	}
 
+	void dumpHidden(String filename) throws IOException {
+		PrintStream out = Taxonomy.openw(filename);
+		for (Taxon node : this) {
+			if (((node.properFlags | node.inheritedFlags) &
+				 (Taxonomy.HIDDEN |
+				  Taxonomy.EXTINCT |
+				  Taxonomy.MAJOR_RANK_CONFLICT |
+				  Taxonomy.TATTERED |
+				  Taxonomy.NOT_OTU |
+				  Taxonomy.HYBRID |
+				  Taxonomy.VIRAL |
+				  Taxonomy.UNCLASSIFIED |
+				  Taxonomy.ENVIRONMENTAL |
+				  Taxonomy.INCERTAE_SEDIS)) != 0) {
+				out.format("%s\t%s\t%s\t", node.id, node.name, node.division);
+				this.printFlags(node, out);
+				out.println();
+			}
+		}
+		out.close();
+	}
+
 	/*
 	   flags are:
 
@@ -788,7 +811,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	// NCBI only (not SILVA)
 	public void analyzeOTUs() {
 		for (Taxon root : this.roots)
-			analyzeOTUs(root, 0);	// mutates the tree
+			analyzeOTUs(root);	// mutates the tree
 	}
 
 	// GBIF and IF only
@@ -920,10 +943,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	// taxa being hidden.
 	// We use this for NCBI but not for SILVA.
 
-	static void analyzeOTUs(Taxon node, int inheritedFlags) {
-		// Before
-		node.inheritedFlags |= inheritedFlags;
-
+	static void analyzeOTUs(Taxon node) {
 		// Prepare for recursive descent
 		if (notOtuRegex.matcher(node.name).find()) 
 			node.properFlags |= NOT_OTU;
@@ -932,12 +952,10 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		if (viralRegex.matcher(node.name).find()) 
 			node.properFlags |= VIRAL;
 
-		int bequest = inheritedFlags | node.properFlags;		// What the children inherit
-
 		// Recursive descent
 		if (node.children != null)
 			for (Taxon child : node.children)
-				analyzeOTUs(child, bequest);
+				analyzeOTUs(child);
 	}
 
 	// Flags to set for all taxonomies.	 Also elide container pseudo-taxa
@@ -1045,6 +1063,10 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		if ((node.properFlags & HIDDEN) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("hidden");
+		}
+		else if ((node.inheritedFlags & HIDDEN) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("hidden_inherited");
 		}
 
 		if ((node.properFlags & MAJOR_RANK_CONFLICT) != 0) {
@@ -1844,24 +1866,25 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 							  node1, node2);
 			return;
 		}
-		if (snode.mapped == unode) return;	  // Already equated
 		if (!(snode.taxonomy instanceof SourceTaxonomy)) {
 			System.err.format("** One of the two nodes must come from a source taxonomy: %s %s\n", unode, snode);
 			return;
 		}
-		if (polarity) {
+		if (polarity) {			// same
 			if (snode.mapped != null) {
 				if (snode.mapped != unode)
 					System.err.format("** The taxa have already been determined to be different: %s\n", snode);
 				return;
 			}
 			snode.unifyWith(unode);
-		} else {
+		} else {				// notSame
 			if (snode.mapped != null) {
 				if (snode.mapped == unode)
 					System.err.format("** The taxa have already been determined to be the same: %s\n", snode);
 				return;
 			}
+			// Give the source node a place to go in the union that is
+			// different from the union node it's different from
 			Taxon evader = new Taxon(unode.taxonomy);
 			snode.unifyWithNew(evader);
 			evader.addSource(snode);
@@ -2200,6 +2223,17 @@ class UnionTaxonomy extends Taxonomy {
 		// idsource.tag = "ids";
 		idsource.mapInto(this, Criterion.idCriteria);
 
+		this.transferIds(idsource);
+
+		// Phase 2: give new ids to union nodes that didn't get them above.
+		long sourcemax = idsource.maxid();
+		this.assignNewIds(sourcemax);
+		// remember, this = union, idsource = previous version of ott
+
+		Taxon.printStats();		// Taxon id clash
+	}
+
+	public void transferIds(SourceTaxonomy idsource) {
 		Taxon.resetStats();
 		System.out.println("--- Assigning ids to union starting with " + idsource.getTag() + " ---");
 
@@ -2217,13 +2251,6 @@ class UnionTaxonomy extends Taxonomy {
 				unode.setId(node.id);
 			}
 		}
-
-		// Phase 2: give new ids to union nodes that didn't get them above.
-		long sourcemax = idsource.maxid();
-		this.assignNewIds(sourcemax);
-		// remember, this = union, idsource = previous version of ott
-
-		Taxon.printStats();		// Taxon id clash
 	}
 
 	// Cf. assignIds()
@@ -2347,6 +2374,7 @@ class UnionTaxonomy extends Taxonomy {
 
 		this.dumpNodes(this.roots, outprefix, sep);
 		this.dumpSynonyms(outprefix + "synonyms.tsv", sep);
+		this.dumpHidden(outprefix + "hidden.tsv");
 	}
 
 	// Overrides method in Taxonomy class

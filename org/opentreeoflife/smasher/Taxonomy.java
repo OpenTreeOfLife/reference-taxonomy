@@ -725,18 +725,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	void dumpHidden(String filename) throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
 		for (Taxon node : this) {
-			if (((node.properFlags | node.inheritedFlags) &
-				 (Taxonomy.HIDDEN |
-				  Taxonomy.EXTINCT |
-				  Taxonomy.MAJOR_RANK_CONFLICT |
-				  Taxonomy.TATTERED |
-				  Taxonomy.NOT_OTU |
-				  Taxonomy.HYBRID |
-				  Taxonomy.VIRAL |
-				  Taxonomy.UNCLASSIFIED |
-				  Taxonomy.ENVIRONMENTAL |
-				  Taxonomy.INCERTAE_SEDIS)) != 0) {
-				out.format("%s\t%s\t%s\t", node.id, node.name, node.division);
+			if (node.isHidden()) {
+				out.format("%s\t%s\t%s\t%s\t", node.id, node.name, node.getSourceIdsString(), node.division);
 				this.printFlags(node, out);
 				out.println();
 			}
@@ -966,7 +956,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		boolean elidep = false;
 
 		if (unclassifiedRegex.matcher(node.name).find()) {// Rule 3+5
-			node.properFlags |= UNCLASSIFIED;
+			node.properFlags |= UNCLASSIFIED;  // includes uncultured
 			elidep = true;
 		}
 		if (environmentalRegex.matcher(node.name).find()) {// Rule 3+5

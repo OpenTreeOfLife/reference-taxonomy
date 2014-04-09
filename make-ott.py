@@ -110,7 +110,7 @@ ncbi  = Taxonomy.getTaxonomy('tax/ncbi/', 'ncbi')
 # mark them 'hidden' so they can be suppressed downstream.  This
 # preserves the identifier assignments, which may have been used
 # somewhere.
-ncbi.taxon('Fungi').hideDescendants()
+ncbi.taxon('Fungi').hideDescendantsToRank('species')
 
 #ott.same(ncbi.taxon('Cyanobacteria'), silva.taxon('D88288/#3'))
 ott.notSame(ncbi.taxon('Burkea'), fung.taxon('Burkea'))
@@ -134,7 +134,7 @@ gbif  = Taxonomy.getTaxonomy('tax/gbif/', 'gbif')
 gbif.smush()
 
 # Fungi suppressed at David Hibbett's request
-gbif.taxon('Fungi').hideDescendants()
+gbif.taxon('Fungi').hideDescendantsToRank('species')
 
 # Microbes suppressed at Laura Katz's request
 gbif.taxon('Bacteria','life').hideDescendants()
@@ -183,7 +183,7 @@ irmng = Taxonomy.getTaxonomy('tax/irmng/', 'irmng')
 irmng.smush()
 
 # Fungi suppressed at David Hibbett's request
-irmng.taxon('Fungi').hideDescendants()
+irmng.taxon('Fungi').hideDescendantsToRank('species')
 
 irmng.taxon('1413316').prune() #Neopithecus in Mammalia
 irmng.taxon('1413315').extinct() #Neopithecus in Primates (Pongidae)

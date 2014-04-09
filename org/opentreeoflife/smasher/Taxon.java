@@ -1003,20 +1003,47 @@ public class Taxon {
 							  this.parent == null ? "(roots)" : this.parent.name);
 			return "?";
 		}
-		for (Taxon other : nodes)
-			if (other != this && other.name.equals(this.name)) {
+		boolean homonymp = false;
+		boolean informativeFail = false;
+
+		if (true) {
+			for (Taxon other : nodes)
+				if (other != this && other.name.equals(this.name)) {
+					homonymp = true;
+					Taxon i = this.informative();
+					if (i != null && i.equals(other.informative())) {
+						informativeFail = true;
+						break;
+					}
+				}
+			if (informativeFail || homonymp) {
+				String urank = "";
+				if (this.rank != null) urank = this.rank + " ";
+				if (informativeFail)
+					urank = urank + " " + this.sourceIds.get(0);
+
 				Taxon i = this.informative();
-				if ((i != other.informative() &&
-					 i != null &&
-					 !this.name.endsWith(" sp."))) {
-					String urank = "";
-					if (this.rank != null) urank = this.rank + " ";
-					String irank = "";
-					if (i.rank != null) irank = i.rank + " ";
-					return this.name + " (" + urank + "in " + irank + i.name + ")";
-				} else
-					return this.name + " (" + this.getSourceIdsString() + ")";
-			}
+				String irank = "";
+				if (i.rank != null) irank = i.rank + " ";
+				return this.name + " (" + urank + "in " + irank + i.name + ")";
+			} else return "";
+		}
+		else
+			// Old buggy version, delete after above has been tested
+			for (Taxon other : nodes)
+				if (other != this && other.name.equals(this.name)) {
+					Taxon i = this.informative();
+					if ((i != other.informative() &&
+						 i != null &&
+						 !this.name.endsWith(" sp."))) {
+						String urank = "";
+						if (this.rank != null) urank = this.rank + " ";
+						String irank = "";
+						if (i.rank != null) irank = i.rank + " ";
+						return this.name + " (" + urank + "in " + irank + i.name + ")";
+					} else
+						return this.name + " (" + this.getSourceIdsString() + ")";
+				}
 		return "";
 	}
 
@@ -1101,6 +1128,20 @@ public class Taxon {
 		return sam;
 	}
 
+	public boolean isHidden() {
+		return ((this.properFlags | this.inheritedFlags) &
+				(Taxonomy.HIDDEN |
+				 Taxonomy.EXTINCT |
+				 Taxonomy.MAJOR_RANK_CONFLICT |
+				 Taxonomy.TATTERED |
+				 Taxonomy.NOT_OTU |
+				 Taxonomy.HYBRID |
+				 Taxonomy.VIRAL |
+				 Taxonomy.UNCLASSIFIED |
+				 Taxonomy.ENVIRONMENTAL |
+				 Taxonomy.INCERTAE_SEDIS)) != 0;
+	}
+
 	// ----- Methods intended for use in jython scripts -----
 
 	// Patch system commands are add, move, synonym, prune, fold, flag
@@ -1157,6 +1198,17 @@ public class Taxon {
 			}
 	}
 
+	// Hide up to but not including the given rank
+	public void hideDescendantsToRank(String rank) {
+		if (this.children != null)
+			for (Taxon child : this.children) {
+				if (child.rank != null && !child.rank.equals(rank)) {
+					child.properFlags = Taxonomy.HIDDEN;
+					child.hideDescendantsToRank(rank);
+				}
+			}
+	}
+
 	public void synonym(String name) {
 		this.taxonomy.addSynonym(name, this);
 	}
@@ -1176,7 +1228,7 @@ public class Taxon {
 			System.err.format("** %s is a root\n", this);
 		else {
 			if (this.children == null)
-				System.err.format("** Warning: %s has no children\n", this);
+				; //System.err.format("** Warning: %s has no children\n", this);
 			else
 				for (Taxon child : new ArrayList<Taxon>(this.children))
 					child.changeParent(this.parent);

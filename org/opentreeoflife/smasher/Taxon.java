@@ -1020,7 +1020,7 @@ public class Taxon {
 				String urank = "";
 				if (this.rank != null) urank = this.rank + " ";
 				if (informativeFail)
-					urank = urank + " " + this.sourceIds.get(0);
+					urank = urank + this.sourceIds.get(0) + " ";
 
 				Taxon i = this.informative();
 				String irank = "";

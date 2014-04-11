@@ -309,12 +309,13 @@ public class Taxon {
 			return new QualifiedId(this.taxonomy.getTag(), this.id);
 		else {
 			// What if from a Newick string?
-			System.err.println("!? [getQualifiedId] Taxon has no id: " + this.name);
-			return new QualifiedId("?", this.name);
+			System.err.println("** [getQualifiedId] Taxon has no id, using name: " + this.name);
+			return new QualifiedId(this.taxonomy.getTag(), this.name);
 		}
 	}
 
-	// Method on Node, called for every node in the source taxonomy
+	// Method on Node, called for every node in the source taxonomy.
+	// Input is node in source taxonomy.  Returns node in union taxonomy.
 	Taxon augment(UnionTaxonomy union) {
 
 		Taxon newnode = null;
@@ -380,7 +381,6 @@ public class Taxon {
 
 			} else if (this.refinementp(oldChildren, newChildren)) {
 
-
 					// Move the new internal node over to union taxonomy.
 					// It will end up becoming a descendent of oldParent.
 					newnode = new Taxon(union);
@@ -408,14 +408,7 @@ public class Taxon {
 				for (Taxon augChild: newChildren)
 					newnode.addChild(augChild);
 
-				if (this.taxonomy.tag.equals("if")) {
-					boolean javasux = false;
-					for (Taxon p = this.parent; p != null; p = p.parent)
-						if (p.name.equals("Fungi")) { javasux = true; break; }
-					if (javasux)
-						for (Taxon o : oldChildren)
-							System.err.format("** %s losing %s to %s\n", this, o, o.parent);
-				}
+				union.reportConflict(oldChildren.get(0), this);
 
 				newflags |= Taxonomy.TATTERED;
 				union.logAndMark(Answer.yes(this, null, "new/tattered", null));
@@ -913,6 +906,7 @@ public class Taxon {
 		return up;
 	}
 
+	// Use getDepth() only after the tree is in its final form
 	int depth = -1;
 	int getDepth() {
 		if (this.depth < 0) {
@@ -923,12 +917,12 @@ public class Taxon {
 		}
 		return this.depth;
 	}
+	// Does not cache - depths may change during merge
 	int measureDepth() {		// Robust in presence of insertions
 		if (this.parent == null)
-			this.depth = 0;
+			return 0;
 		else
-			this.depth = this.parent.measureDepth() + 1;
-		return this.depth;
+			return this.parent.measureDepth() + 1;
 	}
 
 	Taxon mrca(Taxon b) {
@@ -1267,8 +1261,16 @@ public class Taxon {
 	}
 
 	public void extant() {
+		boolean wasExtant = true;
 		for (Taxon node = this; node != null; node = node.parent)
-			this.properFlags &= ~Taxonomy.EXTINCT;
+			if ((this.properFlags & Taxonomy.EXTINCT) != 0) {
+				this.properFlags &= ~Taxonomy.EXTINCT;
+				if (node != this)
+					System.err.format("** Ancestor %s of %s was marked extinct\n", node, this);
+				wasExtant = false;
+			}
+		if (wasExtant)
+			System.err.format("** Note: %s wasn't marked extinct\n", this);
 	}
 
 	// add a tree to the forest?

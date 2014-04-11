@@ -61,6 +61,18 @@ ott.absorb(study713)
 
 # Index Fungorum
 fung  = Taxonomy.getTaxonomy('tax/if/', 'if')
+
+# JAR 2014-04-11 Missing in earlier IF, mistake in later IF -
+# extraneous authority string
+cyph = fung.taxon('Cyphellopsis')
+if cyph == None:
+	cyph = fung.taxon('Cyphellopsis Donk 1931')
+	if cyph != None:
+		cyph.rename('Cyphellopsis')
+	else:
+		cyph = fung.newTaxon('Cyphellopsis', 'genus', 'if:17439')
+fung.taxon('Niaceae').take(cyph)
+
 # smush will fold sibling taxa that have the same name.
 fung.smush()
 
@@ -116,6 +128,10 @@ ncbi.taxon('Fungi').hideDescendantsToRank('species')
 ott.notSame(ncbi.taxon('Burkea'), fung.taxon('Burkea'))
 ott.notSame(ncbi.taxon('Coscinium'), fung.taxon('Coscinium'))
 ott.notSame(ncbi.taxon('Perezia'), fung.taxon('Perezia'))
+
+# JAR 2014-04-11 Discovered during regression testing
+ott.notSame(ncbi.taxon('Epiphloea', 'Rhodophyta'), fung.taxon('Epiphloea', 'Lichinaceae'))
+
 # analyzeOTUs sets flags on questionable taxa ("unclassified",
 #  hybrids, and so on) to allow the option of suppression downstream
 ncbi.analyzeOTUs()
@@ -410,7 +426,7 @@ ott.taxon('Trichoderma deliquescens').rename('Hypocrea lutea')
 # TBD: Change species names from Norops X to Anolis X for all X
 ott.taxon('Anolis').absorb(ott.taxon('Norops', 'Iguanidae'))
 
-# JAR 2014-4-08 - these are in study OTUs - see IRMNG
+# JAR 2014-04-08 - these are in study OTUs - see IRMNG
 ott.taxon('Inseliellum').extant()
 ott.taxon('Conus', 'Gastropoda').extant()
 ott.taxon('Patelloida').extant()
@@ -418,7 +434,7 @@ ott.taxon('Phyllanthus', 'Phyllanthaceae').extant()
 ott.taxon('Stelis','Orchidaceae').extant()
 ott.taxon('Chloris', 'Poaceae').extant()
 ott.taxon('Acropora', 'Acroporidae').extant()
-
+ott.taxon('Diadasia').extant()
 
 # -----------------------------------------------------------------------------
 # Finish up

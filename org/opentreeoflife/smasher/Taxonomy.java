@@ -161,13 +161,13 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		}
 	}
 
-	Taxon highest(String name) {
+	Taxon highest(String name) { // See pin()
 		Taxon best = null;
 		List<Taxon> l = this.lookup(name);
 		if (l != null) {
 			int depth = 1 << 30;
 			for (Taxon node : l)
-				if (node.getDepth() < depth) {
+				if (node.measureDepth() < depth) {
 					depth = node.getDepth();
 					best = node;
 				}
@@ -323,6 +323,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	abstract void dumpMetadata(String filename) throws IOException;
 
+	static Pattern commaPattern = Pattern.compile(",");
+
 	// load | dump taxonomy proper
 
 	void loadTaxonomyProper(String filename) throws IOException {
@@ -401,11 +403,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 					addSynonym(rawname, node);
 					++normalizations;
 				}
-				if (this.flagscolumn != null) {
-					if (parts[this.flagscolumn].contains("extinct"))
-						// kludge. could be _direct or _inherited
-						node.properFlags |= Taxonomy.EXTINCT;
-				}
+				if (this.flagscolumn != null && parts[this.flagscolumn].length() > 0)
+					this.parseFlags(parts[this.flagscolumn], node);
 			}
 			++row;
 			if (row % 500000 == 0)
@@ -724,14 +723,17 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	void dumpHidden(String filename) throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
+		int count = 0;
 		for (Taxon node : this) {
 			if (node.isHidden()) {
+				++count;
 				out.format("%s\t%s\t%s\t%s\t", node.id, node.name, node.getSourceIdsString(), node.division);
 				this.printFlags(node, out);
 				out.println();
 			}
 		}
 		out.close();
+		System.out.format("| %s hidden taxa\n", count);
 	}
 
 	/*
@@ -851,6 +853,13 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	// Opposite of 'barren' - propagated upward
 	static final int ANYSPECIES			 =	 8 * 1024;
+
+	void parseFlags(String flags, Taxon node) {
+		// String[] tags = commaPattern.split(flags);
+		if (flags.contains("extinct"))
+			// kludge. could be _direct or _inherited
+			node.properFlags |= Taxonomy.EXTINCT;
+	}
 
 	// Returns the node's rank (as an int).	 In general the return
 	// value should be >= parentRank, but conceivably funny things
@@ -2365,6 +2374,7 @@ class UnionTaxonomy extends Taxonomy {
 		this.dumpNodes(this.roots, outprefix, sep);
 		this.dumpSynonyms(outprefix + "synonyms.tsv", sep);
 		this.dumpHidden(outprefix + "hidden.tsv");
+		this.dumpConflicts(outprefix + "conflicts.tsv");
 	}
 
 	// Overrides method in Taxonomy class
@@ -2506,6 +2516,52 @@ class UnionTaxonomy extends Taxonomy {
 		answer.x.report(answer.reason, answer.y, answer.witness);
 	}
 
+	// 3799 conflicts as of 2014-04-12
+	// unode.comapped.parent == fromparent
+	void reportConflict(Taxon unode, Taxon fromparent) {
+		conflicts.add(new Conflict(unode, fromparent));
+	}
+
+	List<Conflict> conflicts = new ArrayList<Conflict>();
+	void dumpConflicts(String filename) throws IOException {
+		PrintStream out = Taxonomy.openw(filename);
+		for (Conflict conflict : this.conflicts)
+			if (!conflict.unode.isHidden())
+				out.println(conflict.toString());
+		out.close();
+	}
+}
+
+class Conflict {
+	Taxon unode;					// in source taxonomy
+	Taxon fromParent;				// in union taxonomy
+	Conflict(Taxon unode, Taxon fromParent) {
+		this.unode = unode; this.fromParent = fromParent;
+	}
+	public String toString() {
+		// cf. Taxon.mrca
+		Taxon b = fromParent;
+		while (b != null && b.mapped == null)
+			b = b.parent;
+		b = b.mapped;
+		Taxon a = unode;
+		int da = a.measureDepth();
+		int db = b.measureDepth();
+		while (db > da) {
+			b = b.parent;
+			--db;
+		}
+		while (da > db) {
+			a = a.parent;
+			--da;
+		}
+		while (a != null && a.parent != b.parent) {
+			a = a.parent;
+			b = b.parent;
+			--da;
+		}
+		return (da + " " + fromParent + " in " + b + " lost child " + unode.comapped + " to " + unode.parent + " in " + a);
+	}
 }
 
 // For each source node, consider all possible union nodes it might map to

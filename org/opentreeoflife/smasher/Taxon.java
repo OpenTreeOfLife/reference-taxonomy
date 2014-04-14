@@ -1204,7 +1204,8 @@ public class Taxon {
 	}
 
 	public void synonym(String name) {
-		this.taxonomy.addSynonym(name, this);
+		if (!this.taxonomy.addSynonym(name, this))
+			System.err.format("** Synonym not added: %s %s\n", this, name);
 	}
 
 	public void rename(String name) {

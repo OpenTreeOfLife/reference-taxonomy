@@ -7,7 +7,7 @@ from chromista_spreadsheet import fixChromista
 
 ott = Taxonomy.newTaxonomy()
 
-# Hibbett 2007 updated upper fungal taxonomy
+# ----- Hibbett 2007 updated upper fungal taxonomy -----
 h2007 = Taxonomy.getNewick('feed/h2007/tree.tre', 'h2007')
 
 # 2014-04-08 Misspelling
@@ -18,7 +18,7 @@ ott.absorb(h2007)
 # h2007/if synonym https://github.com/OpenTreeOfLife/reference-taxonomy/issues/40
 ott.taxon('Urocystales').synonym('Urocystidales')
 
-# SILVA microbial taxonomy
+# ----- SILVA microbial taxonomy -----
 silva = Taxonomy.getTaxonomy('tax/silva/', 'silva')
 
 # Deal with parent/child homonyms in SILVA.
@@ -41,6 +41,12 @@ silva.taxon('Tetrasphaera','Tetrasphaera').rename('Tetrasphaera inf.')
 # labeled 'tattered'.
 silva.taxon('Fungi').take(silva.taxon('Rozella'))
 
+# 2014-04-12 Rick Ree #58 and #48 - make them match NCBI
+silva.taxon('Arthrobacter Sp. PF2M5').rename('Arthrobacter sp. PF2M5')
+silva.taxon('Halolamina sp. wsy15-h1').rename('Halolamina sp. WSY15-H1')
+# RR #55 - this is a silva/ncbi homonym
+silva.taxon('vesicomya').rename('Vesicomya')
+
 ott.absorb(silva)
 
 # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/30
@@ -59,7 +65,7 @@ study713  = Taxonomy.getTaxonomy('tax/713/', 'study713')
 ott.notSame(study713.taxon('Buchnera'), silva.taxon('Buchnera'))
 ott.absorb(study713)
 
-# Index Fungorum
+# ----- Index Fungorum -----
 fung  = Taxonomy.getTaxonomy('tax/if/', 'if')
 
 # JAR 2014-04-11 Missing in earlier IF, mistake in later IF -
@@ -103,9 +109,11 @@ ott.absorb(fung)
 # Problem: Chlamydotomus is an incertae sedis child of Fungi.
 # http://www.mycobank.org/BioloMICS.aspx?Link=T&TableKey=14682616000000067&Rec=35058&Fields=All
 # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/20
-Cb = ott.taxon('Chlamydotomus beigelii')
-Cb.rename('Trichosporon beigelii')
-ott.taxon('Trichosporon').take(Cb)
+# Not sure about this.  beigelii has a sister that should move along
+# with it, but the sister has never been officially moved.
+# Cb = ott.taxon('Chlamydotomus beigelii')
+# Cb.rename('Trichosporon beigelii')
+# ott.taxon('Trichosporon').take(Cb)
 
 # Don't know what to do about Chlamydotomus cellaris or the genus.
 # Genus is not in Mycobank or IRMNG... and I don't know whether T. cellaris
@@ -114,8 +122,27 @@ ott.taxon('Trichosporon').take(Cb)
 ott.taxon('Chlamydotomus').incertaeSedis()
 # fung.taxon('Chlamydotomus cellaris').rename('Trichosporon cellaris')
 
+# 2014-04-13 Romina #40, #60
+for foo in [('Neozygitales', ['Neozygitaceae']),
+			('Asteriniales', ['Asterinaceae']),
+			('Savoryellales', ['Savoryella', 'Ascotaiwania', 'Ascothailandia']), 
+			('Cladochytriales', ['Cladochytriaceae', 'Nowakowskiellaceae', 'Septochytriaceae', 'Endochytriaceae']),
+			('Jaapiales', ['Jaapiaceae']),
+			('Coniocybales', ['Coniocybaceae']),
+			('Hyaloraphidiales', ['Hyaloraphidiaceae']),
+			('Mytilinidiales', ['Mytilinidiaceae', 'Gloniaceae'])]:
+	order = ott.taxon(foo[0])
+	for family in foo[1]:
+		order.take(ott.taxon(family))
 
-# NCBI Taxonomy
+# ** No taxon found with this name: Nowakowskiellaceae
+# ** No taxon found with this name: Septochytriaceae
+# ** No taxon found with this name: Jaapiaceae
+# ** (null=if:81865 Rhizocarpaceae) is already a child of (null=h2007:212 Rhizocarpales)
+# ** No taxon found with this name: Hyaloraphidiaceae
+
+
+# ----- NCBI Taxonomy -----
 ncbi  = Taxonomy.getTaxonomy('tax/ncbi/', 'ncbi')
 # David Hibbett has requested that for Fungi, only Index Fungorum
 # should be seen.  Rather than delete the NCBI fungal taxa, we just
@@ -132,6 +159,46 @@ ott.notSame(ncbi.taxon('Perezia'), fung.taxon('Perezia'))
 # JAR 2014-04-11 Discovered during regression testing
 ott.notSame(ncbi.taxon('Epiphloea', 'Rhodophyta'), fung.taxon('Epiphloea', 'Lichinaceae'))
 
+# RR 2014-04-12 #49
+ncbi.taxon('leotiomyceta').rename('Leotiomyceta')
+
+# RR #53
+ncbi.taxon('White-sloanea').synonym('White-Sloanea')
+
+# RR #56
+ncbi.taxon('sordariomyceta').rename('Sordariomyceta')
+
+# RR #52
+ncbi.taxon('spinocalanus spinosus').rename('Spinocalanus spinosus')
+ncbi.taxon('spinocalanus angusticeps').rename('Spinocalanus angusticeps')
+
+# RR #59
+ncbi.taxon('candidate division SR1').rename('Candidate division SR1')
+ncbi.taxon('candidate division WS6').rename('Candidate division WS6')
+ncbi.taxon('candidate division BRC1').rename('Candidate division BRC1')
+ncbi.taxon('candidate division OP9').rename('Candidate division OP9')
+ncbi.taxon('candidate division JS1').rename('Candidate division JS1')
+
+# RR #51
+ncbi.taxon('Dendro-hypnum').synonym('Dendro-Hypnum')
+# RR #45
+ncbi.taxon('Cyrto-hypnum').synonym('Cyrto-Hypnum')
+# RR #54
+ncbi.taxon('Sciuro-hypnum').synonym('Sciuro-Hypnum')
+
+# RR 2014-04-12 #46
+ncbi.taxon('Pechuel-loeschea').synonym('Pechuel-Loeschea')
+
+# RR #50
+ncbi.taxon('Saxofridericia').synonym('Saxo-Fridericia')
+ncbi.taxon('Saxofridericia').synonym('Saxo-fridericia')
+
+# RR #57
+ncbi.taxon('Solms-laubachia').synonym('Solms-Laubachia')
+
+# RR #45
+ncbi.taxon('Cyrto-hypnum').synonym('Cyrto-Hypnum')
+
 # analyzeOTUs sets flags on questionable taxa ("unclassified",
 #  hybrids, and so on) to allow the option of suppression downstream
 ncbi.analyzeOTUs()
@@ -145,7 +212,8 @@ ott.taxon('Icteridae').take(ott.taxon('Quiscalus', 'Fringillidae'))
 # Misspelling in GBIF... seems to already be known
 # ott.taxon("Torricelliaceae").synonym("Toricelliaceae")
 
-# GBIF (Global Biodiversity Information Facility) taxonomy
+
+# ----- GBIF (Global Biodiversity Information Facility) taxonomy -----
 gbif  = Taxonomy.getTaxonomy('tax/gbif/', 'gbif')
 gbif.smush()
 
@@ -187,13 +255,35 @@ ott.same(ncbi.taxon('Calothrix', 'Rivulariaceae'), gbif.taxon('Calothrix', 'Rivu
 ott.same(ncbi.taxon('Chlorella', 'Chlorellaceae'), gbif.taxon('Chlorella', 'Chlorellaceae'))
 ott.same(ncbi.taxon('Myrmecia', 'Microthamniales'), gbif.taxon('Myrmecia', 'Microthamniales'))
 
+# RR 2014-04-12 #47
+gbif.taxon('Drake-brockmania').absorb(gbif.taxon('Drake-Brockmania'))
+gbif.taxon('Drake-brockmania').synonym('Drake-Brockmania')
+# RR #50 - this one is in NCBI, see above
+gbif.taxon('Saxofridericia').absorb(gbif.taxon('4930834')) #Saxo-Fridericia
+# RR #57 - the genus is in NCBI, see above
+gbif.taxon('Solms-laubachia').absorb(gbif.taxon('4908941')) #Solms-Laubachia
+gbif.taxon('Solms-Laubachia pulcherrima').rename('Solms-laubachia pulcherrima')
+
+# RR #45
+gbif.taxon('Cyrto-hypnum').absorb(gbif.taxon('4907605'))
+
+# 2014-04-13 JAR noticed while grepping
+gbif.taxon('Drepano-Hypnum').rename('Drepano-hypnum')
+gbif.taxon('Chryso-Hypnum').rename('Chryso-hypnum')
+gbif.taxon('Complanato-Hypnum').rename('Complanato-hypnum')
+gbif.taxon('Leptorrhyncho-Hypnum').rename('Leptorrhyncho-hypnum')
+
 gbif.analyzeMajorRankConflicts()
 ott.absorb(gbif)
+
 
 # Joseph 2014-01-27 https://code.google.com/p/gbif-ecat/issues/detail?id=104
 ott.taxon('Parulidae').take(ott.taxon('Myiothlypis', 'Passeriformes'))
 # I don't get why this one isn't a major_rank_conflict !?
 ott.taxon('Blattaria').take(ott.taxon('Phyllodromiidae'))
+
+
+# ----- Interim Register of Marine and Nonmarine Genera (IRMNG) -----
 
 irmng = Taxonomy.getTaxonomy('tax/irmng/', 'irmng')
 irmng.smush()
@@ -217,8 +307,14 @@ irmng.taxon('Bacteria','life').hideDescendants()
 irmng.taxon('Protista','life').hideDescendants()
 irmng.taxon('Archaea','life').hideDescendants()
 
+# RR #50
+irmng.taxon('Saxo-Fridericia').rename('Saxofridericia')
+irmng.taxon('Saxofridericia').absorb(irmng.taxon('Saxo-fridericia'))
+
 ott.absorb(irmng)
 
+
+# ----- Final patches -----
 
 # Finished loading source taxonomies.  Now patch things up.
 
@@ -420,6 +516,9 @@ ott.taxon('Agaricaceae').take(ott.taxon('Cystoderma','Fungi'))
 ott.taxon('Hypocrea').absorb(ott.taxonThatContains('Trichoderma', 'Trichoderma raseum'))
 # Invert the synonym relationship
 ott.taxon('Trichoderma deliquescens').rename('Hypocrea lutea')
+
+# Romina email to JAR 2014-04-09
+ott.taxon('Hypocrea').synonym('Trichoderma')
 
 # Fold Norops into Anolis
 # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/31

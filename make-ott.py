@@ -119,7 +119,7 @@ ott.absorb(fung)
 # Genus is not in Mycobank or IRMNG... and I don't know whether T. cellaris
 # would be valid.  Leave as is I guess, and set incertae sedis
 		 
-ott.taxon('Chlamydotomus').incertaeSedis()
+#ott.taxon('Chlamydotomus').incertaeSedis()
 # fung.taxon('Chlamydotomus cellaris').rename('Trichosporon cellaris')
 
 # 2014-04-13 Romina #40, #60

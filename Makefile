@@ -155,7 +155,7 @@ feed/gbif/in/checklist1.zip:
 irmng: tax/irmng/taxonomy.tsv
 
 tax/irmng/taxonomy.tsv: feed/irmng/process_irmng.py \
-          feed/irmng/in/IRMNG_DWC_20140113.csv feed/irmng/process_irmng.py
+          feed/irmng/in/IRMNG_DWC_20140131.csv feed/irmng/process_irmng.py
 	@mkdir -p `dirname $@`
 	python feed/irmng/process_irmng.py \
 	   feed/irmng/in/IRMNG_DWC_20140113.csv \

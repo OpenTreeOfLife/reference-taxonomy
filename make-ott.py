@@ -196,9 +196,6 @@ ncbi.taxon('Saxofridericia').synonym('Saxo-fridericia')
 # RR #57
 ncbi.taxon('Solms-laubachia').synonym('Solms-Laubachia')
 
-# RR #45
-ncbi.taxon('Cyrto-hypnum').synonym('Cyrto-Hypnum')
-
 # analyzeOTUs sets flags on questionable taxa ("unclassified",
 #  hybrids, and so on) to allow the option of suppression downstream
 ncbi.analyzeOTUs()

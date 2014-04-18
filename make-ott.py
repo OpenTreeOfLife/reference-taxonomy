@@ -99,6 +99,18 @@ for name in ["Trichoderma harzianum",
 			 "Lacrymaria"]:
 	ott.notSame(silva.taxon(name), fung.taxon(name))
 
+# Romina email to JAR 2014-04-09
+# IF has both Hypocrea and Trichoderma.  So does NCBI
+fung.taxon('Hypocrea').absorb(fung.taxon('Trichoderma'))
+fung.taxon('Hypocrea').synonym('Trichoderma')
+# was: ott.taxon('Hypocrea').absorb(ott.taxonThatContains('Trichoderma', 'Trichoderma raseum'))
+
+# 2014-04-14 Bad Fungi homonyms in new version of IF
+if fung.taxon('90154') != None:
+	fung.taxon('90154').prune()
+if fung.taxon('90155') != None:
+	fung.taxon('90155').prune()
+
 # analyzeMajorRankConflicts sets the "major_rank_conflict" flag when
 # intermediate ranks are missing (e.g. a family that's a child of a
 # class)
@@ -513,12 +525,8 @@ ott.taxon('Cyphellopsis','Cyphellaceae').absorb(ott.taxon('Cyphellopsis','Niacea
 ott.taxon('Diaporthaceae').take(ott.taxon('Phomopsis'))
 ott.taxon('Valsaceae').take(ott.taxon('Valsa', 'Fungi'))
 ott.taxon('Agaricaceae').take(ott.taxon('Cystoderma','Fungi'))
-ott.taxon('Hypocrea').absorb(ott.taxonThatContains('Trichoderma', 'Trichoderma raseum'))
 # Invert the synonym relationship
-ott.taxon('Trichoderma deliquescens').rename('Hypocrea lutea')
-
-# Romina email to JAR 2014-04-09
-ott.taxon('Hypocrea').synonym('Trichoderma')
+ott.taxon('Hypocrea lutea').absorb(ott.taxon('Trichoderma deliquescens'))
 
 # Fold Norops into Anolis
 # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/31
@@ -552,6 +560,9 @@ ids = Taxonomy.getTaxonomy('tax/prev_ott/')
 ott.same(ids.taxon('4107132'), fung.taxon('11060')) #Cryptococcus
 ott.same(ids.taxon('339002'), ncbi.taxon('3071')) #Chlorella
 ott.same(ids.taxon('342868'), ncbi.taxon('56708')) #Tetraphyllidea
+
+# These sneak in from GBIF and IRMNG - hide for purposes of Open Tree
+ott.taxon('Viruses').hide()
 
 ott.assignIds(ids)
 

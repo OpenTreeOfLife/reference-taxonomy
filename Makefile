@@ -5,7 +5,7 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.7draft1
+WHICH=2.7draft2
 PREV_WHICH=2.6
 
 #  $^ = all prerequisites
@@ -30,7 +30,7 @@ PREOTTOL=../../preottol
 
 CP=-classpath ".:lib/*"
 JAVA=java $(CP)
-BIG_JAVA=$(JAVA) -Xmx12G
+BIG_JAVA=$(JAVA) -Xmx14G
 SMASH=org.opentreeoflife.smasher.Smasher
 CLASS=org/opentreeoflife/smasher/Smasher.class
 

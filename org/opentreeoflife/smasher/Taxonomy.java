@@ -162,16 +162,22 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	}
 
 	Taxon highest(String name) { // See pin()
-		Taxon best = null;
 		List<Taxon> l = this.lookup(name);
-		if (l != null) {
-			int depth = 1 << 30;
-			for (Taxon node : l)
-				if (node.measureDepth() < depth) {
-					depth = node.getDepth();
-					best = node;
-				}
+		if (l == null) return null;
+		Taxon best = null;
+		int depth = 1 << 30;
+		boolean ambiguousp = false;
+		for (Taxon node : l) {
+			int d = node.measureDepth();
+			if (d < depth) {
+				depth = d;
+				best = node;
+				ambiguousp = false;
+			} else if (d == depth)
+				ambiguousp = true;
 		}
+		if (ambiguousp)
+			System.err.format("** Ambiguous division name: %s\n", name);
 		return best;
 	}
 
@@ -376,6 +382,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 				String parentId = parts[1];
 				if (parentId.equals("null")) parentId = "";	 // Index Fungorum
+				if (parentId.equals("not found")) parentId = "";	 // Index Fungorum
 				if (parentId.equals(id)) {
 					System.err.println("!! Taxon is its own parent: " + id);
 					parentId = "";
@@ -394,7 +401,10 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 						parent = new Taxon(this);	 //don't know parent's name yet
 						parent.setId(parentId);
 					}
-					parent.addChild(node);
+					if (parent.descendsFrom(node))
+						System.err.format("** Cycle detected in input taxonomy: %s %s\n", node, parent);
+					else
+						parent.addChild(node);
 				} else
 					roots.add(node);
 				node.setName(name);

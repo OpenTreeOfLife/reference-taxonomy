@@ -158,11 +158,11 @@ tax/irmng/taxonomy.tsv: feed/irmng/process_irmng.py \
           feed/irmng/in/IRMNG_DWC_20140131.csv feed/irmng/process_irmng.py
 	@mkdir -p `dirname $@`
 	python feed/irmng/process_irmng.py \
-	   feed/irmng/in/IRMNG_DWC_20140113.csv \
-	   feed/irmng/in/IRMNG_DWC_SP_PROFILE_20140113.csv \
+	   feed/irmng/in/IRMNG_DWC_20140131.csv \
+	   feed/irmng/in/IRMNG_DWC_SP_PROFILE_20140131.csv \
 	   > tax/irmng/taxonomy.tsv
 
-feed/irmng/in/IRMNG_DWC_20140113.csv: feed/irmng/in/IRMNG_DWC.zip
+feed/irmng/in/IRMNG_DWC_20140131.csv: feed/irmng/in/IRMNG_DWC.zip
 	(cd feed/irmng/in; unzip IRMNG_DWC.zip)
 
 feed/irmng/in/IRMNG_DWC.zip:
@@ -192,7 +192,7 @@ feed/silva/in/accessionid_to_taxonid.tsv: feed/silva/accessionid_to_taxonid.tsv
 feed/silva/in/silva.fasta:
 	@mkdir -p `dirname $@`
 	wget --output-document=feed/silva/in/tax_ranks.txt \
-	  https://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/tax_ranks_ssu_115.txt
+          ftp://ftp.arb-silva.de/release_115/Exports/tax_ranks_ssu_115.csv
 	@ls -l feed/silva/in/tax_ranks.txt
 	wget --output-document=feed/silva/in/silva.fasta.tgz "$(SILVA_URL)"
 	@ls -l feed/silva/in/silva.fasta.tgz

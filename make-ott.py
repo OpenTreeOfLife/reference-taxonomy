@@ -352,7 +352,11 @@ ott.taxon('Adlerocystis').incertaeSedis()
 ott.taxon('Amylophagus','Fungi').incertaeSedis()
 
 # Bad synonym - Tony Rees 2014-01-28
-ott.taxon('Lemania pluvialis').prune()
+try:
+    ott.taxon('Lemania pluvialis').prune()
+except AttributeError:
+    #print '!! tried pruning Lemania pluvialis, not found'
+    print sys.exc_info()[0]
 
 #Pinophyta and daughters need to be deleted; - Bryan 2014-01-28
 #Lycopsida and daughters need to be deleted;
@@ -527,13 +531,17 @@ ott.taxon('Anolis').absorb(ott.taxon('Norops', 'Iguanidae'))
 
 # JAR 2014-04-08 - these are in study OTUs - see IRMNG
 ott.taxon('Inseliellum').extant()
-ott.taxon('Conus', 'Gastropoda').extant()
-ott.taxon('Patelloida').extant()
-ott.taxon('Phyllanthus', 'Phyllanthaceae').extant()
-ott.taxon('Stelis','Orchidaceae').extant()
-ott.taxon('Chloris', 'Poaceae').extant()
-ott.taxon('Acropora', 'Acroporidae').extant()
-ott.taxon('Diadasia').extant()
+for t in (['Patelloida'],
+          ['Conus', 'Gastropoda'],
+          ['Phyllanthus', 'Phyllanthaceae'],
+          ['Stelis','Orchidaceae'],
+          ['Chloris', 'Poaceae'],
+          ['Acropora', 'Acroporidae'],
+          ['Diadasia']):
+    try:
+        ott.taxon(*t).extant()
+    except:
+        print sys.exc_info()[0]
 
 # -----------------------------------------------------------------------------
 # Finish up

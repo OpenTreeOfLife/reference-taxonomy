@@ -3,10 +3,10 @@
 The 'smasher' program builds taxonomies.  It was written to support
 builds of the Open Tree Reference Taxonomy, but is a general purpose
 tool.  The build process is driven by scripts written in Jython.  You
-can see examples of such scripts in these two locations:
+can see examples of such scripts in these two locations in the repository:
 
     t/aster.py
-    feed/ott/ott.py
+    make-ott.py
 
 ## Running Smasher
 

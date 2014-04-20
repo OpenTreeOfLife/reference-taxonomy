@@ -59,7 +59,6 @@ public class Smasher {
 						String filename = argv[++i];
 						Taxonomy t1 = Taxonomy.getTaxonomy(name1);
 						Taxonomy t2 = Taxonomy.getTaxonomy(name2);
-						System.out.println("Writing differences to " + filename);
 						t2.dumpDifferences(t1, filename);
 					}
 

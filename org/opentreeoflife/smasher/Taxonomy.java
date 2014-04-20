@@ -2042,6 +2042,7 @@ class SourceTaxonomy extends Taxonomy {
 			{"Chordata"},
 			// {"Eukaryota"},		// doesn't occur in gbif, but useful for ncbi/ncbi test merge
 			// {"Archaea"},			// ambiguous in ncbi
+			{"Viruses"},
 		};
 		int count = 0;
 		for (int i = 0; i < pins.length; ++i) {

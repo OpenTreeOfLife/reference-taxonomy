@@ -79,6 +79,8 @@ public enum Flag {
 					f |= iflag.bit; // Temporary kludge for containers
 				else if (name.equals("barren"))
 					f &= ~Taxonomy.ANYSPECIES;
+				else if (name.equals(""))
+					;
 				else
 					System.err.format("** Unrecognized flag: %s\n", name);
 			}

@@ -329,8 +329,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	abstract void dumpMetadata(String filename) throws IOException;
 
-	static Pattern commaPattern = Pattern.compile(",");
-
 	// load | dump taxonomy proper
 
 	void loadTaxonomyProper(String filename) throws IOException {
@@ -413,8 +411,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 					addSynonym(rawname, node);
 					++normalizations;
 				}
-				if (this.flagscolumn != null && parts[this.flagscolumn].length() > 0)
-					this.parseFlags(parts[this.flagscolumn], node);
+				if (this.flagscolumn != null)
+					node.properFlags |=
+						Flag.parseFlags(parts[this.flagscolumn]);
 			}
 			++row;
 			if (row % 500000 == 0)
@@ -444,6 +443,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 								   total + " reachable from roots");
 		}
 		this.elideDubiousIntermediateTaxa();
+		for (Taxon root : roots)
+			this.propagateFlags(root, 0);	// set inheritedFlags
 	}
 
 	// From stackoverflow
@@ -599,7 +600,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 		// 6. flags
 		// (node.mode == null ? "" : node.mode)
-		Taxonomy.printFlags(node, out);
+		Flag.printFlags(node.properFlags, node.inheritedFlags, out);
 		out.print(sep);
 		// was: out.print(((node.flags != null) ? node.flags : "") + sep);
 
@@ -738,7 +739,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			if (node.isHidden()) {
 				++count;
 				out.format("%s\t%s\t%s\t%s\t", node.id, node.name, node.getSourceIdsString(), node.division);
-				this.printFlags(node, out);
+				Flag.printFlags(node.properFlags, node.inheritedFlags, out);
 				out.println();
 			}
 		}
@@ -863,13 +864,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	// Opposite of 'barren' - propagated upward
 	static final int ANYSPECIES			 =	 8 * 1024;
-
-	void parseFlags(String flags, Taxon node) {
-		// String[] tags = commaPattern.split(flags);
-		if (flags.contains("extinct"))
-			// kludge. could be _direct or _inherited
-			node.properFlags |= Taxonomy.EXTINCT;
-	}
 
 	// Returns the node's rank (as an int).	 In general the return
 	// value should be >= parentRank, but conceivably funny things
@@ -1005,6 +999,15 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		}
 	}
 
+	static void propagateFlags(Taxon node, int inheritedFlags) {
+		node.inheritedFlags |= inheritedFlags;
+		if (node.children != null) {
+			int bequest = inheritedFlags | node.properFlags;		// What the children inherit
+			for (Taxon child : new ArrayList<Taxon>(node.children))
+				analyzeContainers(child, bequest);
+		}
+	}
+
 	// Set the ANYSPECIES flag of any taxon that is a species or has
 	// one below it
 
@@ -1028,110 +1031,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		} else if (node.rank == Taxonomy.NO_RANK)
 			anyspeciesp = true;
 		if (anyspeciesp) node.properFlags |= ANYSPECIES;
-	}
-
-	static void printFlags(Taxon node, PrintStream out) {
-		boolean needComma = false;
-		if ((((node.properFlags | node.inheritedFlags) & NOT_OTU) != 0)
-			|| ((node.inheritedFlags & ENVIRONMENTAL) != 0)) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("not_otu");
-		}
-		if (((node.properFlags | node.inheritedFlags) & VIRAL) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("viral");
-		}
-		if (((node.properFlags | node.inheritedFlags) & HYBRID) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("hybrid");
-		}
-
-		// Containers
-		if ((node.properFlags & INCERTAE_SEDIS) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("incertae_sedis_direct");
-		}
-		if ((node.inheritedFlags & INCERTAE_SEDIS) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("incertae_sedis_inherited");
-		}
-
-		if ((node.properFlags & UNCLASSIFIED) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("unclassified_direct");  // JAR prefers 'unclassified'
-		}
-		if ((node.inheritedFlags & UNCLASSIFIED) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("unclassified_inherited"); // JAR prefers 'unclassified_indirect' ?
-		}
-
-		if ((node.properFlags & ENVIRONMENTAL) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("environmental");
-		}
-		if ((node.properFlags & HIDDEN) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("hidden");
-		}
-		else if ((node.inheritedFlags & HIDDEN) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("hidden_inherited");
-		}
-
-		if ((node.properFlags & MAJOR_RANK_CONFLICT) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("major_rank_conflict_direct");
-		}
-		else if ((node.properFlags & SIBLING_HIGHER) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("sibling_higher");
-		}
-		if ((node.properFlags & SIBLING_LOWER) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("sibling_lower");
-		}
-
-		if ((node.inheritedFlags & MAJOR_RANK_CONFLICT) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("major_rank_conflict_inherited");
-		}
-
-		// Misc
-		if ((node.properFlags & TATTERED) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("tattered");
-		}
-		if ((node.inheritedFlags & TATTERED) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("tattered_inherited");
-		}
-
-		if ((node.properFlags & EDITED) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("edited");
-		}
-
-		if ((node.properFlags & EXTINCT) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("extinct_direct");
-		}
-		if ((node.inheritedFlags & EXTINCT) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("extinct_inherited");
-		}
-
-		if ((node.properFlags & FORCED_VISIBLE) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("forced_visible");
-		}
-
-		if ((node.inheritedFlags & SPECIFIC) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("infraspecific");
-		} else if ((node.properFlags & ANYSPECIES) == 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("barren");
-		}
 	}
 	
 	static Pattern notOtuRegex =
@@ -1763,7 +1662,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	}
 
 	// Look up a taxon by name or unique id.  Name must be unique in the taxonomy.
-	public Taxon taxon(String name) {
+	public Taxon maybeTaxon(String name) {
 		List<Taxon> probe = this.nameIndex.get(name);
 		// TBD: Maybe rule out synonyms?
 		if (probe != null) {
@@ -1774,10 +1673,14 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				return null;
 			}
 		}
-		Taxon byId = this.idIndex.get(name);
-		if (byId == null)
+		return this.idIndex.get(name);
+	}
+
+	public Taxon taxon(String name) {
+		Taxon probe = maybeTaxon(name);
+		if (probe == null)
 			System.err.format("** No taxon found with this name: %s\n", name);
-		return byId;
+		return probe;
 	}
 
 	public Taxon taxon(String name, String context) {
@@ -1937,7 +1840,69 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 													 "UTF-8"));
 	}
 
-}  // End of class Taxonomy
+	public void dumpDifferences(Taxonomy other, String filename) throws IOException {
+		PrintStream out = Taxonomy.openw(filename);
+		reportDifferences(other, out);
+		out.close();
+	}
+
+	public void reportDifferences(Taxonomy other) {
+		reportDifferences(other, System.out);
+	}
+
+	void reportDifference(String what, Taxon node, Taxon oldParent, Taxon newParent, PrintStream out) {
+		out.format("%s\t%s\t%s\t%s\t%s\n", what, node.id, node.name,
+				   (oldParent == null ? "" : oldParent.name),
+				   (newParent == null ? "" : newParent.name));
+	}
+
+	// other would typically be an older version of the same taxonomy.
+	public void reportDifferences(Taxonomy other, PrintStream out) {
+		out.format("what\tuid\tname\tfrom\tto\n");
+		for (Taxon node : other) {
+			Taxon newnode = this.idIndex.get(node.id);
+			if (newnode == null) {
+				newnode = this.unique(node.name);
+				if (newnode == null)
+					reportDifference("removed", node, null, null, out);
+				else if (newnode.name.equals(node.name))
+					reportDifference("changed id ?", node, null, null, out);
+				else
+					reportDifference("synonymized to " + newnode.name, node, null, null, out);
+			} else {
+				if (!newnode.name.equals(node.name))
+					reportDifference("renamed to " + newnode.name, node, null, null, out);
+				if (newnode.parent == null && node.parent == null)
+					;
+				else if (newnode.parent == null && node.parent != null)
+					reportDifference("raised to root", node, node.parent, null, out);
+				else if (newnode.parent != null && node.parent == null)
+					reportDifference("no longer a root", node, null, newnode.parent, out);
+				else if (!newnode.parent.id.equals(node.parent.id))
+					reportDifference("moved", node, node.parent, newnode.parent, out);
+				if (newnode.isHidden() && !node.isHidden())
+					reportDifference("hidden", node, null, null, out);
+				else if (!newnode.isHidden() && node.isHidden())
+					reportDifference("exposed", node, null, null, out);
+			}
+		}
+		for (Taxon newnode : this) {
+			Taxon node = other.idIndex.get(newnode.id);
+			if (node == null) {
+				if (other.lookup(newnode.name) != null)
+					reportDifference("changed id?", newnode, null, null, out);
+				else {
+					List<Taxon> found = this.lookup(newnode.name);
+					if (found != null && found.size() > 1)
+						reportDifference("added homonym", newnode, null, null, out);
+					else
+						reportDifference("added", newnode, null, null, out);
+				}
+			}
+		}
+	}
+
+}  // end of class Taxonomy
 
 class SourceTaxonomy extends Taxonomy {
 

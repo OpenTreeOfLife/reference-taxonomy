@@ -104,9 +104,10 @@ public class Taxon {
 
 	void setName(String name) {
 		if (this.name != null) {
-			if (name.equals(this.name)) return;
+			if (name.equals(this.name))
+				return;
 			List<Taxon> nodes = this.taxonomy.nameIndex.get(this.name);
-			nodes.remove(name);
+			nodes.remove(this);
 			if (nodes.size() == 0) {
 				System.out.println("Removing name from index: " + name);
 				this.taxonomy.nameIndex.remove(name);
@@ -309,7 +310,7 @@ public class Taxon {
 			return new QualifiedId(this.taxonomy.getTag(), this.id);
 		else {
 			// What if from a Newick string?
-			System.err.println("** [getQualifiedId] Taxon has no id, using name: " + this.name);
+			System.err.println("| [getQualifiedId] Taxon has no id, using name: " + this.name);
 			return new QualifiedId(this.taxonomy.getTag(), this.name);
 		}
 	}
@@ -1218,7 +1219,8 @@ public class Taxon {
 	public void rename(String name) {
 		String oldname = this.name;
 		if (!oldname.equals(name)) {
-			if (this.taxonomy.lookup(name) != null)
+			Taxon existing = this.taxonomy.unique(name);
+			if (existing != null && existing != this)
 				System.err.format("** Warning: creating a homonym: %s\n", name);
 			this.setName(name);
 			this.taxonomy.addSynonym(oldname, this);  // awkward
@@ -1254,7 +1256,7 @@ public class Taxon {
 			for (Taxon child : new ArrayList<Taxon>(other.children))
 				// beware concurrent modification
 				child.changeParent(this.parent);
-		this.synonym(other.name);	// Not sure this is a good idea
+		this.taxonomy.addSynonym(other.name, this);	// Not sure this is a good idea
 		other.prune();
 	}
 
@@ -1319,7 +1321,7 @@ public class Taxon {
 		}
 		if (this.properFlags > 0 || this.inheritedFlags > 0) {
 			System.out.print("Flags: ");
-			this.taxonomy.printFlags(this, System.out);
+			Flag.printFlags(this.properFlags, this.inheritedFlags, System.out);
 			System.out.println();
 		}
 	}

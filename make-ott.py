@@ -47,6 +47,10 @@ silva.taxon('Halolamina sp. wsy15-h1').rename('Halolamina sp. WSY15-H1')
 # RR #55 - this is a silva/ncbi homonym
 silva.taxon('vesicomya').rename('Vesicomya')
 
+# From Laura and Dail on 5 Feb 2014
+# https://groups.google.com/forum/#!topic/opentreeoflife/a69fdC-N6pY
+silva.taxon('Diatomea').rename('Bacillariophyta')
+
 ott.absorb(silva)
 
 # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/30
@@ -70,9 +74,9 @@ fung  = Taxonomy.getTaxonomy('tax/if/', 'if')
 
 # JAR 2014-04-11 Missing in earlier IF, mistake in later IF -
 # extraneous authority string
-cyph = fung.taxon('Cyphellopsis')
+cyph = fung.maybeTaxon('Cyphellopsis')
 if cyph == None:
-	cyph = fung.taxon('Cyphellopsis Donk 1931')
+	cyph = fung.maybeTaxon('Cyphellopsis Donk 1931')
 	if cyph != None:
 		cyph.rename('Cyphellopsis')
 	else:
@@ -89,6 +93,8 @@ ott.notSame(silva.taxon('Phaeosphaeria'), fung.taxon('Phaeosphaeria'))
 ott.notSame(silva.taxon('Morganella'), fung.taxon('Morganella'))
 
 # 2014-04-08 More IF/SILVA bad matches (probably sample contamination)
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/63
+# These will probably be fixed in SILVA 117
 for name in ["Trichoderma harzianum",
 			 "Acantharia",
 			 "Bogoriella",
@@ -100,15 +106,17 @@ for name in ["Trichoderma harzianum",
 	ott.notSame(silva.taxon(name), fung.taxon(name))
 
 # Romina email to JAR 2014-04-09
-# IF has both Hypocrea and Trichoderma.  So does NCBI
-fung.taxon('Hypocrea').absorb(fung.taxon('Trichoderma'))
-fung.taxon('Hypocrea').synonym('Trichoderma')
-# was: ott.taxon('Hypocrea').absorb(ott.taxonThatContains('Trichoderma', 'Trichoderma raseum'))
+# IF has both Hypocrea and Trichoderma.  Hypocrea is the right name.
+fung.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
+fung.taxon('Hypocrea').absorb(fung.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
+
+# Romina https://github.com/OpenTreeOfLife/reference-taxonomy/issues/42
+fung.taxon('Trichoderma deliquescens').rename('Hypocrea lutea')
 
 # 2014-04-14 Bad Fungi homonyms in new version of IF
-if fung.taxon('90154') != None:
+if fung.maybeTaxon('90154') != None:
 	fung.taxon('90154').prune()
-if fung.taxon('90155') != None:
+if fung.maybeTaxon('90155') != None:
 	fung.taxon('90155').prune()
 
 # analyzeMajorRankConflicts sets the "major_rank_conflict" flag when
@@ -118,11 +126,22 @@ fung.analyzeMajorRankConflicts()
 
 ott.absorb(fung)
 
-# Problem: Chlamydotomus is an incertae sedis child of Fungi.
-# http://www.mycobank.org/BioloMICS.aspx?Link=T&TableKey=14682616000000067&Rec=35058&Fields=All
 # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/20
-# Not sure about this.  beigelii has a sister that should move along
-# with it, but the sister has never been officially moved.
+# Problem: Chlamydotomus is an incertae sedis child of Fungi.  Need to
+# find a good home for it.
+#
+# Mycobank says Chlamydotomus beigelii = Trichosporon beigelii:
+# http://www.mycobank.org/BioloMICS.aspx?Link=T&TableKey=14682616000000067&Rec=35058&Fields=All
+#
+# IF says the basionym is Pleurococcus beigelii, and P. beigelii's current name
+# is Geotrichum beigelii.  IF says the type for Trichosporon is Trichosporon beigelii,
+# and that T. beigelii's current name is Trichosporum beigelii... with no synonymies...
+# So IF does not corroborate Mycobank.
+#
+# So we could consider absorbing Chlamydotomus into Trichosoporon.  But...
+#
+# Not sure about this.  beigelii has a sister, cellaris, that should move along
+# with it, but the name Trichosporon cellaris has never been published.
 # Cb = ott.taxon('Chlamydotomus beigelii')
 # Cb.rename('Trichosporon beigelii')
 # ott.taxon('Trichosporon').take(Cb)
@@ -132,7 +151,6 @@ ott.absorb(fung)
 # would be valid.  Leave as is I guess, and set incertae sedis
 		 
 ott.taxon('Chlamydotomus').incertaeSedis()
-# fung.taxon('Chlamydotomus cellaris').rename('Trichosporon cellaris')
 
 # 2014-04-13 Romina #40, #60
 for foo in [('Neozygitales', ['Neozygitaceae']),
@@ -208,8 +226,16 @@ ncbi.taxon('Saxofridericia').synonym('Saxo-fridericia')
 # RR #57
 ncbi.taxon('Solms-laubachia').synonym('Solms-Laubachia')
 
-# RR #45
-ncbi.taxon('Cyrto-hypnum').synonym('Cyrto-Hypnum')
+# Romina email to JAR 2014-04-09
+# NCBI has both Hypocrea and Trichoderma.
+ncbi.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
+ncbi.taxon('Hypocrea').absorb(ncbi.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
+
+# JAR attempt to resolve ambiguous alignment of Trichosporon in IF and
+# NCBI based on common parent and member.
+# Type = T. beigelii, which is current, according to Mycobank.
+# But I'm going to use a different 'type', Trichosporon cutaneum.
+ott.same(fung.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'), ncbi.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
 
 # analyzeOTUs sets flags on questionable taxa ("unclassified",
 #  hybrids, and so on) to allow the option of suppression downstream
@@ -269,21 +295,29 @@ ott.same(ncbi.taxon('Myrmecia', 'Microthamniales'), gbif.taxon('Myrmecia', 'Micr
 
 # RR 2014-04-12 #47
 gbif.taxon('Drake-brockmania').absorb(gbif.taxon('Drake-Brockmania'))
-gbif.taxon('Drake-brockmania').synonym('Drake-Brockmania')
 # RR #50 - this one is in NCBI, see above
 gbif.taxon('Saxofridericia').absorb(gbif.taxon('4930834')) #Saxo-Fridericia
 # RR #57 - the genus is in NCBI, see above
 gbif.taxon('Solms-laubachia').absorb(gbif.taxon('4908941')) #Solms-Laubachia
-gbif.taxon('Solms-Laubachia pulcherrima').rename('Solms-laubachia pulcherrima')
+gbif.taxon('Solms-laubachia pulcherrima').absorb(gbif.taxon('Solms-Laubachia pulcherrima'))
 
 # RR #45
 gbif.taxon('Cyrto-hypnum').absorb(gbif.taxon('4907605'))
 
 # 2014-04-13 JAR noticed while grepping
+gbif.taxon('Chryso-hypnum').absorb(gbif.taxon('Chryso-Hypnum'))
 gbif.taxon('Drepano-Hypnum').rename('Drepano-hypnum')
-gbif.taxon('Chryso-Hypnum').rename('Chryso-hypnum')
 gbif.taxon('Complanato-Hypnum').rename('Complanato-hypnum')
 gbif.taxon('Leptorrhyncho-Hypnum').rename('Leptorrhyncho-hypnum')
+
+# Romina email to JAR 2014-04-09
+# GBIF has both Hypocrea and Trichoderma.  And it has four Trichoderma synonyms...
+gbif.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
+gbif.taxon('Hypocrea').absorb(gbif.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
+
+# JAR 2014-04-18 attempt to resolve ambiguous alignment of
+# Trichosporon in IF and GBIF based on common member
+ott.same(fung.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'), gbif.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
 
 gbif.analyzeMajorRankConflicts()
 ott.absorb(gbif)
@@ -322,6 +356,16 @@ irmng.taxon('Archaea','life').hideDescendants()
 # RR #50
 irmng.taxon('Saxo-Fridericia').rename('Saxofridericia')
 irmng.taxon('Saxofridericia').absorb(irmng.taxon('Saxo-fridericia'))
+
+# Romina email to JAR 2014-04-09
+# IRMNG has EIGHT different Trichodermas.  (Four are synonyms of other things.)
+# 1307461 = Trichoderma Persoon 1794, in Hypocreaceae
+irmng.taxon('Hypocrea').absorb(irmng.taxon('1307461'))
+
+# JAR 2014-04-18 attempt to resolve ambiguous alignment of
+# Trichosporon in IF and IRMNG based on common parent and member
+ott.same(fung.taxon('Trichosporon'), irmng.taxon('Trichosporon'))
+
 
 ott.absorb(irmng)
 
@@ -376,11 +420,14 @@ ott.taxon('Gymnospermophyta','Chloroplastida').incertaeSedis()
 
 # Patches from the Katz lab to give decent parents to taxa classified
 # as Chromista or Protozoa
+print '-- Chromista/Protozoa spreadsheet from Katz lab --'
 fixChromista(ott)
 
+print '-- more patches --'
+
 # From Laura and Dail on 5 Feb 2014
+# https://groups.google.com/forum/#!topic/opentreeoflife/a69fdC-N6pY
 ott.taxon('Chlamydiae/Verrucomicrobia group').rename('Verrucomicrobia group')
-ott.taxon('Diatomea').rename('Bacillariophyta')
 ott.taxon('Heterolobosea','Discicristata').absorb(ott.taxon('Heterolobosea','Percolozoa'))
 ott.taxon('Excavata','Eukaryota').take(ott.taxon('Oxymonadida','Eukaryota'))
 
@@ -560,6 +607,8 @@ ids = Taxonomy.getTaxonomy('tax/prev_ott/')
 ott.same(ids.taxon('4107132'), fung.taxon('11060')) #Cryptococcus
 ott.same(ids.taxon('339002'), ncbi.taxon('3071')) #Chlorella
 ott.same(ids.taxon('342868'), ncbi.taxon('56708')) #Tetraphyllidea
+
+ott.same(fung.taxon('Trichosporon'), ids.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
 
 # These sneak in from GBIF and IRMNG - hide for purposes of Open Tree
 ott.taxon('Viruses').hide()

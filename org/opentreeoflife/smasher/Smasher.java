@@ -53,6 +53,16 @@ public class Smasher {
 						jscheme.REPL.main(jargs);
 					}
 
+					else if (argv[i].equals("--diff")) {
+						String name1 = argv[++i];
+						String name2 = argv[++i];
+						String filename = argv[++i];
+						Taxonomy t1 = Taxonomy.getTaxonomy(name1);
+						Taxonomy t2 = Taxonomy.getTaxonomy(name2);
+						System.out.println("Writing differences to " + filename);
+						t2.dumpDifferences(t1, filename);
+					}
+
 					else if (argv[i].equals("--deforest")) {
 						tax.deforestate();
 					}

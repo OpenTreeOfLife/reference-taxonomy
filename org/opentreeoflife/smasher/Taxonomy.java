@@ -1888,13 +1888,18 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		for (Taxon node : other) {
 			Taxon newnode = this.idIndex.get(node.id);
 			if (newnode == null) {
-				newnode = this.unique(node.name);
-				if (newnode == null)
+				List<Taxon> newnodes = this.lookup(node.name);
+				if (newnodes == null)
 					reportDifference("removed", node, null, null, out);
-				else if (newnode.name.equals(node.name))
-					reportDifference("changed id ?", node, null, null, out);
-				else
-					reportDifference("synonymized to " + newnode.name, node, null, null, out);
+				else if (newnodes.size() != 1)
+					reportDifference("multiple replacements", node, null, null, out);
+				else {
+					newnode = newnodes.get(0);
+					if (newnode.name.equals(node.name))
+						reportDifference("changed id ?", node, null, null, out);
+					else
+						reportDifference("synonymized to " + newnode.name, node, null, null, out);
+				}
 			} else {
 				if (!newnode.name.equals(node.name))
 					reportDifference("renamed to " + newnode.name, node, null, null, out);

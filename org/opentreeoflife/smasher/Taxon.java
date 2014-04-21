@@ -941,6 +941,13 @@ public class Taxon {
 		}
 	}
 
+	boolean descendsFrom(Taxon b) {
+		for (Taxon a = this; a != null; a = a.parent)
+			if (b == a)
+				return true;
+		return false;
+	}
+
 	void appendNewickTo(StringBuffer buf) {
 		if (this.children != null) {
 			buf.append("(");
@@ -1211,6 +1218,8 @@ public class Taxon {
 	public void rename(String name) {
 		String oldname = this.name;
 		if (!oldname.equals(name)) {
+			if (this.taxonomy.lookup(name) != null)
+				System.err.format("** Warning: creating a homonym: %s\n", name);
 			this.setName(name);
 			this.taxonomy.addSynonym(oldname, this);  // awkward
 		}

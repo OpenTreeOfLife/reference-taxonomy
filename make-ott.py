@@ -612,7 +612,7 @@ ott.same(fung.taxon('Trichosporon'), ids.taxonThatContains('Trichosporon', 'Tric
 
 # These sneak in from GBIF and IRMNG - hide for purposes of Open Tree
 # Regression testing TBD
-# ott.taxon('Viruses').hide()
+ott.taxon('Viruses').hide()
 
 ott.assignIds(ids)
 

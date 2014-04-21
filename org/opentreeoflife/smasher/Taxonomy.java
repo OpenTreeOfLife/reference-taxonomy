@@ -381,7 +381,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 				String parentId = parts[1];
 				if (parentId.equals("null")) parentId = "";	 // Index Fungorum
-				// if (parentId.equals("not found")) parentId = "";	 // Index Fungorum
+				if (parentId.equals("not found")) parentId = "";	 // Index Fungorum
 				if (parentId.equals(id)) {
 					System.err.println("!! Taxon is its own parent: " + id);
 					parentId = "";

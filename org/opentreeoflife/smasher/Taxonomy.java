@@ -245,6 +245,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			System.out.println("--- Reading " + designator + " ---");
 			tax.loadTaxonomy(designator);
 		}
+		tax.elideDubiousIntermediateTaxa();
 		tax.investigateHomonyms();
 		return tax;
 	}
@@ -380,7 +381,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 				String parentId = parts[1];
 				if (parentId.equals("null")) parentId = "";	 // Index Fungorum
-				if (parentId.equals("not found")) parentId = "";	 // Index Fungorum
+				// if (parentId.equals("not found")) parentId = "";	 // Index Fungorum
 				if (parentId.equals(id)) {
 					System.err.println("!! Taxon is its own parent: " + id);
 					parentId = "";
@@ -411,9 +412,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 					addSynonym(rawname, node);
 					++normalizations;
 				}
-				if (this.flagscolumn != null)
-					node.properFlags |=
-						Flag.parseFlags(parts[this.flagscolumn]);
+				if (this.flagscolumn != null && parts[this.flagscolumn].length() > 0)
+					// this.parseFlags(parts[this.flagscolumn], node);
+					Flag.parseFlags(parts[this.flagscolumn], node);
 			}
 			++row;
 			if (row % 500000 == 0)
@@ -442,9 +443,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 								   row + " rows, but only " + 
 								   total + " reachable from roots");
 		}
-		this.elideDubiousIntermediateTaxa();
-		for (Taxon root : roots)
-			this.propagateFlags(root, 0);	// set inheritedFlags
+		// this.setDerivedFlags();
 	}
 
 	// From stackoverflow
@@ -826,27 +825,33 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	// Final analysis, after assembling entire taxonomy, before writing it out
 	void analyze() {
 		for (Taxon root : this.roots)
-			analyzeRankConflicts(root, false);
+			analyzeRankConflicts(root, false);  //SIBLING_LOWER and SIBLING_HIGHER
 		for (Taxon root : this.roots)
 			analyzeContainers(root, 0);
+		setDerivedFlags();
+	}
+
+	void setDerivedFlags() {
 		for (Taxon root : this.roots)
-			analyzeBarren(root);
+			this.analyzeBarren(root);
+		for (Taxon root : this.roots)
+			this.propagateFlags(root, 0);
 	}
 
 	// Set during assembly
-	static final int TATTERED			 =	 4 * 1024;	  // combine using |
+	static final int TATTERED			 =	 4 * 1024;	  // combine using |  ??
 	static final int FORCED_VISIBLE		 =	16 * 1024;	  // combine using |
 	static final int EDITED				 = 128;			  // combine using |
 	static final int EXTINCT			 =	64 * 1024;	  // combine using |
 	static final int HIDDEN				 =	32 * 1024;	  // combine using &
 
-	// Parent-dependent.  Retain value
-	static final int MAJOR_RANK_CONFLICT =	 2 * 1024;
-
-	// NCBI - individually troublesome - not sticky - combine using &
+	// NCBI - individually troublesome - not sticky - combine using &  ? no, | ?
 	static final int NOT_OTU			 =	  1;
 	static final int HYBRID				 =	  2;
 	static final int VIRAL				 =	  4;
+
+	// Parent-dependent.  Retain value
+	static final int MAJOR_RANK_CONFLICT =	 2 * 1024;
 
 	// Final analysis...
 	// Containers - unconditionally so.
@@ -858,16 +863,25 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	static final int SIBLING_LOWER		 =	512;
 	static final int SIBLING_HIGHER		 =	 1 * 1024;
 
-	// Is 'species' or lower rank ('infraspecific' when inherited)
+	// Is below a 'species'
 	// Unconditional ?
-	static final int SPECIFIC			 =	 64;
+	static final int INFRASPECIFIC		 =	 64;
 
-	// Opposite of 'barren' - propagated upward
-	static final int ANYSPECIES			 =	 8 * 1024;
+	// Propagated upward
+	static final int BARREN			     =	 8 * 1024;
 
-	// Returns the node's rank (as an int).	 In general the return
-	// value should be >= parentRank, but conceivably funny things
-	// could happen when combinings taxonomies.
+	// FLUSH ME
+	static Pattern commaPattern = Pattern.compile(",");
+	void parseFlags(String flags, Taxon node) {
+		// String[] tags = commaPattern.split(flags);
+		if (flags.contains("extinct"))
+			// kludge. could be _direct or _inherited
+			node.properFlags |= Taxonomy.EXTINCT;
+	}
+
+	// Returns the node's rank (as an int).  In general the return
+	// value should be >= parentRank, but occasionally ranks get out
+	// of order when combinings taxonomies.
 
 	static int analyzeRankConflicts(Taxon node, boolean majorp) {
 		Integer m = -1;			// "no rank" = -1
@@ -891,7 +905,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			// In the process, calculate rank of highest child
 			for (Taxon child : node.children) {
 				int rank = analyzeRankConflicts(child, majorp);
-				if (rank >= 0) {
+				if (rank >= 0) {  //  && !child.isHidden()  ??
 					if (rank < highrank) { highrank = rank; highchild = child; }
 					if (rank > lowrank)	 lowrank = rank;
 				}
@@ -966,71 +980,83 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	static void analyzeContainers(Taxon node, int inheritedFlags) {
 		// Before
 		node.inheritedFlags |= inheritedFlags;
-		boolean elidep = false;
 
-		if (unclassifiedRegex.matcher(node.name).find()) {// Rule 3+5
-			node.properFlags |= UNCLASSIFIED;  // includes uncultured
-			elidep = true;
-		}
-		if (environmentalRegex.matcher(node.name).find()) {// Rule 3+5
-			node.properFlags |= ENVIRONMENTAL;
-			elidep = true;
-		}
-		if (incertae_sedisRegex.matcher(node.name).find()) {// Rule 3+5
-			node.properFlags |= INCERTAE_SEDIS;
-			elidep = true;
-		}
+		int flag = 0;
+
+		if (unclassifiedRegex.matcher(node.name).find()) // Rule 3+5
+			flag = UNCLASSIFIED;  // includes uncultured
+		if (environmentalRegex.matcher(node.name).find()) // Rule 3+5
+			flag = ENVIRONMENTAL;
+		if (incertae_sedisRegex.matcher(node.name).find()) // Rule 3+5
+			flag = INCERTAE_SEDIS;
 
 		// Recursive descent
 		if (node.children != null) {
-			int bequest = inheritedFlags | node.properFlags;		// What the children inherit
+			int bequest = inheritedFlags | node.properFlags | flag;		// What the children inherit
 			for (Taxon child : new ArrayList<Taxon>(node.children))
 				analyzeContainers(child, bequest);
 		}
 
 		// After
-		if (elidep) {
+		if (flag != 0) {
 			// Splice the node out of the hierarchy, but leave it as a
 			// residual terminal non-OTU node.
 			if (node.children != null && node.parent != null)
-				for (Taxon child : new ArrayList<Taxon>(node.children))
+				for (Taxon child : new ArrayList<Taxon>(node.children)) {
+					child.properFlags |= flag;
 					child.changeParent(node.parent);
+				}
 			node.properFlags |= NOT_OTU;
 		}
 	}
 
 	static void propagateFlags(Taxon node, int inheritedFlags) {
-		node.inheritedFlags |= inheritedFlags;
+		node.inheritedFlags = inheritedFlags;
 		if (node.children != null) {
 			int bequest = inheritedFlags | node.properFlags;		// What the children inherit
-			for (Taxon child : new ArrayList<Taxon>(node.children))
-				analyzeContainers(child, bequest);
+			for (Taxon child : node.children)
+				propagateFlags(child, bequest);
 		}
 	}
 
-	// Set the ANYSPECIES flag of any taxon that is a species or has
-	// one below it
+	// 1. Set the INFRASPECIFIC flag of any taxon that is a species or has
+	// one below it.  
+	// 2. Set the BARREN flag of any taxon that doesn't
+	// contain anything at species rank or below.
+	// 3. Propagate EXTINCT upwards.
 
 	static void analyzeBarren(Taxon node) {
-		boolean anyspeciesp = false;	 // Any descendant is a species?
+		boolean infraspecific = false;
+		boolean barren = true;      // No species?
 		if (node.rank != null) {
 			Integer rank = ranks.get(node.rank);
-			if (rank != null && rank >= SPECIES_RANK) {
-				node.properFlags |= SPECIFIC;
-				anyspeciesp = true;
+			if (rank != null) {
+				if (rank == SPECIES_RANK)
+					infraspecific = true;
+				if (rank >= SPECIES_RANK)
+					barren = false;
 			}
 		}
+		if (node.rank == null && node.children == null)
+			barren = false;
 		if (node.children != null) {
 			boolean allextinct = true;	   // Any descendant is extant?
 			for (Taxon child : node.children) {
+				if (infraspecific)
+					child.properFlags |= INFRASPECIFIC;
+				else
+					child.properFlags &= ~INFRASPECIFIC;
 				analyzeBarren(child);
-				if ((child.properFlags & ANYSPECIES) != 0) anyspeciesp = true;
+				if ((child.properFlags & BARREN) == 0) barren = false;
 				if ((child.properFlags & EXTINCT) == 0) allextinct = false;
 			}
 			if (allextinct) node.properFlags |= EXTINCT;
-		} else if (node.rank == Taxonomy.NO_RANK)
-			anyspeciesp = true;
-		if (anyspeciesp) node.properFlags |= ANYSPECIES;
+			// We could do something similar for all of the hidden-type flags
+		}
+		if (barren)
+			node.properFlags |= BARREN;
+		else
+			node.properFlags &= ~BARREN;
 	}
 	
 	static Pattern notOtuRegex =
@@ -2042,7 +2068,7 @@ class SourceTaxonomy extends Taxonomy {
 			{"Chordata"},
 			// {"Eukaryota"},		// doesn't occur in gbif, but useful for ncbi/ncbi test merge
 			// {"Archaea"},			// ambiguous in ncbi
-			{"Viruses"},
+			// {"Viruses"},
 		};
 		int count = 0;
 		for (int i = 0; i < pins.length; ++i) {

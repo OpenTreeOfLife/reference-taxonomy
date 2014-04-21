@@ -941,7 +941,8 @@ public class Taxon {
 			return a;
 		}
 	}
-
+ 
+	// For cycle detection
 	boolean descendsFrom(Taxon b) {
 		for (Taxon a = this; a != null; a = a.parent)
 			if (b == a)
@@ -1136,6 +1137,7 @@ public class Taxon {
 				 Taxonomy.EXTINCT |
 				 Taxonomy.MAJOR_RANK_CONFLICT |
 				 Taxonomy.TATTERED |
+				 Taxonomy.BARREN |
 				 Taxonomy.NOT_OTU |
 				 Taxonomy.HYBRID |
 				 Taxonomy.VIRAL |
@@ -1213,7 +1215,7 @@ public class Taxon {
 
 	public void synonym(String name) {
 		if (!this.taxonomy.addSynonym(name, this))
-			System.err.format("** Synonym not added: %s %s\n", this, name);
+			System.err.format("** Synonym already present: %s %s\n", this, name);
 	}
 
 	public void rename(String name) {

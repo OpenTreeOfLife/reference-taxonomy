@@ -611,7 +611,8 @@ ott.same(ids.taxon('342868'), ncbi.taxon('56708')) #Tetraphyllidea
 ott.same(fung.taxon('Trichosporon'), ids.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
 
 # These sneak in from GBIF and IRMNG - hide for purposes of Open Tree
-ott.taxon('Viruses').hide()
+# Regression testing TBD
+# ott.taxon('Viruses').hide()
 
 ott.assignIds(ids)
 

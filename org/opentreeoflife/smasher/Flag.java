@@ -1,7 +1,14 @@
+/*
+ * Please don't laugh at the integer bit masks in this file... I'm in
+ * the middle of a transition from using bit masks to using an enum,
+ * and the process isn't complete yet.
+ */
+
 package org.opentreeoflife.smasher;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.EnumSet;
 import java.io.PrintStream;
 import java.util.regex.Pattern;
 
@@ -14,13 +21,15 @@ public enum Flag {
 
 	// Final analysis...
 	// Containers - unconditionally so.
-	INCERTAE_SEDIS		 ("incertae_sedis_direct", "incertae_sedis_inherited", Taxonomy.INCERTAE_SEDIS),
-	UNCLASSIFIED		 ("unclassified_direct", "unclassified_inherited", Taxonomy.UNCLASSIFIED),
-	ENVIRONMENTAL		 ("environmental", "environmental_inherited", Taxonomy.ENVIRONMENTAL),
+	INCERTAE_SEDIS		 ("incertae_sedis", "incertae_sedis_inherited", Taxonomy.INCERTAE_SEDIS),
+	UNCLASSIFIED		 ("unclassified", "unclassified_inherited", Taxonomy.UNCLASSIFIED),
+	ENVIRONMENTAL		 (null, "environmental_inherited", Taxonomy.ENVIRONMENTAL),
 
 	// Set during assembly
 	HIDDEN				 ("hidden", "hidden_inherited", Taxonomy.HIDDEN),	  // combine using &
-	MAJOR_RANK_CONFLICT  ("major_rank_conflict_direct", "major_rank_conflict_inherited", Taxonomy.MAJOR_RANK_CONFLICT),     // Parent-dependent.  Retain value
+	MAJOR_RANK_CONFLICT  ("major_rank_conflict_direct",
+						  "major_rank_conflict_inherited",
+						  Taxonomy.MAJOR_RANK_CONFLICT),     // Parent-dependent.  Retain value
 
 	// Australopithecus
 	SIBLING_HIGHER		 ("sibling_higher", null, Taxonomy.SIBLING_HIGHER),
@@ -31,12 +40,10 @@ public enum Flag {
 	FORCED_VISIBLE		 ("forced_visible", null, Taxonomy.FORCED_VISIBLE),	  		  // combine using |
 	EXTINCT			 	 ("extinct_direct", "extinct_inherited", Taxonomy.EXTINCT),	  // combine using |
 
-	// Is 'species' or lower rank ('infraspecific' when inherited)
-	// Unconditional ?
-	SPECIFIC			 (null, "infraspecific", Taxonomy.SPECIFIC),
+	// Has a node of rank 'species' as an ancestor?
+	INFRASPECIFIC		 ("infraspecific", null, Taxonomy.INFRASPECIFIC),
 
-	// Opposite of 'barren' - propagated upward
-	ANYSPECIES			 (null, null, Taxonomy.ANYSPECIES);
+	BARREN			     ("barren", null, Taxonomy.BARREN);
 
 	String name, inheritedName;
 	int bit;
@@ -53,6 +60,17 @@ public enum Flag {
 		for (Flag flag : Flag.values())
 			lookupTable.put(flag.name, flag);
 		lookupTable.put("extinct", EXTINCT); // hack for IF and IRMNG
+
+		// Container stubs
+		lookupTable.put("incertae_sedis_direct", NOT_OTU);
+		lookupTable.put("unclassified_direct", NOT_OTU);
+		lookupTable.put("environmental", NOT_OTU);
+
+		// Temp kludge pending revision of representation ...
+		lookupTable.put("incertae_sedis_inherited", INCERTAE_SEDIS);
+		lookupTable.put("unclassified_inherited", UNCLASSIFIED);
+		lookupTable.put("environmental_inherited", ENVIRONMENTAL);
+
 		for (Flag flag : Flag.values())
 			lookupInheritedTable.put(flag.inheritedName, flag);
 	}
@@ -67,33 +85,40 @@ public enum Flag {
 
 	static Pattern commaPattern = Pattern.compile(",");
 
-	static int parseFlags(String flags) {
-		int f = Taxonomy.ANYSPECIES;
+	//static EnumSet<Flag> derived = 
+	//	EnumSet<Flag>.of(BARREN, INFRASPECIFIC, SIBLING_HIGHER, SIBLING_LOWER);
+
+	static void parseFlags(String flags, Taxon node) {
+		int f = 0;
+		int g = 0;
 		for (String name : commaPattern.split(flags)) {
 			Flag flag = Flag.lookup(name);
-			if (flag != null)
+			if (flag != null) {
 				f |= flag.bit;
-			else {
+			} else {
 				Flag iflag = Flag.lookupInherited(name);
 				if (iflag != null)
-					f |= iflag.bit; // Temporary kludge for containers
-				else if (name.equals("barren"))
-					f &= ~Taxonomy.ANYSPECIES;
+					g |= iflag.bit;
 				else if (name.equals(""))
 					;
 				else
 					System.err.format("** Unrecognized flag: %s\n", name);
 			}
 		}
-		return f;
+		node.properFlags = f;
+		node.inheritedFlags = g;
 	}
 
 	public static void printFlags(int flags, int iflags, PrintStream out) {
-		// for (Flag flag : Flag.values()) { ...} 
-
 		boolean needComma = false;
-		if ((((flags | iflags) & Taxonomy.NOT_OTU) != 0)
-			|| ((iflags & Taxonomy.ENVIRONMENTAL) != 0)) {
+
+		if (false)
+			for (Flag flag : Flag.values()) {
+				;
+			} 
+
+		if ((((flags | iflags) & Taxonomy.NOT_OTU) != 0) || 
+			(((flags | iflags) & Taxonomy.ENVIRONMENTAL) != 0)) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("not_otu");
 		}
@@ -106,10 +131,11 @@ public enum Flag {
 			out.print("hybrid");
 		}
 
-		// Containers
+		// Disposition relative to parent (containers)
 		if ((flags & Taxonomy.INCERTAE_SEDIS) != 0) {
 			if (needComma) out.print(","); else needComma = true;
-			out.print("incertae_sedis_direct");
+			// WORK IN PROGRESS
+			out.print("incertae_sedis_inherited");
 		}
 		if ((iflags & Taxonomy.INCERTAE_SEDIS) != 0) {
 			if (needComma) out.print(","); else needComma = true;
@@ -118,7 +144,8 @@ public enum Flag {
 
 		if ((flags & Taxonomy.UNCLASSIFIED) != 0) {
 			if (needComma) out.print(","); else needComma = true;
-			out.print("unclassified_direct");  // JAR prefers 'unclassified'
+			// WORK IN PROGRESS
+			out.print("unclassified_inherited");  // JAR prefers 'unclassified'
 		}
 		if ((iflags & Taxonomy.UNCLASSIFIED) != 0) {
 			if (needComma) out.print(","); else needComma = true;
@@ -129,6 +156,9 @@ public enum Flag {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("environmental");
 		}
+		// for inherited environmental, see NOT_OTU above
+
+		// Other
 		if ((flags & Taxonomy.HIDDEN) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("hidden");
@@ -185,10 +215,10 @@ public enum Flag {
 			out.print("forced_visible");
 		}
 
-		if ((iflags & Taxonomy.SPECIFIC) != 0) {
+		if (((flags | iflags) & Taxonomy.INFRASPECIFIC) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("infraspecific");
-		} else if ((flags & Taxonomy.ANYSPECIES) == 0) {
+		} else if ((flags & Taxonomy.BARREN) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("barren");
 		}

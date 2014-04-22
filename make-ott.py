@@ -318,6 +318,19 @@ gbif.taxon('Leptorrhyncho-Hypnum').rename('Leptorrhyncho-hypnum')
 gbif.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
 gbif.taxon('Hypocrea').absorb(gbif.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
 
+for epithet in ['cylindraceum',
+				'lepidoziaceum',
+				'intermedium',
+				'espinosae',
+				'pseudoinvolvens',
+				'arzobispoae',
+				'sharpii',
+				'frontinoae',
+				'atlanticum',
+				'stevensii',
+				'brachythecium']:
+	gbif.taxon('Cyrto-hypnum ' + epithet).absorb(gbif.taxon('Cyrto-Hypnum ' + epithet))
+
 # JAR 2014-04-18 attempt to resolve ambiguous alignment of
 # Trichosporon in IF and GBIF based on common member
 ott.same(fung.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'), gbif.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))

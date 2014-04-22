@@ -5,7 +5,7 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.7draft3
+WHICH=2.7draft4
 PREV_WHICH=2.6
 
 #  $^ = all prerequisites
@@ -50,8 +50,6 @@ lib/jython-standalone-2.5.3.jar:
 	@ls -l $@
 
 # --------------------------------------------------------------------------
-
-# Add tax/if/ when it starts to work
 
 OTT_ARGS=$(SMASH) $(SILVA)/ tax/713/ tax/if/ $(NCBI)/ $(GBIF)/ \
       --edits feed/ott/edits/ \

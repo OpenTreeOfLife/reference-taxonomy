@@ -174,6 +174,8 @@ for foo in [('Neozygitales', ['Neozygitaceae']),
 
 # ----- NCBI Taxonomy -----
 ncbi  = Taxonomy.getTaxonomy('tax/ncbi/', 'ncbi')
+ncbi.taxon('Viruses').hide()
+
 # David Hibbett has requested that for Fungi, only Index Fungorum
 # should be seen.  Rather than delete the NCBI fungal taxa, we just
 # mark them 'hidden' so they can be suppressed downstream.  This
@@ -254,6 +256,7 @@ ott.taxon('Icteridae').take(ott.taxon('Quiscalus', 'Fringillidae'))
 # ----- GBIF (Global Biodiversity Information Facility) taxonomy -----
 gbif  = Taxonomy.getTaxonomy('tax/gbif/', 'gbif')
 gbif.smush()
+gbif.taxon('Viruses').hide()
 
 # Fungi suppressed at David Hibbett's request
 gbif.taxon('Fungi').hideDescendantsToRank('species')
@@ -333,6 +336,7 @@ ott.taxon('Blattaria').take(ott.taxon('Phyllodromiidae'))
 
 irmng = Taxonomy.getTaxonomy('tax/irmng/', 'irmng')
 irmng.smush()
+irmng.taxon('Viruses').hide()
 
 # Fungi suppressed at David Hibbett's request
 irmng.taxon('Fungi').hideDescendantsToRank('species')
@@ -609,10 +613,6 @@ ott.same(ids.taxon('339002'), ncbi.taxon('3071')) #Chlorella
 ott.same(ids.taxon('342868'), ncbi.taxon('56708')) #Tetraphyllidea
 
 ott.same(fung.taxon('Trichosporon'), ids.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
-
-# These sneak in from GBIF and IRMNG - hide for purposes of Open Tree
-# Regression testing TBD
-ott.taxon('Viruses').hide()
 
 ott.assignIds(ids)
 

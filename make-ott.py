@@ -149,8 +149,6 @@ ott.absorb(fung)
 # Don't know what to do about Chlamydotomus cellaris or the genus.
 # Genus is not in Mycobank or IRMNG... and I don't know whether T. cellaris
 # would be valid.  Leave as is I guess, and set incertae sedis
-		 
-ott.taxon('Chlamydotomus').incertaeSedis()
 
 # 2014-04-13 Romina #40, #60
 for foo in [('Neozygitales', ['Neozygitaceae']),
@@ -390,6 +388,9 @@ ott.absorb(irmng)
 # ----- Final patches -----
 
 # Finished loading source taxonomies.  Now patch things up.
+
+# See above (occurs in both IF and GBIF).  Also see #67
+ott.taxon('Chlamydotomus').incertaeSedis()
 
 # Joseph Brown email to JAR 2014-01-27
 ott.taxon('Thamnophilus bernardi').absorb(ott.taxon('Sakesphorus bernardi'))

@@ -23,7 +23,7 @@ public enum Flag {
 	// Containers - unconditionally so.
 	INCERTAE_SEDIS		 ("incertae_sedis", "incertae_sedis_inherited", Taxonomy.INCERTAE_SEDIS),
 	UNCLASSIFIED		 ("unclassified", "unclassified_inherited", Taxonomy.UNCLASSIFIED),
-	ENVIRONMENTAL		 (null, "environmental_inherited", Taxonomy.ENVIRONMENTAL),
+	ENVIRONMENTAL		 ("environmental", "environmental_inherited", Taxonomy.ENVIRONMENTAL),
 
 	// Set during assembly
 	HIDDEN				 ("hidden", "hidden_inherited", Taxonomy.HIDDEN),	  // combine using &
@@ -61,15 +61,17 @@ public enum Flag {
 			lookupTable.put(flag.name, flag);
 		lookupTable.put("extinct", EXTINCT); // hack for IF and IRMNG
 
-		// Container stubs
+		// Container stubs - legacy
 		lookupTable.put("incertae_sedis_direct", NOT_OTU);
 		lookupTable.put("unclassified_direct", NOT_OTU);
-		lookupTable.put("environmental", NOT_OTU);
 
-		// Temp kludge pending revision of representation ...
+		// Kludge for legacy 2.6 and before, pending revision of representation ...
+		// will need to separate out direct and inherited cases, and in the case
+		// of 'environmental' there are three cases, the container, direct, and
+		// indirect
 		lookupTable.put("incertae_sedis_inherited", INCERTAE_SEDIS);
 		lookupTable.put("unclassified_inherited", UNCLASSIFIED);
-		lookupTable.put("environmental_inherited", ENVIRONMENTAL);
+		lookupTable.put("environmental", ENVIRONMENTAL);
 
 		for (Flag flag : Flag.values())
 			lookupInheritedTable.put(flag.inheritedName, flag);
@@ -117,8 +119,7 @@ public enum Flag {
 				;
 			} 
 
-		if ((((flags | iflags) & Taxonomy.NOT_OTU) != 0) || 
-			(((flags | iflags) & Taxonomy.ENVIRONMENTAL) != 0)) {
+		if ((((flags | iflags) & Taxonomy.NOT_OTU) != 0)) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("not_otu");
 		}
@@ -131,32 +132,34 @@ public enum Flag {
 			out.print("hybrid");
 		}
 
-		// Disposition relative to parent (containers)
+		// Disposition relative to parent (formerly inside of containers)
+		// The direct form means incertae sedis
 		if ((flags & Taxonomy.INCERTAE_SEDIS) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			// WORK IN PROGRESS
-			out.print("incertae_sedis_inherited");
+			out.print("incertae_sedis");
 		}
 		if ((iflags & Taxonomy.INCERTAE_SEDIS) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("incertae_sedis_inherited");
 		}
-
 		if ((flags & Taxonomy.UNCLASSIFIED) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			// WORK IN PROGRESS
-			out.print("unclassified_inherited");  // JAR prefers 'unclassified'
+			out.print("unclassified");
 		}
 		if ((iflags & Taxonomy.UNCLASSIFIED) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("unclassified_inherited"); // JAR prefers 'unclassified_indirect' ?
 		}
-
 		if ((flags & Taxonomy.ENVIRONMENTAL) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("environmental");
 		}
-		// for inherited environmental, see NOT_OTU above
+		if ((iflags & Taxonomy.ENVIRONMENTAL) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("environmental_inherited");
+		}
 
 		// Other
 		if ((flags & Taxonomy.HIDDEN) != 0) {
@@ -168,6 +171,7 @@ public enum Flag {
 			out.print("hidden_inherited");
 		}
 
+		// Another kind of incertae sedis
 		if ((flags & Taxonomy.MAJOR_RANK_CONFLICT) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("major_rank_conflict_direct");

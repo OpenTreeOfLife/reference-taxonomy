@@ -164,20 +164,19 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	Taxon highest(String name) { // See pin()
 		List<Taxon> l = this.lookup(name);
 		if (l == null) return null;
-		Taxon best = null;
+		Taxon best = null, otherbest = null;
 		int depth = 1 << 30;
-		boolean ambiguousp = false;
 		for (Taxon node : l) {
 			int d = node.measureDepth();
 			if (d < depth) {
 				depth = d;
 				best = node;
-				ambiguousp = false;
+				otherbest = null;
 			} else if (d == depth)
-				ambiguousp = true;
+				otherbest = node;
 		}
-		if (ambiguousp)
-			System.err.format("** Ambiguous division name: %s\n", name);
+		if (otherbest != null)
+			System.err.format("** Ambiguous division name: %s %s %s\n", best, otherbest, depth);
 		return best;
 	}
 
@@ -374,7 +373,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				String id = parts[0];
 				String rawname = parts[2];
 				String rank = parts[3];
-				if (rank.length() == 0 || rank.equals("no rank"))
+				if (rank.length() == 0 || rank.startsWith("no rank") || rank.equals("terminal"))
 					rank = NO_RANK;
 
 				String name = normalizeName(rawname);
@@ -588,7 +587,11 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		out.print((node.name == null ? "?" : node.name)
 				  + sep);
 		// 3. rank:
-		out.print((node.rank == Taxonomy.NO_RANK ? "no rank" : node.rank) + sep);
+		out.print((node.rank == Taxonomy.NO_RANK ?
+				   (node.children == null ?
+					"no rank - terminal" :
+					"no rank") :
+				   node.rank) + sep);
 
 		// 4. source information
 		// comma-separated list of URI-or-CURIE
@@ -838,6 +841,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			this.propagateFlags(root, 0);
 	}
 
+	// Work in progress - don't laugh - will be converting flag set
+	// representation from int to EnumSet<Flag>
+
 	// Set during assembly
 	static final int TATTERED			 =	 4 * 1024;	  // combine using |  ??
 	static final int FORCED_VISIBLE		 =	16 * 1024;	  // combine using |
@@ -1038,6 +1044,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			}
 		}
 		if (node.rank == null && node.children == null)
+			// The "no rank - terminal" case
 			barren = false;
 		if (node.children != null) {
 			boolean allextinct = true;	   // Any descendant is extant?
@@ -1563,12 +1570,12 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			System.err.println("Unrecognized edit command: " + command);
 	}
 
+	// Test case: Valsa
 	List<Taxon> filterByAncestor(String taxonName, String contextName) {
 		List<Taxon> nodes = this.lookup(taxonName);
 		if (nodes == null) return null;
 		List<Taxon> fnodes = new ArrayList<Taxon>(1);
 		for (Taxon node : nodes) {
-			if (!node.name.equals(taxonName)) continue;
 			// Follow ancestor chain to see whether this node is in the context
 			for (Taxon chain = node; chain != null; chain = chain.parent)
 				if (chain.name.equals(contextName)) {
@@ -1576,7 +1583,14 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 					break;
 				}
 		}
-		return fnodes.size() == 0 ? null : fnodes;
+		if (fnodes.size() == 0) return null;
+		if (fnodes.size() == 1) return fnodes;
+		List<Taxon> gnodes = new ArrayList<Taxon>(1);
+		for (Taxon fnode : fnodes)
+			if (fnode.name.equals(taxonName))
+				gnodes.add(fnode);
+		if (gnodes.size() >= 1) return gnodes;
+		return fnodes;
 	}
 
 	List<Taxon> filterByDescendant(String taxonName, String descendantName) {
@@ -1687,6 +1701,13 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		((UnionTaxonomy)this).assignIds(idsource);
 	}
 
+	public Taxon taxon(String name) {
+		Taxon probe = maybeTaxon(name);
+		if (probe == null)
+			System.err.format("** No unique taxon found with this name: %s\n", name);
+		return probe;
+	}
+
 	// Look up a taxon by name or unique id.  Name must be unique in the taxonomy.
 	public Taxon maybeTaxon(String name) {
 		List<Taxon> probe = this.nameIndex.get(name);
@@ -1702,21 +1723,21 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		return this.idIndex.get(name);
 	}
 
-	public Taxon taxon(String name) {
-		Taxon probe = maybeTaxon(name);
+	public Taxon taxon(String name, String context) {
+		Taxon probe = maybeTaxon(name, context);
 		if (probe == null)
-			System.err.format("** No taxon found with this name: %s\n", name);
+			System.err.format("** No unique taxon found with name %s in context %s\n", name, context);
 		return probe;
 	}
 
-	public Taxon taxon(String name, String context) {
+	public Taxon maybeTaxon(String name, String context) {
 		List<Taxon> nodes = filterByAncestor(name, context);
 		if (nodes == null) {
-			System.err.format("** No taxon with name %s in context %s\n", name, context);
 			return null;
 		} else if (nodes.size() == 1)
 			return nodes.get(0);
 		else {
+			// Still ambiguous even in context.
 			Taxon candidate = null;
 			// Chaetognatha
 			for (Taxon node : nodes)
@@ -2088,12 +2109,14 @@ class SourceTaxonomy extends Taxonomy {
 				Taxon m2 = union.highest(name);
 				if (m2 != null) n2 = m2;
 			}
-			if (n1 != null && n2 != null) {
+			if (n1 != null)
 				n1.setDivision(names[0]);
+			if (n2 != null)
 				n2.setDivision(names[0]);
+			if (n1 != null && n2 != null)
 				n1.unifyWith(n2); // hmm.  TBD: move this out of here
+			if (n1 != null || n2 != null)
 				++count;
-			}
 		}
 		if (count > 0)
 			System.out.println("Pinned " + count + " out of " + pins.length);
@@ -2950,7 +2973,7 @@ abstract class Criterion {
 				// x is source node, y is union node.
 				// Two cases:
 				// 1. Mapping x=NCBI to y=union(SILVA): y.sourceIds contains x.id
-				// 2. Mapping idsource to union: x.sourceIds contains ncbi:123
+				// 2. Mapping x=idsource to y=union: x.sourceIds contains ncbi:123
 				// compare x.id to y.sourcenode.id
 				QualifiedId xid = x.getQualifiedId();
 				for (QualifiedId ysourceid : y.sourceIds)
@@ -3146,8 +3169,8 @@ class QualifiedId {
 			QualifiedId qid = (QualifiedId)o;
 			return (qid.id.equals(id) &&
 					qid.prefix.equals(prefix));
-		}
-		return false;
+		} else
+			return false;
 	}
 }
 

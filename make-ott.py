@@ -63,7 +63,7 @@ for name in ['GAL08', 'GOUTA4', 'JL-ETNP-Z39', 'Kazan-3B-28',
 			 'NAMAKO-1', 'RT5iin25', 'SA1-3C06', 'DH147-EKD23']:
     ott.taxon(name).elide()
 
-# Lamiales taxonomy from study 713
+# ----- Lamiales taxonomy from study 713 -----
 # http://dx.doi.org/10.1186/1471-2148-10-352
 study713  = Taxonomy.getTaxonomy('tax/713/', 'study713')
 ott.notSame(study713.taxon('Buchnera'), silva.taxon('Buchnera'))
@@ -73,7 +73,7 @@ ott.absorb(study713)
 fung  = Taxonomy.getTaxonomy('tax/if/', 'if')
 
 # JAR 2014-04-11 Missing in earlier IF, mistake in later IF -
-# extraneous authority string
+# extraneous authority string.  See Romina's issue #42
 cyph = fung.maybeTaxon('Cyphellopsis')
 if cyph == None:
 	cyph = fung.maybeTaxon('Cyphellopsis Donk 1931')
@@ -81,15 +81,16 @@ if cyph == None:
 		cyph.rename('Cyphellopsis')
 	else:
 		cyph = fung.newTaxon('Cyphellopsis', 'genus', 'if:17439')
-fung.taxon('Niaceae').take(cyph)
+	fung.taxon('Niaceae').take(cyph)
 
 # smush will fold sibling taxa that have the same name.
 fung.smush()
 
 # 2014-03-07 Prevent a false match
+# https://groups.google.com/d/msg/opentreeoflife/5SAPDerun70/fRjA2M6z8tIJ
 ott.notSame(silva.taxon('Phaeosphaeria'), fung.taxon('Phaeosphaeria'))
 
-# 2014-04-08 This was causing Agaricaceae to become 'tattered'
+# 2014-04-08 This was causing Agaricaceae to be paraphyletic
 ott.notSame(silva.taxon('Morganella'), fung.taxon('Morganella'))
 
 # 2014-04-08 More IF/SILVA bad matches (probably sample contamination)
@@ -102,7 +103,8 @@ for name in ["Trichoderma harzianum",
 			 "Sclerotinia homoeocarpa",
 			 "Epiphloea",
 			 "Campanella",
-			 "Lacrymaria"]:
+			 "Lacrymaria",
+			 "Puccinia triticina"]:
 	ott.notSame(silva.taxon(name), fung.taxon(name))
 
 # Romina email to JAR 2014-04-09
@@ -113,11 +115,20 @@ fung.taxon('Hypocrea').absorb(fung.taxonThatContains('Trichoderma', 'Hypocrea ru
 # Romina https://github.com/OpenTreeOfLife/reference-taxonomy/issues/42
 fung.taxon('Trichoderma deliquescens').rename('Hypocrea lutea')
 
-# 2014-04-14 Bad Fungi homonyms in new version of IF
+# 2014-04-14 Bad Fungi homonyms in new version of IF.  90156 is the good one.
+# 90154 has no descendants
 if fung.maybeTaxon('90154') != None:
+	print 'Removing Fungi 90154'
 	fung.taxon('90154').prune()
+# 90155 is "Nom. inval." and has no descendants
 if fung.maybeTaxon('90155') != None:
+	print 'Removing Fungi 90155'
 	fung.taxon('90155').prune()
+
+# 2014-04-25 JAR
+# There are three Bostrychias: a rhodophyte, a fungus, and a bird.
+# The fungus name is a synonym for Cytospora.
+ott.notSame(silva.taxon('Bostrychia', 'Rhodophyceae'), fung.taxon('Bostrychia', 'Ascomycota'))
 
 # analyzeMajorRankConflicts sets the "major_rank_conflict" flag when
 # intermediate ranks are missing (e.g. a family that's a child of a
@@ -125,6 +136,11 @@ if fung.maybeTaxon('90155') != None:
 fung.analyzeMajorRankConflicts()
 
 ott.absorb(fung)
+
+# These don't matter much because Protozoa and Chromista are hidden
+ott.taxon('Eukaryota').take(ott.taxon('Protozoa'))
+ott.taxon('Eukaryota').take(ott.taxon('Chromista'))
+
 
 # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/20
 # Problem: Chlamydotomus is an incertae sedis child of Fungi.  Need to
@@ -145,10 +161,9 @@ ott.absorb(fung)
 # Cb = ott.taxon('Chlamydotomus beigelii')
 # Cb.rename('Trichosporon beigelii')
 # ott.taxon('Trichosporon').take(Cb)
+#
+# Just make it incertae sedis and put off dealing with it until someone cares...
 
-# Don't know what to do about Chlamydotomus cellaris or the genus.
-# Genus is not in Mycobank or IRMNG... and I don't know whether T. cellaris
-# would be valid.  Leave as is I guess, and set incertae sedis
 
 # 2014-04-13 Romina #40, #60
 for foo in [('Neozygitales', ['Neozygitaceae']),
@@ -187,7 +202,7 @@ ott.notSame(ncbi.taxon('Coscinium'), fung.taxon('Coscinium'))
 ott.notSame(ncbi.taxon('Perezia'), fung.taxon('Perezia'))
 
 # JAR 2014-04-11 Discovered during regression testing
-ott.notSame(ncbi.taxon('Epiphloea', 'Rhodophyta'), fung.taxon('Epiphloea', 'Lichinaceae'))
+ott.notSame(ncbi.taxon('Epiphloea', 'Rhodophyta'), fung.taxon('Epiphloea', 'Ascomycota'))
 
 # RR 2014-04-12 #49
 ncbi.taxon('leotiomyceta').rename('Leotiomyceta')
@@ -241,18 +256,32 @@ ott.same(fung.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'), ncbi.t
 #  hybrids, and so on) to allow the option of suppression downstream
 ncbi.analyzeOTUs()
 
+# 2014-04-23 In new version of IF - obvious misalignment
+ott.notSame(ncbi.taxon('Crepidula', 'Gastropoda'), fung.taxon('Crepidula', 'Microsporidia'))
+ott.notSame(ncbi.taxon('Hessea', 'Viridiplantae'), fung.taxon('Hessea', 'Microsporidia'))
+# 2014-04-23 Resolve ambiguity introduced into new version of IF
+# http://www.speciesfungorum.org/Names/SynSpecies.asp?RecordID=331593
+ott.same(ncbi.taxon('Gymnopilus spectabilis var. junonius'), fung.taxon('Gymnopilus junonius'))
+
+# JAR 2014-04-23 More sample contamination in SILVA 115
+ott.same(ncbi.taxon('Lamprospora'), fung.taxon('Lamprospora'))
+
+# JAR 2014-04-25
+ott.notSame(silva.taxon('Bostrychia', 'Rhodophyceae'), ncbi.taxon('Bostrychia', 'Aves'))
+
 ott.absorb(ncbi)
 
-# 2014-01-27 Joseph: Quiscalus is incorrectly in Fringillidae instead
-# of Icteridae.  NCBI is wrong, GBIF is correct.
+# 2014-01-27 Joseph email to JAR: Quiscalus is incorrectly in
+# Fringillidae instead of Icteridae.  NCBI is wrong, GBIF is correct.
 ott.taxon('Icteridae').take(ott.taxon('Quiscalus', 'Fringillidae'))
 
 # Misspelling in GBIF... seems to already be known
+# Stephen email to JAR 2014-01-26
 # ott.taxon("Torricelliaceae").synonym("Toricelliaceae")
 
 
 # ----- GBIF (Global Biodiversity Information Facility) taxonomy -----
-gbif  = Taxonomy.getTaxonomy('tax/gbif/', 'gbif')
+gbif = Taxonomy.getTaxonomy('tax/gbif/', 'gbif')
 gbif.smush()
 gbif.taxon('Viruses').hide()
 
@@ -261,23 +290,25 @@ gbif.taxon('Fungi').hideDescendantsToRank('species')
 
 # Microbes suppressed at Laura Katz's request
 gbif.taxon('Bacteria','life').hideDescendants()
-gbif.taxon('Protozoa','life').hideDescendants()
 gbif.taxon('Archaea','life').hideDescendants()
-gbif.taxon('Chromista','life').hideDescendants()
 
 #ott.same(gbif.taxon('Cyanobacteria'), silva.taxon('Cyanobacteria','Cyanobacteria')) #'D88288/#3'
 
-# Automatic merge makes the wrong choice for the following two
+# Automatic alignment makes the wrong choice for the following two
 ott.same(ncbi.taxon('5878'), gbif.taxon('10'))	  # Ciliophora
 ott.same(ncbi.taxon('29178'), gbif.taxon('389'))  # Foraminifera
 
+# Tetrasphaera is a messy multi-way homonym
 ott.same(ncbi.taxon('Tetrasphaera','Intrasporangiaceae'), gbif.taxon('Tetrasphaera','Intrasporangiaceae'))
+
+# SILVA's Retaria is in SAR, GBIF's is in Brachiopoda
 ott.notSame(silva.taxon('Retaria'), gbif.taxon('Retaria'))
 
 # Rod Page blogged about this one
+# http://iphylo.blogspot.com/2014/03/gbif-liverwort-taxonomy-broken.html
 gbif.taxon('Jungermanniales','Marchantiophyta').absorb(gbif.taxon('Jungermanniales','Bryophyta'))
 
-# Bad synonym in NCBI
+# Bad alignments to NCBI
 ott.notSame(ncbi.taxon('Labyrinthomorpha'), gbif.taxon('Labyrinthomorpha'))
 ott.notSame(ncbi.taxon('Ophiurina'), gbif.taxon('Ophiurina','Ophiurinidae'))
 ott.notSame(ncbi.taxon('Rhynchonelloidea'), gbif.taxon('Rhynchonelloidea'))
@@ -313,9 +344,11 @@ gbif.taxon('Leptorrhyncho-Hypnum').rename('Leptorrhyncho-hypnum')
 
 # Romina email to JAR 2014-04-09
 # GBIF has both Hypocrea and Trichoderma.  And it has four Trichoderma synonyms...
+# pick the one that contains bogo-type Hypocrea rufa
 gbif.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
 gbif.taxon('Hypocrea').absorb(gbif.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
 
+# 2014-04-21 RR email to JAR
 for epithet in ['cylindraceum',
 				'lepidoziaceum',
 				'intermedium',
@@ -333,13 +366,37 @@ for epithet in ['cylindraceum',
 # Trichosporon in IF and GBIF based on common member
 ott.same(fung.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'), gbif.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
 
+# JAR 2014-04-23 Noticed while perusing silva/gbif conflicts
+gbif.taxon('Ebriaceae').synonym('Ebriacea')
+gbif.taxon('Acanthocystidae').absorb(gbif.taxon('Acanthocistidae'))
+gbif.taxon('Dinophyta').synonym('Dinoflagellata')
+
+# Obviously the same genus, can't tell what's going on
+ott.same(gbif.taxon('Hygrocybe'), fung.taxon('Hygrocybe'))
+
+# JAR 2014-04-23 More sample contamination in SILVA 115
+ott.same(gbif.taxon('Lamprospora'), fung.taxon('Lamprospora'))
+
+# JAR 2014-04-23 IF update fallout
+ott.same(gbif.taxonThatContains('Penicillium', 'Penicillium expansum'), fung.taxonThatContains('Penicillium', 'Penicillium expansum'))
+
+# JAR 2014-04-25 GBIF puts rhodophytes under plants, which is wrong.
+# Need to fix this before alignment because of division calculations.
+# Plantae is a child of 'life' in GBIF, and Rhodophyta is one of many
+# phyla below that.  Move up to be a sibling of Plantae.
+# Discovered while looking at Bostrychia alignment problem.
+gbif.taxon('life').take(gbif.taxon('Rhodophyta'))
+
+# In GBIF, if a rank is skipped for some children but not others, that
+# means rank-skipped children are incertae sedis.  Mark them so.
 gbif.analyzeMajorRankConflicts()
+
 ott.absorb(gbif)
 
 
 # Joseph 2014-01-27 https://code.google.com/p/gbif-ecat/issues/detail?id=104
 ott.taxon('Parulidae').take(ott.taxon('Myiothlypis', 'Passeriformes'))
-# I don't get why this one isn't a major_rank_conflict !?
+# I don't get why this one isn't a major_rank_conflict !? - bug. (so to speak.)
 ott.taxon('Blattaria').take(ott.taxon('Phyllodromiidae'))
 
 
@@ -352,21 +409,22 @@ irmng.taxon('Viruses').hide()
 # Fungi suppressed at David Hibbett's request
 irmng.taxon('Fungi').hideDescendantsToRank('species')
 
+# Neopithecus (extinct) occurs in two places.  Flush one, mark the other
 irmng.taxon('1413316').prune() #Neopithecus in Mammalia
 irmng.taxon('1413315').extinct() #Neopithecus in Primates (Pongidae)
+
 ott.same(gbif.taxon('3172047'), irmng.taxon('1381293'))  # Veronica
-ott.same(gbif.taxon('6101461'), irmng.taxon('1170022')) # genus Tipuloidea
+ott.same(gbif.taxon('6101461'), irmng.taxon('1170022')) # genus Tipuloidea (not superfamily)
 # IRMNG has four Tetrasphaeras.
 ott.same(ncbi.taxon('Tetrasphaera','Intrasporangiaceae'), irmng.taxon('Tetrasphaera','Intrasporangiaceae'))
 ott.same(gbif.taxon('Gorkadinium','Dinophyceae'), irmng.taxon('Gorkadinium','Dinophyceae'))
-irmng.analyzeMajorRankConflicts()
 
 irmng.taxon('Unaccepted').hide()
 
 # Microbes suppressed at Laura Katz's request
 irmng.taxon('Bacteria','life').hideDescendants()
-irmng.taxon('Protista','life').hideDescendants()
 irmng.taxon('Archaea','life').hideDescendants()
+irmng.taxon('Protista','life').hide()
 
 # RR #50
 irmng.taxon('Saxo-Fridericia').rename('Saxofridericia')
@@ -381,15 +439,18 @@ irmng.taxon('Hypocrea').absorb(irmng.taxon('1307461'))
 # Trichosporon in IF and IRMNG based on common parent and member
 ott.same(fung.taxon('Trichosporon'), irmng.taxon('Trichosporon'))
 
+# JAR 2014-04-24 false match
+ott.notSame(irmng.taxon('Protaspis', 'Chordata'), ncbi.taxon('Protaspis', 'Cercozoa'))
+
+irmng.analyzeMajorRankConflicts()
 
 ott.absorb(irmng)
-
 
 # ----- Final patches -----
 
 # Finished loading source taxonomies.  Now patch things up.
 
-# See above (occurs in both IF and GBIF).  Also see #67
+# See above (occurs in both IF and GBIF).  Also see issue #67
 ott.taxon('Chlamydotomus').incertaeSedis()
 
 # Joseph Brown email to JAR 2014-01-27
@@ -400,7 +461,7 @@ ott.taxon('Thamnophilus bernardi').synonym('Sakesphorus bernardi')
 ott.taxon('Thamnophilus melanonotus').synonym('Sakesphorus melanonotus')
 ott.taxon('Thamnophilus melanothorax').synonym('Sakesphorus melanothorax')
 
-# Mammals
+# Mammals - groups cluttering basal part of tree
 ott.taxon('Litopterna').extinct()
 ott.taxon('Notoungulata').extinct()
 # Artiodactyls
@@ -422,11 +483,16 @@ ott.taxon('Adlerocystis').incertaeSedis()
 
 # "No clear identity has emerged"
 #  http://forestis.rsvs.ulaval.ca/REFERENCES_X/phylogeny.arizona.edu/tree/eukaryotes/accessory/parasitic.html
-# Need to hide it because it clutters top level of Fungi
+# Need to hide it because it clutters base of Fungi
 ott.taxon('Amylophagus','Fungi').incertaeSedis()
 
 # Bad synonym - Tony Rees 2014-01-28
+# https://groups.google.com/d/msg/opentreeoflife/SrI7KpPgoPQ/ihooRUSayXkJ
 ott.taxon('Lemania pluvialis').prune()
+
+# Tony Rees 2014-01-29
+# https://groups.google.com/d/msg/opentreeoflife/SrI7KpPgoPQ/wTeD17GzOGoJ
+ott.taxon('Trigonocarpales').extinct()
 
 #Pinophyta and daughters need to be deleted; - Bryan 2014-01-28
 #Lycopsida and daughters need to be deleted;
@@ -443,8 +509,15 @@ fixChromista(ott)
 
 print '-- more patches --'
 
+ott.taxon('Eukaryota').take(ott.taxon('Protista'))
+
+# Paraphyletic
+ott.taxon('Protozoa','life').hide()
+ott.taxon('Chromista','life').hide()
+ott.taxon('Protista','life').hide()
+
 # From Laura and Dail on 5 Feb 2014
-# https://groups.google.com/forum/#!topic/opentreeoflife/a69fdC-N6pY
+# https://groups.google.com/d/msg/opentreeoflife/a69fdC-N6pY/y9QLqdqACawJ
 ott.taxon('Chlamydiae/Verrucomicrobia group').rename('Verrucomicrobia group')
 ott.taxon('Heterolobosea','Discicristata').absorb(ott.taxon('Heterolobosea','Percolozoa'))
 ott.taxon('Excavata','Eukaryota').take(ott.taxon('Oxymonadida','Eukaryota'))
@@ -452,7 +525,7 @@ ott.taxon('Excavata','Eukaryota').take(ott.taxon('Oxymonadida','Eukaryota'))
 # Work in progress - Joseph
 ott.taxon('Reptilia').hide()
 
-# Chris Owen patches 2014-01-30
+# Chris Owen patches 2014-01-30, attachment to email to JAR and SAS
 ott.taxon('Protostomia').take(ott.taxon('Chaetognatha','Deuterostomia'))
 ott.taxon('Lophotrochozoa').take(ott.taxon('Platyhelminthes'))
 ott.taxon('Polychaeta','Annelida').take(ott.taxon('Myzostomida'))
@@ -464,11 +537,9 @@ ott.taxon('Bilateria').take(ott.taxon('Nemertodermatida'))
 ott.taxon('Cnidaria').take(ott.taxon('Stauromedusae'))
 ott.taxon('Copepoda').take(ott.taxon('Prionodiaptomus'))
 
-# Bryan Drew patches 2014-01-30
+# Bryan Drew patches 2014-01-30, in email to JAR
 ott.taxon('Salazaria mexicana').rename('Scutellaria mexicana')
 ott.taxon('Scutellaria','Lamiaceae').absorb(ott.taxon('Salazaria'))
-
-#  Move children of Lophoziaceae into Scapaniaceae [in order Jungermanniales]
 ott.taxon('Scapaniaceae').absorb(ott.taxon('Lophoziaceae'))
 
 #  Make an order Boraginales that contains Boraginaceae + Hydrophyllaceae
@@ -575,7 +646,7 @@ ott.taxonThatContains('Bacteria', 'Lentisphaerae').take(ott.taxon('Lentisphaerae
 
 # David Hibbett 2014-04-02 misspelling in h2007 file
 # (Dacrymecetales is 'no rank', Dacrymycetes is a class)
-if ott.taxon('Dacrymecetales') != None:
+if ott.maybeTaxon('Dacrymecetales') != None:
 	ott.taxon('Dacrymecetales').rename('Dacrymycetes')
 
 # Dail https://github.com/OpenTreeOfLife/feedback/issues/6
@@ -585,8 +656,11 @@ ott.taxon('Telonema').synonym('Teleonema')
 ott.taxon('Lorisiformes').take(ott.taxon('Lorisidae'))
 
 # Romina https://github.com/OpenTreeOfLife/reference-taxonomy/issues/42
+# As of 2014-04-23 IF synonymizes Cyphellopsis to Merismodes
 ott.taxon('Cyphellopsis','Cyphellaceae').unhide()
-ott.taxon('Cyphellopsis','Cyphellaceae').absorb(ott.taxon('Cyphellopsis','Niaceae'))
+if ott.maybeTaxon('Cyphellopsis','Niaceae') != None:
+	ott.taxon('Cyphellopsis','Cyphellaceae').absorb(ott.taxon('Cyphellopsis','Niaceae'))
+
 ott.taxon('Diaporthaceae').take(ott.taxon('Phomopsis'))
 ott.taxon('Valsaceae').take(ott.taxon('Valsa', 'Fungi'))
 ott.taxon('Agaricaceae').take(ott.taxon('Cystoderma','Fungi'))
@@ -608,6 +682,17 @@ ott.taxon('Chloris', 'Poaceae').extant()
 ott.taxon('Acropora', 'Acroporidae').extant()
 ott.taxon('Diadasia').extant()
 
+# JAR 2014-04-24
+# grep "ncbi:.*extinct_inherited" tax/ott/taxonomy.tsv | head
+ott.taxon('Tarsius').extant()
+ott.taxon('Odontesthes').extant()
+ott.taxon('Leiognathus', 'Chordata').extant()
+ott.taxon('Oscheius').extant()
+ott.taxon('Cicindela').extant()
+ott.taxon('Leucothoe', 'Ericales').extant()
+ott.taxon('Hydrornis').extant()
+ott.taxon('Bostrychia harveyi').extant() #fungus
+
 # -----------------------------------------------------------------------------
 # Finish up
 
@@ -621,7 +706,7 @@ ott.deforestate()
 ids = Taxonomy.getTaxonomy('tax/prev_ott/')
 
 # JAR manual intervention to preserve ids
-# These OTUs cases came up as ambiguous. Keep old ids.
+# These OTUs came up as ambiguous. Keep old ids.
 ott.same(ids.taxon('4107132'), fung.taxon('11060')) #Cryptococcus
 ott.same(ids.taxon('339002'), ncbi.taxon('3071')) #Chlorella
 ott.same(ids.taxon('342868'), ncbi.taxon('56708')) #Tetraphyllidea

@@ -17,7 +17,7 @@ public class Taxon {
 	public String id = null;
 	public Taxon parent = null;
 	public String name, rank = null;
-	List<Taxon> children = null;
+	public List<Taxon> children = null;
 	Taxonomy taxonomy;			// For subsumption checks etc.
 	String auxids = null;		// preottol id from taxonomy file, if any
 	int count = -1;
@@ -29,7 +29,7 @@ public class Taxon {
 	int properFlags = 0, inheritedFlags = 0, rankAsInt = 0;
 
 	// State during merge operation
-	Taxon mapped = null;			// source node -> union node
+	public Taxon mapped = null;			// source node -> union node
 	Taxon comapped = null;		// union node -> source node
 	boolean novelp = false;		// added to union in last round?
 	String division = null;
@@ -980,8 +980,11 @@ public class Taxon {
 			this.parent.resetCount();
 			this.parent.properFlags |= Taxonomy.EDITED;
 			this.parent = null;
-		}
-		List nodes = this.taxonomy.nameIndex.get(this.name);
+		} else if (this.taxonomy.roots.contains(this))
+			this.taxonomy.roots.remove(this);
+		else
+			System.err.format("** Taxon not in taxonomy !? %s\n", this);
+		List<Taxon> nodes = this.taxonomy.nameIndex.get(this.name);
 		nodes.remove(this);
 		if (nodes.size() == 0)
 			this.taxonomy.nameIndex.remove(this.name);
@@ -1158,7 +1161,7 @@ public class Taxon {
 		else if (this.taxonomy != newchild.taxonomy)
 			System.err.format("** %s and %s aren't in the same taxonomy\n", newchild, this);
 		else if (this.children != null && this.children.contains(newchild))
-			System.err.format("** %s is already a child of %s\n", newchild, this);
+			System.err.format("| %s is already a child of %s\n", newchild, this);
 		else if (newchild.parent != null)
 			System.err.format("** %s can't be added because it is already in the tree\n", newchild, this);
 		else {
@@ -1173,7 +1176,7 @@ public class Taxon {
 		else if (this.taxonomy != newchild.taxonomy)
 			System.err.format("** %s and %s aren't in the same taxonomy\n", newchild, this);
 		else if (this.children != null && this.children.contains(newchild))
-			System.err.format("** %s is already a child of %s\n", newchild, this);
+			System.err.format("| %s is already a child of %s\n", newchild, this);
 		else if (newchild == this)
 			System.err.format("** A taxon cannot be its own parent: %s\n", newchild, this);
 		else {
@@ -1215,7 +1218,7 @@ public class Taxon {
 
 	public void synonym(String name) {
 		if (!this.taxonomy.addSynonym(name, this))
-			System.err.format("** Synonym already present: %s %s\n", this, name);
+			System.err.format("| Synonym already present: %s %s\n", this, name);
 	}
 
 	public void rename(String name) {
@@ -1284,7 +1287,7 @@ public class Taxon {
 				wasExtant = false;
 			}
 		if (wasExtant)
-			System.err.format("** Note: %s wasn't marked extinct\n", this);
+			System.err.format("| Note: %s wasn't marked extinct\n", this);
 	}
 
 	// add a tree to the forest?

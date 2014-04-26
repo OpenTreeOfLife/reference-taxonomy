@@ -337,10 +337,10 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		int row = 0;
 		int normalizations = 0;
 
-		// how to get this right?
-		// Map<String,String> idReplacements = new HashMap<String,String>();
-
         Pattern pat = null;
+
+		// work in progress
+		// Map<Taxon, String> parentMap = new HashMap<Taxon, String>();
 
 		while ((str = br.readLine()) != null) {
             if (pat == null) {
@@ -372,11 +372,15 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				}
 				String id = parts[0];
 				String rawname = parts[2];
-				String rank = parts[3];
-				if (rank.length() == 0 || rank.startsWith("no rank") || rank.equals("terminal"))
-					rank = NO_RANK;
 
 				String name = normalizeName(rawname);
+
+				Taxon node = this.idIndex.get(id);
+				if (node == null) {
+					// node was created earlier because it's the parent of some other node.
+					node = new Taxon(this);
+					node.setId(id); // stores into this.idIndex
+				}
 
 				String parentId = parts[1];
 				if (parentId.equals("null")) parentId = "";	 // Index Fungorum
@@ -385,13 +389,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 					System.err.println("!! Taxon is its own parent: " + id);
 					parentId = "";
 				}
-
-				Taxon node = this.idIndex.get(id);
-				if (node == null) {
-					// node was created earlier because it's the parent of some other node.
-					node = new Taxon(this);
-					node.setId(id); // stores into this.idIndex
-				}
+				// parentMap.put(node, parentId);
 
 				if (parentId.length() > 0) {
 					Taxon parent = this.idIndex.get(parentId);
@@ -406,7 +404,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				} else
 					roots.add(node);
 				node.setName(name);
-				node.init(parts); // does setName
+				initTaxon(node, parts);
 				if (!name.equals(rawname)) {
 					addSynonym(rawname, node);
 					++normalizations;
@@ -443,6 +441,43 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 								   total + " reachable from roots");
 		}
 		// this.setDerivedFlags();
+	}
+
+	// Populate fields of a Taxon object from fields of row of taxonomy file
+	// parts = fields from row of dump file
+	void initTaxon(Taxon node, String[] parts) {
+		if (parts.length >= 4) {
+			String rank = parts[3];
+			if (rank.length() == 0 || rank.startsWith("no rank") || rank.equals("terminal"))
+				rank = Taxonomy.NO_RANK;
+			else if (Taxonomy.ranks.get(rank) == null) {
+				System.err.println("!! Unrecognized rank: " + rank + " " + node.id);
+				rank = Taxonomy.NO_RANK;
+			}
+			node.rank = rank;
+		}
+		// TBD: map source+sourceId when present (deprecated),
+		// parse sourceInfo when present
+
+		if (this.infocolumn != null) {
+			if (parts.length <= this.infocolumn)
+				System.err.println("Missing sourceinfo column: " + node.id);
+			else {
+				String info = parts[this.infocolumn];
+				if (info != null && info.length() > 0)
+					node.setSourceIds(info);
+			}
+		}
+
+		else if (this.sourcecolumn != null &&
+			this.sourceidcolumn != null) {
+			List<QualifiedId> qids = new ArrayList<QualifiedId>(1);
+			qids.add(new QualifiedId(parts[this.sourcecolumn],
+									 parts[this.sourceidcolumn]));
+		}
+
+		if (this.preottolcolumn != null)
+			node.auxids = parts[this.preottolcolumn];
 	}
 
 	// From stackoverflow
@@ -1268,17 +1303,18 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			});
 		Taxon biggest = rootsList.get(0);
 		int count1 = biggest.count();
-		int count2 = rootsList.get(1).count();
-		if (rootsList.size() >= 2 && count1 < count2*1000)
-			System.err.format("*** Nontrivial forest: biggest is %s, 2nd biggest is %s\n", count1, count2);
-		else
-			System.out.format("| Deforesting: keeping biggest (%s), 2nd biggest is %s\n", count1, count2);
-		for (Taxon root : rootsList)
-			if (!root.equals(biggest))
+		Taxon second = rootsList.get(1);
+		int count2 = second.count();
+		if (rootsList.size() >= 2 && count1 < count2*500)
+			System.err.format("** Nontrivial forest: biggest is %s, 2nd biggest is %s\n", count1, count2);
+		System.out.format("| Deforesting: keeping %s (%s), 2nd biggest is %s (%s)\n", biggest.name, count1, second.name, count2);
+		int flushed = 0;
+		for (Taxon root : new HashSet<Taxon>(rootsList))
+			if (!root.equals(biggest)) {
 				root.prune();
-		this.roots = new HashSet<Taxon>(1);
-		this.roots.add(biggest);
-		System.out.format("| Removed %s smaller trees\n", rootsList.size()-1);
+				++flushed;
+			}
+		System.out.format("| Removed %s smaller trees\n", flushed);
 	}
 
 	// -------------------- Newick stuff --------------------
@@ -2548,8 +2584,8 @@ class UnionTaxonomy extends Taxonomy {
 
 	// 3799 conflicts as of 2014-04-12
 	// unode.comapped.parent == fromparent
-	void reportConflict(Taxon unode, Taxon fromparent) {
-		conflicts.add(new Conflict(unode, fromparent));
+	void reportConflict(Taxon paraphyletic, Taxon unode) {
+		conflicts.add(new Conflict(paraphyletic, unode));
 	}
 
 	List<Conflict> conflicts = new ArrayList<Conflict>();
@@ -2563,14 +2599,14 @@ class UnionTaxonomy extends Taxonomy {
 }
 
 class Conflict {
-	Taxon unode;					// in source taxonomy
-	Taxon fromParent;				// in union taxonomy
-	Conflict(Taxon unode, Taxon fromParent) {
-		this.unode = unode; this.fromParent = fromParent;
+	Taxon paraphyletic;				// in source taxonomy
+	Taxon unode;					// in union taxonomy
+	Conflict(Taxon paraphyletic, Taxon unode) {
+		this.paraphyletic = paraphyletic; this.unode = unode;
 	}
 	public String toString() {
 		// cf. Taxon.mrca
-		Taxon b = fromParent;
+		Taxon b = paraphyletic;
 		while (b != null && b.mapped == null)
 			b = b.parent;
 		b = b.mapped;
@@ -2590,7 +2626,7 @@ class Conflict {
 			b = b.parent;
 			--da;
 		}
-		return (da + " " + fromParent + " in " + b + " lost child " + unode.comapped + " to " + unode.parent + " in " + a);
+		return (da + " " + paraphyletic + "=" + paraphyletic.mapped + " in " + b + " lost child " + unode + " to " + unode.parent + " in " + a);
 	}
 }
 

@@ -53,43 +53,6 @@ public class Taxon {
 				child.reset();
 	}
 
-
-	// parts = fields from row of dump file
-	// uid	|	parent_uid	|	name	|	rank	|	source	|	sourceid
-	//		|	sourcepid	|	uniqname	|	preottol_id	|	
-	void init(String[] parts) {
-		if (parts.length >= 4) {
-			this.rank = parts[3];
-			if (this.rank.length() == 0 || this.rank.equals("no rank"))
-				this.rank = Taxonomy.NO_RANK;
-			else if (Taxonomy.ranks.get(this.rank) == null)
-				System.err.println("!! Unrecognized rank: " + this.rank + " " + this.id);
-		}
-		// TBD: map source+sourceId when present (deprecated),
-		// parse sourceInfo when present
-
-		if (this.taxonomy.infocolumn != null) {
-			if (parts.length <= this.taxonomy.infocolumn)
-				System.err.println("Missing sourceinfo column: " + this.id);
-			else {
-				String info = parts[this.taxonomy.infocolumn];
-				if (info != null && info.length() > 0)
-					this.setSourceIds(info);
-			}
-		}
-
-		else if (this.taxonomy.sourcecolumn != null &&
-			this.taxonomy.sourceidcolumn != null) {
-			List<QualifiedId> qids = new ArrayList<QualifiedId>(1);
-			qids.add(new QualifiedId(parts[this.taxonomy.sourcecolumn],
-									 parts[this.taxonomy.sourceidcolumn]));
-		}
-
-		if (this.taxonomy.preottolcolumn != null)
-			this.auxids = parts[this.taxonomy.preottolcolumn];
-
-	}
-
 	static Pattern commaPattern = Pattern.compile(",");
 
 	void setSourceIds(String info) {
@@ -168,7 +131,10 @@ public class Taxon {
 				p.children = null;
 			p.resetCount();
 		}
-		newparent.addChild(this);
+		if (newparent != null)
+			newparent.addChild(this);
+		else
+			this.taxonomy.roots.add(this);
 	}
 
 	// Go upwards and cache on the way back down
@@ -409,7 +375,7 @@ public class Taxon {
 				for (Taxon augChild: newChildren)
 					newnode.addChild(augChild);
 
-				union.reportConflict(oldChildren.get(0), this);
+				union.reportConflict(this, oldChildren.get(0));
 
 				newflags |= Taxonomy.TATTERED;
 				union.logAndMark(Answer.yes(this, null, "new/tattered", null));
@@ -1235,16 +1201,14 @@ public class Taxon {
 	// prune() is elsewhere
 
 	public void elide() {
-		if (this.parent == null)
-			System.err.format("** %s is a root\n", this);
-		else {
-			if (this.children == null)
-				; //System.err.format("** Warning: %s has no children\n", this);
-			else
-				for (Taxon child : new ArrayList<Taxon>(this.children))
-					child.changeParent(this.parent);
-			this.prune();
-		}
+		if (this.children != null)
+			for (Taxon child : new ArrayList<Taxon>(this.children))
+				child.changeParent(this.parent);
+		this.prune();
+	}
+
+	public void detach() {
+		this.changeParent(null);
 	}
 
 	// Move all of B's children to A, and make B a synonym of A

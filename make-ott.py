@@ -130,16 +130,23 @@ if fung.maybeTaxon('90155') != None:
 # The fungus name is a synonym for Cytospora.
 ott.notSame(silva.taxon('Bostrychia', 'Rhodophyceae'), fung.taxon('Bostrychia', 'Ascomycota'))
 
+# Work in progress.  By promoting to root we've lost the fact that
+# they're eukaryotes, which is unfortunate.  Not important in this
+# case, but suggestive of deeper problems in the framework.
+# Test case: Oomycota should end up in Stramenopiles.
+fung_Protozoa = fung.taxon('Protozoa')
+fung_Protozoa.detach()
+fung_Protozoa.elide()
+fung_Chromista = fung.taxon('Chromista')
+fung_Chromista.detach()
+fung_Chromista.elide()
+
 # analyzeMajorRankConflicts sets the "major_rank_conflict" flag when
 # intermediate ranks are missing (e.g. a family that's a child of a
 # class)
 fung.analyzeMajorRankConflicts()
 
 ott.absorb(fung)
-
-# These don't matter much because Protozoa and Chromista are hidden
-ott.taxon('Eukaryota').take(ott.taxon('Protozoa'))
-ott.taxon('Eukaryota').take(ott.taxon('Chromista'))
 
 
 # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/20
@@ -387,6 +394,14 @@ ott.same(gbif.taxonThatContains('Penicillium', 'Penicillium expansum'), fung.tax
 # Discovered while looking at Bostrychia alignment problem.
 gbif.taxon('life').take(gbif.taxon('Rhodophyta'))
 
+# Paraphyletic
+gbif_Protozoa = gbif.taxon('Protozoa')
+gbif_Protozoa.detach()
+gbif_Protozoa.elide()
+gbif_Chromista = gbif.taxon('Chromista')
+gbif_Chromista.detach()
+gbif_Chromista.elide()
+
 # In GBIF, if a rank is skipped for some children but not others, that
 # means rank-skipped children are incertae sedis.  Mark them so.
 gbif.analyzeMajorRankConflicts()
@@ -424,7 +439,11 @@ irmng.taxon('Unaccepted').hide()
 # Microbes suppressed at Laura Katz's request
 irmng.taxon('Bacteria','life').hideDescendants()
 irmng.taxon('Archaea','life').hideDescendants()
-irmng.taxon('Protista','life').hide()
+
+# Protista is paraphyletic
+irmng_Protista = irmng.taxon('Protista','life')
+irmng_Protista.detach()
+irmng_Protista.elide()
 
 # RR #50
 irmng.taxon('Saxo-Fridericia').rename('Saxofridericia')
@@ -441,6 +460,9 @@ ott.same(fung.taxon('Trichosporon'), irmng.taxon('Trichosporon'))
 
 # JAR 2014-04-24 false match
 ott.notSame(irmng.taxon('Protaspis', 'Chordata'), ncbi.taxon('Protaspis', 'Cercozoa'))
+
+# See above for GBIF
+irmng.taxon('life').take(irmng.taxon('Rhodophyta'))
 
 irmng.analyzeMajorRankConflicts()
 
@@ -508,13 +530,6 @@ print '-- Chromista/Protozoa spreadsheet from Katz lab --'
 fixChromista(ott)
 
 print '-- more patches --'
-
-ott.taxon('Eukaryota').take(ott.taxon('Protista'))
-
-# Paraphyletic
-ott.taxon('Protozoa','life').hide()
-ott.taxon('Chromista','life').hide()
-ott.taxon('Protista','life').hide()
 
 # From Laura and Dail on 5 Feb 2014
 # https://groups.google.com/d/msg/opentreeoflife/a69fdC-N6pY/y9QLqdqACawJ
@@ -693,14 +708,14 @@ ott.taxon('Leucothoe', 'Ericales').extant()
 ott.taxon('Hydrornis').extant()
 ott.taxon('Bostrychia harveyi').extant() #fungus
 
+# JAR 2014-04-26
+ott.taxon('Acritarcha').extinct()
+
 # -----------------------------------------------------------------------------
 # Finish up
 
 # "Old" patch system
 ott.edit('feed/ott/edits/')
-
-# Remove all trees but the largest 
-ott.deforestate()
 
 # Assign OTT ids to all taxa, re-using old ids when possible
 ids = Taxonomy.getTaxonomy('tax/prev_ott/')
@@ -714,6 +729,9 @@ ott.same(ids.taxon('342868'), ncbi.taxon('56708')) #Tetraphyllidea
 ott.same(fung.taxon('Trichosporon'), ids.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
 
 ott.assignIds(ids)
+
+# Remove all trees but the largest 
+ott.deforestate()
 
 ott.parentChildHomonymReport()
 

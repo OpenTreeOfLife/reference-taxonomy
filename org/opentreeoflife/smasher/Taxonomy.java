@@ -339,8 +339,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
         Pattern pat = null;
 
-		// work in progress
-		// Map<Taxon, String> parentMap = new HashMap<Taxon, String>();
+		Map<Taxon, String> parentMap = new HashMap<Taxon, String>();
 
 		while ((str = br.readLine()) != null) {
             if (pat == null) {
@@ -380,29 +379,13 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 					// node was created earlier because it's the parent of some other node.
 					node = new Taxon(this);
 					node.setId(id); // stores into this.idIndex
+				} else {
+					System.err.format("** Duplicate id definition: %s %s\n", node.id, node.name);
 				}
 
 				String parentId = parts[1];
-				if (parentId.equals("null")) parentId = "";	 // Index Fungorum
-				if (parentId.equals("not found")) parentId = "";	 // Index Fungorum
-				if (parentId.equals(id)) {
-					System.err.println("!! Taxon is its own parent: " + id);
-					parentId = "";
-				}
-				// parentMap.put(node, parentId);
+				parentMap.put(node, parentId);
 
-				if (parentId.length() > 0) {
-					Taxon parent = this.idIndex.get(parentId);
-					if (parent == null) {
-						parent = new Taxon(this);	 //don't know parent's name yet
-						parent.setId(parentId);
-					}
-					if (parent.descendsFrom(node))
-						System.err.format("** Cycle detected in input taxonomy: %s %s\n", node, parent);
-					else
-						parent.addChild(node);
-				} else
-					roots.add(node);
 				node.setName(name);
 				initTaxon(node, parts);
 				if (!name.equals(rawname)) {
@@ -421,21 +404,38 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		if (normalizations > 0)
 			System.out.format("| %s names normalized\n", normalizations);
 
+		for (Taxon node : parentMap.keySet()) {
+			String parentId = parentMap.get(node);
+			Taxon parent = this.idIndex.get(parentId);
+			if (parent == null) {
+				if (parentId.length() > 0 && !parentId.equals("null") && !parentId.equals("not found"))
+					System.err.format("** Parent %s missing for %s %s\n", parentId, node.id, node.name);
+				roots.add(node);
+			} else if (parentId.equals(node.id)) {
+				System.err.format("** Taxon is its own parent: %s %s\n" + node.id, node.name);
+			} else if (parent.descendsFrom(node)) {
+				System.err.format("** Cycle detected in input taxonomy: %s %s\n", node, parent);
+			} else {
+				parent.addChild(node);
+			}
+		}
+
 		for (Taxon node : this.idIndex.values())
 			if (node.name == null) {
-				System.err.println("!! Identifier with no associated name, probably a missing parent: " + node.id);
+				System.err.println("** Identifier with no associated name, probably a missing parent: " + node.id);
 				node.setName("undefined:" + node.id);
 			}
 
 		if (roots.size() == 0)
-			System.err.println("*** No root nodes!");
+			System.err.println("** No root nodes!");
 		else {
 			if (roots.size() > 1)
-				System.err.println("There are " + roots.size() + " roots");
+				System.err.println("| There are " + roots.size() + " roots");
 			int total = 0;
 			for (Taxon root : roots)
 				total += root.count();
 			if (row != total)
+				// Shouldn't happen
 				System.err.println(this.getTag() + " is ill-formed: " +
 								   row + " rows, but only " + 
 								   total + " reachable from roots");
@@ -448,7 +448,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	void initTaxon(Taxon node, String[] parts) {
 		if (parts.length >= 4) {
 			String rank = parts[3];
-			if (rank.length() == 0 || rank.startsWith("no rank") || rank.equals("terminal"))
+			if (rank.length() == 0 || rank.startsWith("no rank") ||
+				rank.equals("terminal") || rank.equals("samples"))
 				rank = Taxonomy.NO_RANK;
 			else if (Taxonomy.ranks.get(rank) == null) {
 				System.err.println("!! Unrecognized rank: " + rank + " " + node.id);
@@ -1311,7 +1312,12 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		int flushed = 0;
 		for (Taxon root : new HashSet<Taxon>(rootsList))
 			if (!root.equals(biggest)) {
-				root.prune();
+				if (false)
+					root.prune();
+				else {
+					root.changeParent(biggest); // removes from roots
+					root.incertaeSedis();
+				}
 				++flushed;
 			}
 		System.out.format("| Removed %s smaller trees\n", flushed);
@@ -1775,19 +1781,21 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		else {
 			// Still ambiguous even in context.
 			Taxon candidate = null;
+			Taxon otherCandidate = null;
 			// Chaetognatha
 			for (Taxon node : nodes)
 				if (node.parent != null && node.parent.name.equals(context))
 					if (candidate == null)
 						candidate = node;
 					else {
-						candidate = null;
+						otherCandidate = node;
 						break;
 					}
-			if (candidate != null)
+			if (otherCandidate == null)
 				return candidate;
 			else {
-				System.err.format("** Ancestor %s does not disambiguate %s\n", context, name);
+				System.err.format("** Ancestor %s of %s does not disambiguate %s and %s\n",
+								  context, name, candidate.id, otherCandidate.id);
 				return null;
 			}
 		}
@@ -1803,19 +1811,21 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			return nodes.get(0);
 		else {
 			Taxon candidate = null;
+			Taxon otherCandidate = null;
 			// Chaetognatha
 			for (Taxon node : nodes)
 				if (node.parent != null && node.parent.name.equals(name))
 					if (candidate == null)
 						candidate = node.parent;
 					else {
-						candidate = null;
+						otherCandidate = node.parent;
 						break;
 					}
-			if (candidate != null)
+			if (otherCandidate == null)
 				return candidate;
 			else {
-				System.err.format("** Descendant %s does not disambiguate %s\n", descendant, name);
+				System.err.format("** Descendant %s of %s does not disambiguate between %s and %s\n",
+								  descendant, name, candidate.id, otherCandidate.id);
 				return null;
 			}
 		}
@@ -1934,7 +1944,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	}
 
 	void reportDifference(String what, Taxon node, Taxon oldParent, Taxon newParent, PrintStream out) {
-		out.format("%s\t%s\t%s\t%s\t%s\n", what, node.id, node.name,
+		out.format("%s\t%s\t%s\t%s\t%s\n", node.id, what, node.name,
 				   (oldParent == null ? "" : oldParent.name),
 				   (newParent == null ? "" : newParent.name));
 	}
@@ -1955,11 +1965,11 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 					if (newnode.name.equals(node.name))
 						reportDifference("changed id ?", node, null, null, out);
 					else
-						reportDifference("synonymized to " + newnode.name, node, null, null, out);
+						reportDifference("synonymized", node, null, newnode, out);
 				}
 			} else {
 				if (!newnode.name.equals(node.name))
-					reportDifference("renamed to " + newnode.name, node, null, null, out);
+					reportDifference("renamed", node, null, newnode, out);
 				if (newnode.parent == null && node.parent == null)
 					;
 				else if (newnode.parent == null && node.parent != null)

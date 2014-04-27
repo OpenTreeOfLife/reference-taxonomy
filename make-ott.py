@@ -128,18 +128,27 @@ if fung.maybeTaxon('90155') != None:
 # 2014-04-25 JAR
 # There are three Bostrychias: a rhodophyte, a fungus, and a bird.
 # The fungus name is a synonym for Cytospora.
-ott.notSame(silva.taxon('Bostrychia', 'Rhodophyceae'), fung.taxon('Bostrychia', 'Ascomycota'))
+if fung.maybeTaxon('Bostrychia', 'Ascomycota') != None:
+	ott.notSame(silva.taxon('Bostrychia', 'Rhodophyceae'), fung.taxon('Bostrychia', 'Ascomycota'))
+
+# JAR 2014-04-27 JAR found while investigating 'hidden' status of
+# Thelohania butleri.  Move out of Protozoa to prevent their being hidden
+fung.taxon('Fungi').take(fung.taxon('Microsporidia'))
 
 # Work in progress.  By promoting to root we've lost the fact that
-# they're eukaryotes, which is unfortunate.  Not important in this
+# protozoa are eukaryotes, which is unfortunate.  Not important in this
 # case, but suggestive of deeper problems in the framework.
 # Test case: Oomycota should end up in Stramenopiles.
-fung_Protozoa = fung.taxon('Protozoa')
-fung_Protozoa.detach()
-fung_Protozoa.elide()
-fung_Chromista = fung.taxon('Chromista')
-fung_Chromista.detach()
-fung_Chromista.elide()
+fung_Protozoa = fung.maybeTaxon('Protozoa')
+if fung_Protozoa != None:
+	fung_Protozoa.hide()   # recursive
+	fung_Protozoa.detach()
+	fung_Protozoa.elide()
+fung_Chromista = fung.maybeTaxon('Chromista')
+if fung_Chromista != None:
+	fung_Chromista.hide()  # recursive
+	fung_Chromista.detach()
+	fung_Chromista.elide()
 
 # analyzeMajorRankConflicts sets the "major_rank_conflict" flag when
 # intermediate ranks are missing (e.g. a family that's a child of a
@@ -396,9 +405,11 @@ gbif.taxon('life').take(gbif.taxon('Rhodophyta'))
 
 # Paraphyletic
 gbif_Protozoa = gbif.taxon('Protozoa')
+gbif_Protozoa.hide()   # recursive
 gbif_Protozoa.detach()
 gbif_Protozoa.elide()
 gbif_Chromista = gbif.taxon('Chromista')
+gbif_Chromista.hide()   # recursive
 gbif_Chromista.detach()
 gbif_Chromista.elide()
 
@@ -421,6 +432,9 @@ irmng = Taxonomy.getTaxonomy('tax/irmng/', 'irmng')
 irmng.smush()
 irmng.taxon('Viruses').hide()
 
+# JAR 2014-04-26 Flush all 'Unaccepted' taxa
+irmng.taxon('Unaccepted', 'life').prune()
+
 # Fungi suppressed at David Hibbett's request
 irmng.taxon('Fungi').hideDescendantsToRank('species')
 
@@ -434,16 +448,9 @@ ott.same(gbif.taxon('6101461'), irmng.taxon('1170022')) # genus Tipuloidea (not 
 ott.same(ncbi.taxon('Tetrasphaera','Intrasporangiaceae'), irmng.taxon('Tetrasphaera','Intrasporangiaceae'))
 ott.same(gbif.taxon('Gorkadinium','Dinophyceae'), irmng.taxon('Gorkadinium','Dinophyceae'))
 
-irmng.taxon('Unaccepted').hide()
-
 # Microbes suppressed at Laura Katz's request
 irmng.taxon('Bacteria','life').hideDescendants()
 irmng.taxon('Archaea','life').hideDescendants()
-
-# Protista is paraphyletic
-irmng_Protista = irmng.taxon('Protista','life')
-irmng_Protista.detach()
-irmng_Protista.elide()
 
 # RR #50
 irmng.taxon('Saxo-Fridericia').rename('Saxofridericia')
@@ -463,6 +470,16 @@ ott.notSame(irmng.taxon('Protaspis', 'Chordata'), ncbi.taxon('Protaspis', 'Cerco
 
 # See above for GBIF
 irmng.taxon('life').take(irmng.taxon('Rhodophyta'))
+
+# JAR 2014-04-18 while investigating hidden status of Coscinodiscus radiatus
+ott.notSame(irmng.taxon('Coscinodiscus', 'Porifera'), ncbi.taxon('Coscinodiscus', 'Stramenopiles'))
+
+# Protista is paraphyletic
+irmng_Protista = irmng.taxon('Protista','life')
+irmng_Protista.hide()
+irmng_Protista.detach()
+irmng_Protista.elide()
+
 
 irmng.analyzeMajorRankConflicts()
 
@@ -707,6 +724,8 @@ ott.taxon('Cicindela').extant()
 ott.taxon('Leucothoe', 'Ericales').extant()
 ott.taxon('Hydrornis').extant()
 ott.taxon('Bostrychia harveyi').extant() #fungus
+ott.taxon('Agaricia').extant() #coral
+ott.taxon('Dischidia').extant() #eudicot
 
 # JAR 2014-04-26
 ott.taxon('Acritarcha').extinct()
@@ -725,6 +744,7 @@ ids = Taxonomy.getTaxonomy('tax/prev_ott/')
 ott.same(ids.taxon('4107132'), fung.taxon('11060')) #Cryptococcus
 ott.same(ids.taxon('339002'), ncbi.taxon('3071')) #Chlorella
 ott.same(ids.taxon('342868'), ncbi.taxon('56708')) #Tetraphyllidea
+ott.same(ids.taxon('772892'), ncbi.taxon('1883')) #Streptomyces
 
 ott.same(fung.taxon('Trichosporon'), ids.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
 

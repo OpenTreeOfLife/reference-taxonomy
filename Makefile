@@ -5,7 +5,7 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.7draft6
+WHICH=2.7draft7
 PREV_WHICH=2.6
 
 #  $^ = all prerequisites
@@ -220,6 +220,11 @@ lib/json-simple-1.1.1.jar:
 	  "https://json-simple.googlecode.com/files/json-simple-1.1.1.jar"
 	@ls -l $@
 
+z: feed/misc/chromista_spreadsheet.py
+feed/misc/chromista_spreadsheet.py: feed/misc/chromista-spreadsheet.csv feed/misc/process_chromista_spreadsheet.py
+	python feed/misc/process_chromista_spreadsheet.py \
+           feed/misc/chromista-spreadsheet.csv >feed/misc/chromista_spreadsheet.py
+
 # internal tests
 test2: $(CLASS)
 	$(JAVA) $(SMASH) --test
@@ -229,21 +234,36 @@ ids_report.tsv:
 	time wget -O ids_report.csv "http://reelab.net/phylografter/ottol/ottol_names_report.csv/" 
 	tr "," "	" <ids_report.csv >$@
 
-short-list.tsv: ids_report.tsv tax/ott/deprecated.tsv
+tax/ott/otu_deprecated.tsv: ids_report.tsv tax/ott/deprecated.tsv
 	grep "\\*" tax/ott/deprecated.tsv | grep -v "excluded" >dep-tmp.tsv
-	$(JAVA) $(SMASH) --join ids_report.tsv dep-tmp.tsv >$@
+	$(JAVA) $(SMASH) --join ids_report.tsv dep-tmp.tsv >$@.new
+	mv $@.new $@
 	wc $@
+
+tax/ott/differences.tsv: tax/prev_ott/taxonomy.tsv tax/ott/taxonomy.tsv
+	$(JAVA) $(SMASH) --diff tax/prev_ott/ tax/ott/ $@.new
+	mv $@.new $@
+	wc $@
+
+tax/ott/otu_differences.tsv: tax/ott/differences.tsv
+	$(JAVA) $(SMASH) --join ids_report.tsv tax/ott/differences.tsv> $@.new
+	mv $@.new $@
+	wc $@
+
+tax/ott/otu_hidden.tsv: tax/ott/hidden.tsv
+	$(JAVA) $(SMASH) --join ids_report.tsv tax/ott/hidden.tsv >$@.new
+	mv $@.new $@
+	wc $@
+
+# The works
+works: ott tax/ott/otu_deprecated.tsv tax/ott/otu_differences.tsv tax/ott/otu_hidden.tsv
+
 
 clean:
 	rm -rf feed/*/in
 	rm -rf tax/if tax/ncbi tax/prev_nem tax/silva
 	rm -f $(CLASS)
 	rm -f feed/ncbi/taxdump.tar.gz
-
-z: feed/misc/chromista_spreadsheet.py
-feed/misc/chromista_spreadsheet.py: feed/misc/chromista-spreadsheet.csv feed/misc/process_chromista_spreadsheet.py
-	python feed/misc/process_chromista_spreadsheet.py \
-           feed/misc/chromista-spreadsheet.csv >feed/misc/chromista_spreadsheet.py
 
 # -----------------------------------------------------------------------------
 # Test: nematodes

@@ -72,8 +72,8 @@ public class Taxon {
 			List<Taxon> nodes = this.taxonomy.nameIndex.get(this.name);
 			nodes.remove(this);
 			if (nodes.size() == 0) {
-				System.out.println("Removing name from index: " + name);
-				this.taxonomy.nameIndex.remove(name);
+				System.out.println("Removing name from index: " + this.name);
+				this.taxonomy.nameIndex.remove(this.name);
 			}
 		}
 		this.name = name;
@@ -124,17 +124,20 @@ public class Taxon {
 
 	void changeParent(Taxon newparent) {
 		Taxon p = this.parent;
-		this.parent = null;
-		if (p != null) {
-			p.children.remove(this);
-			if (p.children.size() == 0)
-				p.children = null;
-			p.resetCount();
+		if (p != newparent) {
+			this.parent = null;
+			if (p != null) {
+				p.children.remove(this);
+				if (p.children.size() == 0)
+					p.children = null;
+				p.resetCount();
+			} else
+				this.taxonomy.roots.remove(this);
+			if (newparent != null)
+				newparent.addChild(this);
+			else
+				this.taxonomy.roots.add(this);
 		}
-		if (newparent != null)
-			newparent.addChild(this);
-		else
-			this.taxonomy.roots.add(this);
 	}
 
 	// Go upwards and cache on the way back down

@@ -317,3 +317,6 @@ aster-tarball: t/tax/aster/taxonomy.tsv
 	(cd t/tax && \
 	 tar -czvf $(TARDIR)/aster.tgz.tmp aster && \
 	 mv $(TARDIR)/aster.tgz.tmp $(TARDIR)/aster.tgz )
+
+check:
+	bash run-tests.sh

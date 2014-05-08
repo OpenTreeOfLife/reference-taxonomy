@@ -971,6 +971,9 @@ public class Taxon {
 		}
 	}
 
+	// TBD: Currently the code selects the smallest containing disambiguating taxon.
+	// In future maybe it should select the *largest* disambiguating taxon.
+
 	String uniqueName() {
 		List<Taxon> nodes = this.taxonomy.lookup(this.name);
 		if (nodes == null) {
@@ -983,7 +986,7 @@ public class Taxon {
 
 		if (true) {
 			for (Taxon other : nodes)
-				if (other != this && other.name.equals(this.name)) {
+				if (other != this) {  //  && other.name.equals(this.name)
 					homonymp = true;
 					Taxon i = this.informative();
 					if (i != null && i.equals(other.informative())) {
@@ -1053,12 +1056,33 @@ public class Taxon {
 		return sam;
 	}
 
+	// Copy only visible (non-hidden) nodes
+
+	Taxon selectVisible(Taxonomy tax) {
+		if (this.isHidden()) return null;
+		Taxon sam = null;
+		if (this.children == null) {
+			sam = this.dup(tax);
+			this.mapped = sam;
+		} else
+			for (Taxon child : this.children) {
+				Taxon c = child.selectVisible(tax);
+				if (c != null) {
+					if (sam == null) {
+						sam = this.dup(tax);
+						this.mapped = sam;
+					}
+					sam.addChild(c);
+				}
+			}
+		return sam;
+	}
+
 	// The nodes of the resulting tree are a subset of size k of the
 	// nodes from the input tree, sampled proportionally.
 
 	Taxon sample(int k, Taxonomy tax) {
 		if (k <= 0) return null;
-		Taxon sam = this.dup(tax);
 
 		// Assume k <= n.
 		// We want to select k descendents out of the n that are available.
@@ -1071,6 +1095,8 @@ public class Taxon {
 		// k2 = (k*n) / n2
 		int n1 = 1;
 		int k1 = 1;
+
+		List<Taxon> newChildren = new ArrayList<Taxon>();
 
 		if (this.children != null) {
 			java.util.Collections.sort(this.children, compareNodesBySize);
@@ -1092,7 +1118,7 @@ public class Taxon {
 				// Number of children to request
 				Taxon c = child.sample(dk, tax);
 				if (c != null) {
-					sam.addChild(c);
+					newChildren.add(c);
 					k1 += c.count();
 				}
 				n1 = n2;
@@ -1100,6 +1126,13 @@ public class Taxon {
 			}
 		}
 
+		// Remove "knuckles"
+		if (newChildren.size() == 1)
+			return newChildren.get(0);
+
+		Taxon sam = this.dup(tax);
+		for (Taxon c : newChildren)
+			sam.addChild(c);
 		return sam;
 	}
 
@@ -1157,7 +1190,7 @@ public class Taxon {
 
 	public void hide() {
 		this.properFlags = Taxonomy.HIDDEN;
-		this.hideDescendants();  // shouldn't be needed, consider removing
+		this.hideDescendants();
 	}
 
 	public void unhide() {

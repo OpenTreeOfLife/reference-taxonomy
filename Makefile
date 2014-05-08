@@ -233,6 +233,7 @@ test2: $(CLASS)
 ids_report.tsv:
 	time wget -O ids_report.csv "http://reelab.net/phylografter/ottol/ottol_names_report.csv/" 
 	tr "," "	" <ids_report.csv >$@
+	rm ids_report.csv
 
 tax/ott/otu_deprecated.tsv: ids_report.tsv tax/ott/deprecated.tsv
 	grep "\\*" tax/ott/deprecated.tsv | grep -v "excluded" >dep-tmp.tsv

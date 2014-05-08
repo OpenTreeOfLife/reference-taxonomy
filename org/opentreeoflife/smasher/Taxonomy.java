@@ -1220,24 +1220,25 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			Taxon selection = sel.select(tax2);
 			System.out.println("| Selection has " + selection.count() + " taxa");
 			tax2.roots.add(selection);
-
-			// Synonyms
-			int in = 0, out = 0;
-			for (String name : this.nameIndex.keySet())
-				for (Taxon node : this.nameIndex.get(name)) {
-					if (node.mapped != null) {
-						tax2.addSynonym(name, node.mapped);
-						++in;
-					} else
-						++out;
-				}
-			System.out.println("| Nyms in: " + in + " out: " + out);
-
+			this.copySynonyms(tax2);
 			return tax2;
 		} else {
-			System.err.println("Missing or ambiguous name: " + sel);
+			System.err.println("** Missing or ambiguous name: " + sel);
 			return null;
 		}
+	}
+
+	public Taxonomy selectVisible(String designator) {
+		Taxon sel = this.taxon(designator);
+		if (sel != null) {
+			Taxonomy tax2 = new SourceTaxonomy();
+			Taxon selection = sel.selectVisible(tax2);
+			System.out.println("| Selection has " + selection.count() + " taxa");
+			tax2.roots.add(selection);
+			this.copySynonyms(tax2);
+			return tax2;
+		} else
+			return null;
 	}
 
 	public Taxonomy sample(String designator, int count) {
@@ -1759,6 +1760,16 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				return probe.get(0);
 			else {
 				System.err.format("** Ambiguous taxon name: %s\n", name);
+				for (Taxon alt : probe) {
+					String u = alt.uniqueName();
+					if (u.equals("")) {
+						if (alt.name.equals(name))
+							System.err.format("**   %s %s\n", name, alt.id);
+						else
+							System.err.format("**   %s (synonym for %s)\n", name, alt.name);
+					} else
+						System.err.format("**   %s\n", u);
+				}
 				return null;
 			}
 		}
@@ -1999,6 +2010,29 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			}
 		}
 	}
+	
+	// Propogate synonyms from source taxonomy to union.
+	// Some names that are synonyms in the source might be primary names in the union,
+	//	and vice versa.
+	void copySynonyms(Taxonomy union) {
+		int count = 0;
+
+		// For each name in source taxonomy...
+		for (String syn : this.nameIndex.keySet()) {
+
+			// For each node that the name names...
+			for (Taxon node : this.nameIndex.get(syn))
+
+				// If that node maps to a union node with a different name....
+				if (node.mapped != null && !node.mapped.name.equals(syn)) {
+					// then the name is a synonym of the union node too
+					if (union.addSynonym(syn, node.mapped))
+						++count;
+				}
+		}
+		if (count > 0)
+			System.err.println("| Added " + count + " synonyms");
+	}
 
 }  // end of class Taxonomy
 
@@ -2217,29 +2251,6 @@ class SourceTaxonomy extends Taxonomy {
 				System.out.println(" -> " + union.toNewick());
 		}
 	}
-	
-	// Propogate synonyms from source taxonomy to union.
-	// Some names that are synonyms in the source might be primary names in the union,
-	//	and vice versa.
-	void copySynonyms(UnionTaxonomy union) {
-		int count = 0;
-
-		// For each name in source taxonomy...
-		for (String syn : this.nameIndex.keySet()) {
-
-			// For each node that the name names...
-			for (Taxon node : this.nameIndex.get(syn))
-
-				// If that node maps to a union node with a different name....
-				if (node.mapped != null && !node.mapped.name.equals(syn)) {
-					// then the name is a synonym of the union node too
-					if (union.addSynonym(syn, node.mapped))
-						++count;
-				}
-		}
-		if (count > 0)
-			System.err.println("| Added " + count + " synonyms to union");
-	}
 
 	// Overrides dumpMetadata in class Taxonomy
 	void dumpMetadata(String filename)	throws IOException {
@@ -2249,7 +2260,6 @@ class SourceTaxonomy extends Taxonomy {
 			out.close();
 		}
 	}
-
 }
 
 class UnionTaxonomy extends Taxonomy {

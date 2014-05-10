@@ -1764,11 +1764,11 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 					String u = alt.uniqueName();
 					if (u.equals("")) {
 						if (alt.name.equals(name))
-							System.err.format("**   %s %s\n", name, alt.id);
+							System.err.format("**   %s %s\n", alt.id, name);
 						else
-							System.err.format("**   %s (synonym for %s)\n", name, alt.name);
+							System.err.format("**   %s %s (synonym for %s)\n", alt.id, name, alt.name);
 					} else
-						System.err.format("**   %s\n", u);
+						System.err.format("**   %s %s\n", alt.id, u);
 				}
 				return null;
 			}
@@ -1979,8 +1979,14 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 						reportDifference("synonymized", node, null, newnode, out);
 				}
 			} else {
-				if (!newnode.name.equals(node.name))
-					reportDifference("renamed", node, null, newnode, out);
+				if (!newnode.name.equals(node.name)) {
+					// Does the new taxonomy retain the old name as a synonym?
+					Taxon retained = this.unique(node.name);
+					if (retained != null && retained.id.equals(newnode.id))
+						reportDifference("renamed keeping synonym", node, null, newnode, out);
+					else
+						reportDifference("renamed", node, null, newnode, out);
+				}
 				if (newnode.parent == null && node.parent == null)
 					;
 				else if (newnode.parent == null && node.parent != null)

@@ -730,6 +730,10 @@ ott.taxon('Dischidia').extant() #eudicot
 # JAR 2014-04-26
 ott.taxon('Acritarcha').extinct()
 
+# JAR 2014-05-08 while looking at the deprecated ids file. 
+# http://www.theplantlist.org/tpl/record/kew-2674785
+ott.taxon('Berendtiella rugosa').synonym('Berendtia rugosa')
+
 # -----------------------------------------------------------------------------
 # Finish up
 

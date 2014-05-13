@@ -277,6 +277,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		this.loadMetadata(dirname + "about.json");
 		this.loadTaxonomyProper(dirname + "taxonomy.tsv");
 		this.loadSynonyms(dirname + "synonyms.tsv");
+		// Don't do this - barren and extinct lead to problems
+		// this.setDerivedFlags();
+		this.propagateFlags();
 	}
 
 	// This gets overridden in the UnionTaxonomy class
@@ -404,12 +407,16 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		if (normalizations > 0)
 			System.out.format("| %s names normalized\n", normalizations);
 
+		Set<String> losers = new HashSet<String>();
 		for (Taxon node : parentMap.keySet()) {
 			String parentId = parentMap.get(node);
 			Taxon parent = this.idIndex.get(parentId);
 			if (parent == null) {
-				if (parentId.length() > 0 && !parentId.equals("null") && !parentId.equals("not found"))
+				if (parentId.length() > 0 && !parentId.equals("null") && !parentId.equals("not found") &&
+					!losers.contains(parentId)) {
 					System.err.format("** Parent %s missing for %s %s\n", parentId, node.id, node.name);
+					losers.add(parentId);
+				}
 				roots.add(node);
 			} else if (parentId.equals(node.id)) {
 				System.err.format("** Taxon is its own parent: %s %s\n" + node.id, node.name);
@@ -440,7 +447,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 								   row + " rows, but only " + 
 								   total + " reachable from roots");
 		}
-		// this.setDerivedFlags();
 	}
 
 	// Populate fields of a Taxon object from fields of row of taxonomy file
@@ -600,16 +606,13 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		PrintStream out = Taxonomy.openw(outprefix + "taxonomy.tsv");
 
 		out.format("uid%sparent_uid%sname%srank%ssourceinfo%suniqname%sflags%s\n",
-					// 0   1		2	  3     4	   		 5		   6
+				   // 0  1		     2	   3     4	   		 5		   6
                    sep, sep, sep, sep, sep, sep, sep
 					);
 
-		for (Taxon node : nodes) {
-			if (node == null)
-				System.err.println("null in nodes list!?" );
-			else if (!node.prunedp)
+		for (Taxon node : nodes)
+			if (!node.prunedp)
 				dumpNode(node, out, true, sep);
-		}
 		out.close();
 	}
 
@@ -870,9 +873,13 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		setDerivedFlags();
 	}
 
-	void setDerivedFlags() {
+	public void setDerivedFlags() {
 		for (Taxon root : this.roots)
 			this.analyzeBarren(root);
+		this.propagateFlags();
+	}
+
+	public void propagateFlags() {
 		for (Taxon root : this.roots)
 			this.propagateFlags(root, 0);
 	}
@@ -881,36 +888,36 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	// representation from int to EnumSet<Flag>
 
 	// Set during assembly
-	static final int TATTERED			 =	 4 * 1024;	  // combine using |  ??
-	static final int FORCED_VISIBLE		 =	16 * 1024;	  // combine using |
-	static final int EDITED				 = 128;			  // combine using |
-	static final int EXTINCT			 =	64 * 1024;	  // combine using |
-	static final int HIDDEN				 =	32 * 1024;	  // combine using &
+	static final int TATTERED			 = (1 << 0);	  // combine using |  ??
+	static final int FORCED_VISIBLE		 = (1 << 1);	  // combine using |
+	static final int EDITED				 = (1 << 2);			  // combine using |
+	static final int EXTINCT			 = (1 << 3);	  // combine using |
+	static final int HIDDEN				 = (1 << 4);	  // combine using &
 
 	// NCBI - individually troublesome - not sticky - combine using &  ? no, | ?
-	static final int NOT_OTU			 =	  1;
-	static final int HYBRID				 =	  2;
-	static final int VIRAL				 =	  4;
+	static final int NOT_OTU			 = (1 << 5);
+	static final int HYBRID				 = (1 << 6);
+	static final int VIRAL				 = (1 << 7);
 
 	// Parent-dependent.  Retain value
-	static final int MAJOR_RANK_CONFLICT =	 2 * 1024;
+	static final int MAJOR_RANK_CONFLICT = (1 << 8);
 
 	// Final analysis...
 	// Containers - unconditionally so.
-	static final int UNCLASSIFIED		 =	  8;
-	static final int ENVIRONMENTAL		 =	 16;
-	static final int INCERTAE_SEDIS		 =	 32;
+	static final int UNCLASSIFIED		 = (1 << 9);
+	static final int ENVIRONMENTAL		 = (1 << 10);
+	static final int INCERTAE_SEDIS		 = (1 << 11);
 
 	// Australopithecus
-	static final int SIBLING_LOWER		 =	512;
-	static final int SIBLING_HIGHER		 =	 1 * 1024;
+	static final int SIBLING_LOWER		 = (1 << 12);
+	static final int SIBLING_HIGHER		 = (1 << 13);
 
 	// Is below a 'species'
 	// Unconditional ?
-	static final int INFRASPECIFIC		 =	 64;
+	static final int INFRASPECIFIC		 = (1 << 14);
 
 	// Propagated upward
-	static final int BARREN			     =	 8 * 1024;
+	static final int BARREN			     = (1 << 15);
 
 	// FLUSH ME
 	static Pattern commaPattern = Pattern.compile(",");
@@ -1093,7 +1100,11 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				if ((child.properFlags & BARREN) == 0) barren = false;
 				if ((child.properFlags & EXTINCT) == 0) allextinct = false;
 			}
-			if (allextinct) node.properFlags |= EXTINCT;
+			if (allextinct) {
+				node.properFlags |= EXTINCT;
+				if (node.sourceIds != null && node.sourceIds.get(0).prefix.equals("ncbi"))
+					System.out.format("| Induced extinct: %s\n", node);
+			}
 			// We could do something similar for all of the hidden-type flags
 		}
 		if (barren)
@@ -1192,21 +1203,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	}
 
 	static int SPECIES_RANK = -1; // ranks.get("species");
-
-	// Called from --select1
-	// TBD: synonyms and about file
-	void select1(Taxon node, String outprefix) throws IOException {
-		System.out.println("| Selecting " + node.name);
-		List<Taxon> it = new ArrayList<Taxon>(1);
-		it.add(node);
-		this.dumpNodes(it, outprefix, "\t|\t");
-
-		if (this.metadata != null) {
-			PrintStream out = Taxonomy.openw(outprefix + "about.json");
-			out.println(this.metadata);
-			out.close();
-		}
-	}
 
 	// Select subtree rooted at a specified node
 
@@ -1786,7 +1782,13 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	public Taxon maybeTaxon(String name, String context) {
 		List<Taxon> nodes = filterByAncestor(name, context);
 		if (nodes == null) {
-			return null;
+			if (this.lookup(context) == null) {
+				Taxon probe = this.maybeTaxon(name);
+				if (probe != null)
+					System.err.format("| Found %s but there is no context %s\n", name, context);
+				return probe;
+			} else
+				return null;
 		} else if (nodes.size() == 1)
 			return nodes.get(0);
 		else {
@@ -1851,6 +1853,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		if (!rank.equals("no rank"))
 			t.rank = rank;
 		t.setSourceIds(sourceIds);
+		this.roots.add(t);
 		return t;
 	}
 
@@ -1954,12 +1957,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		reportDifferences(other, System.out);
 	}
 
-	void reportDifference(String what, Taxon node, Taxon oldParent, Taxon newParent, PrintStream out) {
-		out.format("%s\t%s\t%s\t%s\t%s\n", node.id, what, node.name,
-				   (oldParent == null ? "" : oldParent.name),
-				   (newParent == null ? "" : newParent.name));
-	}
-
 	// other would typically be an older version of the same taxonomy.
 	public void reportDifferences(Taxonomy other, PrintStream out) {
 		out.format("what\tuid\tname\tfrom\tto\n");
@@ -1970,11 +1967,11 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				if (newnodes == null)
 					reportDifference("removed", node, null, null, out);
 				else if (newnodes.size() != 1)
-					reportDifference("multiple replacements", node, null, null, out);
+					reportDifference("multiple-replacements", node, null, null, out);
 				else {
 					newnode = newnodes.get(0);
 					if (newnode.name.equals(node.name))
-						reportDifference("changed id ?", node, null, null, out);
+						reportDifference("changed-id-?", node, null, null, out);
 					else
 						reportDifference("synonymized", node, null, newnode, out);
 				}
@@ -1983,16 +1980,16 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 					// Does the new taxonomy retain the old name as a synonym?
 					Taxon retained = this.unique(node.name);
 					if (retained != null && retained.id.equals(newnode.id))
-						reportDifference("renamed keeping synonym", node, null, newnode, out);
+						reportDifference("renamed-keeping-synonym", node, null, newnode, out);
 					else
 						reportDifference("renamed", node, null, newnode, out);
 				}
 				if (newnode.parent == null && node.parent == null)
 					;
 				else if (newnode.parent == null && node.parent != null)
-					reportDifference("raised to root", node, node.parent, null, out);
+					reportDifference("raised-to-root", node, node.parent, null, out);
 				else if (newnode.parent != null && node.parent == null)
-					reportDifference("no longer a root", node, null, newnode.parent, out);
+					reportDifference("no-longer-root", node, null, newnode.parent, out);
 				else if (!newnode.parent.id.equals(node.parent.id))
 					reportDifference("moved", node, node.parent, newnode.parent, out);
 				if (newnode.isHidden() && !node.isHidden())
@@ -2005,16 +2002,24 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			Taxon node = other.idIndex.get(newnode.id);
 			if (node == null) {
 				if (other.lookup(newnode.name) != null)
-					reportDifference("changed id?", newnode, null, null, out);
+					reportDifference("changed-id?", newnode, null, null, out);
 				else {
 					List<Taxon> found = this.lookup(newnode.name);
 					if (found != null && found.size() > 1)
-						reportDifference("added homonym", newnode, null, null, out);
+						reportDifference("added-homonym", newnode, null, null, out);
 					else
 						reportDifference("added", newnode, null, null, out);
 				}
 			}
 		}
+	}
+
+	void reportDifference(String what, Taxon node, Taxon oldParent, Taxon newParent, PrintStream out) {
+		String division = node.getDivision();
+		out.format("%s\t%s\t%s\t%s\t%s\t%s\n", node.id, what, node.name,
+				   (oldParent == null ? "" : oldParent.name),
+				   (newParent == null ? "" : newParent.name),
+				   (division == null ? "" : division));
 	}
 	
 	// Propogate synonyms from source taxonomy to union.
@@ -2169,8 +2174,8 @@ class SourceTaxonomy extends Taxonomy {
 			{"Bacteria"},
 			{"Alveolata"},
 			// {"Rhodophyta"},	creates duplicate of Cyanidiales
-			{"Glaucocystophyceae"},
-			{"Haptophyceae"},
+			{"Glaucophyta", "Glaucocystophyceae"},
+			{"Haptophyta", "Haptophyceae"},
 			{"Choanoflagellida"},
 			{"Metazoa", "Animalia"},
 			{"Viridiplantae", "Plantae", "Chloroplastida"},
@@ -3025,12 +3030,34 @@ abstract class Criterion {
 			}
 		};
 
+	static Criterion sameSourceId =
+		new Criterion() {
+			public String toString() { return "same-source-id"; }
+			Answer assess(Taxon x, Taxon y) {
+				// x is source node, y is union node.
+				QualifiedId xid, yid;
+				if (x.sourceIds == null)
+					xid = x.getQualifiedId();
+				else
+					xid = x.sourceIds.get(0);
+				if (y.sourceIds == null)
+					yid = y.getQualifiedId(); // shouldn't happen
+				else
+					yid = y.sourceIds.get(0);
+				if (xid.equals(yid))
+					return Answer.yes(x, y, "same-source-id", null);
+				else
+					return Answer.NOINFO;
+			}
+		};
+
+
 	// Match NCBI or GBIF identifiers
 	// This kicks in when we try to map the previous OTT to assign ids, after we've mapped GBIF.
 	// x is a node in the old OTT.	y, the union node, is in the new OTT.
-	static Criterion compareSourceIds =
+	static Criterion anySourceId =
 		new Criterion() {
-			public String toString() { return "same-qualified-id"; }
+			public String toString() { return "any-source-id"; }
 			Answer assess(Taxon x, Taxon y) {
 				// x is source node, y is union node.
 				// Two cases:
@@ -3040,12 +3067,12 @@ abstract class Criterion {
 				QualifiedId xid = x.getQualifiedId();
 				for (QualifiedId ysourceid : y.sourceIds)
 					if (xid.equals(ysourceid))
-						return Answer.yes(x, y, "same-qualified-id-1", null);
+						return Answer.yes(x, y, "any-source-id-1", null);
 				if (x.sourceIds != null)
 					for (QualifiedId xsourceid : x.sourceIds)
 						for (QualifiedId ysourceid : y.sourceIds)
 							if (xsourceid.equals(ysourceid))
-								return Answer.yes(x, y, "same-qualified-id-2", null);
+								return Answer.yes(x, y, "any-source-id-2", null);
 				return Answer.NOINFO;
 			}
 		};
@@ -3105,7 +3132,8 @@ abstract class Criterion {
 	static Criterion[] criteria = { adHoc, division,
 									// eschewTattered,
 									lineage, subsumption,
-									compareSourceIds,
+									sameSourceId,
+									anySourceId,
 									// knowDivision,
 									byRank, byPrimaryName, elimination };
 

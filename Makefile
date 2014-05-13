@@ -5,8 +5,8 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.7
-PREV_WHICH=2.6
+WHICH=2.8
+PREV_WHICH=2.7
 
 #  $^ = all prerequisites
 #  $< = first prerequisite
@@ -18,7 +18,7 @@ PREV_WHICH=2.6
 NCBI=tax/ncbi
 GBIF=tax/gbif
 SILVA=tax/silva
-IF=tax/if
+FUNG=tax/if
 
 # Root of local copy of taxomachine git repo, for nematode examples
 # (TBD: make local copies so that setup is simpler)
@@ -68,6 +68,8 @@ tax/ott/log.tsv: $(CLASS) make-ott.py $(SILVA)/taxonomy.tsv \
 	@mkdir -p tax/ott
 	$(BIG_JAVA) $(SMASH) --jython make-ott.py
 	echo $(WHICH) >tax/ott/version.txt
+
+fung: tax/if/taxonomy.tsv tax/if/synonyms.tsv
 
 tax/if/taxonomy.tsv: tax/if/synonyms.tsv tax/if/about.json
 	@mkdir -p `dirname $@`
@@ -247,7 +249,7 @@ tax/ott/differences.tsv: tax/prev_ott/taxonomy.tsv tax/ott/taxonomy.tsv
 	wc $@
 
 tax/ott/otu_differences.tsv: tax/ott/differences.tsv
-	$(JAVA) $(SMASH) --join ids_report.tsv tax/ott/differences.tsv> $@.new
+	$(JAVA) $(SMASH) --join ids_report.tsv tax/ott/differences.tsv >$@.new
 	mv $@.new $@
 	wc $@
 

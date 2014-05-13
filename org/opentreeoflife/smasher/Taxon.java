@@ -122,7 +122,7 @@ public class Taxon {
 		}
 	}
 
-	void changeParent(Taxon newparent) {
+	public void changeParent(Taxon newparent) {
 		Taxon p = this.parent;
 		if (p != newparent) {
 			this.parent = null;
@@ -141,7 +141,7 @@ public class Taxon {
 	}
 
 	// Go upwards and cache on the way back down
-	String getDivision() {
+	public String getDivision() {
 		if (this.division == null) {
 			if (this.parent == null)
 				this.division = null;
@@ -984,44 +984,28 @@ public class Taxon {
 		boolean homonymp = false;
 		boolean informativeFail = false;
 
-		if (true) {
-			for (Taxon other : nodes)
-				if (other != this) {  //  && other.name.equals(this.name)
-					homonymp = true;
-					Taxon i = this.informative();
-					if (i != null && i.equals(other.informative())) {
-						informativeFail = true;
-						break;
-					}
-				}
-			if (informativeFail || homonymp) {
-				String urank = "";
-				if (this.rank != null) urank = this.rank + " ";
-				if (informativeFail)
-					urank = urank + this.sourceIds.get(0) + " ";
-
+		for (Taxon other : nodes)
+			if (other != this) {  //  && other.name.equals(this.name)
+				homonymp = true;
 				Taxon i = this.informative();
+				if (i != null && i.equals(other.informative())) {
+					informativeFail = true;
+					break;
+				}
+			}
+		if (informativeFail || homonymp) {
+			String urank = "";
+			if (this.rank != null) urank = this.rank + " ";
+			if (informativeFail && this.sourceIds != null)
+				urank = urank + this.sourceIds.get(0) + " ";
+
+			Taxon i = this.informative();
+			if (i != null) {
 				String irank = "";
 				if (i.rank != null) irank = i.rank + " ";
 				return this.name + " (" + urank + "in " + irank + i.name + ")";
-			} else return "";
+			}
 		}
-		else
-			// Old buggy version, delete after above has been tested
-			for (Taxon other : nodes)
-				if (other != this && other.name.equals(this.name)) {
-					Taxon i = this.informative();
-					if ((i != other.informative() &&
-						 i != null &&
-						 !this.name.endsWith(" sp."))) {
-						String urank = "";
-						if (this.rank != null) urank = this.rank + " ";
-						String irank = "";
-						if (i.rank != null) irank = i.rank + " ";
-						return this.name + " (" + urank + "in " + irank + i.name + ")";
-					} else
-						return this.name + " (" + this.getSourceIdsString() + ")";
-				}
 		return "";
 	}
 

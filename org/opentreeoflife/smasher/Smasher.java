@@ -84,16 +84,6 @@ public class Smasher {
 						union.dumpAuxIds(outprefix);
 					}
 
-					// Deprecated
-					else if (argv[i].equals("--select") || argv[i].equals("--select1")) {
-						String name = argv[++i];
-						Taxon root = tax.unique(name);
-						if (root != null) {
-							tax.analyze();	  // otherwise they all show up as 'barren'
-							tax.select1(root, argv[++i]);
-						}
-					}
-
 					else if (argv[i].equals("--select2")) {
 						String name = argv[++i];
 						tax = tax.select(name);

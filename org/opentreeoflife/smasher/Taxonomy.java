@@ -1213,6 +1213,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	public Taxonomy select(Taxon sel) {
 		if (sel != null) {
 			Taxonomy tax2 = new SourceTaxonomy();
+			tax2.tag = this.tag; // ???
 			Taxon selection = sel.select(tax2);
 			System.out.println("| Selection has " + selection.count() + " taxa");
 			tax2.roots.add(selection);
@@ -1907,6 +1908,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			Taxon evader = new Taxon(unode.taxonomy);
 			snode.unifyWithNew(evader);
 			evader.addSource(snode);
+			// Now evader != unode, as desired.
 		}
 	}
 
@@ -1959,7 +1961,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	// other would typically be an older version of the same taxonomy.
 	public void reportDifferences(Taxonomy other, PrintStream out) {
-		out.format("what\tuid\tname\tfrom\tto\n");
+		out.format("uid\twhat\tname\tsource\tfrom\tto\n");
 		for (Taxon node : other) {
 			Taxon newnode = this.idIndex.get(node.id);
 			if (newnode == null) {
@@ -2016,7 +2018,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	void reportDifference(String what, Taxon node, Taxon oldParent, Taxon newParent, PrintStream out) {
 		String division = node.getDivision();
-		out.format("%s\t%s\t%s\t%s\t%s\t%s\n", node.id, what, node.name,
+		out.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\n", node.id, what, node.name,
+				   node.getSourceIdsString(), 
 				   (oldParent == null ? "" : oldParent.name),
 				   (newParent == null ? "" : newParent.name),
 				   (division == null ? "" : division));

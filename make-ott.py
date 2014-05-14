@@ -70,24 +70,98 @@ ott.absorb(h2007)
 ott.taxon('Urocystales').synonym('Urocystidales')
 
 # ----- Index Fungorum -----
-fung  = Taxonomy.getTaxonomy('tax/if/', 'if')
+# IF is pretty comprehensive for Fungi, but has an assortment of other
+# things, mostly eukaryotic microbes.  We should treat the former as
+# more authoritative than NCBI, and the latter as less authoritative
+# than NCBI.
+
+allfung  = Taxonomy.getTaxonomy('tax/if/', 'if')
+
+print "Index Fungorum has %s nodes"%allfung.count()
 
 # 2014-04-14 Bad Fungi homonyms in new version of IF.  90156 is the good one.
 # 90154 has no descendants
-if fung.maybeTaxon('90154') != None:
+if allfung.maybeTaxon('90154') != None:
 	print 'Removing Fungi 90154'
-	fung.taxon('90154').prune()
+	allfung.taxon('90154').prune()
 # 90155 is "Nom. inval." and has no descendants
-if fung.maybeTaxon('90155') != None:
+if allfung.maybeTaxon('90155') != None:
 	print 'Removing Fungi 90155'
-	fung.taxon('90155').prune()
+	allfung.taxon('90155').prune()
 
 # JAR 2014-04-27 JAR found while investigating 'hidden' status of
 # Thelohania butleri.  Move out of Protozoa to prevent their being hidden
-fung.taxon('Fungi').take(fung.taxon('Microsporidia'))
+allfung.taxon('Fungi').take(allfung.taxon('Microsporidia'))
+
+# *** Non-Fungi processing
+
+# JAR 2014-05-13 Chlorophyte or fungus?  This one is very confused.
+# Pick it up from GBIF if at all
+allfung.taxon('Byssus phosphorea').prune()
+
+# Work in progress.  By promoting to root we've lost the fact that
+# protozoa are eukaryotes, which is unfortunate.  Not important in this
+# case, but suggestive of deeper problems in the framework.
+# Test case: Oomycota should end up in Stramenopiles.
+fung_Protozoa = allfung.maybeTaxon('Protozoa')
+if fung_Protozoa != None:
+	fung_Protozoa.hide()   # recursive
+	fung_Protozoa.detach()
+	fung_Protozoa.elide()
+fung_Chromista = allfung.maybeTaxon('Chromista')
+if fung_Chromista != None:
+	fung_Chromista.hide()  # recursive
+	fung_Chromista.detach()
+	fung_Chromista.elide()
+
+# IF Thraustochytriidae = SILVA Thraustochytriaceae ?  (Stramenopiles)
+# IF T. 90638 contains Sicyoidochytrium, Schizochytrium, Ulkenia, Thraustochytrium
+#  Parietichytrium, Elina, Botryochytrium, Althornia
+# SILVA T. contains Ulkenia and a few others of these... I say yes.
+thraust = allfung.taxon('90377')
+thraust.synonym('Thraustochytriaceae')
+thraust.synonym('Thraustochytriidae')
+thraust.synonym('Thraustochytridae')
+
+# IF Labyrinthulaceae = SILVA Labyrinthulomycetes ?  NO.
+# IF L. contains only Labyrinthomyxa, Labyrinthula
+# SILVA L. contains a lot more than that.
+
+# IF Hyphochytriaceae = SILVA Hyphochytriales ?
+# SILVA Hyphochytriales = AB622284/#4 contains only
+# Hypochitrium, Rhizidiomycetaceae
+
+# There are two Bacillaria.
+# 1. NCBI 3002, in Stramenopiles, contains Bacillaria paxillifer.
+#    No synonyms in NCBI.
+#    IF has Bacillaria as a synonym for Camillea (if:777).
+#    Bacillaria is not otherwise in IF.
+#    Cammillea in IF is in Stramenopiles.
+# 2. NCBI 109369, in Pezizomycotina
+#    No synonyms in NCBI.
+# NCBI 13677 = Camillea, a fish.
+
+# There are two Polyangium, a bacterium (NCBI) and a flatworm (IF).
+
+# smush folds sibling taxa that have the same name.
+allfung.smush()
+
+# *** Fungi processing
+
+print "Fungi in Index Fungorum has %s nodes"%allfung.taxon('Fungi').count()
+
+# fung = allfung.select(allfung.taxon('Fungi'))
+# SIDE EFFECT.  Ideally there would be a declarative
+# (non-side-effecty) way to do this.
+# allfung.taxon('Fungi').trim()
+
+# Revert to previous method for the time being due to large chunks of Fungi
+# lacking parent links
+fung = allfung
 
 # JAR 2014-04-11 Missing in earlier IF, mistake in later IF -
 # extraneous authority string.  See Romina's issue #42
+# This is a fungus.
 cyph = fung.maybeTaxon('Cyphellopsis')
 if cyph == None:
 	cyph = fung.maybeTaxon('Cyphellopsis Donk 1931')
@@ -97,32 +171,27 @@ if cyph == None:
 		cyph = fung.newTaxon('Cyphellopsis', 'genus', 'if:17439')
 	fung.taxon('Niaceae').take(cyph)
 
-# smush will fold sibling taxa that have the same name.
-fung.smush()
-
 # 2014-03-07 Prevent a false match
 # https://groups.google.com/d/msg/opentreeoflife/5SAPDerun70/fRjA2M6z8tIJ
+# This is a fungus in Pezizomycotina
 ott.notSame(silva.taxon('Phaeosphaeria'), fung.taxon('Phaeosphaeria'))
 
 # 2014-04-08 This was causing Agaricaceae to be paraphyletic
 ott.notSame(silva.taxon('Morganella'), fung.taxon('Morganella'))
 
-# 2014-04-08 More IF/SILVA bad matches (probably sample contamination)
+# 2014-04-08 More IF/SILVA bad matches
 # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/63
-# These will probably be fixed in SILVA 117
-for name in ['Trichoderma harzianum',
-			 'Acantharia',
-			 'Bogoriella',
-			 'Steinia',
-			 'Sclerotinia homoeocarpa',
-			 'Epiphloea',
-			 'Campanella',
-			 'Lacrymaria',
-			 'Bacillaria',
-			 'Polyangium',
-			 'Frankia',		  # eukaryote / bacterium
-			 'Phialina',
-			 'Puccinia triticina']:
+for name in ['Trichoderma harzianum',  # in Pezizomycotina
+			 'Acantharia',			   # in Pezizomycotina
+			 'Bogoriella',			   # in Pezizomycotina
+			 'Steinia',				   # in Pezizomycotina
+			 'Sclerotinia homoeocarpa', # in Pezizomycotina
+			 'Epiphloea',			   # in Pezizomycotina
+			 'Campanella',			   # in Agaricomycotina
+			 'Lacrymaria',			   # in Agaricomycotina
+			 'Frankia',		  		   # in Pezizomycotina / bacterium in SILVA
+			 'Phialina',			   # in Pezizomycotina
+			 'Puccinia triticina']:    # in Pucciniomycotina in Fungi
 	ott.notSame(silva.taxon(name), fung.taxon(name))
 
 # Romina email to JAR 2014-04-09
@@ -139,38 +208,6 @@ fung.taxon('Trichoderma deliquescens').rename('Hypocrea lutea')
 if fung.maybeTaxon('Bostrychia', 'Ascomycota') != None:
 	ott.notSame(silva.taxon('Bostrychia', 'Rhodophyceae'), fung.taxon('Bostrychia', 'Ascomycota'))
 
-# JAR 2014-05-13 This one is very confused.  Pick it up from GBIF if at all
-fung.taxon('Byssus phosphorea').prune()
-
-# Work in progress.  By promoting to root we've lost the fact that
-# protozoa are eukaryotes, which is unfortunate.  Not important in this
-# case, but suggestive of deeper problems in the framework.
-# Test case: Oomycota should end up in Stramenopiles.
-fung_Protozoa = fung.maybeTaxon('Protozoa')
-if fung_Protozoa != None:
-	fung_Protozoa.hide()   # recursive
-	fung_Protozoa.detach()
-	fung_Protozoa.elide()
-fung_Chromista = fung.maybeTaxon('Chromista')
-if fung_Chromista != None:
-	fung_Chromista.hide()  # recursive
-	fung_Chromista.detach()
-	fung_Chromista.elide()
-
-# IF Thraustochytriidae = SILVA Thraustochytriaceae ?
-# IF T. 90638 contains Sicyoidochytrium, Schizochytrium, Ulkenia, Thraustochytrium
-#  Parietichytrium, Elina, Botryochytrium, Althornia
-# SILVA T. contains Ulkenia and a few others of these... I say yes.
-fung.taxon('Thraustochytriidae').synonym('Thraustochytriaceae')
-
-# IF Labyrinthulaceae = SILVA Labyrinthulomycetes ?  NO.
-# IF L. contains only Labyrinthomyxa, Labyrinthula
-# SILVA L. contains a lot more than that.
-
-# IF Hyphochytriaceae = SILVA Hyphochytriales ?
-# SILVA Hyphochytriales = AB622284/#4 contains only
-# Hypochitrium, Rhizidiomycetaceae
-
 # analyzeMajorRankConflicts sets the "major_rank_conflict" flag when
 # intermediate ranks are missing (e.g. a family that's a child of a
 # class)
@@ -178,6 +215,7 @@ fung.analyzeMajorRankConflicts()
 
 ott.absorb(fung)
 
+print "Fungi in h2007 + if has %s nodes"%ott.taxon('Fungi').count()
 
 # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/20
 # Problem: Chlamydotomus is an incertae sedis child of Fungi.  Need to
@@ -322,6 +360,16 @@ ott.taxon('Icteridae').take(ott.taxon('Quiscalus', 'Fringillidae'))
 # Stephen email to JAR 2014-01-26
 # ott.taxon("Torricelliaceae").synonym("Toricelliaceae")
 
+
+print "Fungi in h2007 + if _ ncbi has %s nodes"%ott.taxon('Fungi').count()
+
+
+# ----- Non-Fungi from Index Fungorum -----
+
+# Not activating this hack yet
+if False:
+	allfung.analyzeMajorRankConflicts()
+	ott.absorb(allfung)
 
 # ----- GBIF (Global Biodiversity Information Facility) taxonomy -----
 gbif = Taxonomy.getTaxonomy('tax/gbif/', 'gbif')

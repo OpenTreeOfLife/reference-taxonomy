@@ -745,7 +745,7 @@ public class Taxon {
 
 	// Number of child-less nodes at and below this node.
 
-	int count() {
+	public int count() {
 		if (this.count < 1) {
 			this.count = 1;
 			if (children != null)

@@ -60,7 +60,7 @@ Taxonomy from Hibbett et al 2007, with updates through 2014
   Retrieved from
     http://dx.doi.org/10.6084/m9.figshare.915439
   Last-modified date: 2014-03-10
-  There is a copy in the git repository.
+  There is a copy in feed/h2007/ in the git repository.
   See: A higher-level phylogenetic classification of the Fungi.
     DS Hibbett, M Binder, JF Bischoff, M Blackwell, et al.
     Mycological Research 111(5):509-547, 2007.
@@ -76,7 +76,7 @@ Index Fungorum
 
 Lamiales taxonomy from Schaferhof et al 2010
   File prepared from figure by Open Tree of Life staff.
-  There is a copy in the git repository.
+  There is a copy in tax/713/ in the git repository.
   See:
     Schaferhoff, B., Fleischmann, A., Fischer, E., Albach, D. C.,
     Borsch, T., Heubl, G., and Muller, K. F. (2010). Towards resolving
@@ -109,10 +109,12 @@ GBIF backbone taxonomy
 IRMNG (Interim Register of Marine and Nonmarine Genera)
   Retrieved from http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip
   Last-modified date: 2014-01-12
-    http://purl.org/opentree/ott2.6-inputs/feed/irmng/in/IRMNG_DWC.zip
+  The file at that URI is replaced from time to time.  A capture of
+  the version used for OTT 2.6 is here: 
+   http://purl.org/opentree/ott2.6-inputs/feed/irmng/in/IRMNG_DWC.zip
   Web site: http://www.obis.org.au/irmng/
 
 OTT version 2.5
   The previous version of OTT is used only for the purpose of ensuring
   identifier choice consistency from one version of OTT to the next.
-    http://files.opentreeoflife.org/ott/ott2.5.tgz
+    http://purl.org/opentree/ott/ott2.5.tgz

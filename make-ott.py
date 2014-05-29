@@ -336,6 +336,7 @@ ott.same(fung.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'), ncbi.t
 # analyzeOTUs sets flags on questionable taxa ("unclassified",
 #  hybrids, and so on) to allow the option of suppression downstream
 ncbi.analyzeOTUs()
+ncbi.analyzeContainers()
 
 # 2014-04-23 In new version of IF - obvious misalignment
 ott.notSame(ncbi.taxon('Crepidula', 'Gastropoda'), fung.taxon('Crepidula', 'Microsporidia'))
@@ -847,6 +848,10 @@ if ott.maybeTaxon('Cycadidae') != None:
 	ott.taxon('Cycadidae').absorb(ott.taxon('Cycadophyta'))
 
 # Similar problem with Gnetidae and Ginkgoidae
+
+# Dail 2014-03-31
+# https://github.com/OpenTreeOfLife/feedback/issues/6
+ott.taxon('Telonema').synonym('Teleonema')
 
 # -----------------------------------------------------------------------------
 # Finish up

@@ -868,9 +868,12 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	void analyze() {
 		for (Taxon root : this.roots)
 			analyzeRankConflicts(root, false);  //SIBLING_LOWER and SIBLING_HIGHER
+		setDerivedFlags();
+	}
+
+	public void analyzeContainers() {
 		for (Taxon root : this.roots)
 			analyzeContainers(root, 0);
-		setDerivedFlags();
 	}
 
 	public void setDerivedFlags() {
@@ -1026,7 +1029,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	// Flags to set for all taxonomies.	 Also elide container pseudo-taxa
 
-	static void analyzeContainers(Taxon node, int inheritedFlags) {
+	public static void analyzeContainers(Taxon node, int inheritedFlags) {
 		// Before
 		node.inheritedFlags |= inheritedFlags;
 
@@ -2046,6 +2049,52 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		}
 		if (count > 0)
 			System.err.println("| Added " + count + " synonyms");
+	}
+
+	static Pattern binomialPattern = Pattern.compile("^[A-Z][a-z]+ [a-z]+$");
+	static Pattern monomialPattern = Pattern.compile("^[A-Z][a-z]*$");
+
+	public void adHocReport() {
+		adHocReport1(this.taxon("cellular organisms"));
+		adHocReport1(this.taxon("Bacteria", "cellular organisms"));
+		adHocReport1(this.taxon("Archaea", "cellular organisms"));
+		adHocReport1(this.taxon("Bacillariophyceae"));
+	}
+
+	interface Filter {
+		boolean passes(Taxon x);
+	}
+
+	public void adHocReport1(Taxon node) {
+		System.out.format("%s\n", node.name);
+		System.out.format("Taxa: %s\n", node.count());
+		int tips = tipCount(node, new Filter() {
+				public boolean passes(Taxon node) { return true; }
+			});
+		System.out.format("Tips: %s\n", tips);
+		int hidden = tipCount(node, new Filter() {
+				public boolean passes(Taxon node) { return node.isHidden(); }
+			});
+		System.out.format(" Visible: %s, hidden: %s\n", tips - hidden, hidden);
+		int binomial = tipCount(node, new Filter() {
+				public boolean passes(Taxon node) { return binomialPattern.matcher(node.name).find(); }
+			});
+		int monomial = tipCount(node, new Filter() {
+				public boolean passes(Taxon node) { return monomialPattern.matcher(node.name).find(); }
+			});
+		System.out.format(" Binomial: %s, monomial: %s, other: %s\n\n",
+						  binomial, monomial, tips - (binomial + monomial));
+	}
+
+	int tipCount(Taxon node, Filter filter) {
+		if (node.children == null)
+			return filter.passes(node) ? 1 : 0;
+		else {
+			int total = 0;
+			for (Taxon child : node.children)
+				total += tipCount(child, filter);
+			return total;
+		}
 	}
 
 }  // end of class Taxonomy

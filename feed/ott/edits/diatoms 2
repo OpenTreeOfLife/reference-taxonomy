@@ -1,0 +1,20 @@
+# E.g. (without the # signs)
+#command	name	rank	parent	context	sourceInfo
+#add  Acanthotrema frischii	species	Acanthotrema	Fungi	if:516851
+command name  rank  parent  context sourceInfo
+add Encyonopsis sp. CH021 strain  Encyonopsis Bacillariophyta http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add Geissleria decussis sp. FD50  strain  Geissleria decussis Bacillariophyta http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add Gomphoneis minuta sp. CH053  strain  Gomphoneis minuta Bacillariophyta http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add Gomphonema affine sp. FD45  strain  Gomphonema affine Bacillariophyta http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add Gomphonema affine sp. FD95  strain  Gomphonema affine Bacillariophyta http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add Gomphonema angustatum sp. FD434  strain  Gomphonema angustatum Bacillariophyta http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add Gomphonema brebissonii sp. FD373  strain  Gomphonema brebissonii Bacillariophyta http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add Gomphonema carolinense sp. FD285  strain  Gomphonema carolinense Bacillariophyta http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add Gomphonema dichotomum sp. FD288  strain  Gomphonema dichotomum Bacillariophyta http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add Gomphonema gracile sp. FD65  strain  Gomphonema gracile Bacillariophyta http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add Gomphonema intricatum sp. FD385  strain  Gomphonema intricatum Bacillariophyta http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add Gomphonema parvulum sp. FD240  strain  Gomphonema parvulum Bacillariophyta http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add Placoneis abiskoensis  sp. FD363  strain  Placoneis abiskoensis Bacillariophyta http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add Placoneis clementis sp. FD419  strain  Placoneis clementis Bacillariophyta http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add Placoneis elginensis sp. FD212  strain  Placoneis elginensis Bacillariophyta http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add Placoneis gastrum sp. CH333  strain  Placoneis gastrum Bacillariophyta http://purl.org/phylo/treebase/phylows/study/TB2:S15699

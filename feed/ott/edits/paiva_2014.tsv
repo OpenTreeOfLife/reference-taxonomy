@@ -16,7 +16,8 @@
 # E.g. (without the # signs)
 #command	name	rank	parent	context	sourceInfo
 #add	Acanthotrema frischii	species	Acanthotrema	Fungi	if:516851
-command name  rank  parent  context sourceInfo
+command	name	rank	parent  context sourceInfo
 add Nothoholostichinae  subfamily Pseudokeronopsidae  Ciliophora  http://10.1371/journal.pone.0088954
 add Tetrakeronopsis silvanetoi  species Nothoholostichinae  Ciliophora  http://10.1371/journal.pone.0088954
 add Apoholosticha sinica  species Nothoholostichinae  Ciliophora  http://10.1371/journal.pone.0088954
+this	is	a	tab	test

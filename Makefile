@@ -205,13 +205,18 @@ feed/silva/in/silva.fasta:
 	@ls -l feed/silva/in/silva.fasta.tgz
 	(cd feed/silva/in && tar xzvf silva.fasta.tgz && mv *silva.fasta silva.fasta)
 
-TARDIR=/raid/www/roots/opentree/ott
+#TARDIR=/raid/www/roots/opentree/ott
+TARDIR=tarballs
 
 tarball: tax/ott/log.tsv
-	(cd tax && \
-	 tar czvf $(TARDIR)/ott$(WHICH).tgz.tmp ott && \
+	(mkdir -p $(TARDIR) && \
+	 tar czvf $(TARDIR)/ott$(WHICH).tgz.tmp -C tax ott && \
 	 mv $(TARDIR)/ott$(WHICH).tgz.tmp $(TARDIR)/ott$(WHICH).tgz )
 	@echo "Don't forget to bump the version number"
+
+# Then, something like
+# scp -p -i ~/.ssh/opentree.pem tarballs/ott2.8draft5.tgz \
+#   opentree@ot10.opentreeoflife.org:files.opentreeoflife.org/ott/
 
 # This predates use of git on norbert...
 #norbert:

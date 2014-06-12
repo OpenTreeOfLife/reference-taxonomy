@@ -1217,7 +1217,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		if (sel != null) {
 			Taxonomy tax2 = new SourceTaxonomy();
 			tax2.tag = this.tag; // ???
-			Taxon selection = sel.select(tax2);
+			Taxon selection = select(sel, tax2);
 			System.out.println("| Selection has " + selection.count() + " taxa");
 			tax2.roots.add(selection);
 			this.copySynonyms(tax2);
@@ -1227,6 +1227,51 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			return null;
 		}
 	}
+
+	Taxon select(Taxon node, Taxonomy tax) {
+		Taxon sam = node.dup(tax);
+		node.mapped = sam;
+		if (node.children != null)
+			for (Taxon child : node.children) {
+				Taxon c = select(child, tax);
+				sam.addChild(c);
+			}
+		return sam;
+	}
+
+	// Select subtree rooted at a specified node, down to given depth
+
+	public Taxonomy selectToDepth(String designator, int depth) {
+		return selectToDepth(this.unique(designator), depth);
+	}
+	
+	public Taxonomy selectToDepth(Taxon sel, int depth) {
+		if (sel != null) {
+			Taxonomy tax2 = new SourceTaxonomy();
+			tax2.tag = this.tag; // ???
+			Taxon selection = selectToDepth(sel, tax2, depth);
+			System.out.println("| Selection has " + selection.count() + " taxa");
+			tax2.roots.add(selection);
+			this.copySynonyms(tax2);
+			return tax2;
+		} else {
+			System.err.println("** Missing or ambiguous name: " + sel);
+			return null;
+		}
+	}
+
+	Taxon selectToDepth(Taxon node, Taxonomy tax, int depth) {
+		Taxon sam = node.dup(tax);
+		node.mapped = sam;
+		if (node.children != null && depth > 0)
+			for (Taxon child : node.children) {
+				Taxon c = selectToDepth(child, tax, depth-1);
+				sam.addChild(c);
+			}
+		return sam;
+	}
+
+	// Select subtree, but only those nodes that are visible
 
 	public Taxonomy selectVisible(String designator) {
 		Taxon sel = this.taxon(designator);
@@ -1240,6 +1285,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		} else
 			return null;
 	}
+
+	// Select a proportional sample of the nodes in a tree
 
 	public Taxonomy sample(String designator, int count) {
 		Taxon sel = this.unique(designator);
@@ -1754,8 +1801,15 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	// Look up a taxon by name or unique id.  Name must be unique in the taxonomy.
 	public Taxon maybeTaxon(String name) {
 		List<Taxon> probe = this.nameIndex.get(name);
-		// TBD: Maybe rule out synonyms?
 		if (probe != null) {
+			if (probe.size() > 1) {
+				// This is extremely ad hoc.  Need a more general theory.
+				List<Taxon> replacement = new ArrayList<Taxon>();
+				for (Taxon node : probe)
+					if (node.name.equals(name))
+						replacement.add(node);
+				if (replacement.size() == 1) probe = replacement;
+			}
 			if (probe.size() == 1)
 				return probe.get(0);
 			else {

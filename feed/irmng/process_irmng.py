@@ -30,10 +30,9 @@ with open(irmng_file_name, 'rb') as csvfile:
 		longname = row[1]
 		auth = row[2]
 		genus = row[3]
+		epithet = row[4]
 		family = row[5]
 		rank = row[6]
-		# TEMPORARY for compatibility with OTT 2.6
-		if rank == 'species': continue
 		status = row[7]
 		syn_target = row[12]
 		parent = row[-4]
@@ -42,7 +41,9 @@ with open(irmng_file_name, 'rb') as csvfile:
 #		if (status != '' and status != 'accepted' and status != 'valid' and 
 #			   status != 'available' and status != 'proParteSynonym'):
 #			continue
-		if rank == 'genus':
+		if rank == 'species':
+			name = ('%s %s')%(genus,epithet)
+		elif rank == 'genus':
 			name = genus
 		elif rank == 'family':
 			name = family
@@ -121,4 +122,5 @@ with open(synonyms_file_name, 'w') as synfile:
 	for synid in synonyms:
 		(parent, name, rank) = taxa[synid]
 		targetid = synonyms[synid]
-		synfile.write('%s\t|\t%s\t|\t\n'%(targetid, name))
+		if not (targetid in extinctp):
+			synfile.write('%s\t|\t%s\t|\t\n'%(targetid, name))

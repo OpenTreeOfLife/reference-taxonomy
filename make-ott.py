@@ -536,8 +536,9 @@ irmng.taxon('Bacteria','life').hideDescendants()
 irmng.taxon('Archaea','life').hideDescendants()
 
 # RR #50
-irmng.taxon('Saxo-Fridericia').rename('Saxofridericia')
-irmng.taxon('Saxofridericia').absorb(irmng.taxon('Saxo-fridericia'))
+# irmng.taxon('Saxo-Fridericia').rename('Saxofridericia')
+# irmng.taxon('Saxofridericia').absorb(irmng.taxon('Saxo-fridericia'))
+irmng.taxon('1063899').absorb(irmng.taxon('1071613'))
 
 # Romina email to JAR 2014-04-09
 # IRMNG has EIGHT different Trichodermas.  (Four are synonyms of other things.)
@@ -653,9 +654,12 @@ ott.taxon('Cnidaria').take(ott.taxon('Stauromedusae'))
 ott.taxon('Copepoda').take(ott.taxon('Prionodiaptomus'))
 
 # Bryan Drew patches 2014-01-30, in email to JAR
-ott.taxon('Salazaria mexicana').rename('Scutellaria mexicana')
-ott.taxon('Scutellaria','Lamiaceae').absorb(ott.taxon('Salazaria'))
 ott.taxon('Scapaniaceae').absorb(ott.taxon('Lophoziaceae'))
+ott.taxon('Salazaria mexicana').rename('Scutellaria mexicana')
+# One Scutellaria is in Lamiaceae; the other is a fungus.
+# IRMNG's Salazaria 1288740 is in Lamiales, and is a synonym of Scutellaria.
+ott.taxon('Scutellaria','Lamiaceae').absorb(ott.image(gbif.taxon('Salazaria')))
+ott.taxon('Scutellaria','Lamiaceae').absorb(ott.image(irmng.taxon('1288740'))) #Salazaria
 
 #  Make an order Boraginales that contains Boraginaceae + Hydrophyllaceae
 #  http://dx.doi.org/10.1111/cla.12061

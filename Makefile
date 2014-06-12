@@ -176,8 +176,14 @@ feed/irmng/in/IRMNG_DWC.zip:
 
 # Significant tabs !!!
 
-SILVA_URL=https://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/SSURef_NR99_115_tax_silva.fasta.tgz
+# Silva 115: 206M uncompresses to 817M
+# tax_ranks file moved to ftp://ftp.arb-silva.de/release_115/Exports/tax_ranks_ssu_115.csv ?
+# issue #62 - verify  (is it a tsv file or csv file?)
+# see also http://www.arb-silva.de/no_cache/download/archive/release_115/ ?
 
+SILVA_URL=http://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/SSURef_NR99_115_tax_silva.fasta.tgz
+SILVA_RANKS_URL=http://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/tax_ranks_ssu_115.csv
+		
 silva: $(SILVA)/taxonomy.tsv
 $(SILVA)/taxonomy.tsv: feed/silva/process_silva.py feed/silva/in/silva.fasta feed/silva/in/accessionid_to_taxonid.tsv 
 	@mkdir -p feed/silva/out
@@ -191,15 +197,9 @@ feed/silva/in/accessionid_to_taxonid.tsv: feed/silva/accessionid_to_taxonid.tsv
 	@mkdir -p `dirname $@`
 	(cd `dirname $@` && ln -sf ../accessionid_to_taxonid.tsv ./)
 
-# Silva 115: 206M uncompresses to 817M
-# tax_ranks file moved to ftp://ftp.arb-silva.de/release_115/Exports/tax_ranks_ssu_115.csv ?
-# issue #62 - verify  (is it a tsv file or csv file?)
-# see also http://www.arb-silva.de/no_cache/download/archive/release_115/ ?
-
 feed/silva/in/silva.fasta:
 	@mkdir -p `dirname $@`
-	wget --output-document=feed/silva/in/tax_ranks.txt \
-	  https://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/tax_ranks_ssu_115.txt
+	wget --output-document=feed/silva/in/tax_ranks.txt $(SILVA_RANKS_URL)
 	@ls -l feed/silva/in/tax_ranks.txt
 	wget --output-document=feed/silva/in/silva.fasta.tgz "$(SILVA_URL)"
 	@ls -l feed/silva/in/silva.fasta.tgz

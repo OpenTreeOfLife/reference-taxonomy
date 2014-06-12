@@ -1027,19 +1027,6 @@ public class Taxon {
 		return dup;
 	}
 
-	// Copy subtree
-
-	Taxon select(Taxonomy tax) {
-		Taxon sam = this.dup(tax);
-		this.mapped = sam;
-		if (this.children != null)
-			for (Taxon child : this.children) {
-				Taxon c = child.select(tax);
-				sam.addChild(c);
-			}
-		return sam;
-	}
-
 	// Copy only visible (non-hidden) nodes
 
 	Taxon selectVisible(Taxonomy tax) {

@@ -75,6 +75,10 @@ The format of taxonomy files (taxonomy.tsv and so on) is given [here](https://gi
 Taxonomies can also be read and written in Newick syntax.
 
     h2007 = Taxonomy.getNewick('feed/h2007/tree.tre', 'h2007')
+    
+See [wikipedia](https://en.wikipedia.org/wiki/Newick_format) for a description of Newick format.  Smasher supports an idiosyncratic syntax for specifying rank, e.g. 
+
+    ('Subclass=Sordariomycetidae','Subclass=Hypocreomycetidae')
 
 'absorb' merges the given taxonomy into the one under construction.
 

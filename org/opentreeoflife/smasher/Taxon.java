@@ -1164,13 +1164,22 @@ public class Taxon {
 		else if (this.children != null && this.children.contains(newchild))
 			System.err.format("| %s is already a child of %s\n", newchild, this);
 		else if (newchild == this)
-			System.err.format("** A taxon cannot be its own parent: %s\n", newchild, this);
+			System.err.format("** A taxon cannot be its own parent: %s %s\n", newchild, this);
 		else {
 			newchild.properFlags |= Taxonomy.EDITED;
 			newchild.properFlags &= ~(Taxonomy.MAJOR_RANK_CONFLICT | Taxonomy.INCERTAE_SEDIS);
 			newchild.changeParent(this);
 		}
 	}
+
+    public void includes(Taxon newchild) {
+        if (newchild == this)
+			System.err.format("| Obviously a taxon includes itself: %s %s\n", newchild, this);
+        else if (newchild.descendsFrom(this))
+			System.err.format("| Redundant inclusion declaration: %s %s\n", newchild, this);
+        else
+            this.take(newchild);
+    }
 
 	public void hide() {
 		this.properFlags = Taxonomy.HIDDEN;

@@ -77,13 +77,6 @@ public class Smasher {
 						union.assignIds(idsource);
 					}
 
-					else if (argv[i].equals("--aux")) { // preottol
-						UnionTaxonomy union = tax.promote(); tax = union;
-						SourceTaxonomy auxsource = Taxonomy.getTaxonomy(argv[++i]);
-						union.loadAuxIds(auxsource);
-						union.dumpAuxIds(outprefix);
-					}
-
 					else if (argv[i].equals("--select2")) {
 						String name = argv[++i];
 						tax = tax.select(name);

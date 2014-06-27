@@ -19,17 +19,15 @@ public class Taxon {
 	public String name, rank = null;
 	public List<Taxon> children = null;
 	Taxonomy taxonomy;			// For subsumption checks etc.
-	String auxids = null;		// preottol id from taxonomy file, if any
-	int count = -1;
+	int count = -1;             // cache of # nodes at or below here
 	List<QualifiedId> sourceIds = null;
 	Answer deprecationReason = null;
-	Answer blockedp = null;
 	boolean prunedp = false;
 
 	int properFlags = 0, inheritedFlags = 0, rankAsInt = 0;
 
 	// State during merge operation
-	public Taxon mapped = null;			// source node -> union node
+	public Taxon mapped = null;	// source node -> union node
 	Taxon comapped = null;		// union node -> source node
 	boolean novelp = false;		// added to union in last round?
 	String division = null;

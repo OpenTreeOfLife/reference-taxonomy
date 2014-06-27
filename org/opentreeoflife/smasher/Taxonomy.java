@@ -51,7 +51,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	Integer sourceidcolumn = null;
 	Integer infocolumn = null;
 	Integer flagscolumn = null;
-	Integer preottolcolumn = null;
 	JSONObject metadata = null;
 	int taxid = -1234;	  // kludge
 
@@ -367,7 +366,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 						this.sourceidcolumn = headerx.get("sourceid");
 						this.infocolumn = headerx.get("sourceinfo");
 						this.flagscolumn = headerx.get("flags");
-						this.preottolcolumn = headerx.get("preottol_id");
+						// this.preottolcolumn = headerx.get("preottol_id");
 						continue;
 					} else
 						System.out.println("! No header row");
@@ -482,9 +481,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			qids.add(new QualifiedId(parts[this.sourcecolumn],
 									 parts[this.sourceidcolumn]));
 		}
-
-		if (this.preottolcolumn != null)
-			node.auxids = parts[this.preottolcolumn];
 	}
 
 	// From stackoverflow
@@ -2071,6 +2067,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				}
 			}
 		}
+
 	}
 
 	void reportDifference(String what, Taxon node, Taxon oldParent, Taxon newParent, PrintStream out) {
@@ -2150,6 +2147,36 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			return total;
 		}
 	}
+
+    // The probability of coreference decreases with distance within
+    // the tree.  This is an attempt to quantify this relation.
+
+    public void homonymReport(String filename) throws IOException {
+        PrintStream stream = openw(filename);
+        // for each name that's a homonym...
+        //  for each taxon named by that name...
+        //   for every *other* taxon named by that name...
+        //    report name, MRCA, and size of MRCA of the two
+        //     (& maybe subtract sizes of the two taxa)
+        for (String name : this.nameIndex.keySet()) {
+            List<Taxon> nodes = this.nameIndex.get(name);
+            if (nodes.size() > 1)
+                for (Taxon n1 : nodes)
+                    for (Taxon n2 : nodes)
+                        if (compareTaxa(n1, n2) < 0) {
+                            Taxon mrca = n1.mrca(n2);
+                            if (n1.parent != mrca &&
+                                n2.parent != mrca)
+                                stream.format("%s\t%s\t%s\t%s\n",
+                                              mrca.count(),
+                                              (mrca.count() -
+                                               (n1.count() + n2.count())),
+                                              name,
+                                              mrca.name);
+                        }
+        }
+        stream.close();
+    }
 
 }  // end of class Taxonomy
 
@@ -2494,70 +2521,6 @@ class UnionTaxonomy extends Taxonomy {
 	}
 
 	// x.getQualifiedId()
-
-	void loadAuxIds(SourceTaxonomy aux) {
-		this.auxsource = aux;
-		aux.mapInto(this, Criterion.idCriteria);
-	}
-
-	void explainAuxIds(SourceTaxonomy aux, SourceTaxonomy idsource, String filename)
-		throws IOException
-	{
-		System.out.println("--- Comparing new auxiliary id mappings with old ones ---");
-		Taxon.resetStats();		// Taxon id clash
-		PrintStream out = Taxonomy.openw(filename);
-		Set<String> seen = new HashSet<String>();
-		for (Taxon idnode : idsource) 
-			if (idnode.mapped != null) {
-				String idstringfield = idnode.auxids;
-				if (idstringfield.length() == 0) continue;
-				for (String idstring : idstringfield.split(",")) {
-					Taxon auxnode = aux.idIndex.get(idstring);
-					String reason;
-					if (auxnode == null)
-						reason = "not-found-in-aux-source";
-					else if (auxnode.mapped == null)
-						reason = "not-resolved-to-union";  //, auxnode, idstring
-					else if (idnode.mapped == null)
-						reason = "not-mapped";
-					else if (auxnode.mapped != idnode.mapped)
-						reason = "mapped-differently";	 // , auxnode.mapped, idstring
-					else
-						reason = "ok";	 // "Aux id in idsource mapped to union" // 107,576
-					out.print(idstring
-							  + "\t" +
-							  ((auxnode == null || auxnode.mapped == null) ? "" : auxnode.mapped.id)
-							  + "\t" +
-							  reason + "\n");
-					Taxon.markEvent("reason");
-					seen.add(idstring);
-				}
-			}
-		
-		for (Taxon auxnode : aux) {
-			if (auxnode.mapped != null && !seen.contains(auxnode.id))
-				out.print("" + auxnode.id
-						  + "\t" +
-						  // Can be invoked in either of two ways... see Makefile
-						  (auxnode.mapped.id != null?
-						   auxnode.mapped.id :
-						   auxnode.mapped.getSourceIdsString())
-						  + "\t" +
-						  "new" + "\n");
-			Taxon.markEvent("new-aux-mapping");
-		}
-		Taxon.printStats();
-		out.close();
-	}
-
-	// Method on union taxonomy.
-	void dumpAuxIds(String outprefix) throws java.io.IOException {
-		// TBD: Should be done as a separate operation
-		if (this.auxsource != null)
-			this.explainAuxIds(this.auxsource,
-							   this.idsource,
-							   outprefix + "aux.tsv");
-	}
 
 	// Overrides dump method in class Taxonomy.
 	// outprefix should end with a / , but I guess . would work too

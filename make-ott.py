@@ -484,6 +484,16 @@ gbif.taxon('Glaucophyta').detach()
 # Glaucophyta - there's a GBIF/IRMNG false homonym, should be merged
 gbif.taxon('Haptophyta').detach()
 
+# JAR 2014-06-29 stumbled on this while trying out new alignment
+# methods and examining troublesome homonym Bullacta exarata.
+# GBIF obviously puts it in the wrong place, see description at
+# http://www.gbif.org/species/4599744 (it's a snail, not a shrimp).
+bex = gbif.taxon('Bullacta exarata', 'Atyidae')
+bec = gbif.taxon('Bullacta ecarata', 'Atyidae')
+if bex != None and bec != None:
+	bex.absorb(bec)
+	bex.detach()
+
 # Paraphyletic
 gbif_Protozoa = gbif.taxon('Protozoa')
 gbif_Protozoa.hide()   # recursive

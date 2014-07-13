@@ -221,14 +221,13 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		}
 	}
 
-	int compareTaxa(Taxon n1, Taxon n2) {
-		if (n1.id == null || n2.id == null) return 0;
+	static int compareTaxa(Taxon n1, Taxon n2) {
 		int q1 = (n1.children == null ? 0 : n1.children.size());
 		int q2 = (n2.children == null ? 0 : n2.children.size());
 		if (q1 != q2) return q1 - q2;
-		int c = n1.id.length() - n2.id.length();
-		if (c != 0) return c;
-		return n1.id.compareTo(n2.id);
+		int z1 = (n1.id == null ? -1 : n1.id.length());
+		int z2 = (n2.id == null ? -1 : n2.id.length());
+		return z1 - z2;
 	}
 
 	static Pattern tabVbarTab = Pattern.compile("\t\\|\t?");
@@ -853,8 +852,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			System.err.println("!? Synonym for a node that's not in this taxonomy: " + syn + " " + node);
 		List<Taxon> nodes = this.nameIndex.get(syn);
 		if (nodes != null) {
-			if (nodes.contains(node))
-				return false;	 //lots of these System.err.println("Redundant synonymy: " + id + " " + syn);
+			for (Taxon n : nodes)
+				if (n == node || n.name.equals(syn))
+					return false;	 //lots of these System.err.println("Redundant synonymy: " + id + " " + syn);
 		} else {
 			nodes = new ArrayList<Taxon>(1);
 			this.nameIndex.put(syn, nodes);
@@ -2262,32 +2262,60 @@ public abstract class Taxonomy implements Iterable<Taxon> {
     // The probability of coreference decreases with distance within
     // the tree.  This is an attempt to quantify this relation.
 
+	/*
+	  WIP
     public void homonymReport(String filename) throws IOException {
-        PrintStream stream = openw(filename);
-        // for each name that's a homonym...
-        //  for each taxon named by that name...
-        //   for every *other* taxon named by that name...
-        //    report name, MRCA, and size of MRCA of the two
-        //     (& maybe subtract sizes of the two taxa)
-        for (String name : this.nameIndex.keySet()) {
-            List<Taxon> nodes = this.nameIndex.get(name);
-            if (nodes.size() > 1)
-                for (Taxon n1 : nodes)
-                    for (Taxon n2 : nodes)
-                        if (compareTaxa(n1, n2) < 0) {
-                            Taxon mrca = n1.mrca(n2);
-                            if (n1.parent != mrca &&
-                                n2.parent != mrca)
-                                stream.format("%s\t%s\t%s\t%s\n",
-                                              mrca.count(),
-                                              (mrca.count() -
-                                               (n1.count() + n2.count())),
-                                              name,
-                                              mrca.name);
-                        }
-        }
-        stream.close();
+		Alignment.homonymReport(this, filename);
     }
+
+	public Alignment alignTo(Taxonomy t2) throws IOException {
+		Alignment a = new Alignment(this, t2);
+		a.report();
+		return a;
+	}
+	*/
+
+	// Compute sibling taxa {a', b'} such that a' includes a and b' includes b
+
+	public static Taxon[] divergence(Taxon a, Taxon b) {
+		if (a.taxonomy != b.taxonomy) {
+			if (a.taxonomy instanceof SourceTaxonomy) {
+				while (a.mapped == null) {
+					a = a.parent;
+					if (a == null) return null;
+				}
+				a = a.mapped;
+			}
+			if (b.taxonomy instanceof SourceTaxonomy) {
+				while (b.mapped == null) {
+					b = b.parent;
+					if (b == null) return null;
+				}
+				b = b.mapped;
+			}
+		}
+		int da = a.measureDepth();
+		int db = b.measureDepth();
+		while (db > da) {
+			b = b.parent;
+			--db;
+		}
+		while (da > db) {
+			a = a.parent;
+			--da;
+		}
+		while (a != null && a.parent != b.parent) {
+			a = a.parent;
+			b = b.parent;
+			--da;
+		}
+		if (a != null && b != null) {
+			Taxon[] answer = {a, b};
+			return answer;
+		} else
+			return null;
+	}
+
 
 }  // end of class Taxonomy
 
@@ -2818,27 +2846,14 @@ class Conflict {
 	}
 	public String toString() {
 		// cf. Taxon.mrca
-		Taxon b = paraphyletic;
-		while (b != null && b.mapped == null)
-			b = b.parent;
-		b = b.mapped;
-		Taxon a = unode;
-		int da = a.measureDepth();
-		int db = b.measureDepth();
-		while (db > da) {
-			b = b.parent;
-			--db;
-		}
-		while (da > db) {
-			a = a.parent;
-			--da;
-		}
-		while (a != null && a.parent != b.parent) {
-			a = a.parent;
-			b = b.parent;
-			--da;
-		}
-		return (da + " " + paraphyletic + "=" + paraphyletic.mapped + " in " + b + " lost child " + unode + " to " + unode.parent + " in " + a);
+		Taxon[] div = Taxonomy.divergence(paraphyletic, unode);
+		if (div != null) {
+			Taxon a = div[0];
+			Taxon b = div[1];
+			int da = a.getDepth();
+			return (da + " " + paraphyletic + "=" + paraphyletic.mapped + " in " + b + " lost child " + unode + " to " + unode.parent + " in " + a);
+		} else
+			return ("? " + paraphyletic + "=" + paraphyletic.mapped + " lost child " + unode + " to " + unode.parent);
 	}
 }
 

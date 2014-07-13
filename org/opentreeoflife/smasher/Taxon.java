@@ -32,6 +32,12 @@ public class Taxon {
 	boolean novelp = false;		// added to union in last round?
 	String division = null;
 
+	// Cf. assignBrackets
+	int seq = NOT_SET;		// Self
+	int start = NOT_SET;	// First taxon included not including self
+	int end = NOT_SET;		// Next taxon *not* included
+
+
 	static boolean windyp = true;
 
 	Taxon(Taxonomy tax) {
@@ -762,11 +768,12 @@ public class Taxon {
 		}
 	}
 
-	static final int NOT_SET = -7; // for source nodes
+	// 'Bracketing' logic.  Every node in the union taxonomy is
+	// assigned a unique integer, ordered sequentially by a preorder
+	// traversal.  Taxon inclusion across taxonomies can be determined
+	// (approximately) by looking at shared names and doing a range check.
 
-	int seq = NOT_SET;		// Self
-	int start = NOT_SET;	// First taxon included not including self
-	int end = NOT_SET;		// Next taxon *not* included
+	static final int NOT_SET = -7; // for source nodes
 
 	void resetBrackets() {			  // for union nodes
 		this.seq = NOT_SET;			  // Self
@@ -893,7 +900,7 @@ public class Taxon {
 			return this.parent.measureDepth() + 1;
 	}
 
-	Taxon mrca(Taxon b) {
+	public Taxon mrca(Taxon b) {
 		if (b == null) return null; // Shouldn't happen, but...
 		else {
 			Taxon a = this;

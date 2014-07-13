@@ -513,14 +513,19 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	void elideDubiousIntermediateTaxa() {
 		Set<Taxon> dubious = new HashSet<Taxon>();
-		for (Taxon node : this)
+		for (Taxon node : this) {
+			boolean ic = incertae_sedisRegex.matcher(node.name).find();
+			if (ic)
+				node.properFlags |= INCERTAE_SEDIS; // kludge
 			if (node.parent != null &&
 				node.parent.children.size() == 1 &&
 				node.children != null)
-				if (incertae_sedisRegex.matcher(node.name).find())
+				// Do this for SILVA and for everything else
+				if (ic)
 					dubious.add(node);
 				else if (node.parent.name.equals(node.name))
 					dubious.add(node);
+		}
 		for (Taxon node: dubious) {
 			System.out.format("! Eliding %s in %s, %s children\n",
 							  node.name,
@@ -820,6 +825,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 					if (type.equals("in-part")) continue;
 					if (type.equals("includes")) continue;
 					if (type.equals("type material")) continue;
+					if (type.endsWith("common name")) continue;
 					if (type.equals("authority")) continue;	   // keep?
 					if (node == null) {
 						if (++losers < 10)

@@ -1,11 +1,9 @@
-
-from org.opentreeoflife.smasher import Taxonomy, Alignment
+from org.opentreeoflife.smasher import Taxonomy
+from org.opentreeoflife.smasher import Reportx
 
 def report(tag):
 	tax = Taxonomy.getTaxonomy('tax/' + tag + '/', tag)
-	# Alignment.homonymDensityReport(tax, tag + '-density-report.tsv')
-	Alignment.homonymUncertaintyReport(tax, tag + '-uncertainty-report.tsv')
-	# a = tax.alignTo(tax)
+	Reportx.report(tax, tag + '-mrca-report.tsv')
 
 report('silva')
 report('if')

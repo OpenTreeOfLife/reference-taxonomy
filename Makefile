@@ -42,7 +42,7 @@ $(CLASS): org/opentreeoflife/smasher/Smasher.java \
 	  org/opentreeoflife/smasher/Taxonomy.java \
 	  org/opentreeoflife/smasher/Taxon.java \
 	  org/opentreeoflife/smasher/Flag.java \
-	  org/opentreeoflife/smasher/Alignment.java \
+	  org/opentreeoflife/smasher/Alignment.java org/opentreeoflife/smasher/Reportx.java \
 	  lib/jscheme.jar lib/json-simple-1.1.1.jar lib/jython-standalone-2.5.3.jar
 	javac -g $(CP) org/opentreeoflife/smasher/*.java
 

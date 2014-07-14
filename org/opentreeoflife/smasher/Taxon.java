@@ -987,31 +987,38 @@ public class Taxon {
 			return "?";
 		}
 		boolean homonymp = false;
-		boolean informativeFail = false;
 
+		// Ancestor that distinguishes this taxon from all others with same name
+		Taxon unique = null;
 		for (Taxon other : nodes)
 			if (other != this) {  //  && other.name.equals(this.name)
 				homonymp = true;
-				Taxon i = this.informative();
-				if (i != null && i.equals(other.informative())) {
-					informativeFail = true;
-					break;
+				if (unique != this) {
+					Taxon[] div = Taxonomy.divergence(this, other);
+					if (div != null) {
+						if (unique == null)
+							unique = div[0];
+						else if (div[0].descendsFrom(unique))
+							unique = div[0];
+					}
 				}
 			}
-		if (informativeFail || homonymp) {
-			String urank = "";
-			if (this.rank != null) urank = this.rank + " ";
-			if (informativeFail && this.sourceIds != null)
-				urank = urank + this.sourceIds.get(0) + " ";
-
-			Taxon i = this.informative();
-			if (i != null) {
-				String irank = "";
-				if (i.rank != null) irank = i.rank + " ";
-				return this.name + " (" + urank + "in " + irank + i.name + ")";
+		if (homonymp) {
+			String thisrank = ((this.rank == null) ? "" : (this.rank + " "));
+			if (unique == null || unique == this) {
+				if (this.sourceIds != null)
+					return this.name + " (" + thisrank + this.sourceIds.get(0) + ")";
+				else
+					/* No unique name, just leave it alone and pray */
+					return this.name;
+			} else {
+				String qrank = ((unique.rank == null) ? "" : (unique.rank + " "));
+				String qname = unique.uniqueName();
+				if (qname.length() == 0) qname = unique.name;
+				return this.name + " (" + thisrank + "in " + qrank + qname + ")";
 			}
-		}
-		return "";
+		} else
+			return "";
 	}
 
 	static Comparator<Taxon> compareNodesBySize = new Comparator<Taxon>() {

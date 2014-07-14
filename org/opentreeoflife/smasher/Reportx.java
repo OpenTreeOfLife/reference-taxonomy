@@ -56,19 +56,43 @@ public class Reportx {
 							else
 								type = "a-tip-true";
 							Taxon t1, t2, x1, x2;
-							if (div[0].count() < div[1].count()) {
+							if (div[0].count() >= div[1].count()) {
 								x1 = taxon1; x2 = taxon2; t1 = div[0]; t2 = div[1];
 							} else {
 								x1 = taxon2; x2 = taxon1; t1 = div[1]; t2 = div[0];
 							}
 							out.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t\n", type, name,
-									   getSourceName(x1), t1.name, t1.count(),
-									   getSourceName(x2), t2.name, t2.count());
+									   getSourceName(x1), popularize(t1, x1).name, t1.count(),
+									   getSourceName(x2), popularize(t2, x2).name, t2.count());
 						}
 					}
 				}
 			}
 		}
+	}
+
+	// Find a popular ancestor of x under t.
+	public static Taxon popularize(Taxon t, Taxon x) {
+		if (x == t) return t;
+
+		int popularity = -1;
+		Taxon p = null;
+
+		// Run y from x rootward to t
+		Taxon y = x.parent;
+		while (y != null) {
+			int pop = (y.sourceIds == null ? 0 : y.sourceIds.size());
+			if (pop >= popularity) {
+				p = y;
+				popularity = pop;
+			}
+			if (y == t) break;
+			y = y.parent;
+		}
+		if (p == null)			// shouldn't happen
+			return t;
+		else
+			return p;
 	}
 
 	static String getSourceName(Taxon node) {

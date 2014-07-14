@@ -2413,24 +2413,48 @@ class SourceTaxonomy extends Taxonomy {
 	// List determined manually and empirically
 	void pin(UnionTaxonomy union) {
 		String[][] pins = {
-			// Stephen's list
-			{"Fungi"},
 			{"Bacteria"},
-			{"Alveolata"},
-			// {"Rhodophyta"},	creates duplicate of Cyanidiales
-			{"Glaucophyta", "Glaucocystophyceae"},
-			{"Haptophyta", "Haptophyceae"},
-			{"Choanoflagellida"},
-			{"Metazoa", "Animalia"},
-			{"Viridiplantae", "Plantae", "Chloroplastida"},
-			// JAR's list
-			{"Mollusca"},
-			{"Arthropoda"},		// Tetrapoda, Theria
-			{"Chordata"},
-			// {"Eukaryota"},		// doesn't occur in gbif, but useful for ncbi/ncbi test merge
 			// {"Archaea"},			// ambiguous in ncbi
+			{"Eukaryota"},		// doesn't occur in gbif, but useful for ncbi/ncbi test merge
+            // SAR:
+			{  "Alveolata"},
+            // Archaeplastida:
+			{  "Rhodophyta", "Rhodophyceae"},  // creates duplicate of Cyanidiales ?
+			{  "Glaucophyta", "Glaucocystophyceae"},
+			{  "Viridiplantae", "Plantae", "Chloroplastida"},
+			{ "Haptophyta", "Haptophyceae"},
+			{ "Choanoflagellida"},
+            // Opisthokonta
+			{ "Fungi"},
+			{ "Metazoa", "Animalia"},
+            // Porifera, Cnidaria, Annelida, Mollusca
+			{  "Mollusca"},
+			{  "Arthropoda"},		// Tetrapoda, Theria
+            //  Chelicerata, Mandibulata, Crustacea
+            //  Hexapoda, Diptera, ...
+			{  "Chordata"},
 			{"Viruses"},
 		};
+
+        /*
+Bacteria / Eukaryota
+Archaeplastida / Opisthokonta (/ Fungi or Metazoa probably)
+SAR / Opisth
+Haptophyta / Opisthokonta  [silva contamination]
+Nucletmycea (probably Fungi) / Holozoa (probably Metazoa)
+Porifera / Eumetazoa
+Cnidaria / Bilateria (?)
+Deuterostomia / Protostomia   ???
+Lophotrochozoa / Ecdysoa   ???
+Chelicerata / Mandibulata ??
+Crustacea / Hexapoda
+Paraneoptera / Endopterygota
+Orthopteroida / Endopterygota
+Diptera / Amphiesmenoptera
+Annelida / Mollusca
+CUTOFF AROUND 100,000.
+        */
+
 		int count = 0;
 		for (int i = 0; i < pins.length; ++i) {
 			String names[] = pins[i];

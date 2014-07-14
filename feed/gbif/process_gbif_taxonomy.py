@@ -21,7 +21,7 @@ if __name__ == "__main__":
     
     infile = open(sys.argv[1],"r")
     infile2 = open(sys.argv[2],"r")
-    ignore = []
+    ignore = []    # stack
     for i in infile2:
         ignore.append(i.strip())
     outfile = open(sys.argv[3]+"/taxonomy.tsv","w")
@@ -101,20 +101,20 @@ if __name__ == "__main__":
 
     print "counting"
     b  = Counter(names)
-    # 2013-07-02 dnames is unused
-    dnames = []
+
+    dnames = {}
     for i in b:
         if b[i] > 1:
-            dnames.append(i)
-    names = []  #GC
+            dnames[i] = True
+    names = None  #GC
 
     b = Counter(parents)
-    dparents = []
+    dparents = None
     dparents = b.keys()
-    parents = []
+    parents = None
 
     print "getting the parent child duplicates fixed"
-    ignoreid = []
+    ignoreid = {}
     for i in nm_storage:
         if i in pid and pid[i] in nm_storage:
             if nm_storage[i] == nm_storage[pid[i]]:
@@ -125,8 +125,8 @@ if __name__ == "__main__":
                     idstoch = cid[i]
                     for j in idstoch:
                         pid[j] = pid[i]
-                ignoreid.append(i)
-    for i in ignoreid:
+                ignoreid[i] = True
+    for i in ignoreid.keys():
         del nm_storage[i]
 
     # Flush taxa from the IRMNG homonym list that don't have children
@@ -190,7 +190,7 @@ if __name__ == "__main__":
         name = nm_storage[i]
  #       if spls[3] == "Unassigned":
  #           name = spls[4]
-        if name in dnames:
+        if name in dnames.keys():
             #if num in dparents:
             #may need to add this back for null parents
             outfile.write(num+"\t|\t"+pnum+"\t|\t"+name+"\t|\t"+nrank[i]+"\t|\t\n")

@@ -1,6 +1,9 @@
 # Jython script to build the Open Tree reference taxonomy
 # coding=utf-8
 
+# Unless specified otherwise issues are in the reference-taxonomy repo:
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/...
+
 import sys
 
 from org.opentreeoflife.smasher import Taxonomy
@@ -9,11 +12,23 @@ sys.path.append("feed/misc/")
 from chromista_spreadsheet import fixChromista
 
 ott = Taxonomy.newTaxonomy()
+skel = Taxonomy.getTaxonomy('tax/skel/', 'skel')
+ott.setSkeleton(skel)
 
 # ----- SILVA microbial taxonomy -----
 silva = taxonomies.loadSilva()
 
-# Deal with parent/child homonyms in SILVA.
+# - Deal with division alignment issues -
+ott.notSame(silva.taxon('Ctenophora', 'Coscinodiscophytina'),
+			skel.taxon('Ctenophora'))
+
+# JAR 2014-05-13 scrutinizing pin() and BarrierNodes.  Wikipedia
+# confirms these synonymies.
+silva.taxon('Glaucophyta').synonym('Glaucocystophyceae')
+silva.taxon('Haptophyta').synonym('Haptophyceae')
+silva.taxon('Rhodophyceae').synonym('Rhodophyta')
+
+# - Deal with parent/child homonyms in SILVA -
 # Arbitrary choices here to eliminate ambiguities down the road when NCBI gets merged.
 # (If the homonym is retained, then the merge algorithm will have no
 # way to choose between them, and refuse to match either.  It will
@@ -43,12 +58,6 @@ silva.taxon('vesicomya').rename('Vesicomya')
 # https://groups.google.com/forum/#!topic/opentreeoflife/a69fdC-N6pY
 silva.taxon('Diatomea').rename('Bacillariophyta')
 
-# JAR 2014-05-13 scrutinizing pin() and BarrierNodes.  Wikipedia
-# confirms these synonymies.
-silva.taxon('Glaucophyta').synonym('Glaucocystophyceae')
-silva.taxon('Haptophyta').synonym('Haptophyceae')
-silva.taxon('Rhodophyceae').synonym('Rhodophyta')
-
 ott.absorb(silva)
 
 # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/30
@@ -62,7 +71,7 @@ for name in ['GAL08', 'GOUTA4', 'JL-ETNP-Z39', 'Kazan-3B-28',
     ott.taxon(name).elide()
 
 # ----- Hibbett 2007 updated upper fungal taxonomy -----
-h2007 = taxonomies.loadh2007()
+h2007 = taxonomies.loadH2007()
 
 ott.absorb(h2007)
 
@@ -89,20 +98,21 @@ allfung.taxon('Fungi').take(allfung.taxon('Microsporidia'))
 # Pick it up from GBIF if at all
 allfung.taxon('Byssus phosphorea').prune()
 
-# Work in progress.  By promoting to root we've lost the fact that
-# protozoa are eukaryotes, which is unfortunate.  Not important in this
-# case, but suggestive of deeper problems in the framework.
-# Test case: Oomycota should end up in Stramenopiles.
-fung_Protozoa = allfung.maybeTaxon('Protozoa')
-if fung_Protozoa != None:
-	fung_Protozoa.hide()   # recursive
-	fung_Protozoa.detach()
-	fung_Protozoa.elide()
-fung_Chromista = allfung.maybeTaxon('Chromista')
-if fung_Chromista != None:
-	fung_Chromista.hide()  # recursive
-	fung_Chromista.detach()
-	fung_Chromista.elide()
+if False:  # see taxonomies.loadFung
+	# Work in progress.  By promoting to root we've lost the fact that
+	# protozoa are eukaryotes, which is unfortunate.  Not important in this
+	# case, but suggestive of deeper problems in the framework.
+	# Test case: Oomycota should end up in Stramenopiles.
+	fung_Protozoa = allfung.maybeTaxon('Protozoa')
+	if fung_Protozoa != None:
+		fung_Protozoa.hide()   # recursive
+		fung_Protozoa.detach()
+		fung_Protozoa.elide()
+	fung_Chromista = allfung.maybeTaxon('Chromista')
+	if fung_Chromista != None:
+		fung_Chromista.hide()  # recursive
+		fung_Chromista.detach()
+		fung_Chromista.elide()
 
 # IF Thraustochytriidae = SILVA Thraustochytriaceae ?  (Stramenopiles)
 # IF T. 90638 contains Sicyoidochytrium, Schizochytrium, Ulkenia, Thraustochytrium
@@ -254,7 +264,7 @@ for foo in [('Neozygitales', ['Neozygitaceae']),
 
 # ----- Lamiales taxonomy from study 713 -----
 # http://dx.doi.org/10.1186/1471-2148-10-352
-study713  = taxonomies.loadTaxonomy713()
+study713  = taxonomies.load713()
 ott.notSame(study713.taxon('Buchnera'), silva.taxon('Buchnera'))
 ott.absorb(study713)
 
@@ -375,8 +385,8 @@ gbif.taxon('Archaea','life').hideDescendants()
 #ott.same(gbif.taxon('Cyanobacteria'), silva.taxon('Cyanobacteria','Cyanobacteria')) #'D88288/#3'
 
 # Automatic alignment makes the wrong choice for the following two
-ott.same(ncbi.taxon('5878'), gbif.taxon('10'))	  # Ciliophora
-ott.same(ncbi.taxon('29178'), gbif.taxon('389'))  # Foraminifera
+ott.same(ncbi.taxon('5878'), gbif.taxon('10'))	  # Ciliophora gbif:3269382
+ott.same(ncbi.taxon('29178'), gbif.taxon('389'))  # Foraminifera gbif:4983431
 
 # Tetrasphaera is a messy multi-way homonym
 ott.same(ncbi.taxon('Tetrasphaera','Intrasporangiaceae'), gbif.taxon('Tetrasphaera','Intrasporangiaceae'))
@@ -472,17 +482,18 @@ if bex != None and bec != None:
 	bex.absorb(bec)
 	bex.detach()
 
-# Paraphyletic
-gbif_Protozoa = gbif.taxon('Protozoa')
-gbif_Protozoa.hide()   # recursive
+# Paraphyletic - now taken care of in loadGbif
 if False:
-	gbif_Protozoa.detach()
-	gbif_Protozoa.elide()
-gbif_Chromista = gbif.taxon('Chromista')
-gbif_Chromista.hide()   # recursive
-if False:
-	gbif_Chromista.detach()
-	gbif_Chromista.elide()
+	gbif_Protozoa = gbif.taxon('Protozoa')
+	gbif_Protozoa.hide()   # recursive
+	if False:
+		gbif_Protozoa.detach()
+		gbif_Protozoa.elide()
+	gbif_Chromista = gbif.taxon('Chromista')
+	gbif_Chromista.hide()   # recursive
+	if False:
+		gbif_Chromista.detach()
+		gbif_Chromista.elide()
 
 # In GBIF, if a rank is skipped for some children but not others, that
 # means rank-skipped children are incertae sedis.  Mark them so.
@@ -525,7 +536,9 @@ irmng.taxon('Archaea','life').hideDescendants()
 # RR #50
 # irmng.taxon('Saxo-Fridericia').rename('Saxofridericia')
 # irmng.taxon('Saxofridericia').absorb(irmng.taxon('Saxo-fridericia'))
-irmng.taxon('1063899').absorb(irmng.taxon('1071613'))
+saxo = irmng.maybeTaxon('1063899')
+if saxo != None:
+	saxo.absorb(irmng.taxon('1071613'))
 
 # Romina 2014-04-09
 # IRMNG has EIGHT different Trichodermas.  (Four are synonyms of other things.)
@@ -544,11 +557,12 @@ ott.notSame(irmng.taxon('Protaspis', 'Chordata'), ncbi.taxon('Protaspis', 'Cerco
 ott.notSame(irmng.taxon('Coscinodiscus', 'Porifera'), ncbi.taxon('Coscinodiscus', 'Stramenopiles'))
 
 # Protista is paraphyletic
-irmng_Protista = irmng.taxon('Protista','life')
-irmng_Protista.hide()
 if False:
-	irmng_Protista.detach()
-	irmng_Protista.elide()
+	irmng_Protista = irmng.taxon('Protista','life')
+	irmng_Protista.hide()
+	if False:
+		irmng_Protista.detach()
+		irmng_Protista.elide()
 
 irmng.analyzeMajorRankConflicts()
 
@@ -601,7 +615,8 @@ ott.taxon('Lemania pluvialis').prune()
 
 # Tony Rees 2014-01-29
 # https://groups.google.com/d/msg/opentreeoflife/SrI7KpPgoPQ/wTeD17GzOGoJ
-ott.taxon('Trigonocarpales').extinct()
+trigo = ott.maybeTaxon('Trigonocarpales')
+if trigo != None: trigo.extinct()
 
 #Pinophyta and daughters need to be deleted; - Bryan 2014-01-28
 #Lycopsida and daughters need to be deleted;
@@ -648,7 +663,9 @@ ott.taxon('Salazaria mexicana').rename('Scutellaria mexicana')
 # One Scutellaria is in Lamiaceae; the other is a fungus.
 # IRMNG's Salazaria 1288740 is in Lamiales, and is a synonym of Scutellaria.
 ott.taxon('Scutellaria','Lamiaceae').absorb(ott.image(gbif.taxon('Salazaria')))
-ott.taxon('Scutellaria','Lamiaceae').absorb(ott.image(irmng.taxon('1288740'))) #Salazaria
+sal = irmng.maybeTaxon('1288740')
+if sal != None:
+	ott.taxon('Scutellaria','Lamiaceae').absorb(ott.image(sal)) #Salazaria
 
 #  Make an order Boraginales that contains Boraginaceae + Hydrophyllaceae
 #  http://dx.doi.org/10.1111/cla.12061

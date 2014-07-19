@@ -89,7 +89,7 @@ public class Taxon {
 		if (this.id == null) {
 			this.id = id;
 			this.taxonomy.idIndex.put(id, this);
-		} else
+		} if (!this.id.equals(id))
 			System.err.println("Attempt to replace id " + this.id + " with " + id);
 	}
 
@@ -153,8 +153,13 @@ public class Taxon {
 		return this.division;
 	}
 
+	public String divisionName() {
+		Taxon d = this.getDivision();
+		return (d == null ? "(no division)" : d.name);
+	}
+
 	void setDivision(Taxon division) {
-		if (this.division != null)
+		if (this.division != null && this.division != division)
 			this.report("!? changing divisions doesn't work");
 		this.division = division;
 	}
@@ -269,7 +274,9 @@ public class Taxon {
 	}
 
 	void addSource(Taxon source) {
-		addSourceId(source.getQualifiedId());
+		if (source.id != null &&
+			!source.taxonomy.getTag().equals("skel")) //KLUDGE!!!
+			addSourceId(source.getQualifiedId());
 		// Accumulate ...
 		if (source.sourceIds != null)
 			for (QualifiedId qid : source.sourceIds)
@@ -415,11 +422,11 @@ public class Taxon {
 						if (loser.name.equals(this.name)) {
 							if (this.getDivision() == loser.getDivision())	 //double check
 								union.logAndMark(Answer.no(this, loser, "new-homonym/in-division",
-														   this.getDivision().name));
+														   this.divisionName()));
 							else
 								union.logAndMark(Answer.no(this, loser, "new-homonym/out-division",
 														   (this.getDivision().name + "=>" +
-															loser.getDivision().name)));
+															loser.divisionName())));
 							break;
 						}
 					}
@@ -936,7 +943,7 @@ public class Taxon {
 			buf.append(")");
 		}
 		if (this.name != null)
-			buf.append(newickName(this.name));
+			buf.append(newickName(this.name, this.taxonomy.getTag(), this.id));
 	}
 
 	static Comparator<Taxon> compareNodes = new Comparator<Taxon>() {
@@ -1329,10 +1336,12 @@ public class Taxon {
      * around the entire string.
 	 * Puts quotes around name if any illegal characters are present.
 	 * 
+	 * Author: Joseph W. Brown
+	 *
 	 * @param origName
 	 * @return newickName
 	 */
-	public static String newickName(String origName) {
+	public static String newickName(String origName, String tag, String id) {
 		boolean needQuotes = false;
 		String newickName = origName;
 		
@@ -1348,6 +1357,9 @@ public class Taxon {
 			newickName = newickName.replaceAll("'", "''");
 			needQuotes = true;
         }
+		if (tag != null && id != null)
+			newickName = String.format("%s_%s%s", newickName, tag, id);
+
 		// if offending characters are present, quotes are needed
 		if (newickIllegal.matcher(newickName).matches())
 			needQuotes = true;

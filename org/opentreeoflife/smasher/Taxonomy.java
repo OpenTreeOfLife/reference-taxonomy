@@ -1610,7 +1610,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		return id;
 	}
 
-	void assignNewIds(long sourcemax) {
+	public void assignNewIds(long sourcemax) {
 		long maxid = this.maxid();
 		if (sourcemax > maxid) maxid = sourcemax;
 		System.out.println("| Highest id before: " + maxid);

@@ -930,7 +930,7 @@ public class Taxon {
 			buf.append(")");
 		}
 		if (this.name != null)
-			buf.append(newickName(this.name));
+			buf.append(newickName(this.name, this.taxonomy.getTag(), this.id));
 	}
 
 	static Comparator<Taxon> compareNodes = new Comparator<Taxon>() {
@@ -1319,7 +1319,7 @@ public class Taxon {
 	 * @param origName
 	 * @return newickName
 	 */
-	public static String newickName(String origName) {
+	public static String newickName(String origName, String tag, String id) {
 		boolean needQuotes = false;
 		String newickName = origName;
 		
@@ -1335,6 +1335,9 @@ public class Taxon {
 			newickName = newickName.replaceAll("'", "''");
 			needQuotes = true;
         }
+		if (tag != null && id != null)
+			newickName = String.format("%s_%s%s", newickName, tag, id);
+
 		// if offending characters are present, quotes are needed
 		if (newickIllegal.matcher(newickName).matches())
 			needQuotes = true;

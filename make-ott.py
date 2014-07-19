@@ -1,14 +1,17 @@
 # Jython script to build the Open Tree reference taxonomy
+# coding=utf-8
+
+import sys
 
 from org.opentreeoflife.smasher import Taxonomy
-import sys
+import taxonomies
 sys.path.append("feed/misc/")
 from chromista_spreadsheet import fixChromista
 
 ott = Taxonomy.newTaxonomy()
 
 # ----- SILVA microbial taxonomy -----
-silva = Taxonomy.getTaxonomy('tax/silva/', 'silva')
+silva = taxonomies.loadSilva()
 
 # Deal with parent/child homonyms in SILVA.
 # Arbitrary choices here to eliminate ambiguities down the road when NCBI gets merged.
@@ -59,10 +62,7 @@ for name in ['GAL08', 'GOUTA4', 'JL-ETNP-Z39', 'Kazan-3B-28',
     ott.taxon(name).elide()
 
 # ----- Hibbett 2007 updated upper fungal taxonomy -----
-h2007 = Taxonomy.getNewick('feed/h2007/tree.tre', 'h2007')
-
-# 2014-04-08 Misspelling
-h2007.taxon('Chaetothryriomycetidae').rename('Chaetothyriomycetidae')
+h2007 = taxonomies.loadh2007()
 
 ott.absorb(h2007)
 
@@ -75,19 +75,9 @@ ott.taxon('Urocystales').synonym('Urocystidales')
 # more authoritative than NCBI, and the latter as less authoritative
 # than NCBI.
 
-allfung  = Taxonomy.getTaxonomy('tax/if/', 'if')
+allfung  = taxonomies.loadFung()
 
 print "Index Fungorum has %s nodes"%allfung.count()
-
-# 2014-04-14 Bad Fungi homonyms in new version of IF.  90156 is the good one.
-# 90154 has no descendants
-if allfung.maybeTaxon('90154') != None:
-	print 'Removing Fungi 90154'
-	allfung.taxon('90154').prune()
-# 90155 is "Nom. inval." and has no descendants
-if allfung.maybeTaxon('90155') != None:
-	print 'Removing Fungi 90155'
-	allfung.taxon('90155').prune()
 
 # JAR 2014-04-27 JAR found while investigating 'hidden' status of
 # Thelohania butleri.  Move out of Protozoa to prevent their being hidden
@@ -144,6 +134,7 @@ thraust.synonym('Thraustochytridae')
 # There are two Polyangium, a bacterium (NCBI) and a flatworm (IF).
 
 # smush folds sibling taxa that have the same name.
+# (repeats - see loadFung()  ???)
 allfung.smush()
 
 # *** Fungi processing
@@ -194,8 +185,9 @@ for name in ['Trichoderma harzianum',  # in Pezizomycotina
 			 'Puccinia triticina']:    # in Pucciniomycotina in Fungi
 	ott.notSame(silva.taxon(name), fung.taxon(name))
 
-# Romina email to JAR 2014-04-09
+# Romina 2014-04-09
 # IF has both Hypocrea and Trichoderma.  Hypocrea is the right name.
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
 fung.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
 fung.taxon('Hypocrea').absorb(fung.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
 
@@ -262,12 +254,12 @@ for foo in [('Neozygitales', ['Neozygitaceae']),
 
 # ----- Lamiales taxonomy from study 713 -----
 # http://dx.doi.org/10.1186/1471-2148-10-352
-study713  = Taxonomy.getTaxonomy('tax/713/', 'study713')
+study713  = taxonomies.loadTaxonomy713()
 ott.notSame(study713.taxon('Buchnera'), silva.taxon('Buchnera'))
 ott.absorb(study713)
 
 # ----- NCBI Taxonomy -----
-ncbi  = Taxonomy.getTaxonomy('tax/ncbi/', 'ncbi')
+ncbi = taxonomies.loadNcbi()
 ncbi.taxon('Viruses').hide()
 
 # David Hibbett has requested that for Fungi, only Index Fungorum
@@ -322,8 +314,9 @@ ncbi.taxon('Saxofridericia').synonym('Saxo-fridericia')
 # RR #57
 ncbi.taxon('Solms-laubachia').synonym('Solms-Laubachia')
 
-# Romina email to JAR 2014-04-09
+# Romina 2014-04-09
 # NCBI has both Hypocrea and Trichoderma.
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
 ncbi.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
 ncbi.taxon('Hypocrea').absorb(ncbi.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
 
@@ -332,11 +325,6 @@ ncbi.taxon('Hypocrea').absorb(ncbi.taxonThatContains('Trichoderma', 'Hypocrea ru
 # Type = T. beigelii, which is current, according to Mycobank.
 # But I'm going to use a different 'type', Trichosporon cutaneum.
 ott.same(fung.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'), ncbi.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
-
-# analyzeOTUs sets flags on questionable taxa ("unclassified",
-#  hybrids, and so on) to allow the option of suppression downstream
-ncbi.analyzeOTUs()
-ncbi.analyzeContainers()
 
 # 2014-04-23 In new version of IF - obvious misalignment
 ott.notSame(ncbi.taxon('Crepidula', 'Gastropoda'), fung.taxon('Crepidula', 'Microsporidia'))
@@ -353,8 +341,9 @@ ott.notSame(silva.taxon('Bostrychia', 'Rhodophyceae'), ncbi.taxon('Bostrychia', 
 
 ott.absorb(ncbi)
 
-# 2014-01-27 Joseph email to JAR: Quiscalus is incorrectly in
+# 2014-01-27 Joseph: Quiscalus is incorrectly in
 # Fringillidae instead of Icteridae.  NCBI is wrong, GBIF is correct.
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/87
 ott.taxon('Icteridae').take(ott.taxon('Quiscalus', 'Fringillidae'))
 
 # Misspelling in GBIF... seems to already be known
@@ -373,8 +362,7 @@ if False:
 	ott.absorb(allfung)
 
 # ----- GBIF (Global Biodiversity Information Facility) taxonomy -----
-gbif = Taxonomy.getTaxonomy('tax/gbif/', 'gbif')
-gbif.smush()
+gbif = taxonomies.loadGbif()
 gbif.taxon('Viruses').hide()
 
 # Fungi suppressed at David Hibbett's request
@@ -434,13 +422,15 @@ gbif.taxon('Drepano-Hypnum').rename('Drepano-hypnum')
 gbif.taxon('Complanato-Hypnum').rename('Complanato-hypnum')
 gbif.taxon('Leptorrhyncho-Hypnum').rename('Leptorrhyncho-hypnum')
 
-# Romina email to JAR 2014-04-09
+# Romina 2014-04-09
 # GBIF has both Hypocrea and Trichoderma.  And it has four Trichoderma synonyms...
 # pick the one that contains bogo-type Hypocrea rufa
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
 gbif.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
 gbif.taxon('Hypocrea').absorb(gbif.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
 
-# 2014-04-21 RR email to JAR
+# 2014-04-21 RR
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/45
 for epithet in ['cylindraceum',
 				'lepidoziaceum',
 				'intermedium',
@@ -471,18 +461,6 @@ ott.same(gbif.taxon('Lamprospora'), fung.taxon('Lamprospora'))
 
 # JAR 2014-04-23 IF update fallout
 ott.same(gbif.taxonThatContains('Penicillium', 'Penicillium expansum'), fung.taxonThatContains('Penicillium', 'Penicillium expansum'))
-
-# JAR 2014-04-25 GBIF puts rhodophytes under plants, which is wrong.
-# Need to fix this before alignment because of division calculations.
-# Plantae is a child of 'life' in GBIF, and Rhodophyta is one of many
-# phyla below that.  Move up to be a sibling of Plantae.
-# Discovered while looking at Bostrychia alignment problem.
-gbif.taxon('Rhodophyta').detach()
-
-# JAR 2014-05-13 similarly
-gbif.taxon('Glaucophyta').detach()
-# Glaucophyta - there's a GBIF/IRMNG false homonym, should be merged
-gbif.taxon('Haptophyta').detach()
 
 # JAR 2014-06-29 stumbled on this while trying out new alignment
 # methods and examining troublesome homonym Bullacta exarata.
@@ -521,8 +499,7 @@ ott.taxon('Blattaria').take(ott.taxon('Phyllodromiidae'))
 
 # ----- Interim Register of Marine and Nonmarine Genera (IRMNG) -----
 
-irmng = Taxonomy.getTaxonomy('tax/irmng/', 'irmng')
-irmng.smush()
+irmng = taxonomies.loadIrmng()
 irmng.taxon('Viruses').hide()
 
 # JAR 2014-04-26 Flush all 'Unaccepted' taxa
@@ -550,9 +527,10 @@ irmng.taxon('Archaea','life').hideDescendants()
 # irmng.taxon('Saxofridericia').absorb(irmng.taxon('Saxo-fridericia'))
 irmng.taxon('1063899').absorb(irmng.taxon('1071613'))
 
-# Romina email to JAR 2014-04-09
+# Romina 2014-04-09
 # IRMNG has EIGHT different Trichodermas.  (Four are synonyms of other things.)
 # 1307461 = Trichoderma Persoon 1794, in Hypocreaceae
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
 irmng.taxon('Hypocrea').absorb(irmng.taxon('1307461'))
 
 # JAR 2014-04-18 attempt to resolve ambiguous alignment of
@@ -561,9 +539,6 @@ ott.same(fung.taxon('Trichosporon'), irmng.taxon('Trichosporon'))
 
 # JAR 2014-04-24 false match
 ott.notSame(irmng.taxon('Protaspis', 'Chordata'), ncbi.taxon('Protaspis', 'Cercozoa'))
-
-# See above for GBIF
-irmng.taxon('life').take(irmng.taxon('Rhodophyta'))
 
 # JAR 2014-04-18 while investigating hidden status of Coscinodiscus radiatus
 ott.notSame(irmng.taxon('Coscinodiscus', 'Porifera'), ncbi.taxon('Coscinodiscus', 'Stramenopiles'))
@@ -586,7 +561,8 @@ ott.absorb(irmng)
 # See above (occurs in both IF and GBIF).  Also see issue #67
 ott.taxon('Chlamydotomus').incertaeSedis()
 
-# Joseph Brown email to JAR 2014-01-27
+# Joseph Brown 2014-01-27
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/87
 ott.taxon('Thamnophilus bernardi').absorb(ott.taxon('Sakesphorus bernardi'))
 ott.taxon('Thamnophilus melanonotus').absorb(ott.taxon('Sakesphorus melanonotus'))
 ott.taxon('Thamnophilus melanothorax').absorb(ott.taxon('Sakesphorus melanothorax'))
@@ -651,7 +627,8 @@ ott.taxon('Excavata','Eukaryota').take(ott.taxon('Oxymonadida','Eukaryota'))
 # Work in progress - Joseph
 ott.taxon('Reptilia').hide()
 
-# Chris Owen patches 2014-01-30, attachment to email to JAR and SAS
+# Chris Owen patches 2014-01-30
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/88
 ott.taxon('Protostomia').take(ott.taxon('Chaetognatha','Deuterostomia'))
 ott.taxon('Lophotrochozoa').take(ott.taxon('Platyhelminthes'))
 ott.taxon('Polychaeta','Annelida').take(ott.taxon('Myzostomida'))
@@ -663,7 +640,9 @@ ott.taxon('Bilateria').take(ott.taxon('Nemertodermatida'))
 ott.taxon('Cnidaria').take(ott.taxon('Stauromedusae'))
 ott.taxon('Copepoda').take(ott.taxon('Prionodiaptomus'))
 
-# Bryan Drew patches 2014-01-30, in email to JAR
+# Bryan Drew patches 2014-01-30 
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/89
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/90
 ott.taxon('Scapaniaceae').absorb(ott.taxon('Lophoziaceae'))
 ott.taxon('Salazaria mexicana').rename('Scutellaria mexicana')
 # One Scutellaria is in Lamiaceae; the other is a fungus.
@@ -673,21 +652,25 @@ ott.taxon('Scutellaria','Lamiaceae').absorb(ott.image(irmng.taxon('1288740'))) #
 
 #  Make an order Boraginales that contains Boraginaceae + Hydrophyllaceae
 #  http://dx.doi.org/10.1111/cla.12061
-# Bryan Drew email to JAR on 2013-09-30
+# Bryan Drew 2013-09-30
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/91
 ott.taxon('Boraginaceae').absorb(ott.taxon('Hydrophyllaceae'))
 ott.taxon('Boraginales').take(ott.taxon('Boraginaceae'))
 ott.taxon('lamiids').take(ott.taxon('Boraginales'))
 
-# Bryan Drew email to JAR and SAS 2014-01-30
+# Bryan Drew 2014-01-30
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/90
 # Vahlia 26024 <- Vahliaceae 23372 <- lammids 596112 (was incertae sedis)
 ott.taxon('lamiids').take(ott.taxon('Vahliaceae'))
 
-# Bryan Drew email to JAR and SAS 2014-01-30
+# Bryan Drew 2014-01-30
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/90
 # http://www.sciencedirect.com/science/article/pii/S0034666703000927
 ott.taxon('Araripia').extinct()
 
-# Bryan Drew email to JAR 2014-02-05
+# Bryan Drew  2014-02-05
 # http://www.mobot.org/mobot/research/apweb/
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/92
 ott.taxon('Viscaceae').rename('Visceae')
 ott.taxon('Amphorogynaceae').rename('Amphorogyneae')
 ott.taxon('Thesiaceae').rename('Thesieae')
@@ -706,11 +689,13 @@ ott.taxon('Magnoliophyta').take(ott.taxon('Archaefructus'))
 ott.taxon('eudicotyledons').take(ott.taxon('Phyllites'))
 
 # Bryan Drew 2014-02-13
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/93
 # http://dx.doi.org/10.1007/978-3-540-31051-8_2
 ott.taxon('Alseuosmiaceae').take(ott.taxon('Platyspermation'))
 
 # JAR 2014-02-24.  We are getting extinctness information for genus
 # and above from IRMNG, but not for species.
+# There's a similar problem in Equus.
 for name in ['Homo sapiens neanderthalensis',
 			 'Homo sapiens ssp. Denisova',
 			 'Homo habilis',

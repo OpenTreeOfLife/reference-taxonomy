@@ -166,6 +166,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		}
 	}
 
+	// Most rootward node in this taxonomy having a given name
 	Taxon highest(String name) { // See pin()
 		List<Taxon> l = this.lookup(name);
 		if (l == null) return null;
@@ -350,13 +351,13 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 		while ((str = br.readLine()) != null) {
             if (pat == null) {
-                String[] parts = tabOnly.split(str + "!");	 // Java loses
+                String[] parts = tabOnly.split(str + "\t!");	 // Java loses
                 if (parts[1].equals("|"))
                     pat = tabVbarTab;
                 else
                     pat = tabOnly;
             }
-			String[] parts = pat.split(str + "!");	 // Java loses
+			String[] parts = pat.split(str + "\t!");	 // Java loses
 			if (parts.length < 3) {
 				System.out.println("Bad row: " + row + " has " + parts.length + " parts");
 			} else {
@@ -892,7 +893,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		for (Taxon node : this) {
 			if (node.isHidden()) {
 				++count;
-				out.format("%s\t%s\t%s\t%s\t", node.id, node.name, node.getSourceIdsString(), node.division);
+				Taxon div = node.getDivision();
+				out.format("%s\t%s\t%s\t%s\t", node.id, node.name, node.getSourceIdsString(),
+						   (div == null ? "" : div.name));
 				Flag.printFlags(node.properFlags, node.inheritedFlags, out);
 				out.println();
 			}
@@ -2188,12 +2191,12 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	}
 
 	void reportDifference(String what, Taxon node, Taxon oldParent, Taxon newParent, PrintStream out) {
-		String division = node.getDivision();
+		Taxon division = node.getDivision();
 		out.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\n", node.id, what, node.name,
 				   node.getSourceIdsString(), 
 				   (oldParent == null ? "" : oldParent.name),
 				   (newParent == null ? "" : newParent.name),
-				   (division == null ? "" : division));
+				   (division == null ? "" : division.name));
 	}
 	
 	// Propogate synonyms from source taxonomy to union.
@@ -2322,6 +2325,91 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			return null;
 	}
 
+	public SourceTaxonomy skeleton = null;
+
+	// method on union taxonomies, I would think
+	public void setSkeleton(SourceTaxonomy skel) {
+		this.skeleton = skel;
+		for (Taxon div : skel)
+			div.setDivision(div);
+	}
+
+	public void markDivisions(UnionTaxonomy union) {
+		if (union.skeleton == null)
+			this.pin(union);
+		else
+			for (Taxon div : union.skeleton.roots)
+				this.markDivisions(div);
+	}
+
+	// Method on skeleton taxonomy ...
+	boolean markDivisions(Taxon div) {
+		if (div.children != null) {
+			Taxon hit = null, miss = null;
+			for (Taxon child : div.children) {
+				if (markDivisions(child))
+					hit = child;
+				else
+					miss = child;
+			}
+			if (hit != null && miss != null)
+				System.err.format("** Division %s was found but %s wasn't\n", hit.name, miss.name);
+		}
+		Taxon node = this.highest(div.name);
+		if (node != null) {
+			node.setDivision(div);
+			return true;
+		} else
+			return false;
+	}
+
+	// List determined manually and empirically
+	void pin(UnionTaxonomy union) {
+		String[][] pins = {
+			// Stephen's list
+			{"Fungi"},
+			{"Bacteria"},
+			{"Alveolata"},
+			// {"Rhodophyta"},	creates duplicate of Cyanidiales
+			{"Glaucophyta", "Glaucocystophyceae"},
+			{"Haptophyta", "Haptophyceae"},
+			{"Choanoflagellida"},
+			{"Metazoa", "Animalia"},
+			{"Chloroplastida", "Viridiplantae", "Plantae"},
+			// JAR's list
+			{"Mollusca"},
+			{"Arthropoda"},		// Tetrapoda, Theria
+			{"Chordata"},
+			// {"Eukaryota"},		// doesn't occur in gbif, but useful for ncbi/ncbi test merge
+			// {"Archaea"},			// ambiguous in ncbi
+			{"Viruses"},
+		};
+		int count = 0;
+		for (int i = 0; i < pins.length; ++i) {
+			String names[] = pins[i];
+			Taxon n1 = null, div = null;
+			// For each pinnable name, look for it in both taxonomies
+			// under all possible synonyms
+			for (int j = 0; j < names.length; ++j) {
+				String name = names[j];
+				Taxon m1 = this.highest(name);
+				if (m1 != null) n1 = m1;
+				Taxon m2 = union.highest(name);
+				if (m2 != null) div = m2;
+			}
+			if (div != null) {
+				div.setDivision(div);
+				if (n1 != null)
+					n1.setDivision(div);
+				if (n1 != null && div != null)
+					n1.unifyWith(div); // hmm.  TBD: move this out of here
+				if (n1 != null || div != null)
+					++count;
+			}
+		}
+		if (count > 0)
+			System.out.println("Pinned " + count + " out of " + pins.length);
+	}
 
 }  // end of class Taxonomy
 
@@ -2345,9 +2433,10 @@ class SourceTaxonomy extends Taxonomy {
 
 			int beforeCount = union.nameIndex.size();
 
-			// this.reset();
+			this.markDivisions(union);
 
-			this.pin(union);
+			Set<String> seen = new HashSet<String>();
+			List<String> todo = new ArrayList<String>();
 
 			// Consider all matches where names coincide.
 			// When matching P homs to Q homs, we get PQ choices of which
@@ -2358,9 +2447,7 @@ class SourceTaxonomy extends Taxonomy {
 			// processed, so as to make the 'races' come out the right
 			// way.	 This is a kludge.
 
-			Set<String> seen = new HashSet<String>();
-			List<String> todo = new ArrayList<String>();
-			// true / true
+			// primary / primary
 			for (Taxon node : this)
 				if (!seen.contains(node.name)) {
 					List<Taxon> unodes = union.nameIndex.get(node.name);
@@ -2369,12 +2456,12 @@ class SourceTaxonomy extends Taxonomy {
 							if (unode.name.equals(node.name))
 								{ seen.add(node.name); todo.add(node.name); break; }
 				}
-			// true / synonym
+			// primary / synonym
 			for (Taxon node : union)
 				if (this.nameIndex.get(node.name) != null &&
 					!seen.contains(node.name))
 					{ seen.add(node.name); todo.add(node.name); }
-			// synonym / true
+			// synonym / primary
 			for (Taxon node : this)
 				if (union.nameIndex.get(node.name) != null &&
 					!seen.contains(node.name))
@@ -2442,53 +2529,6 @@ class SourceTaxonomy extends Taxonomy {
 							   // added + " added, " +	  -- this hasn't happened yet
 							   prevented + " blocked");
 		}
-	}
-
-	// List determined manually and empirically
-	void pin(UnionTaxonomy union) {
-		String[][] pins = {
-			// Stephen's list
-			{"Fungi"},
-			{"Bacteria"},
-			{"Alveolata"},
-			// {"Rhodophyta"},	creates duplicate of Cyanidiales
-			{"Glaucophyta", "Glaucocystophyceae"},
-			{"Haptophyta", "Haptophyceae"},
-			{"Choanoflagellida"},
-			{"Metazoa", "Animalia"},
-			{"Viridiplantae", "Plantae", "Chloroplastida"},
-			// JAR's list
-			{"Mollusca"},
-			{"Arthropoda"},		// Tetrapoda, Theria
-			{"Chordata"},
-			// {"Eukaryota"},		// doesn't occur in gbif, but useful for ncbi/ncbi test merge
-			// {"Archaea"},			// ambiguous in ncbi
-			{"Viruses"},
-		};
-		int count = 0;
-		for (int i = 0; i < pins.length; ++i) {
-			String names[] = pins[i];
-			Taxon n1 = null, n2 = null;
-			// For each pinnable name, look for it in both taxonomies
-			// under all possible synonyms
-			for (int j = 0; j < names.length; ++j) {
-				String name = names[j];
-				Taxon m1 = this.highest(name);
-				if (m1 != null) n1 = m1;
-				Taxon m2 = union.highest(name);
-				if (m2 != null) n2 = m2;
-			}
-			if (n1 != null)
-				n1.setDivision(names[0]);
-			if (n2 != null)
-				n2.setDivision(names[0]);
-			if (n1 != null && n2 != null)
-				n1.unifyWith(n2); // hmm.  TBD: move this out of here
-			if (n1 != null || n2 != null)
-				++count;
-		}
-		if (count > 0)
-			System.out.println("Pinned " + count + " out of " + pins.length);
 	}
 
 	void augment(UnionTaxonomy union) {
@@ -2572,10 +2612,10 @@ class UnionTaxonomy extends Taxonomy {
 		return this;
 	}
 
-	void reset() {
+	// Clear out comapped, brackets, etc. from previous merges
+	public void reset() {
 		this.nextSequenceNumber = 0;
 		for (Taxon root: this.roots) {
-			// Clear out gumminess from previous merges
 			root.reset();
 			// Prepare for subsumption checks
 			root.assignBrackets();
@@ -3144,8 +3184,8 @@ abstract class Criterion {
 		new Criterion() {
 			public String toString() { return "same-division"; }
 			Answer assess(Taxon x, Taxon y) {
-				String xdiv = x.getDivision();
-				String ydiv = y.getDivision();
+				Taxon xdiv = x.getDivision();
+				Taxon ydiv = y.getDivision();
 				if (xdiv == ydiv)
 					return Answer.NOINFO;
 				else if (xdiv != null) {
@@ -3153,7 +3193,7 @@ abstract class Criterion {
 						//System.err.format("No half-sided division exclusion: %s %s\n", x, y);
 						return Answer.NOINFO;
 					}
-					return Answer.heckNo(x, y, "different-division", xdiv);
+					return Answer.heckNo(x, y, "different-division", xdiv.name);
 				} else
 					return Answer.NOINFO;
 			}
@@ -3284,11 +3324,11 @@ abstract class Criterion {
 		new Criterion() {
 			public String toString() { return "same-division-knowledge"; }
 			Answer assess(Taxon x, Taxon y) {
-				String xdiv = x.getDivision();
-				String ydiv = y.getDivision();
+				Taxon xdiv = x.getDivision();
+				Taxon ydiv = y.getDivision();
 				if (xdiv != ydiv) // One might be null
 					// Evidence of difference, good enough to prevent name-only matches
-					return Answer.heckNo(x, y, "not-same-division-knowledge", xdiv);
+					return Answer.heckNo(x, y, "not-same-division-knowledge", xdiv.name);
 				else
 					return Answer.NOINFO;
 			}

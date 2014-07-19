@@ -30,7 +30,7 @@ public class Taxon {
 	public Taxon mapped = null;	// source node -> union node
 	Taxon comapped = null;		// union node -> source node
 	boolean novelp = false;		// added to union in last round?
-	String division = null;
+	Taxon division = null;
 
 	// Cf. assignBrackets
 	int seq = NOT_SET;		// Self
@@ -47,9 +47,7 @@ public class Taxon {
 
 	// Clear out temporary stuff from union nodes
 	void reset() {
-		// this.mapped = null;	  // always null anyhow
 		this.comapped = null;
-		this.division = null;
 		this.novelp = false;
 		resetBrackets();
 		if (children != null)
@@ -145,17 +143,17 @@ public class Taxon {
 	}
 
 	// Go upwards and cache on the way back down
-	public String getDivision() {
+	public Taxon getDivision() {
 		if (this.division == null) {
 			if (this.parent == null)
-				this.division = null;
+				this.division = null; // shouldn't happen
 			else
 				this.division = this.parent.getDivision();
 		}
 		return this.division;
 	}
 
-	void setDivision(String division) {
+	void setDivision(Taxon division) {
 		if (this.division != null)
 			this.report("!? changing divisions doesn't work");
 		this.division = division;
@@ -417,10 +415,11 @@ public class Taxon {
 						if (loser.name.equals(this.name)) {
 							if (this.getDivision() == loser.getDivision())	 //double check
 								union.logAndMark(Answer.no(this, loser, "new-homonym/in-division",
-														   this.getDivision()));
+														   this.getDivision().name));
 							else
 								union.logAndMark(Answer.no(this, loser, "new-homonym/out-division",
-														   this.getDivision() + "=>" + loser.getDivision()));
+														   (this.getDivision().name + "=>" +
+															loser.getDivision().name)));
 							break;
 						}
 					}

@@ -351,5 +351,6 @@ aster: t/tax/aster/taxonomy.tsv
 
 aster-tarball: t/tax/aster/taxonomy.tsv
 	(cd t/tax && \
+	 mkdir -p $(TARDIR) $$ \
 	 tar -czvf $(TARDIR)/aster.tgz.tmp aster && \
 	 mv $(TARDIR)/aster.tgz.tmp $(TARDIR)/aster.tgz )

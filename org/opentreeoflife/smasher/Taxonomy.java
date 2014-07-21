@@ -347,20 +347,24 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		int normalizations = 0;
 
         Pattern pat = null;
+		String suffix = null;	// Java loses somehow.  I don't get it
 
 		Map<Taxon, String> parentMap = new HashMap<Taxon, String>();
 
 		while ((str = br.readLine()) != null) {
             if (pat == null) {
                 String[] parts = tabOnly.split(str + "\t!");	 // Java loses
-                if (parts[1].equals("|"))
+                if (parts[1].equals("|")) {
                     pat = tabVbarTab;
-                else
+					suffix = "\t|\t!";
+                } else {
                     pat = tabOnly;
+					suffix = "\t!";
+				}
             }
-			String[] parts = pat.split(str + "\t!");	 // Java loses
+			String[] parts = pat.split(str + suffix);	 // Java loses
 			if (parts.length < 3) {
-				System.out.println("Bad row: " + row + " has " + parts.length + " parts");
+				System.out.println("Bad row: " + row + " has only " + parts.length + " parts");
 			} else {
 				if (row == 0) {
 					if (parts[0].equals("uid")) {
@@ -376,8 +380,16 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 						// this.preottolcolumn = headerx.get("preottol_id");
 						continue;
 					} else
-						System.out.println("! No header row");
+						System.out.println("! No header row - saw " + parts[0]);
 				}
+				String lastone = parts[parts.length - 1];
+				// The following is residue from an annoying bug that
+				// I never tracked down and that seems to have fixed
+				// itself
+				if (lastone.endsWith("!") && (parts.length < 4 ||
+											  lastone.length() > 1))
+					System.err.println("I don't get it: [" + lastone + "]");
+
 				String id = parts[0];
 				String rawname = parts[2];
 
@@ -425,7 +437,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				}
 				roots.add(node);
 			} else if (parentId.equals(node.id)) {
-				System.err.format("** Taxon is its own parent: %s %s\n" + node.id, node.name);
+				System.err.format("** Taxon is its own parent: %s %s\n", node.id, node.name);
 			} else if (parent.descendsFrom(node)) {
 				System.err.format("** Cycle detected in input taxonomy: %s %s\n", node, parent);
 			} else {
@@ -627,7 +639,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		out.close();
 	}
 
-        void dumpNodesSkos(Collection<Taxon> nodes, String outprefix) throws IOException {
+	// From Ryan Scherle at a NESCent Informatics hack day -
+	void dumpNodesSkos(Collection<Taxon> nodes, String outprefix) throws IOException {
             try {
                 SKOSManager manager = new SKOSManager();
                 SKOSDataset dataset = manager.createSKOSDataset(URI.create(SKOS_BASE_URI));
@@ -1225,7 +1238,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			if (allextinct) {
 				node.properFlags |= EXTINCT;
 				if (node.sourceIds != null && node.sourceIds.get(0).prefix.equals("ncbi"))
-					System.out.format("| Induced extinct: %s\n", node);
+					;//System.out.format("| Induced extinct: %s\n", node);
 			}
 			// We could do something similar for all of the hidden-type flags
 		}
@@ -2273,22 +2286,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		}
 	}
 
-    // The probability of coreference decreases with distance within
-    // the tree.  This is an attempt to quantify this relation.
-
-	/*
-	  WIP
-    public void homonymReport(String filename) throws IOException {
-		Alignment.homonymReport(this, filename);
-    }
-
-	public Alignment alignTo(Taxonomy t2) throws IOException {
-		Alignment a = new Alignment(this, t2);
-		a.report();
-		return a;
-	}
-	*/
-
 	// Compute sibling taxa {a', b'} such that a' includes a and b' includes b
 
 	public static Taxon[] divergence(Taxon a, Taxon b) {
@@ -2330,30 +2327,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			return null;
 	}
 
-	// Set 'division' to division taxon in skeleton, if possible.
-	// Recur over children.
-	boolean markDivisions(Taxon div) {
-		if (div.children != null) {
-			Taxon hit = null, miss = null;
-			for (Taxon child : div.children) {
-				if (markDivisions(child))
-					hit = child;
-				else
-					miss = child;
-			}
-			if (hit != null && miss != null)
-				System.err.format("** Division %s was found but %s wasn't\n", hit.name, miss.name);
-		}
-		Taxon node = this.highest(div.name);
-		// ** HACK for SILVA Ctenophora - notSame use to prevent division match **
-		if ((node != null) &&
-			(node.mapped == null || div.mapped == null || node.mapped == div.mapped)) {
-			node.setDivision(div);
-			return true;
-		} else
-			return false;
-	}
-
 	// for jython
 	public void setSkeleton(SourceTaxonomy skel) {
 		UnionTaxonomy union = (UnionTaxonomy)this;
@@ -2386,7 +2359,7 @@ class SourceTaxonomy extends Taxonomy {
 
 			int beforeCount = union.nameIndex.size();
 
-			union.markDivisions(this);
+			union.markDivisionsx(this);
 
 			Set<String> seen = new HashSet<String>();
 			List<String> todo = new ArrayList<String>();
@@ -2583,19 +2556,52 @@ class UnionTaxonomy extends Taxonomy {
 		// Copy skeleton into union
 		union.absorb(skel);		// ?
 		for (Taxon div : skel) div.mapped.setId(div.id); // ??!!!
-
-		// Set up divisions in union itself (which at this point would
-		// normally be just a copy of skeleton)
-		this.markDivisions(skel);
 	}
 
+	// this = a union taxonomy.
 	// Set 'division' for division taxa in source
 	public void markDivisionsx(Taxonomy source) {
 		if (this.skeleton == null)
 			this.pin(source);	// Backward compatibility!
 		else
-			for (Taxon div : this.skeleton.roots)
-				source.markDivisions(div);
+			for (Taxon div : this.skeleton.roots) // this = union
+				this.markDivisions(div, source);
+	}
+
+	// Before every alignment pass (folding source taxonomy into
+	// union), all 'division' taxa (from the skeleton) that occur in
+	// either the union or the source taxonomy are identified and the
+	// 'division' field of each one is set to the corresponding
+	// division node from the union taxonomy.
+
+	// unifyp = true if this is a source taxonomy, false if union.
+
+	// This operation is idempotent.
+
+	boolean markDivisions(Taxon div, Taxonomy source) {
+		if (div.children != null) {
+			Taxon hit = null, miss = null;
+			for (Taxon child : div.children) {
+				if (markDivisions(child, source))
+					hit = child;
+				else
+					miss = child;
+			}
+			if (hit != null && miss != null)
+				System.err.format("** Division %s was found but its sibling %s wasn't\n", hit.name, miss.name);
+		}
+		Taxon unode = this.highest(div.name);
+		if (unode != null) {
+			unode.setDivision(unode);
+			Taxon node = source.highest(div.name);
+			if (node != null &&
+				(node.mapped == null || node.mapped == unode)) {   // Cf. notSame
+				node.unifyWith(unode);
+				node.setDivision(unode);
+				return true;
+			}
+		}
+		return false;
 	}
 
 	// List determined manually and empirically
@@ -2624,6 +2630,7 @@ class UnionTaxonomy extends Taxonomy {
 		for (int i = 0; i < pins.length; ++i) {
 			String names[] = pins[i];
 			Taxon n1 = null, div = null;
+			// The division (div) is in the union taxonomy.
 			// For each pinnable name, look for it in both taxonomies
 			// under all possible synonyms
 			for (int j = 0; j < names.length; ++j) {
@@ -3229,8 +3236,10 @@ abstract class Criterion {
 					if (ydiv == null) {
 						//System.err.format("No half-sided division exclusion: %s %s\n", x, y);
 						return Answer.NOINFO;
-					} else
+					} else if (!xdiv.descendsFrom(ydiv) && !ydiv.descendsFrom(xdiv))
 						return Answer.heckNo(x, y, "different-division", xdiv.name);
+					else
+						return Answer.NOINFO;
 				} else
 					return Answer.NOINFO;
 			}

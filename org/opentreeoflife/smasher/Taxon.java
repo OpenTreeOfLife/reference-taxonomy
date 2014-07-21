@@ -249,7 +249,7 @@ public class Taxon {
 		}
 		if (unode.comapped != null) {
 			// Union node has already been matched to, but synonyms are OK
-			this.report("Union node already mapped tog, creating synonym", unode);
+			this.report("Union node already mapped to, creating synonym", unode);
 		}
 		this.mapped = unode;
 		unode.comapped = this;
@@ -923,9 +923,9 @@ public class Taxon {
 	}
  
 	// For cycle detection
-	boolean descendsFrom(Taxon b) {
+	public boolean descendsFrom(Taxon b) {
 		for (Taxon a = this; a != null; a = a.parent)
-			if (b == a)
+			if (a == b)
 				return true;
 		return false;
 	}

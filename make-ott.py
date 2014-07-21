@@ -16,67 +16,71 @@ skel = Taxonomy.getTaxonomy('tax/skel/', 'skel')
 ott.setSkeleton(skel)
 
 # ----- SILVA microbial taxonomy -----
-silva = taxonomies.loadSilva()
+def doSilva():
 
-# - Deal with division alignment issues -
-ott.notSame(silva.taxon('Ctenophora', 'Coscinodiscophytina'),
-			skel.taxon('Ctenophora'))
+	silva = taxonomies.loadSilva()
 
-# JAR 2014-05-13 scrutinizing pin() and BarrierNodes.  Wikipedia
-# confirms these synonymies.
-silva.taxon('Glaucophyta').synonym('Glaucocystophyceae')
-silva.taxon('Haptophyta').synonym('Haptophyceae')
-silva.taxon('Rhodophyceae').synonym('Rhodophyta')
+	# - Deal with parent/child homonyms in SILVA -
+	# Arbitrary choices here to eliminate ambiguities down the road when NCBI gets merged.
+	# (If the homonym is retained, then the merge algorithm will have no
+	# way to choose between them, and refuse to match either.  It will
+	# then create a third homonym.)
+	# Note order dependence between the following two
+	silva.taxon('Intramacronucleata','Intramacronucleata').rename('Intramacronucleata inf.')
+	silva.taxon('Spirotrichea','Intramacronucleata inf.').rename('Spirotrichea inf.')
+	silva.taxon('Cyanobacteria','Bacteria').rename('Cyanobacteria sup.')
+	silva.taxon('Actinobacteria','Bacteria').rename('Actinobacteria sup.')
+	silva.taxon('Acidobacteria','Bacteria').rename('Acidobacteria sup.')
+	silva.taxon('Ochromonas','Ochromonadales').rename('Ochromonas sup.')
+	silva.taxon('Tetrasphaera','Tetrasphaera').rename('Tetrasphaera inf.')
 
-# - Deal with parent/child homonyms in SILVA -
-# Arbitrary choices here to eliminate ambiguities down the road when NCBI gets merged.
-# (If the homonym is retained, then the merge algorithm will have no
-# way to choose between them, and refuse to match either.  It will
-# then create a third homonym.)
-# Note order dependence between the following two
-silva.taxon('Intramacronucleata','Intramacronucleata').rename('Intramacronucleata inf.')
-silva.taxon('Spirotrichea','Intramacronucleata inf.').rename('Spirotrichea inf.')
-silva.taxon('Cyanobacteria','Bacteria').rename('Cyanobacteria sup.')
-silva.taxon('Actinobacteria','Bacteria').rename('Actinobacteria sup.')
-silva.taxon('Acidobacteria','Bacteria').rename('Acidobacteria sup.')
-silva.taxon('Ochromonas','Ochromonadales').rename('Ochromonas sup.')
-silva.taxon('Tetrasphaera','Tetrasphaera').rename('Tetrasphaera inf.')
+	# SILVA's placement of Rozella as a sibling of Fungi is contradicted
+	# by Hibbett 2007, which puts it under Fungi.  Hibbett gets priority.
+	# We make the change to SILVA to prevent Nucletmycea from being
+	# labeled 'tattered'.
+	silva.taxon('Fungi').take(silva.taxon('Rozella'))
 
-# SILVA's placement of Rozella as a sibling of Fungi is contradicted
-# by Hibbett 2007, which puts it under Fungi.  Hibbett gets priority.
-# We make the change to SILVA to prevent Nucletmycea from being
-# labeled 'tattered'.
-silva.taxon('Fungi').take(silva.taxon('Rozella'))
+	# 2014-04-12 Rick Ree #58 and #48 - make them match NCBI
+	silva.taxon('Arthrobacter Sp. PF2M5').rename('Arthrobacter sp. PF2M5')
+	silva.taxon('Halolamina sp. wsy15-h1').rename('Halolamina sp. WSY15-H1')
+	# RR #55 - this is a silva/ncbi homonym
+	silva.taxon('vesicomya').rename('Vesicomya')
 
-# 2014-04-12 Rick Ree #58 and #48 - make them match NCBI
-silva.taxon('Arthrobacter Sp. PF2M5').rename('Arthrobacter sp. PF2M5')
-silva.taxon('Halolamina sp. wsy15-h1').rename('Halolamina sp. WSY15-H1')
-# RR #55 - this is a silva/ncbi homonym
-silva.taxon('vesicomya').rename('Vesicomya')
+	# From Laura and Dail on 5 Feb 2014
+	# https://groups.google.com/forum/#!topic/opentreeoflife/a69fdC-N6pY
+	silva.taxon('Diatomea').rename('Bacillariophyta')
 
-# From Laura and Dail on 5 Feb 2014
-# https://groups.google.com/forum/#!topic/opentreeoflife/a69fdC-N6pY
-silva.taxon('Diatomea').rename('Bacillariophyta')
+	# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/30
+	# https://github.com/OpenTreeOfLife/feedback/issues/5
+	for name in ['GAL08', 'GOUTA4', 'JL-ETNP-Z39', 'Kazan-3B-28',
+				 'LD1-PA38', 'MVP-21', 'NPL-UPA2', 'OC31', 'RsaHF231',
+				 'S2R-29', 'SBYG-2791', 'SM2F11', 'WCHB1-60', 'T58',
+				 'LKM74', 'LEMD255', 'CV1-B1-93', 'H1-10', 'H26-1',
+				 'M1-18D08', 'D4P07G08', 'DH147-EKD10', 'LG25-05',
+				 'NAMAKO-1', 'RT5iin25', 'SA1-3C06', 'DH147-EKD23']:
+		silva.taxon(name).elide()  #maybe just hide instead ?
 
-ott.absorb(silva)
+	# - Deal with division alignment issues -
+	ott.notSame(silva.taxon('Ctenophora', 'Coscinodiscophytina'),
+				skel.taxon('Ctenophora'))
 
-# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/30
-# https://github.com/OpenTreeOfLife/feedback/issues/5
-for name in ['GAL08', 'GOUTA4', 'JL-ETNP-Z39', 'Kazan-3B-28',
-			 'LD1-PA38', 'MVP-21', 'NPL-UPA2', 'OC31', 'RsaHF231',
-			 'S2R-29', 'SBYG-2791', 'SM2F11', 'WCHB1-60', 'T58',
-			 'LKM74', 'LEMD255', 'CV1-B1-93', 'H1-10', 'H26-1',
-			 'M1-18D08', 'D4P07G08', 'DH147-EKD10', 'LG25-05',
-			 'NAMAKO-1', 'RT5iin25', 'SA1-3C06', 'DH147-EKD23']:
-    ott.taxon(name).elide()
+	ott.markDivisions(silva)
+	taxonomies.checkDivisions(silva)
+	ott.absorb(silva)
+	return silva
+
+silva = doSilva()
 
 # ----- Hibbett 2007 updated upper fungal taxonomy -----
-h2007 = taxonomies.loadH2007()
 
-ott.absorb(h2007)
+def doH2007():
+	h2007 = taxonomies.loadH2007()
+	ott.absorb(h2007)
+	# h2007/if synonym https://github.com/OpenTreeOfLife/reference-taxonomy/issues/40
+	ott.taxon('Urocystales').synonym('Urocystidales')
+	return h2007
 
-# h2007/if synonym https://github.com/OpenTreeOfLife/reference-taxonomy/issues/40
-ott.taxon('Urocystales').synonym('Urocystidales')
+h2007 = doH2007()
 
 # ----- Index Fungorum -----
 # IF is pretty comprehensive for Fungi, but has an assortment of other
@@ -84,183 +88,188 @@ ott.taxon('Urocystales').synonym('Urocystidales')
 # more authoritative than NCBI, and the latter as less authoritative
 # than NCBI.
 
-allfung  = taxonomies.loadFung()
+def doFung():
 
-print "Index Fungorum has %s nodes"%allfung.count()
+	allfung  = taxonomies.loadFung()
 
-# JAR 2014-04-27 JAR found while investigating 'hidden' status of
-# Thelohania butleri.  Move out of Protozoa to prevent their being hidden
-allfung.taxon('Fungi').take(allfung.taxon('Microsporidia'))
+	print "Index Fungorum has %s nodes"%allfung.count()
 
-# *** Non-Fungi processing
+	# JAR 2014-04-27 JAR found while investigating 'hidden' status of
+	# Thelohania butleri.  Move out of Protozoa to prevent their being hidden
+	allfung.taxon('Fungi').take(allfung.taxon('Microsporidia'))
 
-# JAR 2014-05-13 Chlorophyte or fungus?  This one is very confused.
-# Pick it up from GBIF if at all
-allfung.taxon('Byssus phosphorea').prune()
+	# *** Non-Fungi processing
 
-if False:  # see taxonomies.loadFung
-	# Work in progress.  By promoting to root we've lost the fact that
-	# protozoa are eukaryotes, which is unfortunate.  Not important in this
-	# case, but suggestive of deeper problems in the framework.
-	# Test case: Oomycota should end up in Stramenopiles.
-	fung_Protozoa = allfung.maybeTaxon('Protozoa')
-	if fung_Protozoa != None:
-		fung_Protozoa.hide()   # recursive
-		fung_Protozoa.detach()
-		fung_Protozoa.elide()
-	fung_Chromista = allfung.maybeTaxon('Chromista')
-	if fung_Chromista != None:
-		fung_Chromista.hide()  # recursive
-		fung_Chromista.detach()
-		fung_Chromista.elide()
+	# JAR 2014-05-13 Chlorophyte or fungus?  This one is very confused.
+	# Pick it up from GBIF if at all
+	allfung.taxon('Byssus phosphorea').prune()
 
-# IF Thraustochytriidae = SILVA Thraustochytriaceae ?  (Stramenopiles)
-# IF T. 90638 contains Sicyoidochytrium, Schizochytrium, Ulkenia, Thraustochytrium
-#  Parietichytrium, Elina, Botryochytrium, Althornia
-# SILVA T. contains Ulkenia and a few others of these... I say yes.
-thraust = allfung.taxon('90377')
-thraust.synonym('Thraustochytriaceae')
-thraust.synonym('Thraustochytriidae')
-thraust.synonym('Thraustochytridae')
+	if False:  # see taxonomies.loadFung
+		# Work in progress.  By promoting to root we've lost the fact that
+		# protozoa are eukaryotes, which is unfortunate.  Not important in this
+		# case, but suggestive of deeper problems in the framework.
+		# Test case: Oomycota should end up in Stramenopiles.
+		fung_Protozoa = allfung.maybeTaxon('Protozoa')
+		if fung_Protozoa != None:
+			fung_Protozoa.hide()   # recursive
+			fung_Protozoa.detach()
+			fung_Protozoa.elide()
+		fung_Chromista = allfung.maybeTaxon('Chromista')
+		if fung_Chromista != None:
+			fung_Chromista.hide()  # recursive
+			fung_Chromista.detach()
+			fung_Chromista.elide()
 
-# IF Labyrinthulaceae = SILVA Labyrinthulomycetes ?  NO.
-# IF L. contains only Labyrinthomyxa, Labyrinthula
-# SILVA L. contains a lot more than that.
+	# IF Thraustochytriidae = SILVA Thraustochytriaceae ?  (Stramenopiles)
+	# IF T. 90638 contains Sicyoidochytrium, Schizochytrium, Ulkenia, Thraustochytrium
+	#  Parietichytrium, Elina, Botryochytrium, Althornia
+	# SILVA T. contains Ulkenia and a few others of these... I say yes.
+	thraust = allfung.taxon('90377')
+	thraust.synonym('Thraustochytriaceae')
+	thraust.synonym('Thraustochytriidae')
+	thraust.synonym('Thraustochytridae')
 
-# IF Hyphochytriaceae = SILVA Hyphochytriales ?
-# SILVA Hyphochytriales = AB622284/#4 contains only
-# Hypochitrium, Rhizidiomycetaceae
+	# IF Labyrinthulaceae = SILVA Labyrinthulomycetes ?  NO.
+	# IF L. contains only Labyrinthomyxa, Labyrinthula
+	# SILVA L. contains a lot more than that.
 
-# There are two Bacillaria.
-# 1. NCBI 3002, in Stramenopiles, contains Bacillaria paxillifer.
-#    No synonyms in NCBI.
-#    IF has Bacillaria as a synonym for Camillea (if:777).
-#    Bacillaria is not otherwise in IF.
-#    Cammillea in IF is in Stramenopiles.
-# 2. NCBI 109369, in Pezizomycotina
-#    No synonyms in NCBI.
-# NCBI 13677 = Camillea, a fish.
+	# IF Hyphochytriaceae = SILVA Hyphochytriales ?
+	# SILVA Hyphochytriales = AB622284/#4 contains only
+	# Hypochitrium, Rhizidiomycetaceae
 
-# There are two Polyangium, a bacterium (NCBI) and a flatworm (IF).
+	# There are two Bacillaria.
+	# 1. NCBI 3002, in Stramenopiles, contains Bacillaria paxillifer.
+	#    No synonyms in NCBI.
+	#    IF has Bacillaria as a synonym for Camillea (if:777).
+	#    Bacillaria is not otherwise in IF.
+	#    Cammillea in IF is in Stramenopiles.
+	# 2. NCBI 109369, in Pezizomycotina
+	#    No synonyms in NCBI.
+	# NCBI 13677 = Camillea, a fish.
 
-# smush folds sibling taxa that have the same name.
-# (repeats - see loadFung()  ???)
-allfung.smush()
+	# There are two Polyangium, a bacterium (NCBI) and a flatworm (IF).
 
-# *** Fungi processing
+	# smush folds sibling taxa that have the same name.
+	# (repeats - see loadFung()  ???)
+	allfung.smush()
 
-print "Fungi in Index Fungorum has %s nodes"%allfung.taxon('Fungi').count()
+	# *** Fungi processing
 
-# fung = allfung.select(allfung.taxon('Fungi'))
-# SIDE EFFECT.  Ideally there would be a declarative
-# (non-side-effecty) way to do this.
-# allfung.taxon('Fungi').trim()
+	print "Fungi in Index Fungorum has %s nodes"%allfung.taxon('Fungi').count()
 
-# Revert to previous method for the time being due to large chunks of Fungi
-# lacking parent links
-fung = allfung
+	# fung = allfung.select(allfung.taxon('Fungi'))
+	# SIDE EFFECT.  Ideally there would be a declarative
+	# (non-side-effecty) way to do this.
+	# allfung.taxon('Fungi').trim()
 
-# JAR 2014-04-11 Missing in earlier IF, mistake in later IF -
-# extraneous authority string.  See Romina's issue #42
-# This is a fungus.
-cyph = fung.maybeTaxon('Cyphellopsis')
-if cyph == None:
-	cyph = fung.maybeTaxon('Cyphellopsis Donk 1931')
-	if cyph != None:
-		cyph.rename('Cyphellopsis')
-	else:
-		cyph = fung.newTaxon('Cyphellopsis', 'genus', 'if:17439')
-	fung.taxon('Niaceae').take(cyph)
+	# Revert to previous method for the time being due to large chunks of Fungi
+	# lacking parent links
+	fung = allfung
 
-# 2014-03-07 Prevent a false match
-# https://groups.google.com/d/msg/opentreeoflife/5SAPDerun70/fRjA2M6z8tIJ
-# This is a fungus in Pezizomycotina
-ott.notSame(silva.taxon('Phaeosphaeria'), fung.taxon('Phaeosphaeria'))
+	# JAR 2014-04-11 Missing in earlier IF, mistake in later IF -
+	# extraneous authority string.  See Romina's issue #42
+	# This is a fungus.
+	cyph = fung.maybeTaxon('Cyphellopsis')
+	if cyph == None:
+		cyph = fung.maybeTaxon('Cyphellopsis Donk 1931')
+		if cyph != None:
+			cyph.rename('Cyphellopsis')
+		else:
+			cyph = fung.newTaxon('Cyphellopsis', 'genus', 'if:17439')
+		fung.taxon('Niaceae').take(cyph)
 
-# 2014-04-08 This was causing Agaricaceae to be paraphyletic
-ott.notSame(silva.taxon('Morganella'), fung.taxon('Morganella'))
+	# 2014-03-07 Prevent a false match
+	# https://groups.google.com/d/msg/opentreeoflife/5SAPDerun70/fRjA2M6z8tIJ
+	# This is a fungus in Pezizomycotina
+	ott.notSame(silva.taxon('Phaeosphaeria'), fung.taxon('Phaeosphaeria'))
 
-# 2014-04-08 More IF/SILVA bad matches
-# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/63
-for name in ['Trichoderma harzianum',  # in Pezizomycotina
-			 'Acantharia',			   # in Pezizomycotina
-			 'Bogoriella',			   # in Pezizomycotina
-			 'Steinia',				   # in Pezizomycotina
-			 'Sclerotinia homoeocarpa', # in Pezizomycotina
-			 'Epiphloea',			   # in Pezizomycotina
-			 'Campanella',			   # in Agaricomycotina
-			 'Lacrymaria',			   # in Agaricomycotina
-			 'Frankia',		  		   # in Pezizomycotina / bacterium in SILVA
-			 'Phialina',			   # in Pezizomycotina
-			 'Puccinia triticina']:    # in Pucciniomycotina in Fungi
-	ott.notSame(silva.taxon(name), fung.taxon(name))
+	# 2014-04-08 This was causing Agaricaceae to be paraphyletic
+	ott.notSame(silva.taxon('Morganella'), fung.taxon('Morganella'))
 
-# Romina 2014-04-09
-# IF has both Hypocrea and Trichoderma.  Hypocrea is the right name.
-# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
-fung.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
-fung.taxon('Hypocrea').absorb(fung.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
+	# 2014-04-08 More IF/SILVA bad matches
+	# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/63
+	for name in ['Trichoderma harzianum',  # in Pezizomycotina
+				 'Acantharia',			   # in Pezizomycotina
+				 'Bogoriella',			   # in Pezizomycotina
+				 'Steinia',				   # in Pezizomycotina
+				 'Sclerotinia homoeocarpa', # in Pezizomycotina
+				 'Epiphloea',			   # in Pezizomycotina
+				 'Campanella',			   # in Agaricomycotina
+				 'Lacrymaria',			   # in Agaricomycotina
+				 'Frankia',		  		   # in Pezizomycotina / bacterium in SILVA
+				 'Phialina',			   # in Pezizomycotina
+				 'Puccinia triticina']:    # in Pucciniomycotina in Fungi
+		ott.notSame(silva.taxon(name), fung.taxon(name))
 
-# Romina https://github.com/OpenTreeOfLife/reference-taxonomy/issues/42
-fung.taxon('Trichoderma deliquescens').rename('Hypocrea lutea')
+	# Romina 2014-04-09
+	# IF has both Hypocrea and Trichoderma.  Hypocrea is the right name.
+	# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
+	fung.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
+	fung.taxon('Hypocrea').absorb(fung.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
 
-# 2014-04-25 JAR
-# There are three Bostrychias: a rhodophyte, a fungus, and a bird.
-# The fungus name is a synonym for Cytospora.
-if fung.maybeTaxon('Bostrychia', 'Ascomycota') != None:
-	ott.notSame(silva.taxon('Bostrychia', 'Rhodophyceae'), fung.taxon('Bostrychia', 'Ascomycota'))
+	# Romina https://github.com/OpenTreeOfLife/reference-taxonomy/issues/42
+	fung.taxon('Trichoderma deliquescens').rename('Hypocrea lutea')
 
-# analyzeMajorRankConflicts sets the "major_rank_conflict" flag when
-# intermediate ranks are missing (e.g. a family that's a child of a
-# class)
-fung.analyzeMajorRankConflicts()
+	# 2014-04-25 JAR
+	# There are three Bostrychias: a rhodophyte, a fungus, and a bird.
+	# The fungus name is a synonym for Cytospora.
+	if fung.maybeTaxon('Bostrychia', 'Ascomycota') != None:
+		ott.notSame(silva.taxon('Bostrychia', 'Rhodophyceae'), fung.taxon('Bostrychia', 'Ascomycota'))
 
-ott.absorb(fung)
+	# analyzeMajorRankConflicts sets the "major_rank_conflict" flag when
+	# intermediate ranks are missing (e.g. a family that's a child of a
+	# class)
+	fung.analyzeMajorRankConflicts()
 
-print "Fungi in h2007 + if has %s nodes"%ott.taxon('Fungi').count()
+	ott.absorb(fung)
 
-# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/20
-# Problem: Chlamydotomus is an incertae sedis child of Fungi.  Need to
-# find a good home for it.
-#
-# Mycobank says Chlamydotomus beigelii = Trichosporon beigelii:
-# http://www.mycobank.org/BioloMICS.aspx?Link=T&TableKey=14682616000000067&Rec=35058&Fields=All
-#
-# IF says the basionym is Pleurococcus beigelii, and P. beigelii's current name
-# is Geotrichum beigelii.  IF says the type for Trichosporon is Trichosporon beigelii,
-# and that T. beigelii's current name is Trichosporum beigelii... with no synonymies...
-# So IF does not corroborate Mycobank.
-#
-# So we could consider absorbing Chlamydotomus into Trichosoporon.  But...
-#
-# Not sure about this.  beigelii has a sister, cellaris, that should move along
-# with it, but the name Trichosporon cellaris has never been published.
-# Cb = ott.taxon('Chlamydotomus beigelii')
-# Cb.rename('Trichosporon beigelii')
-# ott.taxon('Trichosporon').take(Cb)
-#
-# Just make it incertae sedis and put off dealing with it until someone cares...
+	print "Fungi in h2007 + if has %s nodes"%ott.taxon('Fungi').count()
+
+	# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/20
+	# Problem: Chlamydotomus is an incertae sedis child of Fungi.  Need to
+	# find a good home for it.
+	#
+	# Mycobank says Chlamydotomus beigelii = Trichosporon beigelii:
+	# http://www.mycobank.org/BioloMICS.aspx?Link=T&TableKey=14682616000000067&Rec=35058&Fields=All
+	#
+	# IF says the basionym is Pleurococcus beigelii, and P. beigelii's current name
+	# is Geotrichum beigelii.  IF says the type for Trichosporon is Trichosporon beigelii,
+	# and that T. beigelii's current name is Trichosporum beigelii... with no synonymies...
+	# So IF does not corroborate Mycobank.
+	#
+	# So we could consider absorbing Chlamydotomus into Trichosoporon.  But...
+	#
+	# Not sure about this.  beigelii has a sister, cellaris, that should move along
+	# with it, but the name Trichosporon cellaris has never been published.
+	# Cb = ott.taxon('Chlamydotomus beigelii')
+	# Cb.rename('Trichosporon beigelii')
+	# ott.taxon('Trichosporon').take(Cb)
+	#
+	# Just make it incertae sedis and put off dealing with it until someone cares...
 
 
-# 2014-04-13 Romina #40, #60
-for foo in [('Neozygitales', ['Neozygitaceae']),
-			('Asteriniales', ['Asterinaceae']),
-			('Savoryellales', ['Savoryella', 'Ascotaiwania', 'Ascothailandia']), 
-			('Cladochytriales', ['Cladochytriaceae', 'Nowakowskiellaceae', 'Septochytriaceae', 'Endochytriaceae']),
-			('Jaapiales', ['Jaapiaceae']),
-			('Coniocybales', ['Coniocybaceae']),
-			('Hyaloraphidiales', ['Hyaloraphidiaceae']),
-			('Mytilinidiales', ['Mytilinidiaceae', 'Gloniaceae'])]:
-	order = ott.taxon(foo[0])
-	for family in foo[1]:
-		order.take(ott.taxon(family))
+	# 2014-04-13 Romina #40, #60
+	for foo in [('Neozygitales', ['Neozygitaceae']),
+				('Asteriniales', ['Asterinaceae']),
+				('Savoryellales', ['Savoryella', 'Ascotaiwania', 'Ascothailandia']), 
+				('Cladochytriales', ['Cladochytriaceae', 'Nowakowskiellaceae', 'Septochytriaceae', 'Endochytriaceae']),
+				('Jaapiales', ['Jaapiaceae']),
+				('Coniocybales', ['Coniocybaceae']),
+				('Hyaloraphidiales', ['Hyaloraphidiaceae']),
+				('Mytilinidiales', ['Mytilinidiaceae', 'Gloniaceae'])]:
+		order = ott.taxon(foo[0])
+		for family in foo[1]:
+			order.take(ott.taxon(family))
 
-# ** No taxon found with this name: Nowakowskiellaceae
-# ** No taxon found with this name: Septochytriaceae
-# ** No taxon found with this name: Jaapiaceae
-# ** (null=if:81865 Rhizocarpaceae) is already a child of (null=h2007:212 Rhizocarpales)
-# ** No taxon found with this name: Hyaloraphidiaceae
+	# ** No taxon found with this name: Nowakowskiellaceae
+	# ** No taxon found with this name: Septochytriaceae
+	# ** No taxon found with this name: Jaapiaceae
+	# ** (null=if:81865 Rhizocarpaceae) is already a child of (null=h2007:212 Rhizocarpales)
+	# ** No taxon found with this name: Hyaloraphidiaceae
 
+	return fung
+
+fung = doFung()
 
 # ----- Lamiales taxonomy from study 713 -----
 # http://dx.doi.org/10.1186/1471-2148-10-352
@@ -269,87 +278,100 @@ ott.notSame(study713.taxon('Buchnera'), silva.taxon('Buchnera'))
 ott.absorb(study713)
 
 # ----- NCBI Taxonomy -----
-ncbi = taxonomies.loadNcbi()
-ncbi.taxon('Viruses').hide()
 
-# David Hibbett has requested that for Fungi, only Index Fungorum
-# should be seen.  Rather than delete the NCBI fungal taxa, we just
-# mark them 'hidden' so they can be suppressed downstream.  This
-# preserves the identifier assignments, which may have been used
-# somewhere.
-ncbi.taxon('Fungi').hideDescendantsToRank('species')
+def doNcbi():
 
-#ott.same(ncbi.taxon('Cyanobacteria'), silva.taxon('D88288/#3'))
-ott.notSame(ncbi.taxon('Burkea'), fung.taxon('Burkea'))
-ott.notSame(ncbi.taxon('Coscinium'), fung.taxon('Coscinium'))
-ott.notSame(ncbi.taxon('Perezia'), fung.taxon('Perezia'))
+	ncbi = taxonomies.loadNcbi()
 
-# JAR 2014-04-11 Discovered during regression testing
-ott.notSame(ncbi.taxon('Epiphloea', 'Rhodophyta'), fung.taxon('Epiphloea', 'Ascomycota'))
+	# - Canonicalize division names (cf. skeleton) -
+	# JAR 2014-05-13 scrutinizing pin() and BarrierNodes.  Wikipedia
+	# confirms these synonymies.
+	ncbi.taxon('Glaucocystophyceae').synonym('Glaucophyta')
+	ncbi.taxon('Haptophyceae').synonym('Haptophyta')
 
-# RR 2014-04-12 #49
-ncbi.taxon('leotiomyceta').rename('Leotiomyceta')
+	ncbi.taxon('Viruses').hide()
 
-# RR #53
-ncbi.taxon('White-sloanea').synonym('White-Sloanea')
+	# David Hibbett has requested that for Fungi, only Index Fungorum
+	# should be seen.  Rather than delete the NCBI fungal taxa, we just
+	# mark them 'hidden' so they can be suppressed downstream.  This
+	# preserves the identifier assignments, which may have been used
+	# somewhere.
+	ncbi.taxon('Fungi').hideDescendantsToRank('species')
 
-# RR #56
-ncbi.taxon('sordariomyceta').rename('Sordariomyceta')
+	#ott.same(ncbi.taxon('Cyanobacteria'), silva.taxon('D88288/#3'))
+	ott.notSame(ncbi.taxon('Burkea'), fung.taxon('Burkea'))
+	ott.notSame(ncbi.taxon('Coscinium'), fung.taxon('Coscinium'))
+	ott.notSame(ncbi.taxon('Perezia'), fung.taxon('Perezia'))
 
-# RR #52
-ncbi.taxon('spinocalanus spinosus').rename('Spinocalanus spinosus')
-ncbi.taxon('spinocalanus angusticeps').rename('Spinocalanus angusticeps')
+	# JAR 2014-04-11 Discovered during regression testing
+	ott.notSame(ncbi.taxon('Epiphloea', 'Rhodophyta'), fung.taxon('Epiphloea', 'Ascomycota'))
 
-# RR #59
-ncbi.taxon('candidate division SR1').rename('Candidate division SR1')
-ncbi.taxon('candidate division WS6').rename('Candidate division WS6')
-ncbi.taxon('candidate division BRC1').rename('Candidate division BRC1')
-ncbi.taxon('candidate division OP9').rename('Candidate division OP9')
-ncbi.taxon('candidate division JS1').rename('Candidate division JS1')
+	# RR 2014-04-12 #49
+	ncbi.taxon('leotiomyceta').rename('Leotiomyceta')
 
-# RR #51
-ncbi.taxon('Dendro-hypnum').synonym('Dendro-Hypnum')
-# RR #45
-ncbi.taxon('Cyrto-hypnum').synonym('Cyrto-Hypnum')
-# RR #54
-ncbi.taxon('Sciuro-hypnum').synonym('Sciuro-Hypnum')
+	# RR #53
+	ncbi.taxon('White-sloanea').synonym('White-Sloanea')
 
-# RR 2014-04-12 #46
-ncbi.taxon('Pechuel-loeschea').synonym('Pechuel-Loeschea')
+	# RR #56
+	ncbi.taxon('sordariomyceta').rename('Sordariomyceta')
 
-# RR #50
-ncbi.taxon('Saxofridericia').synonym('Saxo-Fridericia')
-ncbi.taxon('Saxofridericia').synonym('Saxo-fridericia')
+	# RR #52
+	ncbi.taxon('spinocalanus spinosus').rename('Spinocalanus spinosus')
+	ncbi.taxon('spinocalanus angusticeps').rename('Spinocalanus angusticeps')
 
-# RR #57
-ncbi.taxon('Solms-laubachia').synonym('Solms-Laubachia')
+	# RR #59
+	ncbi.taxon('candidate division SR1').rename('Candidate division SR1')
+	ncbi.taxon('candidate division WS6').rename('Candidate division WS6')
+	ncbi.taxon('candidate division BRC1').rename('Candidate division BRC1')
+	ncbi.taxon('candidate division OP9').rename('Candidate division OP9')
+	ncbi.taxon('candidate division JS1').rename('Candidate division JS1')
 
-# Romina 2014-04-09
-# NCBI has both Hypocrea and Trichoderma.
-# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
-ncbi.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
-ncbi.taxon('Hypocrea').absorb(ncbi.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
+	# RR #51
+	ncbi.taxon('Dendro-hypnum').synonym('Dendro-Hypnum')
+	# RR #45
+	ncbi.taxon('Cyrto-hypnum').synonym('Cyrto-Hypnum')
+	# RR #54
+	ncbi.taxon('Sciuro-hypnum').synonym('Sciuro-Hypnum')
 
-# JAR attempt to resolve ambiguous alignment of Trichosporon in IF and
-# NCBI based on common parent and member.
-# Type = T. beigelii, which is current, according to Mycobank.
-# But I'm going to use a different 'type', Trichosporon cutaneum.
-ott.same(fung.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'), ncbi.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
+	# RR 2014-04-12 #46
+	ncbi.taxon('Pechuel-loeschea').synonym('Pechuel-Loeschea')
 
-# 2014-04-23 In new version of IF - obvious misalignment
-ott.notSame(ncbi.taxon('Crepidula', 'Gastropoda'), fung.taxon('Crepidula', 'Microsporidia'))
-ott.notSame(ncbi.taxon('Hessea', 'Viridiplantae'), fung.taxon('Hessea', 'Microsporidia'))
-# 2014-04-23 Resolve ambiguity introduced into new version of IF
-# http://www.speciesfungorum.org/Names/SynSpecies.asp?RecordID=331593
-ott.same(ncbi.taxon('Gymnopilus spectabilis var. junonius'), fung.taxon('Gymnopilus junonius'))
+	# RR #50
+	ncbi.taxon('Saxofridericia').synonym('Saxo-Fridericia')
+	ncbi.taxon('Saxofridericia').synonym('Saxo-fridericia')
 
-# JAR 2014-04-23 More sample contamination in SILVA 115
-ott.same(ncbi.taxon('Lamprospora'), fung.taxon('Lamprospora'))
+	# RR #57
+	ncbi.taxon('Solms-laubachia').synonym('Solms-Laubachia')
 
-# JAR 2014-04-25
-ott.notSame(silva.taxon('Bostrychia', 'Rhodophyceae'), ncbi.taxon('Bostrychia', 'Aves'))
+	# Romina 2014-04-09
+	# NCBI has both Hypocrea and Trichoderma.
+	# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
+	ncbi.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
+	ncbi.taxon('Hypocrea').absorb(ncbi.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
 
-ott.absorb(ncbi)
+	# JAR attempt to resolve ambiguous alignment of Trichosporon in IF and
+	# NCBI based on common parent and member.
+	# Type = T. beigelii, which is current, according to Mycobank.
+	# But I'm going to use a different 'type', Trichosporon cutaneum.
+	ott.same(fung.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'), ncbi.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
+
+	# 2014-04-23 In new version of IF - obvious misalignment
+	ott.notSame(ncbi.taxon('Crepidula', 'Gastropoda'), fung.taxon('Crepidula', 'Microsporidia'))
+	ott.notSame(ncbi.taxon('Hessea', 'Viridiplantae'), fung.taxon('Hessea', 'Microsporidia'))
+	# 2014-04-23 Resolve ambiguity introduced into new version of IF
+	# http://www.speciesfungorum.org/Names/SynSpecies.asp?RecordID=331593
+	ott.same(ncbi.taxon('Gymnopilus spectabilis var. junonius'), fung.taxon('Gymnopilus junonius'))
+
+	# JAR 2014-04-23 More sample contamination in SILVA 115
+	ott.same(ncbi.taxon('Lamprospora'), fung.taxon('Lamprospora'))
+
+	# JAR 2014-04-25
+	ott.notSame(silva.taxon('Bostrychia', 'Rhodophyceae'), ncbi.taxon('Bostrychia', 'Aves'))
+
+	ott.absorb(ncbi)
+	return ncbi
+
+ncbi = doNcbi()
 
 # 2014-01-27 Joseph: Quiscalus is incorrectly in
 # Fringillidae instead of Icteridae.  NCBI is wrong, GBIF is correct.
@@ -367,9 +389,9 @@ print "Fungi in h2007 + if _ ncbi has %s nodes"%ott.taxon('Fungi').count()
 # ----- Non-Fungi from Index Fungorum -----
 
 # Not activating this hack yet
-if False:
-	allfung.analyzeMajorRankConflicts()
-	ott.absorb(allfung)
+# if False:
+# 	allfung.analyzeMajorRankConflicts()
+# 	ott.absorb(allfung)
 
 # ----- GBIF (Global Biodiversity Information Facility) taxonomy -----
 gbif = taxonomies.loadGbif()
@@ -510,63 +532,68 @@ ott.taxon('Blattaria').take(ott.taxon('Phyllodromiidae'))
 
 # ----- Interim Register of Marine and Nonmarine Genera (IRMNG) -----
 
-irmng = taxonomies.loadIrmng()
-irmng.taxon('Viruses').hide()
+def doIrmng():
 
-# JAR 2014-04-26 Flush all 'Unaccepted' taxa
-irmng.taxon('Unaccepted', 'life').prune()
+	irmng = taxonomies.loadIrmng()
+	irmng.taxon('Viruses').hide()
 
-# Fungi suppressed at David Hibbett's request
-irmng.taxon('Fungi').hideDescendantsToRank('species')
+	# JAR 2014-04-26 Flush all 'Unaccepted' taxa
+	irmng.taxon('Unaccepted', 'life').prune()
 
-# Neopithecus (extinct) occurs in two places.  Flush one, mark the other
-irmng.taxon('1413316').prune() #Neopithecus in Mammalia
-irmng.taxon('1413315').extinct() #Neopithecus in Primates (Pongidae)
+	# Fungi suppressed at David Hibbett's request
+	irmng.taxon('Fungi').hideDescendantsToRank('species')
 
-ott.same(gbif.taxon('3172047'), irmng.taxon('1381293'))  # Veronica
-ott.same(gbif.taxon('6101461'), irmng.taxon('1170022')) # genus Tipuloidea (not superfamily)
-# IRMNG has four Tetrasphaeras.
-ott.same(ncbi.taxon('Tetrasphaera','Intrasporangiaceae'), irmng.taxon('Tetrasphaera','Intrasporangiaceae'))
-ott.same(gbif.taxon('Gorkadinium','Dinophyceae'), irmng.taxon('Gorkadinium','Dinophyceae'))
+	# Neopithecus (extinct) occurs in two places.  Flush one, mark the other
+	irmng.taxon('1413316').prune() #Neopithecus in Mammalia
+	irmng.taxon('1413315').extinct() #Neopithecus in Primates (Pongidae)
 
-# Microbes suppressed at Laura Katz's request
-irmng.taxon('Bacteria','life').hideDescendants()
-irmng.taxon('Archaea','life').hideDescendants()
+	ott.same(gbif.taxon('3172047'), irmng.taxon('1381293'))  # Veronica
+	ott.same(gbif.taxon('6101461'), irmng.taxon('1170022')) # genus Tipuloidea (not superfamily)
+	# IRMNG has four Tetrasphaeras.
+	ott.same(ncbi.taxon('Tetrasphaera','Intrasporangiaceae'), irmng.taxon('Tetrasphaera','Intrasporangiaceae'))
+	ott.same(gbif.taxon('Gorkadinium','Dinophyceae'), irmng.taxon('Gorkadinium','Dinophyceae'))
 
-# RR #50
-# irmng.taxon('Saxo-Fridericia').rename('Saxofridericia')
-# irmng.taxon('Saxofridericia').absorb(irmng.taxon('Saxo-fridericia'))
-saxo = irmng.maybeTaxon('1063899')
-if saxo != None:
-	saxo.absorb(irmng.taxon('1071613'))
+	# Microbes suppressed at Laura Katz's request
+	irmng.taxon('Bacteria','life').hideDescendants()
+	irmng.taxon('Archaea','life').hideDescendants()
 
-# Romina 2014-04-09
-# IRMNG has EIGHT different Trichodermas.  (Four are synonyms of other things.)
-# 1307461 = Trichoderma Persoon 1794, in Hypocreaceae
-# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
-irmng.taxon('Hypocrea').absorb(irmng.taxon('1307461'))
+	# RR #50
+	# irmng.taxon('Saxo-Fridericia').rename('Saxofridericia')
+	# irmng.taxon('Saxofridericia').absorb(irmng.taxon('Saxo-fridericia'))
+	saxo = irmng.maybeTaxon('1063899')
+	if saxo != None:
+		saxo.absorb(irmng.taxon('1071613'))
 
-# JAR 2014-04-18 attempt to resolve ambiguous alignment of
-# Trichosporon in IF and IRMNG based on common parent and member
-ott.same(fung.taxon('Trichosporon'), irmng.taxon('Trichosporon'))
+	# Romina 2014-04-09
+	# IRMNG has EIGHT different Trichodermas.  (Four are synonyms of other things.)
+	# 1307461 = Trichoderma Persoon 1794, in Hypocreaceae
+	# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
+	irmng.taxon('Hypocrea').absorb(irmng.taxon('1307461'))
 
-# JAR 2014-04-24 false match
-ott.notSame(irmng.taxon('Protaspis', 'Chordata'), ncbi.taxon('Protaspis', 'Cercozoa'))
+	# JAR 2014-04-18 attempt to resolve ambiguous alignment of
+	# Trichosporon in IF and IRMNG based on common parent and member
+	ott.same(fung.taxon('Trichosporon'), irmng.taxon('Trichosporon'))
 
-# JAR 2014-04-18 while investigating hidden status of Coscinodiscus radiatus
-ott.notSame(irmng.taxon('Coscinodiscus', 'Porifera'), ncbi.taxon('Coscinodiscus', 'Stramenopiles'))
+	# JAR 2014-04-24 false match
+	ott.notSame(irmng.taxon('Protaspis', 'Chordata'), ncbi.taxon('Protaspis', 'Cercozoa'))
 
-# Protista is paraphyletic
-if False:
-	irmng_Protista = irmng.taxon('Protista','life')
-	irmng_Protista.hide()
+	# JAR 2014-04-18 while investigating hidden status of Coscinodiscus radiatus
+	ott.notSame(irmng.taxon('Coscinodiscus', 'Porifera'), ncbi.taxon('Coscinodiscus', 'Stramenopiles'))
+
+	# Protista is paraphyletic
 	if False:
-		irmng_Protista.detach()
-		irmng_Protista.elide()
+		irmng_Protista = irmng.taxon('Protista','life')
+		irmng_Protista.hide()
+		if False:
+			irmng_Protista.detach()
+			irmng_Protista.elide()
 
-irmng.analyzeMajorRankConflicts()
+	irmng.analyzeMajorRankConflicts()
 
-ott.absorb(irmng)
+	ott.absorb(irmng)
+	return irmng
+
+irmng = doIrmng()
 
 # ----- Final patches -----
 

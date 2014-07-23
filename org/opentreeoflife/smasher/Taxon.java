@@ -30,7 +30,13 @@ public class Taxon {
 	public Taxon mapped = null;	// source node -> union node
 	Taxon comapped = null;		// union node -> source node
 	boolean novelp = false;		// added to union in last round?
-	String division = null;
+	Taxon division = null;
+
+	// Cf. assignBrackets
+	int seq = NOT_SET;		// Self
+	int start = NOT_SET;	// First taxon included not including self
+	int end = NOT_SET;		// Next taxon *not* included
+
 
 	static boolean windyp = true;
 
@@ -41,9 +47,7 @@ public class Taxon {
 
 	// Clear out temporary stuff from union nodes
 	void reset() {
-		// this.mapped = null;	  // always null anyhow
 		this.comapped = null;
-		this.division = null;
 		this.novelp = false;
 		resetBrackets();
 		if (children != null)
@@ -85,7 +89,7 @@ public class Taxon {
 		if (this.id == null) {
 			this.id = id;
 			this.taxonomy.idIndex.put(id, this);
-		} else
+		} if (!this.id.equals(id))
 			System.err.println("Attempt to replace id " + this.id + " with " + id);
 	}
 
@@ -139,18 +143,23 @@ public class Taxon {
 	}
 
 	// Go upwards and cache on the way back down
-	public String getDivision() {
+	public Taxon getDivision() {
 		if (this.division == null) {
 			if (this.parent == null)
-				this.division = null;
+				this.division = null; // shouldn't happen
 			else
 				this.division = this.parent.getDivision();
 		}
 		return this.division;
 	}
 
-	void setDivision(String division) {
-		if (this.division != null)
+	public String divisionName() {
+		Taxon d = this.getDivision();
+		return (d == null ? "(no division)" : d.name);
+	}
+
+	void setDivision(Taxon division) {
+		if (this.division != null && this.division != division)
 			this.report("!? changing divisions doesn't work");
 		this.division = division;
 	}
@@ -240,7 +249,7 @@ public class Taxon {
 		}
 		if (unode.comapped != null) {
 			// Union node has already been matched to, but synonyms are OK
-			this.report("Union node already mapped tog, creating synonym", unode);
+			this.report("Union node already mapped to, creating synonym", unode);
 		}
 		this.mapped = unode;
 		unode.comapped = this;
@@ -265,7 +274,9 @@ public class Taxon {
 	}
 
 	void addSource(Taxon source) {
-		addSourceId(source.getQualifiedId());
+		if (source.id != null &&
+			!source.taxonomy.getTag().equals("skel")) //KLUDGE!!!
+			addSourceId(source.getQualifiedId());
 		// Accumulate ...
 		if (source.sourceIds != null)
 			for (QualifiedId qid : source.sourceIds)
@@ -411,10 +422,11 @@ public class Taxon {
 						if (loser.name.equals(this.name)) {
 							if (this.getDivision() == loser.getDivision())	 //double check
 								union.logAndMark(Answer.no(this, loser, "new-homonym/in-division",
-														   this.getDivision()));
+														   this.divisionName()));
 							else
 								union.logAndMark(Answer.no(this, loser, "new-homonym/out-division",
-														   this.getDivision() + "=>" + loser.getDivision()));
+														   (this.getDivision().name + "=>" +
+															loser.divisionName())));
 							break;
 						}
 					}
@@ -762,11 +774,12 @@ public class Taxon {
 		}
 	}
 
-	static final int NOT_SET = -7; // for source nodes
+	// 'Bracketing' logic.  Every node in the union taxonomy is
+	// assigned a unique integer, ordered sequentially by a preorder
+	// traversal.  Taxon inclusion across taxonomies can be determined
+	// (approximately) by looking at shared names and doing a range check.
 
-	int seq = NOT_SET;		// Self
-	int start = NOT_SET;	// First taxon included not including self
-	int end = NOT_SET;		// Next taxon *not* included
+	static final int NOT_SET = -7; // for source nodes
 
 	void resetBrackets() {			  // for union nodes
 		this.seq = NOT_SET;			  // Self
@@ -893,7 +906,7 @@ public class Taxon {
 			return this.parent.measureDepth() + 1;
 	}
 
-	Taxon mrca(Taxon b) {
+	public Taxon mrca(Taxon b) {
 		if (b == null) return null; // Shouldn't happen, but...
 		else {
 			Taxon a = this;
@@ -910,9 +923,9 @@ public class Taxon {
 	}
  
 	// For cycle detection
-	boolean descendsFrom(Taxon b) {
+	public boolean descendsFrom(Taxon b) {
 		for (Taxon a = this; a != null; a = a.parent)
-			if (b == a)
+			if (a == b)
 				return true;
 		return false;
 	}
@@ -980,31 +993,38 @@ public class Taxon {
 			return "?";
 		}
 		boolean homonymp = false;
-		boolean informativeFail = false;
 
+		// Ancestor that distinguishes this taxon from all others with same name
+		Taxon unique = null;
 		for (Taxon other : nodes)
 			if (other != this) {  //  && other.name.equals(this.name)
 				homonymp = true;
-				Taxon i = this.informative();
-				if (i != null && i.equals(other.informative())) {
-					informativeFail = true;
-					break;
+				if (unique != this) {
+					Taxon[] div = Taxonomy.divergence(this, other);
+					if (div != null) {
+						if (unique == null)
+							unique = div[0];
+						else if (div[0].descendsFrom(unique))
+							unique = div[0];
+					}
 				}
 			}
-		if (informativeFail || homonymp) {
-			String urank = "";
-			if (this.rank != null) urank = this.rank + " ";
-			if (informativeFail && this.sourceIds != null)
-				urank = urank + this.sourceIds.get(0) + " ";
-
-			Taxon i = this.informative();
-			if (i != null) {
-				String irank = "";
-				if (i.rank != null) irank = i.rank + " ";
-				return this.name + " (" + urank + "in " + irank + i.name + ")";
+		if (homonymp) {
+			String thisrank = ((this.rank == null) ? "" : (this.rank + " "));
+			if (unique == null || unique == this) {
+				if (this.sourceIds != null)
+					return this.name + " (" + thisrank + this.sourceIds.get(0) + ")";
+				else
+					/* No unique name, just leave it alone and pray */
+					return this.name;
+			} else {
+				String qrank = ((unique.rank == null) ? "" : (unique.rank + " "));
+				String qname = unique.uniqueName();
+				if (qname.length() == 0) qname = unique.name;
+				return this.name + " (" + thisrank + "in " + qrank + qname + ")";
 			}
-		}
-		return "";
+		} else
+			return "";
 	}
 
 	static Comparator<Taxon> compareNodesBySize = new Comparator<Taxon>() {
@@ -1316,6 +1336,8 @@ public class Taxon {
      * around the entire string.
 	 * Puts quotes around name if any illegal characters are present.
 	 * 
+	 * Author: Joseph W. Brown
+	 *
 	 * @param origName
 	 * @return newickName
 	 */

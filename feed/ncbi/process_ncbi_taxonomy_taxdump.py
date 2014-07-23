@@ -152,9 +152,10 @@ if __name__ == "__main__":
 		if "subgroup <" in homonc: #corrects some nested homonyms
 			nm = homonc.replace("<","").replace(">","")
 		if nm_c != "scientific name":
-			if gid not in synonyms:
-				synonyms[gid] = []
-			synonyms[gid].append(i.strip())
+			if nm_c != "common name" and nm_c != "genbank common name" and nm_c != "type material":
+				if gid not in synonyms:
+					synonyms[gid] = []
+				synonyms[gid].append(i.strip())
 		else:
 			lines[gid] = i.strip()
 			nm_storage[gid] = nm
@@ -294,10 +295,11 @@ if __name__ == "__main__":
 			prid = ""
 		elif nametowrite == 'environmental samples':
 			nametowrite = nm_storage[pid[i]] + ' ' + nametowrite
-			if nametowrite not in synonyms:
-				synonyms[i] = []
-			# kludge, would be better to change synonyms table representation
-			synonyms[i].append('%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n' % (i, 'environmental samples', '', 'synonym'))
+			if False:
+				if nametowrite not in synonyms:
+					synonyms[i] = []
+				# kludge, would be better to change synonyms table representation
+				synonyms[i].append('%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n' % (i, 'environmental samples', '', 'synonym'))
 		rankwrite = nrank[id]
 		outfile.write(id+"\t|\t"+prid+"\t|\t"+nametowrite+"\t|\t"+rankwrite+"\t|\t\n")
 

@@ -1,0 +1,9 @@
+worm.py A tool to generate smasher files from the WoRMS web API
+
+This tool uses the worms web API and generates a log file (worms.log by 
+default), a taxonomy.tsv and a synonyms.tsv file that correspond to other
+smashers input files.
+
+Usage:
+
+python worms.py [taxonomy_file synonysm_file [log_file]]

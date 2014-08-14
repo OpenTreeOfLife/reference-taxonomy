@@ -5,8 +5,8 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.8draft5
-PREV_WHICH=2.7
+WHICH=2.9draft1
+PREV_WHICH=2.8
 
 #  $^ = all prerequisites
 #  $< = first prerequisite
@@ -42,6 +42,7 @@ $(CLASS): org/opentreeoflife/smasher/Smasher.java \
 	  org/opentreeoflife/smasher/Taxonomy.java \
 	  org/opentreeoflife/smasher/Taxon.java \
 	  org/opentreeoflife/smasher/Flag.java \
+	  org/opentreeoflife/smasher/Alignment.java org/opentreeoflife/smasher/Reportx.java \
 	  lib/jscheme.jar lib/json-simple-1.1.1.jar lib/jython-standalone-2.5.3.jar
 	javac -g $(CP) org/opentreeoflife/smasher/*.java
 
@@ -58,7 +59,8 @@ OTT_ARGS=$(SMASH) $(SILVA)/ tax/713/ tax/if/ $(NCBI)/ $(GBIF)/ \
       --out tax/ott/
 
 ott: tax/ott/log.tsv
-tax/ott/log.tsv: $(CLASS) make-ott.py $(SILVA)/taxonomy.tsv \
+tax/ott/log.tsv: $(CLASS) make-ott.py taxonomies.py \
+                    tax/silva/taxonomy.tsv \
 		    tax/if/taxonomy.tsv tax/713/taxonomy.tsv \
 		    $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv \
 		    tax/irmng/taxonomy.tsv \
@@ -73,12 +75,12 @@ fung: tax/if/taxonomy.tsv tax/if/synonyms.tsv
 
 tax/if/taxonomy.tsv: tax/if/synonyms.tsv tax/if/about.json
 	@mkdir -p `dirname $@`
-	wget --output-document=$@ http://files.opentreeoflife.org/ott/IF/taxonomy.tsv
+	wget --output-document=$@ http://files.opentreeoflife.org/ott/if-ott2.8/taxonomy.tsv
 	@ls -l $@
 
 tax/if/synonyms.tsv:
 	@mkdir -p `dirname $@`
-	wget --output-document=$@ http://files.opentreeoflife.org/ott/IF/synonyms.tsv
+	wget --output-document=$@ http://files.opentreeoflife.org/ott/if-ott2.8/synonyms.tsv
 	@ls -l $@
 
 tax/if/about.json:
@@ -351,5 +353,9 @@ aster: t/tax/aster/taxonomy.tsv
 
 aster-tarball: t/tax/aster/taxonomy.tsv
 	(cd t/tax && \
+	 mkdir -p $(TARDIR) $$ \
 	 tar -czvf $(TARDIR)/aster.tgz.tmp aster && \
 	 mv $(TARDIR)/aster.tgz.tmp $(TARDIR)/aster.tgz )
+
+check:
+	bash run-tests.sh

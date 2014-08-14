@@ -5,6 +5,11 @@ from org.opentreeoflife.smasher import Taxonomy
 # Create model taxonomy
 tax = Taxonomy.newTaxonomy()
 
+# Establish homonym-resolution skeleton (not really used here)
+skel = Taxonomy.getTaxonomy('tax/skel/', 'skel')
+tax.setSkeleton(skel)
+
+
 # Add NCBI subset to the model taxonomy
 ncbi = Taxonomy.getTaxonomy('t/tax/ncbi_aster/')
 # analyzeOTUs sets flags on questionable taxa ("unclassified" and so on)

@@ -172,7 +172,8 @@ def write_taxonomy(fname, taxon_table):
     try:
         taxonomy_file = codecs.open(fname, "w", "utf-8")
         taxonomy_file.write(TAXON_HEADER)
-        for taxon in taxon_table.values():    # maybe sort this
+        for rawtaxon in taxon_table.values():    # maybe sort this
+            taxon = process_parens(rawtaxon)
             if 'rank' in taxon:
                 outstr = TAXON_TEMPLATE % (taxon['id'],
                                            taxon['parent'],
@@ -192,6 +193,32 @@ def write_taxonomy(fname, taxon_table):
             "error %s opening/writing %s as taxonomy file file",
             str(e),
             taxonomy_fname)
+
+def process_parens(taxon):
+    """subgenera are parenthesized; if this occurs in the name of a
+       species or lower ranked taxon, strip out the subgenus reference;
+       if the taxon is the subgenus, assume the parenthesized portion is
+       the subgenus name, so strip out the genus name that preceeds it and
+       parens.  If it doesn't fit the pattern, fail."""
+    if 'rank' not in taxon:  # unfortunate edge case
+        return taxon
+    name = taxon['name']
+    if taxon['rank'] == 'subgenus':
+        if name.find('(') > -1:
+            open = name.find('(')
+            close = name.find(')')
+            if close > open:
+                name = name[0:open -1]
+                taxon['name'] = name
+    elif taxon['name'].find('(') > -1:
+        if name.find('(') > -1:
+            open = name.find('(')
+            close = name.find(')')
+            if close > open:
+                name = name[0:open] + name[close+2:]
+                taxon['name'] = name
+    return taxon
+       
 
 
 SYNONYM_HEADER = "uid\t|\tname\t|\ttype\t|\tTBD\t|\n"

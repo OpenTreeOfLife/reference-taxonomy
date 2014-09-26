@@ -1270,9 +1270,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	static Pattern viralRegex =
 		Pattern.compile(
 						"\\bviral\\b|" +
-						"\\bviroids\\b|" +
-						"\\bViruses\\b|" +
-						"\\bviruses\\b|" +
+						"\\b[Vv]iroids\\b|" +
+						"\\b[Vv]iruses\\b|" +
 						"\\bvirus\\b"
 						);
 

@@ -283,12 +283,6 @@ def doNcbi():
 
 	ncbi = taxonomies.loadNcbi()
 
-	# - Canonicalize division names (cf. skeleton) -
-	# JAR 2014-05-13 scrutinizing pin() and BarrierNodes.  Wikipedia
-	# confirms these synonymies.
-	ncbi.taxon('Glaucocystophyceae').synonym('Glaucophyta')
-	ncbi.taxon('Haptophyceae').synonym('Haptophyta')
-
 	ncbi.taxon('Viruses').hide()
 
 	# David Hibbett has requested that for Fungi, only Index Fungorum
@@ -298,13 +292,7 @@ def doNcbi():
 	# somewhere.
 	ncbi.taxon('Fungi').hideDescendantsToRank('species')
 
-	#ott.same(ncbi.taxon('Cyanobacteria'), silva.taxon('D88288/#3'))
-	ott.notSame(ncbi.taxon('Burkea'), fung.taxon('Burkea'))
-	ott.notSame(ncbi.taxon('Coscinium'), fung.taxon('Coscinium'))
-	ott.notSame(ncbi.taxon('Perezia'), fung.taxon('Perezia'))
-
-	# JAR 2014-04-11 Discovered during regression testing
-	ott.notSame(ncbi.taxon('Epiphloea', 'Rhodophyta'), fung.taxon('Epiphloea', 'Ascomycota'))
+	# - Touch-up -
 
 	# RR 2014-04-12 #49
 	ncbi.taxon('leotiomyceta').rename('Leotiomyceta')
@@ -348,6 +336,16 @@ def doNcbi():
 	# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
 	ncbi.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
 	ncbi.taxon('Hypocrea').absorb(ncbi.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
+
+	# - Alignment to OTT -
+
+	#ott.same(ncbi.taxon('Cyanobacteria'), silva.taxon('D88288/#3'))
+	ott.notSame(ncbi.taxon('Burkea'), fung.taxon('Burkea'))
+	ott.notSame(ncbi.taxon('Coscinium'), fung.taxon('Coscinium'))
+	ott.notSame(ncbi.taxon('Perezia'), fung.taxon('Perezia'))
+
+	# JAR 2014-04-11 Discovered during regression testing
+	ott.notSame(ncbi.taxon('Epiphloea', 'Rhodophyta'), fung.taxon('Epiphloea', 'Ascomycota'))
 
 	# JAR attempt to resolve ambiguous alignment of Trichosporon in IF and
 	# NCBI based on common parent and member.
@@ -394,135 +392,144 @@ print "Fungi in h2007 + if _ ncbi has %s nodes"%ott.taxon('Fungi').count()
 # 	ott.absorb(allfung)
 
 # ----- GBIF (Global Biodiversity Information Facility) taxonomy -----
-gbif = taxonomies.loadGbif()
-gbif.taxon('Viruses').hide()
 
-# Fungi suppressed at David Hibbett's request
-gbif.taxon('Fungi').hideDescendantsToRank('species')
+def doGbif():
 
-# Microbes suppressed at Laura Katz's request
-gbif.taxon('Bacteria','life').hideDescendants()
-gbif.taxon('Archaea','life').hideDescendants()
+	gbif = taxonomies.loadGbif()
+	gbif.taxon('Viruses').hide()
 
-#ott.same(gbif.taxon('Cyanobacteria'), silva.taxon('Cyanobacteria','Cyanobacteria')) #'D88288/#3'
+	# Fungi suppressed at David Hibbett's request
+	gbif.taxon('Fungi').hideDescendantsToRank('species')
 
-# Automatic alignment makes the wrong choice for the following two
-ott.same(ncbi.taxon('5878'), gbif.taxon('10'))	  # Ciliophora gbif:3269382
-ott.same(ncbi.taxon('29178'), gbif.taxon('389'))  # Foraminifera gbif:4983431
+	# Microbes suppressed at Laura Katz's request
+	gbif.taxon('Bacteria','life').hideDescendants()
+	gbif.taxon('Archaea','life').hideDescendants()
 
-# Tetrasphaera is a messy multi-way homonym
-ott.same(ncbi.taxon('Tetrasphaera','Intrasporangiaceae'), gbif.taxon('Tetrasphaera','Intrasporangiaceae'))
-
-# SILVA's Retaria is in SAR, GBIF's is in Brachiopoda
-ott.notSame(silva.taxon('Retaria'), gbif.taxon('Retaria'))
-
-# Rod Page blogged about this one
-# http://iphylo.blogspot.com/2014/03/gbif-liverwort-taxonomy-broken.html
-gbif.taxon('Jungermanniales','Marchantiophyta').absorb(gbif.taxon('Jungermanniales','Bryophyta'))
-
-# Bad alignments to NCBI
-ott.notSame(ncbi.taxon('Labyrinthomorpha'), gbif.taxon('Labyrinthomorpha'))
-ott.notSame(ncbi.taxon('Ophiurina'), gbif.taxon('Ophiurina','Ophiurinidae'))
-ott.notSame(ncbi.taxon('Rhynchonelloidea'), gbif.taxon('Rhynchonelloidea'))
-ott.notSame(ncbi.taxon('Neoptera'), gbif.taxon('Neoptera', 'Diptera'))
-ott.notSame(gbif.taxon('6101461'), ncbi.taxon('Tipuloidea')) # genus Tipuloidea
-ott.notSame(silva.taxon('GN013951'), gbif.taxon('Gorkadinium')) #Tetrasphaera
-
-# Joseph 2013-07-23 https://github.com/OpenTreeOfLife/opentree/issues/62
-# GBIF has two copies of Myospalax
-gbif.taxon('6006429').absorb(gbif.taxon('2439119'))
-
-# Rick Ree 2014-03-28 https://github.com/OpenTreeOfLife/reference-taxonomy/issues/37
-ott.same(ncbi.taxon('Calothrix', 'Rivulariaceae'), gbif.taxon('Calothrix', 'Rivulariaceae'))
-ott.same(ncbi.taxon('Chlorella', 'Chlorellaceae'), gbif.taxon('Chlorella', 'Chlorellaceae'))
-ott.same(ncbi.taxon('Myrmecia', 'Microthamniales'), gbif.taxon('Myrmecia', 'Microthamniales'))
-
-# RR 2014-04-12 #47
-gbif.taxon('Drake-brockmania').absorb(gbif.taxon('Drake-Brockmania'))
-# RR #50 - this one is in NCBI, see above
-gbif.taxon('Saxofridericia').absorb(gbif.taxon('4930834')) #Saxo-Fridericia
-# RR #57 - the genus is in NCBI, see above
-gbif.taxon('Solms-laubachia').absorb(gbif.taxon('4908941')) #Solms-Laubachia
-gbif.taxon('Solms-laubachia pulcherrima').absorb(gbif.taxon('Solms-Laubachia pulcherrima'))
-
-# RR #45
-gbif.taxon('Cyrto-hypnum').absorb(gbif.taxon('4907605'))
-
-# 2014-04-13 JAR noticed while grepping
-gbif.taxon('Chryso-hypnum').absorb(gbif.taxon('Chryso-Hypnum'))
-gbif.taxon('Drepano-Hypnum').rename('Drepano-hypnum')
-gbif.taxon('Complanato-Hypnum').rename('Complanato-hypnum')
-gbif.taxon('Leptorrhyncho-Hypnum').rename('Leptorrhyncho-hypnum')
-
-# Romina 2014-04-09
-# GBIF has both Hypocrea and Trichoderma.  And it has four Trichoderma synonyms...
-# pick the one that contains bogo-type Hypocrea rufa
-# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
-gbif.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
-gbif.taxon('Hypocrea').absorb(gbif.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
-
-# 2014-04-21 RR
-# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/45
-for epithet in ['cylindraceum',
-				'lepidoziaceum',
-				'intermedium',
-				'espinosae',
-				'pseudoinvolvens',
-				'arzobispoae',
-				'sharpii',
-				'frontinoae',
-				'atlanticum',
-				'stevensii',
-				'brachythecium']:
-	gbif.taxon('Cyrto-hypnum ' + epithet).absorb(gbif.taxon('Cyrto-Hypnum ' + epithet))
-
-# JAR 2014-04-18 attempt to resolve ambiguous alignment of
-# Trichosporon in IF and GBIF based on common member
-ott.same(fung.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'), gbif.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
-
-# JAR 2014-04-23 Noticed while perusing silva/gbif conflicts
-gbif.taxon('Ebriaceae').synonym('Ebriacea')
-gbif.taxon('Acanthocystidae').absorb(gbif.taxon('Acanthocistidae'))
-gbif.taxon('Dinophyta').synonym('Dinoflagellata')
-
-# Obviously the same genus, can't tell what's going on
-ott.same(gbif.taxon('Hygrocybe'), fung.taxon('Hygrocybe'))
-
-# JAR 2014-04-23 More sample contamination in SILVA 115
-ott.same(gbif.taxon('Lamprospora'), fung.taxon('Lamprospora'))
-
-# JAR 2014-04-23 IF update fallout
-ott.same(gbif.taxonThatContains('Penicillium', 'Penicillium expansum'), fung.taxonThatContains('Penicillium', 'Penicillium expansum'))
-
-# JAR 2014-06-29 stumbled on this while trying out new alignment
-# methods and examining troublesome homonym Bullacta exarata.
-# GBIF obviously puts it in the wrong place, see description at
-# http://www.gbif.org/species/4599744 (it's a snail, not a shrimp).
-bex = gbif.taxon('Bullacta exarata', 'Atyidae')
-bec = gbif.taxon('Bullacta ecarata', 'Atyidae')
-if bex != None and bec != None:
-	bex.absorb(bec)
-	bex.detach()
-
-# Paraphyletic - now taken care of in loadGbif
-if False:
-	gbif_Protozoa = gbif.taxon('Protozoa')
-	gbif_Protozoa.hide()   # recursive
+	# Paraphyletic - now taken care of in loadGbif
 	if False:
-		gbif_Protozoa.detach()
-		gbif_Protozoa.elide()
-	gbif_Chromista = gbif.taxon('Chromista')
-	gbif_Chromista.hide()   # recursive
-	if False:
-		gbif_Chromista.detach()
-		gbif_Chromista.elide()
+		gbif_Protozoa = gbif.taxon('Protozoa')
+		gbif_Protozoa.hide()   # recursive
+		if False:
+			gbif_Protozoa.detach()
+			gbif_Protozoa.elide()
+		gbif_Chromista = gbif.taxon('Chromista')
+		gbif_Chromista.hide()   # recursive
+		if False:
+			gbif_Chromista.detach()
+			gbif_Chromista.elide()
 
-# In GBIF, if a rank is skipped for some children but not others, that
-# means rank-skipped children are incertae sedis.  Mark them so.
-gbif.analyzeMajorRankConflicts()
+	# - Touch-up -
 
-ott.absorb(gbif)
+	# Rod Page blogged about this one
+	# http://iphylo.blogspot.com/2014/03/gbif-liverwort-taxonomy-broken.html
+	gbif.taxon('Jungermanniales','Marchantiophyta').absorb(gbif.taxon('Jungermanniales','Bryophyta'))
 
+	# Joseph 2013-07-23 https://github.com/OpenTreeOfLife/opentree/issues/62
+	# GBIF has two copies of Myospalax
+	gbif.taxon('6006429').absorb(gbif.taxon('2439119'))
+
+	# RR 2014-04-12 #47
+	gbif.taxon('Drake-brockmania').absorb(gbif.taxon('Drake-Brockmania'))
+	# RR #50 - this one is in NCBI, see above
+	gbif.taxon('Saxofridericia').absorb(gbif.taxon('4930834')) #Saxo-Fridericia
+	# RR #57 - the genus is in NCBI, see above
+	gbif.taxon('Solms-laubachia').absorb(gbif.taxon('4908941')) #Solms-Laubachia
+	gbif.taxon('Solms-laubachia pulcherrima').absorb(gbif.taxon('Solms-Laubachia pulcherrima'))
+
+	# RR #45
+	gbif.taxon('Cyrto-hypnum').absorb(gbif.taxon('4907605'))
+
+	# 2014-04-13 JAR noticed while grepping
+	gbif.taxon('Chryso-hypnum').absorb(gbif.taxon('Chryso-Hypnum'))
+	gbif.taxon('Drepano-Hypnum').rename('Drepano-hypnum')
+	gbif.taxon('Complanato-Hypnum').rename('Complanato-hypnum')
+	gbif.taxon('Leptorrhyncho-Hypnum').rename('Leptorrhyncho-hypnum')
+
+	# Romina 2014-04-09
+	# GBIF has both Hypocrea and Trichoderma.  And it has four Trichoderma synonyms...
+	# pick the one that contains bogo-type Hypocrea rufa
+	# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
+	gbif.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
+	gbif.taxon('Hypocrea').absorb(gbif.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
+
+	# 2014-04-21 RR
+	# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/45
+	for epithet in ['cylindraceum',
+					'lepidoziaceum',
+					'intermedium',
+					'espinosae',
+					'pseudoinvolvens',
+					'arzobispoae',
+					'sharpii',
+					'frontinoae',
+					'atlanticum',
+					'stevensii',
+					'brachythecium']:
+		gbif.taxon('Cyrto-hypnum ' + epithet).absorb(gbif.taxon('Cyrto-Hypnum ' + epithet))
+
+	# JAR 2014-04-23 Noticed while perusing silva/gbif conflicts
+	gbif.taxon('Ebriaceae').synonym('Ebriacea')
+	gbif.taxon('Acanthocystidae').absorb(gbif.taxon('Acanthocistidae'))
+	gbif.taxon('Dinophyta').synonym('Dinoflagellata')
+
+	# JAR 2014-06-29 stumbled on this while trying out new alignment
+	# methods and examining troublesome homonym Bullacta exarata.
+	# GBIF obviously puts it in the wrong place, see description at
+	# http://www.gbif.org/species/4599744 (it's a snail, not a shrimp).
+	bex = gbif.taxon('Bullacta exarata', 'Atyidae')
+	bec = gbif.taxon('Bullacta ecarata', 'Atyidae')
+	if bex != None and bec != None:
+		bex.absorb(bec)
+		bex.detach()
+
+	# - Alignment -
+
+	#ott.same(gbif.taxon('Cyanobacteria'), silva.taxon('Cyanobacteria','Cyanobacteria')) #'D88288/#3'
+
+	# Automatic alignment makes the wrong choice for the following two
+	ott.same(ncbi.taxon('5878'), gbif.taxon('10'))	  # Ciliophora gbif:3269382
+	ott.same(ncbi.taxon('29178'), gbif.taxon('389'))  # Foraminifera gbif:4983431
+
+	# Tetrasphaera is a messy multi-way homonym
+	ott.same(ncbi.taxon('Tetrasphaera','Intrasporangiaceae'), gbif.taxon('Tetrasphaera','Intrasporangiaceae'))
+
+	# SILVA's Retaria is in SAR, GBIF's is in Brachiopoda
+	ott.notSame(silva.taxon('Retaria'), gbif.taxon('Retaria'))
+
+	# Bad alignments to NCBI
+	ott.notSame(ncbi.taxon('Labyrinthomorpha'), gbif.taxon('Labyrinthomorpha'))
+	ott.notSame(ncbi.taxon('Ophiurina'), gbif.taxon('Ophiurina','Ophiurinidae'))
+	ott.notSame(ncbi.taxon('Rhynchonelloidea'), gbif.taxon('Rhynchonelloidea'))
+	ott.notSame(ncbi.taxon('Neoptera'), gbif.taxon('Neoptera', 'Diptera'))
+	ott.notSame(gbif.taxon('6101461'), ncbi.taxon('Tipuloidea')) # genus Tipuloidea
+	ott.notSame(silva.taxon('GN013951'), gbif.taxon('Gorkadinium')) #Tetrasphaera
+
+	# Rick Ree 2014-03-28 https://github.com/OpenTreeOfLife/reference-taxonomy/issues/37
+	ott.same(ncbi.taxon('Calothrix', 'Rivulariaceae'), gbif.taxon('Calothrix', 'Rivulariaceae'))
+	ott.same(ncbi.taxon('Chlorella', 'Chlorellaceae'), gbif.taxon('Chlorella', 'Chlorellaceae'))
+	ott.same(ncbi.taxon('Myrmecia', 'Microthamniales'), gbif.taxon('Myrmecia', 'Microthamniales'))
+
+	# JAR 2014-04-18 attempt to resolve ambiguous alignment of
+	# Trichosporon in IF and GBIF based on common member
+	ott.same(fung.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'), gbif.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
+
+	# Obviously the same genus, can't tell what's going on
+	ott.same(gbif.taxon('Hygrocybe'), fung.taxon('Hygrocybe'))
+
+	# JAR 2014-04-23 More sample contamination in SILVA 115
+	ott.same(gbif.taxon('Lamprospora'), fung.taxon('Lamprospora'))
+
+	# JAR 2014-04-23 IF update fallout
+	ott.same(gbif.taxonThatContains('Penicillium', 'Penicillium expansum'), fung.taxonThatContains('Penicillium', 'Penicillium expansum'))
+
+	# In GBIF, if a rank is skipped for some children but not others, that
+	# means rank-skipped children are incertae sedis.  Mark them so.
+	gbif.analyzeMajorRankConflicts()
+
+	ott.absorb(gbif)
+	return gbif
+
+gbif = doGbif()
 
 # Joseph 2014-01-27 https://code.google.com/p/gbif-ecat/issues/detail?id=104
 ott.taxon('Parulidae').take(ott.taxon('Myiothlypis', 'Passeriformes'))

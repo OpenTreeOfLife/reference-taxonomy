@@ -208,7 +208,7 @@ feed/silva/in/silva.fasta:
 	(cd feed/silva/in && tar xzvf silva.fasta.tgz && mv *silva.fasta silva.fasta)
 
 #TARDIR=/raid/www/roots/opentree/ott
-TARDIR=tarballs
+TARDIR?=tarballs
 
 tarball: tax/ott/log.tsv
 	(mkdir -p $(TARDIR) && \
@@ -352,9 +352,8 @@ test: aster
 aster: t/tax/aster/taxonomy.tsv
 
 aster-tarball: t/tax/aster/taxonomy.tsv
-	(cd t/tax && \
-	 mkdir -p $(TARDIR) $$ \
-	 tar -czvf $(TARDIR)/aster.tgz.tmp aster && \
+	(mkdir -p $(TARDIR) && \
+	 tar czvf $(TARDIR)/aster.tgz.tmp -C t/tax aster && \
 	 mv $(TARDIR)/aster.tgz.tmp $(TARDIR)/aster.tgz )
 
 check:

@@ -208,7 +208,7 @@ feed/silva/in/silva.fasta:
 	(cd feed/silva/in && tar xzvf silva.fasta.tgz && mv *silva.fasta silva.fasta)
 
 #TARDIR=/raid/www/roots/opentree/ott
-TARDIR=tarballs
+TARDIR?=tarballs
 
 tarball: tax/ott/log.tsv
 	(mkdir -p $(TARDIR) && \

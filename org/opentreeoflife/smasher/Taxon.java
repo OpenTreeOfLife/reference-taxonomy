@@ -1157,6 +1157,8 @@ public class Taxon {
 			System.err.format("** %s can't be added because it is already in the tree\n", newchild, this);
 		else {
 			newchild.properFlags |= Taxonomy.EDITED;
+			if (this.taxonomy.roots.contains(newchild))
+				this.taxonomy.roots.remove(newchild);
 			this.addChild(newchild);
 		}
 	}

@@ -6,8 +6,8 @@ from org.opentreeoflife.smasher import Taxonomy
 tax = Taxonomy.newTaxonomy()
 
 # Establish homonym-resolution skeleton (not really used here)
-skel = Taxonomy.getTaxonomy('tax/skel/', 'skel')
-tax.setSkeleton(skel)
+# skel = Taxonomy.getTaxonomy('tax/skel/', 'skel')
+# tax.setSkeleton(skel)
 
 
 # Add NCBI subset to the model taxonomy

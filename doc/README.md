@@ -1,7 +1,9 @@
 # Release notes for versions of the Open Tree Reference Taxonomy (OTT)
 
-If you're viewing this file on github, then in order for the relative
-hyperlinks to work, please select the 'raw' view of this file.
+If you're viewing this file on github using Firefox, then in order for
+the relative hyperlinks to work, you must select the 'raw' view of
+this file. There is some weird bug either with github or with Firefox
+in the handling of .md files.
 
 * [Version 2.8](ott2.8.md) 11 June 2014
 * Version 2.7 8 May 2014 (no release notes)

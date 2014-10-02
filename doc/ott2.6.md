@@ -42,31 +42,31 @@ f624223f31, which resides on github, [here](https://github.com/OpenTreeOfLife/re
 
 * SILVA 115:
     Retrieved from
-      [https://www.arb-silva.de/fileadmin/silva_databases/release\_115/Exports/SSURef\_NR99\_115\_tax\_silva.fasta.tgz](https://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/SSURef_NR99_115_tax_silva.fasta.tgz).
+    [https://www.arb-silva.de/fileadmin/silva_databases/release\_115/Exports/SSURef\_NR99\_115\_tax\_silva.fasta.tgz](https://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/SSURef_NR99_115_tax_silva.fasta.tgz).
     Last-modified date: 2013-09-07.
     See: Quast C, Pruesse E, Yilmaz P, Gerken J, Schweer T, Yarza P,
-      Peplies J, Glockner FO (2013) The SILVA ribosomal RNA gene
-      database project: improved data processing and web-based tools.
-      Nucleic Acids Research 41 (D1): D590-D596.
-      [http://dx.doi.org/10.1093/nar/gks1219](http://dx.doi.org/10.1093/nar/gks1219).
+    Peplies J, Glockner FO (2013) The SILVA ribosomal RNA gene
+    database project: improved data processing and web-based tools.
+    Nucleic Acids Research 41 (D1): D590-D596.
+    [http://dx.doi.org/10.1093/nar/gks1219](http://dx.doi.org/10.1093/nar/gks1219).
     Web site: [https://www.arb-silva.de/](https://www.arb-silva.de/).
 
 *  Taxonomy from Hibbett et al 2007, with updates through April 2014:
     Retrieved from
-      [http://dx.doi.org/10.6084/m9.figshare.915439](http://dx.doi.org/10.6084/m9.figshare.915439)
+    [http://dx.doi.org/10.6084/m9.figshare.915439](http://dx.doi.org/10.6084/m9.figshare.915439).
     Last-modified date: 2014-03-10.
     There is a copy in feed/h2007/ in the git repository.
     See: A higher-level phylogenetic classification of the Fungi.
-      DS Hibbett, M Binder, JF Bischoff, M Blackwell, et al.
-      Mycological Research 111(5):509-547, 2007.
-      [http://dx.doi.org/10.1016/j.mycres.2007.03.004](http://dx.doi.org/10.1016/j.mycres.2007.03.004)
+    DS Hibbett, M Binder, JF Bischoff, M Blackwell, et al.
+    Mycological Research 111(5):509-547, 2007.
+    [http://dx.doi.org/10.1016/j.mycres.2007.03.004](http://dx.doi.org/10.1016/j.mycres.2007.03.004)
 
 *  Index Fungorum:
     We received database table dumps from Paul Kirk in email in
     November-December 2013, and converted them to the interim taxonomy
     format using ad hoc scripts.  The converted form is here:
-      [http://purl.org/opentree/ott2.6-inputs/tax/if/taxonomy.tsv](http://purl.org/opentree/ott2.6-inputs/tax/if/taxonomy.tsv) and
-      [http://purl.org/opentree/ott2.6-inputs/tax/if/synonyms.tsv](http://purl.org/opentree/ott2.6-inputs/tax/if/synonyms.tsv).
+    [http://purl.org/opentree/ott2.6-inputs/tax/if/taxonomy.tsv](http://purl.org/opentree/ott2.6-inputs/tax/if/taxonomy.tsv) and
+    [http://purl.org/opentree/ott2.6-inputs/tax/if/synonyms.tsv](http://purl.org/opentree/ott2.6-inputs/tax/if/synonyms.tsv).
     Web site: [http://www.indexfungorum.org/](http://www.indexfungorum.org/).
 
 *  Lamiales taxonomy from Schaferhof et al 2010:

@@ -1,9 +1,9 @@
 
 Documentation for how to use 'smasher', the taxonomy combiner.
-See file NEWS.md for release notes for the taxonomy itself.
+See file doc/README.md for release notes for the taxonomy itself.
 
 Taxonomies are represented as directories, see 
-<https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Interim-taxonomy-file-format>
+[here](https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Interim-taxonomy-file-format).
 
 To test to see whether you can run Smasher, do 'make aster'.
 

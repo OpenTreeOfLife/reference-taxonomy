@@ -24,10 +24,6 @@ FUNG=tax/if
 # (TBD: make local copies so that setup is simpler)
 TAXOMACHINE_EXAMPLE=../../taxomachine/example
 
-# Preottol - for filling in the preottol id column
-#  https://bitbucket.org/mtholder/ottol/src/dc0f89986c6c2a244b366312a76bae8c7be15742/preOTToL_20121112.txt?at=master
-PREOTTOL=../../preottol
-
 CP=-classpath ".:lib/*"
 JAVA=java $(CP)
 BIG_JAVA=$(JAVA) -Xmx14G
@@ -86,15 +82,6 @@ tax/if/synonyms.tsv:
 tax/if/about.json:
 	@mkdir -p `dirname $@`
 	cp -p feed/if/about.json tax/if/
-
-# Create the aux (preottol) mapping in a separate step.
-# How does it know where to write to?
-
-tax/ott/aux.tsv: $(CLASS) tax/ott/log.tsv
-	$(BIG_JAVA) $(SMASH) tax/ott/ --aux $(PREOTTOL)/preottol-20121112.processed
-
-$(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
-	python process-preottol.py $< $@
 
 tax/prev_ott/taxonomy.tsv:
 	@mkdir -p feed/prev_ott/in 

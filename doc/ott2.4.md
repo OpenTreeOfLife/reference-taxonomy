@@ -1,3 +1,11 @@
+## Version 2.4 release notes
+
+Features Index Fungorum, the Hibbett 2007 Updated fungal taxonomy,
+extinct flags from IRMNG, and many small algorithmic improvements.
+
+Released 17 March 2014.
+
+-----
 2.4.draft19 (2014-02-27):
 
 * Microbes from GBIF and IRMNG now suppressed

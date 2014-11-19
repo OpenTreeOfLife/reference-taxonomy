@@ -906,21 +906,27 @@ public class Taxon {
 			return this.parent.measureDepth() + 1;
 	}
 
-	public Taxon mrca(Taxon b) {
-		if (b == null) return null; // Shouldn't happen, but...
-		else {
-			Taxon a = this;
-			while (a.getDepth() > b.getDepth())
-				a = a.parent;
-			while (b.getDepth() > a.getDepth())
-				b = b.parent;
-			while (a != b) {
-				a = a.parent;
-				b = b.parent;
-			}
-			return a;
-		}
-	}
+    Taxon mrca(Taxon b) {
+        if (b == null) return null; // Shouldn't happen, but...
+        else {
+            Taxon a = this;
+            int adepth = a.getDepth();
+            int bdepth = b.getDepth();
+            while (adepth > bdepth) {
+                a = a.parent;
+                --adepth;
+            }
+            while (bdepth > adepth) {
+                b = b.parent;
+                --bdepth;
+            }
+            while (a != b) {
+                a = a.parent;
+                b = b.parent;
+            }
+            return a;
+        }
+    }
  
 	// For cycle detection
 	public boolean descendsFrom(Taxon b) {

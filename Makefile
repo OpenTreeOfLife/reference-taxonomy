@@ -47,7 +47,8 @@ $(CLASS): org/opentreeoflife/smasher/Smasher.java \
 	javac -g $(CP) org/opentreeoflife/smasher/*.java
 
 lib/jython-standalone-2.5.3.jar:
-	wget -O "$@" "http://search.maven.org/remotecontent?filepath=org/python/jython-standalone/2.5.3/jython-standalone-2.5.3.jar"
+	wget -O "$@" --no-check-certificate \
+	 "http://search.maven.org/remotecontent?filepath=org/python/jython-standalone/2.5.3/jython-standalone-2.5.3.jar"
 	@ls -l $@
 
 # --------------------------------------------------------------------------

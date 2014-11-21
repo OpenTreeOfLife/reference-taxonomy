@@ -98,6 +98,13 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		return total;
 	}
 
+	public int tipCount() {
+		int total = 0;
+		for (Taxon root : this.roots)
+			total += root.tipCount();
+		return total;
+	}
+
 	// Iterate over all nodes reachable from roots
 
 	public Iterator<Taxon> iterator() {

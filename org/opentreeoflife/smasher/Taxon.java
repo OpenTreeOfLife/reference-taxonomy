@@ -775,6 +775,19 @@ public class Taxon {
 		}
 	}
 
+	// Number of tips at or below this node.
+
+	public int tipCount() {
+		if (children == null)
+			return 1;
+		else {
+			int count = 0;
+			for (Taxon child: children)
+				count += child.tipCount();
+			return count;
+		}
+	}
+
 	// 'Bracketing' logic.  Every node in the union taxonomy is
 	// assigned a unique integer, ordered sequentially by a preorder
 	// traversal.  Taxon inclusion across taxonomies can be determined

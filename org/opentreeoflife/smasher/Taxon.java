@@ -145,10 +145,10 @@ public class Taxon {
 	// Go upwards and cache on the way back down
 	public Taxon getDivision() {
 		if (this.division == null) {
-			if (this.parent == null)
-				this.division = null; // shouldn't happen
-			else
+			if (this.parent != null)
 				this.division = this.parent.getDivision();
+			if (this.division == null && this.mapped != null)
+				this.division = this.mapped.getDivision();
 		}
 		return this.division;
 	}
@@ -387,6 +387,7 @@ public class Taxon {
 				for (Taxon augChild: newChildren)
 					newnode.addChild(augChild);
 
+				// this = node in source taxonomy.  this.mapped is null.
 				union.reportConflict(this, oldChildren.get(0));
 
 				newflags |= Taxonomy.TATTERED;
@@ -425,7 +426,7 @@ public class Taxon {
 														   this.divisionName()));
 							else
 								union.logAndMark(Answer.no(this, loser, "new-homonym/out-division",
-														   (this.getDivision().name + "=>" +
+														   (this.divisionName() + "=>" +
 															loser.divisionName())));
 							break;
 						}
@@ -1052,19 +1053,25 @@ public class Taxon {
 		Taxon sam = null;
 		if (this.children == null) {
 			sam = this.dup(tax);
-			this.mapped = sam;
+			this.mapTo(sam);
 		} else
 			for (Taxon child : this.children) {
 				Taxon c = child.selectVisible(tax);
 				if (c != null) {
 					if (sam == null) {
 						sam = this.dup(tax);
-						this.mapped = sam;
+						this.mapTo(sam);
 					}
 					sam.addChild(c);
 				}
 			}
 		return sam;
+	}
+
+	// This is a bad idea but I don't know whether anything depends on it
+	void mapTo(Taxon m) {
+		if (false)
+			this.mapped = m;
 	}
 
 	// The nodes of the resulting tree are a subset of size k of the

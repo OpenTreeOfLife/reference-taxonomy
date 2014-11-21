@@ -77,6 +77,10 @@ def loadGbif():
 	gbif = Taxonomy.getTaxonomy('tax/gbif/', 'gbif')
 	gbif.smush()
 
+	# In GBIF, if a rank is skipped for some children but not others, that
+	# means the rank-skipped children are incertae sedis.  Mark them so.
+	gbif.analyzeMajorRankConflicts()
+
 	fixProtists(gbif)  # creates a Eukaryota node
 	fixPlants(gbif)
 	gbif.taxon('Animalia').synonym('Metazoa')
@@ -89,18 +93,40 @@ def loadGbif():
 def loadIrmng():
 	irmng = Taxonomy.getTaxonomy('tax/irmng/', 'irmng')
 	irmng.smush()
+	irmng.analyzeMajorRankConflicts()
 
 	fixProtists(irmng)
 	fixPlants(irmng)
 	irmng.taxon('Animalia').synonym('Metazoa')
 
+	# JAR 2014-04-26 Flush all 'Unaccepted' taxa
+	irmng.taxon('Unaccepted', 'life').prune()
+
 	return irmng
+
+def loadWorms():
+	worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
+	worms.smush()
+
+	worms.taxon('Biota').synonym('life')
+	worms.taxon('Animalia').synonym('Metazoa')
+	fixProtists(worms)
+	fixPlants(worms)
+	return worms
+
 
 # Common code for GBIF, IRMNG, Index Fungorum
 def fixProtists(tax):
 	euk = tax.maybeTaxon('Eukaryota')
 	if euk == None:
 		euk = tax.newTaxon('Eukaryota', 'domain', 'ncbi:2759')
+	co = tax.maybeTaxon('cellular organisms')
+	if co != None: co.take(euk)
+	else:
+		li = tax.maybeTaxon('life')
+		if li != None: li.take(euk)
+		else:
+			print('No parent for Eukaryota')
 
 	for name in ['Animalia', 'Fungi', 'Plantae']:
 		node = tax.maybeTaxon(name)
@@ -111,7 +137,7 @@ def fixProtists(tax):
 		bad = tax.maybeTaxon(name)
 		if bad != None:
 			euk.take(bad)
-			bad.hide()   # recursive
+			bad.hide()	 # recursive
 			for child in bad.children:
 				child.incertaeSedis()
 			bad.elide()
@@ -155,7 +181,7 @@ def checkDivisions(tax):
 		("Rhodophyta", "Acrotylus australis"), #MANUALLY SELECTED
 		("Glaucophyta", "Cyanophora biloba"),
 
-		("Fungi", "Tuber indicum"),    # MANUAL
+		("Fungi", "Tuber indicum"),	   # MANUAL
 
 		("Porifera", "Oscarella nicolae"), # MANUALLY SELECTED
 		("Cnidaria", "Malo kingi"),

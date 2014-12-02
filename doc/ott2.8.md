@@ -65,11 +65,11 @@ ordering is as given below.
     Download location: [http://purl.org/opentree/ott/ott2.8/inputs/hibbett-20140313.tre](http://purl.oeg/opentree/ott/ott2.8/inputs/hibbett-20140313.tre)
 
 1.  Taxonomy from: SILVA 16S ribosomal RNA database, version 115.
-    Download location: [http://www.arb-silva.de/download/arb-files/](http://www.arb-silva.de/download/arb-files/).
     See: Quast C, Pruesse E, Yilmaz P, Gerken J, Schweer T, Yarza P, Peplies J,
     Gl&ouml;ckner FO (2013) The SILVA ribosomal RNA gene database project:
     improved data processing and web-based tools. 
     [Nucleic Acids Research</i> 41 (D1): D590-D596](http://dx.doi.org/10.1093/nar/gks1219).
+    Web site: [http://www.arb-silva.de/](http://www.arb-silva.de/).
     <br />
     Download location: [ftp://ftp.arb-silva.de/release\_115/Exports/tax\_ranks\_ssu\_115.csv](ftp://ftp.arb-silva.de/release_115/Exports/tax_ranks_ssu_115.csv).
 
@@ -113,7 +113,7 @@ ordering is as given below.
     [http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip](http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip).
     <br />
     We used a version dated 2014-01-31.  Download location:
-    [http://purl.org/opentree/ott/ott2.8/inputs/taxdump-20140611.tgz](IRMNG_DWC-2014-01-30.zip">http://purl.org/opentree/ott/ott2.8/inputs/IRMNG_DWC-2014-01-30.zip).
+    [http://purl.org/opentree/ott/ott2.8/inputs/taxdump-20140611.tgz](http://purl.org/opentree/ott/ott2.8/inputs/IRMNG_DWC-2014-01-30.zip).
  
 
 Any errors

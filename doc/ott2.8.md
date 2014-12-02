@@ -4,7 +4,7 @@ Version 2.8 (also known as version 2.8 draft 5) was generated on 11 June 2014.
 
 ## Download
 
-[Download](http://files.opentreeoflife.org/ott/ott2.8.tgz) (gzipped tar file, 119 Mbyte) 
+[Download](http://purl.org/ott/ott2.8/ott2.8.tgz) (gzipped tar file, 119 Mbyte) 
 
 ## Contents
 All files are encoded UTF-8.  For detailed documentation about file formats, see [documentation in the reference taxonomy
@@ -55,13 +55,14 @@ ordering is as given below.
 
 ## Sources
 
-1.   Taxonomy from: 
+1.  Taxonomy from: 
     DS Hibbett, M Binder, JF Bischoff, M Blackwell, et al. 
     A higher-level phylogenetic classification of the <i>Fungi</i>.
     [Mycological Research</i> <b>111</b>(5):509-547, 2007](http://dx.doi.org/10.1016/j.mycres.2007.03.004).
-    Newick string with updates through June 2014
+    Newick string with revisions
     archived at [http://dx.doi.org/10.6084/m9.figshare.915439](http://dx.doi.org/10.6084/m9.figshare.915439).
-    Download location: [http://purl.oeg/opentree/ott/ott2.8/inputs/hibbett-20140313.tre](http://purl.oeg/opentree/ott/ott2.8/inputs/hibbett-20140313.tre)
+    <br />
+    Download location: [http://purl.org/opentree/ott/ott2.8/inputs/hibbett-20140313.tre](http://purl.oeg/opentree/ott/ott2.8/inputs/hibbett-20140313.tre)
 
 1.  Taxonomy from: SILVA 16S ribosomal RNA database, version 115.
     Download location: [http://www.arb-silva.de/download/arb-files/](http://www.arb-silva.de/download/arb-files/).
@@ -69,14 +70,15 @@ ordering is as given below.
     Gl&ouml;ckner FO (2013) The SILVA ribosomal RNA gene database project:
     improved data processing and web-based tools. 
     [Nucleic Acids Research</i> 41 (D1): D590-D596](http://dx.doi.org/10.1093/nar/gks1219).
-    Download available at <a href="ftp://ftp.arb-silva.de/release_115/Exports/"
-	  >Silva's web site</a>.
+    <br />
+    Download location: [ftp://ftp.arb-silva.de/release\_115/Exports/tax\_ranks\_ssu\_115.csv](ftp://ftp.arb-silva.de/release_115/Exports/tax_ranks_ssu_115.csv).
 
 1.  Index Fungorum.
     Download location: derived from database query result files provided by Paul
     Kirk, April 2014 (personal communication).
     Web site: [http://www.indexfungorum.org/](http://www.indexfungorum.org/).
-    Converted to OTT format: [http://purl.org/opentree/ott/ott2.8/inputs/if-20140514.tgz](http://purl.org/opentree/ott/ott2.8/inputs/if-20140514.tgz).
+    <br />
+    Download location (converted to OTT format): [http://purl.org/opentree/ott/ott2.8/inputs/if-20140514.tgz](http://purl.org/opentree/ott/ott2.8/inputs/if-20140514.tgz).
 
 1.  Taxonomy from:
     Sch&auml;ferhoff, B., Fleischmann, A., Fischer, E., Albach, D. C., Borsch,
@@ -85,28 +87,33 @@ ordering is as given below.
     sequences. 
     [<i>BMC evolutionary biology</i> 10(1), 352.](http://dx.doi.org/10.1186/1471-2148-10-352).
     Manually transcribed from the paper and converted to OTT format.
-    Download location: [http://purl.oeg/opentree/ott/ott2.8/inputs/lamiales-20140118.tsv](http://purl.oeg/opentree/ott/ott2.8/inputs/lamiales-20140118.tsv)
+    <br />
+    Download location: [http://purl.org/opentree/ott/ott2.8/inputs/lamiales-20140118.tsv](http://purl.oeg/opentree/ott/ott2.8/inputs/lamiales-20140118.tsv)
 
 1.  NCBI Taxonomy, from the 
     [US National Center on Biotechnology Information](http://www.ncbi.nlm.nih.gov/).
+    Web site: [http://www.ncbi.nlm.nih.gov/Taxonomy/](http://www.ncbi.nlm.nih.gov/Taxonomy/).
     Current version download location:
     [ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz](ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz)
-    Updated frequently; for OTT 2.8 we used a version dated
-    circa 11 June 2014, archived at
-    [http://purl.org/opentree/ott/ott2.8/inputs/taxdump-20140611.tgz](taxdump-20140611.tgz">http://purl.org/opentree/ott/ott2.8/inputs/taxdump-20140611.tgz).
-    Web site: [http://www.ncbi.nlm.nih.gov/Taxonomy/](http://www.ncbi.nlm.nih.gov/Taxonomy/).
+    <br />
+    For OTT 2.8 we used a version dated circa 11 June 2014.
+    Download location: [http://purl.org/opentree/ott/ott2.8/inputs/taxdump-20140611.tgz](http://purl.org/opentree/ott/ott2.8/inputs/taxdump-20140611.tgz).
   </li>
 
 1.  GBIF Backbone Taxonomy, from the 
     [Global Biodiversity Information facility](http://www.gbif.org/).
     Current version download location: 
     [http://www.gbif.org/dataset/d7dddbf4-2cf0-4f39-9b2a-bb099caae36c](http://www.gbif.org/dataset/d7dddbf4-2cf0-4f39-9b2a-bb099caae36c).
-    Updated from time to time.  We used a version dated 2013-07-02, archived at [http://purl.org/opentree/gbif-backbone-2013-07-02.zip](http://purl.org/opentree/gbif-backbone-2013-07-02.zip).
+    <br />
+    We used a version dated 2013-07-02.
+    Download location: [http://purl.org/opentree/gbif-backbone-2013-07-02.zip](http://purl.org/opentree/gbif-backbone-2013-07-02.zip).
 
 1.  [Interim Register of Marine and Nonmarine Genera (IRMNG)](http://www.obis.org.au/irmng/), from CSIRO.
     Current version download location:
     [http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip](http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip).
-    Updated from time to time.  We use a version dated 2014-01-31.
+    <br />
+    We used a version dated 2014-01-31.  Download location:
+    [http://purl.org/opentree/ott/ott2.8/inputs/taxdump-20140611.tgz](IRMNG_DWC-2014-01-30.zip">http://purl.org/opentree/ott/ott2.8/inputs/IRMNG_DWC-2014-01-30.zip).
  
 
 Any errors

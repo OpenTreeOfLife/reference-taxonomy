@@ -130,6 +130,6 @@ It has been requested that we relay the following statement:
 
 The Open Tree Taxonomy does not reproduce its sources in their
 entirety or in their original form of expression, but only uses
-limited information expressed in them. See "Scientific names of
-organisms: attribution, rights, and licensing" [DOI hyperlink]
+limited information expressed in them. See "[Scientific names of
+organisms: attribution, rights, and licensing](http://dx.doi.org/10.1186/1756-0500-7-79)" ([http://dx.doi.org/10.1186/1756-0500-7-79](http://dx.doi.org/10.1186/1756-0500-7-79))
 regarding use of taxonomic information and attribution.

@@ -55,6 +55,14 @@ ordering is as given below.
 
 ## Sources
 
+Any errors in OTT
+should be assumed to have been introduced by the Open Tree of Life 
+project until confirmed as originating in the source taxonomy.
+
+Download locations are for the particular versions used to construct
+OTT 2.8.  For new work, current versions of these sources should be
+retrieved.
+
 1.  Taxonomy from: 
     DS Hibbett, M Binder, JF Bischoff, M Blackwell, et al. 
     A higher-level phylogenetic classification of the <i>Fungi</i>.
@@ -113,9 +121,15 @@ ordering is as given below.
     [http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip](http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip).
     <br />
     We used a version dated 2014-01-31.  Download location:
-    [http://purl.org/opentree/ott/ott2.8/inputs/taxdump-20140611.tgz](http://purl.org/opentree/ott/ott2.8/inputs/IRMNG_DWC-2014-01-30.zip).
+    [http://purl.org/opentree/ott/ott2.8/inputs/IRMNG\_DWC-2014-01-30.zip](http://purl.org/opentree/ott/ott2.8/inputs/IRMNG_DWC-2014-01-30.zip).
  
+It has been requested that we relay the following statement:
 
-Any errors
-should be assumed to have been introduced by the Open Tree of Life 
-project until confirmed as originating in the source taxonomy.
+> REUSE OF IRMNG CONTENT:
+> IRMNG (the Interim Register of Marine and Nonmarine Genera) is assembled, with permission, from a range of third party data sources, certain of which permit data reuse only under specific conditions. In particular, for data originating from the Catalogue of Life (CoL), please refer to the relevant terms and conditions for reuse of CoL data as available at [http://www.catalogueoflife.org/content/terms-use](http://www.catalogueoflife.org/content/terms-use), and for data originating from the World Register of Marine Species (WoRMS) refer the paragraph "Terms of Use and Citation" at [http://www.marinespecies.org/about.php](http://www.marinespecies.org/about.php). The compilers of IRMNG accept no liability for any reuse of IRMNG content by downstream users which may be construed by the original data providers to violate their publicly available conditions of use.
+
+The Open Tree Taxonomy does not reproduce its sources in their
+entirety or in their original form of expression, but only uses
+limited information expressed in them. See "[Scientific names of
+organisms: attribution, rights, and licensing](http://dx.doi.org/10.1186/1756-0500-7-79)" ([http://dx.doi.org/10.1186/1756-0500-7-79](http://dx.doi.org/10.1186/1756-0500-7-79))
+regarding use of taxonomic information and attribution.

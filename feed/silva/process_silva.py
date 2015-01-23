@@ -157,8 +157,13 @@ def readNcbi(indir):
 	ncbifile = open(ncbifilename, 'r')
 	for line in ncbifile:
 		fields = line.split('\t')
-		if len(fields) >= 2 and fields[1] != '':
-			accession_to_ncbi[fields[0]] = fields[1].strip()
+		if len(fields) >= 3 and fields[1] != '' and fields[2] != '':
+			taxon = fields[1].strip()
+			strain = fields[2].strip()
+			accession_to_ncbi[fields[0]] = (taxon, strain)
+		elif len(fields) >= 2 and fields[1] != '':
+			taxon = fields[1].strip
+			accession_to_ncbi[fields[0]] = (taxon, None)
 	ncbifile.close()
 
 synonyms = {}
@@ -247,23 +252,23 @@ def processSilva(pathdict, indir, outdir):
 			if not accession in acc_seen:
 				acc_seen[accession] = True
 			if accession in accession_to_ncbi:
-				ncbi = accession_to_ncbi[accession]
-				if ncbi == '*':
+				(taxon, strain) = accession_to_ncbi[accession]
+				if taxon == '*':
 					blocked = blocked + 1
 				else:
 					acc_success = acc_success + 1
-					if ncbi in ncbi_silva_parent:
-						if ncbi_silva_parent[ncbi] != parentid:
-							ncbi_silva_parent[ncbi] = None
+					if taxon in ncbi_silva_parent:
+						if ncbi_silva_parent[taxon] != parentid:
+							ncbi_silva_parent[taxon] = None
 					else:
-						ncbi_silva_parent[ncbi] = parentid
-						ncbi_sample_accession[ncbi] = accession
-						ncbi_name[ncbi] = path[len(path)-1]
-					if ncbi in ncbi_to_accession_unique:
-						if ncbi_to_accession_unique[ncbi] != ncbi:
-							ncbi_to_accession_unique[ncbi] = None
+						ncbi_silva_parent[taxon] = parentid
+						ncbi_sample_accession[taxon] = accession
+						ncbi_name[taxon] = path[len(path)-1]
+					if taxon in ncbi_to_accession_unique:
+						if ncbi_to_accession_unique[taxon] != taxon:
+							ncbi_to_accession_unique[taxon] = None
 					else:
-						ncbi_to_accession_unique[ncbi] = accession
+						ncbi_to_accession_unique[taxon] = accession
 			else:
 				missing.append(accession)
 

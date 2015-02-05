@@ -4,7 +4,7 @@ Version 2.8 (also known as version 2.8 draft 5) was generated on 11 June 2014.
 
 ## Download
 
-[Download](http://purl.org/ott/ott2.8/ott2.8.tgz) (gzipped tar file, 119 Mbyte) 
+[Download](http://purl.org/opentree/ott/ott2.8/ott2.8.tgz) (gzipped tar file, 119 Mbyte) 
 
 ## Contents
 All files are encoded UTF-8.  For detailed documentation about file formats, see [documentation in the reference taxonomy

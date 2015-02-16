@@ -5,7 +5,7 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.9draft1
+WHICH=2.9draft2
 PREV_WHICH=2.8
 
 #  $^ = all prerequisites
@@ -19,10 +19,6 @@ NCBI=tax/ncbi
 GBIF=tax/gbif
 SILVA=tax/silva
 FUNG=tax/if
-
-# Root of local copy of taxomachine git repo, for nematode examples
-# (TBD: make local copies so that setup is simpler)
-TAXOMACHINE_EXAMPLE=../../taxomachine/example
 
 # Preottol - for filling in the preottol id column
 #  https://bitbucket.org/mtholder/ottol/src/dc0f89986c6c2a244b366312a76bae8c7be15742/preOTToL_20121112.txt?at=master
@@ -278,35 +274,6 @@ clean:
 	rm -rf tax/if tax/ncbi tax/prev_nem tax/silva
 	rm -f $(CLASS)
 	rm -f feed/ncbi/taxdump.tar.gz
-
-# -----------------------------------------------------------------------------
-# Test: nematodes
-
-# Nematode test
-TEST_ARGS=$(SMASH) tax/nem_ncbi/ tax/nem_gbif/ \
-      --edits feed/nem/edits/ \
-      --ids tax/prev_nem/ \
-      --out tax/nem/
-
-nem: tax/nem/log.tsv
-tax/nem/log.tsv: $(CLASS) tax/prev_nem/taxonomy.tsv tax/nem_ncbi/taxonomy.tsv tax/nem_gbif/taxonomy.tsv
-	@mkdir -p tax/nem/
-	$(JAVA) $(TEST_ARGS)
-
-# Inputs to the nem test
-
-tax/nem_ncbi/taxonomy.tsv:
-	@mkdir -p `dirname $@`
-	cp -p $(TAXOMACHINE_EXAMPLE)/nematoda.ncbi $@
-
-tax/nem_gbif/taxonomy.tsv:
-	@mkdir -p `dirname $@`
-	cp -p $(TAXOMACHINE_EXAMPLE)/nematoda.gbif $@
-
-# little test of --select feature
-tax/nem_dory/taxonomy.tsv: tax/nem/log.tsv $(CLASS)
-	@mkdir -p `dirname $@`
-	$(JAVA) $(SMASH) --start tax/nem/ --select Dorylaimina tax/nem_dory/
 
 # -----------------------------------------------------------------------------
 # Model village: Asterales

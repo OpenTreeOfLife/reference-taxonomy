@@ -182,7 +182,7 @@ feed/irmng/in/IRMNG_DWC.zip:
 
 SILVA_URL=http://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/SSURef_NR99_115_tax_silva.fasta.tgz
 SILVA_RANKS_URL=http://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/tax_ranks_ssu_115.csv
-		
+
 silva: $(SILVA)/taxonomy.tsv
 $(SILVA)/taxonomy.tsv: feed/silva/process_silva.py feed/silva/in/silva.fasta feed/silva/in/accessionid_to_taxonid.tsv 
 	@mkdir -p feed/silva/out
@@ -239,14 +239,20 @@ test2: $(CLASS)
 	$(JAVA) $(SMASH) --test
 
 
-ids_report.tsv:
+old-ids-that-are-otus.tsv:
 	time wget -O ids_report.csv "http://reelab.net/phylografter/ottol/ottol_names_report.csv/" 
 	tr "," "	" <ids_report.csv >$@
 	rm ids_report.csv
 
-tax/ott/otu_deprecated.tsv: ids_report.tsv tax/ott/deprecated.tsv
+# This typically won't run since the target is checked in
+ids-that-are-otus.tsv:
+	time python util/ids-that-are-otus.py $@.new
+	mv $@.new $@
+	wc $@
+
+tax/ott/otu_deprecated.tsv: ids-that-are-otus.tsv tax/ott/deprecated.tsv
 	grep "\\*" tax/ott/deprecated.tsv | grep -v "excluded" >dep-tmp.tsv
-	$(JAVA) $(SMASH) --join ids_report.tsv dep-tmp.tsv >$@.new
+	$(JAVA) $(SMASH) --join ids-that-are-otus.tsv dep-tmp.tsv >$@.new
 	mv $@.new $@
 	wc $@
 
@@ -256,12 +262,12 @@ tax/ott/differences.tsv: tax/prev_ott/taxonomy.tsv tax/ott/taxonomy.tsv
 	wc $@
 
 tax/ott/otu_differences.tsv: tax/ott/differences.tsv
-	$(JAVA) $(SMASH) --join ids_report.tsv tax/ott/differences.tsv >$@.new
+	$(JAVA) $(SMASH) --join ids-that-are-otus.tsv tax/ott/differences.tsv >$@.new
 	mv $@.new $@
 	wc $@
 
 tax/ott/otu_hidden.tsv: tax/ott/hidden.tsv
-	$(JAVA) $(SMASH) --join ids_report.tsv tax/ott/hidden.tsv >$@.new
+	$(JAVA) $(SMASH) --join ids-that-are-otus.tsv tax/ott/hidden.tsv >$@.new
 	mv $@.new $@
 	wc $@
 

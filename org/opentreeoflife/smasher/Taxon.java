@@ -1177,7 +1177,7 @@ public class Taxon {
 		else if (this.children != null && this.children.contains(newchild))
 			System.err.format("| %s is already a child of %s\n", newchild, this);
 		else if (newchild == this)
-			System.err.format("** A taxon cannot be its own parent: %s\n", newchild, this);
+			System.err.format("** A taxon cannot be its own parent: %s %s\n", newchild, this);
 		else {
 			newchild.properFlags |= Taxonomy.EDITED;
 			newchild.properFlags &= ~(Taxonomy.MAJOR_RANK_CONFLICT | Taxonomy.INCERTAE_SEDIS);

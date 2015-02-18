@@ -10,6 +10,16 @@ def loadSilva():
 	# but says -phytina would be more correct per code.
 	silva.taxon('Rhodophyceae').rename('Rhodophyta')
 
+	# Sample contamination
+	silva.taxon('Trichoderma harzianum').prune()
+	silva.taxon('Sclerotinia homoeocarpa').prune()
+	silva.taxon('Puccinia triticina').prune()
+
+	# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/104
+	silva.taxon('Caenorhabditis elegans').prune()
+
+	silva.taxon('Solanum lycopersicum').prune()
+
 	return silva
 
 def loadH2007():

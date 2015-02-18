@@ -5,7 +5,7 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.9draft2
+WHICH=2.9draft3
 PREV_WHICH=2.8
 
 #  $^ = all prerequisites
@@ -96,7 +96,7 @@ $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 tax/prev_ott/taxonomy.tsv:
 	@mkdir -p feed/prev_ott/in 
 	wget --output-document=feed/prev_ott/in/ott$(PREV_WHICH).tgz \
-	  http://files.opentreeoflife.org/ott/ott$(PREV_WHICH).tgz
+	  http://files.opentreeoflife.org/ott/ott$(PREV_WHICH)/ott$(PREV_WHICH).tgz
 	@ls -l feed/prev_ott/in/ott$(PREV_WHICH).tgz
 	(cd feed/prev_ott/in/ && tar xvf ott$(PREV_WHICH).tgz)
 	rm -rf tax/prev_ott
@@ -214,8 +214,8 @@ tarball: tax/ott/log.tsv
 	@echo "Don't forget to bump the version number"
 
 # Then, something like
-# scp -p -i ~/.ssh/opentree.pem tarballs/ott2.8draft5.tgz \
-#   opentree@ot10.opentreeoflife.org:files.opentreeoflife.org/ott/
+# scp -p -i ~/.ssh/opentree/opentree.pem tarballs/ott2.9draft3.tgz \
+#   opentree@ot10.opentreeoflife.org:files.opentreeoflife.org/ott/ott2.9/
 
 # This predates use of git on norbert...
 #norbert:

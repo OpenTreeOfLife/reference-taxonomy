@@ -61,8 +61,13 @@ def prepare_silva():
 		silva.taxon(name).elide()  #maybe just hide instead ?
 
 	# - Deal with division alignment issues -
-	ott.notSame(silva.taxon('Ctenophora', 'Coscinodiscophytina'),
-				skel.taxon('Ctenophora'))
+	# In SILVA, Ctenophora is a genus inside of SAR, not a metazoan phylum
+	if False:
+		# *** The following seems to not work. ***
+		ott.notSame(silva.taxon('Ctenophora', 'Coscinodiscophytina'),
+					skel.taxon('Ctenophora'))
+	else:
+		silva.taxon('Ctenophora', 'Coscinodiscophytina').prune()
 
 	ott.markDivisions(silva)
 	taxonomies.checkDivisions(silva)
@@ -109,6 +114,14 @@ def prepare_fungorum():
 
 	# JAR 2014-05-13 Chlorophyte or fungus?	 This one is very confused.
 	# Pick it up from GBIF if at all
+	# Mycobank and EOL (via Mycobank) put in in Algae
+	# IF says it's a chlorophyte, not a fungus
+	# First Nature says it's a synonym for a fungus (Terana caerulea) 'Cobalt crust fungus'
+	# GBIF puts it in Basidiomycota (Fungi), synonym for Terana caerulea, in Phanerochaetaceae
+	# Study pg_391 puts it sister to Phlebiopsis gigantea, in Basidiomycota
+	# Study pg_1744 puts it sister to genus Phanerochaete, which is in Basidiomycota
+	# Study pg_1160 puts is close to Phanerochaete and Hyphodermella
+	# I'm thinking of putting it in Phanerochaetaceae. - GBIF does this for us.
 	fung.taxon('Byssus phosphorea').prune()
 
 	if False:  # see taxonomies.loadFung
@@ -209,6 +222,10 @@ def prepare_fungorum():
 	# ** (null=if:81865 Rhizocarpaceae) is already a child of (null=h2007:212 Rhizocarpales)
 	# ** No taxon found with this name: Hyaloraphidiaceae
 
+	# Yan Wong https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116
+	fung.taxon('Mycosphaeroides').extinct()
+	fung.taxon('Majasphaeridium').extinct()
+
 	# *** Alignment to SILVA
 
 	# 2014-03-07 Prevent a false match
@@ -221,19 +238,19 @@ def prepare_fungorum():
 
 	# 2014-04-08 More IF/SILVA bad matches
 	# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/63
-	for name in ['Trichoderma harzianum',  # in Pezizomycotina
-				 'Acantharia',			   # in Pezizomycotina
+	for name in ['Acantharia',			   # in Pezizomycotina
 				 'Bogoriella',			   # in Pezizomycotina
 				 'Steinia',				   # in Pezizomycotina
-				 'Sclerotinia homoeocarpa', # in Pezizomycotina
 				 'Epiphloea',			   # in Pezizomycotina
 				 'Campanella',			   # in Agaricomycotina
 				 'Lacrymaria',			   # in Agaricomycotina
 				 'Frankia',				   # in Pezizomycotina / bacterium in SILVA
-				 'Phialina',			   # in Pezizomycotina
-				 'Puccinia triticina']:	   # in Pucciniomycotina in Fungi
+				 'Phialina', 			   # in Pezizomycotina
+				 ]:
 		ott.notSame(silva.taxon(name), fung.taxon(name))
-
+	# Trichoderma harzianum, Sclerotinia homoeocarpa, Puccinia
+	# triticina are removed from SILVA early
+				 
 	# 2014-04-25 JAR
 	# There are three Bostrychias: a rhodophyte, a fungus, and a bird.
 	# The fungus name is a synonym for Cytospora.
@@ -262,6 +279,9 @@ def prepare_fungorum():
 	#
 	# Just make it incertae sedis and put off dealing with it until someone cares...
 
+	# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/79
+	ott.notSame(silva.taxon('Podocystis', 'Stramenopiles'), fung.taxon('Podocystis', 'Fungi'))
+
 	return fung
 
 fungorum = prepare_fungorum()
@@ -286,6 +306,15 @@ ott.absorb(study713)
 def prepare_worms():
 	worms = taxonomies.loadWorms()
 	worms.taxon('Viruses').prune()
+
+	# 2015-02-17 According to WoRMS web site.  Occurs in pg_1229
+	worms.taxon('Scenedesmus communis').synonym('Scenedesmus caudata')
+
+	# See NCBI
+	worms.taxon('Millericrinida').extant()
+
+	worms.smush()  # Gracilimesus gorbunovi, pg_1783
+
 	return worms
 
 worms = prepare_worms()
@@ -358,6 +387,9 @@ def doNcbi():
 	ncbi.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
 	ncbi.taxon('Hypocrea').absorb(ncbi.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
 
+	# Mark Holder https://github.com/OpenTreeOfLife/reference-taxonomy/issues/120
+	ncbi.taxon('Cetartiodactyla').synonym('Artiodactyla')
+
 	# - Alignment to OTT -
 
 	#ott.same(ncbi.taxon('Cyanobacteria'), silva.taxon('D88288/#3'))
@@ -372,7 +404,10 @@ def doNcbi():
 	# NCBI based on common parent and member.
 	# Type = T. beigelii, which is current, according to Mycobank.
 	# But I'm going to use a different 'type', Trichosporon cutaneum.
-	ott.same(fungorum.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'), ncbi.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
+	ott.same(fungorum.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'),
+			 #ncbi.taxonThatContains('Trichosporon', 'Trichosporon cutaneum')
+			 ncbi.taxon('5552')
+			 )
 
 	# 2014-04-23 In new version of IF - obvious misalignment
 	ott.notSame(ncbi.taxon('Crepidula', 'Gastropoda'), fungorum.taxon('Crepidula', 'Microsporidia'))
@@ -504,6 +539,16 @@ def doGbif():
 		bex.absorb(bec)
 		bex.detach()
 
+	# Yan Wong 2014-12-16 https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116
+	for name in ['Griphopithecus', 'Asiadapis',
+				 'Lomorupithecus', 'Marcgodinotius', 'Muangthanhinius',
+				 'Plesiopithecus', 'Suratius', 'Killikaike blakei', 'Rissoina bonneti']:
+		gbif.taxon(name).extinct()
+
+	# Doug Soltis 2015-02-17 https://github.com/OpenTreeOfLife/feedback/issues/59 
+	# http://dx.doi.org/10.1016/0034-6667(95)00105-0
+	gbif.taxon('Timothyia').extinct()
+
 	# - Alignment -
 
 	#ott.same(gbif.taxon('Cyanobacteria'), silva.taxon('Cyanobacteria','Cyanobacteria')) #'D88288/#3'
@@ -533,7 +578,10 @@ def doGbif():
 
 	# JAR 2014-04-18 attempt to resolve ambiguous alignment of
 	# Trichosporon in IF and GBIF based on common member
-	ott.same(fungorum.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'), gbif.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
+	# ott.same(fungorum.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'),
+	#          gbif.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
+	# doesn't work.  brute force.
+	ott.same(fungorum.taxon('10296'), gbif.taxon('2518163'))
 
 	# Obviously the same genus, can't tell what's going on
 	ott.same(gbif.taxon('Hygrocybe'), fungorum.taxon('Hygrocybe'))
@@ -918,6 +966,15 @@ def patch_ott():
 	# Dail 2014-03-31
 	# https://github.com/OpenTreeOfLife/feedback/issues/6
 	ott.taxon('Telonema').synonym('Teleonema')
+
+	# JAR noticed 2015-02-17  used in pg_2460
+	# http://reptile-database.reptarium.cz/species?genus=Parasuta&species=spectabilis
+	ott.taxon('Parasuta spectabilis').synonym('Rhinoplocephalus spectabilis')
+
+	# Bryan Drew 2015-02-17 http://dx.doi.org/10.1016/j.ympev.2014.11.011
+	sax = ott.taxon('Saxifragella bicuspidata')
+	ott.taxon('Saxifraga').take(sax)
+	sax.rename('Saxifraga bicuspidata')
 
 patch_ott()
 

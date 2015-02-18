@@ -87,7 +87,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		if (nodes == null) {
 			nodes = new ArrayList<Taxon>(1); //default is 10
 			this.nameIndex.put(name, nodes);
-		}
+		} else if (nodes.contains(node))
+			return;
 		nodes.add(node);
 	}
 
@@ -521,7 +522,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	// TO BE DONE:
 	//	 Umlaut letters of German origin (not diaresis) need to have an added 'e'
 	//	   ... but there's no way to determine this automatically.
-	//	   Xestoleberis yüchiae is not of Germanic origin.
+	//	   Xestoleberis y\u00FCchiae is not of Germanic origin.
 	//	 Convert upper case letters to lower case
 	//		e.g. genus Pechuel-Loeschea	 -- but these are all barren.
 	private static String normalizeName(String str) {
@@ -864,15 +865,10 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 							System.err.println("...");
 						continue;
 					}
-					if (node.name.equals(syn)) {
-						if (++losers < 10)
-							System.err.println("Putative synonym " + syn + " is the primary name of " + id);
-						else if (losers == 10)
-							System.err.println("...");
-						continue;
+					if (!node.name.equals(syn)) {
+						addSynonym(syn, node);
+						++count;
 					}
-					addSynonym(syn, node);
-					++count;
 				}
 			}
 			br.close();
@@ -1299,7 +1295,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	static Pattern environmentalRegex = Pattern.compile("\\benvironmental\\b");
 
 	static Pattern incertae_sedisRegex =
-		Pattern.compile("\\bincertae sedis\\b|\\bIncertae sedis\\b|\\bIncertae Sedis\\b|(unallocated)|\\bUnallocated\\b");
+		Pattern.compile("\\bincertae sedis\\b|\\bIncertae sedis\\b|\\bIncertae Sedis\\b|" +
+						"(unallocated)|\\bUnallocated\\b|\\bmitosporic\\b");
 
 	static String[][] rankStrings = {
 		{"domain",
@@ -1370,7 +1367,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			Taxon selectionRoot = this.select(sel, tax2);
 			System.out.println("| Selection has " + selectionRoot.count() + " taxa");
 			tax2.roots.add(selectionRoot);
-			this.copySynonyms(tax2);
+			this.copySelectedSynonyms(tax2);
 			return tax2;
 		} else {
 			System.err.println("** Missing or ambiguous selection name");
@@ -1403,7 +1400,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			Taxon selection = selectToDepth(sel, tax2, depth);
 			System.out.println("| Selection has " + selection.count() + " taxa");
 			tax2.roots.add(selection);
-			this.copySynonyms(tax2);
+			this.copySelectedSynonyms(tax2);
 			return tax2;
 		} else {
 			System.err.println("** Missing or ambiguous name: " + sel);
@@ -1431,7 +1428,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			Taxon selection = sel.selectVisible(tax2);
 			System.out.println("| Selection has " + selection.count() + " taxa");
 			tax2.roots.add(selection);
-			this.copySynonyms(tax2);
+			this.copySelectedSynonyms(tax2);
 			return tax2;
 		} else
 			return null;
@@ -1685,7 +1682,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			return;
 		}
 		for (File editfile : editfiles)
-			if (!editfile.getName().endsWith("~")) {
+			if (editfile.isFile() &&
+				!editfile.getName().endsWith(".hold") &&
+				!editfile.getName().endsWith("~")) {
 				applyEdits(editfile);
 			}
 	}
@@ -2233,27 +2232,40 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				   node.divisionName());
 	}
 	
+	void copySelectedSynonyms(Taxonomy target) {
+		copySynonyms(target, false);
+	}
+
+	void copyMappedSynonyms(Taxonomy target) {
+		copySynonyms(target, true);
+	}
+
 	// Propogate synonyms from source taxonomy (= this) to union.
 	// Some names that are synonyms in the source might be primary names in the union,
 	//	and vice versa.
-	void copySynonyms(Taxonomy union) {
+	void copySynonyms(Taxonomy target, boolean mappedp) {
 		int count = 0;
 
 		// For each name in source taxonomy...
 		for (String syn : this.nameIndex.keySet()) {
 
 			// For each node that the name names...
-			for (Taxon node : this.nameIndex.get(syn))
+			for (Taxon node : this.nameIndex.get(syn)) {
+				Taxon other =
+					(mappedp
+					 ? node.mapped
+					 : target.idIndex.get(node.id));
 
 				// If that node maps to a union node with a different name....
-				if (node.mapped != null && !node.mapped.name.equals(syn)) {
+				if (other != null && !other.name.equals(syn)) {
 					// then the name is a synonym of the union node too
-					if (node.mapped.taxonomy != union)
+					if (other.taxonomy != target)
 						System.err.format("** copySynonyms logic error %s %s\n",
-										  node.mapped.taxonomy, union);
-					else if (union.addSynonym(syn, node.mapped))
+										  other.taxonomy, target);
+					else if (target.addSynonym(syn, other))
 						++count;
 				}
+			}
 		}
 		if (count > 0)
 			System.err.println("| Added " + count + " synonyms");
@@ -2358,9 +2370,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	public void markDivisions(SourceTaxonomy source) {
 		UnionTaxonomy union = (UnionTaxonomy)this;
 		union.markDivisionsx(source);
-	}
+	}}
 
-}  // end of class Taxonomy
+// end of class Taxonomy
 
 class SourceTaxonomy extends Taxonomy {
 
@@ -2693,7 +2705,7 @@ class UnionTaxonomy extends Taxonomy {
 	void mergeIn(SourceTaxonomy source) {
 		source.mapInto(this, Criterion.criteria);
 		source.augment(this);
-		source.copySynonyms(this);
+		source.copyMappedSynonyms(this); // this = union
 		this.reset();			// ??? see Taxonomy.same()
 		Taxon.windyp = true; //kludge
 	}
@@ -3581,11 +3593,14 @@ class Answer {
 class QualifiedId {
 	String prefix;
 	String id;
+
+	static Pattern colonPattern = Pattern.compile(":");
+
 	QualifiedId(String prefix, String id) {
 		this.prefix = prefix; this.id = id;
 	}
 	QualifiedId(String qid) {
-		String[] foo = qid.split(":", 2);
+		String[] foo = colonPattern.split(qid, 2);
 		if (foo.length != 2)
 			throw new RuntimeException("ill-formed qualified id: " + qid);
 		this.prefix = foo[0]; this.id = foo[1];

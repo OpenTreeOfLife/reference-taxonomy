@@ -143,6 +143,15 @@ CURIE that is specific to that taxon.
 
 If the taxon has no particular rank, put 'no rank'.
 
+## Counts
+
+    taxon.count()  =>  integer
+    taxon.tipCount()  =>  integer
+    
+count() returns the number of taxa (nodes) tipward of the given taxon.
+
+tipCount() returns the number of tips (leaf nodes) tipward of the given taxon.
+
 ## Surgery
 
 Whenever making ad hoc modifications to the taxonomy please leave a pointer (i.e. a URL) to some

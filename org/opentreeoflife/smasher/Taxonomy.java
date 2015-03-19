@@ -87,7 +87,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		if (nodes == null) {
 			nodes = new ArrayList<Taxon>(1); //default is 10
 			this.nameIndex.put(name, nodes);
-		}
+		} else if (nodes.contains(node))
+			return;
 		nodes.add(node);
 	}
 
@@ -95,6 +96,13 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		int total = 0;
 		for (Taxon root : this.roots)
 			total += root.count();
+		return total;
+	}
+
+	public int tipCount() {
+		int total = 0;
+		for (Taxon root : this.roots)
+			total += root.tipCount();
 		return total;
 	}
 
@@ -181,8 +189,13 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			} else if (d == depth)
 				otherbest = node;
 		}
-		if (otherbest != null)
-			System.err.format("** Ambiguous division name: %s %s %s\n", best, otherbest, depth);
+		if (otherbest != null) {
+			if (otherbest == best)
+				// shouldn't happen
+				System.err.format("** Multiply indexed: %s %s %s\n", best, otherbest, depth);
+			else
+				System.err.format("** Ambiguous division name: %s %s %s\n", best, otherbest, depth);
+		}
 		return best;
 	}
 
@@ -509,7 +522,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	// TO BE DONE:
 	//	 Umlaut letters of German origin (not diaresis) need to have an added 'e'
 	//	   ... but there's no way to determine this automatically.
-	//	   Xestoleberis yüchiae is not of Germanic origin.
+	//	   Xestoleberis y\u00FCchiae is not of Germanic origin.
 	//	 Convert upper case letters to lower case
 	//		e.g. genus Pechuel-Loeschea	 -- but these are all barren.
 	private static String normalizeName(String str) {
@@ -852,15 +865,10 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 							System.err.println("...");
 						continue;
 					}
-					if (node.name.equals(syn)) {
-						if (++losers < 10)
-							System.err.println("Putative synonym " + syn + " is the primary name of " + id);
-						else if (losers == 10)
-							System.err.println("...");
-						continue;
+					if (!node.name.equals(syn)) {
+						addSynonym(syn, node);
+						++count;
 					}
-					addSynonym(syn, node);
-					++count;
 				}
 			}
 			br.close();
@@ -1287,16 +1295,20 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	static Pattern environmentalRegex = Pattern.compile("\\benvironmental\\b");
 
 	static Pattern incertae_sedisRegex =
-		Pattern.compile("\\bincertae sedis\\b|\\bIncertae sedis\\b|\\bIncertae Sedis\\b|(unallocated)|\\bUnallocated\\b");
+		Pattern.compile("\\bincertae sedis\\b|\\bIncertae sedis\\b|\\bIncertae Sedis\\b|" +
+						"(unallocated)|\\bUnallocated\\b|\\bmitosporic\\b");
 
 	static String[][] rankStrings = {
 		{"domain",
 		 "superkingdom",
 		 "kingdom",
 		 "subkingdom",
+		 "infrakingdom",		// worms
 		 "superphylum"},
 		{"phylum",
 		 "subphylum",
+		 "infraphylum",			// worms
+		 "subdivision",			// worms
 		 "superclass"},
 		{"class",
 		 "subclass",
@@ -1306,9 +1318,12 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		 "suborder",
 		 "infraorder",
 		 "parvorder",
+		 "section",				// worms
+		 "subsection",			// worms
 		 "superfamily"},
 		{"family",
 		 "subfamily",
+		 "supertribe",			// worms
 		 "tribe",
 		 "subtribe"},
 		{"genus",
@@ -1318,6 +1333,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		{"species",
 		 "infraspecificname",
 		 "subspecies",
+		 "variety",
 		 "varietas",
 		 "subvariety",
 		 "forma",
@@ -1351,7 +1367,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			Taxon selectionRoot = this.select(sel, tax2);
 			System.out.println("| Selection has " + selectionRoot.count() + " taxa");
 			tax2.roots.add(selectionRoot);
-			this.copySynonyms(tax2);
+			this.copySelectedSynonyms(tax2);
 			return tax2;
 		} else {
 			System.err.println("** Missing or ambiguous selection name");
@@ -1362,7 +1378,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	// node is in source taxonomy, tax is the destination taxonomy ('union' or similar)
 	Taxon select(Taxon node, Taxonomy tax) {
 		Taxon sam = node.dup(tax);
-		node.mapped = sam;
+		node.mapTo(sam);
 		if (node.children != null)
 			for (Taxon child : node.children) {
 				Taxon c = select(child, tax);
@@ -1384,7 +1400,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			Taxon selection = selectToDepth(sel, tax2, depth);
 			System.out.println("| Selection has " + selection.count() + " taxa");
 			tax2.roots.add(selection);
-			this.copySynonyms(tax2);
+			this.copySelectedSynonyms(tax2);
 			return tax2;
 		} else {
 			System.err.println("** Missing or ambiguous name: " + sel);
@@ -1394,7 +1410,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	Taxon selectToDepth(Taxon node, Taxonomy tax, int depth) {
 		Taxon sam = node.dup(tax);
-		node.mapped = sam;
+		node.mapTo(sam);
 		if (node.children != null && depth > 0)
 			for (Taxon child : node.children) {
 				Taxon c = selectToDepth(child, tax, depth-1);
@@ -1412,7 +1428,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			Taxon selection = sel.selectVisible(tax2);
 			System.out.println("| Selection has " + selection.count() + " taxa");
 			tax2.roots.add(selection);
-			this.copySynonyms(tax2);
+			this.copySelectedSynonyms(tax2);
 			return tax2;
 		} else
 			return null;
@@ -1666,7 +1682,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			return;
 		}
 		for (File editfile : editfiles)
-			if (!editfile.getName().endsWith("~")) {
+			if (editfile.isFile() &&
+				!editfile.getName().endsWith(".hold") &&
+				!editfile.getName().endsWith("~")) {
 				applyEdits(editfile);
 			}
 	}
@@ -2214,26 +2232,40 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				   node.divisionName());
 	}
 	
+	void copySelectedSynonyms(Taxonomy target) {
+		copySynonyms(target, false);
+	}
+
+	void copyMappedSynonyms(Taxonomy target) {
+		copySynonyms(target, true);
+	}
+
 	// Propogate synonyms from source taxonomy (= this) to union.
 	// Some names that are synonyms in the source might be primary names in the union,
 	//	and vice versa.
-	void copySynonyms(Taxonomy union) {
+	void copySynonyms(Taxonomy target, boolean mappedp) {
 		int count = 0;
 
 		// For each name in source taxonomy...
 		for (String syn : this.nameIndex.keySet()) {
 
 			// For each node that the name names...
-			for (Taxon node : this.nameIndex.get(syn))
+			for (Taxon node : this.nameIndex.get(syn)) {
+				Taxon other =
+					(mappedp
+					 ? node.mapped
+					 : target.idIndex.get(node.id));
 
 				// If that node maps to a union node with a different name....
-				if (node.mapped != null && !node.mapped.name.equals(syn)) {
+				if (other != null && !other.name.equals(syn)) {
 					// then the name is a synonym of the union node too
-					if (node.mapped.taxonomy != union)
-						System.err.println("** copySynonyms logic error");
-					else if (union.addSynonym(syn, node.mapped))
+					if (other.taxonomy != target)
+						System.err.format("** copySynonyms logic error %s %s\n",
+										  other.taxonomy, target);
+					else if (target.addSynonym(syn, other))
 						++count;
 				}
+			}
 		}
 		if (count > 0)
 			System.err.println("| Added " + count + " synonyms");
@@ -2304,6 +2336,10 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				b = b.mapped;
 			}
 		}
+		if (a.taxonomy != b.taxonomy) {
+			System.err.format("*** incomparable: %s %s\n", a, b);
+			return null;
+		}
 		int da = a.measureDepth();
 		int db = b.measureDepth();
 		while (db > da) {
@@ -2334,9 +2370,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	public void markDivisions(SourceTaxonomy source) {
 		UnionTaxonomy union = (UnionTaxonomy)this;
 		union.markDivisionsx(source);
-	}
+	}}
 
-}  // end of class Taxonomy
+// end of class Taxonomy
 
 class SourceTaxonomy extends Taxonomy {
 
@@ -2578,6 +2614,7 @@ class UnionTaxonomy extends Taxonomy {
 	// This operation is idempotent.
 
 	boolean markDivisions(Taxon div, Taxonomy source) {
+		Taxon unode = this.highest(div.name);
 		if (div.children != null) {
 			Taxon hit = null, miss = null;
 			for (Taxon child : div.children) {
@@ -2589,7 +2626,6 @@ class UnionTaxonomy extends Taxonomy {
 			if (hit != null && miss != null)
 				System.err.format("** Division %s was found but its sibling %s wasn't\n", hit.name, miss.name);
 		}
-		Taxon unode = this.highest(div.name);
 		if (unode != null) {
 			unode.setDivision(unode);
 			Taxon node = source.highest(div.name);
@@ -2597,6 +2633,7 @@ class UnionTaxonomy extends Taxonomy {
 				(node.mapped == null || node.mapped == unode)) {   // Cf. notSame
 				node.unifyWith(unode);
 				node.setDivision(unode);
+				node.reallyUnifyWith(unode); // voodoo, cf. getDivision? divergence?
 				return true;
 			}
 		}
@@ -2668,7 +2705,7 @@ class UnionTaxonomy extends Taxonomy {
 	void mergeIn(SourceTaxonomy source) {
 		source.mapInto(this, Criterion.criteria);
 		source.augment(this);
-		source.copySynonyms(this);
+		source.copyMappedSynonyms(this); // this = union
 		this.reset();			// ??? see Taxonomy.same()
 		Taxon.windyp = true; //kludge
 	}
@@ -2761,10 +2798,11 @@ class UnionTaxonomy extends Taxonomy {
 
 		Set<String> scrutinize = null;
 
-		if (this.idsource != null) 
+		if (this.idsource != null) {
 			scrutinize = this.dumpDeprecated(this.idsource, outprefix + "deprecated.tsv");
-		scrutinize.add("Methanococcus maripaludis");
-		this.dumpLog(outprefix + "log.tsv", scrutinize);
+			scrutinize.add("Methanococcus maripaludis");
+			this.dumpLog(outprefix + "log.tsv", scrutinize);
+		}
 
 		this.dumpNodes(this.roots, outprefix, sep);
 		this.dumpSynonyms(outprefix + "synonyms.tsv", sep);
@@ -2920,8 +2958,14 @@ class UnionTaxonomy extends Taxonomy {
 	List<Conflict> conflicts = new ArrayList<Conflict>();
 	void dumpConflicts(String filename) throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
+		out.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+				   "depth", "para", "para_id",
+				   "eg", "eg_id",
+				   "eg_parent", "egp_id",
+				   "para_anc", "pa_id",
+				   "eg_anc", "ega_id");
 		for (Conflict conflict : this.conflicts)
-			if (!conflict.unode.isHidden())
+			if (!conflict.paraphyletic.isHidden())
 				out.println(conflict.toString());
 		out.close();
 	}
@@ -2929,7 +2973,7 @@ class UnionTaxonomy extends Taxonomy {
 
 class Conflict {
 	Taxon paraphyletic;				// in source taxonomy
-	Taxon unode;					// in union taxonomy
+	Taxon unode;					// child, in union taxonomy
 	Conflict(Taxon paraphyletic, Taxon unode) {
 		this.paraphyletic = paraphyletic; this.unode = unode;
 	}
@@ -2940,9 +2984,24 @@ class Conflict {
 			Taxon a = div[0];
 			Taxon b = div[1];
 			int da = a.getDepth();
-			return (da + " " + paraphyletic + "=" + paraphyletic.mapped + " in " + b + " lost child " + unode + " to " + unode.parent + " in " + a);
+			return String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
+								 da,
+								 paraphyletic.name, paraphyletic.getQualifiedId(),
+								 unode.name, unode.sourceIds.get(0),
+								 unode.parent.name, unode.parent.sourceIds.get(0),
+								 a.name, a.sourceIds.get(0),
+								 b.name, b.sourceIds.get(0));
+			// return (da + " " + paraphyletic + " in " + b + " lost child " + unode + " to " + unode.parent + " in " + a);
 		} else
-			return ("? " + paraphyletic + "=" + paraphyletic.mapped + " lost child " + unode + " to " + unode.parent);
+			// return ("? " + paraphyletic + " lost child " + unode + " to " + unode.parent);
+			return String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
+								 "?",
+								 paraphyletic.name, paraphyletic.getQualifiedId(),
+								 unode.name, unode.sourceIds.get(0),
+								 unode.parent.name, unode.parent.sourceIds.get(0),
+								 "", "",
+								 "", "");
+
 	}
 }
 
@@ -3534,11 +3593,14 @@ class Answer {
 class QualifiedId {
 	String prefix;
 	String id;
+
+	static Pattern colonPattern = Pattern.compile(":");
+
 	QualifiedId(String prefix, String id) {
 		this.prefix = prefix; this.id = id;
 	}
 	QualifiedId(String qid) {
-		String[] foo = qid.split(":", 2);
+		String[] foo = colonPattern.split(qid, 2);
 		if (foo.length != 2)
 			throw new RuntimeException("ill-formed qualified id: " + qid);
 		this.prefix = foo[0]; this.id = foo[1];

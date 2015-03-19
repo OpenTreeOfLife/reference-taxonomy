@@ -157,7 +157,7 @@ def traverse_taxonomy(root_id, pickled):
 
 def make_root_taxon():
     return {"id": 1,
-            "parent": 0,
+            "parent": '',
             "name": 'Biota',
             "rank": ''}
 

@@ -5,7 +5,7 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.9draft1
+WHICH=2.9draft3
 PREV_WHICH=2.8
 
 #  $^ = all prerequisites
@@ -19,10 +19,6 @@ NCBI=tax/ncbi
 GBIF=tax/gbif
 SILVA=tax/silva
 FUNG=tax/if
-
-# Root of local copy of taxomachine git repo, for nematode examples
-# (TBD: make local copies so that setup is simpler)
-TAXOMACHINE_EXAMPLE=../../taxomachine/example
 
 # Preottol - for filling in the preottol id column
 #  https://bitbucket.org/mtholder/ottol/src/dc0f89986c6c2a244b366312a76bae8c7be15742/preOTToL_20121112.txt?at=master
@@ -100,7 +96,7 @@ $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 tax/prev_ott/taxonomy.tsv:
 	@mkdir -p feed/prev_ott/in 
 	wget --output-document=feed/prev_ott/in/ott$(PREV_WHICH).tgz \
-	  http://files.opentreeoflife.org/ott/ott$(PREV_WHICH).tgz
+	  http://files.opentreeoflife.org/ott/ott$(PREV_WHICH)/ott$(PREV_WHICH).tgz
 	@ls -l feed/prev_ott/in/ott$(PREV_WHICH).tgz
 	(cd feed/prev_ott/in/ && tar xvf ott$(PREV_WHICH).tgz)
 	rm -rf tax/prev_ott
@@ -186,7 +182,7 @@ feed/irmng/in/IRMNG_DWC.zip:
 
 SILVA_URL=http://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/SSURef_NR99_115_tax_silva.fasta.tgz
 SILVA_RANKS_URL=http://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/tax_ranks_ssu_115.csv
-		
+
 silva: $(SILVA)/taxonomy.tsv
 $(SILVA)/taxonomy.tsv: feed/silva/process_silva.py feed/silva/in/silva.fasta feed/silva/in/accessionid_to_taxonid.tsv 
 	@mkdir -p feed/silva/out
@@ -218,8 +214,8 @@ tarball: tax/ott/log.tsv
 	@echo "Don't forget to bump the version number"
 
 # Then, something like
-# scp -p -i ~/.ssh/opentree.pem tarballs/ott2.8draft5.tgz \
-#   opentree@ot10.opentreeoflife.org:files.opentreeoflife.org/ott/
+# scp -p -i ~/.ssh/opentree/opentree.pem tarballs/ott2.9draft3.tgz \
+#   opentree@ot10.opentreeoflife.org:files.opentreeoflife.org/ott/ott2.9/
 
 # This predates use of git on norbert...
 #norbert:
@@ -243,14 +239,20 @@ test2: $(CLASS)
 	$(JAVA) $(SMASH) --test
 
 
-ids_report.tsv:
+old-ids-that-are-otus.tsv:
 	time wget -O ids_report.csv "http://reelab.net/phylografter/ottol/ottol_names_report.csv/" 
 	tr "," "	" <ids_report.csv >$@
 	rm ids_report.csv
 
-tax/ott/otu_deprecated.tsv: ids_report.tsv tax/ott/deprecated.tsv
+# This typically won't run since the target is checked in
+ids-that-are-otus.tsv:
+	time python util/ids-that-are-otus.py $@.new
+	mv $@.new $@
+	wc $@
+
+tax/ott/otu_deprecated.tsv: ids-that-are-otus.tsv tax/ott/deprecated.tsv
 	grep "\\*" tax/ott/deprecated.tsv | grep -v "excluded" >dep-tmp.tsv
-	$(JAVA) $(SMASH) --join ids_report.tsv dep-tmp.tsv >$@.new
+	$(JAVA) $(SMASH) --join ids-that-are-otus.tsv dep-tmp.tsv >$@.new
 	mv $@.new $@
 	wc $@
 
@@ -260,12 +262,12 @@ tax/ott/differences.tsv: tax/prev_ott/taxonomy.tsv tax/ott/taxonomy.tsv
 	wc $@
 
 tax/ott/otu_differences.tsv: tax/ott/differences.tsv
-	$(JAVA) $(SMASH) --join ids_report.tsv tax/ott/differences.tsv >$@.new
+	$(JAVA) $(SMASH) --join ids-that-are-otus.tsv tax/ott/differences.tsv >$@.new
 	mv $@.new $@
 	wc $@
 
 tax/ott/otu_hidden.tsv: tax/ott/hidden.tsv
-	$(JAVA) $(SMASH) --join ids_report.tsv tax/ott/hidden.tsv >$@.new
+	$(JAVA) $(SMASH) --join ids-that-are-otus.tsv tax/ott/hidden.tsv >$@.new
 	mv $@.new $@
 	wc $@
 
@@ -278,35 +280,6 @@ clean:
 	rm -rf tax/if tax/ncbi tax/prev_nem tax/silva
 	rm -f $(CLASS)
 	rm -f feed/ncbi/taxdump.tar.gz
-
-# -----------------------------------------------------------------------------
-# Test: nematodes
-
-# Nematode test
-TEST_ARGS=$(SMASH) tax/nem_ncbi/ tax/nem_gbif/ \
-      --edits feed/nem/edits/ \
-      --ids tax/prev_nem/ \
-      --out tax/nem/
-
-nem: tax/nem/log.tsv
-tax/nem/log.tsv: $(CLASS) tax/prev_nem/taxonomy.tsv tax/nem_ncbi/taxonomy.tsv tax/nem_gbif/taxonomy.tsv
-	@mkdir -p tax/nem/
-	$(JAVA) $(TEST_ARGS)
-
-# Inputs to the nem test
-
-tax/nem_ncbi/taxonomy.tsv:
-	@mkdir -p `dirname $@`
-	cp -p $(TAXOMACHINE_EXAMPLE)/nematoda.ncbi $@
-
-tax/nem_gbif/taxonomy.tsv:
-	@mkdir -p `dirname $@`
-	cp -p $(TAXOMACHINE_EXAMPLE)/nematoda.gbif $@
-
-# little test of --select feature
-tax/nem_dory/taxonomy.tsv: tax/nem/log.tsv $(CLASS)
-	@mkdir -p `dirname $@`
-	$(JAVA) $(SMASH) --start tax/nem/ --select Dorylaimina tax/nem_dory/
 
 # -----------------------------------------------------------------------------
 # Model village: Asterales

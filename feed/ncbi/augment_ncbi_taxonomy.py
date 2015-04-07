@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# usage python augment_ncbi_taxonomy [taxonomy [accession [augmented_taxonomy [logfile]]]]
+# usage python augment_ncbi_taxonomy.py [taxonomy [accession [augmented_taxonomy [logfile]]]]
 
 import logging
 import sys

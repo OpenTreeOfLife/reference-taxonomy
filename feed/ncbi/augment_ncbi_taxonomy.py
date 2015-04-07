@@ -1,14 +1,37 @@
 #!/usr/bin/python
 
-# usage python augment_ncbi_taxonomy.py [taxonomy [accession [augmented_taxonomy [logfile]]]]
+# Tool to add genbank strains as terminal taxa to an NCBI taxonomy formated for smasher
+# (lines like id\t|\tparent_uid\t|\tname\t|\trank\t|)
+# strains and their accession identifiers are in a file formated as:
+# accessionid\tNCBI taxon id\tstrain identifier
 
-import logging
+# output is like taxonomy input, but additional terminal taxa, with identifiers like
+# taxonid.
+
+# Requirements based on this:
+
+# Now that we have strain names from Genbank we can add them as taxon-like
+# entities to create an augmented NCBI Taxonomy (ANT).
+
+# For each NCBI taxon there will be some number (0, 1, more) of strains listed
+# in Genbank. That is, we will have some number of Genbank records annotated as
+# belonging to that taxon, and among these there will be multiple strains.
+# Each distinct strain for a taxon should become a new quasi-taxon that is a
+# child of the NCBI taxon. An exception is # when the strain id is a suffix of
+# the NCBI taxon name.
+
+# The name for a new strain-taxon has been implemented as the name of the taxon
+# concatenated with the strain name, with a space in between. Ids don’t have
+# to be numbers for smasher, so were implemented as NNN.strainname
+
+
+# usage python augment_ncbi_taxonomy.py [taxonomy [accession [augmented_taxonomy]]]
+
 import sys
 
 DEFAULT_TAXONOMY_FILE = 'taxonomy.tsv'
 DEFAULT_ACCESSIONS_FILE = 'accessionid_to_taxonid.tsv'
 DEFAULT_AUGMENTED_TAXONOMY_FILE = 'augmented_taxonomy.tsv'
-DEFAULT_LOG_FILE = 'augment_ncbi_taxonomy.log'
 
 
 def process_args():
@@ -21,15 +44,13 @@ def process_args():
     parser.add_argument('augmented_taxonomy',
                         nargs='?',
                         default=DEFAULT_AUGMENTED_TAXONOMY_FILE)
-    parser.add_argument('log_file', nargs='?', default=DEFAULT_LOG_FILE)
     pargs = parser.parse_args()
     return pargs
 
 
 def load_taxonomy(taxonomy_path):
     result = {}
-    try:
-        taxonomy_file = open(taxonomy_path, 'rU')
+    with  open(taxonomy_path, 'r') as taxonomy_file:
         taxonomy_file.readline()  # read and toss headers
         line = taxonomy_file.readline()
         while line:
@@ -42,21 +63,15 @@ def load_taxonomy(taxonomy_path):
                 taxon['rank'] = fields[3].strip()
             result[fields[0]] = taxon
             line = taxonomy_file.readline()
-    except IOError as e:
-        msg = "processing {} as taxonomy file".format(taxonomy_path)
-        print "Error: " + msg
-        logging.error(msg)
-        sys.exit(1)
-    taxonomy_file.close()
+        taxonomy_file.close()
     return result
 
 
 def process_accessions(accession_path):
     result = {}
-    try:
-        accession_file = open(accession_path, 'rU')
-        line = accession_file.readline()[:-2]
-        while line:
+    with open(accession_path, 'r') as accession_file:
+        for raw_line in accession_file:
+            line = raw_line[:-2]
             fields = line.split('\t')
             accession = {}
             accession['id'] = fields[0].strip()
@@ -66,14 +81,7 @@ def process_accessions(accession_path):
                 if len(fields[2].strip('\n')) > 0:
                     strain = fields[2].strip('\n')
                     accession['strain'] = strain
-            result[fields[1]] = accession
-            line = accession_file.readline()
-    except IOError as e:
-        msg = "processing {} as accession mapping file".format(accession_path)
-        print "Error: " + msg
-        logging.error(msg)
-        sys.exit(1)
-    accession_file.close()
+            result[tname] = accession
     return result
 
 
@@ -112,8 +120,7 @@ TAXON_TEMPLATE = "%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n"
 
 
 def save_taxonomy(augmented_taxonomy, augmented_path):
-    try:
-        ofile = open(augmented_path, "w")
+    with open(augmented_path, "w") as ofile:
         ofile.write(TAXON_HEADER)
         for id in augmented_taxonomy.keys():
             item = augmented_taxonomy[id]
@@ -126,28 +133,20 @@ def save_taxonomy(augmented_taxonomy, augmented_path):
                 rank = 'no rank'
             outstr = TAXON_TEMPLATE % (uid, parent, name, rank)
             ofile.write(outstr)
-    except IOError as e:
-        msg = "writing {} as augmented taxonomy file".format(augmented_path)
-        print "Error: " + msg
-        logging.error(msg)
-        sys.exit(1)
-    ofile.close()
 
 
 def startup():
     pargs = vars(process_args())
-    logging.basicConfig(filename=pargs['log_file'],
-                        filemode='w',
-                        level=logging.INFO,
-                        format='%(levelname)-8s: %(message)s')
     taxonomy_path = pargs['taxonomy']
     accession_path = pargs['accession_map']
     augmented_path = pargs['augmented_taxonomy']
     base_taxonomy = load_taxonomy(taxonomy_path)
-    print len(base_taxonomy)
+    base_size = len(base_taxonomy)
     possible_children = process_accessions(accession_path)
-    print len(possible_children)
     augmented_taxonomy = augment_taxonomy(base_taxonomy, possible_children)
+    added_taxa = len(augmented_taxonomy)-base_size
+    print "added {} terminals to base taxonomy of size {}".format(added_taxa,
+                                                                  base_size)
     save_taxonomy(augmented_taxonomy, augmented_path)
 
 

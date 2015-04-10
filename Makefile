@@ -119,12 +119,12 @@ $(NCBI)/taxonomy.tsv: feed/ncbi/in/nodes.dmp feed/ncbi/process_ncbi_taxonomy_tax
 	rm -rf $(NCBI)
 	mv -f $(NCBI).tmp $(NCBI)
 
-feed/ncbi/in/nodes.dmp: feed/ncbi/taxdump.tar.gz
+feed/ncbi/in/nodes.dmp: feed/ncbi/in/taxdump.tar.gz
 	@mkdir -p `dirname $@`
-	tar -C feed/ncbi/in -xzvf feed/ncbi/taxdump.tar.gz
+	tar -C feed/ncbi/in -xzvf feed/ncbi/in/taxdump.tar.gz
 	touch $@
 
-feed/ncbi/taxdump.tar.gz:
+feed/ncbi/in/taxdump.tar.gz:
 	@mkdir -p feed/ncbi
 	wget --output-document=$@ $(NCBI_URL)
 	@ls -l $@
@@ -279,7 +279,7 @@ clean:
 	rm -rf feed/*/in
 	rm -rf tax/if tax/ncbi tax/prev_nem tax/silva
 	rm -f $(CLASS)
-	rm -f feed/ncbi/taxdump.tar.gz
+#	rm -f feed/ncbi/in/taxdump.tar.gz
 
 # -----------------------------------------------------------------------------
 # Model village: Asterales

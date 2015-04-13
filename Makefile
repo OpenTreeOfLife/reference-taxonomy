@@ -39,7 +39,9 @@ $(CLASS): org/opentreeoflife/smasher/Smasher.java \
 	  org/opentreeoflife/smasher/Taxon.java \
 	  org/opentreeoflife/smasher/Flag.java \
 	  org/opentreeoflife/smasher/Alignment.java org/opentreeoflife/smasher/Reportx.java \
-	  lib/jscheme.jar lib/json-simple-1.1.1.jar lib/jython-standalone-2.5.3.jar
+	  org/opentreeoflife/smasher/Test.java \
+	  lib/jscheme.jar lib/json-simple-1.1.1.jar lib/jython-standalone-2.5.3.jar \
+	  lib/junit-4.12.jar
 	javac -g $(CP) org/opentreeoflife/smasher/*.java
 
 lib/jython-standalone-2.5.3.jar:
@@ -228,6 +230,14 @@ lib/json-simple-1.1.1.jar:
 	wget --output-document=$@ --no-check-certificate \
 	  "https://json-simple.googlecode.com/files/json-simple-1.1.1.jar"
 	@ls -l $@
+
+lib/junit-4.12.jar:
+	wget --output-document=$@ --no-check-certificate \
+	  "http://search.maven.org/remotecontent?filepath=junit/junit/4.12/junit-4.12.jar"
+	@ls -l $@
+
+test-smasher: compile
+	$(JAVA) org.opentreeoflife.smasher.Test
 
 z: feed/misc/chromista_spreadsheet.py
 feed/misc/chromista_spreadsheet.py: feed/misc/chromista-spreadsheet.csv feed/misc/process_chromista_spreadsheet.py

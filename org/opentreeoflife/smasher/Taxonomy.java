@@ -2987,18 +2987,18 @@ class Conflict {
 			return String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
 								 da,
 								 paraphyletic.name, paraphyletic.getQualifiedId(),
-								 unode.name, unode.sourceIds.get(0),
-								 unode.parent.name, unode.parent.sourceIds.get(0),
-								 a.name, a.sourceIds.get(0),
-								 b.name, b.sourceIds.get(0));
+								 unode.name, unode.putativeSourceRef(),
+								 unode.parent.name, unode.parent.putativeSourceRef(),
+								 a.name, a.putativeSourceRef(),
+								 b.name, b.putativeSourceRef());
 			// return (da + " " + paraphyletic + " in " + b + " lost child " + unode + " to " + unode.parent + " in " + a);
 		} else
 			// return ("? " + paraphyletic + " lost child " + unode + " to " + unode.parent);
 			return String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
 								 "?",
 								 paraphyletic.name, paraphyletic.getQualifiedId(),
-								 unode.name, unode.sourceIds.get(0),
-								 unode.parent.name, unode.parent.sourceIds.get(0),
+								 unode.name, unode.putativeSourceRef(),
+								 unode.parent.name, unode.parent.putativeSourceRef(),
 								 "", "",
 								 "", "");
 
@@ -3181,7 +3181,7 @@ class Matrix {
 							// if (candidate.comapped == null) continue;  // ???
 							if (candidate.sourceIds == null)
 								System.err.println("?!! No source ids: " + candidate);
-							QualifiedId qid = candidate.sourceIds.get(0);
+							QualifiedId qid = candidate.putativeSourceRef();
 							if (w == null) w = qid.toString();
 							else w += ("," + qid.toString());
 						}
@@ -3385,11 +3385,11 @@ abstract class Criterion {
 				if (x.sourceIds == null)
 					xid = x.getQualifiedId();
 				else
-					xid = x.sourceIds.get(0);
+					xid = x.putativeSourceRef();
 				if (y.sourceIds == null)
 					yid = y.getQualifiedId(); // shouldn't happen
 				else
-					yid = y.sourceIds.get(0);
+					yid = y.putativeSourceRef();
 				if (xid.equals(yid))
 					return Answer.yes(x, y, "same-source-id", null);
 				else

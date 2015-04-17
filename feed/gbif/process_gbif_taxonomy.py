@@ -55,8 +55,6 @@ if __name__ == "__main__":
             continue #gbif incertae sedis
         rank = fields[5].strip()
         parent_id = fields[1].strip()  # parent number
-        if ("IRMNG Homonym" in row) or ((parent_id == "1" or parent_id == "6") and rank == "genus" and "Interim Register of Marine" in row):
-            irmngs[id] = True
         # "unclassified" doesn't occur 2013-07-02
         # "unassigned" doesn't occur 2013-07-02
         # "other" never occurs as a word
@@ -75,19 +73,25 @@ if __name__ == "__main__":
         if len(id) == 0 or len(name) == 0:
             skipcount += 1
             continue
-        acc = fields[6].strip()
-        if acc != "accepted":
+        id = int(id)
+        if ("IRMNG Homonym" in row) or ((parent_id == "1" or parent_id == "6") and rank == "genus" and "Interim Register of Marine" in row):
+            irmngs[id] = True
+        accepted_status = fields[6].strip()
+        if accepted_status != "accepted":
             skipcount += 1
             synnames[id] = name
             syntargets[id] = fields[2].strip()
-            syntypes[id] = acc
+            syntypes[id] = accepted_status
             continue
         if len(parent_id) == 0:
             skipcount += 1
             continue
         nrank[id] = rank
-        if len(parent_id) > 0:
-            parent[id] = parent_id
+        if parent_id == '':
+            parent_id = 0       # life
+        else:
+            parent_id = int(parent_id)
+        parent[id] = parent_id
         nm_storage[id] = name
         if parent_id not in children:
             children[parent_id] = []
@@ -144,7 +148,7 @@ if __name__ == "__main__":
     for id in nm_storage:
         if parent[id] not in nm_storage:
             count += 1
-            if parent[id] != "0":
+            if parent[id] != 0:
                 ignore.append(id)
                 if count % 1000 == 0:
                     print "example orphan ",id,nm_storage[id]
@@ -180,11 +184,8 @@ if __name__ == "__main__":
             parent_id = parent[id]
         else:
             parent_id = ""
-        name = nm_storage[id]
-        if name in dnames.keys():
-            outfile.write(id+"\t|\t"+parent_id+"\t|\t"+name+"\t|\t"+nrank[id]+"\t|\t\n")
-        else:
-            outfile.write(id+"\t|\t"+parent_id+"\t|\t"+name+"\t|\t"+nrank[id]+"\t|\t\n")
+        outfile.write("%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n" %
+                      (id, parent_id, nm_storage[id], nrank[id]))
         count += 1
         if count % 100000 == 0:
             print count

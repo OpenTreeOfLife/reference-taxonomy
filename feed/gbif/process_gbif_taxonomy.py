@@ -30,8 +30,8 @@ if __name__ == "__main__":
     parents = []    #list of ids
     count = 0
     skipcount = 0
-    pid ={} #parent ids key is the id and the value is the parent
-    cid ={} #child ids key is the id and the value is the children
+    parent ={} #parent ids key is the id and the value is the parent
+    children ={} #child ids key is the id and the value is the children
     nm_storage = {} # storing the id and the name
     nrank = {}
     synnames = {}
@@ -39,59 +39,60 @@ if __name__ == "__main__":
     syntypes = {}
     irmngs = {}
     print "count skipped"
-    for i in infile:
-        spls = i.strip().split("\t")
+    infile.next()
+    for row in infile:
+        fields = row.strip().split("\t")
         # For information on what information is in each column see
         # meta.xml in the gbif distribution.
-        num = spls[0].strip()
-        if not num.isdigit():
+        id = fields[0].strip()
+        if not id.isdigit():
             # Header line has "taxonID" here
             continue
-        if "International Plant Names Index" in i:
+        if "International Plant Names Index" in row:
             skipcount += 1
             continue
-        if num == "0":
+        if id == "0":
             continue #gbif incertae sedis
-        rank = spls[5].strip()
-        pnum = spls[1].strip()  # parent number
-        if ("IRMNG Homonym" in i) or ((pnum == "1" or pnum == "6") and rank == "genus" and "Interim Register of Marine" in i):
-            irmngs[num] = True
+        rank = fields[5].strip()
+        parent_id = fields[1].strip()  # parent number
+        if ("IRMNG Homonym" in row) or ((parent_id == "1" or parent_id == "6") and rank == "genus" and "Interim Register of Marine" in row):
+            irmngs[id] = True
         # "unclassified" doesn't occur 2013-07-02
         # "unassigned" doesn't occur 2013-07-02
         # "other" never occurs as a word
         # there are two "artificial" but they look OK
         # there is one "insertion" and it looks OK
-        #if "unclassified" in i or "unassigned" in i or "other" in i or "artificial" in i or "insertion" in i:
+        #if "unclassified" in row or "unassigned" in row or "other" in row or "artificial" in row or "insertion" in row:
         #    skipcount += 1
         #    continue
-        if pnum == "0":
+        if parent_id == "0":
             continue
-        name = spls[4].strip()
+        name = fields[4].strip()
         if rank == "form" or rank == "variety" or rank == "subspecies" or rank == "infraspecificname":
             continue
         if rank == "kingdom":
-            pnum = "0"
-        if len(num) == 0 or len(name) == 0:
+            parent_id = "0"
+        if len(id) == 0 or len(name) == 0:
             skipcount += 1
             continue
-        acc = spls[6].strip()
+        acc = fields[6].strip()
         if acc != "accepted":
             skipcount += 1
-            synnames[num] = name
-            syntargets[num] = spls[2].strip()
-            syntypes[num] = acc
+            synnames[id] = name
+            syntargets[id] = fields[2].strip()
+            syntypes[id] = acc
             continue
-        if len(pnum) == 0:
+        if len(parent_id) == 0:
             skipcount += 1
             continue
-        nrank[num] = rank
-        if len(pnum) > 0:
-            pid[num] = pnum
-        nm_storage[num] = name
-        if pnum not in cid:
-            cid[pnum] = []
-        cid[pnum].append(num)
-        parents.append(pnum)
+        nrank[id] = rank
+        if len(parent_id) > 0:
+            parent[id] = parent_id
+        nm_storage[id] = name
+        if parent_id not in children:
+            children[parent_id] = []
+        children[parent_id].append(id)
+        parents.append(parent_id)
         names.append(name)
         count += 1
         if count % 100000 == 0:
@@ -115,40 +116,40 @@ if __name__ == "__main__":
 
     print "getting the parent child duplicates fixed"
     ignoreid = {}
-    for i in nm_storage:
-        if i in pid and pid[i] in nm_storage:
-            if nm_storage[i] == nm_storage[pid[i]]:
-#                print i,nm_storage[i],nrank[i],pid[i],nm_storage[pid[i]],nrank[pid[i]]
+    for id in nm_storage:
+        if id in parent and parent[id] in nm_storage:
+            if nm_storage[id] == nm_storage[parent[id]]:
+#                print id,nm_storage[id],nrank[id],parent[id],nm_storage[parent[id]],nrank[parent[id]]
 #                sys.exit(0)
-#                if nrank[i] == nrank[pid[i]]:
-                if i in cid:     # If it has children,
-                    idstoch = cid[i]
+#                if nrank[id] == nrank[parent[id]]:
+                if id in children:     # If it has children,
+                    idstoch = children[id]
                     for j in idstoch:
-                        pid[j] = pid[i]
-                ignoreid[i] = True
-    for i in ignoreid.keys():
-        del nm_storage[i]
+                        parent[j] = parent[id]
+                ignoreid[id] = True
+    for id in ignoreid.keys():
+        del nm_storage[id]
 
     # Flush taxa from the IRMNG homonym list that don't have children
     count = 0
-    for num in irmngs:
-        if (not num in cid) and num in nrank and nrank[num] != "species":
-            if num in nm_storage:
-                del nm_storage[num]
+    for id in irmngs:
+        if (not id in children) and id in nrank and nrank[id] != "species":
+            if id in nm_storage:
+                del nm_storage[id]
             count += 1
     print "IRMNG names deleted:", count
 
     #putting parentless taxa into the ignore list
     count = 0
-    for i in nm_storage:
-        if pid[i] not in nm_storage:
+    for id in nm_storage:
+        if parent[id] not in nm_storage:
             count += 1
-            if pid[i] != "0":
-                ignore.append(i)
+            if parent[id] != "0":
+                ignore.append(id)
                 if count % 1000 == 0:
-                    print "example orphan ",i,nm_storage[i]
+                    print "example orphan ",id,nm_storage[id]
             else:
-                print "top level ",i,nm_storage[i]
+                print "top level ",id,nm_storage[id]
     print "orphans: ", len(ignore)
 
     #now making sure that the taxonomy is functional before printing to the file
@@ -160,42 +161,30 @@ if __name__ == "__main__":
         if curid in skipids:
             continue
         skipids[curid] = True
-        if curid in cid:
-            ids = cid[curid]
-            for i in ids:
-                stack.append(i)
+        if curid in children:
+            ids = children[curid]
+            for id in ids:
+                stack.append(id)
 
-    for i in skipids:
-        if i in nm_storage:
-            del nm_storage[i]
+    for id in skipids:
+        if id in nm_storage:
+            del nm_storage[id]
 
     """
     output the id parentid name rank
     """
     print "done counting"
     count = 0
-    for i in nm_storage:
-        #spls = i.strip().split("\t")
-        #num = spls[0]
-        num = i
-#        if num in ignoreid:
-#            print "ignoring ",num
-#            continue
-        #pnum = spls[1]
-        if i in pid:
-            pnum = pid[i]
+    for id in nm_storage:
+        if id in parent:
+            parent_id = parent[id]
         else:
-            pnum = ""
-        #name = spls[3]
-        name = nm_storage[i]
- #       if spls[3] == "Unassigned":
- #           name = spls[4]
+            parent_id = ""
+        name = nm_storage[id]
         if name in dnames.keys():
-            #if num in dparents:
-            #may need to add this back for null parents
-            outfile.write(num+"\t|\t"+pnum+"\t|\t"+name+"\t|\t"+nrank[i]+"\t|\t\n")
+            outfile.write(id+"\t|\t"+parent_id+"\t|\t"+name+"\t|\t"+nrank[id]+"\t|\t\n")
         else:
-            outfile.write(num+"\t|\t"+pnum+"\t|\t"+name+"\t|\t"+nrank[i]+"\t|\t\n")
+            outfile.write(id+"\t|\t"+parent_id+"\t|\t"+name+"\t|\t"+nrank[id]+"\t|\t\n")
         count += 1
         if count % 100000 == 0:
             print count
@@ -203,8 +192,8 @@ if __name__ == "__main__":
     outfile.close()
 
     print "synonyms"
-    for num in synnames:
-        target = syntargets[num]
+    for id in synnames:
+        target = syntargets[id]
         if target in nm_storage:
-            outfilesy.write(target+"\t|\t"+synnames[num]+"\t|\t"+syntypes[num]+"\t|\t\n")
+            outfilesy.write(target+"\t|\t"+synnames[id]+"\t|\t"+syntypes[id]+"\t|\t\n")
     outfilesy.close()

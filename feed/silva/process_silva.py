@@ -53,8 +53,6 @@ import re
 import string
 import os, time, json, os.path
 
-import cProfile
-
 def writeAboutFile(url, nodesfilename, taxdir):
 	aboutfilename = taxdir+"/about.json"
 	aboutfile = open(aboutfilename,"w")
@@ -363,9 +361,7 @@ def main():
 	os.rename(outdir + '/taxonomy.tsv.new', outdir + '/taxonomy.tsv')
 	os.rename(outdir + '/synonyms.tsv.new', outdir + '/synonyms.tsv')
 	
-cProfile.run('main()')
-
-#main()
+main()
 
 #						if False:
 #							rank_key = (taxname,par)

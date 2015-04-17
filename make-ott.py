@@ -69,6 +69,11 @@ def prepare_silva():
 	else:
 		silva.taxon('Ctenophora', 'Coscinodiscophytina').prune()
 
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/79
+    silva.taxon('Melampsora lini').prune()
+    silva.taxon('Polyangium sorediatum').prune()
+    silva.taxon('unidentified plasmid').prune()
+
 	ott.markDivisions(silva)
 	taxonomies.checkDivisions(silva)
 	return silva

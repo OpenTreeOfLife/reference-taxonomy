@@ -182,8 +182,9 @@ feed/irmng/in/IRMNG_DWC.zip:
 # issue #62 - verify  (is it a tsv file or csv file?)
 # see also http://www.arb-silva.de/no_cache/download/archive/release_115/ ?
 
-SILVA_URL=http://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/SSURef_NR99_115_tax_silva.fasta.tgz
-SILVA_RANKS_URL=http://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/tax_ranks_ssu_115.csv
+SILVA_EXPORTS=ftp://ftp.arb-silva.de/release_115/Exports
+SILVA_URL=$(SILVA_EXPORTS)/SSURef_NR99_115_tax_silva.fasta.tgz
+SILVA_RANKS_URL=$(SILVA_EXPORTS)/tax_ranks_ssu_115.csv
 
 silva: $(SILVA)/taxonomy.tsv
 $(SILVA)/taxonomy.tsv: feed/silva/process_silva.py feed/silva/in/silva.fasta feed/silva/in/accessionid_to_taxonid.tsv 

@@ -3,13 +3,14 @@ package org.opentreeoflife.smasher;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Collections;
-import org.junit.test;
+import java.util.Comparator;
+// import org.junit.Test;
 
 public class Test {
 
-    public static void main(String argv[]) {
+    public static void main(String argv[]) throws Exception {
         System.out.println("Hello");
-        new SourceTaxonomy("(a,b)c");
+        Taxonomy.getTaxonomy("(a,b)c");
     }
 
     static boolean sameTree(Taxon node1, Taxon node2) {
@@ -19,12 +20,12 @@ public class Test {
             else if (node2.children == null)
                 return false;
             else {
-                node1children = new ArrayList(node1.children);
-                node2children = new ArrayList(node2.children);
+                ArrayList<Taxon> node1children = new ArrayList<Taxon>(node1.children);
+                ArrayList<Taxon> node2children = new ArrayList<Taxon>(node2.children);
                 if (node1children.size() == node2children.size()) {
                     Collections.sort(node1children, compareNodes);
                     Collections.sort(node2children, compareNodes);
-                    for (int i = 0; i < node1children.size; ++i)
+                    for (int i = 0; i < node1children.size(); ++i)
                         if (!sameTree(node1children.get(i),
                                       node2children.get(i)))
                             return false;

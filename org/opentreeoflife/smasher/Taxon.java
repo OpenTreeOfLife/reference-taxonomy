@@ -1229,7 +1229,7 @@ public class Taxon {
 		if (this.children != null)
 			for (Taxon child : this.children) {
 				if (child.rank != null && !child.rank.equals(rank)) {
-					child.properFlags = Taxonomy.HIDDEN;
+					child.properFlags |= Taxonomy.HIDDEN;
 					child.hideDescendantsToRank(rank);
 				}
 			}

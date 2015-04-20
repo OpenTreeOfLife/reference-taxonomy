@@ -164,7 +164,50 @@ def readNcbi(indir):
 		elif len(fields) >= 2 and fields[1] != '':
 			taxon = fields[1].strip
 			accession_to_ncbi[fields[0]] = (taxon, None)
-	ncbifile.close()
+	ncbifile.close()    
+    
+def readSilvaTaxonomy(indir):
+    silva_taxonomy_path = indir + '/taxmap_slv_ssu_nr_119.txt'
+    taxonomy = {}
+    tax_file = None
+    with open(silva_taxonomy_path, "r") as tax_file:
+        line = tax_file.readline()  # ignore header line
+        for line in tax_file:
+            fields = line.split('\t')
+            id = fields[0].strip()
+            start = fields[1].strip()
+            end = fields[2].strip()
+            split_lineage = fields[3].strip().split(';')
+            name = fields[4].strip('\n')
+            leaf = {'id': id,
+                    'lineage': split_lineage,
+                    'name': name}
+            taxonomy[id] = leaf
+    return taxonomy
+
+    taxonomy = {}
+    tax_file = None
+    try:
+        tax_file = open(silva_taxonomy_path, "r")
+        line = tax_file.readline()
+        for line in tax_file:
+            fields = line.split('\t')
+            id = fields[0].strip()
+            start = fields[1].strip()
+            end = fields[2].strip()
+            raw_lineage = fields[3].strip()
+            split_lineage = raw_lineage.split(';')
+            name = fields[4].strip('\n')
+            leaf = {'id': id,
+                    'lineage': split_lineage,
+                    'name': name}
+            taxonomy[id] = leaf
+    finally:
+        if tax_file:
+            tax_file.close()
+    return taxonomy
+
+    
 
 synonyms = {}
 ncbi_silva_parent = {}
@@ -350,6 +393,8 @@ def main():
 	fastafilename = indir + '/silva.fasta'
 	writeAboutFile(url, fastafilename, outdir)
 	readNcbi(indir)
+	silvaTaxonomy = readSilvaTaxonomy(indir)
+	print "Silva taxonomy has %d items".format(len(silvaTaxonomy))
 	# readRanks(indir) - no longer used
 	pathdict = makePathDict(fastafilename, outdir + '/silva_taxonly.txt')
 	processSilva(pathdict, indir, outdir)

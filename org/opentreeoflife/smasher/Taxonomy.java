@@ -1010,7 +1010,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	}
 
 	// Final analysis, after assembling entire taxonomy, before writing it out
-	void analyze() {
+	public void analyze() {
 		for (Taxon root : this.roots)
 			analyzeRankConflicts(root, false);  //SIBLING_LOWER and SIBLING_HIGHER
 		setDerivedFlags();
@@ -3592,34 +3592,6 @@ class Answer {
 				if (child.mapped == null || child.mapped.novelp)
 					n += lossage(child);
 		return n;
-	}
-}
-
-class QualifiedId {
-	String prefix;
-	String id;
-
-	static Pattern colonPattern = Pattern.compile(":");
-
-	QualifiedId(String prefix, String id) {
-		this.prefix = prefix; this.id = id;
-	}
-	QualifiedId(String qid) {
-		String[] foo = colonPattern.split(qid, 2);
-		if (foo.length != 2)
-			throw new RuntimeException("ill-formed qualified id: " + qid);
-		this.prefix = foo[0]; this.id = foo[1];
-	}
-	public String toString() {
-		return prefix + ":" + id;
-	}
-	public boolean equals(Object o) {
-		if (o instanceof QualifiedId) {
-			QualifiedId qid = (QualifiedId)o;
-			return (qid.id.equals(id) &&
-					qid.prefix.equals(prefix));
-		} else
-			return false;
 	}
 }
 

@@ -171,7 +171,7 @@ def readSilvaTaxonomy(indir):
     taxonomy = {}
     tax_file = None
     with open(silva_taxonomy_path, "r") as tax_file:
-        line = tax_file.readline()  # ignore header line
+        tax_file.readline()  # ignore header line
         for line in tax_file:
             fields = line.split('\t')
             id = fields[0].strip()
@@ -185,29 +185,24 @@ def readSilvaTaxonomy(indir):
             taxonomy[id] = leaf
     return taxonomy
 
-    taxonomy = {}
-    tax_file = None
-    try:
-        tax_file = open(silva_taxonomy_path, "r")
-        line = tax_file.readline()
-        for line in tax_file:
-            fields = line.split('\t')
-            id = fields[0].strip()
-            start = fields[1].strip()
-            end = fields[2].strip()
-            raw_lineage = fields[3].strip()
-            split_lineage = raw_lineage.split(';')
-            name = fields[4].strip('\n')
-            leaf = {'id': id,
-                    'lineage': split_lineage,
-                    'name': name}
-            taxonomy[id] = leaf
-    finally:
-        if tax_file:
-            tax_file.close()
-    return taxonomy
 
-    
+def readSilvaClusters(indir):
+    path = indir + '/silva.clstr'
+    cluster_accessions = set()
+    with open(path,"r") as clusters_file:
+        clusters_file.readline()  # ignore header
+        for line in clusters_file:
+            tokens = line.split(' ')
+            for i,token in enumerate(tokens):
+                if token[0] == '>':  # assessions start with >
+                    token = token[1:]
+                    if token[-2] == '.':  # cleanup
+                        token = token[:-3]
+                    else:
+                        token = token[:-1]
+                    cluster_accessions.add(token)
+    return cluster_accessions
+
 
 synonyms = {}
 ncbi_silva_parent = {}
@@ -394,7 +389,9 @@ def main():
 	writeAboutFile(url, fastafilename, outdir)
 	readNcbi(indir)
 	silvaTaxonomy = readSilvaTaxonomy(indir)
-	print "Silva taxonomy has %d items".format(len(silvaTaxonomy))
+	print "Silva taxonomy has {} items".format(len(silvaTaxonomy))
+	silvaClusters = readSilvaClusters(indir)
+	print "Silva cluster count: {}".format(len(silvaClusters))
 	# readRanks(indir) - no longer used
 	pathdict = makePathDict(fastafilename, outdir + '/silva_taxonly.txt')
 	processSilva(pathdict, indir, outdir)

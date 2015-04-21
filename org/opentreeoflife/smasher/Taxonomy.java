@@ -264,6 +264,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		}
 		tax.elideDubiousIntermediateTaxa();
 		tax.investigateHomonyms();
+		//??? tax.analyzeContainers(); // incertae sedis and similar
 		tax.assignNewIds(0);	// foo
 		return tax;
 	}
@@ -903,11 +904,15 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				if (!node.prunedp && !node.name.equals(name)) {
 					String uniq = node.uniqueName();
 					if (uniq.length() == 0) uniq = node.name;
-					out.println(name + sep +
-								node.id + sep +
-								"" + sep + // type, could be "synonym" etc.
-								name + " (synonym for " + uniq + ")" +
-								sep);
+					if (node.id == null) {
+						System.out.format("Synonym for node with no id: %s\n", node.name);
+						node.show();
+					} else
+						out.println(name + sep +
+									node.id + sep +
+									"" + sep + // type, could be "synonym" etc.
+									name + " (synonym for " + uniq + ")" +
+									sep);
 				}
 		out.close();
 	}

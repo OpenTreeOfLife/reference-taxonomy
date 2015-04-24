@@ -264,6 +264,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		}
 		tax.elideDubiousIntermediateTaxa();
 		tax.investigateHomonyms();
+		//??? tax.analyzeContainers(); // incertae sedis and similar
 		tax.assignNewIds(0);	// foo
 		return tax;
 	}
@@ -903,11 +904,15 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				if (!node.prunedp && !node.name.equals(name)) {
 					String uniq = node.uniqueName();
 					if (uniq.length() == 0) uniq = node.name;
-					out.println(name + sep +
-								node.id + sep +
-								"" + sep + // type, could be "synonym" etc.
-								name + " (synonym for " + uniq + ")" +
-								sep);
+					if (node.id == null) {
+						System.out.format("Synonym for node with no id: %s\n", node.name);
+						node.show();
+					} else
+						out.println(name + sep +
+									node.id + sep +
+									"" + sep + // type, could be "synonym" etc.
+									name + " (synonym for " + uniq + ")" +
+									sep);
 				}
 		out.close();
 	}
@@ -1005,7 +1010,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	}
 
 	// Final analysis, after assembling entire taxonomy, before writing it out
-	void analyze() {
+	public void analyze() {
 		for (Taxon root : this.roots)
 			analyzeRankConflicts(root, false);  //SIBLING_LOWER and SIBLING_HIGHER
 		setDerivedFlags();
@@ -2987,18 +2992,18 @@ class Conflict {
 			return String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
 								 da,
 								 paraphyletic.name, paraphyletic.getQualifiedId(),
-								 unode.name, unode.sourceIds.get(0),
-								 unode.parent.name, unode.parent.sourceIds.get(0),
-								 a.name, a.sourceIds.get(0),
-								 b.name, b.sourceIds.get(0));
+								 unode.name, unode.putativeSourceRef(),
+								 unode.parent.name, unode.parent.putativeSourceRef(),
+								 a.name, a.putativeSourceRef(),
+								 b.name, b.putativeSourceRef());
 			// return (da + " " + paraphyletic + " in " + b + " lost child " + unode + " to " + unode.parent + " in " + a);
 		} else
 			// return ("? " + paraphyletic + " lost child " + unode + " to " + unode.parent);
 			return String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
 								 "?",
 								 paraphyletic.name, paraphyletic.getQualifiedId(),
-								 unode.name, unode.sourceIds.get(0),
-								 unode.parent.name, unode.parent.sourceIds.get(0),
+								 unode.name, unode.putativeSourceRef(),
+								 unode.parent.name, unode.parent.putativeSourceRef(),
 								 "", "",
 								 "", "");
 
@@ -3181,7 +3186,7 @@ class Matrix {
 							// if (candidate.comapped == null) continue;  // ???
 							if (candidate.sourceIds == null)
 								System.err.println("?!! No source ids: " + candidate);
-							QualifiedId qid = candidate.sourceIds.get(0);
+							QualifiedId qid = candidate.putativeSourceRef();
 							if (w == null) w = qid.toString();
 							else w += ("," + qid.toString());
 						}
@@ -3385,11 +3390,11 @@ abstract class Criterion {
 				if (x.sourceIds == null)
 					xid = x.getQualifiedId();
 				else
-					xid = x.sourceIds.get(0);
+					xid = x.putativeSourceRef();
 				if (y.sourceIds == null)
 					yid = y.getQualifiedId(); // shouldn't happen
 				else
-					yid = y.sourceIds.get(0);
+					yid = y.putativeSourceRef();
 				if (xid.equals(yid))
 					return Answer.yes(x, y, "same-source-id", null);
 				else
@@ -3587,34 +3592,6 @@ class Answer {
 				if (child.mapped == null || child.mapped.novelp)
 					n += lossage(child);
 		return n;
-	}
-}
-
-class QualifiedId {
-	String prefix;
-	String id;
-
-	static Pattern colonPattern = Pattern.compile(":");
-
-	QualifiedId(String prefix, String id) {
-		this.prefix = prefix; this.id = id;
-	}
-	QualifiedId(String qid) {
-		String[] foo = colonPattern.split(qid, 2);
-		if (foo.length != 2)
-			throw new RuntimeException("ill-formed qualified id: " + qid);
-		this.prefix = foo[0]; this.id = foo[1];
-	}
-	public String toString() {
-		return prefix + ":" + id;
-	}
-	public boolean equals(Object o) {
-		if (o instanceof QualifiedId) {
-			QualifiedId qid = (QualifiedId)o;
-			return (qid.id.equals(id) &&
-					qid.prefix.equals(prefix));
-		} else
-			return false;
 	}
 }
 

@@ -36,10 +36,10 @@ public class AlignmentByMembership extends Alignment {
 	Taxonomy source, union;
 
     // Map source node to union node that includes it
-	Map<Taxon, Taxon> sourceMap = new HashMap<Taxon, Taxon>();
+	Map<Taxon, Taxon> sourceHalfMap = new HashMap<Taxon, Taxon>();
 
     // Map union node to source node that includes it
-	Map<Taxon, Taxon> unionMap = new HashMap<Taxon, Taxon>();
+	Map<Taxon, Taxon> unionHalfMap = new HashMap<Taxon, Taxon>();
 
     // Final source-to-union alignment
 	Map<Taxon, Taxon> alignmentMap = new HashMap<Taxon, Taxon>();
@@ -62,11 +62,16 @@ public class AlignmentByMembership extends Alignment {
 		this.source = source;
 		this.union = union;
 		this.sourceNameMap = makeNameMap(source);
-		this.unionNameMap = makeNameMap(source);
-
-        map();                  // tips and mrcas
+        System.out.println("sourceNameMap: " + this.sourceNameMap.size());
+		this.unionNameMap = makeNameMap(union);
+        System.out.println("unionNameMap: " + this.unionNameMap.size());
+        System.out.println("a"); System.out.flush();
+        halfMap();                  // tips and mrcas
+        System.out.println("b"); System.out.flush();
         align();                // mutual-mrca
 	}
+
+    // Return the node that this one maps to under this alignment, or null
 
     Taxon target(Taxon node) {
         return alignmentMap.get(node);
@@ -79,22 +84,33 @@ public class AlignmentByMembership extends Alignment {
     // Should we do member-mapping in one direction, name-mapping
     // in the other?
 
-    void map() {
+    void halfMap() {
+        System.out.println("halfMap");
+        System.out.flush();
         for (Taxon node: source.roots)
-            mapSubtree(node, union, sourceNameMap, sourceMap);
+            halfMapSubtree(node, union, sourceNameMap, sourceHalfMap);
+        System.out.println("sourceHalfMap: " + sourceHalfMap.size());
         for (Taxon unode: union.roots)
-            mapSubtree(unode, source, unionNameMap, unionMap);
+            halfMapSubtree(unode, source, unionNameMap, unionHalfMap);
+        System.out.println("unionHalfMap: " + unionHalfMap.size());
     }
 
     // Map tips by name, internal nodes by membership
-    static Taxon mapSubtree(Taxon node,
-                            Taxonomy dest,
-                            Map<Taxon, Collection<String>> nameMap,
-                            Map<Taxon,Taxon> map) {
+    static Taxon halfMapSubtree(Taxon node,
+                                Taxonomy dest,
+                                Map<Taxon, Collection<String>> nameMap,
+                                Map<Taxon,Taxon> halfMap) {
+        if (false) {
+            try {
+                Thread.currentThread().sleep(100);
+            } catch (InterruptedException e) { ; }
+            System.out.println(node);
+            System.out.flush();
+        }
         if (node.children != null) {
             Taxon mrca = null;
             for (Taxon child : node.children) {
-                Taxon a = mapSubtree(node, dest, nameMap, map);
+                Taxon a = halfMapSubtree(child, dest, nameMap, halfMap);
                 if (a != null)
                     if (mrca == null)
                         mrca = a;
@@ -102,13 +118,22 @@ public class AlignmentByMembership extends Alignment {
                         mrca = mrca.mrca(a);
             }
             if (mrca != null) {
-                map.put(node, mrca);
+                halfMap.put(node, mrca);
                 return mrca;
             }
+            /* fall through - node is a 'virtual tip' */
         }
+        if (false) {
+            try {
+                Thread.currentThread().sleep(100);
+            } catch (InterruptedException e) { ; }
+            System.out.println(node);
+            System.out.flush();
+        }
+
         Taxon unode = mapByName(node, nameMap, dest);
         if (unode != null) {
-            map.put(node, unode);
+            halfMap.put(node, unode);
             return unode;
         } else
             return null;
@@ -141,24 +166,26 @@ public class AlignmentByMembership extends Alignment {
             // dest node's name being the node's primary name.
 
             List<Taxon> candidates = new ArrayList<Taxon>();
-            for (String name : nameMap.get(node)) {
-                if (name.equals(node.name)) {
-                    List<Taxon> unionNodes = dest.nameIndex.get(name);
-                    if (unionNodes != null)
-                        for (Taxon unode : unionNodes)
-                            if (!differentDivisions(node, unode))
-                                candidates.add(unode);
-                } else {
-                    List<Taxon> unionNodes = dest.nameIndex.get(name);
-                    if (unionNodes != null)
-                        for (Taxon unode : unionNodes)
-                            if (unode.name.equals(node.name))
+            Collection<String> names = nameMap.get(node);
+            if (names != null)
+                for (String name : names) {
+                    if (name.equals(node.name)) {
+                        List<Taxon> unionNodes = dest.nameIndex.get(name);
+                        if (unionNodes != null)
+                            for (Taxon unode : unionNodes)
                                 if (!differentDivisions(node, unode))
                                     candidates.add(unode);
+                    } else {
+                        List<Taxon> unionNodes = dest.nameIndex.get(name);
+                        if (unionNodes != null)
+                            for (Taxon unode : unionNodes)
+                                if (unode.name.equals(node.name))
+                                    if (!differentDivisions(node, unode))
+                                        candidates.add(unode);
+                    }
+                    Taxon unode = tryCandidates(node, candidates);
+                    if (unode != null) return unode;
                 }
-                Taxon unode = tryCandidates(node, candidates);
-                if (unode != null) return unode;
-            }
         }
         return null;
     }
@@ -200,40 +227,36 @@ public class AlignmentByMembership extends Alignment {
             return false;
     }
 
-    // Is unification really the right relationship? ... I don't think
-    // so, it's already a many-to-one mapping, shouldn't be called
-    // unification.
-
     void align() {
         for (Taxon node : source.roots)
             alignSubtree(node);
     }
 
     void alignSubtree(Taxon node) {
+        Taxon unode = sourceHalfMap.get(node);
+        if (unode == null)
+            return;
         if (node.children != null) {
-            Taxon unode = sourceMap.get(node);
-            if (unode == null)
-                return;
             for (Taxon child : node.children)
                 alignSubtree(child);
-            Taxon renode = unionMap.get(unode);
-            // unode and renode are both 'clean'
-            if (unode == renode) {
-                // Round trip m->n->m
-                List<Taxon> candidates = new ArrayList<Taxon>();
-                for (Taxon ancestor = unode; ancestor != null; ancestor = ancestor.parent) {
-                    // Wrong test, we should try synonyms as well
-                    if (ancestor.name.equals(node.name) &&
-                        unionMap.get(ancestor) == renode)
-                        candidates.add(ancestor);
-                }
-                Taxon match = tryCandidates(node, candidates);
-                if (match != null)
-                    alignmentMap.put(node, match);
-                else
-                    // Ambiguous.  Map to 'smallest' compatible node
-                    alignmentMap.put(node, unode);
+        }
+        Taxon renode = unionHalfMap.get(unode);
+        // unode and renode are both 'clean'
+        if (node == renode) {
+            // Round trip m->n->m
+            List<Taxon> candidates = new ArrayList<Taxon>();
+            for (Taxon ancestor = unode; ancestor != null; ancestor = ancestor.parent) {
+                // Wrong test, we should try synonyms as well
+                if (ancestor.name.equals(node.name) &&
+                    unionHalfMap.get(ancestor) == renode)
+                    candidates.add(ancestor);
             }
+            Taxon match = tryCandidates(node, candidates);
+            if (match != null)
+                alignmentMap.put(node, match);
+            else
+                // Ambiguous.  Map to 'smallest' compatible node
+                alignmentMap.put(node, unode);
         }
     }
 
@@ -242,7 +265,7 @@ public class AlignmentByMembership extends Alignment {
     // node, then we have a refinement...
 
     boolean refinementp(Taxon node, Taxon unode, List<Taxon> children) {
-        Taxon unext = sourceMap.get(node);
+        Taxon unext = sourceHalfMap.get(node);
         if (unext == null)
             return true;        // ???
         else if (unext == unode) {

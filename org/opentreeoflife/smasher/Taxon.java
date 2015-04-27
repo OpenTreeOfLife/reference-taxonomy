@@ -18,9 +18,9 @@ public class Taxon {
 	public Taxon parent = null;
 	public String name, rank = null;
 	public List<Taxon> children = null;
+	public List<QualifiedId> sourceIds = null;
 	Taxonomy taxonomy;			// For subsumption checks etc.
 	int count = -1;             // cache of # nodes at or below here
-	List<QualifiedId> sourceIds = null;
 	Answer deprecationReason = null;
 	boolean prunedp = false;
 
@@ -211,6 +211,10 @@ public class Taxon {
 	}
 
 	// unode is a preexisting node in the union taxonomy.
+
+    // Is unification really the right relationship? ... I don't think
+    // so, it's already a many-to-one mapping, shouldn't be called
+    // unification.
 
 	void unifyWith(Taxon unode) {
 		this.reallyUnifyWith(unode);
@@ -1165,6 +1169,11 @@ public class Taxon {
 				 Taxonomy.ENVIRONMENTAL |
 				 Taxonomy.INCERTAE_SEDIS)) != 0;
 	}
+
+	public boolean isExtinct() {
+		return ((this.properFlags | this.inheritedFlags) &
+				Taxonomy.EXTINCT) != 0;
+    }
 
 	// ----- Methods intended for use in jython scripts -----
 

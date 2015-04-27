@@ -3,6 +3,7 @@
 *.class
 tmp*
 *.tmp
+scratch/
 smasher/tax/gbif
 smasher/tax/ncbi
 smasher/tax/nem_ncbi

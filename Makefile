@@ -34,12 +34,15 @@ all: ott
 
 compile: $(CLASS)
 
+# this is getting tedious
+
 $(CLASS): org/opentreeoflife/smasher/Smasher.java \
 	  org/opentreeoflife/smasher/Taxonomy.java \
 	  org/opentreeoflife/smasher/Taxon.java \
 	  org/opentreeoflife/smasher/Flag.java \
 	  org/opentreeoflife/smasher/Alignment.java org/opentreeoflife/smasher/Reportx.java \
 	  org/opentreeoflife/smasher/Test.java \
+	  org/opentreeoflife/smasher/AlignmentByMembership.java \
 	  lib/jscheme.jar lib/json-simple-1.1.1.jar lib/jython-standalone-2.5.3.jar \
 	  lib/junit-4.12.jar
 	javac -g $(CP) org/opentreeoflife/smasher/*.java

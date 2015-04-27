@@ -17,6 +17,8 @@ public class AlignmentByName extends Alignment {
 
 	Taxonomy source, union;
 
+    // Return the node that this one maps to under this alignment, or null
+
     Taxon target(Taxon node) {
         return node.mapped;
     }

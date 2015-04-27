@@ -264,6 +264,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		}
 		tax.elideDubiousIntermediateTaxa();
 		tax.investigateHomonyms();
+		//??? tax.analyzeContainers(); // incertae sedis and similar
 		tax.assignNewIds(0);	// foo
 		return tax;
 	}
@@ -903,11 +904,15 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				if (!node.prunedp && !node.name.equals(name)) {
 					String uniq = node.uniqueName();
 					if (uniq.length() == 0) uniq = node.name;
-					out.println(name + sep +
-								node.id + sep +
-								"" + sep + // type, could be "synonym" etc.
-								name + " (synonym for " + uniq + ")" +
-								sep);
+					if (node.id == null) {
+						System.out.format("Synonym for node with no id: %s\n", node.name);
+						node.show();
+					} else
+						out.println(name + sep +
+									node.id + sep +
+									"" + sep + // type, could be "synonym" etc.
+									name + " (synonym for " + uniq + ")" +
+									sep);
 				}
 		out.close();
 	}
@@ -1005,7 +1010,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	}
 
 	// Final analysis, after assembling entire taxonomy, before writing it out
-	void analyze() {
+	public void analyze() {
 		for (Taxon root : this.roots)
 			analyzeRankConflicts(root, false);  //SIBLING_LOWER and SIBLING_HIGHER
 		setDerivedFlags();
@@ -2374,6 +2379,14 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 // end of class Taxonomy
 
+    class Stat {
+        String tag;
+        int i = 0;
+        int inc(Taxon x, Taxon n, Taxon m) { if (i<5) System.out.format("%s %s %s %s\n", tag, x, n, m); return ++i; }
+        Stat(String tag) { this.tag = tag; }
+        public String toString() { return "" + i + " " + tag; }
+    }
+
 class SourceTaxonomy extends Taxonomy {
 
 	SourceTaxonomy() {
@@ -2384,13 +2397,40 @@ class SourceTaxonomy extends Taxonomy {
 	}
 
 	void mapInto(UnionTaxonomy union) {
-        Alignment a = new AlignmentByName(this, union);
+        Alignment n = new AlignmentByName(this, union);
         if (false)
             for (Taxon node : this) {
-                Taxon unode = a.target(node);
+                Taxon unode = n.target(node);
                 if (unode != null)
                     node.unifyWith(unode);
             }
+        Alignment m = new AlignmentByMembership(this, union);
+        if (true) {
+            Stat s0 = new Stat("mapped the same by both");
+            Stat s1 = new Stat("not mapped by either");
+            Stat s2 = new Stat("mapped by name only");
+            Stat s3 = new Stat("mapped by membership only");
+            Stat s4 = new Stat("incompatible mappings");
+            for (Taxon node : this) {
+                Taxon nnode = n.target(node);
+                Taxon mnode = m.target(node);
+                if (nnode == mnode) {
+                    if (nnode != null)
+                        s0.inc(node, nnode, mnode);
+                    else
+                        s1.inc(node, nnode, mnode);
+                } else if (mnode == null) {
+                    // maps by name but not by membership
+                    s2.inc(node, nnode, mnode); // maybe ok - name already present in union
+                } else if (nnode == null)
+                    s3.inc(node, nnode, mnode); // good - maps by membership but not by name
+                else
+                    s4.inc(node, nnode, mnode); // bad - incompatible mappings
+            }
+            System.out.println(s0); System.out.println(s1); System.out.println(s2); 
+            System.out.println(s3); System.out.println(s4); 
+        }
+
         union.sources.add(this);
 	}
 
@@ -2889,18 +2929,18 @@ class Conflict {
 			return String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
 								 da,
 								 paraphyletic.name, paraphyletic.getQualifiedId(),
-								 unode.name, unode.sourceIds.get(0),
-								 unode.parent.name, unode.parent.sourceIds.get(0),
-								 a.name, a.sourceIds.get(0),
-								 b.name, b.sourceIds.get(0));
+								 unode.name, unode.putativeSourceRef(),
+								 unode.parent.name, unode.parent.putativeSourceRef(),
+								 a.name, a.putativeSourceRef(),
+								 b.name, b.putativeSourceRef());
 			// return (da + " " + paraphyletic + " in " + b + " lost child " + unode + " to " + unode.parent + " in " + a);
 		} else
 			// return ("? " + paraphyletic + " lost child " + unode + " to " + unode.parent);
 			return String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
 								 "?",
 								 paraphyletic.name, paraphyletic.getQualifiedId(),
-								 unode.name, unode.sourceIds.get(0),
-								 unode.parent.name, unode.parent.sourceIds.get(0),
+								 unode.name, unode.putativeSourceRef(),
+								 unode.parent.name, unode.parent.putativeSourceRef(),
 								 "", "",
 								 "", "");
 
@@ -3061,16 +3101,9 @@ abstract class Criterion {
 			public String toString() { return "same-source-id"; }
 			Answer assess(Taxon x, Taxon y) {
 				// x is source node, y is union node.
-				QualifiedId xid, yid;
-				if (x.sourceIds == null)
-					xid = x.getQualifiedId();
-				else
-					xid = x.sourceIds.get(0);
-				if (y.sourceIds == null)
-					yid = y.getQualifiedId(); // shouldn't happen
-				else
-					yid = y.sourceIds.get(0);
-				if (xid.equals(yid))
+				QualifiedId xid = maybeQualifiedId(x);
+				QualifiedId yid = maybeQualifiedId(y);
+                if (xid != null && xid.equals(yid))
 					return Answer.yes(x, y, "same-source-id", null);
 				else
 					return Answer.NOINFO;
@@ -3090,7 +3123,8 @@ abstract class Criterion {
 				// 1. Mapping x=NCBI to y=union(SILVA): y.sourceIds contains x.id
 				// 2. Mapping x=idsource to y=union: x.sourceIds contains ncbi:123
 				// compare x.id to y.sourcenode.id
-				QualifiedId xid = x.getQualifiedId();
+				QualifiedId xid = maybeQualifiedId(x);
+                if (xid == null) return Answer.NOINFO;
 				Collection<QualifiedId> yids = y.sourceIds;
 				if (yids == null)
 					return Answer.NOINFO;
@@ -3105,6 +3139,13 @@ abstract class Criterion {
 				return Answer.NOINFO;
 			}
 		};
+
+    static QualifiedId maybeQualifiedId(Taxon node) {
+        QualifiedId qid = node.putativeSourceRef();
+        if (qid != null) return qid;
+        if (node.id != null) return node.getQualifiedId();
+        else return null;
+    }
 
 	// Buchnera in Silva and 713
 	static Criterion knowDivision =
@@ -3269,34 +3310,6 @@ class Answer {
 				if (child.mapped == null || child.mapped.novelp)
 					n += lossage(child);
 		return n;
-	}
-}
-
-class QualifiedId {
-	String prefix;
-	String id;
-
-	static Pattern colonPattern = Pattern.compile(":");
-
-	QualifiedId(String prefix, String id) {
-		this.prefix = prefix; this.id = id;
-	}
-	QualifiedId(String qid) {
-		String[] foo = colonPattern.split(qid, 2);
-		if (foo.length != 2)
-			throw new RuntimeException("ill-formed qualified id: " + qid);
-		this.prefix = foo[0]; this.id = foo[1];
-	}
-	public String toString() {
-		return prefix + ":" + id;
-	}
-	public boolean equals(Object o) {
-		if (o instanceof QualifiedId) {
-			QualifiedId qid = (QualifiedId)o;
-			return (qid.id.equals(id) &&
-					qid.prefix.equals(prefix));
-		} else
-			return false;
 	}
 }
 

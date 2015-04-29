@@ -1,19 +1,23 @@
 ''''
-Script received from Jessica Grant, 8 October 2013
+Script modified from process_silva (Jessica Grant, 8 October 2013)
+This script attaches assession ids from reference clusters to the end of each path in
+the silva fasta file.  Only accessions from reference sequences are added (i.e., the
+contents of the .clstr file are not used).
 
-This script takes as input the ssu fasta from Silva (in this case SSURef_NR99_115_tax_silva.fasta
-but change as necessary.)  Also 'tax_rank.txt' for the rank file from Silva ftp.
+The ncbi taxonomy is ignored.
 
+No about file is written and the third command argument (if any) is ignored.
+
+This script takes as input the ssu fasta from Silva (in this case SSURef_NR99_119_tax_silva.fasta
+but change as necessary.)  
 It outputs 
-	the taxonomy in this format:
-	<taxid>\t|\t<parentid>\t|\t<taxon>\t|\t<rank>\t|\t<seqid>
-	also two additional files that might not be necessary:
-	homonym_paths.txt for checking taxa called as homonyms
-	silva_taxonly.txt a list of the taxa that are included in the taxonomy.
+	the taxonomy as augmented_taxonomy.tsv in the same format as process_silva.py 
 
 seqid is the unique identifier from Silva of the SSU reference sequence, 
 e.g. 'A45315.1.1521', and is there for the species only.  Other 
 ranks have 'no seq'
+
+Filtering is still as per process_silva
 
 Be aware of a few things - 
 	I have ignored plants, animals and fungi because they have reasonable taxonomies elsewhere.
@@ -53,6 +57,7 @@ import re
 import string
 import os, time, json, os.path
 
+# not used
 def writeAboutFile(url, nodesfilename, taxdir):
 	aboutfilename = taxdir+"/about.json"
 	aboutfile = open(aboutfilename,"w")
@@ -177,9 +182,11 @@ synonyms = {}
 
 taxondict = {}	# maps (parentid, name) to taxid
 
-def processSilva(pathdict, silvaClusters, indir, outdir):
+#allaccessions = {}
+
+def processSilva(pathdict, indir, outdir):
 	rank = 'no rank' #for now
-	outfile = open(outdir + '/taxonomy.tsv.new','w')
+	outfile = open(outdir + '/augmented_taxonomy.tsv.new','w')
 	outfile.write('uid\t|\tparent_uid\t|\tname\t|\trank\t|\tsourceinfo\t|\t\n')
 	outfile.write('0\t|\t\t|\tlife\t|\tno rank\t|\t\t|\t\n')
 	homfilename = outdir + '/homonym_paths.txt'
@@ -197,8 +204,11 @@ def processSilva(pathdict, silvaClusters, indir, outdir):
 		if i % 50000 == 0: print i
 		parentid = "0"
 		path = pathdict[uid]
+		split_uid = string.split(uid,".")
+		accession = split_uid[0]
+		seq_start = split_uid[1]
+		seq_end = split_uid[2]
 		accession = string.split(uid,".",1)[0]
-
 		# For a single cluster, look at names on path from root
 		for depth in range(0, len(path)-1):
 			taxname = path[depth]
@@ -258,65 +268,17 @@ def processSilva(pathdict, silvaClusters, indir, outdir):
 		# add cluster children; the cluster info is already available, just match against
 		# the parent and write the children
 		if parentid != None:
-			if accession in silvaClusters:
-				for count,child in enumerate(silvaClusters[accession].members):
-					if child.accession != accession:
-						taxid = "%s/#%d"%(accession, depth+2+count)
-						taxname = child.accession
-						outfile.write("%s\t|\t%s\t|\t%s\t|\t%s\t|\t\t|\t\n" %
-								      (taxid, parentid, taxname, 'no rank'))
-			else:
-				print "failed to find %s in silvaClusters"%accession
+			taxid = accession
+			taxname = "SC_"+accession
+			outfile.write("%s\t|\t%s\t|\t%s\t|\t%s\t|\t\t|\t\n" %
+					      (taxid, parentid, taxname, 'no rank'))
 
-
-		# We're trying to insert an NCBI
-		# taxon between a set of clusters and the clusters' parent in SILVA.
-		# If an NCBI taxon doesn't fit inside of a cluster-parent, it's paraphyletic
-		# and is omitted.
-		# N.b. we may encounter the same accession number multiple times
-
-		if parentid != None:
-			if process_accession(accession, parentid, path[len(path)-1]):
-				acc_success += 1
-			else:
-				blocked_or_missing += 1
 
 	# End of loop over cluster uids
 
 	print "Higher taxa: %d"%internal
-	print "Accessions: %d  Mapped to NCBI: %d"%(len(acc_seen), len(accession_to_ncbi))
-	print "Cluster to NCBI taxon mappings: %d successful, %d blocked or missing"%(acc_success, blocked_or_missing)
 
-	print "NCBI taxa: %d"%(len(ncbi_info))
 
-	paraphyletic = []
-	ncbi_count = 0
-
-	# ncbi_silva_parent maps NCBI id to id of its parent in SILVA
-
-	# Write out the tips of the smasher taxonomy.  These correspond to
-	# taxa in NCBI that are placed under SILVA taxa that are just
-	# above the cluster level.
-
-	for ncbi_id in ncbi_info.keys():
-		info = ncbi_info[ncbi_id]
-		parentid = info.silva_parent
-		if parentid != True:
-			taxid = info.sample_accession	 # becomes URL
-			rank = 'samples'	# rank will be set from NCBI
-			qid = "ncbi:%s" % ncbi_id
-			synonyms[qid] = taxid
-			name = info.name
-			outfile.write("%s\t|\t%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n" %
-						  (taxid, parentid, name, rank, qid))
-			ncbi_count = ncbi_count + 1
-			# This isn't useful, is it?
-			#longname = "%s %s"%(taxname, qid)
-			#synonyms[longname] = taxid
-		else:
-			paraphyletic.append(ncbi_id)
-	print "NCBI taxa incorporated: %d"%(ncbi_count)
-	print "Paraphyletic NCBI taxa: %d"%(len(paraphyletic))	  #e.g. 1536
 
 	outfile.close()
 	
@@ -334,26 +296,6 @@ class Ncbi_info:
 
 ncbi_info = {}
 
-# Process a single cluster
-
-def process_accession(accession, parentid, parentname):
-	if not accession in acc_seen:
-		acc_seen[accession] = True
-	if accession in accession_to_ncbi:
-		ncbi_id = accession_to_ncbi[accession][0]  #(taxonid, strain)
-		if ncbi_id in ncbi_info:
-			info = ncbi_info[ncbi_id]
-			if info.silva_parent != parentid:
-				info.silva_parent = True
-		else:
-			info = Ncbi_info(ncbi_id)
-			ncbi_info[ncbi_id] = info
-			info.silva_parent = parentid
-			info.sample_accession = accession
-			info.name = parentname
-		return True
-	else:
-		return False
 
 def do_synonyms(outdir):
 	outfile = open(outdir + "/synonyms.tsv.new","w")
@@ -379,80 +321,23 @@ class Cluster_member:
 		self.length = length
 
 
-SILVACLUSTERFILE = 'silva.clstr'
-
-import collections
-multiple_clusters = {}
-
-def readSilvaClusters(indir):
-	path = indir + '/' + SILVACLUSTERFILE
-	cluster_accessions = {}
-	with open(path,"r") as clusters_file:
-		cur_cluster = None
-		for line in clusters_file:
-			start = None
-			ntlen = None
-			tokens = line.split(' ')
-			for i,token in enumerate(tokens):
-				if token[0] == '>':	 # assessions start with >
-					token = token[1:]
-					if token[-2] == '.':  # cleanup
-						token = token[:-3]
-					else:
-						token = token[:-1]
-					if i == 0: # reference accessions are not indented
-						cur_cluster = Silva_cluster(token)
-						cluster_accessions[token] = cur_cluster
-					else:
-						mem = Cluster_member(accession=token,start=start,length=ntlen)
-						cur_cluster.add_member(mem)
-						if token in multiple_clusters:
-							multiple_clusters[token].add(cur_cluster.reference)
-						else:
-							multiple_clusters[token] = set()
-							multiple_clusters[token].add(cur_cluster.reference)
-				elif i == 0:
-					start = token
-				elif i == 1:
-					ntlen = token
-	#report multiple clusters
-	#multiple_count = 0
-	#for accessionid in multiple_clusters:
-	#	if len(multiple_clusters[accessionid]) > 1:
-	#		print "accession id: %s"%accessionid
-	#		for ref in multiple_clusters[accessionid]:
-	#			print "    %s"%ref
-	#		multiple_count += 1
-	#print "accessions in multiple clusters = %d"%multiple_count
-	# cleanup multiple clusters
-	#print "check cleanup of multiple cluster check"
-	#import itertools
-	#for memset in multiple_clusters:
-	#	check = list(itertools.ifilterfalse(lambda mem: mem.accession == memset, 
-	#								        multiple_clusters[memset]))
-	#	if len(check) > 0:
-	#		print("key: %s, check: %s"%(memset,check))
-	return cluster_accessions
-
-
-#end silva cluster additions
 
 
 def main():
 	# was: infile = open('SSURef_NR99_115_tax_silva.fasta','rU')
 	indir = sys.argv[1]
 	outdir = sys.argv[2]
-	url = sys.argv[3]
+	#url = sys.argv[3]
 	fastafilename = indir + '/silva.fasta'
 	readNcbi(indir)
 	# readRanks(indir) - no longer used
 	pathdict = makePathDict(fastafilename, outdir + '/silva_taxonly.txt')
-	writeAboutFile(url, fastafilename, outdir)
-	silvaClusters = readSilvaClusters(indir)
-	processSilva(pathdict, silvaClusters, indir, outdir)
+	# writeAboutFile(url, fastafilename, outdir)
+	# silvaClusters = readSilvaClusters(indir)
+	processSilva(pathdict, indir, outdir)
 	do_synonyms(outdir)
-	os.rename(outdir + '/taxonomy.tsv.new', outdir + '/taxonomy.tsv')
-	os.rename(outdir + '/synonyms.tsv.new', outdir + '/synonyms.tsv')
+	os.rename(outdir + '/augmented_taxonomy.tsv.new', outdir + '/augmented_taxonomy.tsv')
+#	os.rename(outdir + '/synonyms.tsv.new', outdir + '/synonyms.tsv')
 	
 main()
 

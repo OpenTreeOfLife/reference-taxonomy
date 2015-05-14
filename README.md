@@ -1,5 +1,8 @@
 
 Documentation for how to use 'smasher', the taxonomy combiner.
+
+See file doc/scripting.md for documentation on using the scripting features of smasher for building, subsetting, querying and other operations on taxonomies. 
+
 See file doc/README.md for release notes for the taxonomy itself.
 
 Taxonomies are represented as directories, see 

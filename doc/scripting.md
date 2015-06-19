@@ -258,6 +258,22 @@ in spite of other information:
 Mark a taxon as 'hidden' so that it can be suppressed by tools downstream:
 
     taxon.hide()
+    
+## Looking at taxonomies
+
+Taxonomies are iterable.
+
+    for taxon in taxonomy: ...
+    
+Taxa have lots of properties you might want to look at in a script.
+    
+    taxon.parent
+    taxon.children
+    taxon.isHidden()
+    
+You can select only the visible (non-hidden) taxa:
+
+    taxonomy.selectVisible("my taxonomy but only visible")
 
 ## Debugging
 

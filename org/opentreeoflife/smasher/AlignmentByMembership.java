@@ -131,7 +131,7 @@ public class AlignmentByMembership extends Alignment {
             System.out.flush();
         }
 
-        Taxon unode = mapByName(node, nameMap, dest);
+        Taxon unode = mapByName(node, nameMap, dest); //could be ambiguous
         if (unode != null) {
             halfMap.put(node, unode);
             return unode;
@@ -156,7 +156,7 @@ public class AlignmentByMembership extends Alignment {
                         if (!differentDivisions(node, unode))
                             candidates.add(unode);
             Taxon unode = tryCandidates(node, candidates);
-            if (unode != null) return unode;
+            if (unode != null) return unode; // possibly ambiguous
         }
 
         {
@@ -166,16 +166,23 @@ public class AlignmentByMembership extends Alignment {
             // dest node's name being the node's primary name.
 
             List<Taxon> candidates = new ArrayList<Taxon>();
+
+            // Consider all union nodes that have this node's primary
+            // name among their names
+            {
+                List<Taxon> unionNodes = dest.nameIndex.get(node.name);
+                if (unionNodes != null)
+                    for (Taxon unode : unionNodes)
+                        if (!differentDivisions(node, unode))
+                            candidates.add(unode);
+            }
+
+            // Consider all union nodes that have one of this nodes'
+            // names as their primary name
             Collection<String> names = nameMap.get(node);
             if (names != null)
                 for (String name : names) {
-                    if (name.equals(node.name)) {
-                        List<Taxon> unionNodes = dest.nameIndex.get(name);
-                        if (unionNodes != null)
-                            for (Taxon unode : unionNodes)
-                                if (!differentDivisions(node, unode))
-                                    candidates.add(unode);
-                    } else {
+                    if (!name.equals(node.name)) {
                         List<Taxon> unionNodes = dest.nameIndex.get(name);
                         if (unionNodes != null)
                             for (Taxon unode : unionNodes)
@@ -183,13 +190,12 @@ public class AlignmentByMembership extends Alignment {
                                     if (!differentDivisions(node, unode))
                                         candidates.add(unode);
                     }
-                    Taxon unode = tryCandidates(node, candidates);
-                    if (unode != null) return unode;
                 }
+            return tryCandidates(node, candidates);
         }
-        return null;
     }
         
+    // Taxon, AMBIGUOUS, or null
     static Taxon tryCandidates(Taxon node, List<Taxon> candidates) {
         if (candidates.size() == 1)
             return candidates.get(0);
@@ -209,7 +215,7 @@ public class AlignmentByMembership extends Alignment {
         // Fatally ambiguous!  Maybe choose based on distance in tree?
         // but that would require matches for interior nodes, which we
         // don't have yet.
-        return null;
+        return Taxon.AMBIGUOUS;
     }
 
     static Criterion[] criteria = {
@@ -236,6 +242,10 @@ public class AlignmentByMembership extends Alignment {
         Taxon unode = sourceHalfMap.get(node);
         if (unode == null)
             return;
+        if (unode == Taxon.AMBIGUOUS) {
+            alignmentMap.put(node, unode);
+            return;
+        }
         if (node.children != null) {
             for (Taxon child : node.children)
                 alignSubtree(child);
@@ -252,7 +262,7 @@ public class AlignmentByMembership extends Alignment {
                     candidates.add(ancestor);
             }
             Taxon match = tryCandidates(node, candidates);
-            if (match != null)
+            if (match != null && match != Taxon.AMBIGUOUS)
                 alignmentMap.put(node, match);
             else
                 // Ambiguous.  Map to 'smallest' compatible node

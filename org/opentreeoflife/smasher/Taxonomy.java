@@ -235,13 +235,20 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		}
 	}
 
+    /* Nodes with more children come before nodes with fewer children.
+       Nodes with shorter ids come before nodes with longer ids.
+       */
+
 	static int compareTaxa(Taxon n1, Taxon n2) {
 		int q1 = (n1.children == null ? 0 : n1.children.size());
 		int q2 = (n2.children == null ? 0 : n2.children.size());
-		if (q1 != q2) return q1 - q2;
-		int z1 = (n1.id == null ? -1 : n1.id.length());
-		int z2 = (n2.id == null ? -1 : n2.id.length());
-		return z1 - z2;
+		if (q1 != q2) return q2 - q1;
+        if (n1.id == null) return (n2.id == null ? 0 : 1);
+        if (n2.id == null) return -1;
+        // id might or might not look like an integer
+        int z = n1.id.length() - n2.id.length();
+        if (z != 0) return z;
+        else return n1.id.compareTo(n2.id);
 	}
 
 	static Pattern tabVbarTab = Pattern.compile("\t\\|\t?");
@@ -1938,7 +1945,12 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	// Not deprecated (prefix now passed to getTaxonomy)
 	public void absorb(SourceTaxonomy tax) {
-		((UnionTaxonomy)this).mergeIn(tax);
+        try {
+            ((UnionTaxonomy)this).mergeIn(tax);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
 	}
 
 	// Overridden in class UnionTaxonomy
@@ -2409,6 +2421,7 @@ class SourceTaxonomy extends Taxonomy {
             Stat s0 = new Stat("mapped the same by both");
             Stat s1 = new Stat("not mapped by either");
             Stat s2 = new Stat("mapped by name only");
+            Stat s2a = new Stat("mapped by name only (ambiguous)");
             Stat s3 = new Stat("mapped by membership only");
             Stat s4 = new Stat("incompatible mappings");
             for (Taxon node : this) {
@@ -2421,13 +2434,16 @@ class SourceTaxonomy extends Taxonomy {
                         s1.inc(node, nnode, mnode);
                 } else if (mnode == null) {
                     // maps by name but not by membership
-                    s2.inc(node, nnode, mnode); // maybe ok - name already present in union
+                    if (mnode == Taxon.AMBIGUOUS)
+                        s2a.inc(node, nnode, mnode);
+                    else
+                        s2.inc(node, nnode, mnode);
                 } else if (nnode == null)
                     s3.inc(node, nnode, mnode); // good - maps by membership but not by name
                 else
                     s4.inc(node, nnode, mnode); // bad - incompatible mappings
             }
-            System.out.println(s0); System.out.println(s1); System.out.println(s2); 
+            System.out.println(s0); System.out.println(s1); System.out.println(s2); System.out.println(s2a); 
             System.out.println(s3); System.out.println(s4); 
         }
 

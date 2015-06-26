@@ -208,6 +208,7 @@ public class AlignmentByName extends Alignment {
                         // Block out row, to prevent this source node from mapping to multiple union nodes (!!??)
                         for (int jj = 0; jj < n; ++jj)
                             if (jj != j && suppressp[i][jj] == null)
+                                // This case seems to never happen
                                 suppressp[i][jj] = Answer.no(x,
                                                              unodes.get(jj),
                                                              "coexcluded(" + criterion.toString() + ")",
@@ -217,6 +218,7 @@ public class AlignmentByName extends Alignment {
                         if (x.mapped == y)
                             ;
                         // Did someone else get there first?
+                        // Actually maybe this shouldn't matter.
                         else if (y.comapped != null) {
                             x.deprecationReason = a;
                             a = Answer.no(x, y,
@@ -224,6 +226,7 @@ public class AlignmentByName extends Alignment {
                                           ("lost to " +
                                            y.comapped.getQualifiedId().toString()));
                         } else if (x.mapped != null) {
+                            // This case doesn't happen
                             x.deprecationReason = a;
                             a = Answer.no(x, y, "lost-race-to-source(" + criterion.toString() + ")",
                                           (y.getSourceIdsString() + " lost to " +

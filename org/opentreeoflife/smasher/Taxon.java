@@ -45,6 +45,8 @@ public class Taxon {
 		this.novelp = true;
 	}
 
+    public static Taxon AMBIGUOUS = new Taxon(null);
+
 	// Clear out temporary stuff from union nodes
 	void reset() {
 		this.comapped = null;
@@ -288,6 +290,8 @@ public class Taxon {
 	}
 
 	QualifiedId getQualifiedId() {
+        if (this == Taxon.AMBIGUOUS)
+            return new QualifiedId("", "AMBIGUOUS");
 		if (this.id != null)
 			return new QualifiedId(this.taxonomy.getTag(), this.id);
 		else {

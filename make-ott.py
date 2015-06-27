@@ -11,6 +11,8 @@ import taxonomies
 sys.path.append("feed/misc/")
 from chromista_spreadsheet import fixChromista
 
+import util.check
+
 ott = Taxonomy.newTaxonomy()
 skel = Taxonomy.getTaxonomy('tax/skel/', 'skel')
 ott.setSkeleton(skel)
@@ -680,6 +682,8 @@ ott.assignIds(ids)
 ott.deforestate()
 
 ott.parentChildHomonymReport()
+
+check.check(ott)
 
 # Write files
 ott.dump('tax/ott/')

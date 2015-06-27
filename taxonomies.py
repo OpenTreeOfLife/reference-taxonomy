@@ -445,6 +445,19 @@ def loadIrmng():
     irmng.taxon('1413316').prune() #Neopithecus in Mammalia
     irmng.taxon('1413315').extinct() #Neopithecus in Primates (Pongidae)
 
+    # RR #50
+    # irmng.taxon('Saxo-Fridericia').rename('Saxofridericia')
+    # irmng.taxon('Saxofridericia').absorb(irmng.taxon('Saxo-fridericia'))
+    saxo = irmng.maybeTaxon('1063899')
+    if saxo != None:
+        saxo.absorb(irmng.taxon('1071613'))
+
+    # Romina 2014-04-09
+    # IRMNG has EIGHT different Trichodermas.  (Four are synonyms of other things.)
+    # 1307461 = Trichoderma Persoon 1794, in Hypocreaceae
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
+    irmng.taxon('Hypocrea').absorb(irmng.taxon('1307461'))
+
     return irmng
 
 def loadWorms():

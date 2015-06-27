@@ -2411,13 +2411,17 @@ class SourceTaxonomy extends Taxonomy {
 	void mapInto(UnionTaxonomy union) {
         Alignment n = new AlignmentByName(this, union);
         if (false)
+            // This loop isn't needed, since AlignmentByName does the
+            // unifyWith itself (for the time being)
             for (Taxon node : this) {
                 Taxon unode = n.target(node);
                 if (unode != null)
                     node.unifyWith(unode);
             }
-        Alignment m = new AlignmentByMembership(this, union);
-        if (true) {
+        if (false) {
+            // Code disabled for now - membership based alignment is still experimental
+            // For testing purposes, do both kinds of alignment and compare them
+            Alignment m = new AlignmentByMembership(this, union);
             Stat s0 = new Stat("mapped the same by both");
             Stat s1 = new Stat("not mapped by either");
             Stat s2 = new Stat("mapped by name only");

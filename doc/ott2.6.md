@@ -2,14 +2,14 @@
 
 Version 2.6 was generated on 11 April 2014.
 
-The taxonomy was generated using the 'smasher' utility, commit
-f624223f31, which resides on github, [here](https://github.com/OpenTreeOfLife/reference-taxonomy/commit/f624223f31767fa1787f3ba2ddad5daa56fd939b)
+The taxonomy was generated using the 'smasher' utility, [commit
+f624223f31](https://github.com/OpenTreeOfLife/reference-taxonomy/commit/f624223f31767fa1787f3ba2ddad5daa56fd939b), which resides on github, [here](https://github.com/OpenTreeOfLife/reference-taxonomy/commit/f624223f31767fa1787f3ba2ddad5daa56fd939b)
 
 ## File in this package
 
 * ott/taxonomy.tsv, ott/synonyms.tsv
 
-    The format of these files is described in [doc/Interim-taxonomy-file-format.md](doc/Interim-taxonomy-file-format.md)
+    The format of these files is described in [doc/Interim-taxonomy-file-format.md](https://github.com/OpenTreeOfLife/reference-taxonomy/tree/master/doc/Interim-taxonomy-file-format.md)
 
 * ott/hidden.tsv
 
@@ -84,32 +84,32 @@ f624223f31, which resides on github, [here](https://github.com/OpenTreeOfLife/re
     Last-modified date: 2014-01-06.
     As far as we can tell, NCBI does not archive past versions of its
     taxonomy.  We have captured the applicable version here:
-      http://purl.org/opentree/ott2.6-inputs/feed/ncbi/taxdump.tar.gz .
-    Web site: https://www.ncbi.nlm.nih.gov/taxonomy
+      [http://purl.org/opentree/ott2.6-inputs/feed/ncbi/taxdump.tar.gz](http://purl.org/opentree/ott2.6-inputs/feed/ncbi/taxdump.tar.gz)
+    Web site: [https://www.ncbi.nlm.nih.gov/taxonomy](https://www.ncbi.nlm.nih.gov/taxonomy)
 
 *  GBIF backbone taxonomy:
-    Retrieved from http://ecat-dev.gbif.org/repository/export/checklist1.zip .
+    Retrieved from [http://ecat-dev.gbif.org/repository/export/checklist1.zip](http://ecat-dev.gbif.org/repository/export/checklist1.zip) .
     Last-modified date: 2013-07-02.
     GBIF intends to reorganize their data archives and this file may
     move.  We will make a best effort to maintain the following PURL:
-      http://purl.org/opentree/gbif-backbone-2013-07-02.zip .
+      [http://purl.org/opentree/gbif-backbone-2013-07-02.zip](http://purl.org/opentree/gbif-backbone-2013-07-02.zip) .
     In case these links do not work, search gbif.org data sets and use the
     following file information for confirmation:
       Size: 323093992 bytes
       sha1sum: b7c7c19f1835af3f424ce4f2c086c692c1818b90
       Format: Zip file containing a Darwin Core Archive
       Contains file taxon.txt which has 4416348 lines
-    Web site: http://www.gbif.org/dataset/d7dddbf4-2cf0-4f39-9b2a-bb099caae36c
+    Web site: [http://www.gbif.org/dataset/d7dddbf4-2cf0-4f39-9b2a-bb099caae36c](http://www.gbif.org/dataset/d7dddbf4-2cf0-4f39-9b2a-bb099caae36c)
 
 *  IRMNG (Interim Register of Marine and Nonmarine Genera):
-    Retrieved from http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip .
+    Retrieved from [http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip](http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip) .
     Last-modified date: 2014-01-12.
     The file at that URI is replaced from time to time.  A capture of
     the version used for OTT 2.6 is here: 
-     http://purl.org/opentree/ott2.6-inputs/feed/irmng/in/IRMNG_DWC.zip .
+     [http://purl.org/opentree/ott2.6-inputs/feed/irmng/in/IRMNG_DWC.zip](http://purl.org/opentree/ott2.6-inputs/feed/irmng/in/IRMNG_DWC.zip) .
     Web site: [http://www.obis.org.au/irmng/](http://www.obis.org.au/irmng/).
 
 *  OTT version 2.5:
     The previous version of OTT is used only for the purpose of ensuring
     identifier choice consistency from one version of OTT to the next.
-      http://purl.org/opentree/ott/ott2.5.tgz
+      [http://purl.org/opentree/ott/ott2.5.tgz](http://purl.org/opentree/ott/ott2.5.tgz)

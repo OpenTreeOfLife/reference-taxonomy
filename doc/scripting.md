@@ -1,9 +1,9 @@
-# Writing scripts that build taxonomies
+# Writing scripts that manipulate taxonomies
 
-The 'smasher' program builds taxonomies.  It was written to support
+The 'smasher' program does things with taxonomies.  It was written to support
 builds of the Open Tree Reference Taxonomy, but is a general purpose
-tool.  The build process is driven by scripts written in Jython.  You
-can see examples of such scripts in these two locations in the repository:
+tool.  It is scriptable using Jython.  You
+can see examples of taxonomy build scripts in these two locations in the repository:
 
     t/aster.py
     make-ott.py
@@ -21,7 +21,7 @@ Smasher is a Java program so it requires some version of Java to be installed.  
 
     make compile
 
-(Don't just say 'make' unless you want to build the reference
+(Don't just say 'make' unless you want to build the Open Tree reference
 taxonomy!  That takes a while and is not to be done casually.)
 
 You can test that Smasher functions with
@@ -33,14 +33,12 @@ Smasher is invoked as follows
     java -classpath ".:lib/*" org.opentreeoflife.smasher.Smasher --jython script.py
 
 where the current directory is the home directory of the repository
-clone, and script.py is the name of a script file.
+clone, and script.py is the name of a script file.  
+Or if you like you can skip the --jython parameter, and you'll get an interactive jython prompt.
 
 For convenience you might want to define a shell alias
 
     alias smash='java -classpath ".:lib/*" org.opentreeoflife.smasher.Smasher'
-
-You can also interact with the Jython interpreter and play with the
-library interactively, just by invoking Smasher without arguments.
 
 ## Using the library
 
@@ -51,7 +49,7 @@ library:
 
 ## Taxonomies
 
-Initiate the build by creating a new Taxonomy object:
+Initiate a taxonomy build by creating a new Taxonomy object:
 
     tax = Taxonomy.newTaxonomy()
 
@@ -80,7 +78,7 @@ See [wikipedia](https://en.wikipedia.org/wiki/Newick_format) for a description o
 
     ('Subclass=Sordariomycetidae','Subclass=Hypocreomycetidae')
 
-'absorb' merges the given taxonomy into the one under construction.
+'absorb' merges the given taxonomy (e.g. ncbi) into the one under construction (e.g. the reference taxonomy).
 
     tax.absorb(ncbi)
 
@@ -260,6 +258,22 @@ in spite of other information:
 Mark a taxon as 'hidden' so that it can be suppressed by tools downstream:
 
     taxon.hide()
+    
+## Looking at taxonomies
+
+Taxonomies are iterable.
+
+    for taxon in taxonomy: ...
+    
+Taxa have lots of properties you might want to look at in a script.
+    
+    taxon.parent
+    taxon.children
+    taxon.isHidden()
+    
+You can select only the visible (non-hidden) taxa:
+
+    taxonomy.selectVisible("my taxonomy but only visible")
 
 ## Debugging
 

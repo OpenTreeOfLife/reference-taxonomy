@@ -330,6 +330,10 @@ def patch_ncbi(ncbi):
     # Mark Holder https://github.com/OpenTreeOfLife/reference-taxonomy/issues/120
     ncbi.taxon('Cetartiodactyla').synonym('Artiodactyla')
 
+    # Cody Howard https://github.com/OpenTreeOfLife/feedback/issues/57
+    # http://dx.doi.org/10.1002/fedr.19971080106
+    ncbi.taxon('Resnova').take(ncbi.taxon('Massonieae'))
+
 
 def loadGbif():
     gbif = Taxonomy.getTaxonomy('tax/gbif/', 'gbif')
@@ -342,6 +346,81 @@ def loadGbif():
     fixProtists(gbif)  # creates a Eukaryota node
     fixPlants(gbif)
     gbif.taxon('Animalia').synonym('Metazoa')
+
+    # - Touch-up -
+
+    # Rod Page blogged about this one
+    # http://iphylo.blogspot.com/2014/03/gbif-liverwort-taxonomy-broken.html
+    gbif.taxon('Jungermanniales','Marchantiophyta').absorb(gbif.taxon('Jungermanniales','Bryophyta'))
+
+    # Joseph 2013-07-23 https://github.com/OpenTreeOfLife/opentree/issues/62
+    # GBIF has two copies of Myospalax
+    gbif.taxon('6006429').absorb(gbif.taxon('2439119'))
+
+    # RR 2014-04-12 #47
+    gbif.taxon('Drake-brockmania').absorb(gbif.taxon('Drake-Brockmania'))
+    # RR #50 - this one is in NCBI, see above
+    gbif.taxon('Saxofridericia').absorb(gbif.taxon('4930834')) #Saxo-Fridericia
+    # RR #57 - the genus is in NCBI, see above
+    gbif.taxon('Solms-laubachia').absorb(gbif.taxon('4908941')) #Solms-Laubachia
+    gbif.taxon('Solms-laubachia pulcherrima').absorb(gbif.taxon('Solms-Laubachia pulcherrima'))
+
+    # RR #45
+    gbif.taxon('Cyrto-hypnum').absorb(gbif.taxon('4907605'))
+
+    # 2014-04-13 JAR noticed while grepping
+    gbif.taxon('Chryso-hypnum').absorb(gbif.taxon('Chryso-Hypnum'))
+    gbif.taxon('Drepano-Hypnum').rename('Drepano-hypnum')
+    gbif.taxon('Complanato-Hypnum').rename('Complanato-hypnum')
+    gbif.taxon('Leptorrhyncho-Hypnum').rename('Leptorrhyncho-hypnum')
+
+    # Romina 2014-04-09
+    # GBIF has both Hypocrea and Trichoderma.  And it has four Trichoderma synonyms...
+    # pick the one that contains bogo-type Hypocrea rufa
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
+    gbif.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
+    gbif.taxon('Hypocrea').absorb(gbif.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
+
+    # 2014-04-21 RR
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/45
+    for epithet in ['cylindraceum',
+                    'lepidoziaceum',
+                    'intermedium',
+                    'espinosae',
+                    'pseudoinvolvens',
+                    'arzobispoae',
+                    'sharpii',
+                    'frontinoae',
+                    'atlanticum',
+                    'stevensii',
+                    'brachythecium']:
+        gbif.taxon('Cyrto-hypnum ' + epithet).absorb(gbif.taxon('Cyrto-Hypnum ' + epithet))
+
+    # JAR 2014-04-23 Noticed while perusing silva/gbif conflicts
+    gbif.taxon('Ebriaceae').synonym('Ebriacea')
+    gbif.taxon('Acanthocystidae').absorb(gbif.taxon('Acanthocistidae'))
+    gbif.taxon('Dinophyta').synonym('Dinoflagellata')
+
+    # JAR 2014-06-29 stumbled on this while trying out new alignment
+    # methods and examining troublesome homonym Bullacta exarata.
+    # GBIF obviously puts it in the wrong place, see description at
+    # http://www.gbif.org/species/4599744 (it's a snail, not a shrimp).
+    bex = gbif.taxon('Bullacta exarata', 'Atyidae')
+    bec = gbif.taxon('Bullacta ecarata', 'Atyidae')
+    if bex != None and bec != None:
+        bex.absorb(bec)
+        bex.detach()
+
+    # Yan Wong 2014-12-16 https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116
+    for name in ['Griphopithecus', 'Asiadapis',
+                 'Lomorupithecus', 'Marcgodinotius', 'Muangthanhinius',
+                 'Plesiopithecus', 'Suratius', 'Killikaike blakei', 'Rissoina bonneti',
+                 'Mycosphaeroides']:
+        gbif.taxon(name).extinct()
+
+    # Doug Soltis 2015-02-17 https://github.com/OpenTreeOfLife/feedback/issues/59 
+    # http://dx.doi.org/10.1016/0034-6667(95)00105-0
+    gbif.taxon('Timothyia').extinct()
 
     # JAR 2014-07-18  - get rid of Helophorus duplication
     gbif.taxon('3263442').absorb(gbif.taxon('6757656'))
@@ -359,6 +438,12 @@ def loadIrmng():
 
     # JAR 2014-04-26 Flush all 'Unaccepted' taxa
     irmng.taxon('Unaccepted', 'life').prune()
+
+    # Fixes
+
+    # Neopithecus (extinct) occurs in two places.  Flush one, mark the other
+    irmng.taxon('1413316').prune() #Neopithecus in Mammalia
+    irmng.taxon('1413315').extinct() #Neopithecus in Primates (Pongidae)
 
     return irmng
 

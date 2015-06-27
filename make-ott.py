@@ -233,96 +233,9 @@ def doGbif():
     # Fungi suppressed at David Hibbett's request
     gbif.taxon('Fungi').hideDescendantsToRank('species')
 
-    # Microbes suppressed at Laura Katz's request
+    # Suppressed at Laura Katz's request
     gbif.taxon('Bacteria','life').hideDescendants()
     gbif.taxon('Archaea','life').hideDescendants()
-
-    # Paraphyletic - now taken care of in loadGbif
-    if False:
-        gbif_Protozoa = gbif.taxon('Protozoa')
-        gbif_Protozoa.hide()   # recursive
-        if False:
-            gbif_Protozoa.detach()
-            gbif_Protozoa.elide()
-        gbif_Chromista = gbif.taxon('Chromista')
-        gbif_Chromista.hide()   # recursive
-        if False:
-            gbif_Chromista.detach()
-            gbif_Chromista.elide()
-
-    # - Touch-up -
-
-    # Rod Page blogged about this one
-    # http://iphylo.blogspot.com/2014/03/gbif-liverwort-taxonomy-broken.html
-    gbif.taxon('Jungermanniales','Marchantiophyta').absorb(gbif.taxon('Jungermanniales','Bryophyta'))
-
-    # Joseph 2013-07-23 https://github.com/OpenTreeOfLife/opentree/issues/62
-    # GBIF has two copies of Myospalax
-    gbif.taxon('6006429').absorb(gbif.taxon('2439119'))
-
-    # RR 2014-04-12 #47
-    gbif.taxon('Drake-brockmania').absorb(gbif.taxon('Drake-Brockmania'))
-    # RR #50 - this one is in NCBI, see above
-    gbif.taxon('Saxofridericia').absorb(gbif.taxon('4930834')) #Saxo-Fridericia
-    # RR #57 - the genus is in NCBI, see above
-    gbif.taxon('Solms-laubachia').absorb(gbif.taxon('4908941')) #Solms-Laubachia
-    gbif.taxon('Solms-laubachia pulcherrima').absorb(gbif.taxon('Solms-Laubachia pulcherrima'))
-
-    # RR #45
-    gbif.taxon('Cyrto-hypnum').absorb(gbif.taxon('4907605'))
-
-    # 2014-04-13 JAR noticed while grepping
-    gbif.taxon('Chryso-hypnum').absorb(gbif.taxon('Chryso-Hypnum'))
-    gbif.taxon('Drepano-Hypnum').rename('Drepano-hypnum')
-    gbif.taxon('Complanato-Hypnum').rename('Complanato-hypnum')
-    gbif.taxon('Leptorrhyncho-Hypnum').rename('Leptorrhyncho-hypnum')
-
-    # Romina 2014-04-09
-    # GBIF has both Hypocrea and Trichoderma.  And it has four Trichoderma synonyms...
-    # pick the one that contains bogo-type Hypocrea rufa
-    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
-    gbif.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
-    gbif.taxon('Hypocrea').absorb(gbif.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
-
-    # 2014-04-21 RR
-    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/45
-    for epithet in ['cylindraceum',
-                    'lepidoziaceum',
-                    'intermedium',
-                    'espinosae',
-                    'pseudoinvolvens',
-                    'arzobispoae',
-                    'sharpii',
-                    'frontinoae',
-                    'atlanticum',
-                    'stevensii',
-                    'brachythecium']:
-        gbif.taxon('Cyrto-hypnum ' + epithet).absorb(gbif.taxon('Cyrto-Hypnum ' + epithet))
-
-    # JAR 2014-04-23 Noticed while perusing silva/gbif conflicts
-    gbif.taxon('Ebriaceae').synonym('Ebriacea')
-    gbif.taxon('Acanthocystidae').absorb(gbif.taxon('Acanthocistidae'))
-    gbif.taxon('Dinophyta').synonym('Dinoflagellata')
-
-    # JAR 2014-06-29 stumbled on this while trying out new alignment
-    # methods and examining troublesome homonym Bullacta exarata.
-    # GBIF obviously puts it in the wrong place, see description at
-    # http://www.gbif.org/species/4599744 (it's a snail, not a shrimp).
-    bex = gbif.taxon('Bullacta exarata', 'Atyidae')
-    bec = gbif.taxon('Bullacta ecarata', 'Atyidae')
-    if bex != None and bec != None:
-        bex.absorb(bec)
-        bex.detach()
-
-    # Yan Wong 2014-12-16 https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116
-    for name in ['Griphopithecus', 'Asiadapis',
-                 'Lomorupithecus', 'Marcgodinotius', 'Muangthanhinius',
-                 'Plesiopithecus', 'Suratius', 'Killikaike blakei', 'Rissoina bonneti']:
-        gbif.taxon(name).extinct()
-
-    # Doug Soltis 2015-02-17 https://github.com/OpenTreeOfLife/feedback/issues/59 
-    # http://dx.doi.org/10.1016/0034-6667(95)00105-0
-    gbif.taxon('Timothyia').extinct()
 
     # - Alignment -
 
@@ -389,32 +302,15 @@ def doIrmng():
     # Fungi suppressed at David Hibbett's request
     irmng.taxon('Fungi').hideDescendantsToRank('species')
 
-    # Neopithecus (extinct) occurs in two places.  Flush one, mark the other
-    irmng.taxon('1413316').prune() #Neopithecus in Mammalia
-    irmng.taxon('1413315').extinct() #Neopithecus in Primates (Pongidae)
+    # Microbes suppressed at Laura Katz's request
+    irmng.taxon('Bacteria','life').hideDescendants()
+    irmng.taxon('Archaea','life').hideDescendants()
 
     ott.same(gbif.taxon('3172047'), irmng.taxon('1381293'))  # Veronica
     ott.same(gbif.taxon('6101461'), irmng.taxon('1170022')) # genus Tipuloidea (not superfamily)
     # IRMNG has four Tetrasphaeras.
     ott.same(ncbi.taxon('Tetrasphaera','Intrasporangiaceae'), irmng.taxon('Tetrasphaera','Intrasporangiaceae'))
     ott.same(gbif.taxon('Gorkadinium','Dinophyceae'), irmng.taxon('Gorkadinium','Dinophyceae'))
-
-    # Microbes suppressed at Laura Katz's request
-    irmng.taxon('Bacteria','life').hideDescendants()
-    irmng.taxon('Archaea','life').hideDescendants()
-
-    # RR #50
-    # irmng.taxon('Saxo-Fridericia').rename('Saxofridericia')
-    # irmng.taxon('Saxofridericia').absorb(irmng.taxon('Saxo-fridericia'))
-    saxo = irmng.maybeTaxon('1063899')
-    if saxo != None:
-        saxo.absorb(irmng.taxon('1071613'))
-
-    # Romina 2014-04-09
-    # IRMNG has EIGHT different Trichodermas.  (Four are synonyms of other things.)
-    # 1307461 = Trichoderma Persoon 1794, in Hypocreaceae
-    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
-    irmng.taxon('Hypocrea').absorb(irmng.taxon('1307461'))
 
     # JAR 2014-04-18 attempt to resolve ambiguous alignment of
     # Trichosporon in IF and IRMNG based on common parent and member
@@ -425,14 +321,6 @@ def doIrmng():
 
     # JAR 2014-04-18 while investigating hidden status of Coscinodiscus radiatus
     ott.notSame(irmng.taxon('Coscinodiscus', 'Porifera'), ncbi.taxon('Coscinodiscus', 'Stramenopiles'))
-
-    # Protista is paraphyletic
-    if False:
-        irmng_Protista = irmng.taxon('Protista','life')
-        irmng_Protista.hide()
-        if False:
-            irmng_Protista.detach()
-            irmng_Protista.elide()
 
     ott.absorb(irmng)
     return irmng
@@ -450,6 +338,7 @@ def patch_ott():
 
     # Joseph Brown 2014-01-27
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/87
+    # Occurs as Sakesphorus bernardi in ncbi, gbif, irmng, as Thamnophilus bernardi in bgif
     ott.taxon('Thamnophilus bernardi').absorb(ott.taxon('Sakesphorus bernardi'))
     ott.taxon('Thamnophilus melanonotus').absorb(ott.taxon('Sakesphorus melanonotus'))
     ott.taxon('Thamnophilus melanothorax').absorb(ott.taxon('Sakesphorus melanothorax'))

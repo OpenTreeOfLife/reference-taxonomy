@@ -8,10 +8,11 @@ import sys
 
 from org.opentreeoflife.smasher import Taxonomy
 import taxonomies
+from ncbi_ott_assignments import ncbi_assignments_list
 sys.path.append("feed/misc/")
 from chromista_spreadsheet import fixChromista
 
-import util.check
+import check_inclusions
 
 ott = Taxonomy.newTaxonomy()
 skel = Taxonomy.getTaxonomy('tax/skel/', 'skel')
@@ -199,6 +200,10 @@ def prepare_ncbi():
     # JAR 2014-04-25
     ott.notSame(silva.taxon('Bostrychia', 'Rhodophyceae'), ncbi.taxon('Bostrychia', 'Aves'))
 
+    # https://github.com/OpenTreeOfLife/feedback/issues/45
+    ott.notSame(silva.taxon('Choanoflagellida', 'Ichthyosporea'),
+                ncbi.taxon('Choanoflagellida', 'Opisthokonta'))
+
     ott.absorb(ncbi)
     return ncbi
 
@@ -218,9 +223,17 @@ print "Fungi in h2007 + if + ncbi has %s nodes"%ott.taxon('Fungi').count()
 
 # ----- Non-decapods from WoRMS -----
 
+# https://github.com/OpenTreeOfLife/feedback/issues/45
+ott.same(worms_sans_malacostraca.taxon('Choanoflagellida'),
+         ncbi.taxon('Choanoflagellida', 'Opisthokonta'))
+
 ott.absorb(worms_sans_malacostraca)
 
 # ----- Non-Fungi from Index Fungorum -----
+
+# https://github.com/OpenTreeOfLife/feedback/issues/45
+ott.same(fungorum_sans_fungi.taxon('Choanoflagellida'),
+         ncbi.taxon('Choanoflagellida', 'Opisthokonta'))
 
 ott.absorb(fungorum_sans_fungi)
 
@@ -282,6 +295,10 @@ def doGbif():
     # JAR 2014-04-23 IF update fallout
     ott.same(gbif.taxonThatContains('Penicillium', 'Penicillium expansum'), fungorum.taxonThatContains('Penicillium', 'Penicillium expansum'))
 
+    # https://github.com/OpenTreeOfLife/feedback/issues/45
+    ott.same(gbif.taxon('Choanoflagellida'),
+             ncbi.taxon('Choanoflagellida', 'Opisthokonta'))
+
     ott.absorb(gbif)
     return gbif
 
@@ -323,6 +340,10 @@ def doIrmng():
 
     # JAR 2014-04-18 while investigating hidden status of Coscinodiscus radiatus
     ott.notSame(irmng.taxon('Coscinodiscus', 'Porifera'), ncbi.taxon('Coscinodiscus', 'Stramenopiles'))
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/45
+    ott.same(irmng.taxon('Choanoflagellida'),
+             ncbi.taxon('Choanoflagellida', 'Opisthokonta'))
 
     ott.absorb(irmng)
     return irmng
@@ -552,9 +573,11 @@ def patch_ott():
 
     # Romina https://github.com/OpenTreeOfLife/reference-taxonomy/issues/42
     # As of 2014-04-23 IF synonymizes Cyphellopsis to Merismodes
-    ott.taxon('Cyphellopsis','Cyphellaceae').unhide()
-    if ott.maybeTaxon('Cyphellopsis','Niaceae') != None:
-        ott.taxon('Cyphellopsis','Cyphellaceae').absorb(ott.taxon('Cyphellopsis','Niaceae'))
+    cyph = ott.maybeTaxon('Cyphellopsis','Cyphellaceae')
+    if cyph != None:
+        cyph.unhide()
+        if ott.maybeTaxon('Cyphellopsis','Niaceae') != None:
+            cyph.absorb(ott.taxon('Cyphellopsis','Niaceae'))
 
     ott.taxon('Diaporthaceae').take(ott.taxon('Phomopsis'))
     ott.taxon('Valsaceae').take(ott.taxon('Valsa', 'Fungi'))
@@ -650,32 +673,36 @@ patch_ott()
 # "Old" patch system
 ott.edit('feed/ott/edits/')
 
-# Assign OTT ids to all taxa, re-using old ids when possible
+# Force some id assignments... will try to automate this in the future.
+# Most of these come from looking at the otu-deprecated.tsv file after a 
+# series of smasher runs.
+
+for (ncbi_id, ott_id, name) in ncbi_assignments_list:
+    n = ncbi.maybeTaxon(ncbi_id)
+    if n != None:
+        im = ott.image(n)
+        if im != None:
+            im.setId(ott_id)
+        else:
+            print '** NCBI %s not mapped - %s' % (ncbi_id, name)
+    else:
+        print '** No NCBI taxon %s - %s' % (ncbi_id, name)
+
+# Foo
+trich = fungorum.maybeTaxon('Trichosporon')
+if trich != None:
+    ott.image(trich).setId('364222')
+
+#ott.image(fungorum.taxon('11060')).setId('4107132') #Cryptococcus - a total mess
+
+
+# Assign OTT ids to taxa that don't have them, re-using old ids when possible
 ids = Taxonomy.getTaxonomy('tax/prev_ott/')
 
-# JAR manual intervention to preserve ids
-# These OTUs came up as ambiguous. Keep old ids.
-ott.same(ids.taxon('4107132'), fungorum.taxon('11060')) #Cryptococcus
-ott.same(ids.taxon('339002'), ncbi.taxon('3071')) #Chlorella
-ott.same(ids.taxon('342868'), ncbi.taxon('56708')) #Tetraphyllidea
-ott.same(ids.taxon('772892'), ncbi.taxon('1883')) #Streptomyces
+# When lumping, prefer to use ids that have been used in OTU matching
+ott.loadPreferredIds('ids-that-are-otus.tsv')
 
-ott.same(fungorum.taxon('Trichosporon'), ids.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
-
-# JAR 2014-05-13
-# NCBI renamed Escherichia coli DSM 30083 = JCM 1649 = ATCC 11775
-# 67952 2542    Bifidobacterium pseudocatenulatum DSM 20438 = JCM 1200  ncbi:547043 ?       *
-# 479261    2542    Bifidobacterium catenulatum DSM 16992 = JCM 1194    ncbi:566552 ?       *
-# 613687    2448    Escherichia coli DSM 30083 = JCM 1649   ncbi:866789 ?       *
-ott.same(ids.taxon('67952'), ncbi.taxon('547043')) 
-ott.same(ids.taxon('479261'), ncbi.taxon('566552')) 
-ott.same(ids.taxon('613687'), ncbi.taxon('866789')) 
-# 4773  2319    Phytopythium montanum   ncbi:214887,gbif:5433822    ?       *
-ott.same(ids.taxon('4773'), ncbi.taxon('214887'))
-# 289517    227 Rinorea dimakoensis ncbi:317423 ?       *
-ott.same(ids.taxon('289517'), ncbi.taxon('317423'))
-
-
+# Assign old ids to nodes in the new version
 ott.assignIds(ids)
 
 # Remove all trees but the largest 
@@ -683,7 +710,8 @@ ott.deforestate()
 
 ott.parentChildHomonymReport()
 
-check.check(ott)
+print '-- Inclusion tests'
+check_inclusions.check(ott)
 
 # Write files
 ott.dump('tax/ott/')

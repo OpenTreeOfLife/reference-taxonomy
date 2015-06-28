@@ -42,6 +42,8 @@ sp = tax.newTaxon("Opentreeia sp. C", "species", "data:testing")
 gen.add(sp)
 sp.prune()
 
+tax.loadPreferredIds('ids-that-are-otus.tsv')
+
 # Assign identifiers to the taxa in the model taxonomy.  Identifiers
 # assigned in the previous version are carried over to this version.
 tax.assignIds(Taxonomy.getTaxonomy('t/tax/prev_aster/'))

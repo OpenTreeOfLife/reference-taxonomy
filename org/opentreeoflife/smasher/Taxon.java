@@ -87,12 +87,17 @@ public class Taxon {
 			this.taxonomy.addToIndex(this);
 	}
 
-	void setId(String id) {
+	public void setId(String id) {
 		if (this.id == null) {
-			this.id = id;
-			this.taxonomy.idIndex.put(id, this);
-		} if (!this.id.equals(id))
-			System.err.println("Attempt to replace id " + this.id + " with " + id);
+            Taxon existing = this.taxonomy.idIndex.get(id);
+			if (existing != null && !existing.prunedp)
+                System.err.format("** Id collision: %s wants id of %s\n", this, existing);
+            else {
+                this.id = id;
+                this.taxonomy.idIndex.put(id, this);
+            }
+		} else if (!this.id.equals(id))
+			System.err.println("** Attempt to replace id " + this.id + " with " + id);
 	}
 
 	public Taxon getParent() {
@@ -255,10 +260,12 @@ public class Taxon {
 		}
 		if (unode.comapped != null) {
 			// Union node has already been matched to, but synonyms are OK
-			this.report("Union node already mapped to, creating synonym", unode);
-		}
+            if (unode.comapped != this)
+                Taxon.markEvent("lumped");
+                // System.out.format("| Lumping %s and %s -> %s\n", unode.comapped, this, unode);
+		} else
+            unode.comapped = this;
 		this.mapped = unode;
-		unode.comapped = this;
 	}
 
 	// Recursive descent over source taxonomy

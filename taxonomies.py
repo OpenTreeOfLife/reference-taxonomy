@@ -77,12 +77,15 @@ def patch_silva(silva):
         silva.taxon('Ctenophora', 'Coscinodiscophytina').prune()
 
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/79
-    Ml = silva.taxon('Melampsora lini')
+    Ml = silva.maybeTaxon('Melampsora lini')
     if Ml != None: Ml.prune()
-    Ps = silva.taxon('Polyangium sorediatum')
+    Ps = silva.maybeTaxon('Polyangium sorediatum')
     if Ps != None: Ps.prune()
-    up = silva.taxon('unidentified plasmid')
+    up = silva.maybeTaxon('unidentified plasmid')
     if up != None: up.prune()
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/45
+    silva.taxon('Choanoflagellida', 'Ichthyosporea').rename('Choanoflagellida NOT')
 
 
 def load_h2007():
@@ -100,7 +103,7 @@ def load_h2007():
     return h2007
 
 def load_fung():
-    fung = Taxonomy.getTaxonomy('tax/if/', 'if')
+    fung = Taxonomy.getTaxonomy('tax/fung/', 'if')
 
     # 2014-04-14 Bad Fungi homonyms in new version of IF.  90156 is the good one.
     # 90154 has no descendants
@@ -332,8 +335,63 @@ def patch_ncbi(ncbi):
 
     # Cody Howard https://github.com/OpenTreeOfLife/feedback/issues/57
     # http://dx.doi.org/10.1002/fedr.19971080106
-    ncbi.taxon('Resnova').take(ncbi.taxon('Massonieae'))
+    ncbi.taxon('Massonieae').take(ncbi.taxon('Resnova'))
 
+    # From exmaming the deprecated OTU list.  This one occurs in study pg_188
+    # Name got better, old name lost  JAR 2015-06-27
+    # This could probably be automated, just by looking up the NCBI id
+    # in the right table.
+    for (oldname, ncbiid) in [
+            ('Bifidobacterium pseudocatenulatum DSM 20438 = JCM 1200 = LMG 10505', '547043'),
+            ('Bifidobacterium catenulatum DSM 16992 = JCM 1194 = LMG 11043', '566552'),
+            ('Escherichia coli DSM 30083 = JCM 1649 = ATCC 11775', '866789'),
+            ('Borrelia sp. SV1', 498741),  # Borrelia finlandensis
+            ('Planchonella sp. Meyer 3013', 371649), #was 419398
+            ('Planchonella sp. Takeuchi & al 17902', 419399),
+            ('Sersalisia sp. Bartish and Ford 33', 346601), #was 346602
+            ('Borrelia sp. SV1', 498741),
+            ('Planchonella sp. Meyer 3013', 419398),
+            ('Planchonella sp. Takeuchi & al 17902', 419399),
+            ('Pycnandra sp. Munzinger 2618', 550765),
+            ('Pycnandra sp. Munzinger 2615', 550764),
+            ('Pycnandra sp. Munzinger 3135', 550768),
+            ('Pycnandra sp. Lowry et al. 5786', 280721), #was 280735
+            ('Osmolindsaea sp. SL02013b', 1393958),
+            ('Osmolindsaea sp. SL-2013a', 1388881),
+            ('Docosaccus sp. GW5429', 1503681), #was 582882
+            ('Lellingeria sp. MAS-2010', 741642),
+            ('Terpsichore sp. MAS-2010d', 741647),
+            ('Terpsichore sp. MAS-2010c', 741646),
+            ('Terpsichore sp. MAS-2010b', 741644),
+            # ('Narrabeena sp. 0CDN6739-K', 1342637),  left no forwarding address
+            ('Iochroma sp. Smith 337', 1545467), #was 362368
+            ('Iochroma sp. Smith 370', 1545468), #was 362367
+            ('cyanobacterium endosymbiont of Epithemia turgida isolate ETSB Lake Yunoko', 1228987),
+            ('Pycnandra sp. McPherson and Munzinger 18106', 278656),
+            ('Lellingeria sp. PHL-2010c', 861204),
+            ('Lellingeria sp. PHL-2010d', 861206),
+            ('Lellingeria sp. PHL-2010a', 861202),
+            ('Pycnandra sp. Munzinger 2885', 550767),
+            ('Pycnandra sp. Munzinger 2624', 550766),
+            ('Caenorhabditis briggsae AF16', 6238), #was 473542
+            ('Tachigali sp. Clarke 7212', 162921),
+            ('Euretidae sp. HBFH 16-XI-02-1-001', 396898),
+            ('Cedrela sp. 4 ANM-2010', 582833), #was 934059
+            ('Schismatoglottis sp. SYW-2010f', 743908),
+            ('Schismatoglottis sp. SYW-2010c', 743905),
+            ('Pycnandra sp. Swenson 597', 282185),
+            ('Planchonella sp. Meyer 3013', 73570),
+            ('Pycnandra sp. Lowry et al. 5786', 9539),
+            ('Docosaccus sp. GW5429', 7764),
+            ('Narrabeena sp. 0CDN6739-K', 39542),
+            ('Iochroma sp. Smith 337', 8960),
+            ('Iochroma sp. Smith 370', 8953),
+            ('Caenorhabditis briggsae AF16', 1949),
+            ('Cedrela sp. 4 ANM-2010', 624),
+    ]:
+        tax = ncbi.maybeTaxon(str(ncbiid))
+        if tax != None:
+            tax.synonym(oldname)
 
 def loadGbif():
     gbif = Taxonomy.getTaxonomy('tax/gbif/', 'gbif')
@@ -347,6 +405,10 @@ def loadGbif():
     fixPlants(gbif)
     gbif.taxon('Animalia').synonym('Metazoa')
 
+    patch_gbif(gbif)
+    return gbif
+
+def patch_gbif(gbif):
     # - Touch-up -
 
     # Rod Page blogged about this one
@@ -424,6 +486,14 @@ def loadGbif():
 
     # JAR 2014-07-18  - get rid of Helophorus duplication
     gbif.taxon('3263442').absorb(gbif.taxon('6757656'))
+
+    # JAR 2015-06-27  there are two Myospalax myospalax
+    # The one in Spalacidae is the right one, Myospalacinae is the wrong one
+    # (according to NCBI)
+    # Probably should clean up the whole genus
+    gbif.taxon('2439121').absorb(gbif.taxon('6075534'))
+
+    # 4010070	pg_1378	Gelidiellaceae	gbif:8998  -- ok, paraphyletic
 
     return gbif
 

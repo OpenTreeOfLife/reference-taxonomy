@@ -217,20 +217,20 @@ public class AlignmentByName extends Alignment {
                         Answer a = answer[i];
                         if (x.mapped == y)
                             ;
-                        // Did someone else get there first?
-                        // Actually maybe this shouldn't matter.
-                        else if (y.comapped != null) {
-                            x.deprecationReason = a;
-                            a = Answer.no(x, y,
-                                          "lost-race-to-union(" + criterion.toString() + ")",
-                                          ("lost to " +
-                                           y.comapped.getQualifiedId().toString()));
-                        } else if (x.mapped != null) {
+                        else if (x.mapped != null) {
                             // This case doesn't happen
                             x.deprecationReason = a;
                             a = Answer.no(x, y, "lost-race-to-source(" + criterion.toString() + ")",
                                           (y.getSourceIdsString() + " lost to " +
                                            x.mapped.getSourceIdsString()));
+                        } else if (false && y.comapped != null) {
+                        // Did someone else get there first?
+                        // Actually maybe this shouldn't matter.
+                            x.deprecationReason = a;
+                            a = Answer.no(x, y,
+                                          "lost-race-to-union(" + criterion.toString() + ")",
+                                          ("lost to " +
+                                           y.comapped.getQualifiedId().toString()));
                         } else
                             x.unifyWith(y);
                         suppressp[i][j] = a;

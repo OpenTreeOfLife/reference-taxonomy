@@ -906,21 +906,34 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	void dumpSynonyms(String filename, String sep) throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
 		out.println("name\t|\tuid\t|\ttype\t|\tuniqname\t|\t");
-		for (String name : this.nameIndex.keySet())
-			for (Taxon node : this.nameIndex.get(name))
-				if (!node.prunedp && !node.name.equals(name)) {
-					String uniq = node.uniqueName();
-					if (uniq.length() == 0) uniq = node.name;
-					if (node.id == null) {
-						System.out.format("Synonym for node with no id: %s\n", node.name);
-						node.show();
-					} else
-						out.println(name + sep +
-									node.id + sep +
-									"" + sep + // type, could be "synonym" etc.
-									name + " (synonym for " + uniq + ")" +
-									sep);
-				}
+		for (String name : this.nameIndex.keySet()) {
+            boolean primaryp = false;
+            boolean synonymp = false;
+			for (Taxon node : this.nameIndex.get(name)) {
+				if (!node.prunedp)
+                    if (node.name.equals(name))
+                        // Never emit a synonym when the name is the primary name of something
+                        primaryp = true;
+                    else {
+                        synonymp = true;
+                        String uniq = node.uniqueName();
+                        if (uniq.length() == 0) uniq = node.name;
+                        if (node.id == null) {
+                            if (node.parent != null) {
+                                System.out.format("Synonym for node with no id: %s\n", node.name);
+                                node.show();
+                            }
+                        } else
+                            out.println(name + sep +
+                                        node.id + sep +
+                                        "" + sep + // type, could be "synonym" etc.
+                                        name + " (synonym for " + uniq + ")" +
+                                        sep);
+                    }
+                }
+            if (false && primaryp && synonymp)
+                System.err.println("** Synonym in parallel with primary: " + name);
+            }
 		out.close();
 	}
 
@@ -2387,7 +2400,23 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	public void markDivisions(SourceTaxonomy source) {
 		UnionTaxonomy union = (UnionTaxonomy)this;
 		union.markDivisionsx(source);
-	}}
+	}
+
+    Map<String, Integer> preferredIds = new HashMap<String, Integer>();
+
+    // e.g. "ids-that-are-otus.tsv"
+    public void loadPreferredIds(String filename) throws IOException {
+		System.out.println("--- Loading preferred ids from " + filename + " ---");
+		BufferedReader br = Taxonomy.fileReader(new File(filename));
+		String str;
+		while ((str = br.readLine()) != null) {
+            String[] row = tabPattern.split(str);
+            preferredIds.put(row[0], row[1].length());
+        }
+        br.close();
+    }
+
+}
 
 // end of class Taxonomy
 
@@ -2679,6 +2708,7 @@ class UnionTaxonomy extends Taxonomy {
 		// idsource.tag = "ids";
 		idsource.mapInto(this);
 
+		// Phase 1: recycle previously assigned ids.
 		this.transferIds(idsource);
 
 		// Phase 2: give new ids to union nodes that didn't get them above.
@@ -2693,21 +2723,45 @@ class UnionTaxonomy extends Taxonomy {
 		Taxon.resetStats();
 		System.out.println("--- Assigning ids to union starting with " + idsource.getTag() + " ---");
 
-		// Phase 1: recycle previously assigned ids.
+        Map<Taxon, String> assignments = new HashMap<Taxon, String>();
+
 		for (Taxon node : idsource) {
+            // Consider using node.id as the id for the union node it maps to
 			Taxon unode = node.mapped;
-			if (unode != null) {
-				if (unode.comapped != node)
-					System.err.println("Map/comap don't commute: " + node + " " + unode);
-				Answer answer = assessSource(node, unode);
-				if (answer.value >= Answer.DUNNO)
-					Taxon.markEvent("keeping-id");
-				else
-					this.logAndMark(answer);
-				unode.setId(node.id);
+			if (unode != null &&
+                unode.id == null &&
+                this.idIndex.get(node.id) == null) {
+
+                String haveId = assignments.get(unode);
+                if (haveId == null || compareIds(node.id, haveId) > 0)
+                    assignments.put(unode, node.id);
 			}
 		}
+        for(Taxon unode : assignments.keySet()) {
+            unode.setId(assignments.get(unode));
+        }
+        System.out.format("| %s ids transferred\n", assignments.size());
 	}
+
+    // Return negative, zero, positive depending on whether id1 is worse, same, better than id2
+    int compareIds(String id1, String id2) {
+        Integer p1 = this.preferredIds.get(id1);
+        Integer p2 = this.preferredIds.get(id2);
+        if (p1 != null && p2 != null) {
+            System.out.format("| Competing ids: %s %s\n", id1, id2);
+            return p1 - p2;
+        }
+        if (p1 == null)
+            return -1;
+        if (p2 == null)
+            return 1;
+        try {
+            // Smaller ids are better
+            return Integer.parseInt(id2) - Integer.parseInt(id1);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
 
 	// Cf. assignIds()
 	// x is a source node drawn from the idsource taxonomy file.
@@ -2794,11 +2848,12 @@ class UnionTaxonomy extends Taxonomy {
 		out.println("id\tname\tsourceinfo\treason\twitness\treplacement");
 
 		for (String id : idsource.idIndex.keySet()) {
+            if (this.idIndex.get(id) != null)
+                continue;       // id is not deprecated
 			Taxon node = idsource.idIndex.get(id);
-			if (node.mapped != null) continue;
 			String reason = "?";
 			String witness = "";
-			String replacement = "*";
+			String replacement = null;
 			Answer answer = node.deprecationReason;
 			if (!node.id.equals(id)) {
 				reason = "smushed";
@@ -2810,6 +2865,10 @@ class UnionTaxonomy extends Taxonomy {
 				if (answer.witness != null)
 					witness = answer.witness;
 			}
+            if (replacement == null && node.mapped != null)
+                replacement = node.mapped.id;
+            if (replacement == null)
+                replacement = "*";
 			out.println(id + "\t" +
 						node.name + "\t" +
 						node.getSourceIdsString() + "\t" +

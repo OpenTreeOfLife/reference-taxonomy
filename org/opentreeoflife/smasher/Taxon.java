@@ -45,6 +45,8 @@ public class Taxon {
 		this.novelp = true;
 	}
 
+    public static Taxon AMBIGUOUS = new Taxon(null);
+
 	// Clear out temporary stuff from union nodes
 	void reset() {
 		this.comapped = null;
@@ -85,12 +87,17 @@ public class Taxon {
 			this.taxonomy.addToIndex(this);
 	}
 
-	void setId(String id) {
+	public void setId(String id) {
 		if (this.id == null) {
-			this.id = id;
-			this.taxonomy.idIndex.put(id, this);
-		} if (!this.id.equals(id))
-			System.err.println("Attempt to replace id " + this.id + " with " + id);
+            Taxon existing = this.taxonomy.idIndex.get(id);
+			if (existing != null && !existing.prunedp)
+                System.err.format("** Id collision: %s wants id of %s\n", this, existing);
+            else {
+                this.id = id;
+                this.taxonomy.idIndex.put(id, this);
+            }
+		} else if (!this.id.equals(id))
+			System.err.println("** Attempt to replace id " + this.id + " with " + id);
 	}
 
 	public Taxon getParent() {
@@ -212,6 +219,10 @@ public class Taxon {
 
 	// unode is a preexisting node in the union taxonomy.
 
+    // Is unification really the right relationship? ... I don't think
+    // so, it's already a many-to-one mapping, shouldn't be called
+    // unification.
+
 	void unifyWith(Taxon unode) {
 		this.reallyUnifyWith(unode);
 
@@ -249,10 +260,12 @@ public class Taxon {
 		}
 		if (unode.comapped != null) {
 			// Union node has already been matched to, but synonyms are OK
-			this.report("Union node already mapped to, creating synonym", unode);
-		}
+            if (unode.comapped != this)
+                Taxon.markEvent("lumped");
+                // System.out.format("| Lumping %s and %s -> %s\n", unode.comapped, this, unode);
+		} else
+            unode.comapped = this;
 		this.mapped = unode;
-		unode.comapped = this;
 	}
 
 	// Recursive descent over source taxonomy
@@ -284,6 +297,8 @@ public class Taxon {
 	}
 
 	QualifiedId getQualifiedId() {
+        if (this == Taxon.AMBIGUOUS)
+            return new QualifiedId("", "AMBIGUOUS");
 		if (this.id != null)
 			return new QualifiedId(this.taxonomy.getTag(), this.id);
 		else {
@@ -1234,7 +1249,7 @@ public class Taxon {
 		if (this.children != null)
 			for (Taxon child : this.children) {
 				if (child.rank != null && !child.rank.equals(rank)) {
-					child.properFlags = Taxonomy.HIDDEN;
+					child.properFlags |= Taxonomy.HIDDEN;
 					child.hideDescendantsToRank(rank);
 				}
 			}

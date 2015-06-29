@@ -1,11 +1,130 @@
+# Open Tree of Life reference taxonomy version 2.9
 
-WoRMS - harvested from web site, ~2 weeks ending August 4
-[http://www.marinespecies.org/aphia.php](http://www.marinespecies.org/aphia.php)
-(Peter delivered to JAR on August 5)
+Version 2.9 is not released yet.  Version 2.9 draft 4 was generated on 28 June 2015.
 
-  - Newer version of Index Fungorum - from August
-  - WoRMS, which Keith is reviewing now
-  - moved all of the non-fungal content from Index Fungorum to a low priority position, below NCBI. formerly it was taking priority over NCBI. 
-  - and I will update to the latest version of NCBI taxonomy of course.
+## Download
 
+[Download](http://files.opentreeoflife.org/ott/ott2.9/ott2.9draft4.tgz) (gzipped tar file, 117 Mbyte) 
 
+## Contents
+All files are encoded UTF-8.  For documentation about file formats, see [the documentation in the reference taxonomy
+wiki](https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Interim-taxonomy-file-format),
+on github.
+
+**taxonomy.tsv**: The file that contains the taxonomy.
+
+**synonyms.tsv**: The list of synonyms.
+
+**conflicts.tsv**: Report on taxa from input taxonomies that are
+  hidden because they are paraphyletic with respect to a higher
+  taxon from a higher priority input taxonomy.  Number in first column is depth in taxonomic tree of
+  nearest common ancestor of its children.
+
+**deprecated.tsv**: List all of taxa that have been deprecated since previous version. 
+
+**otu-deprecated.tsv**: List all taxa occurring in phylesystem studies that have been deprecated since previous version. 
+
+**differences.tsv:** Summary of differences between ott2.9 and ott2.8.
+
+**otu-differences.tsv:** Summary of differences between ott2.9 and ott2.8 that involve taxa in phylesystem.
+
+**hidden.tsv**: Report on 'hidden' taxa (incertae sedis and other suppressed taxa). Columns are OTT id, name, source taxonomy and id, containing major group, and flags (reasons for hiding).
+
+**log.tsv**: Debugging information related to homonym resolution.
+
+**version.tsv**: The version of OTT.
+
+## Build script
+
+The reference taxonomy is an algorithmic combination of several
+source taxonomies.  For code,
+see <a href="https://github.com/OpenTreeOfLife/reference-taxonomy">the
+source code repository</a>.
+Version 2.9 draft 4 was generated using 
+[commit ?](https://github.com/OpenTreeOfLife/reference-taxonomy/commit/?).
+
+Where taxonomies conflict regarding taxon relationships, they are
+resolved in favor of the higher priority taxonomy.  The priority
+ordering is as given below.
+
+## Sources
+
+Any errors in OTT
+should be assumed to have been introduced by the Open Tree of Life 
+project until confirmed as originating in the source taxonomy.
+
+Download locations are for the particular versions used to construct
+OTT 2.9.  For new work, current versions of these sources should be
+retrieved.
+
+1.  Taxonomy from: 
+    DS Hibbett, M Binder, JF Bischoff, M Blackwell, et al. 
+    A higher-level phylogenetic classification of the <i>Fungi</i>.
+    [Mycological Research</i> <b>111</b>(5):509-547, 2007](http://dx.doi.org/10.1016/j.mycres.2007.03.004).
+    Newick string with revisions
+    archived at [http://files.figshare.com/2150667/Order_level_June2015_newick_branch_labels.txt](http://files.figshare.com/2150667/Order_level_June2015_newick_branch_labels.txt).
+    <br />
+    Download location: [http://purl.org/opentree/ott/ott2.9/inputs/??.tre](http://purl.org/opentree/ott/ott2.9/inputs/??.tre)
+
+1.  Taxonomy from: SILVA 16S ribosomal RNA database, version 115.
+    See: Quast C, Pruesse E, Yilmaz P, Gerken J, Schweer T, Yarza P, Peplies J,
+    Gl&ouml;ckner FO (2013) The SILVA ribosomal RNA gene database project:
+    improved data processing and web-based tools. 
+    [Nucleic Acids Research</i> 41 (D1): D590-D596](http://dx.doi.org/10.1093/nar/gks1219).
+    Web site: [http://www.arb-silva.de/](http://www.arb-silva.de/).
+    <br />
+    Download location: [ftp://ftp.arb-silva.de/release\_115/Exports/tax\_ranks\_ssu\_115.csv](ftp://ftp.arb-silva.de/release_115/Exports/tax_ranks_ssu_115.csv).
+
+1.  Index Fungorum.
+    Download location: derived from database query result files provided by Paul
+    Kirk, April 2014 (personal communication).
+    Web site: [http://www.indexfungorum.org/](http://www.indexfungorum.org/).
+    <br />
+    Download location (converted to OTT format): [http://purl.org/opentree/ott/ott2.8/inputs/if-20140514.tgz](http://purl.org/opentree/ott/ott2.8/inputs/if-20140514.tgz).
+
+1.  Taxonomy from:
+    Sch&auml;ferhoff, B., Fleischmann, A., Fischer, E., Albach, D. C., Borsch,
+    T., Heubl, G., and M&uuml;ller, K. F. (2010). Towards resolving Lamiales
+    relationships: insights from rapidly evolving chloroplast
+    sequences. 
+    [<i>BMC evolutionary biology</i> 10(1), 352.](http://dx.doi.org/10.1186/1471-2148-10-352).
+    Manually transcribed from the paper and converted to OTT format.
+    <br />
+    Download location: [http://purl.org/opentree/ott/ott2.8/inputs/lamiales-20140118.tsv](http://purl.oeg/opentree/ott/ott2.8/inputs/lamiales-20140118.tsv)
+
+1.  WoRMS - harvested from web site using web API over two weeks ending around 4 August 2014.
+    [http://www.marinespecies.org/aphia.php](http://www.marinespecies.org/aphia.php)
+
+1.  NCBI Taxonomy, from the 
+    [US National Center on Biotechnology Information](http://www.ncbi.nlm.nih.gov/).
+    Web site: [http://www.ncbi.nlm.nih.gov/Taxonomy/](http://www.ncbi.nlm.nih.gov/Taxonomy/).
+    Current version download location:
+    [ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz](ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz)
+    <br />
+    For OTT 2.9 we used a version downloaded from NCBI on 27 June 2015.
+    Download location: [http://purl.org/opentree/ott/ott2.9/inputs/taxdump-20150627.tgz](http://purl.org/opentree/ott/ott2.9/inputs/taxdump-20150627.tgz).
+  </li>
+
+1.  GBIF Backbone Taxonomy, from the 
+    [Global Biodiversity Information facility](http://www.gbif.org/).
+    Current version download location: 
+    [http://www.gbif.org/dataset/d7dddbf4-2cf0-4f39-9b2a-bb099caae36c](http://www.gbif.org/dataset/d7dddbf4-2cf0-4f39-9b2a-bb099caae36c).
+    <br />
+    We used a version dated 2013-07-02.
+    Download location: [http://purl.org/opentree/gbif-backbone-2013-07-02.zip](http://purl.org/opentree/gbif-backbone-2013-07-02.zip).
+
+1.  [Interim Register of Marine and Nonmarine Genera (IRMNG)](http://www.obis.org.au/irmng/), from CSIRO.
+    Current version download location:
+    [http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip](http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip).
+    <br />
+    We used a version dated 2014-01-31.  Download location:
+    [http://purl.org/opentree/ott/ott2.8/inputs/IRMNG\_DWC-2014-01-30.zip](http://purl.org/opentree/ott/ott2.8/inputs/IRMNG_DWC-2014-01-30.zip).
+ 
+1.  Taxon identifiers are carried over from [OTT 2.8](http://purl.org/opentree/ott/ott2.8/) when possible
+
+The non-Fungi content of Index Fungorum is separated from the Fungi
+content and given a priority lower than NCBI but higher than GBIF.
+
+The non-Malacostraca content of WoRMS is separated from the
+Malacostraca content and given a priority lower than NCBI but higher
+than GBIF.

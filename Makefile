@@ -5,7 +5,7 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.9draft3
+WHICH=2.9draft4
 PREV_WHICH=2.8
 
 #  $^ = all prerequisites
@@ -18,7 +18,7 @@ PREV_WHICH=2.8
 NCBI=tax/ncbi
 GBIF=tax/gbif
 SILVA=tax/silva
-FUNG=tax/if
+FUNG=tax/fung
 
 # Preottol - for filling in the preottol id column
 #  https://bitbucket.org/mtholder/ottol/src/dc0f89986c6c2a244b366312a76bae8c7be15742/preOTToL_20121112.txt?at=master
@@ -34,12 +34,17 @@ all: ott
 
 compile: $(CLASS)
 
+# this is getting tedious
+
 $(CLASS): org/opentreeoflife/smasher/Smasher.java \
 	  org/opentreeoflife/smasher/Taxonomy.java \
 	  org/opentreeoflife/smasher/Taxon.java \
 	  org/opentreeoflife/smasher/Flag.java \
 	  org/opentreeoflife/smasher/Alignment.java org/opentreeoflife/smasher/Reportx.java \
-	  lib/jscheme.jar lib/json-simple-1.1.1.jar lib/jython-standalone-2.5.3.jar
+	  org/opentreeoflife/smasher/Test.java \
+	  org/opentreeoflife/smasher/AlignmentByMembership.java \
+	  lib/jscheme.jar lib/json-simple-1.1.1.jar lib/jython-standalone-2.5.3.jar \
+	  lib/junit-4.12.jar
 	javac -g $(CP) org/opentreeoflife/smasher/*.java
 
 lib/jython-standalone-2.5.3.jar:
@@ -49,7 +54,7 @@ lib/jython-standalone-2.5.3.jar:
 
 # --------------------------------------------------------------------------
 
-OTT_ARGS=$(SMASH) $(SILVA)/ tax/713/ tax/if/ $(NCBI)/ $(GBIF)/ \
+OTT_ARGS=$(SMASH) $(SILVA)/ tax/713/ tax/fung/ $(NCBI)/ $(GBIF)/ \
       --edits feed/ott/edits/ \
       --deforest \
       --ids tax/prev_ott/ \
@@ -58,31 +63,32 @@ OTT_ARGS=$(SMASH) $(SILVA)/ tax/713/ tax/if/ $(NCBI)/ $(GBIF)/ \
 ott: tax/ott/log.tsv
 tax/ott/log.tsv: $(CLASS) make-ott.py taxonomies.py \
                     tax/silva/taxonomy.tsv \
-		    tax/if/taxonomy.tsv tax/713/taxonomy.tsv \
+		    tax/fung/taxonomy.tsv tax/713/taxonomy.tsv \
 		    $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv \
 		    tax/irmng/taxonomy.tsv \
 		    feed/ott/edits/ott_edits.tsv \
 		    tax/prev_ott/taxonomy.tsv \
 		    feed/misc/chromista_spreadsheet.py
+	@rm -f *py.class
 	@mkdir -p tax/ott
 	$(BIG_JAVA) $(SMASH) --jython make-ott.py
 	echo $(WHICH) >tax/ott/version.txt
 
-fung: tax/if/taxonomy.tsv tax/if/synonyms.tsv
+fung: tax/fung/taxonomy.tsv tax/fung/synonyms.tsv
 
-tax/if/taxonomy.tsv: tax/if/synonyms.tsv tax/if/about.json
+tax/fung/taxonomy.tsv: tax/fung/synonyms.tsv tax/fung/about.json
 	@mkdir -p `dirname $@`
 	wget --output-document=$@ http://files.opentreeoflife.org/ott/if-ott2.8/taxonomy.tsv
 	@ls -l $@
 
-tax/if/synonyms.tsv:
+tax/fung/synonyms.tsv:
 	@mkdir -p `dirname $@`
 	wget --output-document=$@ http://files.opentreeoflife.org/ott/if-ott2.8/synonyms.tsv
 	@ls -l $@
 
-tax/if/about.json:
+tax/fung/about.json:
 	@mkdir -p `dirname $@`
-	cp -p feed/if/about.json tax/if/
+	cp -p feed/fung/about.json tax/fung/
 
 # Create the aux (preottol) mapping in a separate step.
 # How does it know where to write to?
@@ -181,8 +187,9 @@ feed/irmng/in/IRMNG_DWC.zip:
 # issue #62 - verify  (is it a tsv file or csv file?)
 # see also http://www.arb-silva.de/no_cache/download/archive/release_115/ ?
 
-SILVA_URL=http://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/SSURef_NR99_115_tax_silva.fasta.tgz
-SILVA_RANKS_URL=http://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/tax_ranks_ssu_115.csv
+SILVA_EXPORTS=ftp://ftp.arb-silva.de/release_115/Exports
+SILVA_URL=$(SILVA_EXPORTS)/SSURef_NR99_115_tax_silva.fasta.tgz
+SILVA_RANKS_URL=$(SILVA_EXPORTS)/tax_ranks_ssu_115.csv
 
 silva: $(SILVA)/taxonomy.tsv
 $(SILVA)/taxonomy.tsv: feed/silva/process_silva.py feed/silva/in/silva.fasta feed/silva/in/accessionid_to_taxonid.tsv 
@@ -230,6 +237,14 @@ lib/json-simple-1.1.1.jar:
 	  "https://json-simple.googlecode.com/files/json-simple-1.1.1.jar"
 	@ls -l $@
 
+lib/junit-4.12.jar:
+	wget --output-document=$@ --no-check-certificate \
+	  "http://search.maven.org/remotecontent?filepath=junit/junit/4.12/junit-4.12.jar"
+	@ls -l $@
+
+test-smasher: compile
+	$(JAVA) org.opentreeoflife.smasher.Test
+
 z: feed/misc/chromista_spreadsheet.py
 feed/misc/chromista_spreadsheet.py: feed/misc/chromista-spreadsheet.csv feed/misc/process_chromista_spreadsheet.py
 	python feed/misc/process_chromista_spreadsheet.py \
@@ -252,23 +267,25 @@ ids-that-are-otus.tsv:
 	wc $@
 
 tax/ott/otu_deprecated.tsv: ids-that-are-otus.tsv tax/ott/deprecated.tsv
-	grep "\\*" tax/ott/deprecated.tsv | grep -v "excluded" >dep-tmp.tsv
-	$(JAVA) $(SMASH) --join ids-that-are-otus.tsv dep-tmp.tsv >$@.new
+	#grep "\\*" tax/ott/deprecated.tsv | grep -v "excluded" >dep-tmp.tsv
+	cp tax/ott/deprecated.tsv dep-tmp.tsv
+	$(BIG_JAVA) $(SMASH) --join ids-that-are-otus.tsv dep-tmp.tsv >$@.new
 	mv $@.new $@
 	wc $@
+	rm dep-tmp.tsv
 
 tax/ott/differences.tsv: tax/prev_ott/taxonomy.tsv tax/ott/taxonomy.tsv
-	$(JAVA) $(SMASH) --diff tax/prev_ott/ tax/ott/ $@.new
+	$(BIG_JAVA) $(SMASH) --diff tax/prev_ott/ tax/ott/ $@.new
 	mv $@.new $@
 	wc $@
 
 tax/ott/otu_differences.tsv: tax/ott/differences.tsv
-	$(JAVA) $(SMASH) --join ids-that-are-otus.tsv tax/ott/differences.tsv >$@.new
+	$(BIG_JAVA) $(SMASH) --join ids-that-are-otus.tsv tax/ott/differences.tsv >$@.new
 	mv $@.new $@
 	wc $@
 
 tax/ott/otu_hidden.tsv: tax/ott/hidden.tsv
-	$(JAVA) $(SMASH) --join ids-that-are-otus.tsv tax/ott/hidden.tsv >$@.new
+	$(BIG_JAVA) $(SMASH) --join ids-that-are-otus.tsv tax/ott/hidden.tsv >$@.new
 	mv $@.new $@
 	wc $@
 
@@ -278,7 +295,7 @@ works: ott tax/ott/otu_deprecated.tsv tax/ott/otu_differences.tsv tax/ott/otu_hi
 
 clean:
 	rm -rf feed/*/in
-	rm -rf tax/if tax/ncbi tax/prev_nem tax/silva
+	rm -rf tax/fung tax/ncbi tax/prev_nem tax/silva
 	rm -f $(CLASS)
 #	rm -f feed/ncbi/in/taxdump.tar.gz
 

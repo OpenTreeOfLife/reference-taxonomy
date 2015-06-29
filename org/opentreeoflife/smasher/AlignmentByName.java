@@ -199,6 +199,7 @@ public class AlignmentByName extends Alignment {
                         Taxon y = unodes.get(j);
 
                         // Block out column, to prevent other source nodes from mapping to the same union node
+                        if (false)
                         for (int ii = 0; ii < m; ++ii)
                             if (ii != i && suppressp[ii][j] == null)
                                 suppressp[ii][j] = Answer.no(nodes.get(ii),

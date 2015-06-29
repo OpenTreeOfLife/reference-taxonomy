@@ -528,6 +528,13 @@ def loadIrmng():
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
     irmng.taxon('Hypocrea').absorb(irmng.taxon('1307461'))
 
+    # JAR 2015-06-28
+    # The synonym Ochrothallus multipetalus -> Niemeyera multipetala
+    # is no good; it interferes with correct processing of Ochrothallus 
+    # multipetalus.  We could remove the synonym, but instead remove its 
+    # target because no synonym-removal command is available.
+    irmng.taxon('Niemeyera multipetala').prune()
+
     return irmng
 
 def loadWorms():

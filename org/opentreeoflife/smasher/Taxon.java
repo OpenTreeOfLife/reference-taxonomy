@@ -992,6 +992,8 @@ public class Taxon {
 		this.trim();
 		if (this.parent != null) {
 			this.parent.children.remove(this);
+            if (this.parent.children.size() == 0)
+                this.parent.children = null;
 			this.parent.resetCount();
 			this.parent.properFlags |= Taxonomy.EDITED;
 			this.parent = null;
@@ -1314,7 +1316,7 @@ public class Taxon {
 		this.properFlags |= Taxonomy.EXTINCT;
 	}
 
-	public void extant() {
+	public boolean extant() {
 		boolean wasExtant = true;
 		for (Taxon node = this; node != null; node = node.parent)
 			if ((this.properFlags & Taxonomy.EXTINCT) != 0) {
@@ -1323,8 +1325,7 @@ public class Taxon {
 					System.err.format("** Ancestor %s of %s was marked extinct\n", node, this);
 				wasExtant = false;
 			}
-		if (wasExtant)
-			System.err.format("| Note: %s wasn't marked extinct\n", this);
+		return wasExtant;
 	}
 
 	// add a tree to the forest?

@@ -5,7 +5,7 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.9draft5
+WHICH=2.9draft6
 PREV_WHICH=2.8
 
 #  $^ = all prerequisites
@@ -153,10 +153,13 @@ $(GBIF)/taxonomy.tsv: feed/gbif/in/taxon.txt feed/gbif/process_gbif_taxonomy.py
 feed/gbif/in/taxon.txt: feed/gbif/in/checklist1.zip
 	(cd feed/gbif/in && (unzip checklist1.zip || true))
 
+# Was http://ecat-dev.gbif.org/repository/export/checklist1.zip
+# Could be http://rs.gbif.org/datasets/backbone/backbone.zip
+GBIF_URL=http://purl.org/opentree/gbif-backbone-2013-07-02.zip
+
 feed/gbif/in/checklist1.zip:
 	@mkdir -p feed/gbif/in
-	wget --output-document=$@ \
-             http://ecat-dev.gbif.org/repository/export/checklist1.zip
+	wget --output-document=$@ "$(GBIF_URL)"
 	@ls -l $@
 
 irmng: tax/irmng/taxonomy.tsv

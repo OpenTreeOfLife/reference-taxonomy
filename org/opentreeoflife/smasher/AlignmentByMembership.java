@@ -61,9 +61,9 @@ public class AlignmentByMembership extends Alignment {
 	AlignmentByMembership(Taxonomy source, Taxonomy union) {
 		this.source = source;
 		this.union = union;
-		this.sourceNameMap = makeNameMap(source);
+		this.sourceNameMap = source.makeNameMap();
         System.out.println("sourceNameMap: " + this.sourceNameMap.size());
-		this.unionNameMap = makeNameMap(union);
+		this.unionNameMap = union.makeNameMap();
         System.out.println("unionNameMap: " + this.unionNameMap.size());
         System.out.println("a"); System.out.flush();
         halfMap();                  // tips and mrcas
@@ -310,21 +310,5 @@ public class AlignmentByMembership extends Alignment {
 
         // m repartions n iff
         // every child of n maps to a node under a child of m??
-
-
-	// Compute the inverse of the node->name map.
-	static Map<Taxon, Collection<String>> makeNameMap(Taxonomy tax) {
-		Map<Taxon, Collection<String>> nameMap = new HashMap<Taxon, Collection<String>>();
-		for (String name : tax.nameIndex.keySet())
-			for (Taxon node : tax.nameIndex.get(name)) {
-				Collection<String> names = nameMap.get(node);  // of this node
-				if (names == null) {
-					names = new ArrayList(1);
-					nameMap.put(node, names);
-				}
-				names.add(name);
-			}
-		return nameMap;
-	}
 
 }

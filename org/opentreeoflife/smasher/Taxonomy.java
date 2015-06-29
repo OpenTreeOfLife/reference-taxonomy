@@ -46,8 +46,8 @@ import org.semanticweb.skosapibinding.SKOSFormatExt;
 public abstract class Taxonomy implements Iterable<Taxon> {
     static final String SKOS_BASE_URI = "http://purl.obolibrary.org/obo/OTT_";
 
-    Map<String, List<Taxon>> nameIndex = new HashMap<String, List<Taxon>>();
-	Map<String, Taxon> idIndex = new HashMap<String, Taxon>();
+    public Map<String, List<Taxon>> nameIndex = new HashMap<String, List<Taxon>>();
+	public Map<String, Taxon> idIndex = new HashMap<String, Taxon>();
 	Set<Taxon> roots = new HashSet<Taxon>(1);
 	protected String tag = null;
 	int nextSequenceNumber = 0;
@@ -2090,7 +2090,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		t.setName(name);
 		if (!rank.equals("no rank"))
 			t.rank = rank;
-		t.setSourceIds(sourceIds);
+        if (sourceIds != null && sourceIds.length() > 0)
+            t.setSourceIds(sourceIds);
 		this.roots.add(t);
 		return t;
 	}
@@ -2411,6 +2412,23 @@ public abstract class Taxonomy implements Iterable<Taxon> {
         }
         br.close();
     }
+
+
+	// Compute the inverse of the name->node map.
+	public Map<Taxon, Collection<String>> makeNameMap() {
+		Map<Taxon, Collection<String>> nameMap = new HashMap<Taxon, Collection<String>>();
+		for (String name : this.nameIndex.keySet())
+			for (Taxon node : this.nameIndex.get(name)) {
+				Collection<String> names = nameMap.get(node);  // of this node
+				if (names == null) {
+					names = new ArrayList(1);
+					nameMap.put(node, names);
+				}
+				names.add(name);
+			}
+		return nameMap;
+	}
+
 
 }
 

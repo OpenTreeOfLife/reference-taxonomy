@@ -114,6 +114,7 @@ NCBI_URL="ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz"
 ncbi: $(NCBI)/taxonomy.tsv
 $(NCBI)/taxonomy.tsv: feed/ncbi/in/nodes.dmp feed/ncbi/process_ncbi_taxonomy_taxdump.py 
 	@mkdir -p $(NCBI).tmp
+	@mkdir -p feed/ncbi/in
 	python feed/ncbi/process_ncbi_taxonomy_taxdump.py F feed/ncbi/in \
             /dev/null $(NCBI).tmp $(NCBI_URL)
 	rm -rf $(NCBI)
@@ -125,7 +126,7 @@ feed/ncbi/in/nodes.dmp: feed/ncbi/in/taxdump.tar.gz
 	touch $@
 
 feed/ncbi/in/taxdump.tar.gz:
-	@mkdir -p feed/ncbi
+	@mkdir -p feed/ncbi/in
 	wget --output-document=$@ $(NCBI_URL)
 	@ls -l $@
 

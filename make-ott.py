@@ -204,6 +204,11 @@ def prepare_ncbi():
     ott.notSame(silva.taxon('Choanoflagellida', 'Ichthyosporea'),
                 ncbi.taxon('Choanoflagellida', 'Opisthokonta'))
 
+    # Dail 2014-03-31 https://github.com/OpenTreeOfLife/feedback/issues/5
+    # updated 2015-06-28 NCBI Katablepharidophyta = SILVA Kathablepharidae.
+    ott.same(ncbi.taxon('Katablepharidophyta'), silva.taxon('Kathablepharidae'))
+    # was: ott.taxon('Katablepharidophyta').hide()
+
     ott.absorb(ncbi)
     return ncbi
 
@@ -553,9 +558,6 @@ def patch_ott():
     # https://en.wikipedia.org/wiki/Baurubatrachus
     ott.taxon('Baurubatrachus').extinct()
 
-    # Dail 2014-03-31 https://github.com/OpenTreeOfLife/feedback/issues/5
-    ott.taxon('Katablepharidophyta').hide()
-
     # Dail 2014-03-31 https://github.com/OpenTreeOfLife/feedback/issues/4
     # no evidence given
     ott.taxonThatContains('Bacteria', 'Lentisphaerae').take(ott.taxon('Lentisphaerae'))
@@ -673,6 +675,25 @@ patch_ott()
 # "Old" patch system
 ott.edit('feed/ott/edits/')
 
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/68
+# 'Extinct' really means 'extinct and no sequence'
+print 'Non-extincting NCBI'
+for taxon in ncbi:
+    im = ott.image(taxon)
+    if im != None:
+        im.extant()
+
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/40
+print 'Checking realization of h2007'
+for taxon in h2007:
+    im = ott.image(taxon)
+    if im != None:
+        if im.children == None:
+            print '** Barren taxon from h2007', taxon.name
+    else:
+        print '** Missing taxon from h2007', taxon.name
+
+
 # Force some id assignments... will try to automate this in the future.
 # Most of these come from looking at the otu-deprecated.tsv file after a 
 # series of smasher runs.
@@ -687,6 +708,9 @@ for (ncbi_id, ott_id, name) in ncbi_assignments_list:
             print '** NCBI %s not mapped - %s' % (ncbi_id, name)
     else:
         print '** No NCBI taxon %s - %s' % (ncbi_id, name)
+
+# Cylindrocarpon is now Neonectria
+ott.image(gbif.taxon('2563163')).setId('51754')
 
 # Foo
 trich = fungorum.maybeTaxon('Trichosporon')

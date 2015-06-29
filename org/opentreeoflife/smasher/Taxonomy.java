@@ -2154,14 +2154,10 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		if (subject.taxonomy == this)
 			return subject;
 		Taxon m = subject.mapped;
-		if (m == null) {
-			System.err.format("** Taxon is not mapped: %s\n", subject);
+		if (m == null)
 			return null;
-		}
-		if (m.taxonomy != this) {
-			System.err.format("** Taxon is not mapped into given taxonomy: %s %s\n", subject, this);
+		if (m.taxonomy != this)
 			return null;
-		}
 		return m;
 	}
 
@@ -3034,52 +3030,18 @@ abstract class Criterion {
 
 	abstract Answer assess(Taxon x, Taxon y);
 
-	// Ciliophora = ncbi:5878 = gbif:10 != gbif:3269382
-	static QualifiedId[][] exceptions = {
-		{new QualifiedId("ncbi","5878"),
-		 new QualifiedId("gbif","10"),
-		 new QualifiedId("gbif","3269382")},	// Ciliophora
-		{new QualifiedId("ncbi","29178"),
-		 new QualifiedId("gbif","389"),
-		 new QualifiedId("gbif","4983431")}};	// Foraminifera
+    // Horrible kludge to avoid having to rebuild or maintain the name index
 
-	static QualifiedId loser =
-		new QualifiedId("silva", "AB033773/#6");   // != 713:83
-
-	// This is obviously a horrible kludge, awaiting a rewrite
-	// Foraminifera seems to have been fixed somehow
-	static Criterion adHoc =
+	static Criterion prunedp =
 		new Criterion() {
-			public String toString() { return "ad-hoc"; }
+			public String toString() { return "prunedp"; }
 			Answer assess(Taxon x, Taxon y) {
-				String xtag = x.taxonomy.getTag();
-				for (QualifiedId[] exception : exceptions) {
-					// x is from gbif, y is union
-					if (xtag.equals(exception[1].prefix) &&
-						x.id.equals(exception[1].id)) {
-						System.out.println("| Trying ad-hoc match rule: " + x);
-						if (y.sourceIds.contains(exception[0]))
-							return Answer.yes(x, y, "ad-hoc", null);
-					} else if (xtag.equals(exception[2].prefix) &&
-							   x.id.equals(exception[2].id)) {
-						System.out.println("| Trying ad-hoc mismatch rule: " + x);
-						return Answer.no(x, y, "ad-hoc-not", null);
-					}
-				}
-				if (false && x.name.equals("Buchnera")) {
-					System.out.println("| Checking Buchnera: " + x + " " + y + " " + y.sourceIds);
-					if (xtag.equals("study713") &&
-						y.sourceIds.contains(loser)) {
-						System.out.println("| Distinguishing silva:Buchnera from 713:Buchnera: " + x);
-						return Answer.no(x, y, "Buchnera", null);
-					}
-				}
-				return Answer.NOINFO;
-			}
-		};
-
-	// Failure case: matching where there should be no match: Buchnera, Burkea
-	// Taxon y is protozoan, taxon x is a plant
+                if (x.prunedp || y.prunedp)
+                    return Answer.no(x, y, "prunedp", null);
+                else
+                    return Answer.NOINFO;
+            }
+        };
 
 	static Criterion division =
 		new Criterion() {
@@ -3168,9 +3130,11 @@ abstract class Criterion {
 					if (a == null)
 						// ?
 						return Answer.NOINFO;
-					else		// bad
+					else if (y.children != null)		// bad
 						// 13 ?
 						return Answer.no(x, y, "incompatible-with", a.name);
+                    else
+						return Answer.NOINFO;
 				}
 			}
 		};
@@ -3279,7 +3243,7 @@ abstract class Criterion {
 		};
 
 	static Criterion[] criteria = {
-		// adHoc,
+        prunedp,
 		division,
 		// eschewTattered,
 		lineage, subsumption,

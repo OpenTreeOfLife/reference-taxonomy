@@ -110,6 +110,8 @@ def prepare_fungorum():
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/79
     ott.notSame(silva.taxon('Podocystis', 'Stramenopiles'), fung.taxon('Podocystis', 'Fungi'))
 
+    ott.notSame(ott.taxon('Ciliophora', 'Alveolata'), fung.taxon('Ciliophora', 'Ascomycota'))
+
     return fung
 
 fungorum = prepare_fungorum()
@@ -201,13 +203,15 @@ def prepare_ncbi():
     ott.notSame(silva.taxon('Bostrychia', 'Rhodophyceae'), ncbi.taxon('Bostrychia', 'Aves'))
 
     # https://github.com/OpenTreeOfLife/feedback/issues/45
-    ott.notSame(silva.taxon('Choanoflagellida', 'Ichthyosporea'),
+    ott.notSame(ott.maybeTaxon('Choanoflagellida', 'Ichthyosporea'),
                 ncbi.taxon('Choanoflagellida', 'Opisthokonta'))
 
     # Dail 2014-03-31 https://github.com/OpenTreeOfLife/feedback/issues/5
     # updated 2015-06-28 NCBI Katablepharidophyta = SILVA Kathablepharidae.
     ott.same(ncbi.taxon('Katablepharidophyta'), silva.taxon('Kathablepharidae'))
     # was: ott.taxon('Katablepharidophyta').hide()
+
+    ott.same(ott.taxon('Ciliophora', 'Alveolata'), ncbi.taxon('Ciliophora', 'Alveolata'))
 
     ott.absorb(ncbi)
     return ncbi
@@ -262,7 +266,9 @@ def doGbif():
     #ott.same(gbif.taxon('Cyanobacteria'), silva.taxon('Cyanobacteria','Cyanobacteria')) #'D88288/#3'
 
     # Automatic alignment makes the wrong choice for the following two
-    ott.same(ncbi.taxon('5878'), gbif.taxon('10'))    # Ciliophora gbif:3269382
+    # ott.same(ncbi.taxon('5878'), gbif.taxon('10'))    # Ciliophora gbif:3269382
+    ott.same(ott.taxon('Ciliophora', 'Alveolata'), gbif.taxon('10'))  # in Protozoa
+    ott.same(ott.taxon('Ciliophora', 'Ascomycota'), gbif.taxon('Ciliophora', 'Ascomycota'))
     ott.same(ncbi.taxon('29178'), gbif.taxon('389'))  # Foraminifera gbif:4983431
 
     # Tetrasphaera is a messy multi-way homonym
@@ -349,6 +355,9 @@ def doIrmng():
     # https://github.com/OpenTreeOfLife/feedback/issues/45
     ott.same(irmng.taxon('Choanoflagellida'),
              ncbi.taxon('Choanoflagellida', 'Opisthokonta'))
+
+    ott.same(ott.taxon('Ciliophora', 'Alveolata'), irmng.taxon('239'))  # in Protista
+    ott.same(ott.taxon('Ciliophora', 'Ascomycota'), irmng.taxon('Ciliophora', 'Ascomycota'))
 
     ott.absorb(irmng)
     return irmng
@@ -667,32 +676,24 @@ def patch_ott():
     ott.taxon('Saxifraga').take(sax)
     sax.rename('Saxifraga bicuspidata')
 
+    # "Old" patch system
+    ott.edit('feed/ott/edits/')
+
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/68
+    # 'Extinct' really means 'extinct and no sequence'
+    print 'Non-extincting NCBI'
+    for taxon in ncbi:
+        im = ott.image(taxon)
+        if im != None:
+            im.extant()
+
 patch_ott()
 
+# Remove all trees but the largest 
+ott.deforestate()
+
 # -----------------------------------------------------------------------------
-# Finish up
-
-# "Old" patch system
-ott.edit('feed/ott/edits/')
-
-# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/68
-# 'Extinct' really means 'extinct and no sequence'
-print 'Non-extincting NCBI'
-for taxon in ncbi:
-    im = ott.image(taxon)
-    if im != None:
-        im.extant()
-
-# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/40
-print 'Checking realization of h2007'
-for taxon in h2007:
-    im = ott.image(taxon)
-    if im != None:
-        if im.children == None:
-            print '** Barren taxon from h2007', taxon.name
-    else:
-        print '** Missing taxon from h2007', taxon.name
-
+# OTT id assignment
 
 # Force some id assignments... will try to automate this in the future.
 # Most of these come from looking at the otu-deprecated.tsv file after a 
@@ -729,13 +730,28 @@ ott.loadPreferredIds('ids-that-are-otus.tsv')
 # Assign old ids to nodes in the new version
 ott.assignIds(ids)
 
-# Remove all trees but the largest 
-ott.deforestate()
+# -----------------------------------------------------------------------------
+# Dump and report
 
+# Write files
+ott.dump('tax/ott/')
+
+# Reports
+
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/40
+print '-- Checking realization of h2007'
+for taxon in h2007:
+    im = ott.image(taxon)
+    if im != None:
+        if im.children == None:
+            print '** Barren taxon from h2007', taxon.name
+    else:
+        print '** Missing taxon from h2007', taxon.name
+
+print '-- Parent/child homonyms'
 ott.parentChildHomonymReport()
 
 print '-- Inclusion tests'
 check_inclusions.check(ott)
 
-# Write files
-ott.dump('tax/ott/')
+print '-- Done'

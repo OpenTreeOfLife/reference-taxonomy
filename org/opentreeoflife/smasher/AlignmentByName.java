@@ -220,14 +220,14 @@ public class AlignmentByName extends Alignment {
                             ;
                         else if (x.mapped != null) {
                             // This case doesn't happen
-                            x.deprecationReason = a;
+                            // x.deprecationReason = a;
                             a = Answer.no(x, y, "lost-race-to-source(" + criterion.toString() + ")",
                                           (y.getSourceIdsString() + " lost to " +
                                            x.mapped.getSourceIdsString()));
                         } else if (false && y.comapped != null) {
                         // Did someone else get there first?
                         // Actually maybe this shouldn't matter.
-                            x.deprecationReason = a;
+                            // x.deprecationReason = a;
                             a = Answer.no(x, y,
                                           "lost-race-to-union(" + criterion.toString() + ")",
                                           ("lost to " +
@@ -254,7 +254,7 @@ public class AlignmentByName extends Alignment {
                             // && unodes.get(j).comapped == null
                             ) { ++alts; altj = j; }
                     UnionTaxonomy union = (UnionTaxonomy)unodes.get(0).taxonomy;
-                    Answer explanation;
+                    Answer explanation; // Always gets set
                     if (alts == 1) {
                         // There must be multiple source nodes i1, i2, ... competing
                         // for this one union node.	 Merging them is (probably) fine.
@@ -286,7 +286,7 @@ public class AlignmentByName extends Alignment {
                             }
                         explanation = Answer.noinfo(node, null, "unresolved/ambiguous", w);
                     } else {
-                        // Important case, mapping blocked, give gory details.
+                        // Important case, mapping blocked, maybe a brand new taxon.  Give gory details.
                         // Iterate through the union nodes for this name that we didn't map to
                         // and collect all the reasons.
                         if (n == 1)
@@ -319,8 +319,7 @@ public class AlignmentByName extends Alignment {
                     }
                     union.logAndMark(explanation);
                     // remember, source could be either gbif or idsource
-                    if (node.deprecationReason == null)
-                        node.deprecationReason = explanation;  
+                    node.deprecationReason = explanation;  
                 }
             }
         }

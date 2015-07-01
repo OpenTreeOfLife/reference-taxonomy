@@ -315,17 +315,23 @@ public class Taxon {
 		Taxon newnode = null;
 		int newflags = 0;
 
+        // Four cases:
+        //  mapped
+        //  contentious - discard?  [seems to still happen, not sure why]
+        //  ambiguous   - discard
+        //  blocked     - create homonym
 		if (this.children == null) {
 			if (this.mapped != null) {
 				newnode = this.mapped;
 				Taxon.markEvent("mapped/tip");
 			} else if (this.deprecationReason != null &&
-					   // Create homonym iff it's an unquestionably bad match
-					   this.deprecationReason.value > Answer.HECK_NO) {
+                       this.deprecationReason.value > Answer.HECK_NO) {
+                // Don't create homonym if it's too close a match
+                // (weak no) or ambiguous (noinfo)
+                // NOINFO > WEAK_NO > HECK_NO  (sorry, bad representation)
 				union.logAndMark(Answer.no(this, null, "blocked/tip", null));
 			} else {
 				newnode = new Taxon(union);
-				// heckYes is uninteresting
 				union.logAndMark(Answer.heckYes(this, newnode, "new/tip", null));
 			}
 		} else {
@@ -375,24 +381,24 @@ public class Taxon {
 
 			} else if (this.refinementp(oldChildren, newChildren)) {
 
-					// Move the new internal node over to union taxonomy.
-					// It will end up becoming a descendent of oldParent.
-					newnode = new Taxon(union);
-					for (Taxon nu : newChildren) newnode.addChild(nu);
-					for (Taxon old : oldChildren) {
-						// Delete the Taxonomy.MAJOR_RANK_CONFLICT flag if we're
-						// providing a home for these things??!
-						old.changeParent(newnode);	 // Detach!!
-						if ((this.properFlags & Taxonomy.MAJOR_RANK_CONFLICT) == 0) {
-							if ((old.properFlags & Taxonomy.MAJOR_RANK_CONFLICT) != 0
-								&& ((old.name.hashCode() % 200) == 17))
-								System.err.format("| Removing major rank conflict: %s\n", old);
-							old.properFlags &= ~Taxonomy.MAJOR_RANK_CONFLICT;
-						}
-					}
-					// 'yes' is interesting, 'heckYes' isn't
-					union.logAndMark(Answer.yes(this, null, "new/insertion", null));
-					// fall through
+                // Move the new internal node over to union taxonomy.
+                // It will end up becoming a descendent of oldParent.
+                newnode = new Taxon(union);
+                for (Taxon nu : newChildren) newnode.addChild(nu);
+                for (Taxon old : oldChildren) {
+                    // Delete the Taxonomy.MAJOR_RANK_CONFLICT flag if we're
+                    // providing a home for these things??!
+                    old.changeParent(newnode);	 // Detach!!
+                    if ((this.properFlags & Taxonomy.MAJOR_RANK_CONFLICT) == 0) {
+                        if ((old.properFlags & Taxonomy.MAJOR_RANK_CONFLICT) != 0
+                            && ((old.name.hashCode() % 200) == 17))
+                            System.err.format("| Removing major rank conflict: %s\n", old);
+                        old.properFlags &= ~Taxonomy.MAJOR_RANK_CONFLICT;
+                    }
+                }
+                // 'yes' is interesting, 'heckYes' isn't
+                union.logAndMark(Answer.yes(this, null, "new/insertion", null));
+                // fall through
 
 			} else if (newChildren.size() > 0) {
 				// Paraphyletic.

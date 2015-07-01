@@ -1,4 +1,6 @@
 
+# (ncbi_id, ott_id, name)
+
 ncbi_assignments_list = [
     ('3071', '339002', 'Chlorella'),
     ('56708', '342868', 'Tetraphyllidea'),
@@ -41,10 +43,11 @@ ncbi_assignments_list = [
 
     # This is a funny one.  
     # OTT 2.8: 935049 = Ochrothallus multipetalus = ncbi:550753,irmng:10923427
-    # ncbi:550753 = replaced by ncbi:441510 = Pycnandra fastuosa
-    # irmng:10923427 - removed from IRMNG
-    #         ('550753', '935049', ''),  - lumping
-    ('441510', '5049', 'Ochrothallus multipetalus'),  # 	pg_1017	 - was 550753
+    # ncbi:550753 = replaced by ncbi:441510 = Pycnandra fastuosa = ott:453118
+    # ott:935049 used by pg_1017, ott:453118 used by pg_227,pg_1017,pg_188
+    # Ambiguity with ott:3900562 = Niemeyera multipetala = gbif:5333730,irmng:10245174
+    # Do nothing, allow deprecation to happen normally.
+    # ('441510', '935049', 'Ochrothallus multipetalus'),  # 	pg_1017	 - was 550753
 
     # More from the deprecated list
     ('40296', '6232', 'Penicillium italicum'),
@@ -56,7 +59,6 @@ ncbi_assignments_list = [
 
     ('38483', '5252708', 'Sclerotinia homoeocarpa'),  # 	pg_2229,pg_2462		silva:JU096305,
     ('352995', '5303440', 'Lamprospora crouanii'),  # 	pg_791,pg_949		if:356889,
-    ('550753', '935049', 'Ochrothallus multipetalus'),  # 	pg_1017	 is 935049
     ('171480', '350620', 'Cortinarius glaucopus'),  # 	pg_1240,pg_1610,pg_438,pg_1060	
     ('279506', '1029985', 'Boletus bicolor'),  # 	pg_2597,pg_438	
     ('5066', '749901', 'Aspergillus wentii'),  # 	pg_2427,pg_438	

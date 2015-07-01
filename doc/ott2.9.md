@@ -62,9 +62,9 @@ retrieved.
     A higher-level phylogenetic classification of the <i>Fungi</i>.
     [Mycological Research</i> <b>111</b>(5):509-547, 2007](http://dx.doi.org/10.1016/j.mycres.2007.03.004).
     Newick string with revisions
-    archived at [http://files.figshare.com/2150667/Order_level_June2015_newick_branch_labels.txt](http://files.figshare.com/2150667/Order_level_June2015_newick_branch_labels.txt).
+    archived at [http://figshare.com/articles/Fungal_Classification_2015/1465038](http://figshare.com/articles/Fungal_Classification_2015/1465038).
     <br />
-    Download location: [http://purl.org/opentree/ott/ott2.9/inputs/??.tre](http://purl.org/opentree/ott/ott2.9/inputs/??.tre)
+    Download location: [http://purl.org/opentree/ott/??TBD??](http://purl.org/opentree/ott/??TBD??)
 
 1.  Taxonomy from: SILVA 16S ribosomal RNA database, version 115.
     See: Quast C, Pruesse E, Yilmaz P, Gerken J, Schweer T, Yarza P, Peplies J,
@@ -77,10 +77,10 @@ retrieved.
 
 1.  Index Fungorum.
     Download location: derived from database query result files provided by Paul
-    Kirk, April 2014 (personal communication).
+    Kirk, 7 April 2014 (personal communication).
     Web site: [http://www.indexfungorum.org/](http://www.indexfungorum.org/).
     <br />
-    Download location (converted to OTT format): [http://purl.org/opentree/ott/ott2.8/inputs/if-20140514.tgz](http://purl.org/opentree/ott/ott2.8/inputs/if-20140514.tgz).
+    Download location (converted to OTT format): [http://purl.org/opentree/ott/??TBD??](http://purl.org/opentree/ott/??TBD??).
 
 1.  Taxonomy from:
     Sch&auml;ferhoff, B., Fleischmann, A., Fischer, E., Albach, D. C., Borsch,
@@ -102,7 +102,7 @@ retrieved.
     [ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz](ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz)
     <br />
     For OTT 2.9 we used a version downloaded from NCBI on 27 June 2015.
-    Download location: [http://purl.org/opentree/ott/ott2.9/inputs/taxdump-20150627.tgz](http://purl.org/opentree/ott/ott2.9/inputs/taxdump-20150627.tgz).
+    Download location: [http://purl.org/opentree/ott/??TBD??](http://purl.org/opentree/ott/??TBD??).
   </li>
 
 1.  GBIF Backbone Taxonomy, from the 

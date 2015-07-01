@@ -2382,7 +2382,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			b = b.parent;
 			--da;
 		}
-		if (a != null && b != null) {
+		if (a != null && b != null && a.parent != null) {
 			Taxon[] answer = {a, b};
 			return answer;
 		} else
@@ -2761,10 +2761,8 @@ class UnionTaxonomy extends Taxonomy {
     int compareIds(String id1, String id2) {
         Integer p1 = this.preferredIds.get(id1);
         Integer p2 = this.preferredIds.get(id2);
-        if (p1 != null && p2 != null) {
-            System.out.format("| Competing ids: %s %s\n", id1, id2);
+        if (p1 != null && p2 != null)
             return p1 - p2;
-        }
         if (p1 == null)
             return -1;
         if (p2 == null)
@@ -3012,31 +3010,38 @@ class Conflict {
 	Conflict(Taxon paraphyletic, Taxon unode) {
 		this.paraphyletic = paraphyletic; this.unode = unode;
 	}
+    static String formatString = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s";
 	public String toString() {
 		// cf. Taxon.mrca
 		Taxon[] div = Taxonomy.divergence(paraphyletic, unode);
+        try {
 		if (div != null) {
 			Taxon a = div[0];
 			Taxon b = div[1];
 			int da = a.getDepth();
-			return String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
+			return String.format(formatString,
 								 da,
 								 paraphyletic.name, paraphyletic.getQualifiedId(),
 								 unode.name, unode.putativeSourceRef(),
 								 unode.parent.name, unode.parent.putativeSourceRef(),
 								 a.name, a.putativeSourceRef(),
 								 b.name, b.putativeSourceRef());
-			// return (da + " " + paraphyletic + " in " + b + " lost child " + unode + " to " + unode.parent + " in " + a);
 		} else
-			// return ("? " + paraphyletic + " lost child " + unode + " to " + unode.parent);
-			return String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
+			return String.format(formatString,
 								 "?",
 								 paraphyletic.name, paraphyletic.getQualifiedId(),
 								 unode.name, unode.putativeSourceRef(),
-								 unode.parent.name, unode.parent.putativeSourceRef(),
-								 "", "",
+								 (unode.parent == null ? "" :
+                                  unode.parent.name),
+								 (unode.parent == null ? "" :
+                                  unode.parent.putativeSourceRef()),
+                                 "", "",
 								 "", "");
-
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.format("*** info: %s %s %s\n", paraphyletic, unode, div);
+            return "failed";
+        }
 	}
 }
 

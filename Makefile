@@ -152,6 +152,7 @@ $(GBIF)/taxonomy.tsv: feed/gbif/in/taxon.txt feed/gbif/process_gbif_taxonomy.py
 # when there are warnings.
 feed/gbif/in/taxon.txt: feed/gbif/in/checklist1.zip
 	(cd feed/gbif/in && (unzip checklist1.zip || true))
+	touch feed/gbif/in/taxon.txt
 
 # Was http://ecat-dev.gbif.org/repository/export/checklist1.zip
 # Could be http://rs.gbif.org/datasets/backbone/backbone.zip

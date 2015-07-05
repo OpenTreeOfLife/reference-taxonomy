@@ -14,35 +14,35 @@ import java.util.regex.Pattern;
 
 public enum Flag {
 
-	// NCBI - individually troublesome - not sticky - combine using &
-	NOT_OTU			     ("not_otu", "not_otu", Taxonomy.NOT_OTU),
-	VIRAL				 ("viral", "viral", Taxonomy.VIRAL),
-	HYBRID				 ("hybrid", "hybrid", Taxonomy.HYBRID),
-
-	// Final analysis...
-	// Containers - unconditionally so.
+    // Various kinds of incertae sedis
 	INCERTAE_SEDIS		 ("incertae_sedis", "incertae_sedis_inherited", Taxonomy.INCERTAE_SEDIS),
 	UNCLASSIFIED		 ("unclassified", "unclassified_inherited", Taxonomy.UNCLASSIFIED),
 	ENVIRONMENTAL		 ("environmental", "environmental_inherited", Taxonomy.ENVIRONMENTAL),
+	MAJOR_RANK_CONFLICT  ("major_rank_conflict",
+						  "major_rank_conflict_inherited",
+						  Taxonomy.MAJOR_RANK_CONFLICT),     // Parent-dependent.  Retain value
+    UNPLACED             ("unplaced", "unplaced_inherited", Taxonomy.UNPLACED),
+
+	// Australopithecus
+	SIBLING_HIGHER		 ("sibling_higher", null, Taxonomy.SIBLING_HIGHER), //get rid of this?
+	SIBLING_LOWER		 ("sibling_lower", null, Taxonomy.SIBLING_LOWER),
+
+	// NCBI - individually troublesome - not sticky - combine using &
+	NOT_OTU			     ("not_otu", "not_otu", Taxonomy.NOT_OTU),    // emptied containers
+	VIRAL				 ("viral", "viral", Taxonomy.VIRAL),
+	HYBRID				 ("hybrid", "hybrid", Taxonomy.HYBRID),
 
 	// Set during assembly
 	HIDDEN				 ("hidden", "hidden_inherited", Taxonomy.HIDDEN),	  // combine using &
-	MAJOR_RANK_CONFLICT  ("major_rank_conflict_direct",
-						  "major_rank_conflict_inherited",
-						  Taxonomy.MAJOR_RANK_CONFLICT),     // Parent-dependent.  Retain value
 
-	// Australopithecus
-	SIBLING_HIGHER		 ("sibling_higher", null, Taxonomy.SIBLING_HIGHER),
-	SIBLING_LOWER		 ("sibling_lower", null, Taxonomy.SIBLING_LOWER),
-
-	TATTERED			 ("tattered", "tattered_inherited", Taxonomy.TATTERED),  // combine using |
 	EDITED				 ("edited", null, Taxonomy.EDITED),	  				  // combine using |
-	FORCED_VISIBLE		 ("forced_visible", null, Taxonomy.FORCED_VISIBLE),	  		  // combine using |
-	EXTINCT			 	 ("extinct_direct", "extinct_inherited", Taxonomy.EXTINCT),	  // combine using |
+	FORCED_VISIBLE		 ("forced_visible", null, Taxonomy.FORCED_VISIBLE),   // combine using |
+	EXTINCT			 	 ("extinct", "extinct_inherited", Taxonomy.EXTINCT),  // combine using |
 
 	// Has a node of rank 'species' as an ancestor?
 	INFRASPECIFIC		 ("infraspecific", null, Taxonomy.INFRASPECIFIC),
 
+    // Contains no species?
 	BARREN			     ("barren", null, Taxonomy.BARREN);
 
 	String name, inheritedName;
@@ -57,24 +57,23 @@ public enum Flag {
 	static final Map<String, Flag> lookupTable = new HashMap<String, Flag>();
 	static final Map<String, Flag> lookupInheritedTable = new HashMap<String, Flag>();
 	static {
-		for (Flag flag : Flag.values())
+		for (Flag flag : Flag.values()) {
 			lookupTable.put(flag.name, flag);
-		lookupTable.put("extinct", EXTINCT); // hack for IF and IRMNG
+			lookupInheritedTable.put(flag.inheritedName, flag);
+        }
 
 		// Container stubs - legacy
 		lookupTable.put("incertae_sedis_direct", NOT_OTU);
 		lookupTable.put("unclassified_direct", NOT_OTU);
 
-		// Kludge for legacy 2.6 and before, pending revision of representation ...
-		// will need to separate out direct and inherited cases, and in the case
-		// of 'environmental' there are three cases, the container, direct, and
-		// indirect
-		lookupTable.put("incertae_sedis_inherited", INCERTAE_SEDIS);
-		lookupTable.put("unclassified_inherited", UNCLASSIFIED);
-		lookupTable.put("environmental", ENVIRONMENTAL);
+        // Renamings - keep old names for legacy taxonomies
+        lookupTable.put("major_rank_conflict_direct",	MAJOR_RANK_CONFLICT);
+        lookupTable.put("extinct_direct",	EXTINCT);
 
-		for (Flag flag : Flag.values())
-			lookupInheritedTable.put(flag.inheritedName, flag);
+        // 'Tattered' taxa simply go away in 2.9 (their children are UNPLACED)
+        lookupTable.put("tattered",	UNPLACED);
+
+        lookupInheritedTable.put("tattered_inherited",	UNPLACED);
 	}
 
 	static Flag lookup(String name) {
@@ -191,13 +190,13 @@ public enum Flag {
 		}
 
 		// Misc
-		if ((flags & Taxonomy.TATTERED) != 0) {
+		if ((flags & Taxonomy.UNPLACED) != 0) {
 			if (needComma) out.print(","); else needComma = true;
-			out.print("tattered");
+			out.print("unplaced");
 		}
-		if ((iflags & Taxonomy.TATTERED) != 0) {
+		if ((iflags & Taxonomy.UNPLACED) != 0) {
 			if (needComma) out.print(","); else needComma = true;
-			out.print("tattered_inherited");
+			out.print("unplaced_inherited");
 		}
 
 		if ((flags & Taxonomy.EDITED) != 0) {

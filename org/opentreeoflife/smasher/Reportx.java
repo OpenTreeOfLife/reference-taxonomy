@@ -121,7 +121,7 @@ public class Reportx {
 								continue;
 							}
 						}
-						Taxon div[] = tax.divergence(taxon1, taxon2);
+						Taxon div[] = taxon1.divergence(taxon2);
 						if (div != null) {
 							int count1 = div[0].count();
 							int count2 = div[1].count();

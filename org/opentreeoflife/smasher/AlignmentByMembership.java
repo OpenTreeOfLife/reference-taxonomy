@@ -35,19 +35,14 @@ public class AlignmentByMembership extends Alignment {
 
 	Taxonomy source, union;
 
-    // Map source node to union node that includes it
+    // Map source node to union node that includes its tips
 	Map<Taxon, Taxon> sourceHalfMap = new HashMap<Taxon, Taxon>();
 
     // Map union node to source node that includes it
 	Map<Taxon, Taxon> unionHalfMap = new HashMap<Taxon, Taxon>();
 
     // Final source-to-union alignment
-	Map<Taxon, Taxon> alignmentMap = new HashMap<Taxon, Taxon>();
-
-	// Invert the name->node map: for each node, store the names by
-	// which it is known.
-	Map<Taxon, Collection<String>> sourceNameMap;
-	Map<Taxon, Collection<String>> unionNameMap;
+	Map<Taxon, Answer> alignmentMap = new HashMap<Taxon, Answer>();
 
 	// Need to know which union taxa are targets of mrcas (range of
 	// scaffold or mapping)
@@ -58,23 +53,39 @@ public class AlignmentByMembership extends Alignment {
 	Map<Taxon, Collection<Taxon>> candidatesMap =
 		new HashMap<Taxon, Collection<Taxon>>();
 
+    private static Taxon AMBIGUOUS = new Taxon(null);
+
 	AlignmentByMembership(Taxonomy source, Taxonomy union) {
+        // Invert the name->node map: for each node, store the names by
+        // which it is known.
+        Map<Taxon, Collection<String>> sourceSynonymIndex;
+        Map<Taxon, Collection<String>> unionSynonymIndex;
+
 		this.source = source;
 		this.union = union;
-		this.sourceNameMap = source.makeNameMap();
-        System.out.println("sourceNameMap: " + this.sourceNameMap.size());
-		this.unionNameMap = union.makeNameMap();
-        System.out.println("unionNameMap: " + this.unionNameMap.size());
+		sourceSynonymIndex = source.makeSynonymIndex();
+        System.out.println("sourceSynonymIndex: " + sourceSynonymIndex.size());
+		unionSynonymIndex = union.makeSynonymIndex();
+        System.out.println("unionSynonymIndex: " + unionSynonymIndex.size());
         System.out.println("a"); System.out.flush();
-        halfMap();                  // tips and mrcas
+        halfMap(sourceSynonymIndex, unionSynonymIndex);           // tips and mrcas
         System.out.println("b"); System.out.flush();
         align();                // mutual-mrca
 	}
 
     // Return the node that this one maps to under this alignment, or null
 
-    Taxon target(Taxon node) {
+    Answer answer(Taxon node) {
         return alignmentMap.get(node);
+    }
+
+    void cacheInSourceNodes() {
+        for (Taxon node : sourceHalfMap.keySet()) {
+            node.lub = sourceHalfMap.get(node);
+            Answer a = alignmentMap.get(node);
+            if (a != null) // && a.isYes()
+                node.unifyWith(node.answer.target, a);
+        }
     }
 
     // Is it important to distinguish the two cases of 
@@ -84,14 +95,15 @@ public class AlignmentByMembership extends Alignment {
     // Should we do member-mapping in one direction, name-mapping
     // in the other?
 
-    void halfMap() {
+    void halfMap(Map<Taxon, Collection<String>> sourceSynonymIndex,
+                 Map<Taxon, Collection<String>> unionSynonymIndex) {
         System.out.println("halfMap");
         System.out.flush();
-        for (Taxon node: source.roots)
-            halfMapSubtree(node, union, sourceNameMap, sourceHalfMap);
+        for (Taxon node: source.roots())
+            halfMapSubtree(node, union, sourceSynonymIndex, sourceHalfMap);
         System.out.println("sourceHalfMap: " + sourceHalfMap.size());
-        for (Taxon unode: union.roots)
-            halfMapSubtree(unode, source, unionNameMap, unionHalfMap);
+        for (Taxon unode: union.roots())
+            halfMapSubtree(unode, source, unionSynonymIndex, unionHalfMap);
         System.out.println("unionHalfMap: " + unionHalfMap.size());
     }
 
@@ -100,12 +112,10 @@ public class AlignmentByMembership extends Alignment {
                                 Taxonomy dest,
                                 Map<Taxon, Collection<String>> nameMap,
                                 Map<Taxon,Taxon> halfMap) {
-        if (false) {
-            try {
-                Thread.currentThread().sleep(100);
-            } catch (InterruptedException e) { ; }
-            System.out.println(node);
-            System.out.flush();
+        // Alignment forced by manual intervention
+        if (node.mapped != null) {
+            halfMap.put(node, node.mapped);
+            return node.mapped;
         }
         if (node.children != null) {
             Taxon mrca = null;
@@ -123,14 +133,6 @@ public class AlignmentByMembership extends Alignment {
             }
             /* fall through - node is a 'virtual tip' */
         }
-        if (false) {
-            try {
-                Thread.currentThread().sleep(100);
-            } catch (InterruptedException e) { ; }
-            System.out.println(node);
-            System.out.flush();
-        }
-
         Taxon unode = mapByName(node, nameMap, dest); //could be ambiguous
         if (unode != null) {
             halfMap.put(node, unode);
@@ -215,7 +217,7 @@ public class AlignmentByMembership extends Alignment {
         // Fatally ambiguous!  Maybe choose based on distance in tree?
         // but that would require matches for interior nodes, which we
         // don't have yet.
-        return Taxon.AMBIGUOUS;
+        return AMBIGUOUS;
     }
 
     static Criterion[] criteria = {
@@ -234,7 +236,7 @@ public class AlignmentByMembership extends Alignment {
     }
 
     void align() {
-        for (Taxon node : source.roots)
+        for (Taxon node : source.roots())
             alignSubtree(node);
     }
 
@@ -242,8 +244,8 @@ public class AlignmentByMembership extends Alignment {
         Taxon unode = sourceHalfMap.get(node);
         if (unode == null)
             return;
-        if (unode == Taxon.AMBIGUOUS) {
-            alignmentMap.put(node, unode);
+        if (unode == AMBIGUOUS) {
+            alignmentMap.put(node, Answer.no(node, null, "ambiguous", null));
             return;
         }
         if (node.children != null) {
@@ -255,18 +257,23 @@ public class AlignmentByMembership extends Alignment {
         if (node == renode) {
             // Round trip m->n->m
             List<Taxon> candidates = new ArrayList<Taxon>();
+            Taxon biggest = null;
             for (Taxon ancestor = unode; ancestor != null; ancestor = ancestor.parent) {
                 // Wrong test, we should try synonyms as well
                 if (ancestor.name.equals(node.name) &&
-                    unionHalfMap.get(ancestor) == renode)
+                    unionHalfMap.get(ancestor) == renode) {
                     candidates.add(ancestor);
+                    biggest = ancestor;
+                }
             }
             Taxon match = tryCandidates(node, candidates);
-            if (match != null && match != Taxon.AMBIGUOUS)
-                alignmentMap.put(node, match);
+            if (match == AMBIGUOUS)
+                alignmentMap.put(node, Answer.no(node, null, "ambiguous-internal", null));
+            if (match != null)
+                alignmentMap.put(node, Answer.yes(node, match, "matched", null));
             else
-                // Ambiguous.  Map to 'smallest' compatible node
-                alignmentMap.put(node, unode);
+                // Ambiguous.  Map to 'largest' compatible ancestor node
+                alignmentMap.put(node, Answer.yes(node, biggest, "slop", null));
         }
     }
 
@@ -311,4 +318,12 @@ public class AlignmentByMembership extends Alignment {
         // m repartions n iff
         // every child of n maps to a node under a child of m??
 
+
+    void sluggishly(Taxon node) {
+        try {
+            Thread.currentThread().sleep(100);
+        } catch (InterruptedException e) { ; }
+        System.out.println(node);
+        System.out.flush();
+    }
 }

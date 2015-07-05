@@ -50,19 +50,23 @@ h2007 = doH2007()
 
 def prepare_fungorum():
 
-    fung  = taxonomies.load_fung()
+    fungorum = taxonomies.load_fung()
 
-    print "Index Fungorum has %s nodes"%fung.count()
+    fungi_root = fungorum.taxon('Fungi')
+    fungi = fungorum.select(fungi_root)
+    fungi_root.trim()
+
+    print "Fungi in Index Fungorum has %s nodes"%fungi.count()
 
     # *** Alignment to SILVA
 
     # 2014-03-07 Prevent a false match
     # https://groups.google.com/d/msg/opentreeoflife/5SAPDerun70/fRjA2M6z8tIJ
     # This is a fungus in Pezizomycotina
-    ott.notSame(silva.taxon('Phaeosphaeria'), fung.taxon('Phaeosphaeria'))
+    ott.notSame(silva.taxon('Phaeosphaeria'), fungi.taxon('Phaeosphaeria'))
 
     # 2014-04-08 This was causing Agaricaceae to be paraphyletic
-    ott.notSame(silva.taxon('Morganella'), fung.taxon('Morganella'))
+    ott.notSame(silva.taxon('Morganella'), fungi.taxon('Morganella'))
 
     # 2014-04-08 More IF/SILVA bad matches
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/63
@@ -75,15 +79,16 @@ def prepare_fungorum():
                  'Frankia',                # in Pezizomycotina / bacterium in SILVA
                  'Phialina',               # in Pezizomycotina
                  ]:
-        ott.notSame(silva.taxon(name), fung.taxon(name))
+        ott.notSame(silva.taxon(name), fungi.taxon(name))
     # Trichoderma harzianum, Sclerotinia homoeocarpa, Puccinia
     # triticina are removed from SILVA early
                  
     # 2014-04-25 JAR
     # There are three Bostrychias: a rhodophyte, a fungus, and a bird.
     # The fungus name is a synonym for Cytospora.
-    if fung.maybeTaxon('Bostrychia', 'Ascomycota') != None:
-        ott.notSame(silva.taxon('Bostrychia', 'Rhodophyceae'), fung.taxon('Bostrychia', 'Ascomycota'))
+    if fungi.maybeTaxon('Bostrychia', 'Ascomycota') != None:
+        ott.notSame(silva.taxon('Bostrychia', 'Rhodophyceae'),
+                    fungi.taxon('Bostrychia', 'Ascomycota'))
 
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/20
     # Problem: Chlamydotomus is an incertae sedis child of Fungi.  Need to
@@ -108,18 +113,13 @@ def prepare_fungorum():
     # Just make it incertae sedis and put off dealing with it until someone cares...
 
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/79
-    ott.notSame(silva.taxon('Podocystis', 'Stramenopiles'), fung.taxon('Podocystis', 'Fungi'))
+    ott.notSame(silva.taxon('Podocystis', 'Stramenopiles'), fungi.taxon('Podocystis', 'Fungi'))
 
-    ott.notSame(ott.taxon('Ciliophora', 'Alveolata'), fung.taxon('Ciliophora', 'Ascomycota'))
+    ott.notSame(ott.taxon('Ciliophora', 'Alveolata'), fungi.taxon('Ciliophora', 'Ascomycota'))
 
-    return fung
+    return (fungi, fungorum)
 
-fungorum = prepare_fungorum()
-
-fungi_root = fungorum.taxon('Fungi')
-fungi = fungorum.select(fungi_root)
-fungi_root.trim()
-fungorum_sans_fungi = fungorum
+(fungi, fungorum_sans_fungi) = prepare_fungorum()
 
 ott.absorb(fungi)
 
@@ -128,7 +128,7 @@ ott.absorb(fungi)
 # ----- Lamiales taxonomy from study 713 -----
 # http://dx.doi.org/10.1186/1471-2148-10-352
 study713  = taxonomies.load_713()
-ott.notSame(study713.taxon('Buchnera'), silva.taxon('Buchnera'))
+ott.notSame(study713.taxon('Buchnera', 'Orobanchaceae'), silva.taxon('Buchnera', 'Enterobacteriaceae'))
 ott.absorb(study713)
 
 # ----- WoRMS -----
@@ -137,23 +137,21 @@ def prepare_worms():
     worms = taxonomies.loadWorms()
     worms.taxon('Viruses').prune()
 
-    # 2015-02-17 According to WoRMS web site.  Occurs in pg_1229
-    worms.taxon('Scenedesmus communis').synonym('Scenedesmus caudata')
+    # Malacostraca instead of Decapoda because it's in the skeleton
+    mal = worms.taxon('Malacostraca')
+    malacostraca = worms.select(mal)
+    mal.trim()
+    worms_sans_malacostraca = worms
 
-    # See NCBI
-    worms.taxon('Millericrinida').extant()
+    # Alignment
 
-    worms.smush()  # Gracilimesus gorbunovi, pg_1783
+    # https://github.com/OpenTreeOfLife/feedback/issues/45
+    ott.same(ott.taxon('Choanoflagellida', 'Opisthokonta'),
+             worms_sans_malacostraca.taxon('Choanoflagellida'))
 
-    return worms
+    return (malacostraca, worms_sans_malacostraca)
 
-worms = prepare_worms()
-
-# Malacostraca instead of Decapoda because it's in the skeleton
-mal = worms.taxon('Malacostraca')
-malacostraca = worms.select(mal)
-mal.trim()
-worms_sans_malacostraca = worms
+(malacostraca, worms_sans_malacostraca) = prepare_worms()
 
 ott.absorb(malacostraca)
 
@@ -173,45 +171,46 @@ def prepare_ncbi():
     # - Alignment to OTT -
 
     #ott.same(ncbi.taxon('Cyanobacteria'), silva.taxon('D88288/#3'))
-    ott.notSame(ncbi.taxon('Burkea'), fungorum.taxon('Burkea'))
-    ott.notSame(ncbi.taxon('Coscinium'), fungorum.taxon('Coscinium'))
-    ott.notSame(ncbi.taxon('Perezia'), fungorum.taxon('Perezia'))
+    ott.notSame(ncbi.taxon('Burkea'), fungi.taxon('Burkea'))
+    ott.notSame(ncbi.taxon('Coscinium'), fungi.taxon('Coscinium'))
+    ott.notSame(ncbi.taxon('Perezia'), fungi.taxon('Perezia'))
 
     # JAR 2014-04-11 Discovered during regression testing
-    ott.notSame(ncbi.taxon('Epiphloea', 'Rhodophyta'), fungorum.taxon('Epiphloea', 'Ascomycota'))
+    ott.notSame(ncbi.taxon('Epiphloea', 'Rhodophyta'), fungi.taxon('Epiphloea', 'Ascomycota'))
 
     # JAR attempt to resolve ambiguous alignment of Trichosporon in IF and
     # NCBI based on common parent and member.
     # Type = T. beigelii, which is current, according to Mycobank.
     # But I'm going to use a different 'type', Trichosporon cutaneum.
-    ott.same(fungorum.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'),
+    ott.same(fungi.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'),
              #ncbi.taxonThatContains('Trichosporon', 'Trichosporon cutaneum')
              ncbi.taxon('5552')
              )
 
     # 2014-04-23 In new version of IF - obvious misalignment
-    ott.notSame(ncbi.taxon('Crepidula', 'Gastropoda'), fungorum.taxon('Crepidula', 'Microsporidia'))
-    ott.notSame(ncbi.taxon('Hessea', 'Viridiplantae'), fungorum.taxon('Hessea', 'Microsporidia'))
+    ott.notSame(ncbi.taxon('Crepidula', 'Gastropoda'), fungi.taxon('Crepidula', 'Microsporidia'))
+    ott.notSame(ncbi.taxon('Hessea', 'Viridiplantae'), fungi.taxon('Hessea', 'Microsporidia'))
     # 2014-04-23 Resolve ambiguity introduced into new version of IF
     # http://www.speciesfungorum.org/Names/SynSpecies.asp?RecordID=331593
-    ott.same(ncbi.taxon('Gymnopilus spectabilis var. junonius'), fungorum.taxon('Gymnopilus junonius'))
+    ott.same(ncbi.taxon('Gymnopilus spectabilis var. junonius'), fungi.taxon('Gymnopilus junonius'))
 
     # JAR 2014-04-23 More sample contamination in SILVA 115
-    ott.same(ncbi.taxon('Lamprospora'), fungorum.taxon('Lamprospora'))
+    ott.same(ncbi.taxon('Lamprospora'), fungi.taxon('Lamprospora'))
 
     # JAR 2014-04-25
     ott.notSame(silva.taxon('Bostrychia', 'Rhodophyceae'), ncbi.taxon('Bostrychia', 'Aves'))
 
     # https://github.com/OpenTreeOfLife/feedback/issues/45
     ott.notSame(ott.maybeTaxon('Choanoflagellida', 'Ichthyosporea'),
-                ncbi.taxon('Choanoflagellida', 'Opisthokonta'))
+                ncbi.maybeTaxon('Choanoflagellida', 'Opisthokonta'))
 
     # Dail 2014-03-31 https://github.com/OpenTreeOfLife/feedback/issues/5
     # updated 2015-06-28 NCBI Katablepharidophyta = SILVA Kathablepharidae.
     ott.same(ncbi.taxon('Katablepharidophyta'), silva.taxon('Kathablepharidae'))
     # was: ott.taxon('Katablepharidophyta').hide()
 
-    ott.same(ott.taxon('Ciliophora', 'Alveolata'), ncbi.taxon('Ciliophora', 'Alveolata'))
+    ott.same(ncbi.taxon('Ciliophora', 'Alveolata'),
+             ott.taxon('Ciliophora', 'Alveolata'))
 
     ott.absorb(ncbi)
     return ncbi
@@ -232,17 +231,13 @@ print "Fungi in h2007 + if + ncbi has %s nodes"%ott.taxon('Fungi').count()
 
 # ----- Non-decapods from WoRMS -----
 
-# https://github.com/OpenTreeOfLife/feedback/issues/45
-ott.same(worms_sans_malacostraca.taxon('Choanoflagellida'),
-         ncbi.taxon('Choanoflagellida', 'Opisthokonta'))
-
 ott.absorb(worms_sans_malacostraca)
 
 # ----- Non-Fungi from Index Fungorum -----
 
 # https://github.com/OpenTreeOfLife/feedback/issues/45
-ott.same(fungorum_sans_fungi.taxon('Choanoflagellida'),
-         ncbi.taxon('Choanoflagellida', 'Opisthokonta'))
+ott.same(fungorum_sans_fungi.maybeTaxon('Choanoflagellida'),
+         ncbi.maybeTaxon('Choanoflagellida', 'Opisthokonta'))
 
 ott.absorb(fungorum_sans_fungi)
 
@@ -295,16 +290,16 @@ def doGbif():
     # ott.same(fungorum.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'),
     #          gbif.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
     # doesn't work.  brute force.
-    ott.same(fungorum.taxon('10296'), gbif.taxon('2518163'))
+    ott.same(fungi.taxon('10296'), gbif.taxon('2518163'))
 
     # Obviously the same genus, can't tell what's going on
-    ott.same(gbif.taxon('Hygrocybe'), fungorum.taxon('Hygrocybe'))
+    ott.same(gbif.taxon('Hygrocybe'), fungi.taxon('Hygrocybe'))
 
     # JAR 2014-04-23 More sample contamination in SILVA 115
-    ott.same(gbif.taxon('Lamprospora'), fungorum.taxon('Lamprospora'))
+    ott.same(gbif.taxon('Lamprospora'), fungi.taxon('Lamprospora'))
 
     # JAR 2014-04-23 IF update fallout
-    ott.same(gbif.taxonThatContains('Penicillium', 'Penicillium expansum'), fungorum.taxonThatContains('Penicillium', 'Penicillium expansum'))
+    ott.same(gbif.taxonThatContains('Penicillium', 'Penicillium expansum'), fungi.taxonThatContains('Penicillium', 'Penicillium expansum'))
 
     # https://github.com/OpenTreeOfLife/feedback/issues/45
     ott.same(gbif.taxon('Choanoflagellida'),
@@ -344,7 +339,7 @@ def doIrmng():
 
     # JAR 2014-04-18 attempt to resolve ambiguous alignment of
     # Trichosporon in IF and IRMNG based on common parent and member
-    ott.same(fungorum.taxon('Trichosporon'), irmng.taxon('Trichosporon'))
+    ott.same(fungi.taxon('Trichosporon'), irmng.taxon('Trichosporon'))
 
     # JAR 2014-04-24 false match
     ott.notSame(irmng.taxon('Protaspis', 'Chordata'), ncbi.taxon('Protaspis', 'Cercozoa'))
@@ -406,11 +401,13 @@ def patch_ott():
     # "No clear identity has emerged"
     #  http://forestis.rsvs.ulaval.ca/REFERENCES_X/phylogeny.arizona.edu/tree/eukaryotes/accessory/parasitic.html
     # Need to hide it because it clutters base of Fungi
-    ott.taxon('Amylophagus','Fungi').incertaeSedis()
+    if ott.maybeTaxon('Amylophagus','Fungi') != None:
+        ott.taxon('Amylophagus','Fungi').incertaeSedis()
 
     # Bad synonym - Tony Rees 2014-01-28
     # https://groups.google.com/d/msg/opentreeoflife/SrI7KpPgoPQ/ihooRUSayXkJ
-    ott.taxon('Lemania pluvialis').prune()
+    if ott.maybeTaxon('Lemania pluvialis') != None:
+        ott.taxon('Lemania pluvialis').prune()
 
     # Tony Rees 2014-01-29
     # https://groups.google.com/d/msg/opentreeoflife/SrI7KpPgoPQ/wTeD17GzOGoJ
@@ -421,9 +418,9 @@ def patch_ott():
     #Lycopsida and daughters need to be deleted;
     #Pteridophyta and daughters need to be deleted;
     #Gymnospermophyta and daughters need to be deleted;
-    ott.taxon('Pinophyta','Chloroplastida').incertaeSedis()
-    ott.taxon('Pteridophyta','Chloroplastida').incertaeSedis()
-    ott.taxon('Gymnospermophyta','Chloroplastida').incertaeSedis()
+    for name in ['Pinophyta', 'Pteridophyta', 'Gymnospermophyta']:
+        if ott.maybeTaxon(name,'Chloroplastida'):
+            ott.taxon(name,'Chloroplastida').incertaeSedis()
 
     # Patches from the Katz lab to give decent parents to taxa classified
     # as Chromista or Protozoa
@@ -434,12 +431,15 @@ def patch_ott():
 
     # From Laura and Dail on 5 Feb 2014
     # https://groups.google.com/d/msg/opentreeoflife/a69fdC-N6pY/y9QLqdqACawJ
-    ott.taxon('Chlamydiae/Verrucomicrobia group').rename('Verrucomicrobia group')
+    tax = ott.maybeTaxon('Chlamydiae/Verrucomicrobia group')
+    if tax != None:
+        tax.rename('Verrucomicrobia group')
     ott.taxon('Heterolobosea','Discicristata').absorb(ott.taxon('Heterolobosea','Percolozoa'))
     ott.taxon('Excavata','Eukaryota').take(ott.taxon('Oxymonadida','Eukaryota'))
 
     # Work in progress - Joseph
-    ott.taxon('Reptilia').hide()
+    if ott.maybeTaxon('Reptilia') != None:
+        ott.taxon('Reptilia').hide()
 
     # Chris Owen patches 2014-01-30
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/88
@@ -554,18 +554,18 @@ def patch_ott():
 
     # JAR 2014-03-31 just poking around
     # Many of these would be handled by major_rank_conflict if it worked
-    # http://tolweb.org/tree?group=Temnospondyli
-    ott.taxon('Temnospondyli').extinct()
-    # https://en.wikipedia.org/wiki/Eobatrachus
-    ott.taxon('Eobatrachus').extinct()
-    # https://en.wikipedia.org/wiki/Vulcanobatrachus
-    ott.taxon('Vulcanobatrachus').extinct()
-    # https://en.wikipedia.org/wiki/Beelzebufo
-    ott.taxon('Beelzebufo').extinct()
-    # https://en.wikipedia.org/wiki/Iridotriton
-    ott.taxon('Iridotriton').extinct()
-    # https://en.wikipedia.org/wiki/Baurubatrachus
-    ott.taxon('Baurubatrachus').extinct()
+    for name in [
+            'Temnospondyli', # http://tolweb.org/tree?group=Temnospondyli
+            'Eobatrachus', # https://en.wikipedia.org/wiki/Eobatrachus
+            'Vulcanobatrachus', # https://en.wikipedia.org/wiki/Vulcanobatrachus
+            'Beelzebufo', # https://en.wikipedia.org/wiki/Beelzebufo
+            'Iridotriton', # https://en.wikipedia.org/wiki/Iridotriton
+            'Baurubatrachus', # https://en.wikipedia.org/wiki/Baurubatrachus
+            'Acritarcha', # # JAR 2014-04-26
+
+    ]:
+        tax = ott.maybeTaxon(name)
+        if (tax != None): tax.extinct()
 
     # Dail 2014-03-31 https://github.com/OpenTreeOfLife/feedback/issues/4
     # no evidence given
@@ -599,54 +599,58 @@ def patch_ott():
     # Fold Norops into Anolis
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/31
     # TBD: Change species names from Norops X to Anolis X for all X
-    ott.taxon('Anolis').absorb(ott.taxon('Norops', 'Iguanidae'))
+    ott.taxon('Anolis').absorb(ott.maybeTaxon('Norops', 'Iguanidae'))
 
-    # JAR 2014-04-08 - these are in study OTUs - see IRMNG
-    ott.taxon('Inseliellum').extant()
-    ott.taxon('Conus', 'Gastropoda').extant()
-    ott.taxon('Patelloida').extant()
-    ott.taxon('Phyllanthus', 'Phyllanthaceae').extant()
-    ott.taxon('Stelis','Orchidaceae').extant()
-    ott.taxon('Chloris', 'Poaceae').extant()
-    ott.taxon('Acropora', 'Acroporidae').extant()
-    ott.taxon('Diadasia').extant()
+    for (name, super) in [
+        # JAR 2014-04-08 - these are in study OTUs - see IRMNG
+        ('Inseliellum', None),
+        ('Conus', 'Gastropoda'),
+        ('Patelloida', None),
+        ('Phyllanthus', 'Phyllanthaceae'),
+        ('Stelis','Orchidaceae'),
+        ('Chloris', 'Poaceae'),
+        ('Acropora', 'Acroporidae'),
+        ('Diadasia', None),
 
-    # JAR 2014-04-24
-    # grep "ncbi:.*extinct_inherited" tax/ott/taxonomy.tsv | head
-    ott.taxon('Tarsius').extant()
-    ott.taxon('Odontesthes').extant()
-    ott.taxon('Leiognathus', 'Chordata').extant()
-    ott.taxon('Oscheius').extant()
-    ott.taxon('Cicindela').extant()
-    ott.taxon('Leucothoe', 'Ericales').extant()
-    ott.taxon('Hydrornis').extant()
-    ott.taxon('Bostrychia harveyi').extant() #fungus
-    ott.taxon('Agaricia').extant() #coral
-    ott.taxon('Dischidia').extant() #eudicot
+        # JAR 2014-04-24
+        # grep "ncbi:.*extinct_inherited" tax/ott/taxonomy.tsv | head
+        ('Tarsius', None),
+        ('Odontesthes', None),
+        ('Leiognathus', 'Chordata'),
+        ('Oscheius', None),
+        ('Cicindela', None),
+        ('Leucothoe', 'Ericales'),
+        ('Hydrornis', None),
+        ('Bostrychia harveyi', None), #fungus
+        ('Agaricia', None), #coral
+        ('Dischidia', None), #eudicot
 
-    # JAR 2014-04-26
-    ott.taxon('Acritarcha').extinct()
+        # JAR 2014-05-13
+        ('Saurischia', None),
+        # there are two of these, maybe should be merged.
+        # 'Myoxidae', 'Rodentia'),
 
-    # JAR 2014-05-13
-    ott.taxon('Saurischia').extant()
-    # there are two of these, maybe should be merged.
-    # ott.taxon('Myoxidae', 'Rodentia').extant()
+        # JAR 2014-05-13 These are marked extinct by IRMNG but are all in NCBI
+        # and have necleotide sequences
+        ('Zemetallina', None),
+        ('Nullibrotheas', None),
+        ('Fissiphallius', None),
+        ('Nullibrotheas', None),
+        ('Sinelater', None),
+        ('Phanerothecium', None),
+        ('Cephalotaxaceae', None),
+        ('Vittaria elongata', None),
+        ('Neogymnocrinus', None),
+    ]:
+        if super == None:
+            tax = ott.maybeTaxon(name)
+        else:
+            tax = ott.maybeTaxon(name, super)
+        if tax != None: tax.extant()
 
     # JAR 2014-05-08 while looking at the deprecated ids file. 
     # http://www.theplantlist.org/tpl/record/kew-2674785
     ott.taxon('Berendtiella rugosa').synonym('Berendtia rugosa')
-
-    # JAR 2014-05-13 These are marked extinct by IRMNG but are all in NCBI
-    # and have necleotide sequences
-    ott.taxon('Zemetallina').extant()
-    ott.taxon('Nullibrotheas').extant()
-    ott.taxon('Fissiphallius').extant()
-    ott.taxon('Nullibrotheas').extant()
-    ott.taxon('Sinelater').extant()
-    ott.taxon('Phanerothecium').extant()
-    ott.taxon('Cephalotaxaceae').extant()
-    ott.taxon('Vittaria elongata').extant()
-    ott.taxon('Neogymnocrinus').extant()
 
     # JAR 2014-05-13 weird problem
     # NCBI incorrectly has both Cycadidae and Cycadophyta as children of Acrogymnospermae.
@@ -687,9 +691,13 @@ def patch_ott():
         if im != None:
             im.extant()
 
-patch_ott()
+try:
+    patch_ott()
+except:
+    print '** Exception in patch_ott'
+#    print e
 
-# Remove all trees but the largest 
+# Remove all trees but the largest (or make them life incertae sedis)
 ott.deforestate()
 
 # -----------------------------------------------------------------------------
@@ -714,11 +722,11 @@ for (ncbi_id, ott_id, name) in ncbi_assignments_list:
 ott.image(gbif.taxon('2563163')).setId('51754')
 
 # Foo
-trich = fungorum.maybeTaxon('Trichosporon')
+trich = fungi.maybeTaxon('Trichosporon')
 if trich != None:
     ott.image(trich).setId('364222')
 
-#ott.image(fungorum.taxon('11060')).setId('4107132') #Cryptococcus - a total mess
+#ott.image(fungi.taxon('11060')).setId('4107132') #Cryptococcus - a total mess
 
 
 # Assign OTT ids to taxa that don't have them, re-using old ids when possible

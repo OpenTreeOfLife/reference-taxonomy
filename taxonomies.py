@@ -69,12 +69,7 @@ def patch_silva(silva):
 
     # - Deal with division alignment issues -
     # In SILVA, Ctenophora is a genus inside of SAR, not a metazoan phylum
-    if False:
-        # *** The following seems to not work. ***
-        ott.notSame(silva.taxon('Ctenophora', 'Coscinodiscophytina'),
-                    skel.taxon('Ctenophora'))
-    else:
-        silva.taxon('Ctenophora', 'Coscinodiscophytina').prune()
+    silva.taxon('Ctenophora', 'Coscinodiscophytina').prune()
 
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/79
     Ml = silva.maybeTaxon('Melampsora lini')
@@ -545,6 +540,15 @@ def loadWorms():
     worms.taxon('Animalia').synonym('Metazoa')
     fixProtists(worms)
     fixPlants(worms)
+
+    # 2015-02-17 According to WoRMS web site.  Occurs in pg_1229
+    worms.taxon('Scenedesmus communis').synonym('Scenedesmus caudata')
+
+    # See NCBI
+    worms.taxon('Millericrinida').extant()
+
+    worms.smush()  # Gracilimesus gorbunovi, pg_1783
+
     return worms
 
 

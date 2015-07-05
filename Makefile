@@ -25,10 +25,11 @@ FUNG=tax/fung
 PREOTTOL=../../preottol
 
 CP=-classpath ".:lib/*"
-JAVA=java $(CP)
+JAVA=JYTHONPATH=util java $(CP)
 BIG_JAVA=$(JAVA) -Xmx14G
 SMASH=org.opentreeoflife.smasher.Smasher
 CLASS=org/opentreeoflife/smasher/Smasher.class
+JAVASOURCES=$(shell find org/opentreeoflife/smasher -name "*.java")
 
 all: ott
 
@@ -36,16 +37,10 @@ compile: $(CLASS)
 
 # this is getting tedious
 
-$(CLASS): org/opentreeoflife/smasher/Smasher.java \
-	  org/opentreeoflife/smasher/Taxonomy.java \
-	  org/opentreeoflife/smasher/Taxon.java \
-	  org/opentreeoflife/smasher/Flag.java \
-	  org/opentreeoflife/smasher/Alignment.java org/opentreeoflife/smasher/Reportx.java \
-	  org/opentreeoflife/smasher/Test.java \
-	  org/opentreeoflife/smasher/AlignmentByMembership.java \
+$(CLASS): $(JAVASOURCES) \
 	  lib/jscheme.jar lib/json-simple-1.1.1.jar lib/jython-standalone-2.5.3.jar \
 	  lib/junit-4.12.jar
-	javac -g $(CP) org/opentreeoflife/smasher/*.java
+	javac -g $(CP) $(JAVASOURCES)
 
 lib/jython-standalone-2.5.3.jar:
 	wget -O "$@" --no-check-certificate \

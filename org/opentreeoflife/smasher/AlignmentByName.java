@@ -18,9 +18,69 @@ public class AlignmentByName extends Alignment {
 	Taxonomy source, union;
 
     // Return the node that this one maps to under this alignment, or null
+    Answer answer(Taxon subject) {
+        if (subject.answer != null)
+            return subject.answer;
+        else if (subject.mapped != null)
+            // shouldn't happen
+            return Answer.yes(subject, subject.mapped, "mapped", null);
+        else
+            return null;
+    }
 
-    Taxon target(Taxon node) {
-        return node.mapped;
+    private int losers, winners, fresh, grafts;
+
+    void cacheInSourceNodes() {
+        // The answers are already stored in .answer of each node
+        // Now do the .lubs
+        losers = winners = fresh = grafts = 0;
+        for (Taxon root : source.roots())
+            cacheLubs(root);
+        if (losers + winners + fresh + grafts > 0)
+            System.out.format("| LUB match: %s mismatch: %s graft: %s reclassify: %s\n",
+                              winners, losers, fresh, grafts);
+    }
+
+    // The important case is where a union node is incertae sedis and the source node isn't.
+
+    Taxon cacheLubs(Taxon node) {
+        if (node.children == null)
+            return node.lub = node.mapped();
+        else if (node.mapped != null)
+            return node.lub = node.mapped();
+        else {
+            Taxon mrca = null;
+            int count = 0;
+            for (Taxon child : node.children) {
+                cacheLubs(child);
+                if (child.isPlaced()) {
+                    Taxon a = child.mapped();
+                    if (a == null) a = child.lub;
+                    if (a != null) {
+                        if (mrca == null)
+                            mrca = a;
+                        else {
+                            Taxon m = mrca.mrca(a);
+                            if (m.noMrca() && a.isPlaced())
+                                System.out.format("** Bad alignment: %s %s %s\n", node, mrca, a);
+                            mrca = m;
+                        }
+                    }
+                }
+            }
+            if (mrca != null)
+                node.lub = mrca;
+            // Reporting
+            if (node.lub == node.mapped())
+                ++winners;
+            else if (node.lub == null)
+                ++grafts;
+            else if (node.mapped() == null)
+                ++fresh;
+            else
+                ++losers;
+            return mrca;
+        }
     }
 
     AlignmentByName(SourceTaxonomy source, UnionTaxonomy union) {
@@ -29,7 +89,7 @@ public class AlignmentByName extends Alignment {
         this.union = union;
 
         Criterion[] criteria = Criterion.criteria;
-		if (source.roots.size() > 0) {
+		if (source.rootCount() > 0) {
 
 			Taxon.resetStats();
 			System.out.println("--- Mapping " + source.getTag() + " into union ---");
@@ -220,20 +280,12 @@ public class AlignmentByName extends Alignment {
                             ;
                         else if (x.mapped != null) {
                             // This case doesn't happen
-                            // x.deprecationReason = a;
                             a = Answer.no(x, y, "lost-race-to-source(" + criterion.toString() + ")",
                                           (y.getSourceIdsString() + " lost to " +
                                            x.mapped.getSourceIdsString()));
-                        } else if (false && y.comapped != null) {
-                        // Did someone else get there first?
-                        // Actually maybe this shouldn't matter.
-                            // x.deprecationReason = a;
-                            a = Answer.no(x, y,
-                                          "lost-race-to-union(" + criterion.toString() + ")",
-                                          ("lost to " +
-                                           y.comapped.getQualifiedId().toString()));
-                        } else
-                            x.unifyWith(y);
+                        } else {
+                            x.unifyWith(y, a); // sets .mapped, .answer
+                        }
                         suppressp[i][j] = a;
                     }
                 }
@@ -280,9 +332,11 @@ public class AlignmentByName extends Alignment {
                                 // if (candidate.comapped == null) continue;  // ???
                                 if (candidate.sourceIds == null)
                                     System.err.println("?!! No source ids: " + candidate);
-                                QualifiedId qid = candidate.sourceIds.get(0);
-                                if (w == null) w = qid.toString();
-                                else w += ("," + qid.toString());
+                                else {
+                                    QualifiedId qid = candidate.sourceIds.get(0);
+                                    if (w == null) w = qid.toString();
+                                    else w += ("," + qid.toString());
+                                }
                             }
                         explanation = Answer.noinfo(node, null, "unresolved/ambiguous", w);
                     } else {
@@ -319,7 +373,7 @@ public class AlignmentByName extends Alignment {
                     }
                     union.logAndMark(explanation);
                     // remember, source could be either gbif or idsource
-                    node.deprecationReason = explanation;  
+                    node.answer = explanation;  
                 }
             }
         }

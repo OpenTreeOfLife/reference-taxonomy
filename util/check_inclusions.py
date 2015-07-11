@@ -9,8 +9,13 @@ def check(ott):
     for row in reader:
         small = row[0]
         big = row[1]
-        if ott.taxon(small, big) == None:
-            print '** Failed', small, big
+        if ott.maybeTaxon(small, big) == None:
+            tax = ott.maybeTaxon(small)
+            if tax == None:
+                print '** No unique taxon named %s' % small
+            else:
+                print '** %s not under %s' % (small, big)
+                tax.show()
     infile.close()
 
 if __name__ == '__main__':

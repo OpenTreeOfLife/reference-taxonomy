@@ -19,7 +19,7 @@ public class Taxon {
 	public String name, rank = null;
 	public List<Taxon> children = null;
 	public List<QualifiedId> sourceIds = null;
-	Taxonomy taxonomy;			// For subsumption checks etc.
+	public Taxonomy taxonomy;			// For subsumption checks etc.
 	int count = -1;             // cache of # nodes at or below here
 	int depth = -1;             // cache of distance from root
 	boolean prunedp = false;    // for lazy removal from nameIndex
@@ -34,10 +34,10 @@ public class Taxon {
 	Answer answer = null;  // source nodes only
     Taxon lub = null;                 // union node that is the lub of node's children
 
-	// Cf. assignBrackets
-	int seq = NOT_SET;		// Self
-	int start = NOT_SET;	// First taxon included not including self
-	int end = NOT_SET;		// Next taxon *not* included
+	// Cf. AlignmentByName.assignBrackets
+	int seq = 0;		// Self
+	int start = 0;	// First taxon included not including self
+	int end = 0;		// Next taxon *not* included
 
 
 	static boolean windyp = true;
@@ -68,7 +68,6 @@ public class Taxon {
 	// Clear out temporary stuff from union nodes
 	void reset() {
 		this.comapped = null;
-		resetBrackets();
 		if (children != null)
 			for (Taxon child : children)
 				child.reset();
@@ -145,10 +144,11 @@ public class Taxon {
         } else if (child.noMrca()) {
 			this.report("Attempt to take on the forest !!??", this);
             Taxon.backtrace();
-        } else if (this.descendsFrom(child)) {  // Could be slow.  Maybe not.
+        } else if (this.descendsFrom(child)) {
+            // you'd think the descendsFrom check would slow things
+            // down noticeably, but it doesn't
 			this.report("Attempt to create a cycle !!??", child);
-            for (Taxon foo = this; foo != child; foo = foo.parent)
-                System.out.format("%s < ", foo);
+            this.showLineage(child.parent);
             System.out.format("%s", child);
             Taxon.backtrace();
         } else {
@@ -167,7 +167,7 @@ public class Taxon {
 	void addChild(Taxon child, int flags) {
         this.addChild(child);
         child.properFlags &= ~Taxonomy.INCERTAE_SEDIS_ANY;
-        child.properFlags |= flags;
+        this.addFlag(flags);
     }
 
     // Removes it from the tree - undoes addChild
@@ -196,31 +196,52 @@ public class Taxon {
         if (flags == 0
             && !this.isPlaced()
             && ((this.name.hashCode() % 100) == 17))
-            System.err.format("| Placing previous unplaced %s in %s\n", this, newparent);
+            System.err.format("| Placing previously unplaced %s in %s\n", this, newparent);
         changeParent(newparent);
         this.properFlags &= ~Taxonomy.INCERTAE_SEDIS_ANY;
-        this.properFlags |= flags;
+        this.addFlag(flags);
 	}
+
+    public void addFlag(int flags) {
+        if (flags > 0
+            && this.name != null
+            && (this.name.equals("Brassaiopsis shweliensis")
+                || this.name.equals("eudicotyledons"))) {
+            System.out.format("** Setting flags on %s in %s\n", this, this.parent);
+			Flag.printFlags(flags, 0, System.out);
+            System.out.format("\n");
+			Flag.printFlags(this.properFlags, this.inheritedFlags, System.out);
+            System.out.format("\n");
+            this.showLineage(this.taxonomy.forest);  // want to know the source
+            Taxon.backtrace();
+        }
+        this.properFlags |= flags;
+    }
 
 	// Go upwards and cache on the way back down
     // NOTE: now returns forest instead of null
 	public Taxon getDivision() {
 		if (this.division == null) {
-			if (this.parent != null)
-				this.division = this.parent.getDivision();
-			else if (this.mapped != null)
-				this.division = this.mapped.getDivision();
+            Taxon div;
+			if (this.mapped != null)
+				div = this.mapped.getDivision();
+			else if (this.parent != null)
+				div = this.parent.getDivision();
+            else
+                div = this;     // forest
+            this.division = div; // cache it
 		}
 		return this.division;
 	}
 
 	public String divisionName() {
 		Taxon d = this.getDivision();
-		return (d == null ? "(no division)" : d.name);
+		return (d.noMrca() ? "(no division)" : d.name);
 	}
 
 	void setDivision(Taxon division) {
 		if (this.division != null && this.division != division)
+            // Could do a tree walk setting division to null...
 			this.report("!? changing divisions doesn't work");
 		this.division = division;
 	}
@@ -261,85 +282,106 @@ public class Taxon {
 			return null;
 	}
 
-	// The union node unode is fresh, merely a copy of the source
-	// node.
-
-	void unifyWithNew(Taxon unode, String reason) {
-        if (unode.isDetached()) {
-
-            // this would be the place to report on homonym creation
-
-            this.reallyUnifyWith(unode);
-
-            // foo, this replicates code below.  fix
-            Answer yes  = Answer.yes(this, unode, reason, null);
-            this.answer = yes;
-
-            if (unode.name == null) unode.setName(this.name);
-            if (unode.rank == Taxonomy.NO_RANK) unode.rank = this.rank;
-            unode.properFlags = this.properFlags;
-        } else
-            System.err.format("** Putatively new node isn't: %s %s\n",
-                              unode.name, unode.parent.name);
-	}
-
 	// unode is a preexisting node in the union taxonomy.
 
     // Is unification really the right relationship? ... I don't think
     // so, it's already a many-to-one mapping, shouldn't be called
     // unification.
 
-	void unifyWith(Taxon unode, String reason) {
-        unifyWith(unode, Answer.yes(this, unode, reason, null));
+	void alignWith(Taxon unode, String reason) {
+        try {
+            alignWith(unode, Answer.yes(this, unode, reason, null));
+        } catch (Exception e) {
+            System.err.format("Exception in alignWith\n");
+            e.printStackTrace();
+        }
     }
 
-	void unifyWith(Taxon unode, Answer yes) {
-		this.reallyUnifyWith(unode);
-
-		if (this.taxonomy == ((UnionTaxonomy)(unode.taxonomy)).idsource)
-			return;
-
-		if (this.rank != Taxonomy.NO_RANK)
-			if (unode.rank == Taxonomy.NO_RANK || unode.rank.equals("samples"))
-				unode.rank = this.rank;
-
-		int before = unode.properFlags;
-        int flags = (this.properFlags & ~Taxonomy.INCERTAE_SEDIS_ANY);
-		// Annotations are combined using |
-		unode.properFlags |=
-			((before | flags) &
-			 (Taxonomy.FORCED_VISIBLE | 
-			  Taxonomy.EDITED |
-			  Taxonomy.EXTINCT));
-        // Hidden is combined using &  (maybe it should be 'visible' instead)
-		unode.properFlags &= (flags & Taxonomy.HIDDEN);
-
-        // assert this.answer.subject == this
-        this.answer = yes;
-	}
-
-	void reallyUnifyWith(Taxon unode) {
+    // Set the 'mapped' property of this node, carefully
+	void alignWith(Taxon unode, Answer answer) {
 		if (this.mapped == unode) return; // redundant
-        if (this.taxonomy == unode.taxonomy) {
-            System.out.format("** Expected mapping to be source/union %s %s\n", this, unode);
+        if (!(unode.taxonomy instanceof UnionTaxonomy)) {
+            System.out.format("** Alignment target %s is not in a union taxonomy\n", this);
+            Taxon.backtrace();
+        } else if (this.taxonomy instanceof UnionTaxonomy) {
+            System.out.format("** Alignment source %s is not in a source taxonomy\n", unode);
+            Taxon.backtrace();
+        } else if (this.noMrca() != unode.noMrca()) {
+            System.out.format("** attempt to unify forest %s with non-forest %s\n",
+                              this, unode);
             Taxon.backtrace();
         } else if (this.mapped != null) {
 			// Shouldn't happen - assigning a single source taxon to two
 			//	different union taxa
 			if (this.report("Already assigned to node in union:", unode))
 				Taxon.backtrace();
-			return;
-		}
-		if (unode.comapped != null) {
-			// Union node has already been matched to, but synonyms are OK
-            if (unode.comapped != this)
-                Taxon.markEvent("lumped");
+		} else {
+            this.mapped = unode;
+            this.answer = answer;
+            if (unode.comapped != null) {
+                // Union node has already been matched to, but synonyms are OK
+                if (unode.comapped != this)
+                    Taxon.markEvent("lumped");
                 // System.out.format("| Lumping %s and %s -> %s\n", unode.comapped, this, unode);
-		} else
-            unode.comapped = this;
+            } else
+                unode.comapped = this;
+        }
+    }
 
-		this.mapped = unode;
+    // This is used when the union node is not new
+
+    void transferProperties() {
+        Taxon unode = this.mapped;
+        if (unode == null) return;
+
+        if (unode.name == null)
+            unode.setName(this.name);
+
+		if ((unode.rank == Taxonomy.NO_RANK || unode.rank.equals("samples"))
+            && (this.rank != Taxonomy.NO_RANK))
+            unode.rank = this.rank;
+
+		// Annotations are combined using |
+		unode.properFlags |=
+			(this.properFlags &
+			 (Taxonomy.FORCED_VISIBLE | 
+			  Taxonomy.EDITED |
+			  Taxonomy.EXTINCT));
+
+        // No change to hidden or incertae sedis flags.  Union node
+        // has precedence.
+
+        if (this.sourceIds != null)
+            for (QualifiedId id : this.sourceIds)
+                unode.addSourceId(id);
+
         unode.addSource(this);
+	}
+
+        
+
+	// Duplicate single source node yielding a source or union node
+
+	public Taxon dup(Taxonomy target, String reason) {
+		Taxon dup = new Taxon(target);
+        if (target instanceof SourceTaxonomy)
+            dup.setId(this.id); // kludge for select
+
+        // Compare this with transferProperties(dup)
+		dup.setName(this.name);
+		dup.rank = this.rank;
+
+        // Retain placement flags, since the usual case is that we're
+        // going to attach this in a pretty similar place
+		dup.properFlags = this.properFlags;
+
+        if (this.sourceIds != null)
+            // Unusual
+            dup.sourceIds = new ArrayList<QualifiedId>(this.sourceIds);
+
+        // This might be the place to report on homonym creation
+
+		return dup;
 	}
 
 	// Add most of the otherwise unmapped nodes to the union taxonomy,
@@ -366,11 +408,22 @@ public class Taxon {
 	QualifiedId getQualifiedId() {
 		if (this.id != null)
 			return new QualifiedId(this.taxonomy.getTag(), this.id);
-		else {
-			// What if from a Newick string?
+        else if (this.name != null) {
 			System.err.println("| [getQualifiedId] Taxon has no id, using name: " + this.name);
 			return new QualifiedId(this.taxonomy.getTag(), this.name);
-		}
+        } else if (this.noMrca()) {
+            // Shouldn't happen
+			System.err.println("| [getQualifiedId] Forest");
+			return new QualifiedId(this.taxonomy.getTag(), "<forest>");
+        } else if (this.parent == null) {
+            // Shouldn't happen
+			System.err.println("| [getQualifiedId] Detached");
+            return new QualifiedId(this.taxonomy.getTag(), "<detached>");
+        } else {
+			// What if from a Newick string?
+			System.err.println("| [getQualifiedId] Nondescript");
+            return new QualifiedId(this.taxonomy.getTag(), "<nondescript>");
+        }
 	}
 
 	// Mainly for debugging
@@ -391,7 +444,7 @@ public class Taxon {
 		String ids;
 		QualifiedId ref = this.putativeSourceRef();
 		if (ref != null)		// this is from idsource
-			ids = this.id + "=" + ref;
+			ids = (this.id == null ? "" : this.id) + "=" + ref;
 		else {
 			ids = this.getSourceIdsString();
 			if (ids.length() == 0) {
@@ -408,6 +461,7 @@ public class Taxon {
 			(this.children == null ? "." : "") +
 			" " + this.name +
 			twinkie +				// tbd: indicate division top with "#" 
+            (this.isDirectlyHidden() ? "?" : "") +
 			")";
 	}
 
@@ -568,8 +622,9 @@ public class Taxon {
 			int d0 = this.measureDepth() - nearestMapped.measureDepth();
 
 			// Steps from source node up to mrca
-			int d1 = d0 + (nearestMappedMapped.measureDepth() - mrca.measureDepth());
-			int d2 = match.measureDepth() - mrca.measureDepth();
+            int dm = mrca.measureDepth();
+			int d1 = d0 + (nearestMappedMapped.measureDepth() - dm);
+			int d2 = match.measureDepth() - dm;
 			int d3 = (d2 > d1 ? d2 : d1);
 			String spaces = "															 ";
 			Taxon n1 = this;
@@ -628,95 +683,6 @@ public class Taxon {
 				count += child.tipCount();
 			return count;
 		}
-	}
-
-	// 'Bracketing' logic.  Every node in the union taxonomy is
-	// assigned a unique integer, ordered sequentially by a preorder
-	// traversal.  Taxon inclusion across taxonomies can be determined
-	// (approximately) by looking at shared names and doing a range check.
-
-	static final int NOT_SET = -7; // for source nodes
-
-	void resetBrackets() {			  // for union nodes
-		this.seq = NOT_SET;			  // Self
-		this.start = NOT_SET;	// First taxon included not including self
-		this.end = NOT_SET;					   // Next taxon *not* included
-	}
-
-	// Applied to a union node
-	void assignBrackets() {
-		// Only consider names in common ???
-		this.seq = this.taxonomy.nextSequenceNumber++;
-		this.start = this.taxonomy.nextSequenceNumber;
-		if (this.children != null)
-			for (Taxon child : this.children)
-				child.assignBrackets();
-		this.end = this.taxonomy.nextSequenceNumber;
-	}
-
-	// Applied to a source node
-	void getBracket(Taxonomy union) {
-		if (this.end == NOT_SET) {
-			Taxon unode = union.unique(this.name);
-			if (unode != null)
-				this.seq = unode.seq; // Else leave seq as NOT_SET
-			if (this.children != null) {
-				int start = Integer.MAX_VALUE;
-				int end = -1;
-				for (Taxon child : this.children) {
-					child.getBracket(union);
-					if (child.start < start) start = child.start;
-					if (child.end > end) end = child.end;
-					if (child.seq != NOT_SET) {
-						if (child.seq < start) start = child.seq;
-						if (child.seq > end) end = child.seq+1;
-					}
-				}
-				this.start = start;
-				this.end = end;
-			}
-		}
-	}
-
-	// Cheaper test, without seeking a witness
-	boolean isNotSubsumedBy(Taxon unode) {
-		this.getBracket(unode.taxonomy);
-		return this.start < unode.start || this.end > unode.end; // spills out?
-	}
-
-	// Look for a member of this source taxon that's not a member of the union taxon,
-	// but is a member of some other union taxon.
-	Taxon antiwitness(Taxon unode) {
-		getBracket(unode.taxonomy);
-		if (this.start >= unode.start && this.end <= unode.end)
-			return null;
-		else if (this.children != null) { // it *will* be nonnull actually
-			for (Taxon child : this.children)
-				if (child.seq != NOT_SET && (child.seq < unode.start || child.seq >= unode.end))
-					return child;
-				else {
-					Taxon a = child.antiwitness(unode);
-					if (a != null) return a;
-				}
-		}
-		return null;			// Shouldn't happen
-	}
-
-	// Look for a member of the source taxon that's also a member of the union taxon.
-	Taxon witness(Taxon unode) { // assumes is subsumed by unode
-		getBracket(unode.taxonomy);
-		if (this.start >= unode.end || this.end <= unode.start) // Nonoverlapping => lose
-			return null;
-		else if (this.children != null) { // it *will* be nonnull actually
-			for (Taxon child : this.children)
-				if (child.seq != NOT_SET && (child.seq >= unode.start && child.seq < unode.end))
-					return child;
-				else {
-					Taxon a = child.witness(unode);
-					if (a != null) return a;
-				}
-		}
-		return null;			// Shouldn't happen
 	}
 
 	// Find a near-ancestor (parent, grandparent, etc) node that's in
@@ -796,6 +762,11 @@ public class Taxon {
             --bdepth;
         }
         while (a != b) {
+            if (a == null || b == null) {
+                System.out.format("** shouldn't happen: %s %s?=%s / %s %s?=%s\n",
+                                  this, this.getDepth(), this.measureDepth(), other, other.getDepth(), other.measureDepth());
+                return this.taxonomy.forest;
+            }
             a = a.parent;
             b = b.parent;
         }
@@ -803,7 +774,8 @@ public class Taxon {
     }
  
 	// Compute sibling taxa {a', b'} such that a' includes a and b' includes b.
-    // Returns nonnull, but could return the 'forest' pseudo-taxon.
+    // Returns null if one includes the other.
+    // Could return the 'forest' pseudo-taxon.
     // Except, if no way to get to union from source, return null.
 
 	public Taxon[] divergence(Taxon other) {
@@ -817,10 +789,12 @@ public class Taxon {
 			b = b.parent;
 			--db;
 		}
+        if (a == b) return null;
 		while (da > db) {
 			a = a.parent;
 			--da;
 		}
+        if (a == b) return null;
 		while (a.parent != b.parent) {
 			a = a.parent;
 			b = b.parent;
@@ -878,19 +852,12 @@ public class Taxon {
 	};
 
 	// Delete this node and all of its descendants.
-	public void prune() {
-		this.trim();
-        this.parent.properFlags |= Taxonomy.EDITED;
+	public boolean prune() {
         this.detach();
-
-		List<Taxon> nodes = this.taxonomy.nameIndex.get(this.name);
-		nodes.remove(this);
-		if (nodes.size() == 0)
-			this.taxonomy.nameIndex.remove(this.name);
-		if (this.id != null)
-			this.taxonomy.idIndex.remove(this.id);
-		this.prunedp = true;  // kludge for indexes
-	}
+        this.addFlag(Taxonomy.EDITED);
+        this.setRemoved();
+        return true;
+    }
 
 	// Delete all of this node's descendants.
 	public void trim() {
@@ -899,19 +866,32 @@ public class Taxon {
 				child.prune();
 	}
 
+    // Recursively set prunedp flag and remove from indexes
+	public boolean setRemoved() {
+        this.mapped = null;
+        this.answer = Answer.no(this, null, "pruned", null);
+		if (this.children != null)
+			for (Taxon child : new ArrayList<Taxon>(children))
+				child.setRemoved();
+
+		List<Taxon> nodes = this.taxonomy.nameIndex.get(this.name);
+		nodes.remove(this);
+		if (nodes.size() == 0)
+			this.taxonomy.nameIndex.remove(this.name);
+		if (this.id != null)
+			this.taxonomy.idIndex.remove(this.id);
+		this.prunedp = true;  // kludge ...
+
+        return true;
+	}
+
 	// TBD: Currently the code selects the smallest containing disambiguating taxon.
 	// In future maybe it should select the *largest* disambiguating taxon.
 
 	public String uniqueName() {
 		List<Taxon> nodes = this.taxonomy.lookup(this.name);
-		if (nodes == null) {
-			System.err.format("!? Confused: %s in %s\n", this.name,
-							  this.parent == null ? "(roots)" : this.parent.name);
-            if (this.parent == null)
-                return "<detached>";
-            else
-                return "?";
-		}
+		if (nodes == null)
+            return this.getQualifiedId().toString();
 		boolean homonymp = false;
 
 		// Ancestor that distinguishes this taxon from all others with same name
@@ -953,36 +933,21 @@ public class Taxon {
 		}
 	};
 
-	// Duplicate single source node yielding a source or union node
-
-	public Taxon dup(Taxonomy target) {
-		Taxon dup = new Taxon(target);
-		dup.setName(this.name);
-        if (target instanceof SourceTaxonomy)
-            dup.setId(this.id); // kludge for select
-		dup.rank = this.rank;
-        if (this.sourceIds != null)
-            // Unusual
-            dup.sourceIds = new ArrayList<QualifiedId>(this.sourceIds);
-		dup.properFlags = this.properFlags;
-		return dup;
-	}
-
 	public boolean isHidden() {
-		return ((this.properFlags | this.inheritedFlags) &
-				(Taxonomy.HIDDEN |
-				 Taxonomy.EXTINCT |
-				 Taxonomy.BARREN |
-				 Taxonomy.NOT_OTU |
-				 Taxonomy.HYBRID |
-				 Taxonomy.VIRAL |
-
-				 Taxonomy.MAJOR_RANK_CONFLICT |
-				 Taxonomy.UNPLACED |
-				 Taxonomy.UNCLASSIFIED |
-				 Taxonomy.ENVIRONMENTAL |
-				 Taxonomy.INCERTAE_SEDIS)) != 0;
+		return (((this.properFlags | this.inheritedFlags) &
+                 Taxonomy.HIDDEN_FLAGS) != 0 ||
+                ((this.properFlags & Taxonomy.FORCED_VISIBLE) == 0));
 	}
+
+	public boolean isDirectlyHidden() {
+		return (((this.properFlags & Taxonomy.HIDDEN_FLAGS) != 0) ||
+                ((this.properFlags & Taxonomy.FORCED_VISIBLE) == 0));
+	}
+
+	public boolean isAnnotatedHidden() {
+		return ((this.properFlags | this.inheritedFlags) &
+				Taxonomy.HIDDEN) != 0;
+    }
 
 	public boolean isExtinct() {
 		return ((this.properFlags | this.inheritedFlags) &
@@ -1002,59 +967,74 @@ public class Taxon {
 			System.err.format("** %s and %s aren't in the same taxonomy\n", newchild, this);
 		else if (this.children != null && this.children.contains(newchild))
 			System.err.format("| %s is already a child of %s\n", newchild, this);
-		else if (!newchild.isDetached())
-			System.err.format("** %s can't be added because it is already in the tree\n", newchild, this);
 		else {
+            if (!newchild.isDetached()) newchild.detach();
 			this.addChild(newchild);
             // TBD: get rid of incertae_sedis flags ??
-			newchild.properFlags |= Taxonomy.EDITED;
+			newchild.addFlag(Taxonomy.EDITED);
 		}
 	}
 
-	public void take(Taxon newchild) {
+	public boolean take(Taxon newchild) {
 		if (newchild == null)
-			return;				// Error already reported.
-		else if (this.taxonomy != newchild.taxonomy)
+			return false;				// Error already reported.
+		else if (this.taxonomy != newchild.taxonomy) {
 			System.err.format("** %s and %s aren't in the same taxonomy\n", newchild, this);
-		else if (this.children != null && this.children.contains(newchild))
+			return false;
+		} else if (this.children != null && this.children.contains(newchild)) {
 			System.err.format("| %s is already a child of %s\n", newchild, this);
-		else if (newchild == this)
+			return false;
+        } else if (newchild == this) {
 			System.err.format("** A taxon cannot be its own parent: %s %s\n", newchild, this);
-        else {
+			return false;
+        } else {
             if (!newchild.isDetached()) newchild.detach();
 			this.addChild(newchild, 0);
-			this.properFlags |= Taxonomy.EDITED;
+			this.addFlag(Taxonomy.EDITED);
+            return true;
 		}
 	}
 
-	public void hide() {
-		this.properFlags = Taxonomy.HIDDEN;
+	public boolean hide() {
+		this.addFlag(Taxonomy.HIDDEN);
 		this.hideDescendants();
+        return true;
 	}
 
-	public void unhide() {
-		this.properFlags &= ~Taxonomy.HIDDEN;
-		if (this.parent != null)
-			this.parent.unhide();
+	public boolean unhide() {
+        this.addFlag(Taxonomy.FORCED_VISIBLE);
+        boolean success = true;
+        for (Taxon t = this; !t.isRoot(); t = t.parent) {
+            if (t.isDirectlyHidden()) {
+                t.properFlags &= ~Taxonomy.HIDDEN;
+                if (t.isDirectlyHidden()) {
+                    System.out.format("** %s will remain hidden until problems with %s are fixed\n", t, this);
+                    success = false;
+                }
+            }
+        }
+        return true;
 	}
 
-	public void hideDescendants() {
+	public boolean hideDescendants() {
 		if (this.children != null)
 			for (Taxon child : this.children) {
 				child.properFlags = Taxonomy.HIDDEN;
 				child.hideDescendants();
 			}
+        return true;
 	}
 
 	// Hide up to but not including the given rank
-	public void hideDescendantsToRank(String rank) {
+	public boolean hideDescendantsToRank(String rank) {
 		if (this.children != null)
 			for (Taxon child : this.children) {
 				if (child.rank != null && !child.rank.equals(rank)) {
-					child.properFlags |= Taxonomy.HIDDEN;
+					child.addFlag(Taxonomy.HIDDEN);
 					child.hideDescendantsToRank(rank);
 				}
 			}
+        return true;
 	}
 
 	public void synonym(String name) {
@@ -1069,32 +1049,32 @@ public class Taxon {
 			if (existing != null && existing != this)
 				System.err.format("** Warning: creating a homonym: %s\n", name);
 			this.setName(name);
-			this.taxonomy.addSynonym(oldname, this);  // awkward
+			this.taxonomy.addSynonym(oldname, this);  // awkward, maybe wrong
 		}
 	}
 
-	// prune() is elsewhere
+    // Nonmonophyletic.
 
-	public void elide() {
+	public boolean elide() {
 		if (this.children != null) {
             // Compare smush()
             if (this.parent.children.size() == 1)
                 this.taxonomy.addSynonym(this.name, this.parent);
 			for (Taxon child : new ArrayList<Taxon>(this.children))
-				child.changeParent(this.parent);
+				child.changeParent(this.parent, Taxonomy.UNPLACED);
         }
-		this.prune();
+		return this.prune();
 	}
 
 	// Move all of B's children to A, and make B a synonym of A
 	// Same as take + elide ?
 
-	public void absorb(Taxon other) {
-		if (other == null) return; //error already reported
-		if (other == this) return;
+	public boolean absorb(Taxon other) {
+		if (other == null) return false; //error already reported
+		if (other == this) return true;
 		if (this.taxonomy != other.taxonomy) {
 			System.err.format("** %s and %s aren't in the same taxonomy\n", other, this);
-			return;
+			return false;
 		}
 		if (other.children != null)
 			for (Taxon child : new ArrayList<Taxon>(other.children))
@@ -1102,18 +1082,16 @@ public class Taxon {
 				child.changeParent(this.parent);
 		this.taxonomy.addSynonym(other.name, this);	// Not sure this is a good idea
 		other.prune();
-	}
-
-	public void forceVisible() {
-		this.properFlags |= Taxonomy.FORCED_VISIBLE;
+        return true;
 	}
 
 	public void incertaeSedis() {
-		this.properFlags |= Taxonomy.INCERTAE_SEDIS;
+		this.addFlag(Taxonomy.INCERTAE_SEDIS);
 	}
 
-	public void extinct() {
-		this.properFlags |= Taxonomy.EXTINCT;
+	public boolean extinct() {
+		this.addFlag(Taxonomy.EXTINCT);
+        return true;
 	}
 
 	public boolean extant() {
@@ -1125,8 +1103,73 @@ public class Taxon {
 					System.err.format("** Ancestor %s of %s was marked extinct\n", node, this);
 				wasExtant = false;
 			}
-		return wasExtant;
+		return true;
 	}
+
+    public boolean isExtant() {
+        return (((this.properFlags | this.inheritedFlags) & Taxonomy.EXTINCT) == 0);
+    }
+
+    public boolean whetherMonophyletic(boolean whether, boolean setp) {
+        if (whether) {
+            System.out.format("** Checking and setting monophyly are not yet implemented\n", this);
+            return whether;
+        } else
+            if (setp)
+                // Alternatively, set this.mapped = Answer.no(...)
+                return this.elide();
+            else
+                return false;
+    }
+
+    // return true on success (the node does or doesn't have the name)
+
+    public boolean whetherHasName(String name, boolean whether, boolean setp) {
+        if (whether) {
+            // Make sure the node has this name
+            if (this.name == null) {
+                if (setp) {
+                    this.setName(name);
+                    return true;
+                }
+            } else if (this.name.equals(name)) {
+                return true;
+            } else {
+                List<Taxon> nodes = this.taxonomy.lookup(name);
+                if (nodes == null) {
+                    if (setp) {
+                        this.taxonomy.addSynonym(name, this);
+                        return true;
+                    }
+                } else {
+                    if (nodes.contains(this)) {
+                        return true;
+                    } else if (setp) {
+                        return this.taxonomy.addSynonym(name, this);
+                    }
+                }
+            }
+        } else {
+            if (this.name == null)
+                return true;    // yes, it does not have that name
+            else if (this.name.equals(name)) {
+                if (setp) {
+                    this.name = this.name + " NOT"; // or maybe null
+                    return true;                    // yes, it does not have this name.
+                }
+            } else {
+                List<Taxon> nodes = this.taxonomy.lookup(name);
+                if (nodes == null)
+                    return true;
+                else if (setp) {
+                    nodes.remove(this);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 
 	// add a tree to the forest?
 
@@ -1134,15 +1177,7 @@ public class Taxon {
 
 	public void show() {
 		System.out.format("%s(%s)\n %s size:%s\n	", this.name, this.id, this.rank, this.count());
-		int qount = 0;
-		for (Taxon t = this.parent; t != null; t = t.parent) {
-			if (++qount < 10) {
-				System.out.format("%s(%s) ", t.name, t.id);
-				if (!t.isRoot()) System.out.print(" << ");
-			} else if (qount == 10)
-				System.out.print("...");
-		}
-		System.out.println();
+        this.showLineage(this.taxonomy.forest);
 		if (this.children != null) {
 			java.util.Collections.sort(this.children, compareNodesBySize);
 			int count = 0;
@@ -1168,6 +1203,27 @@ public class Taxon {
 			System.out.println();
 		}
 	}
+
+    // Used to explain why a cycle would be created
+
+    void showLineage(Taxon stop) {
+		int qount = 0;
+		for (Taxon t = this; t != stop; t = t.parent) {
+            System.out.print(t.toString());
+            if (t.parent != stop) {
+                if (++qount < 10) {
+                    if (t.isPlaced())
+                        System.out.print(" < ");
+                    else
+                        System.out.print(" << ");
+                } else if (qount == 10) {
+                    System.out.print(" ...");
+                    break;
+                }
+            }
+		}
+		System.out.println();
+    }
 
     // Newick stuff copied from src/main/java/opentree/GeneralUtils.java
     // in treemachine repo.  Written by Joseph W. Brown and the other treemachine

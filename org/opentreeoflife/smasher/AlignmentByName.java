@@ -13,6 +13,8 @@ import java.util.HashSet;
 import java.io.PrintStream;
 import java.io.IOException;
 
+// At the end of this, every source node should have its .answer field set.
+
 public class AlignmentByName extends Alignment {
 
 	Taxonomy source, union;
@@ -28,17 +30,19 @@ public class AlignmentByName extends Alignment {
             return null;
     }
 
-    private int losers, winners, fresh, grafts;
+    private int losers, winners, fresh, grafts, outlaws;
 
     void cacheInSourceNodes() {
+        source.forest.alignWith(union.forest, "align-forests");
+
         // The answers are already stored in .answer of each node
         // Now do the .lubs
-        losers = winners = fresh = grafts = 0;
+        losers = winners = fresh = grafts = outlaws = 0;
         for (Taxon root : source.roots())
             cacheLubs(root);
-        if (losers + winners + fresh + grafts > 0)
-            System.out.format("| LUB match: %s mismatch: %s graft: %s reclassify: %s\n",
-                              winners, losers, fresh, grafts);
+        if (losers + winners + fresh + grafts + outlaws > 0)
+            System.out.format("| LUB match: %s mismatch: %s graft: %s differ: %s bad: %s\n",
+                              winners, losers, fresh, grafts, outlaws);
     }
 
     // The important case is where a union node is incertae sedis and the source node isn't.
@@ -46,47 +50,172 @@ public class AlignmentByName extends Alignment {
     Taxon cacheLubs(Taxon node) {
         if (node.children == null)
             return node.lub = node.mapped();
-        else if (node.mapped != null)
-            return node.lub = node.mapped();
         else {
             Taxon mrca = null;
-            int count = 0;
             for (Taxon child : node.children) {
-                cacheLubs(child);
+                Taxon a = cacheLubs(child);
                 if (child.isPlaced()) {
-                    Taxon a = child.mapped();
-                    if (a == null) a = child.lub;
                     if (a != null) {
+                        if (a.noMrca()) continue;
+                        a = a.parent;
+                        if (a.noMrca()) continue;
                         if (mrca == null)
                             mrca = a;
                         else {
                             Taxon m = mrca.mrca(a);
-                            if (m.noMrca() && a.isPlaced())
-                                System.out.format("** Bad alignment: %s %s %s\n", node, mrca, a);
+                            if (m.noMrca()) continue;
+                            Taxon div1 = mrca.getDivision();
+                            Taxon div2 = a.getDivision();
+                            if (div1 != div2 && div1.divergence(div2) != null)
+                                System.out.format("** Children of %s are in disjoint divisions (%s in %s + %s in %s)\n",
+                                                  node, mrca, div1, a, div2);
                             mrca = m;
                         }
                     }
                 }
             }
-            if (mrca != null)
-                node.lub = mrca;
+
+            node.lub = mrca;
+
             // Reporting
-            if (node.lub == node.mapped())
-                ++winners;
-            else if (node.lub == null)
-                ++grafts;
-            else if (node.mapped() == null)
+            if (node.mapped == null) {
                 ++fresh;
-            else
-                ++losers;
-            return mrca;
+                return null;
+            } else {
+                if (mrca == node.mapped)
+                    ++winners;
+                else if (mrca == null)
+                    ++grafts;
+                else {
+                    Taxon[] div = mrca.divergence(node.mapped);
+                    if (div != null && !div[0].isRoot()
+                        // Hmm... allow siblings (and cousins) to merge.  Blumeria graminis
+                        && (div[0] != mrca && div[1] != node.mapped)) {
+                        if (outlaws < 50)
+                            System.out.format("** %s maps by name to %s which is disjoint from mrca %s; they meet at %s\n",
+                                              node, node.mapped, mrca, div[0].parent);
+                        ++outlaws;
+                        // OVERRIDE.
+                        node.answer = Answer.no(node, node.mapped, "not-same/disjoint", null);
+                        node.mapped = null;
+                    } else
+                        ++losers;
+                }
+                return node.mapped;
+            }
         }
     }
+
+	int nextSequenceNumber = 0;
+
+	public void reset() {
+		this.nextSequenceNumber = 0;
+        this.source.reset();
+        this.union.reset();
+		for (Taxon root: union.roots())
+			// Prepare for subsumption checks
+            resetBrackets(root);
+		for (Taxon root: union.roots())
+			assignBrackets(root);
+
+	}
+
+	// 'Bracketing' logic.  Every node in the union taxonomy is
+	// assigned a unique integer, ordered sequentially by a preorder
+	// traversal.  Taxon inclusion across taxonomies can be determined
+	// (approximately) by looking at shared names and doing a range check.
+
+	static final int NOT_SET = -7; // for source nodes
+
+	void resetBrackets(Taxon node) {			  // for union nodes
+		node.seq = NOT_SET;			  // Self
+		node.start = NOT_SET;	// First taxon included not including self
+		node.end = NOT_SET;					   // Next taxon *not* included
+	}
+
+	// Applied to a union node
+	void assignBrackets(Taxon node) {
+		// Only consider names in common ???
+		node.seq = nextSequenceNumber++;
+		node.start = nextSequenceNumber;
+		if (node.children != null)
+			for (Taxon child : node.children)
+				assignBrackets(child);
+		node.end = nextSequenceNumber;
+	}
+
+	// Applied to a source node
+	static void getBracket(Taxon node, Taxonomy union) {
+		if (node.end == NOT_SET) {
+			Taxon unode = union.unique(node.name);
+			if (unode != null)
+				node.seq = unode.seq; // Else leave seq as NOT_SET
+			if (node.children != null) {
+				int start = Integer.MAX_VALUE;
+				int end = -1;
+				for (Taxon child : node.children) {
+					getBracket(child, union);
+					if (child.start < start) start = child.start;
+					if (child.end > end) end = child.end;
+					if (child.seq != NOT_SET) {
+						if (child.seq < start) start = child.seq;
+						if (child.seq > end) end = child.seq+1;
+					}
+				}
+				node.start = start;
+				node.end = end;
+			}
+		}
+	}
+
+	// Cheaper test, without seeking a witness
+	boolean isNotSubsumedBy(Taxon node, Taxon unode) {
+		getBracket(node, unode.taxonomy);
+		return node.start < unode.start || node.end > unode.end; // spills out?
+	}
+
+	// Look for a member of the source taxon that's not a member of the union taxon,
+	// but is a member of some other union taxon.
+	static Taxon antiwitness(Taxon node, Taxon unode) {
+		getBracket(node, unode.taxonomy);
+		if (node.start >= unode.start && node.end <= unode.end)
+			return null;
+		else if (node.children != null) { // it *will* be nonnull actually
+			for (Taxon child : node.children)
+				if (child.seq != NOT_SET && (child.seq < unode.start || child.seq >= unode.end))
+					return child;
+				else {
+					Taxon a = antiwitness(child, unode);
+					if (a != null) return a;
+				}
+		}
+		return null;			// Shouldn't happen
+	}
+
+	// Look for a member of the source taxon that's also a member of the union taxon.
+	static Taxon witness(Taxon node, Taxon unode) { // assumes is subsumed by unode
+		getBracket(node, unode.taxonomy);
+		if (node.start >= unode.end || node.end <= unode.start) // Nonoverlapping => lose
+			return null;
+		else if (node.children != null) { // it *will* be nonnull actually
+			for (Taxon child : node.children)
+				if (child.seq != NOT_SET && (child.seq >= unode.start && child.seq < unode.end))
+					return child;
+				else {
+					Taxon a = witness(child, unode);
+					if (a != null) return a;
+				}
+		}
+		return null;			// Shouldn't happen
+	}
+
 
     AlignmentByName(SourceTaxonomy source, UnionTaxonomy union) {
 
         this.source = source;
         this.union = union;
+
+        union.reset();          // depths, brackets, comapped
 
         Criterion[] criteria = Criterion.criteria;
 		if (source.rootCount() > 0) {
@@ -140,13 +269,12 @@ public class AlignmentByName extends Alignment {
 			int incommon = 0;
 			int homcount = 0;
 			for (String name : todo) {
-				boolean painful = name.equals("Nematoda");
 				List<Taxon> unodes = union.nameIndex.get(name);
 				if (unodes != null) {
 					++incommon;
 					List<Taxon> nodes = source.nameIndex.get(name);
 					if (false &&
-						(((nodes.size() > 1 || unodes.size() > 1) && (++homcount % 1000 == 0)) || painful))
+						(((nodes.size() > 1 || unodes.size() > 1) && (++homcount % 1000 == 0))))
 						System.out.format("| Mapping: %s %s*%s (name #%s)\n", name, nodes.size(), unodes.size(), incommon);
 					new Matrix(name, nodes, unodes).run(criteria);
 				}
@@ -178,7 +306,7 @@ public class AlignmentByName extends Alignment {
             this.unodes = unodes;
             m = nodes.size();
             n = unodes.size();
-            if (m*n > 100)
+            if (m*n > 50)
                 System.out.format("!! Badly homonymic: %s %s*%s\n", name, m, n);
         }
 
@@ -277,14 +405,18 @@ public class AlignmentByName extends Alignment {
 
                         Answer a = answer[i];
                         if (x.mapped == y)
-                            ;
+                            ;   // multiple criteria met uniquely
                         else if (x.mapped != null) {
                             // This case doesn't happen
                             a = Answer.no(x, y, "lost-race-to-source(" + criterion.toString() + ")",
                                           (y.getSourceIdsString() + " lost to " +
                                            x.mapped.getSourceIdsString()));
+                        } else if (x.mapped == y) {
+                            ;
+                        } else if (x.answer != null) {
+                            System.out.format("** Blocked from mapping %s to %s because %s\n", x, y, x.answer.reason);
                         } else {
-                            x.unifyWith(y, a); // sets .mapped, .answer
+                            x.alignWith(y, a); // sets .mapped, .answer
                         }
                         suppressp[i][j] = a;
                     }
@@ -331,7 +463,7 @@ public class AlignmentByName extends Alignment {
                                 Taxon candidate = unodes.get(j);	// in union taxonomy
                                 // if (candidate.comapped == null) continue;  // ???
                                 if (candidate.sourceIds == null)
-                                    System.err.println("?!! No source ids: " + candidate);
+                                    ;
                                 else {
                                     QualifiedId qid = candidate.sourceIds.get(0);
                                     if (w == null) w = qid.toString();

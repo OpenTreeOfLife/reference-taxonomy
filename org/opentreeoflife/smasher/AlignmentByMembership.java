@@ -3,7 +3,7 @@
 /*
   The goal here is to be able to unify source nodes with union nodes.
 
-  The unification is done by Taxon.unifyWith and has the effect of
+  The unification is done by Taxon.alignWith and has the effect of
   setting the 'mapped' field of the node.
 
   */
@@ -84,7 +84,7 @@ public class AlignmentByMembership extends Alignment {
             node.lub = sourceHalfMap.get(node);
             Answer a = alignmentMap.get(node);
             if (a != null) // && a.isYes()
-                node.unifyWith(node.answer.target, a);
+                node.alignWith(node.answer.target, a);
         }
     }
 

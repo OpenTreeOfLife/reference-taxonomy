@@ -1,6 +1,7 @@
 # Jython script to build the "model village" taxonomy.
 
 from org.opentreeoflife.smasher import Taxonomy
+from claim import Has_child
 
 # Create model taxonomy
 tax = Taxonomy.newTaxonomy()
@@ -27,6 +28,13 @@ tax.absorb(gbif)
 
 # "Old" patch system with tab-delimited files
 tax.edit('t/edits/')
+
+claims = [
+    Has_child('Asterales', 'Phellinaceae')
+]
+
+for claim in claims:
+    print claim.check(tax)
 
 # Example of referring to a taxon
 fam = tax.taxon("Phellinaceae")

@@ -118,18 +118,7 @@ public enum Flag {
 				;
 			} 
 
-		if ((((flags | iflags) & Taxonomy.NOT_OTU) != 0)) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("not_otu");
-		}
-		if (((flags | iflags) & Taxonomy.VIRAL) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("viral");
-		}
-		if (((flags | iflags) & Taxonomy.HYBRID) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("hybrid");
-		}
+        // Now the various flavors of incertae sedis
 
 		// Disposition relative to parent (formerly inside of containers)
 		// The direct form means incertae sedis
@@ -142,15 +131,16 @@ public enum Flag {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("incertae_sedis_inherited");
 		}
+
 		if ((flags & Taxonomy.UNCLASSIFIED) != 0) {
 			if (needComma) out.print(","); else needComma = true;
-			// WORK IN PROGRESS
 			out.print("unclassified");
 		}
 		if ((iflags & Taxonomy.UNCLASSIFIED) != 0) {
 			if (needComma) out.print(","); else needComma = true;
-			out.print("unclassified_inherited"); // JAR prefers 'unclassified_indirect' ?
+			out.print("unclassified_inherited");
 		}
+
 		if ((flags & Taxonomy.ENVIRONMENTAL) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("environmental");
@@ -158,6 +148,28 @@ public enum Flag {
 		if ((iflags & Taxonomy.ENVIRONMENTAL) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("environmental_inherited");
+		}
+
+		if ((flags & Taxonomy.UNPLACED) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("unplaced");
+		}
+		if ((iflags & Taxonomy.UNPLACED) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("unplaced_inherited");
+		}
+
+		if ((flags & Taxonomy.MAJOR_RANK_CONFLICT) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("major_rank_conflict_direct");
+		}
+		else if ((flags & Taxonomy.SIBLING_HIGHER) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("sibling_higher");
+		}
+		if ((iflags & Taxonomy.MAJOR_RANK_CONFLICT) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("major_rank_conflict_inherited");
 		}
 
 		// Other
@@ -170,35 +182,12 @@ public enum Flag {
 			out.print("hidden_inherited");
 		}
 
-		// Another kind of incertae sedis
-		if ((flags & Taxonomy.MAJOR_RANK_CONFLICT) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("major_rank_conflict_direct");
-		}
-		else if ((flags & Taxonomy.SIBLING_HIGHER) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("sibling_higher");
-		}
-		if ((flags & Taxonomy.SIBLING_LOWER) != 0) {
+		if (false && (flags & Taxonomy.SIBLING_LOWER) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("sibling_lower");
 		}
 
-		if ((iflags & Taxonomy.MAJOR_RANK_CONFLICT) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("major_rank_conflict_inherited");
-		}
-
 		// Misc
-		if ((flags & Taxonomy.UNPLACED) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("unplaced");
-		}
-		if ((iflags & Taxonomy.UNPLACED) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("unplaced_inherited");
-		}
-
 		if ((flags & Taxonomy.EDITED) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("edited");
@@ -206,7 +195,7 @@ public enum Flag {
 
 		if ((flags & Taxonomy.EXTINCT) != 0) {
 			if (needComma) out.print(","); else needComma = true;
-			out.print("extinct_direct");
+			out.print("extinct");
 		}
 		if ((iflags & Taxonomy.EXTINCT) != 0) {
 			if (needComma) out.print(","); else needComma = true;
@@ -225,5 +214,20 @@ public enum Flag {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("barren");
 		}
+
+        // Buckets - these are deprecated
+		if ((((flags | iflags) & Taxonomy.NOT_OTU) != 0)) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("not_otu");
+		}
+		if (((flags | iflags) & Taxonomy.VIRAL) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("viral");
+		}
+		if (((flags | iflags) & Taxonomy.HYBRID) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("hybrid");
+		}
+
 	}
 }

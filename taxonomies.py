@@ -1,6 +1,8 @@
 # coding=utf-8
 
 from org.opentreeoflife.smasher import Taxonomy
+from claim import Has_child, Whether_same, With_ancestor, With_descendant, \
+                  Whether_extant, make_claims
 
 def load_silva():
     silva = Taxonomy.getTaxonomy('tax/silva/', 'silva')
@@ -110,12 +112,16 @@ def load_fung():
         print 'Removing Fungi 90155'
         fung.taxon('90155').prune()
 
-    fixProtists(fung)
+    fix_protists(fung)
 
     # smush folds sibling taxa that have the same name.
     # fung.smush()
 
-    patch_fung(fung)
+    try:
+        patch_fung(fung)
+    except:
+        print '** exception in patch_fung'
+
     fung.smush()
 
     return fung
@@ -256,6 +262,16 @@ def load_ncbi():
     ncbi = Taxonomy.getTaxonomy('tax/ncbi/', 'ncbi')
 
     ncbi.taxon('Viridiplantae').rename('Chloroplastida')
+    patch_ncbi(ncbi)
+
+    # analyzeOTUs sets flags on questionable taxa ("unclassified",
+    #  hybrids, and so on) to allow the option of suppression downstream
+    ncbi.analyzeOTUs()
+    ncbi.analyzeContainers()
+
+    return ncbi
+
+def patch_ncbi(ncbi):
 
     # New NCBI top level taxa introduced circa July 2014
     for toplevel in ["Viroids", "other sequences", "unclassified sequences"]:
@@ -270,16 +286,6 @@ def load_ncbi():
 
     ncbi.taxon('Viruses').hide()
 
-    patch_ncbi(ncbi)
-
-    # analyzeOTUs sets flags on questionable taxa ("unclassified",
-    #  hybrids, and so on) to allow the option of suppression downstream
-    ncbi.analyzeOTUs()
-    ncbi.analyzeContainers()
-
-    return ncbi
-
-def patch_ncbi(ncbi):
     # - Touch-up -
 
     # RR 2014-04-12 #49
@@ -388,7 +394,7 @@ def patch_ncbi(ncbi):
         if tax != None:
             tax.synonym(oldname)
 
-def loadGbif():
+def load_gbif():
     gbif = Taxonomy.getTaxonomy('tax/gbif/', 'gbif')
     gbif.smush()
 
@@ -396,7 +402,7 @@ def loadGbif():
     # means the rank-skipped children are incertae sedis.  Mark them so.
     gbif.analyzeMajorRankConflicts()
 
-    fixProtists(gbif)  # creates a Eukaryota node
+    fix_protists(gbif)  # creates a Eukaryota node
     fixPlants(gbif)
     gbif.taxon('Animalia').synonym('Metazoa')
 
@@ -426,17 +432,34 @@ def patch_gbif(gbif):
     gbif.taxon('Cyrto-hypnum').absorb(gbif.taxon('4907605'))
 
     # 2014-04-13 JAR noticed while grepping
-    gbif.taxon('Chryso-hypnum').absorb(gbif.taxon('Chryso-Hypnum'))
-    gbif.taxon('Drepano-Hypnum').rename('Drepano-hypnum')
-    gbif.taxon('Complanato-Hypnum').rename('Complanato-hypnum')
-    gbif.taxon('Leptorrhyncho-Hypnum').rename('Leptorrhyncho-hypnum')
+    claims = [
+        Whether_same('Chryso-Hypnum', 'Chryso-hypnum', True),
+        Whether_same('Drepano-Hypnum', 'Drepano-hypnum', True),
+        Whether_same('Complanato-Hypnum', 'Complanato-hypnum', True),
+        Whether_same('Leptorrhyncho-Hypnum', 'Leptorrhyncho-hypnum', True),
+        Whether_same('Trichoderma viride', 'Hypocrea rufa', True,
+                     'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86'),  # Type
+        Whether_same('Hypocrea', With_ancestor('Trichoderma', 'Hypocrea rufa'), True,
+                     'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86'),  # Type
+        
+        # Doug Soltis 2015-02-17 https://github.com/OpenTreeOfLife/feedback/issues/59 
+        # http://dx.doi.org/10.1016/0034-6667(95)00105-0
+        Whether_extant('Timothyia', False, 'https://github.com/OpenTreeOfLife/feedback/issues/59'),
 
+    ]
+    make_claims(gbif, claims)
+    # See new versions above
+    # gbif.taxon('Chryso-hypnum').absorb(gbif.taxon('Chryso-Hypnum'))
+    # gbif.taxon('Complanato-Hypnum').rename('Complanato-hypnum')
+    # gbif.taxon('Leptorrhyncho-Hypnum').rename('Leptorrhyncho-hypnum')
+
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
     # Romina 2014-04-09
     # GBIF has both Hypocrea and Trichoderma.  And it has four Trichoderma synonyms...
     # pick the one that contains bogo-type Hypocrea rufa
-    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
-    gbif.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
-    gbif.taxon('Hypocrea').absorb(gbif.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
+    # See new versions above
+    # gbif.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
+    # gbif.taxon('Hypocrea').absorb(gbif.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
 
     # 2014-04-21 RR
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/45
@@ -451,7 +474,10 @@ def patch_gbif(gbif):
                     'atlanticum',
                     'stevensii',
                     'brachythecium']:
-        gbif.taxon('Cyrto-hypnum ' + epithet).absorb(gbif.taxon('Cyrto-Hypnum ' + epithet))
+        claim = Whether_same('Cyrto-Hypnum ' + epithet, 'Cyrto-hypnum ' + epithet, True,
+                             'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/45')
+        claim.make_true(gbif)
+        # was gbif.taxon('Cyrto-hypnum ' + epithet).absorb(gbif.taxon('Cyrto-Hypnum ' + epithet))
 
     # JAR 2014-04-23 Noticed while perusing silva/gbif conflicts
     gbif.taxon('Ebriaceae').synonym('Ebriacea')
@@ -473,31 +499,34 @@ def patch_gbif(gbif):
                  'Lomorupithecus', 'Marcgodinotius', 'Muangthanhinius',
                  'Plesiopithecus', 'Suratius', 'Killikaike blakei', 'Rissoina bonneti',
                  'Mycosphaeroides']:
-        gbif.taxon(name).extinct()
-
-    # Doug Soltis 2015-02-17 https://github.com/OpenTreeOfLife/feedback/issues/59 
-    # http://dx.doi.org/10.1016/0034-6667(95)00105-0
-    gbif.taxon('Timothyia').extinct()
+        claim = Whether_extant(name, False, 'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116')
+        claim.make_true(gbif)
 
     # JAR 2014-07-18  - get rid of Helophorus duplication
+    # GBIF 3263442 = Helophorus Fabricius, 1775, from CoL
+    #    in 6985 = Helophoridae Leach, 1815
+    # GBIF 6757656 = Helophorus Leach, from IRMNG homonym list
+    #    in 7829 = Hydraenidae Mulsant, 1844
+    #  ('Helophorus', 'Helophoridae') ('Helophorus', 'Hydraenidae')
     gbif.taxon('3263442').absorb(gbif.taxon('6757656'))
 
     # JAR 2015-06-27  there are two Myospalax myospalax
     # The one in Spalacidae is the right one, Myospalacinae is the wrong one
     # (according to NCBI)
     # Probably should clean up the whole genus
+    # 2439121 = Myospalax myospalax (Laxmann, 1773) from CoL
     gbif.taxon('2439121').absorb(gbif.taxon('6075534'))
 
     # 4010070	pg_1378	Gelidiellaceae	gbif:8998  -- ok, paraphyletic
 
     return gbif
 
-def loadIrmng():
+def load_irmng():
     irmng = Taxonomy.getTaxonomy('tax/irmng/', 'irmng')
     irmng.smush()
     irmng.analyzeMajorRankConflicts()
 
-    fixProtists(irmng)
+    fix_protists(irmng)
     fixPlants(irmng)
     irmng.taxon('Animalia').synonym('Metazoa')
 
@@ -532,13 +561,13 @@ def loadIrmng():
 
     return irmng
 
-def loadWorms():
+def load_worms():
     worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
     worms.smush()
 
     worms.taxon('Biota').synonym('life')
     worms.taxon('Animalia').synonym('Metazoa')
-    fixProtists(worms)
+    fix_protists(worms)
     fixPlants(worms)
 
     # 2015-02-17 According to WoRMS web site.  Occurs in pg_1229
@@ -553,7 +582,7 @@ def loadWorms():
 
 
 # Common code for GBIF, IRMNG, Index Fungorum
-def fixProtists(tax):
+def fix_protists(tax):
     euk = tax.maybeTaxon('Eukaryota')
     if euk == None:
         euk = tax.newTaxon('Eukaryota', 'domain', 'ncbi:2759')
@@ -599,6 +628,8 @@ def fixPlants(tax):
     euk.take(tax.taxon('Glaucophyta'))
     euk.take(tax.taxon('Haptophyta'))
 
+# what's this for?
+
 def loadOtt():
     ott = Taxonomy.getTaxonomy('tax/ott/', 'ott')
     return ott
@@ -609,7 +640,7 @@ def loadOtt():
 # TBD: these tests live in a file in the germinator repo.  Change to
 # using that list instead of this one.
 
-def checkDivisions(tax):
+def check_divisions(tax):
     cases = [
         # ("Alveolata", "Dysteria marioni"), not in GBIF
         ("Archaea", "Aeropyrum camini"),

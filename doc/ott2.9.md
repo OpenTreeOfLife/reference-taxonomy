@@ -128,3 +128,18 @@ content and given a priority lower than NCBI but higher than GBIF.
 The non-Malacostraca content of WoRMS is separated from the
 Malacostraca content and given a priority lower than NCBI but higher
 than GBIF.
+
+## Release notes
+
+New flags:
+
+* extinct - replaces extinct_direct
+* placed - similar to incertae_sedis (this means a child of an
+  inconsistent taxon, where t is inconsistent if it occurs in a
+  lower-priority taxonomy but is inconsistent with the higher-priority
+  taxonomies.  'tattered' is now deprecated)
+* placed_inherited
+* sibling_lower is deprecated
+
+Deprecated: sibling_lower, tattered, tattered_inherited
+

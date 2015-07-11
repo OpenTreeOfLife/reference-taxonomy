@@ -5,7 +5,7 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.9draft6
+WHICH=2.9draft7
 PREV_WHICH=2.8
 
 #  $^ = all prerequisites
@@ -266,12 +266,9 @@ ids-that-are-otus.tsv:
 	wc $@
 
 tax/ott/otu_deprecated.tsv: ids-that-are-otus.tsv tax/ott/deprecated.tsv
-	#grep "\\*" tax/ott/deprecated.tsv | grep -v "excluded" >dep-tmp.tsv
-	cp tax/ott/deprecated.tsv dep-tmp.tsv
-	$(BIG_JAVA) $(SMASH) --join ids-that-are-otus.tsv dep-tmp.tsv >$@.new
+	$(BIG_JAVA) $(SMASH) --join ids-that-are-otus.tsv tax/ott/deprecated.tsv >$@.new
 	mv $@.new $@
 	wc $@
-	rm dep-tmp.tsv
 
 tax/ott/differences.tsv: tax/prev_ott/taxonomy.tsv tax/ott/taxonomy.tsv
 	$(BIG_JAVA) $(SMASH) --diff tax/prev_ott/ tax/ott/ $@.new

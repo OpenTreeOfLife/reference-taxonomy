@@ -19,7 +19,8 @@ def create_ott():
 
     # When lumping, prefer to use ids that have been used in OTU matching
     # This list could be used for all sorts of purposes...
-    otus = ott.loadPreferredIds('ids-that-are-otus.tsv')
+    ott.loadPreferredIds('ids-that-are-otus.tsv', False)
+    ott.loadPreferredIds('ids-in-synthesis.tsv', True)
 
     ott.setSkeleton(Taxonomy.getTaxonomy('tax/skel/', 'skel'))
 
@@ -53,6 +54,8 @@ def create_ott():
 
     irmng = prepare_irmng(ott)
     ott.absorb(irmng)
+
+    taxonomies.link_to_h2007(ott)
 
     try:
         patch_ott(ott)
@@ -97,7 +100,7 @@ def create_ott():
     # Assign old ids to nodes in the new version
     ott.assignIds(ids)
 
-    report_on_h2007(h2007)
+    report_on_h2007(h2007, ott)
 
     return ott
 
@@ -113,8 +116,6 @@ def prepare_silva(ott):
 
 def prepare_h2007(ott):
     h2007 = taxonomies.load_h2007()
-    # h2007/if synonym https://github.com/OpenTreeOfLife/reference-taxonomy/issues/40
-    h2007.taxon('Urocystales').synonym('Urocystidales')
     return h2007
 
 # ----- Index Fungorum -----
@@ -216,7 +217,7 @@ def prepare_lamiales(ott):
 
 def prepare_worms(ott):
     worms = taxonomies.load_worms()
-    worms.taxon('Viruses').prune()
+    worms.taxon('Viruses').prune("make-ott.py")
 
     # Malacostraca instead of Decapoda because it's in the skeleton
     mal = worms.taxon('Malacostraca')
@@ -491,7 +492,7 @@ def patch_ott(ott):
     # Bad synonym - Tony Rees 2014-01-28
     # https://groups.google.com/d/msg/opentreeoflife/SrI7KpPgoPQ/ihooRUSayXkJ
     if ott.maybeTaxon('Lemania pluvialis') != None:
-        ott.taxon('Lemania pluvialis').prune()
+        ott.taxon('Lemania pluvialis').prune("make-ott.py")
 
     # Tony Rees 2014-01-29
     # https://groups.google.com/d/msg/opentreeoflife/SrI7KpPgoPQ/wTeD17GzOGoJ
@@ -516,7 +517,7 @@ def patch_ott(ott):
     # From Laura and Dail on 5 Feb 2014
     # https://groups.google.com/d/msg/opentreeoflife/a69fdC-N6pY/y9QLqdqACawJ
     tax = ott.maybeTaxon('Chlamydiae/Verrucomicrobia group')
-    if tax != None:
+    if tax != None and tax.name != 'Bacteria':
         tax.rename('Verrucomicrobia group')
     ott.taxon('Heterolobosea','Discicristata').absorb(ott.taxon('Heterolobosea','Percolozoa'))
     ott.taxon('Excavata','Eukaryota').take(ott.taxon('Oxymonadida','Eukaryota'))
@@ -785,7 +786,7 @@ def unextinct_ncbi(ncbi, ott):
 
 # Reports
 
-def report_on_h2007(h2007):
+def report_on_h2007(h2007, ott):
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/40
     print '-- Checking realization of h2007'
     for taxon in h2007:

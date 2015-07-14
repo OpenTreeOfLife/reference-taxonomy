@@ -143,3 +143,4 @@ New flags:
 
 Deprecated: sibling_lower, tattered, tattered_inherited
 
+.add method is deprecated (use .take instead)

@@ -19,6 +19,7 @@ public class Taxon {
 	public String name, rank = null;
 	public List<Taxon> children = null;
 	public List<QualifiedId> sourceIds = null;
+    public List<Synonym> synonyms = null;
 	public Taxonomy taxonomy;			// For subsumption checks etc.
 	int count = -1;             // cache of # nodes at or below here
 	int depth = -1;             // cache of distance from root
@@ -45,6 +46,11 @@ public class Taxon {
 	Taxon(Taxonomy tax) {
 		this.taxonomy = tax;
 	}
+
+    Taxon(Taxonomy tax, String name) {
+        this(tax);
+        this.setName(name);
+    }
 
     boolean isRoot() {
         return this.taxonomy.hasRoot(this);
@@ -198,12 +204,12 @@ public class Taxon {
             && ((this.name.hashCode() % 100) == 17))
             System.err.format("| Placing previously unplaced %s in %s\n", this, newparent);
         changeParent(newparent);
-        this.properFlags &= ~Taxonomy.INCERTAE_SEDIS_ANY;
+        this.properFlags &= ~Taxonomy.INCERTAE_SEDIS_ANY; // ??? think about this
         this.addFlag(flags);
 	}
 
     public void addFlag(int flags) {
-        if (flags > 0
+        if (false && flags > 0
             && this.name != null
             && (this.name.equals("Brassaiopsis shweliensis")
                 || this.name.equals("eudicotyledons"))) {
@@ -328,7 +334,7 @@ public class Taxon {
         }
     }
 
-    // This is used when the union node is not new
+    // This is used when the union node is NOT new
 
     void transferProperties() {
         Taxon unode = this.mapped;
@@ -355,33 +361,48 @@ public class Taxon {
             for (QualifiedId id : this.sourceIds)
                 unode.addSourceId(id);
 
+        // ??? retains pointers to source taxonomy... may want to fix for gc purposes
+        if (unode.answer == null)
+            unode.answer = this.answer;
+
         unode.addSource(this);
 	}
 
         
+    public Taxon alignWithNew(Taxonomy target, String reason) {
+        Taxon newnode = this.dup(target, reason);
+        this.mapped = newnode;
+        this.answer = Answer.yes(this, newnode, reason, null);
+        return newnode;
+    }
 
 	// Duplicate single source node yielding a source or union node
 
 	public Taxon dup(Taxonomy target, String reason) {
-		Taxon dup = new Taxon(target);
-        if (target instanceof SourceTaxonomy)
-            dup.setId(this.id); // kludge for select
 
-        // Compare this with transferProperties(dup)
-		dup.setName(this.name);
-		dup.rank = this.rank;
+        if (this.taxonomy instanceof UnionTaxonomy) {
+            System.out.format("** Dup source %s is not in a source taxonomy\n", target);
+            Taxon.backtrace();
+        }
+
+		Taxon newnode = new Taxon(target, this.name);
+        if (target instanceof SourceTaxonomy)
+            newnode.setId(this.id); // kludge for select
+
+        // Compare this with transferProperties(newnode)
+		newnode.rank = this.rank;
 
         // Retain placement flags, since the usual case is that we're
         // going to attach this in a pretty similar place
-		dup.properFlags = this.properFlags;
+		newnode.properFlags = this.properFlags;
 
         if (this.sourceIds != null)
             // Unusual
-            dup.sourceIds = new ArrayList<QualifiedId>(this.sourceIds);
+            newnode.sourceIds = new ArrayList<QualifiedId>(this.sourceIds);
 
         // This might be the place to report on homonym creation
 
-		return dup;
+		return newnode;
 	}
 
 	// Add most of the otherwise unmapped nodes to the union taxonomy,
@@ -488,6 +509,7 @@ public class Taxon {
 	}
 
 	// Event monitoring
+    // Eventually phase this out in favor of equivalents in Taxonomy class
 
 	static Map<String, Long> eventStats = new HashMap<String, Long>();
 	static List<String> eventStatNames = new ArrayList<String>();
@@ -507,12 +529,6 @@ public class Taxon {
 			return false;
 	}
 
-	// Recursive descent over source taxonomy
-
-	static void augmentationReport() {
-		if (Taxon.windyp)
-			Taxon.printStats();
-	}
 	static void printStats() {
         Collections.sort(eventStatNames);
 		for (String note : eventStatNames) { // In order added
@@ -530,6 +546,7 @@ public class Taxon {
 	// convenience variants
 
 	static boolean markEvent(String note) {
+        // return this.taxonomy.markEvent(note);
 		return startReport(note);
 	}
 
@@ -751,7 +768,8 @@ public class Taxon {
 
     Taxon mrca(Taxon other, int adepth, int bdepth) {
         if (this.taxonomy != other.taxonomy)
-            throw new RuntimeException(String.format("Mrca across taxonomies: %s %s", this, other));
+            throw new RuntimeException(String.format("Mrca across taxonomies: %s %s %s %s",
+                                                     this, other, this.taxonomy, other.taxonomy));
         Taxon a = this, b = other;
         while (adepth > bdepth) {
             a = a.parent;
@@ -851,36 +869,36 @@ public class Taxon {
 		}
 	};
 
-	// Delete this node and all of its descendants.
-	public boolean prune() {
-        this.detach();
-        this.addFlag(Taxonomy.EDITED);
-        this.setRemoved();
-        return true;
-    }
-
 	// Delete all of this node's descendants.
 	public void trim() {
 		if (this.children != null)
 			for (Taxon child : new ArrayList<Taxon>(children))
-				child.prune();
+				child.prune("trim");
 	}
 
+	// Delete this node and all of its descendants.
+	public boolean prune(String reason) {
+        this.detach();
+        this.addFlag(Taxonomy.EDITED);
+        this.setRemoved(reason);
+        return true;
+    }
+
     // Recursively set prunedp flag and remove from indexes
-	public boolean setRemoved() {
+	public boolean setRemoved(String reason) {
+		this.prunedp = true;
         this.mapped = null;
-        this.answer = Answer.no(this, null, "pruned", null);
+        if (this.answer == null)
+            this.answer = Answer.no(this, null, reason, null);
 		if (this.children != null)
 			for (Taxon child : new ArrayList<Taxon>(children))
-				child.setRemoved();
-
+				child.setRemoved(reason);
 		List<Taxon> nodes = this.taxonomy.nameIndex.get(this.name);
 		nodes.remove(this);
 		if (nodes.size() == 0)
 			this.taxonomy.nameIndex.remove(this.name);
 		if (this.id != null)
 			this.taxonomy.idIndex.remove(this.id);
-		this.prunedp = true;  // kludge ...
 
         return true;
 	}
@@ -956,25 +974,6 @@ public class Taxon {
 
 	// ----- Methods intended for use in jython scripts -----
 
-	// Patch system commands are add, move, synonym, prune, fold, flag
-
-	// tax.add(newTaxon("Bos bos", "species", "data:,foo"))
-
-	public void add(Taxon newchild) {
-		if (newchild == null)
-			return;				// Error already reported.
-		else if (this.taxonomy != newchild.taxonomy)
-			System.err.format("** %s and %s aren't in the same taxonomy\n", newchild, this);
-		else if (this.children != null && this.children.contains(newchild))
-			System.err.format("| %s is already a child of %s\n", newchild, this);
-		else {
-            if (!newchild.isDetached()) newchild.detach();
-			this.addChild(newchild);
-            // TBD: get rid of incertae_sedis flags ??
-			newchild.addFlag(Taxonomy.EDITED);
-		}
-	}
-
 	public boolean take(Taxon newchild) {
 		if (newchild == null)
 			return false;				// Error already reported.
@@ -983,13 +982,13 @@ public class Taxon {
 			return false;
 		} else if (this.children != null && this.children.contains(newchild)) {
 			System.err.format("| %s is already a child of %s\n", newchild, this);
-			return false;
+			return true;
         } else if (newchild == this) {
 			System.err.format("** A taxon cannot be its own parent: %s %s\n", newchild, this);
 			return false;
         } else {
-            if (!newchild.isDetached()) newchild.detach();
-			this.addChild(newchild, 0);
+            // if (!newchild.isDetached()) newchild.detach();  - not needed given change to newTaxon.
+            newchild.changeParent(this, 0);
 			this.addFlag(Taxonomy.EDITED);
             return true;
 		}
@@ -1063,7 +1062,7 @@ public class Taxon {
 			for (Taxon child : new ArrayList<Taxon>(this.children))
 				child.changeParent(this.parent, Taxonomy.UNPLACED);
         }
-		return this.prune();
+		return this.prune("elide");
 	}
 
 	// Move all of B's children to A, and make B a synonym of A
@@ -1081,7 +1080,7 @@ public class Taxon {
 				// beware concurrent modification
 				child.changeParent(this.parent);
 		this.taxonomy.addSynonym(other.name, this);	// Not sure this is a good idea
-		other.prune();
+		other.prune("absorb");
         return true;
 	}
 
@@ -1273,4 +1272,18 @@ public class Taxon {
 		
 		return newickName;
 	}
+}
+
+class Synonym {
+    String name;
+    String sourceTag;
+    String type;
+    Taxon target;
+    // Taxonomy taxonomy;
+    Synonym(String name, String type, String sourceTag, Taxon target) {
+        this.name = name;
+        this.type = type;
+        this.sourceTag = sourceTag;
+        this.target = target;
+    }
 }

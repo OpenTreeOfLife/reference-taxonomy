@@ -45,24 +45,35 @@ public class AlignmentByName extends Alignment {
                               winners, losers, fresh, grafts, outlaws);
     }
 
-    // The important case is where a union node is incertae sedis and the source node isn't.
+    // An important case is where a union node is incertae sedis and the source node isn't.
+
+    // Input is in source taxonomy, return value is in union taxonomy
 
     Taxon cacheLubs(Taxon node) {
         if (node.children == null)
             return node.lub = node.mapped();
         else {
-            Taxon mrca = null;
+            Taxon mrca = null;  // in union
             for (Taxon child : node.children) {
-                Taxon a = cacheLubs(child);
+                if (!(child.taxonomy instanceof SourceTaxonomy))
+                    System.out.format("** Child in wrong taxonomy: %s\n", child);
+                Taxon a = cacheLubs(child); // in union
+                if (a != null && !(a.taxonomy instanceof UnionTaxonomy))
+                    System.out.format("** Lub in wrong taxonomy: %s\n", a);
                 if (child.isPlaced()) {
                     if (a != null) {
                         if (a.noMrca()) continue;
-                        a = a.parent;
+                        a = a.parent; // in union
+                        if (!(a.taxonomy instanceof UnionTaxonomy))
+                            System.out.format("** Lub in wrong taxonomy: %s\n", a);
                         if (a.noMrca()) continue;
                         if (mrca == null)
-                            mrca = a;
+                            mrca = a; // in union
                         else {
                             Taxon m = mrca.mrca(a);
+                            if (!(m.taxonomy instanceof UnionTaxonomy))
+                                System.out.format("** Mrca in wrong taxonomy: %s\n", m);
+
                             if (m.noMrca()) continue;
                             Taxon div1 = mrca.getDivision();
                             Taxon div2 = a.getDivision();
@@ -87,6 +98,7 @@ public class AlignmentByName extends Alignment {
                 else if (mrca == null)
                     ++grafts;
                 else {
+                    // divergence across taxonomies
                     Taxon[] div = mrca.divergence(node.mapped);
                     if (div != null && !div[0].isRoot()
                         // Hmm... allow siblings (and cousins) to merge.  Blumeria graminis
@@ -101,6 +113,8 @@ public class AlignmentByName extends Alignment {
                     } else
                         ++losers;
                 }
+                if (node.mapped != null && !(node.mapped.taxonomy instanceof UnionTaxonomy))
+                    System.out.format("** Mapped to wrong taxonomy: %s -> %s\n", node, node.mapped);
                 return node.mapped;
             }
         }
@@ -253,7 +267,7 @@ public class AlignmentByName extends Alignment {
 				if (source.nameIndex.get(node.name) != null &&
 					!seen.contains(node.name))
 					{ seen.add(node.name); todo.add(node.name); }
-			// synonym / primary
+			// synonym / primary    -- maybe disallow !?
 			for (Taxon node : source)
 				if (union.nameIndex.get(node.name) != null &&
 					!seen.contains(node.name))
@@ -307,7 +321,7 @@ public class AlignmentByName extends Alignment {
             m = nodes.size();
             n = unodes.size();
             if (m*n > 50)
-                System.out.format("!! Badly homonymic: %s %s*%s\n", name, m, n);
+                System.out.format("!! Badly homonymic: %s %s in source, %s in union\n", name, m, n);
         }
 
         void clear() {

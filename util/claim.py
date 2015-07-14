@@ -41,6 +41,7 @@ def make_claims(tax, claims):
     for claim in claims:
         if not claim.make_true(tax):
             print '** claim failed:', stringify(claim)
+            passed = False
         elif not claim.check(tax):
             print '** claim seemed to be made, but not verified:', stringify(claim)
     return passed
@@ -97,9 +98,9 @@ class Whether_same:
             if source_taxon == target_taxon:
                 # Same when want different
                 # Maybe remove a synonym here?
-                return whether
+                return self.whether
 
-            if not whether:
+            if not self.whether:
                 # Different when want different
                 return True
 
@@ -132,7 +133,8 @@ def attempt_mapping(source_taxon, target, whether):
             union.sameness(source_taxon, union_target, whether, True)
 
 
-# That one taxon has another as a child
+# That one taxon has another as a child.
+# We could create the child, if it doesn't exist already ?
 
 class Has_child:                # replaces .take
     def __init__(self, parent, child, reason=None):
@@ -144,7 +146,10 @@ class Has_child:                # replaces .take
         child_taxon = resolve_in(self.child, taxonomy)
         parent_taxon = resolve_in(self.parent, taxonomy)
         if child_taxon != None and parent_taxon != None:
-            return parent_taxon.take(child_taxon)
+            if child_taxon.parent == parent_taxon:
+                return True
+            else:
+                return parent_taxon.take(child_taxon)
         return False
 
     def check(self, taxonomy):

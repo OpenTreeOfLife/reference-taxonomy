@@ -22,6 +22,9 @@ public enum Flag {
 						  "major_rank_conflict_inherited",
 						  Taxonomy.MAJOR_RANK_CONFLICT),     // Parent-dependent.  Retain value
     UNPLACED             ("unplaced", "unplaced_inherited", Taxonomy.UNPLACED),
+    INCONSISTENT         ("inconsistent", "inconsistent_inherited", Taxonomy.INCONSISTENT),
+
+    MERGED               ("merged", "merged_inherited", Taxonomy.INCONSISTENT), // new in 2.9
 
 	// Australopithecus
 	SIBLING_HIGHER		 ("sibling_higher", null, Taxonomy.SIBLING_HIGHER), //get rid of this?
@@ -70,10 +73,9 @@ public enum Flag {
         lookupTable.put("major_rank_conflict_direct",	MAJOR_RANK_CONFLICT);
         lookupTable.put("extinct_direct",	EXTINCT);
 
-        // 'Tattered' taxa simply go away in 2.9 (their children are UNPLACED)
-        lookupTable.put("tattered",	UNPLACED);
-
-        lookupInheritedTable.put("tattered_inherited",	UNPLACED);
+        // 'Tattered' replaced with 'inconsistent' in 2.9
+        lookupTable.put("tattered",	INCONSISTENT);
+        lookupInheritedTable.put("tattered_inherited",	INCONSISTENT);
 	}
 
 	static Flag lookup(String name) {
@@ -111,7 +113,13 @@ public enum Flag {
 	}
 
 	public static void printFlags(int flags, int iflags, PrintStream out) {
+        out.print(toString(flags, iflags));
+    }
+
+	public static String toString(int flags, int iflags) {
 		boolean needComma = false;
+
+        StringBuilder out = new StringBuilder();
 
 		if (false)
 			for (Flag flag : Flag.values()) {
@@ -123,111 +131,116 @@ public enum Flag {
 		// Disposition relative to parent (formerly inside of containers)
 		// The direct form means incertae sedis
 		if ((flags & Taxonomy.INCERTAE_SEDIS) != 0) {
-			if (needComma) out.print(","); else needComma = true;
+			if (needComma) out.append(","); else needComma = true;
 			// WORK IN PROGRESS
-			out.print("incertae_sedis");
+			out.append("incertae_sedis");
 		}
 		if ((iflags & Taxonomy.INCERTAE_SEDIS) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("incertae_sedis_inherited");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("incertae_sedis_inherited");
 		}
 
 		if ((flags & Taxonomy.UNCLASSIFIED) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("unclassified");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("unclassified");
 		}
 		if ((iflags & Taxonomy.UNCLASSIFIED) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("unclassified_inherited");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("unclassified_inherited");
 		}
 
 		if ((flags & Taxonomy.ENVIRONMENTAL) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("environmental");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("environmental");
 		}
 		if ((iflags & Taxonomy.ENVIRONMENTAL) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("environmental_inherited");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("environmental_inherited");
 		}
 
 		if ((flags & Taxonomy.UNPLACED) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("unplaced");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("unplaced");
 		}
 		if ((iflags & Taxonomy.UNPLACED) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("unplaced_inherited");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("unplaced_inherited");
 		}
 
 		if ((flags & Taxonomy.MAJOR_RANK_CONFLICT) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("major_rank_conflict_direct");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("major_rank_conflict_direct");
 		}
 		else if ((flags & Taxonomy.SIBLING_HIGHER) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("sibling_higher");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("sibling_higher");
 		}
 		if ((iflags & Taxonomy.MAJOR_RANK_CONFLICT) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("major_rank_conflict_inherited");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("major_rank_conflict_inherited");
+		}
+
+		if ((flags & Taxonomy.MERGED) != 0) { // never inherited
+			if (needComma) out.append(","); else needComma = true;
+			out.append("merged");
 		}
 
 		// Other
 		if ((flags & Taxonomy.HIDDEN) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("hidden");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("hidden");
 		}
 		else if ((iflags & Taxonomy.HIDDEN) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("hidden_inherited");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("hidden_inherited");
 		}
 
 		if (false && (flags & Taxonomy.SIBLING_LOWER) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("sibling_lower");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("sibling_lower");
 		}
 
 		// Misc
 		if ((flags & Taxonomy.EDITED) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("edited");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("edited");
 		}
 
 		if ((flags & Taxonomy.EXTINCT) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("extinct");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("extinct");
 		}
 		if ((iflags & Taxonomy.EXTINCT) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("extinct_inherited");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("extinct_inherited");
 		}
 
 		if ((flags & Taxonomy.FORCED_VISIBLE) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("forced_visible");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("forced_visible");
 		}
 
 		if (((flags | iflags) & Taxonomy.INFRASPECIFIC) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("infraspecific");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("infraspecific");
 		} else if ((flags & Taxonomy.BARREN) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("barren");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("barren");
 		}
 
         // Buckets - these are deprecated
 		if ((((flags | iflags) & Taxonomy.NOT_OTU) != 0)) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("not_otu");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("not_otu");
 		}
 		if (((flags | iflags) & Taxonomy.VIRAL) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("viral");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("viral");
 		}
 		if (((flags | iflags) & Taxonomy.HYBRID) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("hybrid");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("hybrid");
 		}
-
-	}
+        return out.toString();
+    }
 }

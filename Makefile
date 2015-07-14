@@ -286,7 +286,7 @@ tax/ott/otu_hidden.tsv: tax/ott/hidden.tsv
 	wc $@
 
 # The works
-works: ott tax/ott/otu_deprecated.tsv tax/ott/otu_differences.tsv tax/ott/otu_hidden.tsv
+works: ott tax/ott/otu_differences.tsv
 
 
 clean:

@@ -1,3 +1,9 @@
+# Script to create the ids-that-are-otus.tsv file, which lists all OTT ids that are used in studies.
+
+# TBD: 
+#   Add name as third column
+#   Make this use a checkout of the phylesystem repo instead of the API
+#     (more reliable)
 
 """
 curl -X POST http://api.opentreeoflife.org/v2/studies/find_studies \

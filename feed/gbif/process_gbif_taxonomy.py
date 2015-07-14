@@ -56,7 +56,9 @@ if __name__ == "__main__":
         id = int(id_string)
 
         name = fields[4].strip()
-        # smasher now deals with nameless taxa
+        if name == '':
+            bad_id += 1
+            continue
 
         accepted_status = fields[6].strip()
         synonymp = (accepted_status != "accepted")
@@ -125,8 +127,6 @@ if __name__ == "__main__":
                 to_ignore.append(id)
                 if count % 1000 == 0:
                     print "example orphan ",id,nm_storage[id]
-            else:
-                print "top level ",id,nm_storage[id]
     print "orphans to be pruned: ", count
 
     # Now delete the taxa-to-be-ignored and all of their descendants.

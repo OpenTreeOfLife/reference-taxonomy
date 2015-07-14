@@ -4,7 +4,7 @@ Version 2.9 is not released yet.  Version 2.9 draft 4 was generated on 28 June 2
 
 ## Download
 
-[Download](http://files.opentreeoflife.org/ott/ott2.9/ott2.9draft4.tgz) (gzipped tar file, 117 Mbyte) 
+[Download](http://files.opentreeoflife.org/ott/ott2.9/ott2.9draft7.tgz) (gzipped tar file, 117 Mbyte) 
 
 ## Contents
 All files are encoded UTF-8.  For documentation about file formats, see [the documentation in the reference taxonomy
@@ -40,8 +40,8 @@ The reference taxonomy is an algorithmic combination of several
 source taxonomies.  For code,
 see <a href="https://github.com/OpenTreeOfLife/reference-taxonomy">the
 source code repository</a>.
-Version 2.9 draft 4 was generated using 
-[commit ?](https://github.com/OpenTreeOfLife/reference-taxonomy/commit/?).
+Version 2.9 draft 7 was generated using 
+[commit 7cfbbd2](https://github.com/OpenTreeOfLife/reference-taxonomy/commit/?).
 
 Where taxonomies conflict regarding taxon relationships, they are
 resolved in favor of the higher priority taxonomy.  The priority
@@ -131,16 +131,50 @@ than GBIF.
 
 ## Release notes
 
+Changes since OTT 2.8 (a.k.a 2.8draft5) which was built on 11 June 2014:
+
 New flags:
 
-* extinct - replaces extinct_direct
 * placed - similar to incertae_sedis (this means a child of an
   inconsistent taxon, where t is inconsistent if it occurs in a
   lower-priority taxonomy but is inconsistent with the higher-priority
   taxonomies.  'tattered' is now deprecated)
-* placed_inherited
-* sibling_lower is deprecated
+* placed_inherited - descends from a placed taxon.
+* inconsistent (formerly 'tattered') - taxon in lower priority 
+  taxonomy that is inconsistent (see above).
+* merged - this taxon was consistent with another and got folded 
+  into it.  Taxon is hidden, children aren't.  Taxon may be
+  revived if it's learned later that the it is actually different.
+* extinct - replaces extinct_direct.
+* sibling_lower is deprecated, information not recorded (but you can
+  always tell, just by looking at ranks of siblings).  sibling_higher
+  is retained.
+* Deprecated: tattered, tattered_inherited
 
-Deprecated: sibling_lower, tattered, tattered_inherited
+Specific content changes:
 
-.add method is deprecated (use .take instead)
+* Added WoRMS
+* Updated Hibbett 2007 from http://figshare.com/articles/Fungal_Classification_2015/1465038
+* Minor IF update (to 7 April 2014 and modified processing software)
+* Minor GBIF update (same origin content, modified processing, much faster)
+* NCBI update (27 June 2015)
+* Fixes for many bugs reported in feedback and reference-taxonomy repos (see milestones)
+
+Generic content changes (processing):
+
+* 'Lumping' is now allowed more promiscuously than before
+* uniqueName now shows highest possible discriminating node
+* Somewhat more informative deprecated.tsv
+* 'skeleton' feature replaces 'pinning' for homonym separation (see
+  tax/skel/ for list of barrier nodes)
+
+Jython API changes:
+
+* Experimental 'claim' system, an implementation of what JAR described in
+  his IEvoBio 2014 talk.  See util/claim.py in the repo.
+* .add method is deprecated (use .take instead)
+
+Other:
+
+* SKOS generation
+* Homonym reports

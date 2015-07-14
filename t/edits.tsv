@@ -1,0 +1,4 @@
+# This file is for testing the edit feature
+#command	name	rank	parent	context	sourceInfo
+#add	Acanthotrema frischii	species	Acanthotrema	Fungi	if:516851
+#incertae_sedis	Argophyllaceae	family	Asterales	Asterales	*

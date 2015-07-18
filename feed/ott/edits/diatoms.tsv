@@ -1,0 +1,63 @@
+# E.g. (without the # signs)
+#command	name	rank	parent	context sourceInfo
+#add	Acanthotrema frischii species Acanthotrema	Fungi if:516851
+command	name	rank	parent	context	sourceInfo
+add	Anomoeoneis fogedii	species	Anomoeoneis	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Anomoeoneis fogedii sp. FD399	strain	Anomoeoneis fogedii	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Anomoeoneis sculpta sp. CH239	strain	Anomoeoneis sculpta	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Anomoeoneis sphaerophora sp. FD160	strain	Anomoeoneis sphaerophora	Bacillariophyta	 http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbella affinis sp. CH319	strain	Cymbella affinis	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbella affinis sp. CH405	strain	Cymbella affinis	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbella aspera sp. B423	strain	Cymbella aspera	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbella aspera sp. CH423	strain	Cymbella aspera	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbella aspera sp. FD272	strain	Cymbella aspera	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbella baicalensis sp. B20	strain	Cymbella baicalensis	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbella cistula sp. CH019	strain	Cymbella cistula	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbella cistula sp. CH020	strain	Cymbella cistula	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbella cistula sp. CH321	strain	Cymbella cistula	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbella helvetica sp. B457	strain	Cymbella helvetica	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbella janischii	species	Cymbella	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbella janischii sp. CH062	strain	Cymbella janischii	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbella lanceolata CH040	strain	Cymbella lanceolata	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbella mexicana CH031	strain	Cymbella mexicana	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbella proxima 22vi094A	strain	Cymbella proxima	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbella sp. CH023	strain	Cymbella	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbella stuxbergii sp. B63	strain	Cymbella stuxbergii	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbella stuxbergii sp. B382	strain	Cymbella stuxbergii	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbella tumida sp. 1vii097A	strain	Cymbella tumida	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbella tumida sp. FD475	strain	Cymbella tumida	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbopleura inaequalis	species	Cymbopleura	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbopleura sp. B37	strain	Cymbopleura	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Cymbopleura sp. CH254	strain	Cymbopleura	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Didymosphenia dentata	species	Didymosphenia	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Didymosphenia geminata sp. CH058	strain	Didymosphenia geminata	Bacillariophyta http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Encyonema macedonicum	species	Encyonema	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Encyonema macedonicum sp. CH011	strain	Encyonema macedonicum	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Encyonema minutum sp. CH409	strain	Encyonema minutum	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Encyonema norvegicum sp. FD342	strain	Encyonema norvegicum	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699add Encyonopsis sp. CH021 strain	Encyonopsis Bacillariophyta http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Encyonema prostratum sp. CH226	strain	Encyonema prostratum	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Encyonema triangulum sp. 2vii091	strain	Encyonema triangulum	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Gomphoneis sp. 29vi091A	strain	Gomphoneis	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Gomphonema sp. Guam CH026	strain	Gomphonema	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Gomphonema sp. Guam CH027	strain	Gomphonema	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Gomphonema sp. CH024	strain	Gomphonema	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Gomphonema sp. 1 LB B557	Gomphonema	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Gomphonema sp. 2 LB B557	Gomphonema	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Gomphonema sp. 3 LB B557	Gomphonema	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Encyonopsis sp. CH021 strain	Encyonopsis	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Geissleria decussis sp. FD50	strain	Geissleria decussis	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Gomphoneis minuta sp. CH053	strain	Gomphoneis minuta	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Gomphonema affine sp. FD45	strain	Gomphonema affine	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Gomphonema affine sp. FD95	strain	Gomphonema affine	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Gomphonema angustatum sp. FD434	strain	Gomphonema angustatum	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Gomphonema brebissonii sp. FD373	strain	Gomphonema brebissonii	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Gomphonema carolinense sp. FD285	strain	Gomphonema carolinense	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Gomphonema dichotomum sp. FD288	strain	Gomphonema dichotomum	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Gomphonema gracile sp. FD65	strain	Gomphonema gracile	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Gomphonema intricatum sp. FD385	strain	Gomphonema intricatum	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Gomphonema parvulum sp. FD240	strain	Gomphonema parvulum	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Placoneis abiskoensis	 sp. FD363	strain	Placoneis abiskoensis	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Placoneis clementis sp. FD419	strain	Placoneis clementis	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Placoneis elginensis sp. FD212	strain	Placoneis elginensis	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+add	Placoneis gastrum sp. CH333	strain	Placoneis gastrum	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S15699
+

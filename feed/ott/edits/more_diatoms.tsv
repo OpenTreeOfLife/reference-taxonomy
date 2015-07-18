@@ -1,0 +1,60 @@
+# E.g. (without the # signs)
+#command	name	rank	parent	context sourceInfo
+#add	Acanthotrema frischii species Acanthotrema	Fungi if:516851
+command name	rank	parent	context sourceInfo
+add	Asterionellopsis glacialis sp. CCMP134	strain	Asterionellopsis glacialis	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S10953
+add	Asterionellopsis glacialis sp. CCMP1717	strain	Asterionellopsis glacialis	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S10953
+add	Odontella cf. aurita sp. 23vi081ACX	strain	Odontella cf. aurita	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S10953
+add	Odontella cf. aurita sp. 26vi081LCX	strain	Odontella cf. aurita	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S10953
+add	Odontella cf. aurita sp. 26VI083DCX	strain	Odontella cf. aurita	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S10953
+add	Pseudostaurosira construens	species	Pseudostaurosira	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S10953
+add	Triceratium cf. dubium	species	Triceratium	Bacillariophyta	http://purl.org/phylo/treebase/phylows/study/TB2:S10953
+
+add	Caloneis budensis sp. AM710470	strain	Caloneis budensis	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Caloneis lauta sp. AM710506	strain	Caloneis lauta	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Caloneis silicula sp. Cal 890 TM	strain	Caloneis silicula	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Eolimna minima sp. AM710427	strain	Eolimna minima	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Mayamaea atomus var. permitis	variety	Mayamaea atomus	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Mayamaea atomus var. permitis sp. AM710435	strain	Mayamaea atomus var. permitis	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Mayamaea atomus var. permitis sp. Wes2 f	strain	Mayamaea atomus var. permitis	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia acrosphaeria sp. Enc2 b	strain	Pinnularia acrosphaeria	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia acuminata sp. Pin 876 TM	strain	Pinnularia acuminata	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia australogibba	species	Pinnularia	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia australogibba var. subcapitata	variety	Pinnularia australogibba	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia australogibba var. subcapitata sp. W045 b	strain	Pinnularia australogibba var. subcapitata	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia borealis sp. Alka1	strain	Pinnularia borealis	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia borealis sp. Ecrins7 a	strain	Pinnularia borealis	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia borealis sp. Tor12 d	strain	Pinnularia borealis	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia borealis sp. Tor3 a	strain	Pinnularia borealis	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia cf. altiplanensis sp. Tor11 b	strain	Pinnularia cf. altiplanensis	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia cf. isselana sp. Cal 878 TM	strain	Pinnularia cf. isselana	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia cf. marchica sp. Ecrins4 a	strain	Pinnularia cf. marchica	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia cf. microstauron	species	Pinnularia	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia cf. microstauron sp. B2 c	strain	Pinnularia cf. microstauron	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia grunowii sp. Pin 889 MG	strain	Pinnularia grunowii	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia mesolepta sp. AM710461	strain	Pinnularia mesolepta	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia neglectiformis sp. Pin706 F	strain	Pinnularia neglectiformis	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia neomajor sp. Corsea 2	strain	Pinnularia neomajor	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia neomajor sp. Tor1 a	strain	Pinnularia neomajor	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia nodosa sp. Pin 885 TM	strain	Pinnularia nodosa	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia parvulissima sp. Pin 977 TM	strain	Pinnularia parvulissima	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia divergens sp. Tor1 b	strain	Pinnularia divergens	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia divergens sp. Tor7 c	strain	Pinnularia divergens	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia gibba sp. Tor7 f	strain	Pinnularia gibba	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia gibba sp. Tor8 b	strain	Pinnularia gibba	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia sp. Pin 873 TM	strain	Pinnularia	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia sp. PinnC7	strain	Pinnularia	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia subcommutata sp. Pin 649 K	strain	Pinnularia	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia subcommutata sp. Pin 883	strain	Pinnularia	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia sp. Tor4 i	strain	Pinnularia	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia sp. Tor4 r	strain	Pinnularia	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia sp. Wie a	strain	Pinnularia	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia subanglica sp. Pin 650 K	strain	Pinnularia subanglica	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia subcapitata var. elongata sp. Wie c	strain	Pinnularia subcapitata var. elongata	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia subcommutata var. nonfasciata sp. Corsea 10	strain	Pinnularia subcommutata var. nonasciata	Naviculales http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia substrephoraphe sp. AM710503 strain	Pinnularia substrephoraphe	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia viridiformis sp. Enc2 a	strain	Pinnularia viridiformis	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia viridiformis sp. Pin 870 MG	strain	Pinnularia viridiformis	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia viridis sp. AM710490	 strain	Pinnularia viridis	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia blackfordensis sp. Bfp04 02	strain	Pinnularia blackfordensis	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927
+add	Pinnularia blackfordensis sp. Bfp5x8 F1-3	strain	Pinnularia blackfordensis	Naviculales	http://www.sciencedirect.com/science/article/pii/S1055790311003927

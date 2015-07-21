@@ -74,8 +74,8 @@ public enum Flag {
         lookupTable.put("extinct_direct",	EXTINCT);
 
         // 'Tattered' replaced with 'inconsistent' in 2.9
-        lookupTable.put("tattered",	INCONSISTENT);
-        lookupInheritedTable.put("tattered_inherited",	INCONSISTENT);
+        lookupTable.put("tattered",	UNPLACED);
+        lookupInheritedTable.put("tattered_inherited",	UNPLACED);
 	}
 
 	static Flag lookup(String name) {
@@ -109,7 +109,7 @@ public enum Flag {
 			}
 		}
 		node.properFlags = f;
-		node.inheritedFlags = g;
+		node.inferredFlags = g;
 	}
 
 	public static void printFlags(int flags, int iflags, PrintStream out) {
@@ -184,63 +184,71 @@ public enum Flag {
 			if (needComma) out.append(","); else needComma = true;
 			out.append("merged");
 		}
-
-		// Other
-		if ((flags & Taxonomy.HIDDEN) != 0) {
+		if ((flags & Taxonomy.INCONSISTENT) != 0) { // never inherited
 			if (needComma) out.append(","); else needComma = true;
-			out.append("hidden");
-		}
-		else if ((iflags & Taxonomy.HIDDEN) != 0) {
-			if (needComma) out.append(","); else needComma = true;
-			out.append("hidden_inherited");
+			out.append("inconsistent");
 		}
 
-		if (false && (flags & Taxonomy.SIBLING_LOWER) != 0) {
-			if (needComma) out.append(","); else needComma = true;
-			out.append("sibling_lower");
-		}
-
-		// Misc
-		if ((flags & Taxonomy.EDITED) != 0) {
-			if (needComma) out.append(","); else needComma = true;
-			out.append("edited");
-		}
-
-		if ((flags & Taxonomy.EXTINCT) != 0) {
-			if (needComma) out.append(","); else needComma = true;
-			out.append("extinct");
-		}
-		if ((iflags & Taxonomy.EXTINCT) != 0) {
-			if (needComma) out.append(","); else needComma = true;
-			out.append("extinct_inherited");
-		}
-
-		if ((flags & Taxonomy.FORCED_VISIBLE) != 0) {
-			if (needComma) out.append(","); else needComma = true;
-			out.append("forced_visible");
-		}
-
-		if (((flags | iflags) & Taxonomy.INFRASPECIFIC) != 0) {
-			if (needComma) out.append(","); else needComma = true;
-			out.append("infraspecific");
-		} else if ((flags & Taxonomy.BARREN) != 0) {
-			if (needComma) out.append(","); else needComma = true;
-			out.append("barren");
-		}
-
-        // Buckets - these are deprecated
+        // Emptied-out bucket
 		if ((((flags | iflags) & Taxonomy.NOT_OTU) != 0)) {
 			if (needComma) out.append(","); else needComma = true;
 			out.append("not_otu");
-		}
-		if (((flags | iflags) & Taxonomy.VIRAL) != 0) {
-			if (needComma) out.append(","); else needComma = true;
-			out.append("viral");
-		}
-		if (((flags | iflags) & Taxonomy.HYBRID) != 0) {
-			if (needComma) out.append(","); else needComma = true;
-			out.append("hybrid");
-		}
+		} else {
+
+            // Based on input taxonomy
+            if (false && (flags & Taxonomy.SIBLING_LOWER) != 0) {
+                if (needComma) out.append(","); else needComma = true;
+                out.append("sibling_lower");
+            }
+
+            // Annotations
+            if ((flags & Taxonomy.HIDDEN) != 0) {
+                if (needComma) out.append(","); else needComma = true;
+                out.append("hidden");
+            }
+            else if ((iflags & Taxonomy.HIDDEN) != 0) {
+                if (needComma) out.append(","); else needComma = true;
+                out.append("hidden_inherited");
+            }
+            if ((flags & Taxonomy.EDITED) != 0) {
+                if (needComma) out.append(","); else needComma = true;
+                out.append("edited");
+            }
+
+            if ((flags & Taxonomy.EXTINCT) != 0) {
+                if (needComma) out.append(","); else needComma = true;
+                out.append("extinct");
+            }
+            if ((iflags & Taxonomy.EXTINCT) != 0) {
+                if (needComma) out.append(","); else needComma = true;
+                out.append("extinct_inherited");
+            }
+
+            if ((flags & Taxonomy.FORCED_VISIBLE) != 0) {
+                if (needComma) out.append(","); else needComma = true;
+                out.append("forced_visible");
+            }
+
+            // Post-inferred based on actual content
+            if (((flags | iflags) & Taxonomy.INFRASPECIFIC) != 0) {
+                if (needComma) out.append(","); else needComma = true;
+                out.append("infraspecific");
+            } else if (((flags | iflags) & Taxonomy.BARREN) != 0) {
+                if (needComma) out.append(","); else needComma = true;
+                out.append("barren");
+            }
+
+            // Hide
+            if (((flags | iflags) & Taxonomy.VIRAL) != 0) {
+                if (needComma) out.append(","); else needComma = true;
+                out.append("viral");
+            }
+            // Hide
+            if (((flags | iflags) & Taxonomy.HYBRID) != 0) {
+                if (needComma) out.append(","); else needComma = true;
+                out.append("hybrid");
+            }
+        }
         return out.toString();
     }
 }

@@ -1,6 +1,6 @@
 # Open Tree of Life reference taxonomy version 2.9
 
-Version 2.9 is not released yet.  Version 2.9 draft 4 was generated on 28 June 2015.
+Version 2.9 is not released yet.  Version 2.9 draft 7 was generated on 14 July 2015.
 
 ## Download
 
@@ -20,13 +20,11 @@ on github.
   taxon from a higher priority input taxonomy.  Number in first column is depth in taxonomic tree of
   nearest common ancestor of its children.
 
-**deprecated.tsv**: List all of taxa that have been deprecated since previous version. 
+**deprecated.tsv**: List all taxon ids occurring in phylesystem studies that have been deprecated since previous version. 
 
-**otu-deprecated.tsv**: List all taxa occurring in phylesystem studies that have been deprecated since previous version. 
+**differences.tsv:** List of differences between ott2.9 and ott2.8.
 
-**differences.tsv:** Summary of differences between ott2.9 and ott2.8.
-
-**otu-differences.tsv:** Summary of differences between ott2.9 and ott2.8 that involve taxa in phylesystem.
+**otu_differences.tsv:** List of differences between ott2.9 and ott2.8 that involve taxa in phylesystem.
 
 **hidden.tsv**: Report on 'hidden' taxa (incertae sedis and other suppressed taxa). Columns are OTT id, name, source taxonomy and id, containing major group, and flags (reasons for hiding).
 
@@ -135,26 +133,26 @@ Changes since OTT 2.8 (a.k.a 2.8draft5) which was built on 11 June 2014:
 
 New flags:
 
-* placed - similar to incertae_sedis (this means a child of an
+* placed - similar to incertae\_sedis (this means a child of an
   inconsistent taxon, where t is inconsistent if it occurs in a
   lower-priority taxonomy but is inconsistent with the higher-priority
   taxonomies.  'tattered' is now deprecated)
-* placed_inherited - descends from a placed taxon.
+* placed\_inherited - descends from a placed taxon.
 * inconsistent (formerly 'tattered') - taxon in lower priority 
   taxonomy that is inconsistent (see above).
 * merged - this taxon was consistent with another and got folded 
   into it.  Taxon is hidden, children aren't.  Taxon may be
   revived if it's learned later that the it is actually different.
 * extinct - replaces extinct_direct.
-* sibling_lower is deprecated, information not recorded (but you can
-  always tell, just by looking at ranks of siblings).  sibling_higher
+* sibling\_lower is deprecated, information not recorded (but you can
+  always tell, just by looking at ranks of siblings).  sibling\_higher
   is retained.
 * Deprecated: tattered, tattered_inherited
 
 Specific content changes:
 
 * Added WoRMS
-* Updated Hibbett 2007 from http://figshare.com/articles/Fungal_Classification_2015/1465038
+* Updated Hibbett 2007 from [http://figshare.com/articles/Fungal\_Classification_2015/1465038](http://figshare.com/articles/Fungal_Classification_2015/1465038)
 * Minor IF update (to 7 April 2014 and modified processing software)
 * Minor GBIF update (same origin content, modified processing, much faster)
 * NCBI update (27 June 2015)
@@ -167,6 +165,9 @@ Generic content changes (processing):
 * Somewhat more informative deprecated.tsv
 * 'skeleton' feature replaces 'pinning' for homonym separation (see
   tax/skel/ for list of barrier nodes)
+* "unique names" show highest distinguishing taxon, e.g. "Morganella
+  (genus in kingdom Fungi)" instead of "Morganella (genus in family
+  Agaricaceae)"
 
 Jython API changes:
 

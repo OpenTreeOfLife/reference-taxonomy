@@ -25,7 +25,7 @@ public class AlignmentByName extends Alignment {
             return subject.answer;
         else if (subject.mapped != null)
             // shouldn't happen
-            return Answer.yes(subject, subject.mapped, "mapped", null);
+            return Answer.yes(subject, subject.mapped, "mapped-should-not-happen", null);
         else
             return null;
     }
@@ -78,7 +78,7 @@ public class AlignmentByName extends Alignment {
                             Taxon div1 = mrca.getDivision();
                             Taxon div2 = a.getDivision();
                             if (div1 != div2 && div1.divergence(div2) != null)
-                                System.out.format("** Children of %s are in disjoint divisions (%s in %s + %s in %s)\n",
+                                System.out.format("! Children of %s are in disjoint divisions (%s in %s + %s in %s)\n",
                                                   node, mrca, div1, a, div2);
                             mrca = m;
                         }
@@ -104,11 +104,12 @@ public class AlignmentByName extends Alignment {
                         // Hmm... allow siblings (and cousins) to merge.  Blumeria graminis
                         && (div[0] != mrca && div[1] != node.mapped)) {
                         if (outlaws < 50)
-                            System.out.format("** %s maps by name to %s which is disjoint from mrca %s; they meet at %s\n",
+                            System.out.format("! %s maps by name to %s which is disjoint from mrca %s; they meet at %s\n",
                                               node, node.mapped, mrca, div[0].parent);
                         ++outlaws;
                         // OVERRIDE.
                         node.answer = Answer.no(node, node.mapped, "not-same/disjoint", null);
+                        node.answer.maybeLog();
                         node.mapped = null;
                     } else
                         ++losers;
@@ -124,8 +125,13 @@ public class AlignmentByName extends Alignment {
 
 	public void reset() {
 		this.nextSequenceNumber = 0;
-        this.source.reset();
+        this.source.reset();    // depths and comapped
         this.union.reset();
+
+        // unnecessary?
+        this.source.propagateFlags(); 
+        this.union.propagateFlags(); 
+
 		for (Taxon root: union.roots())
 			// Prepare for subsumption checks
             resetBrackets(root);
@@ -234,7 +240,7 @@ public class AlignmentByName extends Alignment {
         Criterion[] criteria = Criterion.criteria;
 		if (source.rootCount() > 0) {
 
-			Taxon.resetStats();
+			union.resetEvents();
 			System.out.println("--- Mapping " + source.getTag() + " into union ---");
 
 			int beforeCount = union.nameIndex.size();
@@ -295,7 +301,7 @@ public class AlignmentByName extends Alignment {
 			}
 			System.out.println("| Names in common: " + incommon);
 
-			Taxon.printStats();
+			union.eventsReport("| ");
 
 			// Report on how well the merge went.
 			Alignment.alignmentReport(source, union);
@@ -340,7 +346,8 @@ public class AlignmentByName extends Alignment {
                 for (Taxon node : nodes)
                     if (!node.name.equals(name)) {
                         Taxon unode = unodes.get(0);
-                        ((UnionTaxonomy)unode.taxonomy).logAndMark(Answer.noinfo(node, unode, "synonym(s)", node.name));
+                        // node.markEvent("synonym(s)");   ?
+                        Answer.noinfo(node, unode, "synonym(s)", node.name).maybeLog();
                         break;
                     }
 
@@ -428,7 +435,8 @@ public class AlignmentByName extends Alignment {
                         } else if (x.mapped == y) {
                             ;
                         } else if (x.answer != null) {
-                            System.out.format("** Blocked from mapping %s to %s because %s\n", x, y, x.answer.reason);
+                            Answer.no(x, y, "blocked-because", x.answer.reason).maybeLog();
+                            // System.out.format("| Blocked from mapping %s to %s because %s\n", x, y, x.answer.reason);
                         } else {
                             x.alignWith(y, a); // sets .mapped, .answer
                         }
@@ -517,7 +525,7 @@ public class AlignmentByName extends Alignment {
                                 explanation = new Answer(node, null, badness, "unresolved/blocked", kludge);
                         }
                     }
-                    union.logAndMark(explanation);
+                    explanation.maybeLog();
                     // remember, source could be either gbif or idsource
                     node.answer = explanation;  
                 }

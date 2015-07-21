@@ -25,7 +25,7 @@ public class Taxon {
 	int depth = -1;             // cache of distance from root
 	boolean prunedp = false;    // for lazy removal from nameIndex
 
-	int properFlags = 0, inheritedFlags = 0, rankAsInt = 0;
+	int properFlags = 0, inferredFlags = 0, rankAsInt = 0;
 
 	Taxon division = null;
 
@@ -216,7 +216,7 @@ public class Taxon {
             System.out.format("** Setting flags on %s in %s\n", this, this.parent);
 			Flag.printFlags(flags, 0, System.out);
             System.out.format("\n");
-			Flag.printFlags(this.properFlags, this.inheritedFlags, System.out);
+			Flag.printFlags(this.properFlags, this.inferredFlags, System.out);
             System.out.format("\n");
             this.showLineage(this.taxonomy.forest);  // want to know the source
             Taxon.backtrace();
@@ -296,7 +296,9 @@ public class Taxon {
 
 	void alignWith(Taxon unode, String reason) {
         try {
-            alignWith(unode, Answer.yes(this, unode, reason, null));
+            Answer answer = Answer.yes(this, unode, reason, null);
+            alignWith(unode, answer);
+            answer.maybeLog();
         } catch (Exception e) {
             System.err.format("Exception in alignWith\n");
             e.printStackTrace();
@@ -327,8 +329,7 @@ public class Taxon {
             if (unode.comapped != null) {
                 // Union node has already been matched to, but synonyms are OK
                 if (unode.comapped != this)
-                    Taxon.markEvent("lumped");
-                // System.out.format("| Lumping %s and %s -> %s\n", unode.comapped, this, unode);
+                    this.markEvent("lumped");
             } else
                 unode.comapped = this;
         }
@@ -372,7 +373,9 @@ public class Taxon {
     public Taxon alignWithNew(Taxonomy target, String reason) {
         Taxon newnode = this.dup(target, reason);
         this.mapped = newnode;
+        newnode.comapped = this;
         this.answer = Answer.yes(this, newnode, reason, null);
+        answer.maybeLog();
         return newnode;
     }
 
@@ -479,7 +482,7 @@ public class Taxon {
 
 		return 
 			"(" + ids +
-			(this.children == null ? "." : "") +
+			(this.children == null ? "" : "+" + ((Object)(this.children.size())).toString()) +
 			" " + this.name +
 			twinkie +				// tbd: indicate division top with "#" 
             (this.isDirectlyHidden() ? "?" : "") +
@@ -508,54 +511,34 @@ public class Taxon {
 			return "";
 	}
 
-	// Event monitoring
-    // Eventually phase this out in favor of equivalents in Taxonomy class
+    // For reporting
+    UnionTaxonomy getUnion() {
+        if (this.taxonomy instanceof UnionTaxonomy)
+            return (UnionTaxonomy)(this.taxonomy);
+        else if (this.taxonomy.target() != null)
+            return this.taxonomy.target();
+        else
+            return null;
+    }
 
-	static Map<String, Long> eventStats = new HashMap<String, Long>();
-	static List<String> eventStatNames = new ArrayList<String>();
+	// Events - punt them to union taxonomy
 
-	static boolean startReport(String note) {
-		Long probe = eventStats.get(note);
-		long count;
-		if (probe == null) {
-			eventStatNames.add(note);
-			count = 0;
-		} else
-			count = probe;
-		eventStats.put(note, count+(long)1);
-		if (count <= 10) {
-			return true;
-		} else
-			return false;
+	boolean markEvent(String note) {
+        UnionTaxonomy u = this.getUnion();
+        if (u == null)
+            return false;
+        else if (this.taxonomy instanceof SourceTaxonomy)
+            return u.markEvent(note, this);
+        else
+            return u.markEvent(note);
 	}
-
-	static void printStats() {
-        Collections.sort(eventStatNames);
-		for (String note : eventStatNames) { // In order added
-			System.out.println("| " + note + ": " + eventStats.get(note));
-		}
-		// Reset...
-		Taxon.resetStats();
-	}
-
-	static void resetStats() {
-		eventStats = new HashMap<String, Long>();
-		eventStatNames = new ArrayList();
-	}
-
-	// convenience variants
-
-	static boolean markEvent(String note) {
-        // return this.taxonomy.markEvent(note);
-		return startReport(note);
-	}
-
+    
 	boolean report(String note, Taxon othernode) {
 		return this.report(note, othernode, null);
 	}
 
 	boolean report(String note, Taxon othernode, String witness) {
-		if (startReport(note)) {
+		if (this.startReport(note)) {
 			System.out.println("| " + note);
 			this.report1("", othernode);
 			if (othernode != null)
@@ -569,7 +552,7 @@ public class Taxon {
 	}
 
 	boolean report(String note, List<Taxon> others) {
-		if (startReport(note)) {
+		if (this.startReport(note)) {
 			System.out.println("| " + note);
 			this.report1("", null);
 			for (Taxon othernode : others)
@@ -581,7 +564,7 @@ public class Taxon {
 	}
 
 	void report(String tag) {
-		if (startReport(tag))
+		if (this.startReport(tag))
 			report1(tag, null);
 	}
 
@@ -601,9 +584,17 @@ public class Taxon {
 		System.out.println(" " + tag + " " + output);
 	}
 
+    boolean startReport(String tag) {
+        UnionTaxonomy u = this.getUnion();
+        if (u != null)
+            return u.markEvent(tag);
+        else
+            return false;
+    }
+
 	// N.b. this is in source taxonomy, match is in union
 	boolean separationReport(String note, Taxon match) {
-		if (startReport(note)) {
+		if (this.startReport(note)) {
 			System.out.println(note);
 
 			Taxon nearestMapped = this;			 // in source taxonomy
@@ -643,7 +634,7 @@ public class Taxon {
 			int d1 = d0 + (nearestMappedMapped.measureDepth() - dm);
 			int d2 = match.measureDepth() - dm;
 			int d3 = (d2 > d1 ? d2 : d1);
-			String spaces = "															 ";
+			String spaces = "                                                                ";
 			Taxon n1 = this;
 			for (int i = d3 - d1; i <= d3; ++i) {
 				if (n1 == nearestMapped)
@@ -797,7 +788,11 @@ public class Taxon {
     // Except, if no way to get to union from source, return null.
 
 	public Taxon[] divergence(Taxon other) {
-        Taxon a = this.bridge(), b = other.bridge();
+        Taxon a = this, b = other;
+        if (a.taxonomy != b.taxonomy) {
+            a = this.bridge();
+            b = other.bridge();
+        }
         if (a == null || b == null) return null;
 		if (a.taxonomy != b.taxonomy)
             throw new RuntimeException(String.format("Can't bridge different union taxonomies %s %s", this, other));
@@ -830,7 +825,8 @@ public class Taxon {
             while (a.mapped == null) {
                 if (a.parent == null)
                     // No bridge!  Shouldn't happen
-                    throw new RuntimeException(String.format("No bridge from %s", this));
+                    // see uniqueName (of e.g. Trachelius) for example
+                    return null; //throw new RuntimeException(String.format("No bridge from %s", this));
                 a = a.parent;
             }
             if (!(a.mapped.taxonomy instanceof UnionTaxonomy))
@@ -888,8 +884,10 @@ public class Taxon {
 	public boolean setRemoved(String reason) {
 		this.prunedp = true;
         this.mapped = null;
-        if (this.answer == null)
+        if (this.answer == null && (this.taxonomy instanceof SourceTaxonomy)) {
             this.answer = Answer.no(this, null, reason, null);
+            this.answer.maybeLog();
+        }
 		if (this.children != null)
 			for (Taxon child : new ArrayList<Taxon>(children))
 				child.setRemoved(reason);
@@ -927,22 +925,41 @@ public class Taxon {
 					}
 				}
 			}
+        String result;
 		if (homonymp) {
 			String thisrank = ((this.rank == null) ? "" : (this.rank + " "));
 			if (unique == null || unique == this) {
 				if (this.sourceIds != null)
-					return this.name + " (" + thisrank + this.sourceIds.get(0) + ")";
+					result = this.name + " (" + thisrank + this.sourceIds.get(0) + ")";
+				else if (this.id != null)
+					result = this.name + " (" + thisrank + this.id + ")";
 				else
 					/* No unique name, just leave it alone and pray */
-					return this.name;
+					result = this.name;
 			} else {
 				String qrank = ((unique.rank == null) ? "" : (unique.rank + " "));
 				String qname = unique.uniqueName();
 				if (qname.length() == 0) qname = unique.name;
-				return this.name + " (" + thisrank + "in " + qrank + qname + ")";
+				result = this.name + " (" + thisrank + "in " + qrank + qname + ")";
 			}
 		} else
-			return "";
+			result = this.name;
+
+        // Surface complexity in TNRS
+        if ((this.properFlags & Taxonomy.MERGED) != 0)
+            result = String.format("%s (merged with %s)",
+                                   result,
+                                   this.parent.uniqueName());
+        else if ((this.properFlags & Taxonomy.INCONSISTENT) != 0)
+            result = String.format("%s (inconsistent in %s)",
+                                   result,
+                                   this.parent.uniqueName());
+
+        // Space saver
+        if (result.equals(this.name))
+            return "";
+        else
+            return result;
 	}
 
 	static Comparator<Taxon> compareNodesBySize = new Comparator<Taxon>() {
@@ -952,23 +969,23 @@ public class Taxon {
 	};
 
 	public boolean isHidden() {
-		return (((this.properFlags | this.inheritedFlags) &
+		return (((this.properFlags | this.inferredFlags) &
                  Taxonomy.HIDDEN_FLAGS) != 0 ||
                 ((this.properFlags & Taxonomy.FORCED_VISIBLE) == 0));
 	}
 
 	public boolean isDirectlyHidden() {
-		return (((this.properFlags & Taxonomy.HIDDEN_FLAGS) != 0) ||
+		return (((this.properFlags & Taxonomy.HIDDEN_FLAGS) != 0) &&
                 ((this.properFlags & Taxonomy.FORCED_VISIBLE) == 0));
 	}
 
 	public boolean isAnnotatedHidden() {
-		return ((this.properFlags | this.inheritedFlags) &
+		return ((this.properFlags | this.inferredFlags) &
 				Taxonomy.HIDDEN) != 0;
     }
 
 	public boolean isExtinct() {
-		return ((this.properFlags | this.inheritedFlags) &
+		return ((this.properFlags | this.inferredFlags) &
 				Taxonomy.EXTINCT) != 0;
     }
 
@@ -1044,11 +1061,18 @@ public class Taxon {
 	public void rename(String name) {
 		String oldname = this.name;
 		if (!oldname.equals(name)) {
+            this.clobberName(name);
+			this.taxonomy.addSynonym(oldname, this);  // awkward, maybe wrong
+		}
+	}
+
+	public void clobberName(String name) {
+		String oldname = this.name;
+		if (!oldname.equals(name)) {
 			Taxon existing = this.taxonomy.unique(name);
 			if (existing != null && existing != this)
 				System.err.format("** Warning: creating a homonym: %s\n", name);
 			this.setName(name);
-			this.taxonomy.addSynonym(oldname, this);  // awkward, maybe wrong
 		}
 	}
 
@@ -1106,7 +1130,7 @@ public class Taxon {
 	}
 
     public boolean isExtant() {
-        return (((this.properFlags | this.inheritedFlags) & Taxonomy.EXTINCT) == 0);
+        return (((this.properFlags | this.inferredFlags) & Taxonomy.EXTINCT) == 0);
     }
 
     public boolean whetherMonophyletic(boolean whether, boolean setp) {
@@ -1196,9 +1220,9 @@ public class Taxon {
 			else
 				System.out.format("Sources: %s\n", this.getSourceIdsString());
 		}
-		if (this.properFlags > 0 || this.inheritedFlags > 0) {
+		if (this.properFlags > 0 || this.inferredFlags > 0) {
 			System.out.print("Flags: ");
-			Flag.printFlags(this.properFlags, this.inheritedFlags, System.out);
+			Flag.printFlags(this.properFlags, this.inferredFlags, System.out);
 			System.out.println();
 		}
 	}

@@ -5,7 +5,7 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.9draft7
+WHICH=2.9draft8
 PREV_WHICH=2.8
 
 #  $^ = all prerequisites
@@ -56,7 +56,7 @@ OTT_ARGS=$(SMASH) $(SILVA)/ tax/713/ tax/fung/ $(NCBI)/ $(GBIF)/ \
       --out tax/ott/
 
 ott: tax/ott/log.tsv
-tax/ott/log.tsv: $(CLASS) make-ott.py taxonomies.py \
+tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
                     tax/silva/taxonomy.tsv \
 		    tax/fung/taxonomy.tsv tax/713/taxonomy.tsv \
 		    $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv \

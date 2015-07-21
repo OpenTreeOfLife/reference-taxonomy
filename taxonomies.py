@@ -4,7 +4,7 @@ from org.opentreeoflife.smasher import Taxonomy
 from claim import Has_child, Whether_same, With_ancestor, With_descendant, \
                   Whether_extant, make_claims
 
-this_source = "taxonomies.py"
+this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/taxonomies.py'
 
 def load_silva():
     silva = Taxonomy.getTaxonomy('tax/silva/', 'silva')
@@ -14,22 +14,34 @@ def load_silva():
     # but says -phytina would be more correct per code.
     silva.taxon('Rhodophyceae').rename('Rhodophyta')
 
+    silva.taxon('Florideophycidae', 'Rhodophyta').synonym('Florideophyceae')
+    silva.taxon('Stramenopiles', 'SAR').synonym('Heterokonta') # needed by WoRMS
+
+    # Used in studies pg_2448,pg_2783,pg_2753, seen deprecated on 2015-07-20
+    silva.taxon('AF364847').rename('Pantoea ananatis LMG 20103')    # ncbi:706191
+    silva.taxon('EF690403').rename('Pantoea ananatis B1-9')  # ncbi:1048262
+
     patch_silva(silva)
 
     return silva
 
+def bad_name(taxonomy, name, anc):
+    tax = taxonomy.maybeTaxon(name, anc)
+    if tax != None:
+        tax.rename('Not ' + name)
+
 def patch_silva(silva):
 
     # Sample contamination
-    silva.taxon('Trichoderma harzianum').prune(this_source)
-    silva.taxon('Sclerotinia homoeocarpa').prune(this_source)
-    silva.taxon('Puccinia triticina').prune(this_source)
+    bad_name(silva, 'Trichoderma harzianum', 'life')
+    bad_name(silva, 'Sclerotinia homoeocarpa', 'life')
+    bad_name(silva, 'Puccinia triticina', 'life')
 
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/104
-    silva.taxon('Caenorhabditis elegans').prune(this_source)
+    bad_name(silva, 'Caenorhabditis elegans', 'life')
 
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/100
-    silva.taxon('Solanum lycopersicum').prune(this_source)
+    bad_name(silva, 'Solanum lycopersicum', 'life')
 
     # - Deal with parent/child homonyms in SILVA -
     # Arbitrary choices here to eliminate ambiguities down the road when NCBI gets merged.
@@ -37,13 +49,13 @@ def patch_silva(silva):
     # way to choose between them, and refuse to match either.  It will
     # then create a third homonym.)
     # Note order dependence between the following two
-    silva.taxon('Intramacronucleata','Intramacronucleata').rename('Intramacronucleata inf.')
-    silva.taxon('Spirotrichea','Intramacronucleata inf.').rename('Spirotrichea inf.')
-    silva.taxon('Cyanobacteria','Bacteria').rename('Cyanobacteria sup.')
-    silva.taxon('Actinobacteria','Bacteria').rename('Actinobacteria sup.')
-    silva.taxon('Acidobacteria','Bacteria').rename('Acidobacteria sup.')
-    silva.taxon('Ochromonas','Ochromonadales').rename('Ochromonas sup.')
-    silva.taxon('Tetrasphaera','Tetrasphaera').rename('Tetrasphaera inf.')
+    silva.taxon('Intramacronucleata','Intramacronucleata').clobberName('Intramacronucleata inf.')
+    silva.taxon('Spirotrichea','Intramacronucleata inf.').clobberName('Spirotrichea inf.')
+    silva.taxon('Cyanobacteria','Bacteria').clobberName('Cyanobacteria sup.')
+    silva.taxon('Actinobacteria','Bacteria').clobberName('Actinobacteria sup.')
+    silva.taxon('Acidobacteria','Bacteria').clobberName('Acidobacteria sup.')
+    silva.taxon('Ochromonas','Ochromonadales').clobberName('Ochromonas sup.')
+    silva.taxon('Tetrasphaera','Tetrasphaera').clobberName('Tetrasphaera inf.')
 
     # SILVA's placement of Rozella as a sibling of Fungi is contradicted
     # by Hibbett 2007, which puts it under Fungi.  Hibbett gets priority.
@@ -73,7 +85,7 @@ def patch_silva(silva):
 
     # - Deal with division alignment issues -
     # In SILVA, Ctenophora is a genus inside of SAR, not a metazoan phylum
-    silva.taxon('Ctenophora', 'Coscinodiscophytina').prune(this_source)
+    bad_name(silva, 'Ctenophora', 'Coscinodiscophytina')
 
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/79
     Ml = silva.maybeTaxon('Melampsora lini')
@@ -84,10 +96,20 @@ def patch_silva(silva):
     if up != None: up.prune(this_source)
 
     # https://github.com/OpenTreeOfLife/feedback/issues/45
-    silva.taxon('Choanoflagellida', 'Ichthyosporea').rename('Choanoflagellida NOT')
+    # Not a legit name
+    # bad_name(silva, 'Choanoflagellida', 'Ichthyosporea')
 
     # JAR noticed failed inclusion test - this is fixed in silva 117
     silva.taxon('Bacteria').take(silva.maybeTaxon('Verrucomicrobia group'))
+
+    # EU930344	|	D78004/#6	|	Photorhabdus luminescens	|	samples	|	ncbi:1004165	|	
+    # EU930342	|	D78004/#6	|	Photorhabdus luminescens	|	samples	|	ncbi:1004166	|	
+    # 1004165	|	29488	|	Photorhabdus luminescens subsp. caribbeanensis	|	subspecies	|	
+    # 1004166	|	29488	|	Photorhabdus luminescens subsp. hainanensis	|	subspecies	|	
+    silva.taxon('EU930344').clobberName('Photorhabdus luminescens subsp. caribbeanensis')
+    silva.taxon('EU930342').clobberName('Photorhabdus luminescens subsp. hainanensis')
+
+
 
 def load_h2007():
     h2007 = Taxonomy.getNewick('feed/h2007/tree.tre', 'h2007')
@@ -111,6 +133,8 @@ def load_h2007():
 def load_fung():
     fung = Taxonomy.getTaxonomy('tax/fung/', 'if')
 
+    fung.analyzeMajorRankConflicts()
+
     # 2014-04-14 Bad Fungi homonyms in new version of IF.  90156 is the good one.
     # 90154 has no descendants
     if fung.maybeTaxon('90154') != None:
@@ -129,7 +153,7 @@ def load_fung():
     try:
         patch_fung(fung)
     except:
-        print '** exception in patch_fung'
+        print '**** Exception in patch_fung'
 
     fung.smush()
 
@@ -160,30 +184,15 @@ def patch_fung(fung):
     # I'm thinking of putting it in Phanerochaetaceae. - GBIF does this for us.
     fung.taxon('Byssus phosphorea').prune(this_source)
 
-    if False:  # see taxonomies.load_fung
-        # Work in progress.  By promoting to root we've lost the fact that
-        # protozoa are eukaryotes, which is unfortunate.  Not important in this
-        # case, but suggestive of deeper problems in the framework.
-        # Test case: Oomycota should end up in Stramenopiles.
-        fung_Protozoa = fung.maybeTaxon('Protozoa')
-        if fung_Protozoa != None:
-            fung_Protozoa.hide()   # recursive
-            fung_Protozoa.detach()
-            fung_Protozoa.elide()
-        fung_Chromista = fung.maybeTaxon('Chromista')
-        if fung_Chromista != None:
-            fung_Chromista.hide()  # recursive
-            fung_Chromista.detach()
-            fung_Chromista.elide()
-
     # IF Thraustochytriidae = SILVA Thraustochytriaceae ?  (Stramenopiles)
     # IF T. 90638 contains Sicyoidochytrium, Schizochytrium, Ulkenia, Thraustochytrium
     #  Parietichytrium, Elina, Botryochytrium, Althornia
     # SILVA T. contains Ulkenia and a few others of these... I say yes.
-    thraust = fung.taxon('90377')
-    thraust.synonym('Thraustochytriaceae')
-    thraust.synonym('Thraustochytriidae')
-    thraust.synonym('Thraustochytridae')
+    thraust = fung.maybeTaxon('90377') # Seems to have gone away
+    if thraust != None:
+        thraust.synonym('Thraustochytriaceae')
+        thraust.synonym('Thraustochytriidae')
+        thraust.synonym('Thraustochytridae')
 
     # IF Labyrinthulaceae = SILVA Labyrinthulomycetes ?  NO.
     # IF L. contains only Labyrinthomyxa, Labyrinthula
@@ -241,16 +250,45 @@ def patch_fung(fung):
     # ** No taxon found with this name: Hyaloraphidiaceae
 
     # Yan Wong https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116
-    fung.taxon('Mycosphaeroides').extinct()
+    # fung.taxon('Mycosphaeroides').extinct()  - gone
     fung.taxon('Majasphaeridium').extinct()
 
-    print "Fungi in Index Fungorum has %s nodes"%fung.taxon('Fungi').count()
+    fung.taxon('Urosporidium').prune(this_source) # parasitic protist, SILVA looks correct
+    fung.taxon('Bonamia').prune(this_source)      # parasitic protist, SILVA looks correct
+    fung.taxon('Zonaria').prune(this_source)
+    fung.taxon('Ellobiopsis').prune(this_source)
 
+    # Our IF dump puts genus Saccharomycetes (21291) directly under Fungi
+    # (incertae sedis).  The corresponding IF record on the site says
+    # "Position in classification: Fossil Fungi". Only two species, too
+    # easily confused with class Saccharamycetes (90791). Discovered while
+    # tracking down
+    # ** Ranks out of order: (if:21291 Saccharomycetes?) genus has child (if:90341 Saccharomycetidae?) subclass
+    # in GBIF.
+    # Neither SILVA nor h2007 has the class.  GBIF used to have the genus,
+    # not sure if it still does.
+    cetes = fung.taxon('21291')
+    if cetes != None:
+        cetes.extinct()
+        cetes.prune("if:21291")
+        #cetes.rank = None
+        #tina = fung.taxon('Saccharomycetaceae', 'Fungi')
+        #if tina != None:
+        #    tina.take(fung.taxon('Saccharomycetes', 'Fungi'))
+        #cetes.extant()
+
+    # JAR 2015-07-20 - largest unattached subtree was Microeccrina, which is dubious.
+    fung.taxon('Microeccrina').prune('http://www.nhm.ku.edu/~fungi/Monograph/Text/chapter12.htm')
+
+    # JAR 2015-07-20 - homonym, Nom. illegit.
+    fung.taxon('Acantharia').prune('http://www.indexfungorum.org/Names/NamesRecord.asp?RecordID=8')
+
+    print "Fungi in Index Fungorum has %s nodes"%fung.taxon('Fungi').count()
 
 def link_to_h2007(tax):
     print '-- Putting families in Hibbett 2007 orders --'
     # 2014-04-13 Romina #40, #60
-    for foo in \
+    for (order_name, family_names) in \
         [('Neozygitales', ['Neozygitaceae']),
          ('Asterinales', ['Asterinaceae']),
          ('Savoryellales', ['Savoryella', 'Ascotaiwania', 'Ascothailandia']), 
@@ -260,9 +298,9 @@ def link_to_h2007(tax):
          ('Hyaloraphidiales', ['Hyaloraphidiaceae']),
          ('Mytilinidiales', ['Mytilinidiaceae', 'Gloniaceae']),
         ]:
-        order = tax.maybeTaxon(foo[0])
+        order = tax.maybeTaxon(order_name)
         if order != None:
-            for family in foo[1]:
+            for family in family_names:
                 order.take(tax.taxon(family))
         else:
             print '*** Missing fungal order', foo[0]
@@ -296,7 +334,7 @@ def link_to_h2007(tax):
         # Loxosporales,synonym of Sarrameanales
         some_claims.append(Whether_same('Sarrameanales', 'Loxosporales',
                                         True, h2007_fam))
-        make_claims(tax, some_claims)
+    make_claims(tax, some_claims)
 
 
 def load_713():
@@ -305,6 +343,7 @@ def load_713():
 
 def load_ncbi():
     ncbi = Taxonomy.getTaxonomy('tax/ncbi/', 'ncbi')
+    fix_SAR(ncbi)
 
     ncbi.taxon('Viridiplantae').rename('Chloroplastida')
     patch_ncbi(ncbi)
@@ -448,7 +487,7 @@ def load_gbif():
     gbif.analyzeMajorRankConflicts()
 
     fix_protists(gbif)  # creates a Eukaryota node
-    fixPlants(gbif)
+    fix_plants(gbif)
     gbif.taxon('Animalia').synonym('Metazoa')
 
     patch_gbif(gbif)
@@ -543,7 +582,8 @@ def patch_gbif(gbif):
     for name in ['Griphopithecus', 'Asiadapis',
                  'Lomorupithecus', 'Marcgodinotius', 'Muangthanhinius',
                  'Plesiopithecus', 'Suratius', 'Killikaike blakei', 'Rissoina bonneti',
-                 'Mycosphaeroides']:
+                 # 'Mycosphaeroides'  - gone
+             ]:
         claim = Whether_extant(name, False, 'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116')
         claim.make_true(gbif)
 
@@ -564,6 +604,20 @@ def patch_gbif(gbif):
 
     # 4010070	pg_1378	Gelidiellaceae	gbif:8998  -- ok, paraphyletic
 
+    # https://github.com/OpenTreeOfLife/feedback/issues/64
+    gbif.taxon('Plagiomene').extinct()
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/65
+    gbif.taxon('Worlandia').extinct()
+
+    tip = gbif.taxon('6101461') # ('Tipuloidea', 'Hemiptera') gbif:6101461 - extinct
+    if tip != None:
+        tip.prune("about:blank#this-homonym-is-causing-too-much-trouble")
+
+    oph = gbif.taxon('4872240')  # ('Ophiurina', 'Ophiurinidae') gbif:4872240 - extinct
+    if oph != None:
+        oph.prune("about:blank#this-homonym-is-causing-too-much-trouble")
+
     return gbif
 
 def load_irmng():
@@ -572,7 +626,7 @@ def load_irmng():
     irmng.analyzeMajorRankConflicts()
 
     fix_protists(irmng)
-    fixPlants(irmng)
+    fix_plants(irmng)
     irmng.taxon('Animalia').synonym('Metazoa')
 
     # JAR 2014-04-26 Flush all 'Unaccepted' taxa
@@ -604,6 +658,14 @@ def load_irmng():
     # target because no synonym-removal command is available.
     irmng.taxon('Niemeyera multipetala').prune(this_source)
 
+    tip = irmng.taxon('Tipuloidea', 'Hemiptera')  # irmng:1170022
+    if tip != None:
+        tip.prune("about:blank#this-homonym-is-causing-too-much-trouble")
+
+    oph = irmng.taxon('Ophiurina', 'Ophiurinidae') # irmng:1346026
+    if oph != None:
+        oph.prune("about:blank#this-homonym-is-causing-too-much-trouble")
+
     return irmng
 
 def load_worms():
@@ -612,8 +674,9 @@ def load_worms():
 
     worms.taxon('Biota').synonym('life')
     worms.taxon('Animalia').synonym('Metazoa')
+
     fix_protists(worms)
-    fixPlants(worms)
+    fix_plants(worms)
 
     # 2015-02-17 According to WoRMS web site.  Occurs in pg_1229
     worms.taxon('Scenedesmus communis').synonym('Scenedesmus caudata')
@@ -625,6 +688,11 @@ def load_worms():
 
     return worms
 
+# Common code for everything but SILVA
+
+def fix_basal(tax):
+    fix_protists(tax)
+    fix_plants(tax)
 
 # Common code for GBIF, IRMNG, Index Fungorum
 def fix_protists(tax):
@@ -637,7 +705,7 @@ def fix_protists(tax):
         li = tax.maybeTaxon('life')
         if li != None: li.take(euk)
         else:
-            print('No parent for Eukaryota')
+            print('** No parent "life" for Eukaryota, probably OK')
 
     for name in ['Animalia', 'Fungi', 'Plantae']:
         node = tax.maybeTaxon(name)
@@ -653,8 +721,34 @@ def fix_protists(tax):
                 child.incertaeSedis()
             bad.elide()
 
+    fix_SAR(tax)
+
+# Add SAR and populate it
+
+def fix_SAR(tax):
+    sar = tax.maybeTaxon('SAR')
+    if sar == None:
+        euk = tax.maybeTaxon('Eukaryota')
+        if euk != None:
+            s = tax.maybeTaxon('Stramenopiles')
+            if s == None:
+                s = tax.maybeTaxon('Heterokonta')
+            a = tax.maybeTaxon('Alveolata')
+            r = tax.maybeTaxon('Rhizaria')
+            if s != None or a != None or r != None:
+                sar = tax.newTaxon('SAR', None, 'silva:E17133/#2')
+                euk.take(sar)
+                if s != None: sar.take(s)
+                else: print '** No Stramenopiles'
+                if a != None: sar.take(a)
+                else: print '** No Alveolata'
+                if r != None: sar.take(r)
+                else: print '** No Rhizaria'
+        else:
+            print '** No parent "Eukaryota" for SAR, maybe OK'
+
 # 'Fix' plants to match SILVA and NCBI...
-def fixPlants(tax):
+def fix_plants(tax):
     # 1. co-opt GBIF taxon for a slightly different purpose
     tax.taxon('Plantae').rename('Chloroplastida')
 
@@ -673,51 +767,3 @@ def fixPlants(tax):
     euk.take(tax.taxon('Glaucophyta'))
     euk.take(tax.taxon('Haptophyta'))
 
-# Manual 'bogotype' selection is because it can be hard to find a good
-# non-homonym in SILVA, especially for suppressed groups...
-
-# TBD: these tests live in a file in the germinator repo.  Change to
-# using that list instead of this one.
-
-def check_divisions(tax):
-    cases = [
-        # ("Alveolata", "Dysteria marioni"), not in GBIF
-        ("Archaea", "Aeropyrum camini"),
-        ("Bacteria", "Bosea eneae"),
-
-        # ("Eukaryota", "Synedra acus"),
-        ("Chloroplastida", "Lippia alba"),
-        ("Haptophyta", "Rebecca salina"),
-        ("Rhodophyta", "Acrotylus australis"), #MANUALLY SELECTED
-        ("Glaucophyta", "Cyanophora biloba"),
-
-        ("Fungi", "Tuber indicum"),    # MANUAL
-
-        ("Porifera", "Oscarella nicolae"), # MANUALLY SELECTED
-        ("Cnidaria", "Malo kingi"),
-        ("Ctenophora", "Pleurobrachia bachei"), # MANUALLY SELECTED
-        ("Annelida", "Pista wui"),
-        ("Chordata", "Ia io"),
-        ("Arthropoda", "Rhysida nuda"),
-        ("Arachnida", "Larca lata"),
-        ("Diptera", "Osca lata"),
-        ("Hymenoptera", "Odontomachus rixosus"), # MANUALLY SELECTED
-        # ("Insecta", ...),
-        ("Metazoa", "Loa loa"),
-        ("Malacostraca", "Uca osa"),
-        ("Coleoptera", "Car pini"),
-        ("Lepidoptera", "Una usta"),
-        ("Mollusca", "Lima lima")]
-    for (div, bogo) in cases:
-        probe = tax.maybeTaxon(bogo)
-        if probe != None:
-            d = probe.getDivision()
-            if d == None:
-                print "** No division for %s: want %s"%(bogo, div)
-            elif d.name != div:
-                print "** Wrong division for %s: have %s, want %s"%(bogo, d.name, div)
-        elif False:
-            probe = tax.maybeTaxon(div)
-            if probe != None:
-                print "** Division %s present but examplar %s isn't"%(div, bogo)
-    return tax

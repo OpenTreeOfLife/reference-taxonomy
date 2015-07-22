@@ -435,10 +435,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				this.metadata = jsonObject;
 
 				Object prefix = jsonObject.get("prefix");
-				if (prefix != null) {
-					System.out.println("prefix is " + prefix);
+				if (prefix != null)
 					this.tag = (String)prefix;
-				}
 			}
 
 		} catch (ParseException e) {
@@ -3249,17 +3247,8 @@ class UnionTaxonomy extends Taxonomy {
 
 	void dumpConflicts(String filename) throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
-		out.format(Conflict.formatString,
-				   "depth",
-                   "para", "para_id",
-				   "lub", "lub_id",
-				   "a_anc", "a_id",
-				   "b_anc", "b_id",
-                   "visible");
-        out.println();
-
+        Conflict.printHeader(out);
         System.out.format("%s conflicts\n", conflicts.size());
-
 		for (Conflict conflict : this.conflicts)
             out.println(conflict.toString());
 		out.close();
@@ -3333,6 +3322,7 @@ class MergeMachine {
 	void augment(Alignment a) {
         // a is unused for the time being - alignment is cached in .mapped
 
+        union.reset();
         union.resetEvents();
 
         boolean windyp = (union.count() > 1);
@@ -3718,9 +3708,9 @@ class MergeMachine {
                 // This method of finding fighting children is
                 // heuristic... cf. AlignmentByName
                 if (alice == null)
-                    alice = mrca = child;
+                    alice = mrca = child.mapped;
                 else {
-                    bob = child;
+                    bob = child.mapped;
                     mrca = mrca.mrca(bob);
                     if (mrca == node.lub)
                         break;
@@ -3747,29 +3737,47 @@ class Conflict {
         this.bob = bob;
         this.isHidden = isHidden;
 	}
-    static String formatString = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"; // 10
+    static String formatString = ("%s\t%s\t" + // id, name
+                                  "%s\t%s\t" + // a, aname
+                                  "%s\t%s\t" + // b, bname
+                                  "%s\t%s\t%s"); // mrca, depth, visible
+    static void printHeader(PrintStream out) throws IOException {
+		out.format(Conflict.formatString,
+                   "para_id",
+                   "para", 
+                   "a", "a_ancestor",
+                   "b", "b_ancestor",
+				   "mrca",
+				   "depth",
+                   "visible");
+        out.println();
+    }
+
 	public String toString() {
 		// cf. Taxon.mrca
-		Taxon[] div = alice.mapped.divergence(bob.mapped);
+		Taxon[] div = alice.divergence(bob);
         try {
             if (div != null) {
                 Taxon a = div[0];
                 Taxon b = div[1];
-                int da = a.getDepth();
+                int da = a.getDepth() - 1;
+                String m = (a.parent == null ? "-" : a.parent.name);
                 return String.format(formatString,
+                                     node.getQualifiedId(),
+                                     node.name, 
+                                     alice.name, a.name,
+                                     bob.name, b.name,
+                                     m,
                                      da,
-                                     node.name, node.getQualifiedId(),
-                                     node.lub.name, node.lub.putativeSourceRef(),
-                                     a.name, a.putativeSourceRef(),
-                                     b.name, b.putativeSourceRef(),
                                      (isHidden ? 0 : 1));
             } else
                 return String.format(formatString,
+                                     node.getQualifiedId(),
+                                     node.name, 
+                                     alice.name, "",
+                                     bob.name, "",
+                                     "",
                                      "?",
-                                     node.name, node.getQualifiedId(),
-                                     node.lub.name, node.lub.putativeSourceRef(),
-                                     "", "",
-                                     "", "",
                                      (isHidden ? 0 : 1));
         } catch (Exception e) {
             e.printStackTrace();

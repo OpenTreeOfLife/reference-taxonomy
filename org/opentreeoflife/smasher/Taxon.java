@@ -970,7 +970,7 @@ public class Taxon {
 
 	public boolean isHidden() {
 		return (((this.properFlags | this.inferredFlags) &
-                 Taxonomy.HIDDEN_FLAGS) != 0 ||
+                 Taxonomy.HIDDEN_FLAGS) != 0 &&
                 ((this.properFlags & Taxonomy.FORCED_VISIBLE) == 0));
 	}
 

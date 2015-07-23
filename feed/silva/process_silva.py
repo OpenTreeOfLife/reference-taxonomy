@@ -179,9 +179,9 @@ taxondict = {}	# maps (parentid, name) to taxid
 
 def processSilva(pathdict, indir, outdir):
 	rank = 'no rank' #for now
-	outfile = open(outdir + '/taxonomy.tsv.new','w')
-	outfile.write('uid\t|\tparent_uid\t|\tname\t|\trank\t|\tsourceinfo\t|\t\n')
-	outfile.write('0\t|\t\t|\tlife\t|\tno rank\t|\t\t|\t\n')
+	taxfile = open(outdir + '/taxonomy.tsv.new','w')
+	taxfile.write('uid\t|\tparent_uid\t|\tname\t|\trank\t|\tsourceinfo\t|\t\n')
+	taxfile.write('0\t|\t\t|\tlife\t|\tno rank\t|\t\t|\t\n')
 	homfilename = outdir + '/homonym_paths.txt'
 	blocked_or_missing = 0
 	acc_success = 0
@@ -224,7 +224,7 @@ def processSilva(pathdict, indir, outdir):
 				# Some of the 'uncultured' taxa are incorrectly assigned rank 'class' or 'order'
 				if taxname == 'uncultured':
 					rank = 'no rank'
-				outfile.write("%s\t|\t%s\t|\t%s\t|\t%s\t|\t\t|\t\n" %
+				taxfile.write("%s\t|\t%s\t|\t%s\t|\t%s\t|\t\t|\t\n" %
 							  (taxid, parentid, taxname, rank))
 
 			parentid = taxid	#for next iteration
@@ -279,7 +279,7 @@ def processSilva(pathdict, indir, outdir):
 	# ncbi_silva_parent maps NCBI id to id of its parent in SILVA
 
 	# Write out the tips of the smasher taxonomy.  These correspond to
-	# taxa in NCBI that are placed under SILVA taxa that are just
+	# taxa in NCBI that are placed under SILVA taxa that are one level
 	# above the cluster level.
 
 	for ncbi_id in ncbi_info.keys():
@@ -291,7 +291,7 @@ def processSilva(pathdict, indir, outdir):
 			qid = "ncbi:%s" % ncbi_id
 			synonyms[qid] = taxid
 			name = info.name
-			outfile.write("%s\t|\t%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n" %
+			taxfile.write("%s\t|\t%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n" %
 						  (taxid, parentid, name, rank, qid))
 			ncbi_count = ncbi_count + 1
 			# This isn't useful, is it?
@@ -302,8 +302,8 @@ def processSilva(pathdict, indir, outdir):
 	print "NCBI taxa incorporated: %d"%(ncbi_count)
 	print "Paraphyletic NCBI taxa: %d"%(len(paraphyletic))	  #e.g. 1536
 
-	outfile.close()
-	
+	taxfile.close()
+
 # Deal with one Genbank accession id.  N.b. we might encounter the same id
 # multiple times.
 

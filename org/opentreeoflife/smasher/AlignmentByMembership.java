@@ -84,7 +84,7 @@ public class AlignmentByMembership extends Alignment {
             node.lub = sourceHalfMap.get(node);
             Answer a = alignmentMap.get(node);
             if (a != null) // && a.isYes()
-                node.alignWith(node.answer.target, a);
+                this.union.alignWith(node, node.answer.target, a);
         }
     }
 
@@ -151,7 +151,7 @@ public class AlignmentByMembership extends Alignment {
         {
             // First try for exact name match.
             List<Taxon> candidates = new ArrayList<Taxon>();
-            List<Taxon> unionNodes = dest.nameIndex.get(node.name);
+            List<Taxon> unionNodes = dest.lookup(node.name);
             if (unionNodes != null)
                 for (Taxon unode : unionNodes)
                     if (unode.name.equals(node.name))
@@ -172,7 +172,7 @@ public class AlignmentByMembership extends Alignment {
             // Consider all union nodes that have this node's primary
             // name among their names
             {
-                List<Taxon> unionNodes = dest.nameIndex.get(node.name);
+                List<Taxon> unionNodes = dest.lookup(node.name);
                 if (unionNodes != null)
                     for (Taxon unode : unionNodes)
                         if (!differentDivisions(node, unode))
@@ -185,7 +185,7 @@ public class AlignmentByMembership extends Alignment {
             if (names != null)
                 for (String name : names) {
                     if (!name.equals(node.name)) {
-                        List<Taxon> unionNodes = dest.nameIndex.get(name);
+                        List<Taxon> unionNodes = dest.lookup(name);
                         if (unionNodes != null)
                             for (Taxon unode : unionNodes)
                                 if (unode.name.equals(node.name))

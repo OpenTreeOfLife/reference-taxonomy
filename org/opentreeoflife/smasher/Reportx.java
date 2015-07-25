@@ -84,8 +84,8 @@ public class Reportx {
 				   "src1", "branch1", "count1",
 				   "src2", "branch2", "count2");
 
-		for (String name : tax.nameIndex.keySet()) {
-			Collection<Taxon> taxa = tax.nameIndex.get(name);
+		for (String name : tax.allNames()) {
+			Collection<Taxon> taxa = tax.lookup(name);
 			if (taxa.size() <= 1) continue;
 			if (name.startsWith("uncultured")) continue;
 			for (Taxon taxon1 : taxa) {

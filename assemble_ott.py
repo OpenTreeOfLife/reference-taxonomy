@@ -16,6 +16,7 @@ from claim import Has_child, test_claims
 
 this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/make-ott.py'
 
+# temporary debugging thing
 invariants = [Has_child('Nucletmycea', 'Fungi'),
               Has_child('Opisthokonta', 'Nucletmycea'),
               Has_child('Rhizobiales', 'Xanthobacteraceae'), # D11342/#4 parent of D11342/#5
@@ -100,6 +101,7 @@ def create_ott():
             ('Rhynchonelloidea','Rhynchonellidae','5316010'),
             ('Epiphloea', 'Lichinales', '5342482'),
             ('Morganella', 'Fungi', '973932'),
+            ('Parmeliaceae', 'Lecanorales', '305904'),
     ]:
         tax = ott.taxon(inf, sup)
         if tax != None:
@@ -144,7 +146,15 @@ def prepare_silva(ott):
     silva = taxonomies.load_silva()
     silva.setTarget(ott)
 
-    ott.markDivisions(silva)    # ??
+    # JAR 2014-05-13 scrutinizing pin() and BarrierNodes.  Wikipedia
+    # confirms this synonymy.  Dail L. prefers -phyta to -phyceae
+    # but says -phytina would be more correct per code.
+    # Skeleton taxonomy has -phyta (on Dail's advice).
+    silva.taxon('Rhodophyceae').synonym('Rhodophyta')    # moot now?
+
+    silva.taxon('Florideophycidae', 'Rhodophyceae').synonym('Florideophyceae')
+    silva.taxon('Stramenopiles', 'SAR').synonym('Heterokonta') # needed by WoRMS
+
     return silva
 
 # ----- Hibbett 2007 updated upper fungal taxonomy -----
@@ -160,8 +170,8 @@ def prepare_h2007(ott):
 # than NCBI.
 
 def prepare_fungorum(ott):
-
     fungorum = taxonomies.load_fung()
+    fungorum.setTarget(ott)
 
     fungi_root = fungorum.taxon('Fungi')
     fungi = fungorum.select(fungi_root)
@@ -518,7 +528,7 @@ def patch_ott(ott):
     # Joseph 2014-01-27 https://code.google.com/p/gbif-ecat/issues/detail?id=104
     ott.taxon('Parulidae').take(ott.taxon('Myiothlypis', 'Passeriformes'))
     # I don't get why this one isn't a major_rank_conflict !? - bug. (so to speak.)
-    ott.taxon('Blattaria').take(ott.taxon('Phyllodromiidae'))
+    ott.taxon('Blattodea').take(ott.taxon('Phyllodromiidae'))
 
     # See above (occurs in both IF and GBIF).  Also see issue #67
     ott.taxon('Chlamydotomus').incertaeSedis()
@@ -853,6 +863,11 @@ def patch_ott(ott):
     # "Old" patch system
     ott.edit('feed/ott/edits/')
 
+    # This is a randomly chosen bivalve to force Bivalvia to not be extinct
+    ott.taxon('Corculum cardissa', 'Bivalvia').extant()
+    # Similarly for roaches
+    ott.taxon('Periplaneta americana', 'Blattodea').extant()
+
 def unextinct_ncbi(ncbi, ott):
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/68
     # 'Extinct' would really mean 'extinct and no sequence' with this change
@@ -921,4 +936,15 @@ names_of_interest = ['Ciliophora',
                      'Tetrasphaera',
                      'Protaspis',
                      'Coscinodiscus',
+                     'Photorhabdus luminescens', # samples from deprecated list
+                     'Xenorhabdus bovienii',
+                     'Gibberella zeae',
+                     'Ruwenzorornis johnstoni',
+
+                     'Blattodea',
+                     'Eumetazoa',
+                     'Bivalvia',
+                     'Pelecypoda',
+                     'Parmeliaceae',
                      ]
+

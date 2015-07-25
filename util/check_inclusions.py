@@ -26,6 +26,8 @@ def check(ott):
                 small_tax.show()
             elif look != small_tax:
                 print '** The %s that descends from %s is %s, not %s' % (small, big, look.id, small_id)
+            if small_tax.isHidden():
+                print '** %s (%s) is hidden' % (small, small_id)
 
     infile.close()
 

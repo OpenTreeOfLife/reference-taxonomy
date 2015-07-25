@@ -33,7 +33,7 @@ public class AlignmentByName extends Alignment {
     private int losers, winners, fresh, grafts, outlaws;
 
     void cacheInSourceNodes() {
-        source.forest.alignWith(union.forest, "align-forests");
+        union.alignWith(source.forest, union.forest, "align-forests");
 
         // The answers are already stored in .answer of each node
         // Now do the .lubs
@@ -75,11 +75,14 @@ public class AlignmentByName extends Alignment {
                                 System.out.format("** Mrca in wrong taxonomy: %s\n", m);
 
                             if (m.noMrca()) continue;
-                            Taxon div1 = mrca.getDivision();
-                            Taxon div2 = a.getDivision();
-                            if (div1 != div2 && div1.divergence(div2) != null)
-                                System.out.format("! Children of %s are in disjoint divisions (%s in %s + %s in %s)\n",
-                                                  node, mrca, div1, a, div2);
+                            if (false) {
+                                Taxon div1 = mrca.getDivision();
+                                Taxon div2 = a.getDivision();
+                                if (div1 != div2 && div1.divergence(div2) != null)
+                                    // 2015-07-23 this happens about 300 times
+                                    System.out.format("! Children of %s are in disjoint divisions (%s in %s + %s in %s)\n",
+                                                      node, mrca, div1, a, div2);
+                            }
                             mrca = m;
                         }
                     }
@@ -129,8 +132,8 @@ public class AlignmentByName extends Alignment {
         this.union.reset();
 
         // unnecessary?
-        this.source.propagateFlags(); 
-        this.union.propagateFlags(); 
+        this.source.inferFlags(); 
+        this.union.inferFlags(); 
 
 		for (Taxon root: union.roots())
 			// Prepare for subsumption checks
@@ -243,9 +246,9 @@ public class AlignmentByName extends Alignment {
 			union.resetEvents();
 			System.out.println("--- Mapping " + source.getTag() + " into union ---");
 
-			int beforeCount = union.nameIndex.size();
+			int beforeCount = union.numberOfNames();
 
-			union.markDivisionsx(source);
+			union.markDivisionsUnion(source);
 
 			Set<String> seen = new HashSet<String>();
 			List<String> todo = new ArrayList<String>();
@@ -262,7 +265,7 @@ public class AlignmentByName extends Alignment {
 			// primary / primary
 			for (Taxon node : source)
 				if (!seen.contains(node.name)) {
-					List<Taxon> unodes = union.nameIndex.get(node.name);
+					List<Taxon> unodes = union.lookup(node.name);
 					if (unodes != null)
 						for (Taxon unode : unodes)
 							if (unode.name.equals(node.name))
@@ -270,33 +273,29 @@ public class AlignmentByName extends Alignment {
 				}
 			// primary / synonym
 			for (Taxon node : union)
-				if (source.nameIndex.get(node.name) != null &&
+				if (source.lookup(node.name) != null &&
 					!seen.contains(node.name))
 					{ seen.add(node.name); todo.add(node.name); }
 			// synonym / primary    -- maybe disallow !?
 			for (Taxon node : source)
-				if (union.nameIndex.get(node.name) != null &&
+				if (union.lookup(node.name) != null &&
 					!seen.contains(node.name))
 					{ seen.add(node.name); todo.add(node.name); }
-			// This one probably just generates noise
-			if (false)
-			// synonym / synonym
-			for (String name : source.nameIndex.keySet())
-				if (union.nameIndex.get(name) != null &&
-					!seen.contains(name))
-					{ seen.add(name); todo.add(name); }
+			// synonym / synonym probably just generates noise
 
 			int incommon = 0;
 			int homcount = 0;
 			for (String name : todo) {
-				List<Taxon> unodes = union.nameIndex.get(name);
+				List<Taxon> unodes = union.lookup(name);
 				if (unodes != null) {
 					++incommon;
-					List<Taxon> nodes = source.nameIndex.get(name);
-					if (false &&
-						(((nodes.size() > 1 || unodes.size() > 1) && (++homcount % 1000 == 0))))
-						System.out.format("| Mapping: %s %s*%s (name #%s)\n", name, nodes.size(), unodes.size(), incommon);
-					new Matrix(name, nodes, unodes).run(criteria);
+					List<Taxon> nodes = source.lookup(name);
+                    if (nodes != null) {
+                        if (false &&
+                            (((nodes.size() > 1 || unodes.size() > 1) && (++homcount % 1000 == 0))))
+                            System.out.format("| Mapping: %s %s*%s (name #%s)\n", name, nodes.size(), unodes.size(), incommon);
+                        new Matrix(name, nodes, unodes).run(criteria);
+                    }
 				}
 			}
 			System.out.println("| Names in common: " + incommon);
@@ -438,7 +437,7 @@ public class AlignmentByName extends Alignment {
                             Answer.no(x, y, "blocked-because", x.answer.reason).maybeLog();
                             // System.out.format("| Blocked from mapping %s to %s because %s\n", x, y, x.answer.reason);
                         } else {
-                            x.alignWith(y, a); // sets .mapped, .answer
+                            y.taxonomy.alignWith(x, y, a); // sets .mapped, .answer
                         }
                         suppressp[i][j] = a;
                     }

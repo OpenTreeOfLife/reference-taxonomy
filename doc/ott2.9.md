@@ -143,9 +143,13 @@ New flags:
 * merged - this taxon was consistent with another and got folded 
   into it.  Taxon is hidden, children aren't.  Taxon may be
   revived if it's learned later that the it is actually different.
+* was_container - treat same as incertae_sedis, merged, and
+  inconsistent - this was formerly a 'bucket' but is now empty and is
+  preserved as a placeholder.
 * extinct - replaces extinct_direct.
-* sibling\_lower is deprecated, information not recorded (but you can
-  always tell, just by looking at ranks of siblings).  sibling\_higher
+* major_rank_conflict - replaced major_rank_conflict_direct.
+* sibling\_lower is deprecated, that information in not recorded (but you can
+  always tell, just by looking at ranks of the siblings).  sibling\_higher
   is retained.
 * Deprecated: tattered, tattered_inherited
 

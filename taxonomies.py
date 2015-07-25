@@ -9,14 +9,6 @@ this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/
 def load_silva():
     silva = Taxonomy.getTaxonomy('tax/silva/', 'silva')
 
-    # JAR 2014-05-13 scrutinizing pin() and BarrierNodes.  Wikipedia
-    # confirms this synonymy.  Dail L. prefers -phyta to -phyceae
-    # but says -phytina would be more correct per code.
-    silva.taxon('Rhodophyceae').rename('Rhodophyta')
-
-    silva.taxon('Florideophycidae', 'Rhodophyta').synonym('Florideophyceae')
-    silva.taxon('Stramenopiles', 'SAR').synonym('Heterokonta') # needed by WoRMS
-
     # Used in studies pg_2448,pg_2783,pg_2753, seen deprecated on 2015-07-20
     silva.taxon('AF364847').rename('Pantoea ananatis LMG 20103')    # ncbi:706191
     silva.taxon('EF690403').rename('Pantoea ananatis B1-9')  # ncbi:1048262
@@ -145,7 +137,7 @@ def load_fung():
         print 'Removing Fungi 90155'
         fung.taxon('90155').prune(this_source)
 
-    fix_protists(fung)
+    fix_basal(fung)
 
     # smush folds sibling taxa that have the same name.
     # fung.smush()
@@ -422,7 +414,7 @@ def patch_ncbi(ncbi):
     # http://dx.doi.org/10.1002/fedr.19971080106
     ncbi.taxon('Massonieae').take(ncbi.taxon('Resnova'))
 
-    # From exmaming the deprecated OTU list.  This one occurs in study pg_188
+    # From examining the deprecated OTU list.  This one occurs in study pg_188
     # Name got better, old name lost  JAR 2015-06-27
     # This could probably be automated, just by looking up the NCBI id
     # in the right table.
@@ -478,6 +470,9 @@ def patch_ncbi(ncbi):
         if tax != None:
             tax.synonym(oldname)
 
+    # Try to prevent confusion with GBIF genus Eucarya in Magnoliopsida
+    ncbi.removeFromNameIndex(ncbi.taxon('Eukaryota'), 'Eucarya')
+
 def load_gbif():
     gbif = Taxonomy.getTaxonomy('tax/gbif/', 'gbif')
     gbif.smush()
@@ -486,7 +481,7 @@ def load_gbif():
     # means the rank-skipped children are incertae sedis.  Mark them so.
     gbif.analyzeMajorRankConflicts()
 
-    fix_protists(gbif)  # creates a Eukaryota node
+    fix_basal(gbif)  # creates a Eukaryota node
     fix_plants(gbif)
     gbif.taxon('Animalia').synonym('Metazoa')
 
@@ -625,7 +620,7 @@ def load_irmng():
     irmng.smush()
     irmng.analyzeMajorRankConflicts()
 
-    fix_protists(irmng)
+    fix_basal(irmng)
     fix_plants(irmng)
     irmng.taxon('Animalia').synonym('Metazoa')
 
@@ -666,6 +661,17 @@ def load_irmng():
     if oph != None:
         oph.prune("about:blank#this-homonym-is-causing-too-much-trouble")
 
+    # NCBI synonymizes Pelecypoda = Bivalvia
+    irmng.taxon('Bivalvia').absorb(irmng.taxon('Pelecypoda')) # bogus order
+    # hmm
+    irmng.taxon('Bivalvia').extant()
+
+    # This one was mapping to Blattodea, and making it extinct.
+    # Caused me a couple of hours of grief.
+    # My guess is it's because its unique child Sinogramma is in Blattodea in GBIF.
+    # Wikipedia says it's paraphyletic.
+    irmng.taxon('Blattoptera', 'Insecta').prune('https://en.wikipedia.org/wiki/Blattoptera')
+
     return irmng
 
 def load_worms():
@@ -675,7 +681,7 @@ def load_worms():
     worms.taxon('Biota').synonym('life')
     worms.taxon('Animalia').synonym('Metazoa')
 
-    fix_protists(worms)
+    fix_basal(worms)
     fix_plants(worms)
 
     # 2015-02-17 According to WoRMS web site.  Occurs in pg_1229
@@ -684,14 +690,19 @@ def load_worms():
     # See NCBI
     worms.taxon('Millericrinida').extant()
 
+    # Help to match up with IRMNG
+    worms.taxon('Ochrophyta').synonym('Heterokontophyta')
+
     worms.smush()  # Gracilimesus gorbunovi, pg_1783
 
     return worms
 
-# Common code for everything but SILVA
+# Common code for everything but SILVA - important for getting
+# divisions in the right place, for homonym detection.
 
 def fix_basal(tax):
     fix_protists(tax)
+    fix_SAR(tax)
     fix_plants(tax)
 
 # Common code for GBIF, IRMNG, Index Fungorum
@@ -728,42 +739,47 @@ def fix_protists(tax):
 def fix_SAR(tax):
     sar = tax.maybeTaxon('SAR')
     if sar == None:
-        euk = tax.maybeTaxon('Eukaryota')
-        if euk != None:
-            s = tax.maybeTaxon('Stramenopiles')
-            if s == None:
-                s = tax.maybeTaxon('Heterokonta')
-            a = tax.maybeTaxon('Alveolata')
-            r = tax.maybeTaxon('Rhizaria')
-            if s != None or a != None or r != None:
-                sar = tax.newTaxon('SAR', None, 'silva:E17133/#2')
-                euk.take(sar)
-                if s != None: sar.take(s)
-                else: print '** No Stramenopiles'
-                if a != None: sar.take(a)
-                else: print '** No Alveolata'
-                if r != None: sar.take(r)
-                else: print '** No Rhizaria'
-        else:
-            print '** No parent "Eukaryota" for SAR, maybe OK'
+        euk = tax.taxon('Eukaryota')
+        s = tax.maybeTaxon('Stramenopiles')
+        if s == None:
+            s = tax.maybeTaxon('Heterokonta')
+        a = tax.maybeTaxon('Alveolata')
+        r = tax.maybeTaxon('Rhizaria')
+        if s != None or a != None or r != None:
+            sar = tax.newTaxon('SAR', None, 'silva:E17133/#2')
+            euk.take(sar)
+            if s != None: sar.take(s)
+            else: print '** No Stramenopiles'
+            if a != None: sar.take(a)
+            else: print '** No Alveolata'
+            if r != None: sar.take(r)
+            else: print '** No Rhizaria'
+    else:
+        print '** No parent "Eukaryota" for SAR, maybe OK'
 
 # 'Fix' plants to match SILVA and NCBI...
 def fix_plants(tax):
-    # 1. co-opt GBIF taxon for a slightly different purpose
-    tax.taxon('Plantae').rename('Chloroplastida')
-
     euk = tax.taxon('Eukaryota')
 
-    # JAR 2014-04-25 GBIF puts rhodophytes under Plantae, but it's not
-    # in Chloroplastida.
-    # Need to fix this before alignment because of division calculations.
-    # Plantae is a child of 'life' in GBIF, and Rhodophyta is one of many
-    # phyla below that.  Move up to be a sibling of Plantae.
-    # Discovered while looking at Bostrychia alignment problem.
-    euk.take(tax.taxon('Rhodophyta'))
+    # 1. co-opt GBIF taxon for a slightly different purpose
+    plants = tax.maybeTaxon('Plantae')
+    if plants != None:
+        plants.rename('Chloroplastida')
+        # euk.take(plants)  ???
 
-    # JAR 2014-05-13 similarly
-    # Glaucophyta - there's a GBIF/IRMNG false homonym, should be merged
-    euk.take(tax.taxon('Glaucophyta'))
-    euk.take(tax.taxon('Haptophyta'))
-
+    if euk != None:
+        # JAR 2014-04-25 GBIF puts rhodophytes under Plantae, but it's not
+        # in Chloroplastida.
+        # Need to fix this before alignment because of division calculations.
+        # Plantae is a child of 'life' in GBIF, and Rhodophyta is one of many
+        # phyla below that.  Move up to be a sibling of Plantae.
+        # This redefines GBIF Plantae, sort of, which is not nice.
+        # Discovered while looking at Bostrychia alignment problem.
+        # JAR 2014-05-13 similarly
+        # Glaucophyta - there's a GBIF/IRMNG false homonym, should be merged
+        # This needs to match the skeleton!
+        for name in ['Rhodophyta', 'Glaucophyta', 'Haptophyta', 'Fungi', 'Metazoa', 'Chloroplastida']:
+            # should check to see if this is an improvement in specificity?
+            rho = tax.maybeTaxon(name)
+            if rho != None:
+                euk.take(rho)

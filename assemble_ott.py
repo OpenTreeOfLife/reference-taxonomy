@@ -80,6 +80,9 @@ def create_ott():
     # consider try: ... except: print '**** Exception in patch_ott'
     patch_ott(ott)
 
+    # Experimental...
+    unextinct_ncbi(ncbi, ott)
+
     # Remove all trees but the largest (or make them life incertae sedis)
     ott.deforestate()
 
@@ -872,10 +875,30 @@ def unextinct_ncbi(ncbi, ott):
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/68
     # 'Extinct' would really mean 'extinct and no sequence' with this change
     print 'Non-extincting NCBI'
-    for taxon in ncbi:
-        im = ott.image(taxon)
-        if im != None:
-            im.extant()
+
+    def recur(node):
+        unode = ott.image(node)
+        if node.children == None:
+            if unode == None:
+                return True
+            else:
+                return unode.isAnnotatedExtinct()
+        else:
+            inct = True
+            for child in node.children:
+                inct = inct and recur(child)
+            if not inct:
+                if unode != None and unode.isAnnotatedExtinct():
+                    # Contains a possibly extant descendant...
+                    print 'Changing from extinct to extant', unode.name, unode.id
+                    unode.extant()
+                return False
+            else:
+                return True
+
+    for node in ncbi.roots():
+        recur(node)
+
 
 # Reports
 

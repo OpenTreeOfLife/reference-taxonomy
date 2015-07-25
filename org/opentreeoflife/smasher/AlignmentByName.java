@@ -434,8 +434,15 @@ public class AlignmentByName extends Alignment {
                         } else if (x.mapped == y) {
                             ;
                         } else if (x.answer != null) {
-                            Answer.no(x, y, "blocked-because", x.answer.reason).maybeLog();
+                            Answer.no(x, y, "blocked-because-" + x.answer.reason, null).maybeLog();
                             // System.out.format("| Blocked from mapping %s to %s because %s\n", x, y, x.answer.reason);
+                        } else if (y.comapped != null && x.children == null) {
+                            // There was already a mapping because of a higher-quality criterion.
+                            // Keeping this mapping could cause
+                            // trouble, like introduction of
+                            // extraneous 'extinct' flags...
+                            x.answer = Answer.no(x, y, "redundant", null);
+                            x.answer.maybeLog();
                         } else {
                             y.taxonomy.alignWith(x, y, a); // sets .mapped, .answer
                         }

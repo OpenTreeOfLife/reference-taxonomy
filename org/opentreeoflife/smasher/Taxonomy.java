@@ -3224,9 +3224,18 @@ class UnionTaxonomy extends Taxonomy {
                                 replacementId = "<" + target.id;
                                 witness = target.name;
                             }
-                        } else
+                        } else {
                             // incertae sedis or annotated hidden
                             reason = "newly-hidden";
+                            Taxon highest = null;
+                            for (Taxon n = unode; n != null; n = n.parent)
+                                if (n.isHidden())
+                                    highest = n;
+                                else
+                                    break;
+                            if (highest != null)
+                                witness = highest.name;
+                        }
                         int newflags  = (unode.properFlags & ~node.properFlags);
                         int newiflags = (unode.inferredFlags & ~node.inferredFlags);
                         if (newflags != 0 || newiflags != 0) {
@@ -3513,7 +3522,7 @@ class MergeMachine {
                      node.answer.value <= Answer.HECK_NO)
                 // Don't create homonym if it's too close a match
                 // (weak no) or ambiguous (noinfo)
-                // NOINFO > NO > HECK_NO  (sorry)
+                // YES > NOINFO > NO > HECK_NO  (sorry)
 				acceptNew(node, "new/tip");
 
 		} else {

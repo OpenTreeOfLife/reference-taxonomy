@@ -339,14 +339,16 @@ public class Taxon {
             unode.rank = this.rank;
 
         int flagsToAdd = (this.properFlags &
-                          (Taxonomy.FORCED_VISIBLE | 
-                           Taxonomy.EDITED |
+                          (Taxonomy.FORCED_VISIBLE | Taxonomy.EDITED |
                            Taxonomy.EXTINCT));
-
-        if (flagsToAdd != 0 && unode.name != null
-            && unode.name.equals("Blattodea"))
-            System.out.format("** Transferring from %s to %s\n", this, unode);
-
+        // Song and dance related to Bivalvia, Blattodea and a few others
+        if ((this.properFlags & Taxonomy.EXTINCT) != 0
+            && (unode.properFlags & Taxonomy.EXTINCT) == 0
+            && !this.name.equals(unode.name)) {
+            if (this.markEvent("extinct-transfer-prevented"))
+                System.out.format("** Transferring extinct flag from %s to %s\n", this, unode);
+            //flagsToAdd &= ~Taxonomy.EXTINCT;
+        }
 		unode.addFlag(flagsToAdd);
 
         // No change to hidden or incertae sedis flags.  Union node
@@ -982,6 +984,10 @@ public class Taxon {
 				Taxonomy.EXTINCT) != 0;
     }
 
+	public boolean isAnnotatedExtinct() { // blah, inconsistent naming
+		return (this.properFlags & Taxonomy.EXTINCT) != 0;
+    }
+
 	// ----- Methods intended for use in jython scripts -----
 
 	public boolean take(Taxon newchild) {
@@ -1092,6 +1098,7 @@ public class Taxon {
 			for (Taxon child : new ArrayList<Taxon>(other.children))
 				// beware concurrent modification
 				child.changeParent(this.parent);
+        // something about extinct flags here - extinct absorbing non-extinct
 		this.taxonomy.addSynonym(other.name, this);	// Not sure this is a good idea
 		other.prune("absorb");
         return true;

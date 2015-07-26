@@ -250,6 +250,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				System.err.format("** Multiply indexed: %s %s %s\n", best, otherbest, depth);
 			else
 				System.err.format("** Ambiguous division name: %s %s %s\n", best, otherbest, depth);
+            return null;
 		}
 		return best;
 	}
@@ -1173,10 +1174,10 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	static final int SIBLING_LOWER		 = (1 << 14); // legacy, see Flag.java
 
 	// Annotations set during assembly
-	static final int HIDDEN				 = (1 << 19);	  // combine using &
-	static final int EXTINCT			 = (1 << 18);	  // combine using |
-	static final int FORCED_VISIBLE		 = (1 << 16);	  // combine using |
-	static final int EDITED				 = (1 << 17);			  // combine using |
+	static final int HIDDEN				 = (1 << 16);	  // combine using &
+	static final int EXTINCT			 = (1 << 17);	  // combine using |
+	static final int FORCED_VISIBLE		 = (1 << 18);	  // combine using |
+	static final int EDITED				 = (1 << 19);			  // combine using |
 
 	// Inferred
 	static final int INFRASPECIFIC		 = (1 << 21);  // Is below a 'species'
@@ -3176,15 +3177,23 @@ class UnionTaxonomy extends Taxonomy {
                         else if (nodes.size() > unodes.size())
                             // 21/55
                             reason = "id-retired/probable-lumping";
+                        else if (unodes.size() == 1)
+                            // 14/55
+                            reason = "id-retired/incompatible-use";
                         else
                             // 14/55
                             reason = "id-retired/incompatible-uses";
 
+                        // this is useless, always shows same/...
+                        //if (node.answer != null) witness = node.answer.reason;
+
                         if (unodes.size() == 1) {
                             Taxon div1 = node.getDivision();
                             Taxon div2 = unodes.get(0).getDivision();
-                            if (div1 != null && div1.mapped != null && div1.mapped != div2)
+                            if (div1 != div2) {
                                 reason = "id-retired/changed-divisions";
+                                witness = div1.name + "->" + div2.name;
+                            }
                             replacementId = "!" + unodes.get(0).id;
                         }
                     }
@@ -3215,7 +3224,7 @@ class UnionTaxonomy extends Taxonomy {
                             if ((unode.properFlags & Taxonomy.MERGED) != 0) {
                                 // Can override previously set reason
                                 reason = "merged";
-                                replacementId = "=" + unode.parent.id;
+                                replacementId = "<" + unode.parent.id;
                                 witness = unode.parent.name;
                             } else {
                                 Taxon target = node.lub;

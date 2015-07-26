@@ -471,7 +471,32 @@ def patch_ncbi(ncbi):
             tax.synonym(oldname)
 
     # Try to prevent confusion with GBIF genus Eucarya in Magnoliopsida
-    ncbi.removeFromNameIndex(ncbi.taxon('Eukaryota'), 'Eucarya')
+    ncbi.taxon('Eukaryota').notCalled('Eucarya')
+
+    # JAR 2015-07-25 Prevent extinction of Myxogastria
+    ncbi.taxon('Myxogastria').notCalled('Myxomycetes')
+
+def load_worms():
+    worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
+    worms.smush()
+
+    worms.taxon('Biota').rename('life')
+    worms.taxon('Animalia').synonym('Metazoa')
+
+    fix_basal(worms)
+
+    # 2015-02-17 According to WoRMS web site.  Occurs in pg_1229
+    worms.taxon('Scenedesmus communis').synonym('Scenedesmus caudata')
+
+    # See NCBI
+    worms.taxon('Millericrinida').extant()
+
+    # Help to match up with IRMNG
+    worms.taxon('Ochrophyta').synonym('Heterokontophyta')
+
+    worms.smush()  # Gracilimesus gorbunovi, pg_1783
+
+    return worms
 
 def load_gbif():
     gbif = Taxonomy.getTaxonomy('tax/gbif/', 'gbif')
@@ -482,7 +507,6 @@ def load_gbif():
     gbif.analyzeMajorRankConflicts()
 
     fix_basal(gbif)  # creates a Eukaryota node
-    fix_plants(gbif)
     gbif.taxon('Animalia').synonym('Metazoa')
 
     patch_gbif(gbif)
@@ -613,6 +637,9 @@ def patch_gbif(gbif):
     if oph != None:
         oph.prune("about:blank#this-homonym-is-causing-too-much-trouble")
 
+    # 2015-07-25 Extra Dipteras are confusing new division logic.  Barren genus
+    gbif.taxon('3230674').prune('this_source')
+
     return gbif
 
 def load_irmng():
@@ -621,7 +648,6 @@ def load_irmng():
     irmng.analyzeMajorRankConflicts()
 
     fix_basal(irmng)
-    fix_plants(irmng)
     irmng.taxon('Animalia').synonym('Metazoa')
 
     # JAR 2014-04-26 Flush all 'Unaccepted' taxa
@@ -672,33 +698,18 @@ def load_irmng():
     # Wikipedia says it's paraphyletic.
     irmng.taxon('Blattoptera', 'Insecta').prune('https://en.wikipedia.org/wiki/Blattoptera')
 
+    # 2015-07-25 Found while trying to figure out why Theraphosidae was marked extinct.
+    # NCBI thinks that Theraphosidae and Aviculariidae are the same.
+    irmng.taxon('Aviculariidae').extant()
+
+    # 2015-07-25 Extra Dipteras are confusing new division logic.  Barren genus
+    irmng.taxon('1323521').prune('this_source')
+
     return irmng
 
-def load_worms():
-    worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
-    worms.smush()
-
-    worms.taxon('Biota').synonym('life')
-    worms.taxon('Animalia').synonym('Metazoa')
-
-    fix_basal(worms)
-    fix_plants(worms)
-
-    # 2015-02-17 According to WoRMS web site.  Occurs in pg_1229
-    worms.taxon('Scenedesmus communis').synonym('Scenedesmus caudata')
-
-    # See NCBI
-    worms.taxon('Millericrinida').extant()
-
-    # Help to match up with IRMNG
-    worms.taxon('Ochrophyta').synonym('Heterokontophyta')
-
-    worms.smush()  # Gracilimesus gorbunovi, pg_1783
-
-    return worms
-
-# Common code for everything but SILVA - important for getting
-# divisions in the right place, for homonym detection.
+# Common code for the 'old fashioned' taxonomies IF, GBIF, IRMNG,
+# WoRMS - important for getting divisions in the right place, which is
+# important for homonym separation.
 
 def fix_basal(tax):
     fix_protists(tax)
@@ -754,8 +765,6 @@ def fix_SAR(tax):
             else: print '** No Alveolata'
             if r != None: sar.take(r)
             else: print '** No Rhizaria'
-    else:
-        print '** No parent "Eukaryota" for SAR, maybe OK'
 
 # 'Fix' plants to match SILVA and NCBI...
 def fix_plants(tax):

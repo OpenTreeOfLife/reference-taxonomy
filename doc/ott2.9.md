@@ -131,6 +131,15 @@ than GBIF.
 
 Changes since OTT 2.8 (a.k.a 2.8draft5) which was built on 11 June 2014:
 
+Statistics:
+
+* Identifiers: 3461408
+* Visible: TBD
+* Synonyms: 910144
+* In deprecated file (used in phylesystem): 2889
+* In deprecated file (used in synthesis): 309
+* Taxa dissolved due to conflict (conflicts.tsv): 1319
+
 New flags:
 
 * placed - similar to incertae\_sedis (this means a child of an

@@ -346,8 +346,8 @@ public class Taxon {
             && (unode.properFlags & Taxonomy.EXTINCT) == 0
             && !this.name.equals(unode.name)) {
             if (this.markEvent("extinct-transfer-prevented"))
-                System.out.format("** Transferring extinct flag from %s to %s\n", this, unode);
-            //flagsToAdd &= ~Taxonomy.EXTINCT;
+                System.out.format("** Preventing transfer of extinct flag from %s to %s\n", this, unode);
+            flagsToAdd &= ~Taxonomy.EXTINCT;
         }
 		unode.addFlag(flagsToAdd);
 
@@ -770,6 +770,8 @@ public class Taxon {
             if (a == null || b == null) {
                 System.out.format("** shouldn't happen: %s %s?=%s / %s %s?=%s\n",
                                   this, this.getDepth(), this.measureDepth(), other, other.getDepth(), other.measureDepth());
+                // seen twice during augment of worms.  ugh.
+                // ought to measure the depths and loop around...
                 return this.taxonomy.forest;
             }
             a = a.parent;
@@ -989,6 +991,16 @@ public class Taxon {
     }
 
 	// ----- Methods intended for use in jython scripts -----
+
+    public boolean notCalled(String name) {
+        if (this.name.equals(name)) {
+            this.clobberName("Not " + name);
+            return true;
+        } else {
+            this.taxonomy.removeFromNameIndex(this, name);
+            return true;
+        }
+    }
 
 	public boolean take(Taxon newchild) {
 		if (newchild == null)

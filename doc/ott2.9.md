@@ -22,12 +22,6 @@ on github.
 
 **deprecated.tsv**: List all taxon ids occurring in phylesystem studies that have been deprecated since previous version. 
 
-**differences.tsv:** List of differences between ott2.9 and ott2.8.
-
-**otu_differences.tsv:** List of differences between ott2.9 and ott2.8 that involve taxa in phylesystem.
-
-**hidden.tsv**: Report on 'hidden' taxa (incertae sedis and other suppressed taxa). Columns are OTT id, name, source taxonomy and id, containing major group, and flags (reasons for hiding).
-
 **log.tsv**: Debugging information related to homonym resolution.
 
 **version.tsv**: The version of OTT.

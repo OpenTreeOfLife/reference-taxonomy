@@ -1,10 +1,10 @@
 # Open Tree of Life reference taxonomy version 2.9
 
-Version 2.9 is not released yet.  Version 2.9 draft 7 was generated on 14 July 2015.
+Version 2.9 is not released yet.  Version 2.9 draft 8 was generated on 25 July 2015.
 
 ## Download
 
-[Download](http://files.opentreeoflife.org/ott/ott2.9/ott2.9draft7.tgz) (gzipped tar file, 117 Mbyte) 
+[Download](http://files.opentreeoflife.org/ott/ott2.9/ott2.9draft8.tgz) (gzipped tar file, 88 Mbyte) 
 
 ## Contents
 All files are encoded UTF-8.  For documentation about file formats, see [the documentation in the reference taxonomy
@@ -38,8 +38,8 @@ The reference taxonomy is an algorithmic combination of several
 source taxonomies.  For code,
 see <a href="https://github.com/OpenTreeOfLife/reference-taxonomy">the
 source code repository</a>.
-Version 2.9 draft 7 was generated using 
-[commit 7cfbbd2](https://github.com/OpenTreeOfLife/reference-taxonomy/commit/?).
+Version 2.9 draft 8 was generated using 
+[commit fc55a7](https://github.com/OpenTreeOfLife/reference-taxonomy/commit/?).
 
 Where taxonomies conflict regarding taxon relationships, they are
 resolved in favor of the higher priority taxonomy.  The priority
@@ -60,7 +60,7 @@ retrieved.
     A higher-level phylogenetic classification of the <i>Fungi</i>.
     [Mycological Research</i> <b>111</b>(5):509-547, 2007](http://dx.doi.org/10.1016/j.mycres.2007.03.004).
     Newick string with revisions
-    archived at [http://figshare.com/articles/Fungal_Classification_2015/1465038](http://figshare.com/articles/Fungal_Classification_2015/1465038).
+    archived at [http://figshare.com/articles/Fungal\_Classification\_2015/1465038](http://figshare.com/articles/Fungal_Classification_2015/1465038).
     <br />
     Download location: [http://purl.org/opentree/ott/??TBD??](http://purl.org/opentree/ott/??TBD??)
 
@@ -142,22 +142,23 @@ Statistics:
 
 New flags:
 
-* placed - similar to incertae\_sedis (this means a child of an
+* unplaced - similar to incertae\_sedis (this means a child of an
   inconsistent taxon, where t is inconsistent if it occurs in a
   lower-priority taxonomy but is inconsistent with the higher-priority
   taxonomies.  'tattered' is now deprecated)
-* placed\_inherited - descends from a placed taxon.
+* unplaced\_inherited - descends from a placed taxon.
 * inconsistent (formerly 'tattered') - taxon in lower priority 
   taxonomy that is inconsistent (see above).
 * merged - this taxon was consistent with another and got folded 
   into it.  Taxon is hidden, children aren't.  Taxon may be
   revived if it's learned later that the it is actually different.
-* was_container - treat same as incertae_sedis, merged, and
-  inconsistent - this was formerly a 'bucket' but is now empty and is
+* was\_container - treat same as incertae\_sedis, merged, and
+  inconsistent - the 'taxon' was formerly a 'bucket' but is now empty and is
   preserved as a placeholder.
 * extinct - replaces extinct_direct.
-* major_rank_conflict - replaced major_rank_conflict_direct.
-* sibling\_lower is deprecated, that information in not recorded (but you can
+* major\_rank\_conflict - replaces major\_rank\_conflict\_direct.
+* incertae\_sedis - replaces incertae\_sedis\_direct.
+* sibling\_lower is deprecated, that information is not recorded (but you can
   always tell, just by looking at ranks of the siblings).  sibling\_higher
   is retained.
 * Deprecated: tattered, tattered_inherited
@@ -174,21 +175,12 @@ Specific content changes:
 Generic content changes (processing):
 
 * 'Lumping' is now allowed more promiscuously than before
-* uniqueName now shows highest possible discriminating node
+* "unique names" show highest distinguishing taxon, e.g. "Morganella
+  (genus in kingdom Fungi)" instead of lowest "Morganella (genus in family
+  Agaricaceae)"
 * Somewhat more informative deprecated.tsv
 * 'skeleton' feature replaces 'pinning' for homonym separation (see
   tax/skel/ for list of barrier nodes)
-* "unique names" show highest distinguishing taxon, e.g. "Morganella
-  (genus in kingdom Fungi)" instead of "Morganella (genus in family
-  Agaricaceae)"
-
-Jython API changes:
-
-* Experimental 'claim' system, an implementation of what JAR described in
-  his IEvoBio 2014 talk.  See util/claim.py in the repo.
-* .add method is deprecated (use .take instead)
-
-Other:
-
-* SKOS generation
-* Homonym reports
+* Deprecated file is now restricted to taxa mentioned in phylesystem,
+  and includes not only deprecated ids but also newly hidden ids (those
+  that were not hidden in 2.8, but are now)

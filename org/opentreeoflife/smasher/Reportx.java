@@ -84,8 +84,8 @@ public class Reportx {
 				   "src1", "branch1", "count1",
 				   "src2", "branch2", "count2");
 
-		for (String name : tax.nameIndex.keySet()) {
-			Collection<Taxon> taxa = tax.nameIndex.get(name);
+		for (String name : tax.allNames()) {
+			Collection<Taxon> taxa = tax.lookup(name);
 			if (taxa.size() <= 1) continue;
 			if (name.startsWith("uncultured")) continue;
 			for (Taxon taxon1 : taxa) {
@@ -121,7 +121,7 @@ public class Reportx {
 								continue;
 							}
 						}
-						Taxon div[] = tax.divergence(taxon1, taxon2);
+						Taxon div[] = taxon1.divergence(taxon2);
 						if (div != null) {
 							int count1 = div[0].count();
 							int count2 = div[1].count();

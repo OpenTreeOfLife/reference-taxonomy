@@ -20,7 +20,16 @@ package org.opentreeoflife.smasher;
 
 public abstract class Alignment {
 
-    abstract Taxon target(Taxon node);
+    abstract Answer answer(Taxon node);
+
+    Taxon map(Taxon node) {
+        Answer a = this.answer(node);
+        if (a == null) return null;
+        else if (a.isYes()) return a.target;
+        else return null;
+    }
+
+    abstract void cacheInSourceNodes();
 
 	// What was the fate of each of the nodes in this source taxonomy?
 
@@ -31,7 +40,6 @@ public abstract class Alignment {
 			int total = 0;
 			int nonamematch = 0;
 			int prevented = 0;
-			int added = 0;
 			int corroborated = 0;
 
 			// Could do a breakdown of matches and nonmatches by reason
@@ -42,8 +50,6 @@ public abstract class Alignment {
 					++nonamematch;
 				else if (node.mapped == null)
 					++prevented;
-				else if (node.mapped.novelp)
-					++added;
 				else
 					++corroborated;
 			}
@@ -51,7 +57,6 @@ public abstract class Alignment {
 			System.out.println("| Of " + total + " nodes in " + source.getTag() + ": " +
 							   (total-nonamematch) + " with name in common, of which " + 
 							   corroborated + " matched with existing, " + 
-							   // added + " added, " +	  -- this hasn't happened yet
 							   prevented + " blocked");
 		}
 	}

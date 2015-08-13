@@ -5,7 +5,7 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.9draft4
+WHICH=2.9draft8
 PREV_WHICH=2.8
 
 #  $^ = all prerequisites
@@ -25,10 +25,11 @@ FUNG=tax/fung
 PREOTTOL=../../preottol
 
 CP=-classpath ".:lib/*"
-JAVA=java $(CP)
+JAVA=JYTHONPATH=util java $(CP)
 BIG_JAVA=$(JAVA) -Xmx14G
 SMASH=org.opentreeoflife.smasher.Smasher
 CLASS=org/opentreeoflife/smasher/Smasher.class
+JAVASOURCES=$(shell find org/opentreeoflife/smasher -name "*.java")
 
 all: ott
 
@@ -36,16 +37,10 @@ compile: $(CLASS)
 
 # this is getting tedious
 
-$(CLASS): org/opentreeoflife/smasher/Smasher.java \
-	  org/opentreeoflife/smasher/Taxonomy.java \
-	  org/opentreeoflife/smasher/Taxon.java \
-	  org/opentreeoflife/smasher/Flag.java \
-	  org/opentreeoflife/smasher/Alignment.java org/opentreeoflife/smasher/Reportx.java \
-	  org/opentreeoflife/smasher/Test.java \
-	  org/opentreeoflife/smasher/AlignmentByMembership.java \
+$(CLASS): $(JAVASOURCES) \
 	  lib/jscheme.jar lib/json-simple-1.1.1.jar lib/jython-standalone-2.5.3.jar \
 	  lib/junit-4.12.jar
-	javac -g $(CP) org/opentreeoflife/smasher/*.java
+	javac -g $(CP) $(JAVASOURCES)
 
 lib/jython-standalone-2.5.3.jar:
 	wget -O "$@" --no-check-certificate \
@@ -61,7 +56,7 @@ OTT_ARGS=$(SMASH) $(SILVA)/ tax/713/ tax/fung/ $(NCBI)/ $(GBIF)/ \
       --out tax/ott/
 
 ott: tax/ott/log.tsv
-tax/ott/log.tsv: $(CLASS) make-ott.py taxonomies.py \
+tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
                     tax/silva/taxonomy.tsv \
 		    tax/fung/taxonomy.tsv tax/713/taxonomy.tsv \
 		    $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv \
@@ -152,11 +147,15 @@ $(GBIF)/taxonomy.tsv: feed/gbif/in/taxon.txt feed/gbif/process_gbif_taxonomy.py
 # when there are warnings.
 feed/gbif/in/taxon.txt: feed/gbif/in/checklist1.zip
 	(cd feed/gbif/in && (unzip checklist1.zip || true))
+	touch feed/gbif/in/taxon.txt
+
+# Was http://ecat-dev.gbif.org/repository/export/checklist1.zip
+# Could be http://rs.gbif.org/datasets/backbone/backbone.zip
+GBIF_URL=http://purl.org/opentree/gbif-backbone-2013-07-02.zip
 
 feed/gbif/in/checklist1.zip:
 	@mkdir -p feed/gbif/in
-	wget --output-document=$@ \
-             http://ecat-dev.gbif.org/repository/export/checklist1.zip
+	wget --output-document=$@ "$(GBIF_URL)"
 	@ls -l $@
 
 irmng: tax/irmng/taxonomy.tsv
@@ -267,12 +266,9 @@ ids-that-are-otus.tsv:
 	wc $@
 
 tax/ott/otu_deprecated.tsv: ids-that-are-otus.tsv tax/ott/deprecated.tsv
-	#grep "\\*" tax/ott/deprecated.tsv | grep -v "excluded" >dep-tmp.tsv
-	cp tax/ott/deprecated.tsv dep-tmp.tsv
-	$(BIG_JAVA) $(SMASH) --join ids-that-are-otus.tsv dep-tmp.tsv >$@.new
+	$(BIG_JAVA) $(SMASH) --join ids-that-are-otus.tsv tax/ott/deprecated.tsv >$@.new
 	mv $@.new $@
 	wc $@
-	rm dep-tmp.tsv
 
 tax/ott/differences.tsv: tax/prev_ott/taxonomy.tsv tax/ott/taxonomy.tsv
 	$(BIG_JAVA) $(SMASH) --diff tax/prev_ott/ tax/ott/ $@.new
@@ -290,7 +286,7 @@ tax/ott/otu_hidden.tsv: tax/ott/hidden.tsv
 	wc $@
 
 # The works
-works: ott tax/ott/otu_deprecated.tsv tax/ott/otu_differences.tsv tax/ott/otu_hidden.tsv
+works: ott tax/ott/otu_differences.tsv
 
 
 clean:

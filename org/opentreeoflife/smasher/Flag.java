@@ -14,36 +14,36 @@ import java.util.regex.Pattern;
 
 public enum Flag {
 
-	// NCBI - individually troublesome - not sticky - combine using &
-	NOT_OTU			     ("not_otu", "not_otu", Taxonomy.NOT_OTU),
-	VIRAL				 ("viral", "viral", Taxonomy.VIRAL),
-	HYBRID				 ("hybrid", "hybrid", Taxonomy.HYBRID),
+    // Emptied containers - these never have children
+    WAS_CONTAINER        ("was_container", null, Taxonomy.WAS_CONTAINER), // class incertae sedis, etc.
+    INCONSISTENT         ("inconsistent", "inconsistent_inherited", Taxonomy.INCONSISTENT),
+    MERGED               ("merged", "merged_inherited", Taxonomy.INCONSISTENT), // new in 2.9
 
-	// Final analysis...
-	// Containers - unconditionally so.
+    // Various kinds of incertae sedis - former children of emptied containers
 	INCERTAE_SEDIS		 ("incertae_sedis", "incertae_sedis_inherited", Taxonomy.INCERTAE_SEDIS),
 	UNCLASSIFIED		 ("unclassified", "unclassified_inherited", Taxonomy.UNCLASSIFIED),
 	ENVIRONMENTAL		 ("environmental", "environmental_inherited", Taxonomy.ENVIRONMENTAL),
-
-	// Set during assembly
-	HIDDEN				 ("hidden", "hidden_inherited", Taxonomy.HIDDEN),	  // combine using &
-	MAJOR_RANK_CONFLICT  ("major_rank_conflict_direct",
+	MAJOR_RANK_CONFLICT  ("major_rank_conflict",             // order that's sibling of a class
 						  "major_rank_conflict_inherited",
 						  Taxonomy.MAJOR_RANK_CONFLICT),     // Parent-dependent.  Retain value
+    UNPLACED             ("unplaced", "unplaced_inherited", Taxonomy.UNPLACED),
 
-	// Australopithecus
-	SIBLING_HIGHER		 ("sibling_higher", null, Taxonomy.SIBLING_HIGHER),
-	SIBLING_LOWER		 ("sibling_lower", null, Taxonomy.SIBLING_LOWER),
+	// Not suitable for use as OTUs
+	NOT_OTU			     ("not_otu", "not_otu", Taxonomy.NOT_OTU),
+	VIRAL				 ("viral", "viral", Taxonomy.VIRAL),      // NCBI
+	HYBRID				 ("hybrid", "hybrid", Taxonomy.HYBRID),   // NCBI
 
-	TATTERED			 ("tattered", "tattered_inherited", Taxonomy.TATTERED),  // combine using |
+    // Annotations
+	SIBLING_HIGHER		 ("sibling_higher", null, Taxonomy.SIBLING_HIGHER), // Australopithecus
+	SIBLING_LOWER		 ("sibling_lower", null, Taxonomy.SIBLING_LOWER), // deprecated
+	HIDDEN				 ("hidden", "hidden_inherited", Taxonomy.HIDDEN),	  // combine using &
 	EDITED				 ("edited", null, Taxonomy.EDITED),	  				  // combine using |
-	FORCED_VISIBLE		 ("forced_visible", null, Taxonomy.FORCED_VISIBLE),	  		  // combine using |
-	EXTINCT			 	 ("extinct_direct", "extinct_inherited", Taxonomy.EXTINCT),	  // combine using |
+	FORCED_VISIBLE		 ("forced_visible", null, Taxonomy.FORCED_VISIBLE),   // combine using |
+	EXTINCT			 	 ("extinct", "extinct_inherited", Taxonomy.EXTINCT),  // combine using |
 
-	// Has a node of rank 'species' as an ancestor?
-	INFRASPECIFIC		 ("infraspecific", null, Taxonomy.INFRASPECIFIC),
-
-	BARREN			     ("barren", null, Taxonomy.BARREN);
+	// Inferred only.
+	INFRASPECIFIC		 (null, "infraspecific", Taxonomy.INFRASPECIFIC),  // Has a species as an ancestor?
+	BARREN			     (null, "barren", Taxonomy.BARREN);  // Contains no species?
 
 	String name, inheritedName;
 	int bit;
@@ -57,24 +57,22 @@ public enum Flag {
 	static final Map<String, Flag> lookupTable = new HashMap<String, Flag>();
 	static final Map<String, Flag> lookupInheritedTable = new HashMap<String, Flag>();
 	static {
-		for (Flag flag : Flag.values())
+		for (Flag flag : Flag.values()) {
 			lookupTable.put(flag.name, flag);
-		lookupTable.put("extinct", EXTINCT); // hack for IF and IRMNG
+			lookupInheritedTable.put(flag.inheritedName, flag);
+        }
 
 		// Container stubs - legacy
-		lookupTable.put("incertae_sedis_direct", NOT_OTU);
-		lookupTable.put("unclassified_direct", NOT_OTU);
+		lookupTable.put("incertae_sedis_direct", WAS_CONTAINER);
+		lookupTable.put("unclassified_direct", WAS_CONTAINER);
 
-		// Kludge for legacy 2.6 and before, pending revision of representation ...
-		// will need to separate out direct and inherited cases, and in the case
-		// of 'environmental' there are three cases, the container, direct, and
-		// indirect
-		lookupTable.put("incertae_sedis_inherited", INCERTAE_SEDIS);
-		lookupTable.put("unclassified_inherited", UNCLASSIFIED);
-		lookupTable.put("environmental", ENVIRONMENTAL);
+        // Renamings - keep old names for legacy taxonomies
+        lookupTable.put("major_rank_conflict_direct", MAJOR_RANK_CONFLICT);
+        lookupTable.put("extinct_direct",	EXTINCT);
 
-		for (Flag flag : Flag.values())
-			lookupInheritedTable.put(flag.inheritedName, flag);
+        // 'Tattered' replaced with 'inconsistent' in 2.9
+        lookupTable.put("tattered",	UNPLACED);
+        lookupInheritedTable.put("tattered_inherited",	UNPLACED);
 	}
 
 	static Flag lookup(String name) {
@@ -108,123 +106,137 @@ public enum Flag {
 			}
 		}
 		node.properFlags = f;
-		node.inheritedFlags = g;
+		node.inferredFlags = g;
 	}
 
 	public static void printFlags(int flags, int iflags, PrintStream out) {
+        out.print(toString(flags, iflags));
+    }
+
+	public static String toString(int flags, int iflags) {
 		boolean needComma = false;
+
+        StringBuilder out = new StringBuilder();
 
 		if (false)
 			for (Flag flag : Flag.values()) {
 				;
 			} 
 
-		if ((((flags | iflags) & Taxonomy.NOT_OTU) != 0)) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("not_otu");
-		}
-		if (((flags | iflags) & Taxonomy.VIRAL) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("viral");
-		}
-		if (((flags | iflags) & Taxonomy.HYBRID) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("hybrid");
-		}
+        // Now the various flavors of incertae sedis
 
 		// Disposition relative to parent (formerly inside of containers)
 		// The direct form means incertae sedis
 		if ((flags & Taxonomy.INCERTAE_SEDIS) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			// WORK IN PROGRESS
-			out.print("incertae_sedis");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("incertae_sedis");
 		}
 		if ((iflags & Taxonomy.INCERTAE_SEDIS) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("incertae_sedis_inherited");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("incertae_sedis_inherited");
 		}
 		if ((flags & Taxonomy.UNCLASSIFIED) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			// WORK IN PROGRESS
-			out.print("unclassified");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("unclassified");
 		}
 		if ((iflags & Taxonomy.UNCLASSIFIED) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("unclassified_inherited"); // JAR prefers 'unclassified_indirect' ?
+			if (needComma) out.append(","); else needComma = true;
+			out.append("unclassified_inherited");
 		}
 		if ((flags & Taxonomy.ENVIRONMENTAL) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("environmental");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("environmental");
 		}
 		if ((iflags & Taxonomy.ENVIRONMENTAL) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("environmental_inherited");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("environmental_inherited");
 		}
-
-		// Other
-		if ((flags & Taxonomy.HIDDEN) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("hidden");
+		if ((flags & Taxonomy.UNPLACED) != 0) {
+			if (needComma) out.append(","); else needComma = true;
+			out.append("unplaced");
 		}
-		else if ((iflags & Taxonomy.HIDDEN) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("hidden_inherited");
+		if ((iflags & Taxonomy.UNPLACED) != 0) {
+			if (needComma) out.append(","); else needComma = true;
+			out.append("unplaced_inherited");
 		}
-
-		// Another kind of incertae sedis
 		if ((flags & Taxonomy.MAJOR_RANK_CONFLICT) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("major_rank_conflict_direct");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("major_rank_conflict");
 		}
 		else if ((flags & Taxonomy.SIBLING_HIGHER) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("sibling_higher");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("sibling_higher");
 		}
-		if ((flags & Taxonomy.SIBLING_LOWER) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("sibling_lower");
-		}
-
 		if ((iflags & Taxonomy.MAJOR_RANK_CONFLICT) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("major_rank_conflict_inherited");
+			if (needComma) out.append(","); else needComma = true;
+			out.append("major_rank_conflict_inherited");
 		}
 
-		// Misc
-		if ((flags & Taxonomy.TATTERED) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("tattered");
+        // Former containers (empty, not inherited)
+		if ((flags & Taxonomy.MERGED) != 0) { // never inherited
+			if (needComma) out.append(","); else needComma = true;
+			out.append("merged");
 		}
-		if ((iflags & Taxonomy.TATTERED) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("tattered_inherited");
+		if ((flags & Taxonomy.INCONSISTENT) != 0) { // never inherited
+			if (needComma) out.append(","); else needComma = true;
+			out.append("inconsistent");
 		}
-
-		if ((flags & Taxonomy.EDITED) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("edited");
-		}
-
-		if ((flags & Taxonomy.EXTINCT) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("extinct_direct");
-		}
-		if ((iflags & Taxonomy.EXTINCT) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("extinct_inherited");
+		if ((flags & Taxonomy.WAS_CONTAINER) != 0) {
+			if (needComma) out.append(","); else needComma = true;
+			out.append("was_container");
 		}
 
-		if ((flags & Taxonomy.FORCED_VISIBLE) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("forced_visible");
-		}
+        // Bad annotations, heritable (not distinguishing _inherited from otherwise)
+		if ((((flags | iflags) & Taxonomy.NOT_OTU) != 0)) {
+			if (needComma) out.append(","); else needComma = true;
+			out.append("not_otu");
+        }
+        if (((flags | iflags) & Taxonomy.VIRAL) != 0) {
+            if (needComma) out.append(","); else needComma = true;
+            out.append("viral");
+        }
+        if (((flags | iflags) & Taxonomy.HYBRID) != 0) {
+            if (needComma) out.append(","); else needComma = true;
+            out.append("hybrid");
+        }
 
-		if (((flags | iflags) & Taxonomy.INFRASPECIFIC) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("infraspecific");
-		} else if ((flags & Taxonomy.BARREN) != 0) {
-			if (needComma) out.print(","); else needComma = true;
-			out.print("barren");
-		}
-	}
+        // Good annotations - heritable
+        if ((flags & Taxonomy.HIDDEN) != 0) {
+            if (needComma) out.append(","); else needComma = true;
+            out.append("hidden");
+        }
+        else if ((iflags & Taxonomy.HIDDEN) != 0) {
+            if (needComma) out.append(","); else needComma = true;
+            out.append("hidden_inherited");
+        }
+        if ((flags & Taxonomy.EXTINCT) != 0) {
+            if (needComma) out.append(","); else needComma = true;
+            out.append("extinct");
+        }
+        if ((iflags & Taxonomy.EXTINCT) != 0) {
+            if (needComma) out.append(","); else needComma = true;
+            out.append("extinct_inherited");
+        }
+
+        // Good annotations - not meaningfully heritable
+        if ((flags & Taxonomy.EDITED) != 0) {
+            if (needComma) out.append(","); else needComma = true;
+            out.append("edited");
+        }
+        if ((flags & Taxonomy.FORCED_VISIBLE) != 0) {
+            if (needComma) out.append(","); else needComma = true;
+            out.append("forced_visible");
+        }
+
+        // Inferred based on actual content
+        if (((flags | iflags) & Taxonomy.INFRASPECIFIC) != 0) {
+            if (needComma) out.append(","); else needComma = true;
+            out.append("infraspecific");
+        } else if (((flags | iflags) & Taxonomy.BARREN) != 0) {
+            if (needComma) out.append(","); else needComma = true;
+            out.append("barren");
+        }
+
+        return out.toString();
+    }
 }

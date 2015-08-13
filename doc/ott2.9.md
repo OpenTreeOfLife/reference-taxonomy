@@ -1,10 +1,10 @@
 # Open Tree of Life reference taxonomy version 2.9
 
-Version 2.9 is not released yet.  Version 2.9 draft 4 was generated on 28 June 2015.
+Version 2.9 is not released yet.  Version 2.9 draft 8 was generated on 25 July 2015.
 
 ## Download
 
-[Download](http://files.opentreeoflife.org/ott/ott2.9/ott2.9draft4.tgz) (gzipped tar file, 117 Mbyte) 
+[Download](http://files.opentreeoflife.org/ott/ott2.9/ott2.9draft8.tgz) (gzipped tar file, 88 Mbyte) 
 
 ## Contents
 All files are encoded UTF-8.  For documentation about file formats, see [the documentation in the reference taxonomy
@@ -20,15 +20,7 @@ on github.
   taxon from a higher priority input taxonomy.  Number in first column is depth in taxonomic tree of
   nearest common ancestor of its children.
 
-**deprecated.tsv**: List all of taxa that have been deprecated since previous version. 
-
-**otu-deprecated.tsv**: List all taxa occurring in phylesystem studies that have been deprecated since previous version. 
-
-**differences.tsv:** Summary of differences between ott2.9 and ott2.8.
-
-**otu-differences.tsv:** Summary of differences between ott2.9 and ott2.8 that involve taxa in phylesystem.
-
-**hidden.tsv**: Report on 'hidden' taxa (incertae sedis and other suppressed taxa). Columns are OTT id, name, source taxonomy and id, containing major group, and flags (reasons for hiding).
+**deprecated.tsv**: List all taxon ids occurring in phylesystem studies that have been deprecated since previous version. 
 
 **log.tsv**: Debugging information related to homonym resolution.
 
@@ -40,8 +32,8 @@ The reference taxonomy is an algorithmic combination of several
 source taxonomies.  For code,
 see <a href="https://github.com/OpenTreeOfLife/reference-taxonomy">the
 source code repository</a>.
-Version 2.9 draft 4 was generated using 
-[commit ?](https://github.com/OpenTreeOfLife/reference-taxonomy/commit/?).
+Version 2.9 draft 8 was generated using 
+[commit fc55a7](https://github.com/OpenTreeOfLife/reference-taxonomy/commit/?).
 
 Where taxonomies conflict regarding taxon relationships, they are
 resolved in favor of the higher priority taxonomy.  The priority
@@ -62,9 +54,9 @@ retrieved.
     A higher-level phylogenetic classification of the <i>Fungi</i>.
     [Mycological Research</i> <b>111</b>(5):509-547, 2007](http://dx.doi.org/10.1016/j.mycres.2007.03.004).
     Newick string with revisions
-    archived at [http://files.figshare.com/2150667/Order_level_June2015_newick_branch_labels.txt](http://files.figshare.com/2150667/Order_level_June2015_newick_branch_labels.txt).
+    archived at [http://figshare.com/articles/Fungal\_Classification\_2015/1465038](http://figshare.com/articles/Fungal_Classification_2015/1465038).
     <br />
-    Download location: [http://purl.org/opentree/ott/ott2.9/inputs/??.tre](http://purl.org/opentree/ott/ott2.9/inputs/??.tre)
+    Download location: [http://purl.org/opentree/ott/??TBD??](http://purl.org/opentree/ott/??TBD??)
 
 1.  Taxonomy from: SILVA 16S ribosomal RNA database, version 115.
     See: Quast C, Pruesse E, Yilmaz P, Gerken J, Schweer T, Yarza P, Peplies J,
@@ -77,10 +69,10 @@ retrieved.
 
 1.  Index Fungorum.
     Download location: derived from database query result files provided by Paul
-    Kirk, April 2014 (personal communication).
+    Kirk, 7 April 2014 (personal communication).
     Web site: [http://www.indexfungorum.org/](http://www.indexfungorum.org/).
     <br />
-    Download location (converted to OTT format): [http://purl.org/opentree/ott/ott2.8/inputs/if-20140514.tgz](http://purl.org/opentree/ott/ott2.8/inputs/if-20140514.tgz).
+    Download location (converted to OTT format): [http://purl.org/opentree/ott/??TBD??](http://purl.org/opentree/ott/??TBD??).
 
 1.  Taxonomy from:
     Sch&auml;ferhoff, B., Fleischmann, A., Fischer, E., Albach, D. C., Borsch,
@@ -102,7 +94,7 @@ retrieved.
     [ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz](ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz)
     <br />
     For OTT 2.9 we used a version downloaded from NCBI on 27 June 2015.
-    Download location: [http://purl.org/opentree/ott/ott2.9/inputs/taxdump-20150627.tgz](http://purl.org/opentree/ott/ott2.9/inputs/taxdump-20150627.tgz).
+    Download location: [http://purl.org/opentree/ott/??TBD??](http://purl.org/opentree/ott/??TBD??).
   </li>
 
 1.  GBIF Backbone Taxonomy, from the 
@@ -128,3 +120,61 @@ content and given a priority lower than NCBI but higher than GBIF.
 The non-Malacostraca content of WoRMS is separated from the
 Malacostraca content and given a priority lower than NCBI but higher
 than GBIF.
+
+## Release notes
+
+Changes since OTT 2.8 (a.k.a 2.8draft5) which was built on 11 June 2014:
+
+Statistics:
+
+* Identifiers: 3461408
+* Visible: TBD
+* Synonyms: 910144
+* In deprecated file (used in phylesystem): 2889
+* In deprecated file (used in synthesis): 309
+* Taxa dissolved due to conflict (conflicts.tsv): 1319
+
+New flags:
+
+* unplaced - similar to incertae\_sedis (this means a child of an
+  inconsistent taxon, where t is inconsistent if it occurs in a
+  lower-priority taxonomy but is inconsistent with the higher-priority
+  taxonomies.  'tattered' is now deprecated)
+* unplaced\_inherited - descends from a placed taxon.
+* inconsistent (formerly 'tattered') - taxon in lower priority 
+  taxonomy that is inconsistent (see above).
+* merged - this taxon was consistent with another and got folded 
+  into it.  Taxon is hidden, children aren't.  Taxon may be
+  revived if it's learned later that the it is actually different.
+* was\_container - treat same as incertae\_sedis, merged, and
+  inconsistent - the 'taxon' was formerly a 'bucket' but is now empty and is
+  preserved as a placeholder.
+* extinct - replaces extinct_direct.
+* major\_rank\_conflict - replaces major\_rank\_conflict\_direct.
+* incertae\_sedis - replaces incertae\_sedis\_direct.
+* sibling\_lower is deprecated, that information is not recorded (but you can
+  always tell, just by looking at ranks of the siblings).  sibling\_higher
+  is retained.
+* Deprecated: tattered, tattered_inherited
+
+Specific content changes:
+
+* Added WoRMS
+* Updated Hibbett 2007 from [http://figshare.com/articles/Fungal\_Classification_2015/1465038](http://figshare.com/articles/Fungal_Classification_2015/1465038)
+* Minor IF update (to 7 April 2014 and modified processing software)
+* Minor GBIF update (same origin content, modified processing, much faster)
+* NCBI update (27 June 2015)
+* Fixes for many bugs reported in feedback and reference-taxonomy repos (see milestones)
+
+Generic content changes (processing):
+
+* 'Lumping' is now allowed more promiscuously than before
+* "unique names" show highest distinguishing taxon, e.g. "Morganella
+  (genus in kingdom Fungi)" instead of lowest "Morganella (genus in family
+  Agaricaceae)"
+* Somewhat more informative deprecated.tsv
+* 'skeleton' feature replaces 'pinning' for homonym separation (see
+  tax/skel/ for list of barrier nodes)
+* Deprecated file is now restricted to taxa mentioned in phylesystem,
+  and includes not only deprecated ids but also newly hidden ids (those
+  that were not hidden in 2.8, but are now)

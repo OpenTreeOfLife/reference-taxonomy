@@ -70,7 +70,7 @@ retrieved.
     Newick string with revisions
     archived at [http://dx.doi.org/10.6084/m9.figshare.915439](http://dx.doi.org/10.6084/m9.figshare.915439).
     <br />
-    Download location: [http://purl.org/opentree/ott/ott2.8/inputs/hibbett-20140313.tre](http://purl.oeg/opentree/ott/ott2.8/inputs/hibbett-20140313.tre)
+    Download location: [http://purl.org/opentree/ott/ott2.8/inputs/hibbett-20140313.tre](http://purl.org/opentree/ott/ott2.8/inputs/hibbett-20140313.tre)
 
 1.  Taxonomy from: SILVA 16S ribosomal RNA database, version 115.
     See: Quast C, Pruesse E, Yilmaz P, Gerken J, Schweer T, Yarza P, Peplies J,

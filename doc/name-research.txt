@@ -1,0 +1,513 @@
+Notes on what I've learned about various names...
+
+### Ciliophora
+
+There's a genus and a phylum, and they're different.
+
+The phylum, in Alveolata:
+
+  tax/silva/taxonomy.tsv:L26446/#4	|	L02366/#3	|	Ciliophora	|	no rank	|		|	
+    Alveolata, SAR, Eukaryota
+
+  tax/ncbi/taxonomy.tsv:5878	|	33630	|	Ciliophora	|	no rank	|	
+    cellular organisms; Eukaryota; Alveolata
+    ciliates.  contains Metopus contortus
+
+  tax/gbif/taxonomy.tsv:10	|	7	|	Ciliophora	|	phylum	|	
+    The Catalogue of Life, 3rd January 2011	Protozoa	Ciliophora Doflein, 1901
+
+  tax/worms/taxonomy.tsv:11	|	536209	|	Ciliophora	|	phylum	|	
+
+  tax/irmng/taxonomy.tsv:239	|	16	|	Ciliophora	|	phylum	|		|	
+
+  tax/ott2.8/taxonomy.tsv:302424	|	266751	|	Ciliophora	|	phylum	|	silva:L26446/#4,ncbi:5878,gbif:10,irmng:239	|	Ciliophora (phylum in Alveolata)	|	sibling_lower	|	
+
+  tax/ott2.9/taxonomy.tsv:302424	|	266751	|	Ciliophora	|	phylum	|	silva:L26446/#4,ncbi:5878,worms:11,gbif:10,irmng:239	|	Ciliophora (phylum in cellular organisms)	|		|	
+
+The genus, in Pezizomycotina in Ascomycota in Fungi:
+
+  tax/fung/taxonomy.tsv:7660	|	501468	|	Ciliophora	|	genus	|		|		|	sibling_higher	|	
+    genus Ciliophora = Incertae sedis, Incertae sedis, Incertae sedis, Incertae sedis, Pezizomycotina, Ascomycota, Fungi
+      501468 = Pezizomycotina
+      90031 = Ascomycota
+      90156 = Fungi
+    contains Ciliophora quercus
+    so what's the problem?
+
+  tax/gbif/taxonomy.tsv:3269382	|	95	|	Ciliophora	|	genus	|	
+    The Catalogue of Life, 3rd January 2011	Fungi	Ascomycota Caval.-Sm.
+
+  tax/irmng/taxonomy.tsv:1312425	|	134	|	Ciliophora	|	genus	|		|	
+    (I presume)
+
+  tax/ott2.8/taxonomy.tsv:5343665	|	971709	|	Ciliophora	|	genus	|	if:7660,irmng:1312425	|	Ciliophora (genus in subphylum Pezizomycotina)	|	major_rank_conflict_direct,sibling_lower	|	
+
+  tax/ott2.9/taxonomy.tsv:5343665	|	805080	|	Ciliophora	|	genus	|	if:7660,gbif:3269382,irmng:1312425	|	Ciliophora (genus if:7660)	|	unplaced,sibling_higher	|	
+
+Looks OK.  - tests added.  But, FAILED:
+
+  ** Ciliophora=5343665 not under Ascomycota
+
+Somehow smasher spliced it out of Fungi, and it never got put back in.
+
+make-ott.py has:
+
+    ott.notSame(ott.taxon('Ciliophora', 'Alveolata'),
+                fungi.taxon('Ciliophora', 'Ascomycota'))
+
+Apparently this didn't do the trick...
+
+I could solve the problem by creating a SAR barrier...
+
+
+### Foraminifera
+
+One taxon only, I guess.
+
+  tax/silva/taxonomy.tsv:X86094/#5	|	X86094/#4	|	Foraminifera	|	no rank	|		|	
+    Eukaryota < SAR < Rhizaria < Retaria < Foraminifera
+
+  tax/ncbi/taxonomy.tsv:29178	|	543769	|	Foraminifera	|	no rank	|	
+    root; cellular organisms; Eukaryota; Rhizaria
+
+  tax/worms/taxonomy.tsv:1410	|	582420	|	Foraminifera	|	phylum	|	
+  tax/gbif/taxonomy.tsv:4983431	|	389	|	Foraminifera	|	genus	|	
+    from Paleobiology Database
+    in 389 = Foraminiferida      ?
+    in 115 = Granuloreticulosea  ?
+    in Protozoa
+
+  tax/irmng/taxonomy.tsv:257	|	16	|	Foraminifera	|	phylum	|		|	
+
+  tax/prev_ott/taxonomy.tsv:936399	|	4972641	|	Foraminifera	|	class	|	silva:X86094/#5,ncbi:29178,gbif:389,irmng:257	|		|		|	
+
+  tax/ott/taxonomy.tsv:936399	|	4972641	|	Foraminifera	|	phylum	|	silva:X86094/#5,ncbi:29178,worms:1410,gbif:389,gbif:4983431,irmng:257	|		|	edited,extinct_inherited	|	
+
+  I think it's fine as is.
+
+### Phaeosphaeria
+
+There are two of these.  They are both real.
+
+One in Rhizaria > Cercozoa:
+
+  tax/silva/taxonomy.tsv:AY266292/#5	|	U03275/#4	|	Phaeosphaeria	|	no rank	|		|	
+    Eukaryota > SAR > Rhizaria > Cercozoa
+
+  tax/prev_ott/taxonomy.tsv:736911	|	363389	|	Phaeosphaeria	|	no rank	|	silva:AY266292/#5	|	Phaeosphaeria (in phylum Cercozoa)	|		|	
+
+  tax/ott/taxonomy.tsv:736911	|	363389	|	Phaeosphaeria	|	no rank	|	silva:AY266292/#5	|	Phaeosphaeria (in SAR)	|		|	
+And the other a fungus:
+
+  tax/fung/taxonomy.tsv:3951	|	81637	|	Phaeosphaeria	|	genus
+    Phaeosphaeriaceae, Pleosporales, Pleosporomycetidae, Dothideomycetes, Pezizomycotina, Ascomycota, Fungi
+
+  tax/worms/taxonomy.tsv:100122	|	100042	|	Phaeosphaeria	|	genus	|	
+  tax/ncbi/taxonomy.tsv:55067	|	5020	|	Phaeosphaeria	|	genus	|	
+    cellular organisms; Eukaryota; Opisthokonta; Fungi; Dikarya; Ascomycota; saccharomyceta; Pezizomycotina; leotiomyceta; dothideomyceta; Dothideomycetes; Pleosporomycetidae; Pleosporales; Pleosporineae; Phaeosphaeriaceae
+
+  tax/gbif/taxonomy.tsv:2579070	|	8312	|	Phaeosphaeria	|	genus	|	
+    in Ascomycota
+
+  tax/irmng/taxonomy.tsv:1091622	|	117813	|	Phaeosphaeria	|	genus	|		|	
+
+  tax/prev_ott/taxonomy.tsv:5311005	|	581434	|	Phaeosphaeria	|	genus	|	if:3951,ncbi:55067,gbif:7253530,irmng:1091622	|	Phaeosphaeria (genus if:3951 in family Phaeosphaeriaceae)	|	sibling_lower	|	
+  tax/prev_ott/taxonomy.tsv:5486272	|	581434	|	Phaeosphaeria	|	genus	|	gbif:2579070	|	Phaeosphaeria (genus gbif:2579070 in family Phaeosphaeriaceae)	|	hidden,sibling_lower,tattered	|	
+
+  tax/ott/taxonomy.tsv:5486272	|	581434	|	Phaeosphaeria	|	genus	|	if:3951,ncbi:55067,worms:100122,gbif:7253578,gbif:2579070,irmng:1091622	|	Phaeosphaeria (genus in kingdom Fungi)	|	sibling_higher	|	
+
+Current situation looks just fine.
+
+tests - added.
+
+### Morganella
+
+Four of them (maybe five).
+
+Bacteria 524780
+
+  tax/silva/taxonomy.tsv:AB089243/#6	|	D78004/#5	|	Morganella	|	no rank	|		|	
+    Bacteria > Proteobacteria > Gammaproteobacteria >
+      Enterobacteriales > Enterobacteriaceae > Morganella
+
+  tax/ncbi/taxonomy.tsv:581	|	543	|	Morganella	|	genus	|	
+    Proteobacteria - 581
+  tax/gbif/taxonomy.tsv:3222026	|	4899	|	Morganella	|	genus	|	
+  tax/irmng/taxonomy.tsv:1379174	|	108710	|	Morganella	|	genus	|		|	
+
+  tax/ott/taxonomy.tsv:524780	|	424023	|	Morganella	|	genus	|	silva:AB089243/#6,ncbi:581,gbif:3222026,irmng:1379174	|	Morganella (genus in domain Bacteria (domain silva:A16379/#1))	|		|	
+
+  tax/prev_ott/taxonomy.tsv:524780	|	424023	|	Morganella	|	genus	|	silva:AB089243/#6,ncbi:581,gbif:3222026,irmng:1379174	|	Morganella (genus in family Enterobacteriaceae)	|	sibling_lower
+
+  My notes say:
+  "GBIF has only one, 3225846.
+    but it has a synonym, for Gorkadinium = 3236661, which is in
+    Dinophyceae, a protist.  Must prevent it matching SILVA."
+
+Fungus 973932 (or 524780 or 5438805)
+
+  Agaricaceae, Agaricales, Agaricomycetidae, Agaricomycetes, Agaricomycotina, Basidiomycota, Fungi
+
+  tax/fung/taxonomy.tsv:19222	|	80434	|	Morganella	|	genus	|		|		|		|	
+  tax/ncbi/taxonomy.tsv:90690	|	5426	|	Morganella	|	genus	|	
+  tax/gbif/taxonomy.tsv:2535116	|	4170	|	Morganella	|	genus	|	
+  tax/irmng/taxonomy.tsv:1379241	|	110489	|	Morganella	|	genus	|		|	
+
+  tax/ott/taxonomy.tsv:973932	|	8360	|	Morganella	|	genus	|	if:19222,gbif:2535116,irmng:1379241	|	Morganella (genus in kingdom Fungi)	|	sibling_higher	|	
+
+  tax/prev_ott/taxonomy.tsv:973932	|	8360	|	Morganella	|	genus	|	if:19222,gbif:2535116,irmng:1379241	|	Morganella (genus in family Agaricaceae)	|	sibling_lower	|	
+  tax/prev_ott/taxonomy.tsv:5438805	|	558970	|	Morganella	|	genus	|	ncbi:90690	|	Morganella (genus in order Agaricales)	|	sibling_lower,tattered_inherited	|	
+
+  Perhaps also in Lycoperdaceae - which has been merged with 
+  Agaricaceae, I think.  Ott 2.9 has:
+    5347678	|	8360	|	Lycoperdaceae	|	family	|	ncbi:5426	|		|	merged,barren	|	
+    8360	|	8364	|	Agaricaceae	|	family	|	if:80434,ncbi:5339,worms:100070,gbif:4170,irmng:110489
+
+Arthropod (scale insect) 6400
+
+  tax/ncbi/taxonomy.tsv:108061	|	30080	|	Morganella	|	genus	|	
+  tax/gbif/taxonomy.tsv:2084895	|	4521	|	Morganella	|	genus	|	
+  tax/irmng/taxonomy.tsv:1379304	|	105639	|	Morganella	|	genus	|		|	
+
+  tax/prev_ott/taxonomy.tsv:6400	|	65332	|	Morganella	|	genus	|	ncbi:108061,gbif:2084895,irmng:1379304	|	Morganella (genus in family Diaspididae)	|	sibling_lower,edited	|	
+
+  tax/ott/taxonomy.tsv:6400	|	65332	|	Morganella	|	genus	|	ncbi:108061,gbif:2084895,irmng:1379304	|	Morganella (genus in kingdom Metazoa)	|		|	
+
+Brachiopod 5297826
+
+  tax/irmng/taxonomy.tsv:1379213	|	118347	|	Morganella	|	genus	|	extinct	|	
+  tax/prev_ott/taxonomy.tsv:5297826	|	4972974	|	Morganella	|	genus	|	irmng:1379213	|	Morganella (genus in family Araksalosiidae)	|	major_rank_conflict_inherited,extinct_direct,extinct_inherited,barren	|	
+  bash-3.2$ 
+
+  Why did it go away in OTT 2.9?  That's mysterious.  -
+  tax/ott/differences.tsv:5297826	multiple-replacements	Morganella	irmng:1379213			(no division)
+  tax/ott/log.tsv:Morganella	irmng:1379213	-	?	unresolved/ambiguous	if:19222,ncbi:108061
+
+  Solution: delete it from irmng before merge.
+
+### Saccharomycetes
+
+The error report from GBIF is:
+
+  ** Ranks out of order: (if:21291 Saccharomycetes?) genus has child (if:90341 Saccharomycetidae?) subclass
+
+Is this a genus or a higher taxon?
+
+Not mentioned in current h2007, although it did appear in an earlier
+version, as a class.
+
+Our IF dump has
+
+  21291	|	90156	|	Saccharomycetes	|	genus	|		|		|	sibling_higher	|	
+  "Position in classification: Fossil Fungi"
+
+corresponding in OTT 2.8 to IF
+
+989999	|	971714	|	Saccharomycetes	|	genus	|	h2007:59,if:21291,ncbi:4891,gbif:182,irmng:1451	|		|	sibling_lower	|	
+
+which is a mish-mash.
+
+IF, for "higher", has record with id 90791:
+
+  Saccharomycetes G. Winter, Rabenh. Krypt.-Fl., Edn 2 (Leipzig) 1.1: 32 (1880) [1884]
+
+which is not in our IF dump.
+For its type genus, has record with id:
+
+  542401 Saccharomyces Meyen 1838, (also see Species Fungorum: Saccharomyces); Saccharomycetaceae
+    Saccharomycetaceae, Saccharomycetales, Saccharomycetidae, Saccharomycetes, Saccharomycotina, Ascomycota, Fungi
+  515985 Saccharomyces Fabian & H.H. Hall 1933; Saccharomycetaceae
+
+IF, asked about the genus, says the type species is:
+
+  Saccharomyces cerevisiae Meyen ex E.C. Hansen 1883
+    Saccharomycetaceae, Saccharomycetales, Saccharomycetidae, Saccharomycetes, Saccharomycotina, Ascomycota, Fungi
+
+So why does GBIF think Saccharomycetidae is in it?
+
+  tax/fung/taxonomy.tsv:21291	|	90156	|	Saccharomycetes	|	genus	|		|		|	sibling_higher
+
+That 'sibling_higher' is suspicious.  It's a child of Fungi in our
+damaged version.  The siblings are all genera except for this and a
+few other phyla:
+
+  90405	|	90156	|	Zygomycota	|	phylum	|		|		|	sibling_lower	|	
+
+hmm... so set the parent to be ... Saccharomycetaceae?
+  989994	|	989996	|	Saccharomycetaceae	|	family	|	if:81248,ncbi:4893,gbif:4140,irmng:110111	|		|	sibling_lower
+
+  taxon('Saccharomycetaceae', 'Fungi').take(taxon('Saccharomycetes', 'Fungi'))
+
+But better to just be rid of the genus.
+
+We want the higher taxon, and it should probably get a new id.
+IF id 90791, parent = Saccharomycotina 
+
+### Choanoflagellida
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/45
+    silva.taxon('Choanoflagellida', 'Ichthyosporea').rename('Choanoflagellida NOT')
+
+There are two of them: one in Ichthyosporea (from SILVA), and one in
+Opisthokonta (from every other source).
+
+The one in SILVA looks simply spurious; I'm going to just rename it,
+and hope the problem goes away.
+
+### Byssus phosphorea
+
+
+### Neoptera
+
+  ** No taxon with name Lepidoptera with ancestor Neoptera
+
+from
+
+    ott.notSame(ott.taxonThatContains('Neoptera', 'Lepidoptera'), gbif.taxon('Neoptera', 'Diptera'))
+
+NCBI used to have this taxon, but has retracted it...
+
+https://en.wikipedia.org/wiki/Neoptera says it's everything 'higher'
+than Odonata.  So, orthopteroids, blattopteroids, and paraneoptera
+(hemiptera, 'oligoneoptera' ~= holometabolous insects).
+
+I guess we've just lost it.
+
+### Photorhabdus luminescens
+
+bash-3.2$ grep "525190[89]" tax/prev_ott/taxonomy.tsv 
+5251908	|	786552	|	Photorhabdus luminescens	|	no rank - terminal	|	silva:EU930342,ncbi:1004166	|	Photorhabdus luminescens (silva:EU930342 in family Enterobacteriaceae)	|		|	
+5251909	|	786552	|	Photorhabdus luminescens	|	no rank - terminal	|	silva:EU930344,ncbi:1004165	|	Photorhabdus luminescens (silva:EU930344 in family Enterobacteriaceae)	|		|	
+
+Look up on web:
+  ncbi:1004166 = Photorhabdus luminescens subsp. hainanensis
+  ncbi:1004165 = Photorhabdus luminescens subsp. caribbeanensis
+
+In draft: for 525190[89], same as in prev_ott.
+  140287	|	786552	|	Photorhabdus luminescens subsp. caribbeanensis	|	subspecies	|	ncbi:1004165	|		|	sibling_higher	|	
+
+Deprecated file has:
+  786496	Photorhabdus luminescens	ncbi:29488,gbif:3221804,irmng:10033920	id-retired/probable-lumping		*	synthesis	
+
+Updated SILVA names to conform to modern NCBI.
+
+These two are probably very similar:
+  425367	Pantoea ananatis	ncbi:553,gbif:3222005,irmng:10035004	id-retired/probable-lumping		*	synthesis	
+  5341975	Synechocystis sp. PCC 6803	ncbi:1148	id-retired/probable-lumping		!5256113	synthesis	
+NCBI:
+  AF364847	|	U80183/#6	|	Pantoea ananatis	|	samples	|	ncbi:706191	|	
+  EF690403	|	U80183/#6	|	Pantoea ananatis	|	samples	|	ncbi:1048262	|	
+
+### Epiphloea
+
+Two of them.
+
+In Rhodymeniophycidae in Florideophycidae.  (Tolweb says
+Florideophycidae = Florideophyceae and it's in Rhodophyta.)
+
+  From ott2.8:
+  471770	|	5275832	|	Epiphloea	|	genus	|	silva:AY437701/#6,gbif:3269351	|	Epiphloea (genus in Rhodymeniophycidae)	|	barren	|	
+
+  Preserved in ott 2.9draft7.
+
+  This one (in Halymeniaceae) I'm guessing is the same, and should be merged with 471770:
+  5342325	|	880583	|	Epiphloea	|	genus	|	ncbi:257604,gbif:2656281,irmng:1343095	|	Epiphloea (genus in family Halymeniaceae)	|	sibling_lower,tattered_inherited
+
+Fungus.
+
+  5342482	|	5344715	|	Epiphloea	|	genus	|	if:1869,irmng:1342382	|	Epiphloea (genus in order Lichinales)	|		|	
+
+** No unique taxon found with name Epiphloea in context Ascomycota
+
+    ott.notSame(ncbi.taxon('Epiphloea', 'Rhodophyta'), ott.taxon('Epiphloea', 'Ascomycota'))
+  Epiphloea      # in Pezizomycotina < Opisth. / Rhodophyta  should be OK, Rh. is a division
+
+  ** No unique taxon with id 5342325 (for Epiphloea)  id issue?
+
+### Campanella
+
+In SAR:
+
+  136738	|	557360	|	Campanella	|	genus	|	silva:AF401524/#9,ncbi:168241,gbif:3204425,irmng:1289747	|	Campanella (genus in SAR)	|		|	
+  136738	|	557360	|	Campanella	|	genus	|	silva:AF401524/#9,ncbi:168241,gbif:3204425,irmng:1289747	|	Campanella (genus in class Oligohymenophorea)	|	sibling_lower	|	
+
+In basidiomycete fungi :
+
+  5342392	|	817243	|	Campanella	|	genus	|	if:17229,ncbi:71870,gbif:2512830,irmng:1289705	|	Campanella (genus in Nucletmycea)	|		|	
+  5342392	|	817243	|	Campanella	|	genus	|	if:17229,ncbi:71870,gbif:2512830,irmng:1289705	|	Campanella (genus in family Marasmiaceae)	|	sibling_lower	|	
+
+In Cnidaria:
+
+  5343447	|	641033	|	Campanella	|	genus	|	irmng:1289625,irmng:1289670	|	Campanella (genus in Holozoa)	|	major_rank_conflict_direct,barren	|	
+  5343447	|	641033	|	Campanella	|	genus	|	irmng:1289625,irmng:1289670	|	Campanella (genus in phylum Cnidaria)	|	major_rank_conflict_direct,sibling_lower,barren	|	
+
+### Steinia
+
+Another 3-way homonym including SAR.
+
+### Tipuloidea
+
+The fly
+
+  722875.  In Diptera < Endopterygota.  Not extinct.  Superfamily, not genus.
+  ?? ncbi:41829,gbif:1882,irmng:1306308
+
+The bug
+
+  5334846.  Genus in Hemiptera.  Extinct.  IRMNG / Yale Peabody.
+  ?? gbif:6101461,irmng:1170022
+    in Chiliocyclidae (= gbif:4774840,irmng:111669, ott:5332502)
+    in Hemiptera (= gbif:809).
+  Delete it - it's barren anyhow.
+
+The 'extinct' is wrong, fix:
+  5334846	|	860956	|	Tipuloidea	|	superfamily	|	ncbi:41829,gbif:1882,irmng:1170022	|		|	extinct	|	
+
+  DELETED bug, deleted test.
+
+  Preserving id ...
+
+  What is GBIF 1882?... Diptera, according to the GBIF UI.
+
+### Ophiurina
+
+What kind of thing is this?  - starfish, Asterozoa.  Brittle stars.
+
+There's the suborder
+
+  ott2.8:
+  258604	|	197637	|	Ophiurina	|	suborder	|	ncbi:133711	|	Ophiurina (suborder in order Ophiurida)	|	sibling_lower	|	
+
+And there's the genus
+
+  ott2.8:
+  5320286	|	3655460	|	Ophiurina	|	genus	|	gbif:4872240,irmng:1346026	|	Ophiurina (genus in family Ophiurinidae)	|	extinct_direct,extinct_inherited	|	
+
+  grep "Ophiurina	" tax/gbif/taxonomy.tsv 
+  4872240	|	4872229	|	Ophiurina	|	genus	|	
+    in
+  grep "^4872229	" tax/gbif/taxonomy.tsv 
+  4872229	|	1429	|	Ophiurinidae	|	family	|	
+
+  but it gets detached somehow.  Hmm... another homonym, exteinct
+  suborder and extact genus.
+
+  Is it real?  
+    grep "Ophiurina	" feed/gbif/in/taxon.txt 
+    4975704	4872240		Ophiurina lymani	Ophiurina lymani	species	accepted		Ophiurina	lymani			Paleobiology Database	Animalia	Echinodermata Klein, 1734	Ophiuroidea Gray, 1840	Ophiurida Müller & Troschel, 1840	Ophiurinidae Gregory, 1897
+    4872240	4872229		Ophiurina Stürtz, 1890	Ophiurina	genus	accepted		Ophiurina			Palaeontogr. , 36, 232.	Interim Register of Marine and Nonmarine Genera	Animalia	Echinodermata Klein, 1734	Ophiuroidea Gray, 1840	Ophiurida Müller & Troschel, 1840	Ophiurinidae Gregory, 1897
+
+  Flush it (from both GBIF and IRMNG).
+  DELETING TEST Ophiurina,Ophiurinidae,5320286,""
+
+### Rhynchonelloidea
+
+    ott.notSame(ott.taxon('Rhynchonelloidea', 'Brachiopoda'), gbif.taxon('Rhynchonelloidea'))
+    ** No unique taxon with id 5316010 (for Rhynchonelloidea)
+
+OTT2.8 has
+
+  795939	|	37861	|	Rhynchonelloidea	|	superfamily	|	ncbi:151154	|	Rhynchonelloidea (superfamily in order Rhynchonellida)	|	sibling_lower,extinct_direct	|	
+  5316010	|	4969615	|	Rhynchonelloidea	|	genus	|	gbif:4865271,irmng:1064058,irmng:1233615	|	Rhynchonelloidea (genus in family Rhynchonellidae)	|	extinct_direct,extinct_inherited,barren	|	
+
+The superfamily from NCBI is extant and contains genus Sphenarina.
+
+The other is less important but it would be nice to keep it...
+
+
+## Division problems
+
+? Poorly divided: (gbif:3326448. Clitocybe paxillus?) in Fungi vs. (=if:134911. Clitocybe paxillus?) in Eukaryota
+
+Clitocybe is a fungus, in 
+  Fungi; Dikarya; Basidiomycota; Agaricomycotina; Agaricomycetes; Agaricomycetidae; Agaricales; Tricholomataceae; Clitocybe
+Why would IF say it's not?
+IF web site says:
+  Tricholomataceae, Agaricales, Agaricomycetidae, Agaricomycetes, Agaricomycotina, Basidiomycota, Fungi
+Our IF says:
+
+IF puts these in Fungi when they probably shouldn't:
+Urosporidium
+Bonamia
+Zonaria
+Minchinia
+
+Ellobiopsis - probable SILVA/NCBI clash
+
+Cylindrotheca - homonyms
+
+
+## Other problems
+
+** No unique taxon found with this name: Burkea
+** No unique taxon found with this name: Coscinium
+** No unique taxon found with this name: Perezia
+** No unique taxon found with name Crepidula in context Microsporidia
+** No unique taxon found with name Hessea in context Viridiplantae
+** No unique taxon found with name Hessea in context Microsporidia
+** No unique taxon found with name Bostrychia in context Rhodophyceae
+
+** Ranks out of order: (gbif:4587706 Nuculoidea?) genus has child (gbif:4587862 Nucularcidae?) family
+** Ranks out of order: (gbif:1010609 Limulus?) genus has child (gbif:4632808. Aglaspididae?) family
+** Ranks out of order: (gbif:2050173 Alydus calcaratus?) species has child (gbif:3265607 Camptopus?) genus
+** Ranks out of order: (gbif:4865225 Chonetoidea?) genus has child (gbif:3252414 Rugosochonetidae?) family
+
+** Children of (irmng:111774 Chonetidae*?) are in disjoint divisions ((=ncbi:33317 Protostomia?) in (691846=silva:D14357/#4 Metazoa*?) + (=h2007:154 Dothideomycetes*?) in (352914=silva:D11377/#4 Fungi*?))
+** Children of (irmng:103583 Trigonirhynchiidae*?) are in disjoint divisions ((=ncbi:46593 Polynoidae*?) in (941620=ncbi:6340 Annelida*?) + (=ncbi:122737 Attelabidae*?) in (865243=ncbi:7041 Coleoptera*?))
+** Children of (irmng:107074 Lichinaceae*?) are in disjoint divisions ((=h2007:85 Lichinales*?) in (352914=silva:D11377/#4 Fungi*?) + (=ncbi:1173045 Glomeridellidae*?) in (632179=ncbi:6656 Arthropoda*?))
+...
+
+I think these represent problems that have been fixed:
+
+** No unique taxon found with name Gorkadinium in context Dinophyceae
+** No unique taxon found with name Choanoflagellida in context Opisthokonta
+
+Enterococcus faecalis - deprecated when division is strong, not
+deprecated when weak (promotions/demotions allowed).
+
+  5255894	Enterococcus faecalis	silva:Y18293,ncbi:1351	id-changed/lump-or-split		=594447		
+
+  In tax/prev_ott/taxonomy.tsv:
+    594447	|	594479	|	Enterococcus faecalis	|	species	|	ncbi:1351,gbif:3227408,irmng:10029994	|	Enterococcus faecalis (species ncbi:1351 in family Enterococcaceae)	|		|	
+    5255894	|	594479	|	Enterococcus faecalis	|	no rank - terminal	|	silva:Y18293,ncbi:1351	|	Enterococcus faecalis (silva:Y18293 in family Enterococcaceae)	|		|	
+
+
+hmm, don't see what happened.  Looks like simple lumping, don't know
+why this would be a cross-division issue.
+
+notSame directives:
+
+  Acantharia
+  Steinia        # in Lecideaceae < Fungi / Alveolata / insect < Holozoa in irmng
+  Campanella     # in Agaricomycotina < Nuclet. / SAR / Holozoa
+  Lacrymaria     # in Agaricomycotina / SAR
+  Bogoriella     # in Verrucariaceae < Pezizomycotina < Euk. / Bogoriellaceae < Bacteria  should be ok
+
+        ott.notSame(ott.taxon('Bostrychia', 'Rhodophyceae'),
+    ott.notSame(ott.taxon('Bostrychia', 'Rhodophyceae'), ncbi.taxon('Bostrychia', 'Aves'))
+
+    ott.notSame(ott.taxon('Podocystis', 'Stramenopiles'), fungi.taxon('Podocystis', 'Fungi'))
+    ott.notSame(study713.taxon('Buchnera', 'Orobanchaceae'), ott.taxon('Buchnera', 'Enterobacteriaceae'))
+    # ott.notSame(ncbi.taxon('Burkea', 'Viridiplantae'), ott.taxon('Burkea'))
+    # ott.notSame(ncbi.taxon('Coscinium', 'Viridiplantae'), ott.taxon('Coscinium'))
+    # ott.notSame(ncbi.taxon('Perezia', 'Viridiplantae'), ott.taxon('Perezia'))
+
+    ott.notSame(ncbi.taxon('Crepidula', 'Gastropoda'), ott.taxon('Crepidula', 'Microsporidia'))
+    ott.notSame(ncbi.taxon('Hessea', 'Viridiplantae'), ott.taxon('Hessea', 'Microsporidia'))
+        ott.notSame(ott.maybeTaxon('Choanoflagellida', 'Ichthyosporea'),
+    ott.notSame(ott.taxon('Retaria', 'SAR'), gbif.taxon('Retaria'))
+    ott.notSame(ott.taxon('Labyrinthomorpha', 'Stramenopiles'), gbif.taxon('Labyrinthomorpha'))
+    # ott.notSame(ott.taxon('Ophiurina', 'Echinodermata'), gbif.taxon('Ophiurina','Ophiurinidae'))
+
+    ott.notSame(ott.taxonThatContains('Neoptera', 'Lepidoptera'), gbif.taxon('Neoptera', 'Diptera'))
+    # ott.notSame(gbif.taxon('Tipuloidea', 'Chiliocyclidae'), ott.taxon('Tipuloidea', 'Diptera')) # genus Tipuloidea
+    ott.notSame(ott.taxon('Tetrasphaera', 'Intrasporangiaceae'),
+    ott.notSame(irmng.taxon('Protaspis', 'Chordata'), ott.taxon('Protaspis', 'Cercozoa'))
+    ott.notSame(irmng.taxon('Coscinodiscus', 'Porifera'), ott.taxon('Coscinodiscus', 'Stramenopiles'))
+
+
+** No unique taxon with id 992764 (for Synedra acus)   5581393 ?
+** No unique taxon with id 600099 (for Hessea)
+** No unique taxon with id 6400 (for Morganella)
+** No unique taxon with id 5320286 (for Ophiurina)
+** No unique taxon with id 722875 (for Tipuloidea)   fixed?

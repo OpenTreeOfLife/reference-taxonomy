@@ -5,7 +5,12 @@ extinct flags from IRMNG, and many small algorithmic improvements.
 
 Released 17 March 2014.
 
------
+## Download
+
+[Download](http://files.opentreeoflife.org/ott/ott2.4.tgz) (gzipped tar file, 84 Mbyte) 
+
+## Change log
+
 2.4.draft19 (2014-02-27):
 
 * Microbes from GBIF and IRMNG now suppressed

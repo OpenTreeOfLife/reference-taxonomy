@@ -5,7 +5,11 @@ Version 2.6 was generated on 11 April 2014.
 The taxonomy was generated using the 'smasher' utility, [commit
 f624223f31](https://github.com/OpenTreeOfLife/reference-taxonomy/commit/f624223f31767fa1787f3ba2ddad5daa56fd939b), which resides on github, [here](https://github.com/OpenTreeOfLife/reference-taxonomy/commit/f624223f31767fa1787f3ba2ddad5daa56fd939b)
 
-## File in this package
+## Download
+
+[Download](http://files.opentreeoflife.org/ott/ott2.6.tgz) (gzipped tar file, 94 Mbyte) 
+
+## Files in this package
 
 * ott/taxonomy.tsv, ott/synonyms.tsv
 

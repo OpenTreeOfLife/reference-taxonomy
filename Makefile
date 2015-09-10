@@ -5,7 +5,7 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.9draft8
+WHICH=2.9draft9
 PREV_WHICH=2.8
 
 #  $^ = all prerequisites

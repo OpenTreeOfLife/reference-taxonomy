@@ -275,6 +275,12 @@ def patch_fung(fung):
     # JAR 2015-07-20 - homonym, Nom. illegit.
     fung.taxon('Acantharia').prune('http://www.indexfungorum.org/Names/NamesRecord.asp?RecordID=8')
 
+    # JAR 2015-09-10 on perusing a long list of equivocal homonyms
+    # (weaklog.csv).  Hibbett 2007 and NCBI put Microsporidia in Fungi.
+    fung.taxon('Fungi').take(fung.taxon('Microsporidia'))
+
+    fung.taxon('SAR').take(fung.taxon('Oomycota'))
+
     print "Fungi in Index Fungorum has %s nodes"%fung.taxon('Fungi').count()
 
 def link_to_h2007(tax):

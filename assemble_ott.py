@@ -367,6 +367,9 @@ def prepare_ncbi(ott):
     # probably not needed
     ott.same(ncbi.taxon('Ciliophora', 'Alveolata'), ott.taxon('Ciliophora', 'Alveolata'))
 
+    ott.notSame(ncbi.taxon('Diphylleia', 'Chloroplastida'),
+                ott.taxonThatContains('Diphylleia', 'Diphylleia rotans'))
+
     return ncbi
 
 # ----- GBIF (Global Biodiversity Information Facility) taxonomy -----
@@ -406,17 +409,22 @@ def prepare_gbif(ott):
     #### Check: was ncbi.taxon
     ott.same(ott.taxon('Tetrasphaera','Intrasporangiaceae'), gbif.taxon('Tetrasphaera','Intrasporangiaceae'))
 
-    # SILVA's Retaria is in SAR, GBIF's is in Brachiopoda
-        # ### CHECK: was silva.taxon
-    ott.notSame(ott.taxon('Retaria', 'SAR'), gbif.taxon('Retaria'))
-
     # Bad alignments to NCBI
     # #### THESE NEED TO BE CHECKED - was ncbi.taxon
-    ott.notSame(ott.taxon('Labyrinthomorpha', 'Stramenopiles'), gbif.taxon('Labyrinthomorpha'))
+
+    # Labyrinthomorpha (synonym for Labyrinthulomycetes)
+    # No longer in GBIF... the one in IRMNG is a Cambrian sponge-like thing
+    # ott.notSame(ott.taxon('Labyrinthomorpha', 'Stramenopiles'), gbif.taxon('Labyrinthomorpha'))
+
     # ott.notSame(ott.taxon('Ophiurina', 'Echinodermata'), gbif.taxon('Ophiurina','Ophiurinidae'))
     #  taken care of in taxonomies.py
-    ott.notSame(ott.taxon('Rhynchonelloidea', 'Brachiopoda'), gbif.taxon('Rhynchonelloidea'))
+
+    # There is a test for this.  The GBIF taxon no longer exists.
+    # ott.notSame(ott.taxon('Rhynchonelloidea', 'Brachiopoda'), gbif.taxon('Rhynchonelloidea'))
+
+    # There are tests.  Seems OK
     ott.notSame(ott.taxonThatContains('Neoptera', 'Lepidoptera'), gbif.taxon('Neoptera', 'Diptera'))
+
     # ott.notSame(gbif.taxon('Tipuloidea', 'Chiliocyclidae'), ott.taxon('Tipuloidea', 'Diptera')) # genus Tipuloidea
     #  taken care of in taxonomies.py
     # ### CHECK: was silva.taxon
@@ -490,11 +498,11 @@ def prepare_irmng(ott):
     ott.same(irmng.taxon('Trichosporon'), ott.taxon('Trichosporon', 'Trichosporonaceae'))
 
     # JAR 2014-04-24 false match
-    #### check - was ncbi.taxon
+    # tests pass
     ott.notSame(irmng.taxon('Protaspis', 'Chordata'), ott.taxon('Protaspis', 'Cercozoa'))
 
     # JAR 2014-04-18 while investigating hidden status of Coscinodiscus radiatus
-    #### check - was ncbi.taxon
+    # tests
     ott.notSame(irmng.taxon('Coscinodiscus', 'Porifera'), ott.taxon('Coscinodiscus', 'Stramenopiles'))
 
     # https://github.com/OpenTreeOfLife/feedback/issues/45
@@ -963,11 +971,13 @@ names_of_interest = ['Ciliophora',
                      'Xenorhabdus bovienii',
                      'Gibberella zeae',
                      'Ruwenzorornis johnstoni',
+                     'Burkea',
 
                      'Blattodea',
                      'Eumetazoa',
                      'Bivalvia',
                      'Pelecypoda',
                      'Parmeliaceae',
+                     'Heterolepa',
                      ]
 

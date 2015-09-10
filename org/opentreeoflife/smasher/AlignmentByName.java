@@ -131,15 +131,15 @@ public class AlignmentByName extends Alignment {
         this.source.reset();    // depths and comapped
         this.union.reset();
 
+        for (Taxon node : this.source)
+            node.seq = NOT_SET;
+
+		for (Taxon root : this.union.roots())
+			assignBrackets(root);
+
         // unnecessary?
         this.source.inferFlags(); 
         this.union.inferFlags(); 
-
-		for (Taxon root: union.roots())
-			// Prepare for subsumption checks
-            resetBrackets(root);
-		for (Taxon root: union.roots())
-			assignBrackets(root);
 
 	}
 
@@ -147,16 +147,13 @@ public class AlignmentByName extends Alignment {
 	// assigned a unique integer, ordered sequentially by a preorder
 	// traversal.  Taxon inclusion across taxonomies can be determined
 	// (approximately) by looking at shared names and doing a range check.
+    // This heuristic can fail in the presence of names that are homonyms
+    // across taxonomies.
 
 	static final int NOT_SET = -7; // for source nodes
+	static final int NO_SEQ = -8;  // for source nodes
 
-	void resetBrackets(Taxon node) {			  // for union nodes
-		node.seq = NOT_SET;			  // Self
-		node.start = NOT_SET;	// First taxon included not including self
-		node.end = NOT_SET;					   // Next taxon *not* included
-	}
-
-	// Applied to a union node
+	// Applied to a union node.  Sets seq, start, end recursively.
 	void assignBrackets(Taxon node) {
 		// Only consider names in common ???
 		node.seq = nextSequenceNumber++;
@@ -167,27 +164,31 @@ public class AlignmentByName extends Alignment {
 		node.end = nextSequenceNumber;
 	}
 
-	// Applied to a source node
+	// Applied to a source node.  Sets start = smallest sequence number among all descendants,
+    // end = 1 + largest sequence number among all descendants.
+    // Sets seq = sequence number of corresponding union node (if any).
 	static void getBracket(Taxon node, Taxonomy union) {
-		if (node.end == NOT_SET) {
+		if (node.seq == NOT_SET) {
 			Taxon unode = union.unique(node.name);
 			if (unode != null)
 				node.seq = unode.seq; // Else leave seq as NOT_SET
+            else
+                node.seq = NO_SEQ;
+            int start = Integer.MAX_VALUE;
+            int end = -1;
 			if (node.children != null) {
-				int start = Integer.MAX_VALUE;
-				int end = -1;
 				for (Taxon child : node.children) {
 					getBracket(child, union);
 					if (child.start < start) start = child.start;
 					if (child.end > end) end = child.end;
-					if (child.seq != NOT_SET) {
+					if (child.seq != NO_SEQ) {
 						if (child.seq < start) start = child.seq;
-						if (child.seq > end) end = child.seq+1;
+						if (child.seq > end) end = child.seq;
 					}
 				}
-				node.start = start;
-				node.end = end;
 			}
+            node.start = start;
+            node.end = end+1;
 		}
 	}
 
@@ -195,6 +196,23 @@ public class AlignmentByName extends Alignment {
 	boolean isNotSubsumedBy(Taxon node, Taxon unode) {
 		getBracket(node, unode.taxonomy);
 		return node.start < unode.start || node.end > unode.end; // spills out?
+	}
+
+	// Look for a member of the source taxon that's also a member of the union taxon.
+	static Taxon witness(Taxon node, Taxon unode) { // assumes is subsumed by unode
+		getBracket(node, unode.taxonomy);
+		if (node.start >= unode.end || node.end <= unode.start) // Nonoverlapping => lose
+			return null;
+		else if (node.children != null) { // it *will* be nonnull actually
+			for (Taxon child : node.children)
+				if (child.seq != NO_SEQ && (child.seq >= unode.start && child.seq < unode.end))
+					return child;
+				else {
+					Taxon a = witness(child, unode);
+					if (a != null) return a;
+				}
+		}
+		return null;			// Shouldn't happen
 	}
 
 	// Look for a member of the source taxon that's not a member of the union taxon,
@@ -205,7 +223,7 @@ public class AlignmentByName extends Alignment {
 			return null;
 		else if (node.children != null) { // it *will* be nonnull actually
 			for (Taxon child : node.children)
-				if (child.seq != NOT_SET && (child.seq < unode.start || child.seq >= unode.end))
+				if (child.seq != NO_SEQ && (child.seq < unode.start || child.seq >= unode.end))
 					return child;
 				else {
 					Taxon a = antiwitness(child, unode);
@@ -215,22 +233,14 @@ public class AlignmentByName extends Alignment {
 		return null;			// Shouldn't happen
 	}
 
-	// Look for a member of the source taxon that's also a member of the union taxon.
-	static Taxon witness(Taxon node, Taxon unode) { // assumes is subsumed by unode
-		getBracket(node, unode.taxonomy);
-		if (node.start >= unode.end || node.end <= unode.start) // Nonoverlapping => lose
-			return null;
-		else if (node.children != null) { // it *will* be nonnull actually
-			for (Taxon child : node.children)
-				if (child.seq != NOT_SET && (child.seq >= unode.start && child.seq < unode.end))
-					return child;
-				else {
-					Taxon a = witness(child, unode);
-					if (a != null) return a;
-				}
-		}
-		return null;			// Shouldn't happen
-	}
+    public static void testWitness() throws Exception {
+        SourceTaxonomy t1 = Taxonomy.getTaxonomy("(a,b,c)d");
+        SourceTaxonomy t2 = Taxonomy.getTaxonomy("(a,b,c)d");
+        UnionTaxonomy u = new UnionTaxonomy();
+        u.mergeIn(t1);
+        u.mergeIn(t2);
+        System.out.println(witness(t1.taxon("d"), u.taxon("d")));
+    }
 
 
     AlignmentByName(SourceTaxonomy source, UnionTaxonomy union) {
@@ -238,7 +248,7 @@ public class AlignmentByName extends Alignment {
         this.source = source;
         this.union = union;
 
-        union.reset();          // depths, brackets, comapped
+        this.reset();          // depths, brackets, comapped
 
         Criterion[] criteria = Criterion.criteria;
 		if (source.rootCount() > 0) {
@@ -503,9 +513,11 @@ public class AlignmentByName extends Alignment {
                         // Important case, mapping blocked, maybe a brand new taxon.  Give gory details.
                         // Iterate through the union nodes for this name that we didn't map to
                         // and collect all the reasons.
-                        if (n == 1)
+                        if (n == 1) {
                             explanation = suppressp[i][0];
-                        else {
+                            if (explanation.reason.equals("not-same/weak-division"))
+                                union.weakLog.add(explanation);
+                        } else {
                             for (int j = 0; j < n; ++j)
                                 if (suppressp[i][j] != null) // how does this happen?
                                     union.log(suppressp[i][j]);
@@ -531,7 +543,7 @@ public class AlignmentByName extends Alignment {
                                 explanation = new Answer(node, null, badness, "unresolved/blocked", kludge);
                         }
                     }
-                    explanation.maybeLog();
+                    explanation.maybeLog(union);
                     // remember, source could be either gbif or idsource
                     node.answer = explanation;  
                 }

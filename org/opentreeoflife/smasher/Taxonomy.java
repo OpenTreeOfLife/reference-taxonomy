@@ -2799,6 +2799,7 @@ class UnionTaxonomy extends Taxonomy {
 	SourceTaxonomy auxsource = null;
 	// One log per name
 	Map<String, List<Answer>> logs = new HashMap<String, List<Answer>>();
+    List<Answer> weakLog = new ArrayList<Answer>();
 
 	UnionTaxonomy() {
 		this.tag = "union";
@@ -3089,12 +3090,28 @@ class UnionTaxonomy extends Taxonomy {
 			scrutinize.addAll(this.dumpDeprecated(this.idsource, outprefix + "deprecated.tsv"));
         if (this.namesOfInterest.size() > 0)
             this.dumpLog(outprefix + "log.tsv", scrutinize);
+        if (this.weakLog.size() > 0)
+            this.dumpWeakLog(outprefix + "weaklog.csv");
 		this.dumpConflicts(outprefix + "conflicts.tsv");
 
 		this.dumpNodes(this.roots(), outprefix, sep);
 		this.dumpSynonyms(outprefix + "synonyms.tsv", sep);
 		// this.dumpHidden(outprefix + "hidden.tsv");
 	}
+
+    void dumpWeakLog(String filename) throws IOException {
+        PrintStream out = Taxonomy.openw(filename);
+        for (Answer a : this.weakLog)
+            if (a.subject.mapped != null)
+                out.format("%s,%s,%s,%s,%s,%s,%s\n",
+                           a.subject, a.subject.getDivision().name,
+                           a.target, a.target.getDivision().name,
+                           a.subject.mapped,
+                           (a.subject.children == null ? 0 : a.subject.children.size()),
+                           (a.target.children == null ? 0 : a.target.children.size())
+                           );
+		out.close();
+    }
 
 	// This is the UnionTaxonomy version.  Overrides method in Taxonomy class.
 
@@ -3926,7 +3943,7 @@ abstract class Criterion {
 					return Answer.weakYes(subject, target, "same/division", xdiv.name);
 				else if (xdiv.noMrca() || ydiv.noMrca())
 					return Answer.NOINFO;
-				else if (false)
+				else if (true)
                     // about 17,000 of these... that's too many
                     return Answer.weakNo(subject, target, "not-same/weak-division", xdiv.name);
                 else

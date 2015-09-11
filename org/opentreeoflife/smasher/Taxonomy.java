@@ -3092,6 +3092,7 @@ class UnionTaxonomy extends Taxonomy {
             this.dumpLog(outprefix + "log.tsv", scrutinize);
         if (this.weakLog.size() > 0)
             this.dumpWeakLog(outprefix + "weaklog.csv");
+        this.dumpForwards(outprefix + "forwards.tsv");
 		this.dumpConflicts(outprefix + "conflicts.tsv");
 
 		this.dumpNodes(this.roots(), outprefix, sep);
@@ -3102,14 +3103,18 @@ class UnionTaxonomy extends Taxonomy {
     void dumpWeakLog(String filename) throws IOException {
         PrintStream out = Taxonomy.openw(filename);
         for (Answer a : this.weakLog)
-            if (a.subject.mapped != null)
+            if (a.subject.mapped != null) {
+                Taxon[] div = a.subject.bridge().divergence(a.target);
+                Taxon div1 = (div == null ? a.subject.getDivision() : div[0]);
+                Taxon div2 = (div == null ? a.target.getDivision() : div[1]);
                 out.format("%s,%s,%s,%s,%s,%s,%s\n",
-                           a.subject, a.subject.getDivision().name,
-                           a.target, a.target.getDivision().name,
+                           a.subject, div1.name,
+                           a.target, div2.name,
                            a.subject.mapped,
                            (a.subject.children == null ? 0 : a.subject.children.size()),
                            (a.target.children == null ? 0 : a.target.children.size())
                            );
+            }
 		out.close();
     }
 
@@ -3129,6 +3134,41 @@ class UnionTaxonomy extends Taxonomy {
 		out.println(this.metadata);
 		out.close();
 	}
+
+    void dumpForwards(String filename) throws IOException {
+		PrintStream out = Taxonomy.openw(filename);
+		out.format("id\treplacement\n");
+		for (String id : idsource.idIndex.keySet()) {
+            Taxon node = idsource.lookupId(id);
+            if (node.mapped != null) {
+                Taxon unode = node.mapped;
+                if (!id.equals(unode.id)) {
+                    String node2name = "";
+                    String node2ref = "";
+                    String dname = "";
+                    String d2name = "";
+                    String pname = "";
+                    Taxon node2 = idsource.lookupId(unode.id);
+                    if (node2 != null) {
+                        node2name = node2.name;
+                        node2ref = node2.putativeSourceRef().toString();
+                        Taxon[] div = node.divergence(node2);
+                        if (div != null) {
+                            dname = div[0].name;
+                            d2name = div[1].name;
+                            pname = (div[0].parent == null ? "" : div[0].parent.name);
+                        }
+                    }
+                    out.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+                               id, unode.id,
+                               node.name, node.putativeSourceRef(), dname,
+                               node2name, node2ref, d2name,
+                               pname);
+                }
+            }
+        }
+        out.close();
+    }
 
 	Set<String> dumpDeprecated(SourceTaxonomy idsource, String filename) throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
@@ -3227,7 +3267,7 @@ class UnionTaxonomy extends Taxonomy {
                 size = unode.count();
 
                 if (unode.id == null)
-                    // why would this happen?
+                    // why would this happen? - actually it doesn't.
                     reason = "id-changed/old-id-retired";
                 else if (!id.equals(unode.id)) {
                     // 143/199
@@ -3995,7 +4035,7 @@ abstract class Criterion {
 
 	static boolean online(String name, Taxon node) {
 		for ( ; node != null; node = node.parent)
-			if (node.name.equals(name)) return true;
+			if (node.name.equals(name)) return !node.noMrca(); // kludge
 		return false;
 	}
 

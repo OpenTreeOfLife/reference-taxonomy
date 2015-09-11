@@ -196,11 +196,11 @@ def prepare_fungorum(ott):
 
     # 2014-04-08 More IF/SILVA bad matches
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/63
-    if False:
-      for name in ['Acantharia',     # in Venturiaceae < Fungi < Opisth. / Rhizaria < SAR
+    # The notSame directives are unnecessary if SAR is a division
+    for name in ['Acantharia',     # in Venturiaceae < Fungi < Opisth. / Rhizaria < SAR
                  'Steinia',        # in Lecideaceae < Fungi / Alveolata / insect < Holozoa in irmng
                  'Epiphloea',      # in Pezizomycotina < Opisth. / Rhodophyta  should be OK, Rh. is a division
-                 'Campanella',     # in Agaricomycotina < Nuclet. / SAR / Holozoa
+                 'Campanella',     # in Agaricomycotina < Nuclet. / SAR / Cnidaria
                  'Lacrymaria',     # in Agaricomycotina / SAR
                  #'Phialina',       # in Pezizomycotina   - not in fung
                  #'Frankia',        # in Pezizomycotina / Bacteria - not even in latest fung
@@ -519,6 +519,14 @@ def prepare_irmng(ott):
     # Could force this to not match the arthropod.  But much easier just to delete it.
     irmng.taxon('Morganella', 'Brachiopoda').prune(this_source)
     #  ... .notSame(ott.taxon('Morganella', 'Arthropoda'))
+
+    # 2015-09-10 Inclusion test failing
+    ott.notSame(irmng.taxon('Retaria', 'Brachiopoda'), # irmng:1340611
+                ott.taxon('Retaria', 'Rhizaria'))
+
+    # 2015-09-10 Inclusion test failing
+    ott.notSame(irmng.taxon('Campanella', 'Cnidaria'), # irmng:1289625
+                ott.taxon('Campanella', 'SAR'))
 
     return irmng
 

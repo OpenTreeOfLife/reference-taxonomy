@@ -142,10 +142,13 @@ def load_fung():
     # smush folds sibling taxa that have the same name.
     # fung.smush()
 
-    try:
+    if True:
         patch_fung(fung)
-    except:
-        print '**** Exception in patch_fung'
+    else:
+        try:
+            patch_fung(fung)
+        except:
+            print '**** Exception in patch_fung'
 
     fung.smush()
 
@@ -279,7 +282,8 @@ def patch_fung(fung):
     # (weaklog.csv).  Hibbett 2007 and NCBI put Microsporidia in Fungi.
     fung.taxon('Fungi').take(fung.taxon('Microsporidia'))
 
-    fung.taxon('SAR').take(fung.taxon('Oomycota'))
+    # This is helpful if SAR is a division
+    # fung.taxon('SAR').take(fung.taxon('Oomycota'))
 
     print "Fungi in Index Fungorum has %s nodes"%fung.taxon('Fungi').count()
 
@@ -482,6 +486,14 @@ def patch_ncbi(ncbi):
     # JAR 2015-07-25 Prevent extinction of Myxogastria
     ncbi.taxon('Myxogastria').notCalled('Myxomycetes')
 
+    # 2015-09-11 https://github.com/OpenTreeOfLife/feedback/issues/83
+    # https://dx.doi.org/10.1007/s10764-010-9443-1 paywalled
+    ncbi.taxon('Tarsius syrichta').rename('Carlito syrichta')
+
+    # 2015-09-11 https://github.com/OpenTreeOfLife/feedback/issues/84
+    ncbi.taxon('Tarsius bancanus').rename('Cephalopachus bancanus')
+
+
 def load_worms():
     worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
     worms.smush()
@@ -644,7 +656,16 @@ def patch_gbif(gbif):
         oph.prune("about:blank#this-homonym-is-causing-too-much-trouble")
 
     # 2015-07-25 Extra Dipteras are confusing new division logic.  Barren genus
-    gbif.taxon('3230674').prune('this_source')
+    gbif.taxon('3230674').prune(this_source)
+
+    # 2015-09-11 https://github.com/OpenTreeOfLife/feedback/issues/72
+    gbif.taxon('Myeladaphus').extinct()
+
+    # 2015-09-11 https://github.com/OpenTreeOfLife/feedback/issues/78
+    gbif.taxon('Oxyprinichthys').extinct()
+
+    # 2015-09-11 https://github.com/OpenTreeOfLife/feedback/issues/82
+    gbif.taxon('Tarsius thailandica').extinct()
 
     return gbif
 
@@ -709,7 +730,14 @@ def load_irmng():
     irmng.taxon('Aviculariidae').extant()
 
     # 2015-07-25 Extra Dipteras are confusing new division logic.  Barren genus
-    irmng.taxon('1323521').prune('this_source')
+    irmng.taxon('1323521').prune(this_source)
+
+    # 2015-09-10 This one is unclassified (Diptera) and is leading to confusion with two other Steinias.
+    irmng.taxon('1299622').prune(this_source)
+
+    # 2015-09-11 https://github.com/OpenTreeOfLife/feedback/issues/74
+    # Lymnea is a snail, not a shark
+    irmng.taxon('1317416').prune(this_source)
 
     return irmng
 

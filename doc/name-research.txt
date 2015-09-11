@@ -343,9 +343,32 @@ In Cnidaria:
   5343447	|	641033	|	Campanella	|	genus	|	irmng:1289625,irmng:1289670	|	Campanella (genus in Holozoa)	|	major_rank_conflict_direct,barren	|	
   5343447	|	641033	|	Campanella	|	genus	|	irmng:1289625,irmng:1289670	|	Campanella (genus in phylum Cnidaria)	|	major_rank_conflict_direct,sibling_lower,barren	|	
 
+2015-09-10: everything got merged into 136738.  Not good.  Log says
+the fungus matched the SAR because 'same/parent+ancestor'.  Same for
+NCBI.  How can that be?...   bug in online(), fixed.
+
+But the Cnidarian is still missing.  Why is irmng:1289670 not present
+in the OTT draft? ... it's there in tax/irmng, but not in the log ...
+
 ### Steinia
 
 Another 3-way homonym including SAR.
+
+564869 = genus in SAR - Alveolata - Ciliophora
+  silva:AJ310494/#8,ncbi:152446,worms:425659,gbif:3237147,irmng:1299655
+
+1070040 = genus in family Nucletmycea - Ascomycota - Lecideaceae
+  ncbi:222574,if:5201,gbif:2603290,irmng:1299589
+
+5346621 = genus in infraclass Holozoa - Endopterygota - Diptera
+  'awaiting allocation'
+  irmng:1299622
+
+5346621 has gone away in the latest draft.  log says:
+Steinia	irmng:1299622	not=>	?	unresolved/blocked	not-same/weak-division,not-same/division
+
+Solution: flush the dipteran, and its inclusion test
+Steinia,Holozoa,5346621,""
 
 ### Tipuloidea
 
@@ -412,9 +435,15 @@ OTT2.8 has
   795939	|	37861	|	Rhynchonelloidea	|	superfamily	|	ncbi:151154	|	Rhynchonelloidea (superfamily in order Rhynchonellida)	|	sibling_lower,extinct_direct	|	
   5316010	|	4969615	|	Rhynchonelloidea	|	genus	|	gbif:4865271,irmng:1064058,irmng:1233615	|	Rhynchonelloidea (genus in family Rhynchonellidae)	|	extinct_direct,extinct_inherited,barren	|	
 
-The superfamily from NCBI is extant and contains genus Sphenarina.
+The superfamily from NCBI (795939) is extant and contains genus Sphenarina.
 
 The other is less important but it would be nice to keep it...
+
+2015-09-10: the genus (5316010) has gone away - not in new rendering
+of GBIF.  Removing inclusion test:
+Rhynchonelloidea,Rhynchonellidae,5316010,"genus in gbif/irmng, extinct"
+... and it's extant, as it should be.
+
 
 ### Bostrychia
 
@@ -494,6 +523,27 @@ NCBI puts it under Collodictyonidae.
 The other one is a eudicot.
 ott:570408 = ncbi:63346,gbif:3033928,irmng:1052707
 
+### Retaria
+
+Retaria in Rhizaria in SAR = 4972641
+  SILVA only
+
+Retaria in Productidae (in Brachiopoda?) = 5297815 - extinct
+  gbif:4870013,irmng:1340611
+
+  IRMNG has: Animalia-Brachiopoda-Strophomenata-Productida
+
+    # No longer present in GBIF (due to preprocessor changes)
+    ott.notSame(ott.taxon('Retaria', 'SAR'), gbif.taxon('Retaria'))  # Brachiopoda
+
+There is a failing inclusion test:
+Retaria,Opisthokonta,5297815,""
+
+The log says
+Retaria	irmng:1340611	=>	4972641	same/parent+ancestor	Eukaryota
+which is just wrong.
+
+Add a notSame directive.
 
 ## Division problems
 
@@ -612,8 +662,15 @@ notSame directives:
   - SILVA has SAR > Rhizaria > ... Ebriacea > Ebria
   - I wonder what Dinophyta is?  Wikipedia says = Dinoflagellata = Dinophyceae, a
       phylum in Alveolata.
+      GBIF has gbif.taxon('Dinophyta').synonym('Dinoflagellata')
   - there is no Alveolata in GBIF
 
+(irmng:1299583+1 Millerella*?),Eukaryota,(5653411=worms:528002+3 Millerella?),SAR,(5648567=irmng:1299583 Millerella?),1,3
+  IRMNG says Protista-Foraminifera-Polythalamea-Fusulinida
+  so this is a false homonym (same taxon)
+  problem is that IRMNG's Foraminifera isn't in SAR (it's in Rhizaria)
+
+What happens if we just pull the plug on SAR as a division?
 
 
 ## Misc. solved problems
@@ -629,7 +686,3 @@ test passes - # ott.notSame(gbif.taxon('Tipuloidea', 'Chiliocyclidae'), ott.taxo
 tests pass - ott.notSame(study713.taxon('Buchnera', 'Orobanchaceae'), ott.taxon('Buchnera', 'Enterobacteriaceae'))
 tests pass - ott.notSame(ncbi.taxon('Hessea', 'Viridiplantae'), ott.taxon('Hessea', 'Microsporidia'))
 test passes - ** No unique taxon with id 992764 (for Synedra acus)   5581393 ?
-
-    # No longer present in GBIF (due to preprocessor changes)
-    ott.notSame(ott.taxon('Retaria', 'SAR'), gbif.taxon('Retaria'))  # Brachiopoda
-

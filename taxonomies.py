@@ -285,6 +285,11 @@ def patch_fung(fung):
     # This is helpful if SAR is a division
     # fung.taxon('SAR').take(fung.taxon('Oomycota'))
 
+    # 2015-09-15 Pezizomycotina has no parent pointer; without Fungi as a barrier,
+    # the placement of genus Onychophora is screwed up.
+    # Found while investigating https://github.com/OpenTreeOfLife/feedback/issues/88
+    fung.taxon('Ascomycota').take(fung.taxon('Pezizomycotina'))
+
     print "Fungi in Index Fungorum has %s nodes"%fung.taxon('Fungi').count()
 
 def link_to_h2007(tax):
@@ -337,7 +342,6 @@ def link_to_h2007(tax):
         some_claims.append(Whether_same('Sarrameanales', 'Loxosporales',
                                         True, h2007_fam))
     make_claims(tax, some_claims)
-
 
 def load_713():
     study713 = Taxonomy.getTaxonomy('tax/713/', 'study713')

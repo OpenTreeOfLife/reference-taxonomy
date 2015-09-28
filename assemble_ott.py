@@ -987,5 +987,6 @@ names_of_interest = ['Ciliophora',
                      'Pelecypoda',
                      'Parmeliaceae',
                      'Heterolepa',
+                     'Acanthokara',
                      ]
 

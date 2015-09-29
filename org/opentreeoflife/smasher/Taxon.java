@@ -763,7 +763,7 @@ public class Taxon {
         return this.mrca(other, this.measureDepth(), other.measureDepth());
     }
 
-    Taxon mrca(Taxon other) {
+    public Taxon mrca(Taxon other) {
         if (other == null) return null; // Shouldn't happen, but...
         return this.mrca(other, this.getDepth(), other.getDepth());
     }

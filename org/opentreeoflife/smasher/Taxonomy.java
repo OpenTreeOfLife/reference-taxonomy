@@ -320,7 +320,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	public static SourceTaxonomy getTaxonomy(String designator) throws IOException {
 		SourceTaxonomy tax = new SourceTaxonomy();
 		if (designator.startsWith("("))
-			tax.addRoot(tax.newickToNode(designator));
+			tax.addRoot(Newick.newickToNode(designator, tax));
 		else {
 			if (!designator.endsWith("/")) {
 				System.err.println("Taxonomy designator should end in / but doesn't: " + designator);
@@ -387,7 +387,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	public static SourceTaxonomy getNewick(String filename) throws IOException {
 		SourceTaxonomy tax = new SourceTaxonomy();
 		BufferedReader br = Taxonomy.fileReader(filename);
-        Taxon root = tax.newickToNode(new java.io.PushbackReader(br));
+        Taxon root = Newick.newickToNode(new java.io.PushbackReader(br), tax);
 		tax.addRoot(root);
         root.properFlags = 0;   // not unplaced
 		tax.investigateHomonyms();
@@ -1672,7 +1672,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			PrintStream out = 
 				openw(outprefix + cutting.name.replaceAll(" ", "_") + ".tre");
 			StringBuffer buf = new StringBuffer();
-			cutting.appendNewickTo(buf);
+			Newick.appendNewickTo(cutting, buf);
 			out.print(buf.toString());
 			out.close();
 		}
@@ -1757,7 +1757,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	public String toNewick() {
 		StringBuffer buf = new StringBuffer();
 		for (Taxon root: this.roots()) {
-			root.appendNewickTo(buf);
+			Newick.appendNewickTo(root, buf);
 			buf.append(";");
 		}
 		return buf.toString();
@@ -1767,85 +1767,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		PrintStream out = openw(outfile);
 		out.print(this.toNewick());
 		out.close();
-	}
-
-	// Parse Newick yielding nodes
-
-	Taxon newickToNode(String newick) {
-		java.io.PushbackReader in = new java.io.PushbackReader(new java.io.StringReader(newick));
-		try {
-			return this.newickToNode(in);
-		} catch (java.io.IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	// TO BE DONE: Implement ; for reading forests
-
-	Taxon newickToNode(java.io.PushbackReader in) throws java.io.IOException {
-		int c = in.read();
-		if (c == '(') {
-			List<Taxon> children = new ArrayList<Taxon>();
-			{
-				Taxon child;
-				while ((child = newickToNode(in)) != null) {
-					children.add(child);
-					int d = in.read();
-					if (d < 0 || d == ')') break;
-					if (d != ',')
-						System.out.println("shouldn't happen: " + d);
-				}
-			}
-			Taxon node = newickToNode(in); // get postfix name, x in (a,b)x
-			if (node != null || children.size() > 0) {
-				if (node == null) {
-					// kludge
-					node = new Taxon(this, "");
-				}
-				for (Taxon child : children)
-					if (!child.name.startsWith("null"))
-						node.addChild(child);
-				node.rank = (children.size() > 0) ? Taxonomy.NO_RANK : "species";
-				return node;
-			} else
-				return null;
-		} else {
-			StringBuffer buf = new StringBuffer();
-			while (true) {
-				if (c < 0 || c == ')' || c == ',' || c == ';') {
-					if (c >= 0) in.unread(c);
-					if (buf.length() > 0) {
-						Taxon node = new Taxon(this); // no name
-						initNewickNode(node, buf.toString());
-						return node;
-					} else return null;
-				} else {
-					buf.appendCodePoint(c);
-					c = in.read();
-				}
-			}
-		}
-	}
-
-	// Specially hacked to support the Hibbett 2007 spreadsheet
-	void initNewickNode(Taxon node, String label) {
-		// Drop the branch length, if present
-		int pos = label.indexOf(':');
-		if (pos >= 0) label = label.substring(0, pos);
-		// Strip quotes put there by Mesquite
-		if (label.startsWith("'"))
-			label = label.substring(1);
-		if (label.endsWith("'"))
-			label = label.substring(0,label.length()-1);
-		// Ad hoc rank syntax Class=Amphibia
-		pos = label.indexOf('=');
-		if (pos > 0) {
-			node.rank = label.substring(0,pos).toLowerCase();
-			node.setName(label.substring(pos+1));
-		} else {
-			node.rank = Taxonomy.NO_RANK;
-			node.setName(label);
-		}
 	}
 
 	static PrintStream openw(String filename) throws IOException {
@@ -1899,7 +1820,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	public static SourceTaxonomy parseNewick(String newick) {
 		SourceTaxonomy tax = new SourceTaxonomy();
-		tax.addRoot(tax.newickToNode(newick));
+		tax.addRoot(Newick.newickToNode(newick, tax));
 		return tax;
 	}
 

@@ -856,22 +856,6 @@ public class Taxon {
 		return false;
 	}
 
-	void appendNewickTo(StringBuffer buf) {
-		if (this.children != null) {
-			buf.append("(");
-			Collections.sort(this.children, compareNodes);
-			Taxon last = children.get(this.children.size()-1);
-			for (Taxon child : children) {
-				child.appendNewickTo(buf);
-				if (child != last)
-					buf.append(",");
-			}
-			buf.append(")");
-		}
-		if (this.name != null)
-			buf.append(newickName(this.name, this.taxonomy.getTag(), this.id));
-	}
-
 	static Comparator<Taxon> compareNodes = new Comparator<Taxon>() {
 		public int compare(Taxon x, Taxon y) {
 			return x.name.compareTo(y.name);
@@ -1271,55 +1255,6 @@ public class Taxon {
 		}
 		System.out.println();
     }
-
-    // Newick stuff copied from src/main/java/opentree/GeneralUtils.java
-    // in treemachine repo.  Written by Joseph W. Brown and the other treemachine
-    // developers.
-
-    // All common non-alphanumeric chars except "_" and "-", for use when cleaning strings
-    public static final Pattern newickIllegal =
-        Pattern.compile(".*[\\Q:;/[]{}(),\\E]+.*");
-	
-	/**
-	 * Make sure name conforms to valid newick usage
-     * (http://evolution.genetics.washington.edu/phylip/newick_doc.html).
-	 * 
-	 * Replaces single quotes in `origName` with "''" and puts a pair of single quotes
-     * around the entire string.
-	 * Puts quotes around name if any illegal characters are present.
-	 * 
-	 * Author: Joseph W. Brown
-	 *
-	 * @param origName
-	 * @return newickName
-	 */
-	public static String newickName(String origName, String tag, String id) {
-		boolean needQuotes = false;
-		String newickName = origName;
-		
-		// replace all spaces with underscore
-		newickName = newickName.replaceAll(" ", "_");
-		
-		// replace ':' with '_'. a hack for working with older versions of
-        // dendroscope e.g. 2.7.4
-		newickName = newickName.replaceAll(":", "_");
-		
-		// newick standard way of dealing with single quotes in taxon names
-		if (newickName.contains("'")) {
-			newickName = newickName.replaceAll("'", "''");
-			needQuotes = true;
-        }
-		if (tag != null && id != null)
-			newickName = String.format("%s_%s%s", newickName, tag, id);
-
-		// if offending characters are present, quotes are needed
-		if (newickIllegal.matcher(newickName).matches())
-			needQuotes = true;
-		if (needQuotes)
-			newickName = "'" + newickName + "'";
-		
-		return newickName;
-	}
 }
 
 class Synonym {

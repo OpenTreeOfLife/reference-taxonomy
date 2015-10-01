@@ -265,13 +265,15 @@ from
 
     ott.notSame(ott.taxonThatContains('Neoptera', 'Lepidoptera'), gbif.taxon('Neoptera', 'Diptera'))
 
-NCBI used to have this taxon, but has retracted it...
+NCBI used to have this taxon (ncbi:33340 = ott:815350), but has retracted it...
+wait, or did it... seems to be there again.
 
 https://en.wikipedia.org/wiki/Neoptera says it's everything 'higher'
 than Odonata.  So, orthopteroids, blattopteroids, and paraneoptera
 (hemiptera, 'oligoneoptera' ~= holometabolous insects).
 
-I guess we've just lost it.
+The genus is a tachinid fly:
+5340261	|	672497	|	Neoptera	|	genus	|	gbif:1478964,irmng:1379252	|	Neoptera (genus in family Tachinidae)	|	sibling_higher,sibling_lower	|	
 
 ### Photorhabdus luminescens
 
@@ -341,9 +343,32 @@ In Cnidaria:
   5343447	|	641033	|	Campanella	|	genus	|	irmng:1289625,irmng:1289670	|	Campanella (genus in Holozoa)	|	major_rank_conflict_direct,barren	|	
   5343447	|	641033	|	Campanella	|	genus	|	irmng:1289625,irmng:1289670	|	Campanella (genus in phylum Cnidaria)	|	major_rank_conflict_direct,sibling_lower,barren	|	
 
+2015-09-10: everything got merged into 136738.  Not good.  Log says
+the fungus matched the SAR because 'same/parent+ancestor'.  Same for
+NCBI.  How can that be?...   bug in online(), fixed.
+
+But the Cnidarian is still missing.  Why is irmng:1289670 not present
+in the OTT draft? ... it's there in tax/irmng, but not in the log ...
+
 ### Steinia
 
 Another 3-way homonym including SAR.
+
+564869 = genus in SAR - Alveolata - Ciliophora
+  silva:AJ310494/#8,ncbi:152446,worms:425659,gbif:3237147,irmng:1299655
+
+1070040 = genus in family Nucletmycea - Ascomycota - Lecideaceae
+  ncbi:222574,if:5201,gbif:2603290,irmng:1299589
+
+5346621 = genus in infraclass Holozoa - Endopterygota - Diptera
+  'awaiting allocation'
+  irmng:1299622
+
+5346621 has gone away in the latest draft.  log says:
+Steinia	irmng:1299622	not=>	?	unresolved/blocked	not-same/weak-division,not-same/division
+
+Solution: flush the dipteran, and its inclusion test
+Steinia,Holozoa,5346621,""
 
 ### Tipuloidea
 
@@ -410,10 +435,115 @@ OTT2.8 has
   795939	|	37861	|	Rhynchonelloidea	|	superfamily	|	ncbi:151154	|	Rhynchonelloidea (superfamily in order Rhynchonellida)	|	sibling_lower,extinct_direct	|	
   5316010	|	4969615	|	Rhynchonelloidea	|	genus	|	gbif:4865271,irmng:1064058,irmng:1233615	|	Rhynchonelloidea (genus in family Rhynchonellidae)	|	extinct_direct,extinct_inherited,barren	|	
 
-The superfamily from NCBI is extant and contains genus Sphenarina.
+The superfamily from NCBI (795939) is extant and contains genus Sphenarina.
 
 The other is less important but it would be nice to keep it...
 
+2015-09-10: the genus (5316010) has gone away - not in new rendering
+of GBIF.  Removing inclusion test:
+Rhynchonelloidea,Rhynchonellidae,5316010,"genus in gbif/irmng, extinct"
+... and it's extant, as it should be.
+
+
+### Bostrychia
+
+** No unique taxon found with name Bostrychia in context Rhodophyceae
+
+The bird:
+
+3596729	|	480157	|	Bostrychia	|	genus	|	ncbi:1281446,worms:204701,gbif:2480780,irmng:1011403	|	Bostrychia (genus in phylum Opisthokonta)	|		|	
+  also (genus in family Threskiornithidae)
+
+The rhodophyte:
+782484	|	5275832	|	Bostrychia	|	genus	|	silva:AF203893/#6,ncbi:103711,worms:143904,gbif:2661216,irmng:1282403	|	Bostrychia (genus in Archaeplastida)	|	sibling_higher	|	
+
+The fungus:
+    - The fungus name is a synonym for Cytospora.
+
+The code:
+
+    if fungi.maybeTaxon('Bostrychia', 'Ascomycota') != None:
+        ott.notSame(ott.taxon('Bostrychia', 'Rhodophyceae'),
+                    fungi.taxon('Bostrychia', 'Ascomycota'))
+    ...
+    ott.notSame(ott.taxon('Bostrychia', 'Rhodophyceae'), ncbi.taxon('Bostrychia', 'Aves'))
+
+Tests pass.  OK.
+
+### Tetrasphaera
+
+SILVA has two of them.  
+grep "Tetrasphaera	" tax/silva/taxonomy.tsv 
+X85212/#6	|	D84597/#5	|	Tetrasphaera	|	no rank	|		|	
+GN013951	|	X85212/#6	|	Tetrasphaera	|	samples	|	ncbi:99479	|	
+
+This is a parent/child homonym pair.  GN is the inferior taxon and
+gets the suffix "inf." in OTT.
+
+    # SILVA = GN013951 = Tetrasphaera (bacteria)
+    ott.notSame(ott.taxon('Tetrasphaera', 'Intrasporangiaceae'),
+                gbif.taxon('Gorkadinium', 'Dinophyta')) # = Tetrasphaera in Protozoa
+
+X85212/#6 (superior) is the correct one ...   so SILVA 117 seems to have changed things around.
+  I'm not going to update to 117 now.
+It's a bacterium.
+
+NCBI has only one, 99479.
+GBIF has only one, 3225846, which is also the bacteria,
+  but it also has a synonym, for Gorkadinium = 3236661, which is in
+  Dinophyceae, a protist.  Must prevent it matching SILVA.
+  Actually Gorkadinium is no longer in the GBIF dump (due to change in preprocessor).
+
+IRMNG has four.  1063974 is the bacterium.  1341844 is what GBIF has.
+
+grep "Tetrasphaera	" tax/prev_ott/taxonomy.tsv 
+777105	|	231761	|	Tetrasphaera	|	genus	|	silva:X85212/#6,ncbi:99479,gbif:3225846,irmng:1063974	|	Tetrasphaera (genus silva:X85212/#6 in family Intrasporangiaceae)	|	sibling_lower	|	
+
+grep "Tetrasphaera	" tax/ott2.9draft8/taxonomy.tsv 
+777105	|	231761	|	Tetrasphaera	|	genus	|	silva:X85212/#6,ncbi:99479,gbif:3225846,irmng:1063974	|	Tetrasphaera (genus in domain Bacteria (domain silva:A16379/#1))	|		|	
+5569825	|	304358	|	Tetrasphaera	|	genus	|	irmng:1114655	|	Tetrasphaera (genus irmng:1114655)	|	unplaced,major_rank_conflict,hidden,extinct,barren	|	
+5569874	|	304358	|	Tetrasphaera	|	genus	|	irmng:1134127	|	Tetrasphaera (genus irmng:1134127)	|	sibling_higher,hidden,barren	|	
+
+    ott.same(ott.taxon('Gorkadinium','Dinophyceae'), irmng.taxon('Gorkadinium','Dinophyceae'))
+
+Gorkadinium = irmng:1073091 = gbif:3236661 = ott:5279559 
+
+irmng:1114655 is Protista-Acritarcha (awaiting allocation)
+irmng:1134127 is Protista-Protista (awaiting allocation)
+
+### Diphylleia
+
+SILVA 117 has a Diphylleia (AF420478/#4) in Palpitomonas < Incertae Sedis < Eukaryota.
+  (Better way to identify: it contains Diphylleia rotans.)
+IRMNG 1223253 is Protista-Apusozoa-Diphyllatea-Diphylleida.
+
+Should be same as ncbi:177250,gbif:2688063,irmng:1223253 = ott:4738987.
+NCBI puts it under Collodictyonidae.
+
+The other one is a eudicot.
+ott:570408 = ncbi:63346,gbif:3033928,irmng:1052707
+
+### Retaria
+
+Retaria in Rhizaria in SAR = 4972641
+  SILVA only
+
+Retaria in Productidae (in Brachiopoda?) = 5297815 - extinct
+  gbif:4870013,irmng:1340611
+
+  IRMNG has: Animalia-Brachiopoda-Strophomenata-Productida
+
+    # No longer present in GBIF (due to preprocessor changes)
+    ott.notSame(ott.taxon('Retaria', 'SAR'), gbif.taxon('Retaria'))  # Brachiopoda
+
+There is a failing inclusion test:
+Retaria,Opisthokonta,5297815,""
+
+The log says
+Retaria	irmng:1340611	=>	4972641	same/parent+ancestor	Eukaryota
+which is just wrong.
+
+Add a notSame directive.
 
 ## Division problems
 
@@ -436,16 +566,11 @@ Ellobiopsis - probable SILVA/NCBI clash
 
 Cylindrotheca - homonyms
 
-
 ## Other problems
 
-** No unique taxon found with this name: Burkea
-** No unique taxon found with this name: Coscinium
-** No unique taxon found with this name: Perezia
 ** No unique taxon found with name Crepidula in context Microsporidia
 ** No unique taxon found with name Hessea in context Viridiplantae
 ** No unique taxon found with name Hessea in context Microsporidia
-** No unique taxon found with name Bostrychia in context Rhodophyceae
 
 ** Ranks out of order: (gbif:4587706 Nuculoidea?) genus has child (gbif:4587862 Nucularcidae?) family
 ** Ranks out of order: (gbif:1010609 Limulus?) genus has child (gbif:4632808. Aglaspididae?) family
@@ -456,11 +581,6 @@ Cylindrotheca - homonyms
 ** Children of (irmng:103583 Trigonirhynchiidae*?) are in disjoint divisions ((=ncbi:46593 Polynoidae*?) in (941620=ncbi:6340 Annelida*?) + (=ncbi:122737 Attelabidae*?) in (865243=ncbi:7041 Coleoptera*?))
 ** Children of (irmng:107074 Lichinaceae*?) are in disjoint divisions ((=h2007:85 Lichinales*?) in (352914=silva:D11377/#4 Fungi*?) + (=ncbi:1173045 Glomeridellidae*?) in (632179=ncbi:6656 Arthropoda*?))
 ...
-
-I think these represent problems that have been fixed:
-
-** No unique taxon found with name Gorkadinium in context Dinophyceae
-** No unique taxon found with name Choanoflagellida in context Opisthokonta
 
 Enterococcus faecalis - deprecated when division is strong, not
 deprecated when weak (promotions/demotions allowed).
@@ -477,37 +597,92 @@ why this would be a cross-division issue.
 
 notSame directives:
 
-  Acantharia
-  Steinia        # in Lecideaceae < Fungi / Alveolata / insect < Holozoa in irmng
-  Campanella     # in Agaricomycotina < Nuclet. / SAR / Holozoa
-  Lacrymaria     # in Agaricomycotina / SAR
-  Bogoriella     # in Verrucariaceae < Pezizomycotina < Euk. / Bogoriellaceae < Bacteria  should be ok
-
-        ott.notSame(ott.taxon('Bostrychia', 'Rhodophyceae'),
-    ott.notSame(ott.taxon('Bostrychia', 'Rhodophyceae'), ncbi.taxon('Bostrychia', 'Aves'))
-
     ott.notSame(ott.taxon('Podocystis', 'Stramenopiles'), fungi.taxon('Podocystis', 'Fungi'))
-    ott.notSame(study713.taxon('Buchnera', 'Orobanchaceae'), ott.taxon('Buchnera', 'Enterobacteriaceae'))
     # ott.notSame(ncbi.taxon('Burkea', 'Viridiplantae'), ott.taxon('Burkea'))
+      ** No unique taxon found with this name: Burkea
+      -- There are two of these now, looks like it's probably OK
     # ott.notSame(ncbi.taxon('Coscinium', 'Viridiplantae'), ott.taxon('Coscinium'))
+      ** No unique taxon found with this name: Coscinium
     # ott.notSame(ncbi.taxon('Perezia', 'Viridiplantae'), ott.taxon('Perezia'))
+      ** No unique taxon found with this name: Perezia
 
     ott.notSame(ncbi.taxon('Crepidula', 'Gastropoda'), ott.taxon('Crepidula', 'Microsporidia'))
-    ott.notSame(ncbi.taxon('Hessea', 'Viridiplantae'), ott.taxon('Hessea', 'Microsporidia'))
         ott.notSame(ott.maybeTaxon('Choanoflagellida', 'Ichthyosporea'),
-    ott.notSame(ott.taxon('Retaria', 'SAR'), gbif.taxon('Retaria'))
+
     ott.notSame(ott.taxon('Labyrinthomorpha', 'Stramenopiles'), gbif.taxon('Labyrinthomorpha'))
+      ** According to NCBI, synonym for Labyrinthulomycetes (Stramenopiles)
+           OTT id is confused.  should be 273318 but screwed up in 2.9 (5343219)
+           273318 is retired in 2.9
+      ** Not same as IRMNG 1124871 (genus in family Archaeocyathidae) OTT 5143332
+      ** No longer in GBIF
+
     # ott.notSame(ott.taxon('Ophiurina', 'Echinodermata'), gbif.taxon('Ophiurina','Ophiurinidae'))
 
-    ott.notSame(ott.taxonThatContains('Neoptera', 'Lepidoptera'), gbif.taxon('Neoptera', 'Diptera'))
-    # ott.notSame(gbif.taxon('Tipuloidea', 'Chiliocyclidae'), ott.taxon('Tipuloidea', 'Diptera')) # genus Tipuloidea
-    ott.notSame(ott.taxon('Tetrasphaera', 'Intrasporangiaceae'),
     ott.notSame(irmng.taxon('Protaspis', 'Chordata'), ott.taxon('Protaspis', 'Cercozoa'))
     ott.notSame(irmng.taxon('Coscinodiscus', 'Porifera'), ott.taxon('Coscinodiscus', 'Stramenopiles'))
 
+** No unique taxon with id 5320286 (for Ophiurina)   but exists as 258604, is that OK?
 
-** No unique taxon with id 992764 (for Synedra acus)   5581393 ?
-** No unique taxon with id 600099 (for Hessea)
-** No unique taxon with id 6400 (for Morganella)
-** No unique taxon with id 5320286 (for Ophiurina)
-** No unique taxon with id 722875 (for Tipuloidea)   fixed?
+### From weaklog.csv
+
+(ncbi:1656933+1 Oxnerella*),Fungi,(470893=silva:JQ245079/#4+1 Oxnerella),Eukaryota,(5683717=ncbi:1656933+1 Oxnerella),1,1
+  - this is a true homonym - Centrohelida
+
+(ncbi:110882+7 Enteropogon*),Chloroplastida,(1008786=silva:AY336705/#7+1 Enteropogon),Eukaryota,(724665=ncbi:110882+20 Enteropogon),7,1
+  - this is a true homonym - Holozoa
+
+(ncbi:6181+32 Schistosoma*),Metazoa,(5264171=worms:293898 Schistosoma?),Malacostraca,(191485=ncbi:6181+32 Schistosoma),32,0
+  - true - in NCBI, this is Platyhelminthes
+
+(ncbi:299834+14 Acanthocystis*),Eukaryota,(5344826=if:17768+165 Hohenbuehelia),Fungi,(901748=ncbi:299834+21 Acanthocystis),14,165
+  - in NCBI, Centroheliozoa
+  - in IF, pretty specifically placed.  => true
+
+(ncbi:137744+35 Amphinema*),Fungi,(665572=silva:AF119811/#7+11 Diplonema),Eukaryota,(540447=ncbi:137744+33 Amphinema),35,11
+(ncbi:367918+3 Amphinema*),Cnidaria,(665572=silva:AF119811/#7+11 Diplonema),Eukaryota,(975487=ncbi:367918+24 Amphinema),3,11
+  - the one in SILVA is a Euglenazoan  => true
+
+(if:30514+3 Larssonia*?),Eukaryota,(825985=ncbi:174681+1 Larssonia?),Fungi,(5625772=if:30514+2 Larssonia?),3,1
+  - Index Fungorum thinks that microsporidia are protozoa, not fungi
+  - false homonym.  fix general case
+
+(if:20275+6 Hyphochytrium*?),Eukaryota,(435110=silva:AB695482/#5+1 Hyphochytrium),SAR,(5582258=if:20275+5 Hyphochytrium?),6,1
+  - IF puts this in Oomycota in Chromista
+  - Oomycota is in Stramenopiles, in SAR  => false
+
+(gbif:4896534+3 Heterolepa*?),Eukaryota,(5652658=worms:520930+7 Heterolepa?),SAR,(4806348=gbif:4896534 Heterolepa?),3,7
+  - GBIF simply calls it a 'chromista'.  Contains 3 species (ornata, ...)
+  - very probable false, but hard to tell
+  - WAIT A MINUTE.  There are species in common (e.g. ornata).  (And an old version of WoRMS is in GBIF.)
+    *** Why didn't that get picked up in the alignment logic? ***
+
+(gbif:2017+2 Ebriaceae*?),Eukaryota,(5248750=silva:AB191409/#6+8 Ebriacea),SAR,(5571954=gbif:2017+1 Ebriaceae?),2,8
+  - GBIF has it in Dinophyta in Protozoa
+  - Genera: Ebria, Parebria
+  - SILVA has SAR > Rhizaria > ... Ebriacea > Ebria
+  - I wonder what Dinophyta is?  Wikipedia says = Dinoflagellata = Dinophyceae, a
+      phylum in Alveolata.
+      GBIF has gbif.taxon('Dinophyta').synonym('Dinoflagellata')
+  - there is no Alveolata in GBIF
+
+(irmng:1299583+1 Millerella*?),Eukaryota,(5653411=worms:528002+3 Millerella?),SAR,(5648567=irmng:1299583 Millerella?),1,3
+  IRMNG says Protista-Foraminifera-Polythalamea-Fusulinida
+  so this is a false homonym (same taxon)
+  problem is that IRMNG's Foraminifera isn't in SAR (it's in Rhizaria)
+
+What happens if we just pull the plug on SAR as a division?
+
+
+## Misc. solved problems
+
+  Acantharia   tests pass
+  Steinia        # in Lecideaceae < Fungi / Alveolata / insect < Holozoa in irmng // tests pass
+  Campanella     # in Agaricomycotina < Nuclet. / SAR / Holozoa // tests pass
+  Lacrymaria     # in Agaricomycotina / SAR //tests pass
+  Bogoriella     # in Verrucariaceae < Pezizomycotina < Euk. / Bogoriellaceae < Bacteria  should be ok
+                  // tests pass
+test passes - # ott.notSame(gbif.taxon('Tipuloidea', 'Chiliocyclidae'), ott.taxon('Tipuloidea', 'Diptera')) # genus Tipuloidea
+
+tests pass - ott.notSame(study713.taxon('Buchnera', 'Orobanchaceae'), ott.taxon('Buchnera', 'Enterobacteriaceae'))
+tests pass - ott.notSame(ncbi.taxon('Hessea', 'Viridiplantae'), ott.taxon('Hessea', 'Microsporidia'))
+test passes - ** No unique taxon with id 992764 (for Synedra acus)   5581393 ?

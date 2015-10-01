@@ -1,10 +1,10 @@
 # Open Tree of Life reference taxonomy version 2.9
 
-Version 2.9 is not released yet.  Version 2.9 draft 8 was generated on 25 July 2015.
+Version 2.9 is not released yet.  Version 2.9 draft 9 was generated on 11 September 2015.
 
 ## Download
 
-[Download](http://files.opentreeoflife.org/ott/ott2.9/ott2.9draft8.tgz) (gzipped tar file, 88 Mbyte) 
+[Download](http://files.opentreeoflife.org/ott/ott2.9/ott2.9draft9.tgz) (gzipped tar file, 100 Mbyte) 
 
 ## Contents
 All files are encoded UTF-8.  For documentation about file formats, see [the documentation in the reference taxonomy
@@ -26,14 +26,20 @@ on github.
 
 **version.tsv**: The version of OTT.
 
+**forwards.tsv**: Forwarding pointers - a list of OTT ids that are retired and should be replaced by new ones
+
+**legacy-forwards.tsv**: Combined list of forwarding pointers for previous versions of OTT
+
+**weaklog.csv**: internal debugging tool
+
 ## Build script
 
 The reference taxonomy is an algorithmic combination of several
 source taxonomies.  For code,
 see <a href="https://github.com/OpenTreeOfLife/reference-taxonomy">the
 source code repository</a>.
-Version 2.9 draft 8 was generated using 
-[commit fc55a7](https://github.com/OpenTreeOfLife/reference-taxonomy/commit/?).
+Version 2.9 draft 9 was generated using 
+[commit d88b48a1](https://github.com/OpenTreeOfLife/reference-taxonomy/commit/?).
 
 Where taxonomies conflict regarding taxon relationships, they are
 resolved in favor of the higher priority taxonomy.  The priority
@@ -84,7 +90,7 @@ retrieved.
     <br />
     Download location: [http://purl.org/opentree/ott/ott2.8/inputs/lamiales-20140118.tsv](http://purl.oeg/opentree/ott/ott2.8/inputs/lamiales-20140118.tsv)
 
-1.  WoRMS - harvested from web site using web API over two weeks ending around 4 August 2014.
+1.  World Registry of Marine Species (WoRMS) - harvested from web site using web API over two weeks ending around 4 August 2014.
     [http://www.marinespecies.org/aphia.php](http://www.marinespecies.org/aphia.php)
 
 1.  NCBI Taxonomy, from the 
@@ -127,14 +133,14 @@ Changes since OTT 2.8 (a.k.a 2.8draft5) which was built on 11 June 2014:
 
 Statistics:
 
-* Identifiers: 3461408
+* Identifiers: 3457834
 * Visible: TBD
-* Synonyms: 910144
-* In deprecated file (used in phylesystem): 2889
-* In deprecated file (used in synthesis): 309
-* Taxa dissolved due to conflict (conflicts.tsv): 1319
+* Synonyms: 911196
+* In deprecated file (used in phylesystem): 2889  FIX ME
+* In deprecated file (used in synthesis): 309  FIX ME
+* Taxa dissolved due to conflict (conflicts.tsv): 848
 
-New flags:
+New [flags](https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Taxon-flags):
 
 * unplaced - similar to incertae\_sedis (this means a child of an
   inconsistent taxon, where t is inconsistent if it occurs in a

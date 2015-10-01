@@ -689,6 +689,21 @@ public class Taxon {
 		}
 	}
 
+	// Number of species at or below this node, i.e. exclude infraspecific taxa.
+
+	public int speciesCount() {
+        if (this.rank != null && this.rank.equals("species"))
+            return 1;
+		else if (children == null)
+            return 0;
+		else {
+			int count = 0;
+			for (Taxon child: children)
+				count += child.speciesCount();
+			return count;
+		}
+	}
+
 	// Find a near-ancestor (parent, grandparent, etc) node that's in
 	// common with the other taxonomy
 	Taxon scan(Taxonomy other) {
@@ -748,7 +763,7 @@ public class Taxon {
         return this.mrca(other, this.measureDepth(), other.measureDepth());
     }
 
-    Taxon mrca(Taxon other) {
+    public Taxon mrca(Taxon other) {
         if (other == null) return null; // Shouldn't happen, but...
         return this.mrca(other, this.getDepth(), other.getDepth());
     }

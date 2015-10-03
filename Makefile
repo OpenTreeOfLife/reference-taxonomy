@@ -71,7 +71,7 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
 
 fung: tax/fung/taxonomy.tsv tax/fung/synonyms.tsv
 
-tax/fung/taxonomy.tsv: tax/fung/synonyms.tsv tax/fung/about.json
+tax/fung/taxonomy.tsv: 
 	@mkdir -p `dirname $@`
 	wget --output-document=$@ http://files.opentreeoflife.org/ott/if-ott2.8/taxonomy.tsv
 	@ls -l $@

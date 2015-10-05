@@ -508,13 +508,16 @@ def load_worms():
     fix_basal(worms)
 
     # 2015-02-17 According to WoRMS web site.  Occurs in pg_1229
-    worms.taxon('Scenedesmus communis').synonym('Scenedesmus caudata')
+    if worms.maybeTaxon('Scenedesmus communis') != None:
+        worms.taxon('Scenedesmus communis').synonym('Scenedesmus caudata')
 
     # See NCBI
     worms.taxon('Millericrinida').extant()
 
     # Help to match up with IRMNG
     worms.taxon('Ochrophyta').synonym('Heterokontophyta')
+
+    worms.taxon('Biota').synonym('life')
 
     worms.smush()  # Gracilimesus gorbunovi, pg_1783
 

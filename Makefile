@@ -216,7 +216,8 @@ TARDIR?=tarballs
 
 tarball: tax/ott/log.tsv
 	(mkdir -p $(TARDIR) && \
-	 tar czvf $(TARDIR)/ott$(WHICH).tgz.tmp -C tax ott && \
+	 tar czvf $(TARDIR)/ott$(WHICH).tgz.tmp -C tax ott \
+	   --exclude differences.tsv && \
 	 mv $(TARDIR)/ott$(WHICH).tgz.tmp $(TARDIR)/ott$(WHICH).tgz )
 	@echo "Don't forget to bump the version number"
 

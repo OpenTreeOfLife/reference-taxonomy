@@ -1,10 +1,10 @@
 # Open Tree of Life reference taxonomy version 2.9
 
-Version 2.9 is not released yet.  Version 2.9 draft 10 was generated on 6 October 2015.
+Version 2.9 is not released yet.  Version 2.9 draft 11 was generated on 6 October 2015.
 
 ## Download
 
-[Download](http://files.opentreeoflife.org/ott/ott2.9/ott2.9draft10.tgz) (gzipped tar file, 93 Mbyte) 
+[Download](http://files.opentreeoflife.org/ott/ott2.9/ott2.9draft11.tgz) (gzipped tar file, 90 Mbyte) 
 
 ## Contents
 All files are encoded UTF-8.  For documentation about file formats, see [the documentation in the reference taxonomy

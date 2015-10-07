@@ -1255,6 +1255,13 @@ public class Taxon {
 		}
 		System.out.println();
     }
+
+	static Pattern binomialPattern = Pattern.compile("^[\\p{Upper}][\\p{Lower}\\-]+ [\\p{Lower}\\-]{2,}+$");
+
+    public static boolean isBinomial(String name) {
+        return binomialPattern.matcher(name).find();
+    }
+
 }
 
 class Synonym {

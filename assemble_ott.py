@@ -76,6 +76,8 @@ def create_ott():
 
     taxonomies.link_to_h2007(ott)
 
+    get_default_extinct_info_from_gbif(gbif, ott)
+
     check_invariants(ott)
     # consider try: ... except: print '**** Exception in patch_ott'
     patch_ott(ott)
@@ -890,6 +892,23 @@ def patch_ott(ott):
     ott.taxon('Corculum cardissa', 'Bivalvia').extant()
     # Similarly for roaches
     ott.taxon('Periplaneta americana', 'Blattodea').extant()
+
+def get_default_extinct_info_from_gbif(gbif, ott):
+    infile = open('tax/gbif/paleo.tsv')
+    paleos = 0
+    flagged = 0
+    for row in infile:
+        paleos += 1
+        id = row.strip()
+        gtaxon = gbif.lookupId(id)
+        if gtaxon != None:
+            taxon = ott.image(gtaxon)
+            if taxon != None:
+                if len(taxon.sourceIds) == 1:
+                    flagged += 1
+                    taxon.extinct()
+    infile.close()
+    print '| Flagged %s of %s taxa from paleodb\n' % (flagged, paleos)
 
 def unextinct_ncbi(ncbi, ott):
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/68

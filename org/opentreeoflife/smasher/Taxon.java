@@ -54,15 +54,15 @@ public class Taxon {
         this.setName(name);
     }
 
-    boolean isRoot() {
+    public boolean isRoot() {
         return this.taxonomy.hasRoot(this);
     }
 
-    boolean isDetached() {
+    public boolean isDetached() {
         return this.parent == null /* && !this.isRoot() */;
     }
 
-    boolean isPlaced() {
+    public boolean isPlaced() {
         return (this.properFlags & Taxonomy.INCERTAE_SEDIS_ANY) == 0;
     }
 
@@ -488,7 +488,7 @@ public class Taxon {
 	// Returns a string of the form prefix:id,prefix:id,...
 	// Generally called on a union taxonomy node
 
-	String getSourceIdsString() {
+	public String getSourceIdsString() {
 		String answer = null;
 		List<QualifiedId> qids = this.sourceIds;
 		if (qids != null) {

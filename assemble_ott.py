@@ -370,6 +370,10 @@ def prepare_ncbi(ott):
     ott.notSame(ncbi.taxon('Diphylleia', 'Chloroplastida'),
                 ott.taxonThatContains('Diphylleia', 'Diphylleia rotans'))
 
+    # 2015-10-06 JAR noticed while debugging surprisingly large number of newly-hidden ids
+    ott.notSame(ncbi.taxon('Ctenophora', 'Metazoa'),
+                ott.taxon('Ctenophora', 'Stramenopiles')) # from SILVA, also GBIF, IRMNG, GBIF
+
     return ncbi
 
 # ----- GBIF (Global Biodiversity Information Facility) taxonomy -----

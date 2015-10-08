@@ -5,7 +5,7 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.9draft10
+WHICH=2.9draft11
 PREV_WHICH=2.8
 
 #  $^ = all prerequisites
@@ -71,15 +71,15 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
 
 fung: tax/fung/taxonomy.tsv tax/fung/synonyms.tsv
 
-tax/fung/taxonomy.tsv: tax/fung/synonyms.tsv tax/fung/about.json
-	@mkdir -p `dirname $@`
-	wget --output-document=$@ http://files.opentreeoflife.org/ott/if-ott2.8/taxonomy.tsv
-	@ls -l $@
-
-tax/fung/synonyms.tsv:
-	@mkdir -p `dirname $@`
-	wget --output-document=$@ http://files.opentreeoflife.org/ott/if-ott2.8/synonyms.tsv
-	@ls -l $@
+#tax/fung/taxonomy.tsv: 
+#        @mkdir -p `dirname $@`
+#        wget --output-document=$@ http://files.opentreeoflife.org/ott/if-ott2.8/taxonomy.tsv
+#        @ls -l $@
+#
+#tax/fung/synonyms.tsv:
+#        @mkdir -p `dirname $@`
+#        wget --output-document=$@ http://files.opentreeoflife.org/ott/if-ott2.8/synonyms.tsv
+#        @ls -l $@
 
 tax/fung/about.json:
 	@mkdir -p `dirname $@`
@@ -216,7 +216,8 @@ TARDIR?=tarballs
 
 tarball: tax/ott/log.tsv
 	(mkdir -p $(TARDIR) && \
-	 tar czvf $(TARDIR)/ott$(WHICH).tgz.tmp -C tax ott && \
+	 tar czvf $(TARDIR)/ott$(WHICH).tgz.tmp -C tax ott \
+	   --exclude differences.tsv && \
 	 mv $(TARDIR)/ott$(WHICH).tgz.tmp $(TARDIR)/ott$(WHICH).tgz )
 	@echo "Don't forget to bump the version number"
 
@@ -285,9 +286,13 @@ tax/ott/otu_hidden.tsv: tax/ott/hidden.tsv
 	mv $@.new $@
 	wc $@
 
-# The works
-works: ott tax/ott/otu_differences.tsv
+tax/ott/forwards.tsv: tax/ott/new-forwards.tsv legacy-forwards.tsv
+	python util/get_forwards.py <tax/ott/new-forwards.tsv >$@.new
+	tail +2 legacy-forwards.tsv >>$@.new
+	mv $@.new $@
 
+# The works
+works: ott tax/ott/otu_differences.tsv tax/ott/forwards.tsv
 
 clean:
 	rm -rf feed/*/in

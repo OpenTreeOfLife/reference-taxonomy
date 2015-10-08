@@ -1463,6 +1463,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		{"species",
 		 "infraspecificname",
 		 "subspecies",
+         "natio",               // worms
 		 "variety",
 		 "varietas",
 		 "subvariety",

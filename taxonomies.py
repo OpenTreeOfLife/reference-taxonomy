@@ -290,6 +290,18 @@ def patch_fung(fung):
     # Found while investigating https://github.com/OpenTreeOfLife/feedback/issues/88
     fung.taxon('Ascomycota').take(fung.taxon('Pezizomycotina'))
 
+    # 2015-10-06 JAR noticed while debugging deprecated taxa list:
+    # This should cover Basidiomycota, Zygomycota, Glomeromycota, and Ascomycota
+    for taxon in fung:
+        if taxon.rank == 'phylum' and taxon.isRoot():
+            fung.taxon('Fungi').take(taxon)
+
+    # 2015-10-06 https://en.wikipedia.org/wiki/Taphrinomycotina
+    if fung.taxon('Taphrinomycotina').isRoot():
+        fung.taxon('Ascomycota').take(fung.taxon('Taphrinomycotina'))
+    if fung.taxon('Saccharomycotina').isRoot():
+        fung.taxon('Ascomycota').take(fung.taxon('Saccharomycotina'))
+
     print "Fungi in Index Fungorum has %s nodes"%fung.taxon('Fungi').count()
 
 def link_to_h2007(tax):
@@ -388,8 +400,10 @@ def patch_ncbi(ncbi):
     ncbi.taxon('sordariomyceta').rename('Sordariomyceta')
 
     # RR #52
-    ncbi.taxon('spinocalanus spinosus').rename('Spinocalanus spinosus')
-    ncbi.taxon('spinocalanus angusticeps').rename('Spinocalanus angusticeps')
+    if ncbi.maybeTaxon('spinocalanus spinosus') != None:
+        ncbi.taxon('spinocalanus spinosus').rename('Spinocalanus spinosus')
+    if ncbi.maybeTaxon('spinocalanus angusticeps') != None:
+        ncbi.taxon('spinocalanus angusticeps').rename('Spinocalanus angusticeps')
 
     # RR #59
     ncbi.taxon('candidate division SR1').rename('Candidate division SR1')
@@ -508,13 +522,16 @@ def load_worms():
     fix_basal(worms)
 
     # 2015-02-17 According to WoRMS web site.  Occurs in pg_1229
-    worms.taxon('Scenedesmus communis').synonym('Scenedesmus caudata')
+    if worms.maybeTaxon('Scenedesmus communis') != None:
+        worms.taxon('Scenedesmus communis').synonym('Scenedesmus caudata')
 
     # See NCBI
     worms.taxon('Millericrinida').extant()
 
     # Help to match up with IRMNG
     worms.taxon('Ochrophyta').synonym('Heterokontophyta')
+
+    worms.taxon('Biota').synonym('life')
 
     worms.smush()  # Gracilimesus gorbunovi, pg_1783
 

@@ -3,9 +3,9 @@ from org.opentreeoflife.smasher import Taxonomy
 
 sourcenames = ['if.4', 'if.2', 'if.1']
 
-sources = [Taxonomy.getTaxonomy('old/' + name + '/', name) for name in sourcenames]
+sources = [Taxonomy.getTaxonomy('feed/fung/' + name + '/', name) for name in sourcenames]
 
-fung = Taxonomy.getTaxonomy('old/if.7/', 'if')
+fung = Taxonomy.getTaxonomy('feed/fung/if.7/', 'if')
 
 def fix_root():
     root = establish('Fungi', '90156', 'kingdom')
@@ -59,7 +59,7 @@ def attempt(taxon, otaxon):
 # Look for additional synonyms
 
 def fix_synonyms():
-    name_maps = [(source, source.makeNameMap()) for source in sources]
+    name_maps = [(source, source.makeSynonymIndex()) for source in sources]
     syns = {}
     for taxon in fung:
         for (source, nmap) in name_maps:
@@ -82,5 +82,4 @@ root = fix_root()
 fix_parents(root)
 fix_synonyms()
 
-fung.dump("hackedfung/")
-
+fung.dump("tax/fung/")

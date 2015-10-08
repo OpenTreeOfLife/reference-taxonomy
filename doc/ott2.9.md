@@ -1,10 +1,10 @@
 # Open Tree of Life reference taxonomy version 2.9
 
-Version 2.9 is not released yet.  Version 2.9 draft 9 was generated on 11 September 2015.
+Version 2.9 is not released yet.  Version 2.9 draft 11 was generated on 6 October 2015.
 
 ## Download
 
-[Download](http://files.opentreeoflife.org/ott/ott2.9/ott2.9draft9.tgz) (gzipped tar file, 100 Mbyte) 
+[Download](http://files.opentreeoflife.org/ott/ott2.9/ott2.9draft11.tgz) (gzipped tar file, 90 Mbyte) 
 
 ## Contents
 All files are encoded UTF-8.  For documentation about file formats, see [the documentation in the reference taxonomy
@@ -26,9 +26,9 @@ on github.
 
 **version.tsv**: The version of OTT.
 
-**forwards.tsv**: Forwarding pointers - a list of OTT ids that are retired and should be replaced by new ones
-
-**legacy-forwards.tsv**: Combined list of forwarding pointers for previous versions of OTT
+**forwards.tsv**: Forwarding pointers - a list of OTT ids that are
+  retired and should be replaced by new ones (usually due to
+  'lumping')
 
 **weaklog.csv**: internal debugging tool
 
@@ -99,7 +99,7 @@ retrieved.
     Current version download location:
     [ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz](ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz)
     <br />
-    For OTT 2.9 we used a version downloaded from NCBI on 27 June 2015.
+    For OTT 2.9 we used a version downloaded from NCBI on 6 October 2015.
     Download location: [http://purl.org/opentree/ott/??TBD??](http://purl.org/opentree/ott/??TBD??).
   </li>
 

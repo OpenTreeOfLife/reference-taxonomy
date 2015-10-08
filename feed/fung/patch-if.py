@@ -18,6 +18,8 @@ all_ranks = {}
 def get_taxonomy(dirname, tag):
     return Taxonomy(dirname)
 
+# ofung is not a smasher Taxonomy object.  see class Taxonomy below.
+
 def fixit(ofung, use_names):
     count = 0
     added = 0

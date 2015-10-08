@@ -704,6 +704,19 @@ public class Taxon {
 		}
 	}
 
+	public int binomialCount() {
+        if (isBinomial(this.name))
+            return 1;
+		else if (children == null)
+            return 0;
+		else {
+			int count = 0;
+			for (Taxon child: children)
+				count += child.binomialCount();
+			return count;
+		}
+	}
+
 	// Find a near-ancestor (parent, grandparent, etc) node that's in
 	// common with the other taxonomy
 	Taxon scan(Taxonomy other) {

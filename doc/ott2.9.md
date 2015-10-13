@@ -134,10 +134,10 @@ Changes since OTT 2.8 (a.k.a 2.8draft5) which was built on 11 June 2014:
 Statistics:
 
 * Identifiers: 3528349
-* Visible: TBD
+* Visible: 2628944
 * Synonyms: 867366
 * In deprecated file (used in phylesystem): 2451
-* In deprecated file (used in synthesis): 368  FIX ME
+* In deprecated file (used in synthesis): 368
 * Source taxa dissolved due to conflict (conflicts.tsv): 1054
 
 New [flags](https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Taxon-flags):
@@ -163,13 +163,13 @@ New [flags](https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Taxon-flag
   is retained.
 * Deprecated: tattered, tattered_inherited
 
-Specific content changes:
+Specific content changes (inputs):
 
 * Added WoRMS
 * Updated Hibbett 2007 from [http://figshare.com/articles/Fungal\_Classification_2015/1465038](http://figshare.com/articles/Fungal_Classification_2015/1465038)
 * Minor IF update (to 7 April 2014 and modified processing software)
 * Minor GBIF update (same origin content, modified processing, much faster)
-* NCBI update (27 June 2015)
+* NCBI update (6 October 2015)
 * Fixes for many bugs reported in feedback and reference-taxonomy repos (see milestones)
 
 Generic content changes (processing):

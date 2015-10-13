@@ -93,7 +93,7 @@ public class Taxon {
 		}
 	}
 
-	void setName(String name) {
+	public void setName(String name) {
 		if (name == null) {
             if (this.name != null)
                 System.err.println("! Setting name to null not allowed: " + this);
@@ -800,7 +800,8 @@ public class Taxon {
                                   this, this.getDepth(), this.measureDepth(), other, other.getDepth(), other.measureDepth());
                 // seen twice during augment of worms.  ugh.
                 // ought to measure the depths and loop around...
-                return this.taxonomy.forest;
+                Taxon.backtrace();
+                return this.carefulMrca(other);
             }
             a = a.parent;
             b = b.parent;

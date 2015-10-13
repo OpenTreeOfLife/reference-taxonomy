@@ -282,10 +282,10 @@ public class AlignmentByName extends Alignment {
 								{ seen.add(node.name); todo.add(node.name); break; }
 				}
 			// primary / synonym
-			for (Taxon node : union)
-				if (source.lookup(node.name) != null &&
-					!seen.contains(node.name))
-					{ seen.add(node.name); todo.add(node.name); }
+			for (Taxon unode : union)
+				if (source.lookup(unode.name) != null &&
+					!seen.contains(unode.name))
+					{ seen.add(unode.name); todo.add(unode.name); }
 			// synonym / primary    -- maybe disallow !?
 			for (Taxon node : source)
 				if (union.lookup(node.name) != null &&
@@ -446,7 +446,7 @@ public class AlignmentByName extends Alignment {
                         } else if (x.answer != null) {
                             Answer.no(x, y, "blocked-because-" + x.answer.reason, null).maybeLog();
                             // System.out.format("| Blocked from mapping %s to %s because %s\n", x, y, x.answer.reason);
-                        } else if (y.comapped != null && x.children == null) {
+                        } else if (false && y.comapped != null && x.children == null) {
                             // There was already a mapping because of a higher-quality criterion.
                             // Keeping this mapping could cause
                             // trouble, like introduction of

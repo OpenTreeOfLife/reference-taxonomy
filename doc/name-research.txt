@@ -545,6 +545,36 @@ which is just wrong.
 
 Add a notSame directive.
 
+### Ctenophora
+
+bash-3.2$ grep "Ctenophora	" tax/prev_ott/taxonomy.tsv  # 2.8
+641212	|	641038	|	Ctenophora	|	phylum	|	ncbi:10197,gbif:51,irmng:109	|	Ctenophora (phylum in Eumetazoa)	|		|	
+1043126	|	183720	|	Ctenophora	|	genus	|	ncbi:516519,gbif:1507726,irmng:1279398	|	Ctenophora (genus in subfamily Ctenophorinae)	|	extinct_inherited	|	
+103964	|	173959	|	Ctenophora	|	genus	|	silva:HQ912611/#7,ncbi:1003038,gbif:3192189,irmng:1279336	|	Ctenophora (genus in order Fragilariales)	|	sibling_higher,sibling_lower	|	
+bash-3.2$ grep "Ctenophora	" tax/ott/taxonomy.tsv   # 2.9draft11
+641212	|	641038	|	Ctenophora	|	phylum	|	silva:HQ912611/#7,ncbi:10197,ncbi:1003038,worms:1248,worms:163921,gbif:51	|	Ctenophora (phylum silva:HQ912611/#7)	|		|	
+1043126	|	183720	|	Ctenophora	|	genus	|	ncbi:516519,gbif:1507726,irmng:1279398	|	Ctenophora (genus in Mandibulata)	|		|	
+103964	|	173960	|	Ctenophora	|	genus	|	gbif:3192189,irmng:1279336	|	Ctenophora (genus in family Fragilariaceae)	|	hidden,barren	|	
+5680147	|	511967	|	Ctenophora	|	genus	|	irmng:1279363	|	Ctenophora (genus in subphylum Chelicerata)	|	major_rank_conflict,barren	|	
+
+1. 641212 = The phylum (comb jellies) in Metazoa = NCBI 10197.  It contains e.g. Pleurobrachia bachei.
+  But silva:HQ912611/#7 (in 'Fragillares') is the diatom, not the phylum!
+
+2. 1043126 = ncbi:516519 is a cranefly (Tipulidae).  Verified that gbif:1507726 is
+the same.  Not extinct!
+
+3. 103964 = gbif:3192189 is diatom.  'Fragillares' < 'Ochrophyta'.  GBIF says it's worms:163921.
+
+4. 5680147 = irmng:1279363 has been deleted from IRMNG !
+
+In draft12:
+
+641212	|	641038	|	Ctenophora	|	phylum	|	silva:AF293678/#4,ncbi:10197,worms:1248,gbif:51,irmng:109	|	Ctenophora (phylum silva:AF293678/#4)	|		|	
+1043126	|	183720	|	Ctenophora	|	genus	|	ncbi:516519,gbif:1507726,irmng:1279398	|	Ctenophora (genus in Bilateria)	|		|	
+103964	|	173959	|	Ctenophora	|	genus	|	silva:HQ912611/#7,ncbi:1003038,worms:163921,gbif:3192189,irmng:1279336	|	Ctenophora (genus in SAR)	|	sibling_higher	|	
+
+much better.
+
 ## Division problems
 
 ? Poorly divided: (gbif:3326448. Clitocybe paxillus?) in Fungi vs. (=if:134911. Clitocybe paxillus?) in Eukaryota

@@ -22,7 +22,7 @@ synonym	Epichloë liyangensis	species	Epichloe liyangensis	Fungi	if:518666
 #add	Eriocybe	genus	Agaricomycotina incertae sedis	Fungi	mb:518495
 #add	Eriocybe chionea	species	Eriocybe	Fungi	mb:518496
 add	Flavoparmelia caperatula	species	Flavoparmelia	Fungi	if:567930
-add	Hyphodiscus hyaloscyphoide	species	Hyphodiscus	Fungi	if:518017
+synonym	Hyphodiscus hyaloscyphoide	species	Hyphodiscus hyaloscyphoides	Fungi	if:518017
 #add	Lepiota phaeoderma	species	Lepiota	Fungi	if:514125
 add	Marasmiellus celebanticus	species	Marasmiellus	Fungi	if:561697
 #add	Marasmius angustilamellatus	species	Marasmius	Fungi	if:512629
@@ -36,7 +36,7 @@ add	Marasmiellus celebanticus	species	Marasmiellus	Fungi	if:561697
 #add	Marasmius iras	species	Marasmius	Fungi	if:512628
 #add	Marasmius jasminodorus	species	Marasmius	Fungi	if:512421
 #add	Marasmius kanchingensis	species	Marasmius	Fungi	if:512631
-add	Marasmius kuthubutheeni	species	Marasmius	Fungi	if:512635
+synonym	Marasmius kuthubutheeni	species	Marasmius kuthubutheenii	Fungi	if:512635
 #add	Marasmius ochropoides	species	Marasmius	Fungi	if:512627
 #add	Marasmius olivascens	species	Marasmius	Fungi	if:512630
 #add	Marasmius suthepensis	species	Marasmius	Fungi	if:512429
@@ -67,7 +67,7 @@ add	Sclerostagonospora cycadis	species	Sclerostagonospora	Fungi	if:560171
 add	Spiroplana	genus	Pleosporales	Fungi	mb:519376
 add	Spiroplana centripeta	species	Spiroplana	Fungi	mb:519377
 #add	Thecaphora capensis	species	Thecaphora	Fungi	if:508255
-add	Togniniella microspore	species	Togniniella	Fungi	if:519582
+synonym	Togniniella microspore	species	Togniniella microspora	Fungi	if:519582
 add	Trichoderma brunneoviride	species	Trichoderma	Fungi	if:512098
 #add	Tricladium alaskense	species	Tricladium	Fungi	if:564247
 #add	Tricladium kelleri	species	Tricladium	Fungi	if:564246

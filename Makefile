@@ -286,9 +286,8 @@ tax/ott/otu_hidden.tsv: tax/ott/hidden.tsv
 	mv $@.new $@
 	wc $@
 
-tax/ott/forwards.tsv: tax/ott/new-forwards.tsv legacy-forwards.tsv
-	python util/get_forwards.py <tax/ott/new-forwards.tsv >$@.new
-	tail +2 legacy-forwards.tsv >>$@.new
+tax/ott/forwards.tsv: tax/ott/new-forwards.tsv legacy-forwards.tsv util/get_forwards.py
+	cat legacy-forwards.tsv tax/ott/new-forwards.tsv | python util/get_forwards.py $@.new
 	mv $@.new $@
 
 # The works

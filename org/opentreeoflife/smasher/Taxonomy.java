@@ -2066,7 +2066,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	// ----- Methods for use in jython scripts -----
 
-	public static Taxonomy newTaxonomy() {
+	public static UnionTaxonomy newTaxonomy() {
 		return new UnionTaxonomy();
 	}
 

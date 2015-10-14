@@ -122,7 +122,7 @@ public class Taxon {
 			if (existing != null && existing != this)
 				System.err.format("** Warning: creating a homonym: %s\n", name);
 			this.setName(name);
-            this.taxonomy.removeNameFromIndex(this, oldname);
+            this.taxonomy.removeFromNameIndex(this, oldname);
 		}
 	}
 
@@ -355,6 +355,7 @@ public class Taxon {
         // No change to hidden or incertae sedis flags.  Union node
         // has precedence.
 
+        unode.addSource(this);
         if (this.sourceIds != null)
             for (QualifiedId id : this.sourceIds)
                 unode.addSourceId(id);
@@ -362,8 +363,6 @@ public class Taxon {
         // ??? retains pointers to source taxonomy... may want to fix for gc purposes
         if (unode.answer == null)
             unode.answer = this.answer;
-
-        unode.addSource(this);
 	}
 
         

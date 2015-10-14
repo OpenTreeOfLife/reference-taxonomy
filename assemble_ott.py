@@ -992,5 +992,6 @@ names_of_interest = ['Ciliophora',
                      'Parmeliaceae',
                      'Heterolepa',
                      'Acanthokara',
+                     'Epigrapsus notatus',  # occurs twice in worms, should be merged...
                      ]
 

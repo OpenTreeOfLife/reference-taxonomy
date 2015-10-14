@@ -1,27 +1,23 @@
 from org.opentreeoflife.smasher import Taxonomy
-from org.opentreeoflife.smasher import Reportx
-import taxonomies
+from org.opentreeoflife.smasher import HomonymReport 
 
-ott = Taxonomy.newTaxonomy()
+union = Taxonomy.newTaxonomy()
 skel = Taxonomy.getTaxonomy('tax/skel/', 'skel')
-ott.setSkeleton(skel)
+union.setSkeleton(skel)
 
 def report(tax, tag):
-	ott.markDivisions(tax)
-#	Reportx.bogotypes(tax)
-	taxonomies.checkDivisions(tax)
-	Reportx.report(tax, tag + '-mrca-report.tsv')
+    union.markDivisionsFromSkeleton(tax, skel)
+    HomonymReport.homonymReport(tax, 'reports/' + tag + '-homonym-report.tsv')
 
 if True:
-	report(taxonomies.loadIrmng(), 'irmng')
+    ott = Taxonomy.getTaxonomy('tax/ott/', 'ott')
+    report(ott, 'ott')
 else:
-	silva = taxonomies.loadSilva()
-	ott.notSame(silva.taxon('Ctenophora', 'Coscinodiscophytina'),
-				skel.taxon('Ctenophora'))
-	report(silva, 'silva')
-	report(taxonomies.loadH2007(), 'h2007')
-	report(taxonomies.loadFung(), 'if')
-	report(taxonomies.loadNcbi(), 'ncbi')
-	report(taxonomies.loadGbif(), 'gbif')
-	report(taxonomies.loadIrmng(), 'irmng')
-	report(taxonomies.loadOtt(), 'ott')
+    import taxonomies
+    report(taxonomies.loadSilva(), 'silva')
+    report(taxonomies.loadH2007(), 'h2007')
+    report(taxonomies.loadFung(), 'worms')
+    report(taxonomies.loadFung(), 'if')
+    report(taxonomies.loadNcbi(), 'ncbi')
+    report(taxonomies.loadGbif(), 'gbif')
+    report(taxonomies.loadIrmng(), 'irmng')

@@ -122,6 +122,7 @@ public class Taxon {
 			if (existing != null && existing != this)
 				System.err.format("** Warning: creating a homonym: %s\n", name);
 			this.setName(name);
+            this.taxonomy.removeNameFromIndex(this, oldname);
 		}
 	}
 

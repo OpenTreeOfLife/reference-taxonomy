@@ -145,6 +145,7 @@ class Newick {
                 node.rank = rank;
                 node.setName(label.substring(pos+1));
             } else {
+                System.out.format("** Unrecognized rank: %s\n", label);
                 node.rank = Taxonomy.NO_RANK;
                 node.setName(label);
             }

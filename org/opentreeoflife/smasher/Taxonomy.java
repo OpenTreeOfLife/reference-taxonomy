@@ -1433,6 +1433,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		 "superkingdom",
 		 "kingdom",
 		 "subkingdom",
+         "division",            // h2007
 		 "infrakingdom",		// worms
 		 "superphylum"},
 		{"phylum",
@@ -2782,7 +2783,7 @@ class UnionTaxonomy extends Taxonomy {
 
 	// This operation is idempotent.
 
-    void markDivisionsFromSkeleton(Taxonomy source, Taxonomy skel) {
+    public void markDivisionsFromSkeleton(Taxonomy source, Taxonomy skel) {
         for (String name : skel.allNames()) {
             Taxon skelnode = skel.highest(name);
             Taxon node = source.highest(name);

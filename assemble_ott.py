@@ -13,6 +13,7 @@ from chromista_spreadsheet import fixChromista
 import taxonomies
 import check_inclusions
 from claim import Has_child, test_claims
+import csv
 
 this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/make-ott.py'
 
@@ -61,6 +62,7 @@ def create_ott():
     ott.absorb(malacostraca)
 
     ncbi = prepare_ncbi(ott)
+    align_ncbi_to_silva(ncbi, silva, ott)
     ott.absorb(ncbi)
     check_invariants(ott)
 
@@ -75,6 +77,8 @@ def create_ott():
     ott.absorb(irmng)
 
     taxonomies.link_to_h2007(ott)
+
+    get_default_extinct_info_from_gbif(gbif, ott)
 
     check_invariants(ott)
     # consider try: ... except: print '**** Exception in patch_ott'
@@ -371,10 +375,43 @@ def prepare_ncbi(ott):
                 ott.taxonThatContains('Diphylleia', 'Diphylleia rotans'))
 
     # 2015-10-06 JAR noticed while debugging surprisingly large number of newly-hidden ids
+    # n.b. there are three Ctenophoras: comb jellies, diatom, fly
     ott.notSame(ncbi.taxon('Ctenophora', 'Metazoa'),
-                ott.taxon('Ctenophora', 'Stramenopiles')) # from SILVA, also GBIF, IRMNG, GBIF
+                ott.taxon('Ctenophora', 'Stramenopiles')) # diatom from SILVA, WoRMS, GBIF, IRMNG
 
     return ncbi
+
+def align_ncbi_to_silva(ncbi, silva, ott):
+    infile = open('feed/silva/out/ncbi_to_silva.tsv', 'r')
+    reader = csv.reader(infile, delimiter='\t')
+    wins = namings = 0
+    for (ncbi_id, silva_cluster_id) in reader:
+        s = silva.maybeTaxon(silva_cluster_id)
+        if s != None:
+            n = ncbi.maybeTaxon(ncbi_id)
+            if n != None:
+                if False:
+                    so = ott.image(s)
+                    if so != None:
+                        ott.same(n, so)
+                        wins += 1
+                    else:
+                        print '** no OTT taxon for cluster', silva_cluster_id
+                elif n.name != s.name:
+                    s.setName(n.name)
+                    namings += 1
+            else:
+                # 332 occurrences on 2015-10-12
+                # print '** no NCBI taxon', ncbi_id, 'for cluster', silva_cluster_id
+                True
+        else:
+            print '** no such cluster', silva_cluster_id
+    if wins > 0:
+        print wins, 'NCBI ids mapped to clusters'
+    if namings > 0:
+        print namings, 'SILVA names updated from more recent NCBI'
+    infile.close()
+
 
 # ----- GBIF (Global Biodiversity Information Facility) taxonomy -----
 
@@ -891,6 +928,23 @@ def patch_ott(ott):
     # Similarly for roaches
     ott.taxon('Periplaneta americana', 'Blattodea').extant()
 
+def get_default_extinct_info_from_gbif(gbif, ott):
+    infile = open('tax/gbif/paleo.tsv')
+    paleos = 0
+    flagged = 0
+    for row in infile:
+        paleos += 1
+        id = row.strip()
+        gtaxon = gbif.lookupId(id)
+        if gtaxon != None:
+            taxon = ott.image(gtaxon)
+            if taxon != None:
+                if len(taxon.sourceIds) == 1:
+                    flagged += 1
+                    taxon.extinct()
+    infile.close()
+    print '| Flagged %s of %s taxa from paleodb\n' % (flagged, paleos)
+
 def unextinct_ncbi(ncbi, ott):
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/68
     # 'Extinct' would really mean 'extinct and no sequence' with this change
@@ -966,6 +1020,7 @@ names_of_interest = ['Ciliophora',
                      'Bostrychia',
                      'Buchnera',
                      'Podocystis', # not found
+                     'Epiphloea',
                      'Crepidula',
                      'Hessea',
                      'Bostrychia',
@@ -992,5 +1047,7 @@ names_of_interest = ['Ciliophora',
                      'Parmeliaceae',
                      'Heterolepa',
                      'Acanthokara',
+                     'Carduelis barbata',  # 'incompatible-use'
+                     'Spinus barbatus',
                      ]
 

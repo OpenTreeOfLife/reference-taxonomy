@@ -20,7 +20,7 @@ def load_silva():
 def bad_name(taxonomy, name, anc):
     tax = taxonomy.maybeTaxon(name, anc)
     if tax != None:
-        tax.rename('Not ' + name)
+        tax.clobberName('Not ' + name)
 
 def patch_silva(silva):
 
@@ -75,10 +75,6 @@ def patch_silva(silva):
                  'NAMAKO-1', 'RT5iin25', 'SA1-3C06', 'DH147-EKD23']:
             silva.taxon(name).elide()  #maybe just hide instead ?
 
-    # - Deal with division alignment issues -
-    # In SILVA, Ctenophora is a genus inside of SAR, not a metazoan phylum
-    bad_name(silva, 'Ctenophora', 'Coscinodiscophytina')
-
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/79
     Ml = silva.maybeTaxon('Melampsora lini')
     if Ml != None: Ml.prune(this_source)
@@ -101,6 +97,12 @@ def patch_silva(silva):
     silva.taxon('EU930344').clobberName('Photorhabdus luminescens subsp. caribbeanensis')
     silva.taxon('EU930342').clobberName('Photorhabdus luminescens subsp. hainanensis')
 
+    # 2015-10-12 JAR
+    # It is proving difficult to separate the three Ctenophora homonyms.  
+    # Maybe it  will help to add the phylum to our SILVA subset.  The 
+    # phylum is in the full SILVA and contains cluster AF293678, which 
+    # has ref seq identified as Pleurobrachia pileus.
+    silva.taxon('Metazoa').take(silva.newTaxon('Ctenophora', 'phylum', 'silva:AF293678/#4'))
 
 
 def load_h2007():
@@ -511,6 +513,13 @@ def patch_ncbi(ncbi):
     # 2015-09-11 https://github.com/OpenTreeOfLife/feedback/issues/84
     ncbi.taxon('Tarsius bancanus').rename('Cephalopachus bancanus')
 
+    # Yan Wong 2015-10-10 http://www.iucnredlist.org/details/22732/0
+    uncia = ncbi.taxon('Uncia uncia')
+    uncia.rename('Panthera uncia')
+    ncbi.taxon('Panthera', 'Felidae').take(uncia)
+
+    # Marc Jones 2015-10-10 https://groups.google.com/d/msg/opentreeoflife/wCP7ervK8YE/DbbonQtkBQAJ
+    ncbi.taxon('Sphenodontia', 'Sauropsida').rename('Rhynchocephalia')
 
 def load_worms():
     worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
@@ -530,8 +539,6 @@ def load_worms():
 
     # Help to match up with IRMNG
     worms.taxon('Ochrophyta').synonym('Heterokontophyta')
-
-    worms.taxon('Biota').synonym('life')
 
     worms.smush()  # Gracilimesus gorbunovi, pg_1783
 
@@ -760,6 +767,10 @@ def load_irmng():
     # Lymnea is a snail, not a shark
     irmng.taxon('1317416').prune(this_source)
 
+    # 2015-10-12 JAR checked IRMNG online and this taxon (Ctenophora in Chelicerata) did not exist
+    if irmng.maybeTaxon('1279363') != None:
+        irmng.taxon('1279363').prune(this_source)
+
     return irmng
 
 # Common code for the 'old fashioned' taxonomies IF, GBIF, IRMNG,
@@ -782,7 +793,7 @@ def fix_protists(tax):
         li = tax.maybeTaxon('life')
         if li != None: li.take(euk)
         else:
-            print('** No parent "life" for Eukaryota, probably OK')
+            print('* No parent "life" for Eukaryota, probably OK')
 
     for name in ['Animalia', 'Fungi', 'Plantae']:
         node = tax.maybeTaxon(name)

@@ -5,6 +5,12 @@
 #   2: kill list
 #   3: directory in which to put taxonomy.tsv and synonyms.tsv
 
+# Assumed column order in GBIF dump - this is almost certain to change 
+# should there ever be a new version of GBIF
+# 0:taxonID	1:parentNameUsageID	2:acceptedNameUsageID	3:scientificName
+#	4:canonicalName	5:taxonRank	6:taxonomicStatus	7:nomenclaturalStatus
+#	8:genus	9:specificEpithet	10:infraspecificEpithet	11:namePublishedIn
+#	12:nameAccordingTo	13:kingdom	14:phylum	15:class	16:order	17:family
 
 import sys,os
 from collections import Counter
@@ -41,6 +47,8 @@ if __name__ == "__main__":
     syntargets = {} #key is synonym id, value is taxon id of target
     syntypes = {}   #key is synonym id, value is synonym type
     to_remove = []  #list of ids
+    paleos = []     #ids that come from paleodb
+    flushed_because_source = 0
     print "taxa synonyms no_parent"
     infile.next()
     for row in infile:
@@ -63,9 +71,12 @@ if __name__ == "__main__":
         accepted_status = fields[6].strip()
         synonymp = (accepted_status != "accepted")
 
+        source = fields[12].strip()
+
         # Filter out IRMNG and IPNI tips
-        if (("IRMNG Homonym" in row) or ("Interim Register of Marine" in row) or
-            ("International Plant Names Index" in row)):
+        if (("IRMNG Homonym" in source) or ("Interim Register of Marine" in source) or
+            ("International Plant Names Index" in source)):
+            flushed_because_source += 1
             if synonymp:
                 continue
             else:
@@ -75,6 +86,8 @@ if __name__ == "__main__":
             syntargets[id] = fields[2].strip()
             syntypes[id] = accepted_status
             continue
+        elif "Paleobiology Database" in source:
+            paleos.append(id)
 
         rank = fields[5].strip()
         if rank == "form" or rank == "variety" or rank == "subspecies" or rank == "infraspecificname":
@@ -103,7 +116,8 @@ if __name__ == "__main__":
 
     infile.close()
 
-    print '%s bad id; %s no parent id; %s synonyms' % (bad_id, no_parent, len(synnames))
+    print ('%s bad id; %s no parent id; %s synonyms; %s bad source' % 
+           (bad_id, no_parent, len(synnames), flushed_because_source))
 
     # Parent/child homonyms now get fixed by smasher
 
@@ -168,8 +182,15 @@ if __name__ == "__main__":
     outfile.close()
 
     print "writing %s synonyms" % len(synnames)
+    outfilesy.write('uid\t|\tname\t|\ttype\t|\t\n')
     for id in synnames:
         target = syntargets[id]
         if target in nm_storage:
             outfilesy.write(target+"\t|\t"+synnames[id]+"\t|\t"+syntypes[id]+"\t|\t\n")
     outfilesy.close()
+
+    print 'writing %s paleodb ids' % len(paleos)
+    paleofile = open(sys.argv[3]+'/paleo.tsv', 'w')
+    for id in paleos:
+        paleofile.write(('%s\n' % id))
+    paleofile.close()

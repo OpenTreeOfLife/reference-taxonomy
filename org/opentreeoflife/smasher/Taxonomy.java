@@ -3015,7 +3015,8 @@ class UnionTaxonomy extends Taxonomy {
             this.dumpLog(outprefix + "log.tsv", scrutinize);
         if (this.weakLog.size() > 0)
             this.dumpWeakLog(outprefix + "weaklog.csv");
-        this.dumpForwards(outprefix + "forwards.tsv");
+        if (this.idsource != null)
+            this.dumpForwards(outprefix + "new-forwards.tsv");
 		this.dumpConflicts(outprefix + "conflicts.tsv");
 
 		this.dumpNodes(this.roots(), outprefix, sep);
@@ -3157,10 +3158,13 @@ class UnionTaxonomy extends Taxonomy {
                         else if (nodes.size() > unodes.size())
                             // 21/55
                             reason = "id-retired/probable-lumping";
-                        else if (unodes.size() == 1)
+                        else if (unodes.size() == 1) {
                             // 14/55
                             reason = "id-retired/incompatible-use";
-                        else
+                            Taxon[] div = node.divergence(unodes.get(0));
+                            if (div != null)
+                                witness = div[0].name + "->" + div[1].name;
+                        } else
                             // 14/55
                             reason = "id-retired/incompatible-uses";
 
@@ -3194,8 +3198,10 @@ class UnionTaxonomy extends Taxonomy {
                     reason = "id-changed/old-id-retired";
                 else if (!id.equals(unode.id)) {
                     // 143/199
-                    reason = "id-changed/lump-or-split"; // mapped elsewhere, maybe split?
-                    replacementId = '=' + unode.id;
+                    ;
+                    // Disable this now that the new-forwards.tsv file is being written.
+                    // reason = "id-changed/lump-or-split"; // mapped elsewhere, maybe split?
+                    // replacementId = '=' + unode.id;
                 }
                 
                 if (unode.isHidden()) {
@@ -3774,7 +3780,9 @@ class MergeMachine {
                     alice = mrca = child.mapped;
                 else {
                     bob = child.mapped;
-                    Taxon newmrca = mrca.mrca(bob);
+                    // We're called deep inside of augment(), so tree may have been edited.
+                    // ergo, .carefulMrca instead of .mrca
+                    Taxon newmrca = mrca.carefulMrca(bob);
                     if (newmrca != null)
                         mrca = newmrca;
                     if (mrca == node.lub)

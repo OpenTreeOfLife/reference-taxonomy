@@ -1,10 +1,10 @@
 # Open Tree of Life reference taxonomy version 2.9
 
-Version 2.9 is not released yet.  Version 2.9 draft 11 was generated on 6 October 2015.
+Version 2.9 is not released yet.  Version 2.9 draft 12 was generated on 12 October 2015.
 
 ## Download
 
-[Download](http://files.opentreeoflife.org/ott/ott2.9/ott2.9draft11.tgz) (gzipped tar file, 90 Mbyte) 
+[Download](http://files.opentreeoflife.org/ott/ott2.9/ott2.9draft12.tgz) (gzipped tar file, 91 Mbyte) 
 
 ## Contents
 All files are encoded UTF-8.  For documentation about file formats, see [the documentation in the reference taxonomy
@@ -133,12 +133,12 @@ Changes since OTT 2.8 (a.k.a 2.8draft5) which was built on 11 June 2014:
 
 Statistics:
 
-* Identifiers: 3457834
-* Visible: TBD
-* Synonyms: 911196
-* In deprecated file (used in phylesystem): 2889  FIX ME
-* In deprecated file (used in synthesis): 309  FIX ME
-* Taxa dissolved due to conflict (conflicts.tsv): 848
+* Identifiers: 3528349
+* Visible: 2628944
+* Synonyms: 867366
+* In deprecated file (used in phylesystem): 2451
+* In deprecated file (used in synthesis): 368
+* Source taxa dissolved due to conflict (conflicts.tsv): 1054
 
 New [flags](https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Taxon-flags):
 
@@ -157,30 +157,37 @@ New [flags](https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Taxon-flag
   preserved as a placeholder.
 * extinct - replaces extinct_direct.
 * major\_rank\_conflict - replaces major\_rank\_conflict\_direct.
-* incertae\_sedis - replaces incertae\_sedis\_direct.
+* incertae\_sedis - (former) child of an incertae sedis container.
 * sibling\_lower is deprecated, that information is not recorded (but you can
   always tell, just by looking at ranks of the siblings).  sibling\_higher
   is retained.
 * Deprecated: tattered, tattered_inherited
 
-Specific content changes:
+Specific content changes (inputs):
 
 * Added WoRMS
 * Updated Hibbett 2007 from [http://figshare.com/articles/Fungal\_Classification_2015/1465038](http://figshare.com/articles/Fungal_Classification_2015/1465038)
 * Minor IF update (to 7 April 2014 and modified processing software)
 * Minor GBIF update (same origin content, modified processing, much faster)
-* NCBI update (27 June 2015)
+* NCBI update (6 October 2015)
 * Fixes for many bugs reported in feedback and reference-taxonomy repos (see milestones)
 
 Generic content changes (processing):
 
-* 'Lumping' is now allowed more promiscuously than before
-* "unique names" show highest distinguishing taxon, e.g. "Morganella
-  (genus in kingdom Fungi)" instead of lowest "Morganella (genus in family
+* 'Lumping' is now allowed more promiscuously than before.  E.g. if NCBI
+  has names A and B with B a synonym of A, and GBIF has A and B as separate 
+  taxa, then GBIF's A and B will both map to NCBI's A.
+* New file forwards.tsv gives replacement ids for some ids that no
+  longer exist in the taxonomy.  E.g. if A and B were separate in an earlier
+  version of OTT, and 'lumped' in this version, then there will be
+  a row in forwards.tsv mapping B's old id to A's id.
+* The "unique names" column shows the highest distinguishing taxon, e.g. "Morganella
+  (genus in kingdom Fungi)" instead of the lowest "Morganella (genus in family
   Agaricaceae)"
 * Somewhat more informative deprecated.tsv
+* Deprecated.tsv file is now restricted to taxa mentioned in phylesystem,
+  and includes not only deprecated ids but also newly hidden ids (those
+  that were not hidden in 2.8, but are hidden now)
+* As a heuristic, taxa that come *only* from PaleoDB are marked extinct
 * 'skeleton' feature replaces 'pinning' for homonym separation (see
   tax/skel/ for list of barrier nodes)
-* Deprecated file is now restricted to taxa mentioned in phylesystem,
-  and includes not only deprecated ids but also newly hidden ids (those
-  that were not hidden in 2.8, but are now)

@@ -1,0 +1,1847 @@
+$ make works
+javac -g -classpath ".:lib/*" org/opentreeoflife/smasher/Alignment.java org/opentreeoflife/smasher/AlignmentByMembership.java org/opentreeoflife/smasher/AlignmentByName.java org/opentreeoflife/smasher/Flag.java org/opentreeoflife/smasher/HomonymReport.java org/opentreeoflife/smasher/JsonServer.java org/opentreeoflife/smasher/Newick.java org/opentreeoflife/smasher/QualifiedId.java org/opentreeoflife/smasher/Reason.java org/opentreeoflife/smasher/Reportx.java org/opentreeoflife/smasher/Smasher.java org/opentreeoflife/smasher/Taxon.java org/opentreeoflife/smasher/Taxonomy.java org/opentreeoflife/smasher/Test.java
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+JYTHONPATH=util java -classpath ".:lib/*" -Xmx14G org.opentreeoflife.smasher.Smasher --jython make-ott.py
+flipping Muus >< Mouse
+--- Loading list of important taxa from ids-that-are-otus.tsv ---
+--- Loading list of important taxa from ids-in-synthesis.tsv ---
+--- Reading tax/skel/ ---
+! No header row - saw 805080
+| 7 synonyms
+| 1 roots + 5 internal + 20 tips = 26 total
+--- Mapping skel into union ---
+| Names in common: 0
+| same/by-division-name: 1
+| LUB match: 0 mismatch: 0 graft: 6 differ: 0 bad: 0
+| Added 7 synonyms
+--- Reading tax/silva/ ---
+! No header row - saw 0
+** (- uncultured) is the 75th to have the name 'uncultured'
+| 5 names normalized
+| 3 synonyms
+| Eliding Elusimicrobia in Elusimicrobia, 11 children
+| Eliding Thermodesulfobacteria in Thermodesulfobacteria, 1 children
+| Eliding Chlamydiae in Chlamydiae, 1 children
+| Eliding Gemmatimonadetes in Gemmatimonadetes, 6 children
+| Eliding Thermotogae in Thermotogae, 1 children
+| Eliding Deferribacteres in Deferribacteres, 1 children
+| Eliding Aquificae in Aquificae, 1 children
+| Eliding Chrysiogenetes in Chrysiogenetes, 1 children
+| 873 homonyms, of which 29 name cousin taxa, 787 name sibling taxa
+| 1 roots + 4478 internal + 68993 tips = 73472 total
+** Warning: A taxon by the name of Ctenophora already exists
+--- Mapping silva into union ---
+| Names in common: 12
+| lumped: 1
+| not-same/weak-division: 1
+| same/by-division-name: 12
+| synonym-match: 1
+| Of 73444 nodes in silva: 12 with name in common, of which 11 matched with existing, 1 blocked
+| LUB match: 2 mismatch: 1 graft: 4467 differ: 6 bad: 0
+--- Augmenting union with new nodes from silva ---
+** (- uncultured) is the 75th to have the name 'uncultured'
+| Started with: 1 roots, 26 taxa + 1 source roots, 73444 source taxa
+|   new/graft: 4464
+|   new/refinement: 3
+|   new/tip: 68966
+| Ended with: 1 roots, 73459 taxa
+| Added 22 synonyms
+| Highest id before: 0 after: 227
+--- Mapping h2007 into union ---
+| Names in common: 2
+| lumped: 1
+| same/by-division-name: 2
+| Of 227 nodes in h2007: 2 with name in common, of which 2 matched with existing, 0 blocked
+| LUB match: 1 mismatch: 0 graft: 38 differ: 0 bad: 0
+--- Augmenting union with new nodes from h2007 ---
+| Started with: 1 roots, 73459 taxa + 1 source roots, 227 source taxa
+|   new/graft: 38
+|   new/tip: 187
+| Ended with: 1 roots, 73684 taxa
+| Added 2 synonyms
+--- Reading tax/fung/ ---
+! No header row - saw 4
+| 766 names normalized
+| 125162 synonyms
+| 4 homonyms, of which 0 name cousin taxa, 3 name sibling taxa
+| 153 roots + 11294 internal + 273525 tips = 284972 total
+!! order (if:90508+63 Agaricales) sibling to subclass (if:501298+1 Agaricomycetidae)
+* No parent "life" for Eukaryota, probably OK
+| (if:90156+803 Fungi) is already a child of (=ncbi:2759+29 Eukaryota?)
+!! order (if:90508+63 Agaricales?) sibling to subclass (if:501298+1 Agaricomycetidae)
+Fungi in Index Fungorum has 276252 nodes
+| Smushing 3 node sets
+| Selection has 276249 taxa
+** Setting flags on (if:90156+799 Fungi), size 276249
+Flags to add: unplaced
+ Preexisting flags: edited
+ Lineage: (if:90156+799 Fungi)
+| Added 111807 synonyms
+Fungi in Index Fungorum has 276249 nodes
+** No unique taxon found with name Acantharia in context Fungi
+** No unique taxon found with name Bostrychia in context Rhodophyceae
+** Warning: A taxon by the name of Ciliophora already exists
+** Warning: A taxon by the name of Phaeosphaeria already exists
+--- Mapping if into union ---
+| Names in common: 231
+| lumped: 1
+| not-same/division: 18
+| not-same/weak-division: 17
+| same/by-division-name: 2
+| synonym-match: 1
+| Of 276249 nodes in if: 213 with name in common, of which 195 matched with existing, 18 blocked
+| LUB match: 17 mismatch: 2 graft: 10522 differ: 173 bad: 0
+--- Augmenting union with new nodes from if ---
+! Trouble with inserting (if:539369+1 Mortierellomycotina) into (352914=silva:D11377/#4+11 Fungi*) is (=silva:AY601707/#4+2 Rozella)
+! Trouble with inserting (if:501282+1 Entomophthoromycotina) into (352914=silva:D11377/#4+11 Fungi*) is (=silva:AY601707/#4+2 Rozella)
+! Trouble with inserting (if:501283+1 Zoopagomycotina) into (352914=silva:D11377/#4+11 Fungi*) is (=silva:AY601707/#4+2 Rozella)
+1 (if:90405+13 Zygomycota)
+! Trouble with inserting (if:513351+1 Geoglossomycetes) into (=h2007:46+3 Pezizomycotina*) is (=h2007:52+11 Leotiomyceta)
+! Trouble with inserting (if:501497+1 Acarosporomycetidae) into (=h2007:84+19 Lecanoromycetes*) is (=h2007:161 Caliciales)
+! Trouble with inserting (if:501505+9 Ostropomycetidae) into (=h2007:84+20 Lecanoromycetes*) is (=h2007:161 Caliciales)
+! Trouble with inserting (if:501290+14 Lecanoromycetidae) into (=h2007:84+26 Lecanoromycetes*) is (=h2007:161 Caliciales)
+! Trouble with inserting (if:90352+1 Spathulosporomycetidae) into (=h2007:140+21 Sordariomycetes*) is (=h2007:182 Savoryellales)
+! Trouble with inserting (if:90351+49 Sordariomycetidae) into (=h2007:140+22 Sordariomycetes*) is (=h2007:182 Savoryellales)
+! Trouble with inserting (if:501501+16 Hypocreomycetidae) into (=h2007:140+64 Sordariomycetes*) is (=h2007:182 Savoryellales)
+! Trouble with inserting (if:501509+1 Xylariomycetidae) into (=h2007:140+77 Sordariomycetes*) is (=h2007:182 Savoryellales)
+!! Parent of (if:501477+1 Blastocladiomycetes)'s children's images, (352914=silva:D11377/#4+19 Fungi*), does not descend from (=h2007:8+4 Chytridiomycota*)
+!! Parent of (if:90123+1 Entorrhizomycetidae)'s children's images, (=h2007:28+2 Phyllum=Entorrhizomycota), does not descend from (=h2007:41+3 Basidiomycota*)
+!! Parent of (if:99022+75 Microsporea?)'s children's images, (=silva:AB191434/#6+5 Abeoformidae), does not descend from (=h2007:10 Microsporidia*)
+| Started with: 7 roots, 73692 taxa + 1 source roots, 276249 source taxa
+|   incomplete conflict: 3
+|   merged: 22
+|   new/graft: 10481
+|   new/refinement: 15
+|   new/tip: 265528
+|   not-placed/already-unplaced: 1
+|   not-placed/does-not-descend: 14
+|   not-placed/same-taxon: 18
+|   not-refinement/nonsurjective: 22
+|   promoted/internal: 1
+|   reject/inconsistent: 4
+|   reject/otu: 2
+|   reported conflict: 1
+|   sibling-sink mismatch: 3
+| Ended with: 7 roots, 349742 taxa
+| Added 111791 synonyms
+--- Reading tax/713/ ---
+! No header row - saw 361838
+| 1 roots + 27 internal + 91 tips = 119 total
+--- Mapping study713 into union ---
+| Names in common: 2
+| lumped: 1
+| same/by-division-name: 2
+| Of 119 nodes in study713: 2 with name in common, of which 2 matched with existing, 0 blocked
+| LUB match: 0 mismatch: 0 graft: 27 differ: 1 bad: 0
+--- Augmenting union with new nodes from study713 ---
+| Started with: 8 roots, 349743 taxa + 1 source roots, 119 source taxa
+|   new/graft: 27
+|   new/tip: 90
+|   not-placed/does-not-descend: 1
+| Ended with: 8 roots, 349860 taxa
+--- Reading tax/worms/ ---
+! No header row - saw 1
+| 71 names normalized
+** Setting flags on (tax1:1+9 Biota), size 64855
+Flags to add: unplaced
+ Preexisting flags: 
+ Lineage: (tax1:1+9 Biota)
+| 220054 synonyms
+| Eliding Spirochaetes in Spirochaetes, 1 children
+| Eliding Thermotogae in Thermotogae, 1 children
+| Eliding Fusobacteria in Fusobacteria, 1 children
+| Eliding Oxyoppia in Oxyoppia, 1 children
+| Eliding Euglenozoa in Euglenozoa, 4 children
+| Eliding Deferribacteres in Deferribacteres, 1 children
+| Eliding Nucleohelea in Nucleohelea, 1 children
+| Eliding Acanthogyrus in Acanthogyrus, 6 children
+| Eliding Neoamerioppia in Neoamerioppia, 1 children
+...
+| 1967 homonyms, of which 46 name cousin taxa, 1026 name sibling taxa
+| 1 roots + 54959 internal + 275424 tips = 330384 total
+| Smushing 1088 node sets
+| Placing previously unplaced (worms:604114 Ephelopalla?) in (=ncbi:2759+155 Eukaryota)
+| Placing previously unplaced (worms:428559+1 Pseudotrichomonas?) in (=ncbi:2759+274 Eukaryota)
+| (worms:4+36 Fungi) is already a child of (=ncbi:2759+366 Eukaryota)
+| (worms:2+29 Animalia) is already a child of (=ncbi:2759+366 Eukaryota)
+| (worms:3+222 Chloroplastida) is already a child of (=ncbi:2759+366 Eukaryota)
+| Smushing 96 node sets
+| Selection has 40945 taxa
+| Added 16481 synonyms
+--- Mapping worms into union ---
+| Names in common: 18
+| lumped: 1
+| not-same/division: 17
+| not-same/weak-division: 1
+| same/by-division-name: 2
+| Of 40945 nodes in worms: 16 with name in common, of which 1 matched with existing, 15 blocked
+| LUB match: 0 mismatch: 0 graft: 6552 differ: 1 bad: 0
+--- Augmenting union with new nodes from worms ---
+| Started with: 8 roots, 349860 taxa + 1 source roots, 40945 source taxa
+|   new/graft: 6552
+|   new/tip: 34391
+| Ended with: 8 roots, 390803 taxa
+| Added 16473 synonyms
+--- Reading tax/ncbi/ ---
+! No header row - saw 287144
+500000
+1000000
+| 25 names normalized
+| 251843 synonyms
+* (ncbi:42328 Ephedra gerardiana) hidden false -> false
+| 812 homonyms, of which 8 name cousin taxa, 16 name sibling taxa
+| 1 roots + 117698 internal + 1234701 tips = 1352400 total
+| Synonym already present: (ncbi:73570+1 Discogasteroides) Planchonella sp. Meyer 3013
+| Synonym already present: (ncbi:9539+29 Macaca) Pycnandra sp. Lowry et al. 5786
+| Synonym already present: (ncbi:7764 Eptatretus burgeri) Docosaccus sp. GW5429
+| Synonym already present: (ncbi:8960+11 Aquila) Iochroma sp. Smith 337
+| Synonym already present: (ncbi:8953+4 Falco columbarius) Iochroma sp. Smith 370
+| Synonym already present: (ncbi:1949 Streptomyces mycarofaciens) Caenorhabditis briggsae AF16
+| Synonym already present: (ncbi:624+13 Shigella sonnei) Cedrela sp. 4 ANM-2010
+** Setting flags on (ncbi:10239+1263 Viruses?), size 143236
+Flags to add: viral
+ Preexisting flags: hidden
+ Lineage: (ncbi:10239+1263 Viruses?) < (ncbi:1+235 life)
+** Setting flags on (ncbi:439488+9 ssRNA viruses?), size 124646
+Flags to add: viral
+ Preexisting flags: hidden
+ Lineage: (ncbi:439488+9 ssRNA viruses?) < (ncbi:10239+1263 Viruses?) < (ncbi:1+235 life)
+** Setting flags on (ncbi:35301+123 ssRNA negative-strand viruses?), size 97851
+Flags to add: viral
+ Preexisting flags: hidden
+ Lineage: (ncbi:35301+123 ssRNA negative-strand viruses?) < (ncbi:439488+9 ssRNA viruses?) < (ncbi:10239+1263 Viruses?) < (ncbi:1+235 life)
+** Setting flags on (ncbi:11320+135 Influenza A virus?), size 83920
+Flags to add: viral
+ Preexisting flags: hidden
+ Lineage: (ncbi:11320+135 Influenza A virus?) < (ncbi:197911+1 Influenzavirus A?) < (ncbi:11308+16 Orthomyxoviridae?) < (ncbi:35301+123 ssRNA negative-strand viruses?) < (ncbi:439488+9 ssRNA viruses?) < (ncbi:10239+1263 Viruses?) < (ncbi:1+235 life)
+** No unique taxon found with name Ctenophora in context Metazoa
+** no such cluster CP001621
+** no such cluster GU207880
+4195 SILVA names updated from more recent NCBI
+* (ncbi:42328 Ephedra gerardiana) hidden false -> false
+--- Mapping ncbi into union ---
+| Names in common: 113279
+| blocked-because-not-same/incompatible: 1
+| blocked-because-unresolved/contentious: 1
+| lumped: 1913
+| not-same/division: 650
+| not-same/incompatible: 29
+| not-same/weak-division: 38
+| same/ancestor+parent: 1
+| same/by-division-name: 27
+| same/is-subsumed-by: 1
+| synonym-match: 5675
+| unresolved/ambiguous: 45
+| unresolved/blocked: 11
+| unresolved/contentious: 43
+| Of 1343566 nodes in ncbi: 108356 with name in common, of which 107559 matched with existing, 797 blocked
+! (ncbi:288+2 Pseudoalteromonas atlantica*) maps by name to (=ncbi:288 Pseudoalteromonas atlantica*) which is disjoint from mrca (=silva:U73723/#6+56 Glaciecola*); they meet at (=silva:D21223/#4+10 Alteromonadales*)
+! (ncbi:283686+2 Kosakonia radicincitans*) maps by name to (=ncbi:283686 Enterobacter radicincitans*) which is disjoint from mrca (=silva:D12656/#6+814 Flavobacterium*); they meet at (844192=silva:A16379/#1+55 Bacteria*)
+! (ncbi:74109+2 Photobacterium profundum*) maps by name to (=ncbi:74109 Photobacterium profundum*) which is disjoint from mrca (=silva:D14431/#5+277 Rhodobacteraceae*); they meet at (=silva:A16379/#2+26 Proteobacteria*)
+! (ncbi:378210+15 Methyloversatilis*) maps by name to (=silva:AB194096/#6+8 Methyloversatilis*) which is disjoint from mrca (=silva:D88005/#6+131 Achromobacter*); they meet at (=silva:D14254/#3+18 Betaproteobacteria*)
+! (ncbi:102115+6 Stanieria*) maps by name to (=silva:AB039008/#6 Stanieria*) which is disjoint from mrca (=silva:X78681/#6+27 Pleurocapsa*); they meet at (=silva:X78681/#4+2 SubsectionII)
+! (ncbi:1148+5 Synechocystis sp. PCC 6803*) maps by name to (=ncbi:1204343 Synechocystis sp. PCC 6803*) which is disjoint from mrca (=silva:D88288/#5+80 FamilyI); they meet at (844192=silva:A16379/#1+55 Bacteria*)
+! (ncbi:322688+2 Caudospora*?) maps by name to (=if:854+1 Caudospora*?) which is disjoint from mrca (=if:30602+5 Weiseria*?); they meet at (352914=silva:D11377/#4+811 Fungi*)
+! (ncbi:231217+5 Leucosporidiella*?) maps by name to (=if:28750+3 Leucosporidiella*) which is disjoint from mrca (=if:9741+106 Rhodotorula?); they meet at (=h2007:68+10 Microbotryomycetes*)
+! (ncbi:646506+1 Marasmius cohaerens*) maps by name to (=if:118871 Marasmius cohaerens*) which is disjoint from mrca (=if:17703+240 Gymnopus*); they meet at (=h2007:108+63 Agaricales*)
+! (ncbi:566109+6 Hymenogaster luteus*) maps by name to (=if:163541 Hymenogaster luteus*) which is disjoint from mrca (=if:19281+8 Protoglossum*); they meet at (=h2007:108+63 Agaricales*)
+! (ncbi:91682+1 Hebeloma truncatum*) maps by name to (=if:282503 Rhodocybe truncata*) which is disjoint from mrca (=if:17723+439 Hebeloma*); they meet at (=h2007:108+63 Agaricales*)
+! (ncbi:171613+1 Gymnopilus spectabilis*) maps by name to (=if:250886 Phaeolepiota aurea*) which is disjoint from mrca (=if:17702+227 Gymnopilus*); they meet at (=h2007:108+63 Agaricales*)
+! (ncbi:139355+1 Guepinia*?) maps by name to (=if:17698+46 Guepinia*?) which is disjoint from mrca (=if:17462+21 Dacryopinax*); they meet at (=h2007:49+18 Agaricomycotina*)
+! (ncbi:154752+1 Neolentiporus*?) maps by name to (=if:27722+1 Neolentiporus*) which is disjoint from mrca (=if:18334+1180 Polyporus*); they meet at (=h2007:101+26 Polyporales*)
+! (ncbi:81051+1 Poria*?) maps by name to (=if:18339+2 Poria*) which is disjoint from mrca (=if:18514+7 Schizopora*); they meet at (=h2007:63+111 Agaricomycetes*)
+! (ncbi:98757+1 Gelatoporia*?) maps by name to (=if:25716+1 Gelatoporia*) which is disjoint from mrca (=if:17268+35 Ceriporiopsis*); they meet at (=h2007:101+26 Polyporales*)
+! (ncbi:205754+2 Gloeocystidiopsis*?) maps by name to (=if:17678+14 Gloiothele*) which is disjoint from mrca (=if:17663+39 Gloeocystidiellum*); they meet at (=h2007:100+25 Russulales*)
+! (ncbi:264097+2 Haplotrichum*?) maps by name to (=if:8444 Haplotrichum*?) which is disjoint from mrca (=if:81744+5 Botryobasidiaceae*); they meet at (=h2007:27+2 Division=Dikarya)
+! (ncbi:467941+1 Chaetodermella*?) maps by name to (=if:25249 Chaetodermella*) which is disjoint from mrca (=if:17273+2 Chaetoderma); they meet at (=h2007:63+111 Agaricomycetes*)
+! (ncbi:164549+1 Phaeangium*) maps by name to (=if:3883 Phaeangium*) which is disjoint from mrca (=if:4096+5 Picoa*); they meet at (=h2007:54+27 Pezizales*)
+! (ncbi:44641+8 Labyrinthomyces*) maps by name to (=if:2611+2 Labyrinthomyces*) which is disjoint from mrca (=if:5214+8 Stephensia*); they meet at (=h2007:54+27 Pezizales*)
+! (ncbi:1542814+4 Inoderma*) maps by name to (=if:17854+151 Inonotus*) which is disjoint from mrca (=h2007:80+2 Dothideomyceta); they meet at (=h2007:27+2 Division=Dikarya)
+! (ncbi:1542763+2 Myriostigma*) maps by name to (=if:3381+1 Myriostigmella*?) which is disjoint from mrca (=if:1335+145 Cryptothecia*); they meet at (=h2007:80+2 Dothideomyceta)
+! (ncbi:1542767+1 Pachnolepia*) maps by name to (=if:320+1343 Arthonia*) which is disjoint from mrca (=if:39081+130 Lichen); they meet at (=h2007:52+14 Leotiomyceta*)
+! (ncbi:1582315+1 Nodulosphaeria*) maps by name to (=if:3517+50 Nodulosphaeria*) which is disjoint from mrca (=if:2800+1084 Leptosphaeria*); they meet at (=h2007:211+86 Pleosporales*)
+! (ncbi:415582+1 Platychora*) maps by name to (=if:4169+1 Platychora*) which is disjoint from mrca (=if:1695+78 Dothidella*); they meet at (=h2007:154+282 Dothideomycetes*)
+! (ncbi:286656+6 Xenostigmina*) maps by name to (=if:27785 Xenostigmina*) which is disjoint from mrca (=if:1548+365 Didymella*); they meet at (=h2007:154+282 Dothideomycetes*)
+! (ncbi:1069644+1 Sthughesia*) maps by name to (=if:3137+16 Metacapnodium*) which is disjoint from mrca (=if:5819+11 Xenomeris*); they meet at (=h2007:154+282 Dothideomycetes*)
+! (ncbi:306883+1 Teratosphaeria readeriellophora*) maps by name to (=if:500054 Mycosphaerella readeriellophora*) which is disjoint from mrca (=if:9698+15 Readeriella*); they meet at (=h2007:217+33 Capnodiales*)
+! (ncbi:418778+25 Kirramyces*?) maps by name to (=if:11298+5 Kirramyces*) which is disjoint from mrca (=if:5377+70 Teratosphaeria*); they meet at (=h2007:217+33 Capnodiales*)
+! (ncbi:415583+2 Plowrightia*) maps by name to (=if:4262+29 Plowrightia*) which is disjoint from mrca (=if:1695+78 Dothidella*); they meet at (=h2007:154+282 Dothideomycetes*)
+! (ncbi:1619895+2 Karschia*?) maps by name to (=if:2545+73 Karschia*?) which is disjoint from mrca (=if:674+1342 Buellia*); they meet at (=h2007:52+14 Leotiomyceta*)
+! (ncbi:997767+1 Asterotexis*) maps by name to (=if:430+1 Asterotexis*) which is disjoint from mrca (=if:4688+12 Rhagadolobium); they meet at (=h2007:208+3 Asterinales*)
+! (ncbi:545373+1 Eremithallales*?) maps by name to (=if:540500+1 Eremithallales*) which is disjoint from mrca (=h2007:205+21 Arthoniales*); they meet at (=h2007:52+14 Leotiomyceta*)
+! (ncbi:763996+1 Thyrostroma*?) maps by name to (=if:10224+15 Thyrostroma*) which is disjoint from mrca (=if:10105+104 Stigmina*); they meet at (=h2007:154+282 Dothideomycetes*)
+! (ncbi:1629687+1 Leucoglossum*) maps by name to (=if:2826+1 Leucoglossum*?) which is disjoint from mrca (=if:5556+20 Trichoglossum*); they meet at (=h2007:52+14 Leotiomyceta*)
+! (ncbi:232783+1 Norrlinia*) maps by name to (=if:3518+1 Norrlinia*) which is disjoint from mrca (=if:905+109 Cercidospora?); they meet at (=h2007:52+14 Leotiomyceta*)
+! (ncbi:1484032+2 Xalocoa ocellata*) maps by name to (=if:537325 Placodium ocellatum*) which is disjoint from mrca (=if:1621+210 Diploschistes*); they meet at (352914=silva:D11377/#4+811 Fungi*)
+! (ncbi:271837+1 Ostropa*) maps by name to (=if:3649+17 Ostropa*) which is disjoint from mrca (=if:2936+21 Lophium*); they meet at (=h2007:52+14 Leotiomyceta*)
+! (ncbi:56758+3 Conotrema*) maps by name to (=if:1222+7 Conotrema*) which is disjoint from mrca (=if:3543+628 Ocellularia*); they meet at (=h2007:169+22 Ostropales*)
+! (ncbi:1006473+34 Circinaria*) maps by name to (=if:39053 Circinaria*) which is disjoint from mrca (=if:2687+4199 Lecanora*); they meet at (=h2007:52+14 Leotiomyceta*)
+! (ncbi:180487+1 Omphalodium*) maps by name to (=if:3568+15 Omphalodium*) which is disjoint from mrca (=if:5666+638 Umbilicaria*); they meet at (=h2007:84+59 Lecanoromycetes*)
+! (ncbi:1695901+1 Pseudographis*) maps by name to (=if:4433+18 Pseudographis*) which is disjoint from mrca (=if:2950+11 Loxospora*); they meet at (=h2007:52+14 Leotiomyceta*)
+! (ncbi:53396+1 Patinella*) maps by name to (=if:3769+51 Patinella*) which is disjoint from mrca (=if:3626+210 Orbilia*); they meet at (=h2007:46+2250 Pezizomycotina*)
+! (ncbi:1071695+1 Brunnipila*) maps by name to (=if:25708+6 Brunnipila*) which is disjoint from mrca (=if:2619+781 Lachnum*); they meet at (=if:90517+160 Leotiomycetidae)
+! (ncbi:470025+1 Thedgonia*?) maps by name to (=if:10207+5 Thedgonia*?) which is disjoint from mrca (=if:7545+1881 Cercospora*); they meet at (=h2007:52+14 Leotiomyceta*)
+! (ncbi:45436+10 Microglossum*?) maps by name to (=if:3166+5 Microglossum*) which is disjoint from mrca (=if:2049+95 Geoglossum*); they meet at (=h2007:52+14 Leotiomyceta*)
+! (ncbi:79858+16 Pseudogymnoascus pannorum*) maps by name to (=if:804769 Pseudogymnoascus pannorum*) which is disjoint from mrca (=if:8323+10 Geomyces*?); they meet at (=h2007:52+14 Leotiomyceta*)
+! (ncbi:146310+1 Seynesia*) maps by name to (=if:5017+52 Seynesia*) which is disjoint from mrca (=if:441+94 Astrosphaeriella*?); they meet at (=h2007:52+14 Leotiomyceta*)
+! (ncbi:796314+1 Nectriopsis exigua*) maps by name to (=if:110838 Nectriopsis exigua*) which is disjoint from mrca (=if:10400+172 Verticillium*); they meet at (=h2007:140+210 Sordariomycetes*)
+| LUB match: 8554 mismatch: 3683 graft: 99978 differ: 5378 bad: 67
+--- Augmenting union with new nodes from ncbi ---
+! Trouble with inserting (ncbi:85000+1 Sphaerobacteridae) into (=silva:M34115/#3+4 Thermomicrobia*) is (=silva:AM934991/#4+1 AKYG1722)
+! Trouble with inserting (ncbi:552810+1 Dehalogenimonas lykanthroporepellens) into (=silva:AX814216/#6+4 Dehalogenimonas*) is (=ncbi:1217800 Dehalogenimonas sp. SBP1)
+! Trouble with inserting (ncbi:1508594+2 Chloroflexineae) into (=silva:D32255/#4+6 Chloroflexales*) is (=silva:EU133961/#5 FFCH7168)
+! Trouble with inserting (ncbi:1508595+1 Roseiflexineae) into (=silva:D32255/#4+7 Chloroflexales*) is (=silva:EU133961/#5 FFCH7168)
+! Trouble with inserting (ncbi:186475+3 Kouleothrix?) into (=silva:D32255/#2+23 Chloroflexi*) is (=silva:AF407406/#3 SHA-26)
+! Trouble with inserting (ncbi:1692041+2 Acidiferrobacteraceae) into (=silva:A16379/#3+62 Gammaproteobacteria*) is (=silva:AB015547/#4 BD3-1)
+! Trouble with inserting (ncbi:732+3 Aggregatibacter aphrophilus) into (=silva:M75036/#6+17 Aggregatibacter*) is (=ncbi:888057 Aggregatibacter segnis)
+! Trouble with inserting (ncbi:1261124+1 Mannheimia haemolytica serotype 6) into (=silva:M75080/#6+27 Mannheimia*) is (=ncbi:653940 Pasteurellaceae bacterium JF4016)
+! Trouble with inserting (ncbi:221404+2 Actinobacillus anseriformium) into (=silva:E05332/#6+53 Actinobacillus*) is (=ncbi:202947 Actinobacillus equuli)
+!! Parent of (ncbi:40325+1 Actinobacillus pleuropneumoniae serovar 1)'s children's images, (=silva:E05332/#6+54 Actinobacillus*), does not descend from (=ncbi:715 Actinobacillus pleuropneumoniae*)
+!! Parent of (ncbi:434270+1 Actinobacillus pleuropneumoniae serovar 3)'s children's images, (=silva:E05332/#6+54 Actinobacillus*), does not descend from (=ncbi:715+1 Actinobacillus pleuropneumoniae*)
+!! Parent of (ncbi:754344+1 Actinobacillus pleuropneumoniae serovar 6)'s children's images, (=silva:E05332/#6+54 Actinobacillus*), does not descend from (=ncbi:715+2 Actinobacillus pleuropneumoniae*)
+!! Parent of (ncbi:209841+1 Actinobacillus pleuropneumoniae serovar 7)'s children's images, (=silva:E05332/#6+54 Actinobacillus*), does not descend from (=ncbi:715+3 Actinobacillus pleuropneumoniae*)
+2 (ncbi:28154+18 Bisgaard taxa)
+3 (ncbi:310966+3 [Pasteurella] aerogenes-[Pasteurella] mairii-[Actinobacillus] rossii complex?)
+!! Parent of (ncbi:415610+1 Clonothrix)'s children's images, (=silva:AB240465/#6+4 Crenothrix*), does not descend from (=silva:D89279/#5+14 Methylococcaceae*)
+! Trouble with inserting (ncbi:1486721+3 Methylothermaceae) into (=silva:D89279/#4+11 Methylococcales*) is (=silva:AB294960/#5 pItb-vmat-59)
+! Trouble with inserting (ncbi:1033854+1 Thioalkalivibrio sulfidiphilus) into (=silva:AF126545/#6+28 Thioalkalivibrio*) is (=ncbi:748653 Thioalkalivibrio sp. ALJ17)
+!! Parent of (ncbi:288+2 Pseudoalteromonas atlantica)'s children's images, (=silva:U73723/#6+56 Glaciecola*), does not descend from (=silva:U80834/#6+674 Pseudoalteromonas*)
+!! Parent of (ncbi:1207041+1 Idiomarina xiamenensis)'s children's images, (=silva:AB682411/#6+26 Pseudidiomarina), does not descend from (=silva:AB015521/#6+35 Idiomarina*)
+| Placing previously unplaced (=ncbi:119915 Alteromonas sp. K*?) in (=silva:L10938/#6+647 Alteromonas*)
+4 (ncbi:1406885+5 Aliiglaciecola)
+!! Parent of (ncbi:568095+5 Salmonella enterica subsp. enterica serovar Hartford)'s children's images, (=silva:X80675/#6+152 Salmonella*), does not descend from (=ncbi:59201 Salmonella enterica subsp. enterica*)
+!! Parent of (ncbi:363569+13 Salmonella enterica subsp. enterica serovar Javiana)'s children's images, (=silva:X80675/#6+152 Salmonella*), does not descend from (=ncbi:59201+5 Salmonella enterica subsp. enterica*)
+!! Parent of (ncbi:340190+5 Salmonella enterica subsp. enterica serovar Schwarzengrund)'s children's images, (=silva:X80675/#6+152 Salmonella*), does not descend from (=ncbi:59201+18 Salmonella enterica subsp. enterica*)
+!! Parent of (ncbi:90370+24 Salmonella enterica subsp. enterica serovar Typhi)'s children's images, (=silva:X80675/#6+152 Salmonella*), does not descend from (=ncbi:59201+23 Salmonella enterica subsp. enterica*)
+5 (ncbi:90370+24 Salmonella enterica subsp. enterica serovar Typhi)
+6 (ncbi:58095+119 Salmonella enterica subsp. enterica serovar Agona)
+7 (ncbi:54388+10 Salmonella enterica subsp. enterica serovar Paratyphi A)
+8 (ncbi:90371+153 Salmonella enterica subsp. enterica serovar Typhimurium)
+9 (ncbi:149539+568 Salmonella enterica subsp. enterica serovar Enteritidis)
+10 (ncbi:72407+70 Klebsiella pneumoniae subsp. pneumoniae)
+11 (ncbi:1234661+15 Yersinia pestis subsp. pestis bv. Orientalis)
+12 (ncbi:1234660+3 Yersinia pestis subsp. pestis bv. Antiqua)
+!! Parent of (ncbi:283686+2 Kosakonia radicincitans)'s children's images, (=silva:D12656/#6+814 Flavobacterium*), does not descend from (=silva:D78004/#5+122 Enterobacteriaceae*)
+! Trouble with inserting (ncbi:40576+11 Xenorhabdus bovienii) into (=silva:D78006/#6+51 Xenorhabdus*) is (=ncbi:1034471 Xenorhabdus sp. MY8)
+!! Parent of (ncbi:378210+15 Methyloversatilis)'s children's images, (=silva:D88005/#6+941 Achromobacter*), does not descend from (=silva:D14254/#5+51 Rhodocyclaceae*)
+! Trouble with inserting (ncbi:203693+6 Nitrospira) into (=silva:M79383/#2+1 Nitrospirae*) is (=silva:M79383/#3+1 Nitrospira)
+! Trouble with inserting (ncbi:102115+6 Stanieria) into (=silva:D88288/#3+21 Cyanobacteria*) is (=silva:D88288/#4+1 SubsectionI)
+! Trouble with inserting (ncbi:118562+127 Arthrospira platensis) into (=silva:X70769/#6+14 Arthrospira*) is (=ncbi:376219 Arthrospira sp.)
+! Trouble with inserting (ncbi:1184+14 Leptolyngbya boryana) into (=silva:L04709/#6+86 Leptolyngbya*) is (=ncbi:411966 Leptolyngbya boryana)
+! Trouble with inserting (ncbi:1148+5 Synechocystis sp. PCC 6803) into (=silva:D88288/#3+18 Cyanobacteria*) is (=silva:D88288/#4+1 SubsectionI)
+!! Parent of (ncbi:165724+19 Rhodotorula?)'s children's images, (=if:9741+106 Rhodotorula?), does not descend from (=h2007:120+4 Microstromatales*)
+!! Parent of (ncbi:266791+7 Rhodotorula?)'s children's images, (=if:9741+106 Rhodotorula?), does not descend from (=h2007:117+13 Ustilaginales*)
+| (=if:16205+368 Podocystis*?) moved from root to (=if:80986+1 Melampsoraceae*) because (ncbi:5259+3 Melampsoraceae*?)
+!! Parent of (ncbi:165791+83 Rhodotorula?)'s children's images, (=if:9741+106 Rhodotorula?), does not descend from (=if:515112+27 Erythrobasidiaceae*)
+!! Parent of (ncbi:54922+1 Kriegeria?)'s children's images, (=if:20598+1 Zymoxenogloea*?), does not descend from (=if:801221+1 Kriegeriaceae*)
+!! Parent of (ncbi:192684+3 Rhodotorula?)'s children's images, (=if:9741+310 Rhodotorula?), does not descend from (=h2007:126+3 Microbotryales*)
+!! Parent of (ncbi:231217+5 Leucosporidiella?)'s children's images, (=if:9741+310 Rhodotorula?), does not descend from (=if:80001+3 Leucosporidiaceae*)
+!! Parent of (ncbi:200204+7 Rhodotorula?)'s children's images, (=if:9741+375 Rhodotorula?), does not descend from (=h2007:70+56 Agaricostilbomycetes*)
+| (=if:17890+12 Lacrymaria*?) moved from root to (=if:80434+110 Agaricaceae*) because (ncbi:5339+222 Agaricaceae*?)
+!! Parent of (ncbi:646506+1 Marasmius cohaerens)'s children's images, (=if:17703+296 Gymnopus*), does not descend from (=if:18018+1571 Marasmius*)
+| (=if:17229+50 Campanella*?) moved from root to (=if:80977+47 Marasmiaceae*) because (ncbi:654128+19 Marasmiaceae*?)
+!! Parent of (ncbi:566109+6 Hymenogaster luteus)'s children's images, (=if:19281+8 Protoglossum*), does not descend from (=if:19163+105 Hymenogaster*)
+!! Parent of (ncbi:205760+3 Gloeopeniophorella?)'s children's images, (=if:17663+39 Gloeocystidiellum*), does not descend from (=if:80648+52 Corticiaceae*)
+!! Parent of (ncbi:264106+2 Hypochniciellum?)'s children's images, (=if:28664+4 Amylocorticiellum), does not descend from (=if:80648+53 Corticiaceae*)
+!! Parent of (ncbi:409239+1 Aegerita?)'s children's images, (=if:17202+1 Bulbillomyces*), does not descend from (=if:80648+53 Corticiaceae*)
+!! Parent of (ncbi:165811+6 Trichosporon?)'s children's images, (=if:10296+102 Trichosporon*), does not descend from (=if:82103+9 Cystofilobasidiaceae*)
+| Placing previously unplaced (=if:28452+2 Scleroconidioma*?) in (=if:80715+20 Dothideaceae*)
+!! Parent of (ncbi:1167256+1 Nothomitra?)'s children's images, (=if:2049+111 Geoglossum*), does not descend from (=if:513351 Geoglossomycetes*?)
+| (=if:5201+4 Steinia*?) moved from root to (=if:80935+30 Lecideaceae*?) because (ncbi:40595+5 Lecideaceae*)
+!! Parent of (ncbi:1503934+7 Graphium?)'s children's images, (=if:8398+129 Graphium), does not descend from (=h2007:199 Helotiales*)
+| Placing previously unplaced (=if:28578+2 Rossmania*?) in (=if:81867+7 Sydowiellaceae*)
+| Placing previously unplaced (=if:20372+21 Nowakowskiella*?) in (=if:81074 Nowakowskiellaceae*)
+!! Parent of (ncbi:228743+1 Scopelocheirus)'s children's images, (=worms:428533+1 Bathycallisoma), does not descend from (=worms:101395+8 Lysianassidae*)
+!! Parent of (ncbi:45156+7 Cyanidioschyzon)'s children's images, (=silva:AB695473/#6+1 A1WVB), does not descend from (=silva:AB090829/#4+4 Cyanidiales*)
+! Trouble with inserting (ncbi:54404+1 Pulvinaria) into (=silva:U40258/#5+6 Sarcinochrysidales*) is (=silva:EU050970/#6+1 SS1-E01-69)
+! Trouble with inserting (ncbi:86280+11 Caryospora) into (=silva:L24382/#7+23 Eimeriorina*) is (=silva:AF238264/#8+1 Symbiont group)
+| Started with: 9 roots, 390804 taxa + 1 source roots, 1343566 source taxa
+|   incomplete conflict: 352
+|   merged: 1570
+|   move to parent of former container, instead of to container: 113
+|   new/graft: 97129
+|   new/refinement: 610
+|   new/tip: 1133792
+|   not-placed/already-unplaced: 95
+|   not-placed/does-not-descend: 4569
+|   not-placed/same-taxon: 2108
+|   not-placed/would-lose-information: 1
+|   not-refinement/hidden: 235
+|   not-refinement/nonsurjective: 1380
+|   promoted/from-root: 4
+|   promoted/internal: 1048
+|   reject/inconsistent: 580
+|   reject/otu: 299
+|   reported conflict: 339
+|   sibling-sink mismatch: 444
+| Ended with: 5 roots, 1624485 taxa
+| Added 250345 synonyms
+* (=ncbi:42328 Ephedra gerardiana) hidden false -> false
+--- Mapping worms into union ---
+| Names in common: 60238
+| blocked-because-not-same/division: 1
+| blocked-because-not-same/incompatible: 2
+| blocked-because-unresolved/blocked: 1
+| lumped: 664
+| not-same/division: 484
+| not-same/incompatible: 74
+| not-same/prunedp: 11
+| not-same/weak-division: 290
+| same/ancestor+parent: 1
+| same/by-division-name: 25
+| same/parent+ancestor: 1
+| same/parent+parent: 2
+| synonym-match: 2753
+| unresolved/ambiguous: 10
+| unresolved/blocked: 99
+| unresolved/contentious: 45
+| Of 287035 nodes in worms: 57215 with name in common, of which 56421 matched with existing, 794 blocked
+! (worms:565237+1 Eubacterium*) maps by name to (=silva:M23927/#6+153 Eubacterium*) which is disjoint from mrca (=silva:X76649/#6+6 Sarcina); they meet at (=silva:D14137/#4+456 Clostridiales*)
+! (worms:570033+1 Vampirovibrio*) maps by name to (=ncbi:213484 Vampirovibrio*?) which is disjoint from mrca (=silva:AF445677/#3+1 SM1D11); they meet at (844192=silva:A16379/#1+50143 Bacteria*)
+! (worms:570029+2 Bacteriovorax*) maps by name to (=silva:AB600410/#6+487 Bacteriovorax*) which is disjoint from mrca (=ncbi:1652133+5 Halobacteriovorax); they meet at (=silva:AB013266/#4+8 Bdellovibrionales*)
+! (worms:565583+1 Kopriimonadaceae*) maps by name to (=ncbi:343330+3 Kopriimonadaceae*) which is disjoint from mrca (=silva:AF530148/#6+13 Kiloniella*?); they meet at (=silva:D11342/#3+3158 Alphaproteobacteria*)
+! (worms:568279+1 Lutibacterium*) maps by name to (=ncbi:179836 Lutibacterium*?) which is disjoint from mrca (=silva:D12699/#6+532 Erythrobacter*); they meet at (=silva:D12699/#4+58 Sphingomonadales*)
+! (worms:415020+1 Agrobacterium*) maps by name to (=ncbi:357+714 Agrobacterium*) which is disjoint from mrca (=silva:D37923/#6+21618 Pseudomonas*); they meet at (=silva:A16379/#2+646 Proteobacteria*)
+! (worms:564349+3 Herpetosiphon*) maps by name to (=silva:X86447/#6+7 Herpetosiphon*) which is disjoint from mrca (=silva:AB301494/#6+25 Lewinella*); they meet at (844192=silva:A16379/#1+50143 Bacteria*)
+! (worms:571931+1 Paraoerskovia*) maps by name to (=ncbi:665568 Paraoerskovia*?) which is disjoint from mrca (=silva:X79450/#6+83 Sanguibacter*); they meet at (=silva:D17751/#4+187 Micrococcales*)
+! (worms:146582+13 Pleurocapsa*) maps by name to (=silva:X78681/#6+65 Pleurocapsa*) which is disjoint from mrca (=silva:AY380791/#6+9 Chroogloeocystis*); they meet at (=silva:D88288/#3+1029 Cyanobacteria*)
+! (worms:370179+1 Richelia*) maps by name to (=ncbi:98443+12 Richelia*) which is disjoint from mrca (=silva:X99213/#6+40 Calothrix); they meet at (=silva:X59559/#4+16 SubsectionIV)
+! (worms:562573+1 Coccinistipes*) maps by name to (=ncbi:414360 Coccinistipes*?) which is disjoint from mrca (=silva:AB125062/#6+13 Owenweeksia*); they meet at (=silva:D12656/#4+111 Flavobacteriales*)
+! (worms:456367+14 Archiminolia*) maps by name to (=ncbi:1173208+2 Archiminolia*) which is disjoint from mrca (=ncbi:529769+3 Microgaza*); they meet at (=ncbi:216285+7 Trochoidea*)
+! (worms:23116+5 Seguenziidae*) maps by name to (=ncbi:216109+4 Seguenziidae*) which is disjoint from mrca (=ncbi:6466+69 Trochidae*); they meet at (=ncbi:216275+25 Vetigastropoda*)
+! (worms:432462+10 Funa*) maps by name to (=ncbi:473494+4 Funa*) which is disjoint from mrca (=ncbi:439586+4 Drillia*); they meet at (=ncbi:37797+9 Conoidea*)
+! (worms:238370+5 Cyrenidae*) maps by name to (=ncbi:1176409+1 Cyrenidae*) which is disjoint from mrca (=ncbi:45947+7 Corbiculidae); they meet at (=ncbi:6580+23 Veneroida*)
+! (worms:269763+2 Macquaria*) maps by name to (=ncbi:45782+2 Macquaria*) which is disjoint from mrca (=ncbi:1545907+2 Percalates); they meet at (=ncbi:1489940+5 Centrarchiformes)
+! (worms:150646+5 Campanulina*) maps by name to (=ncbi:573995+1 Campanulina*) which is disjoint from mrca (=ncbi:314530+2 Opercularella*); they meet at (=ncbi:500008+24 Leptothecata*)
+! (worms:131736+12 Ascaltis*) maps by name to (=ncbi:269042+4 Ascaltis*) which is disjoint from mrca (=ncbi:45128+41 Clathrina*); they meet at (=ncbi:45126+10 Clathrinida*)
+! (worms:437991+1 Zopfia*) maps by name to (=if:5875+6 Zopfia*) which is disjoint from mrca (=if:173+224 Amphisphaeria*); they meet at (=h2007:52+27 Leotiomyceta)
+! (worms:100113+1 Lophiotrema*) maps by name to (=if:2934+89 Lophiotrema*) which is disjoint from mrca (=if:2933+463 Lophiostoma*); they meet at (=h2007:211+938 Pleosporales*)
+! (worms:437976+1 Otthiella*) maps by name to (=if:3656+91 Otthia*) which is disjoint from mrca (=if:3016+184 Massarina*); they meet at (=h2007:154+915 Dothideomycetes*)
+! (worms:437956+1 Epicymatia*) maps by name to (=if:5261+152 Stigmidium*) which is disjoint from mrca (=if:3079+98 Melanopsamma*); they meet at (=h2007:52+27 Leotiomyceta)
+! (worms:147511+1 Sphaceloma*) maps by name to (=if:9975+140 Sphaceloma*) which is disjoint from mrca (=if:8353+6 Gloeosporidina*); they meet at (=h2007:52+27 Leotiomyceta)
+! (worms:178009+1 Metasphaeria*) maps by name to (=if:4819+466 Saccothecium*) which is disjoint from mrca (=if:2800+1192 Leptosphaeria*); they meet at (=h2007:154+915 Dothideomycetes*)
+! (worms:437995+1 Celidium proximellum*) maps by name to (=if:178125 Melaspilea proximella*) which is disjoint from mrca (=if:509+2 Banhegyia*); they meet at (=h2007:80+3 Dothideomyceta)
+! (worms:100227+1 Gliocladium*) maps by name to (=if:8342+58 Gliocladium*) which is disjoint from mrca (=if:7701+172 Clonostachys); they meet at (=h2007:188+876 Hypocreales*)
+! (worms:147616+1 Melanopsamma*?) maps by name to (=if:3079+98 Melanopsamma*) which is disjoint from mrca (=if:3016+184 Massarina*); they meet at (=h2007:52+27 Leotiomyceta)
+! (worms:100251+1 Verticillium*) maps by name to (=if:10400+276 Verticillium*) which is disjoint from mrca (=if:9479+25 Pochonia); they meet at (=h2007:140+1050 Sordariomycetes*)
+! (worms:437979+1 Plagiostoma*) maps by name to (=if:4157+179 Plagiostoma*) which is disjoint from mrca (=if:9384+2938 Phyllosticta*); they meet at (=h2007:52+27 Leotiomyceta)
+! (worms:100216+1 Chrysosporium*) maps by name to (=if:7645+143 Chrysosporium*) which is disjoint from mrca (=if:4436+87 Pseudogymnoascus); they meet at (=h2007:52+27 Leotiomyceta)
+! (worms:100173+2 Gymnoascus*) maps by name to (=if:2168+49 Gymnoascus*) which is disjoint from mrca (=if:4436+87 Pseudogymnoascus); they meet at (=h2007:52+27 Leotiomyceta)
+! (worms:438948+1 Spizellomycetaceae*) maps by name to (=if:81997+13 Spizellomycetaceae*) which is disjoint from mrca (=if:81344+1 Rhizophlyctidaceae); they meet at (=h2007:26+31 Chytridiomycetes*)
+! (worms:572034+2 Elakatotrichaceae*) maps by name to (=ncbi:35495+2 Elakatotrichaceae*) which is disjoint from mrca (=ncbi:3166+89 Chlorophyceae*); they meet at (361838=silva:D13324/#3+166 Chloroplastida*)
+! (worms:426116+1 Metzgeriales*) maps by name to (=ncbi:34158+3 Metzgeriales*) which is disjoint from mrca (=ncbi:186795+3 Pallaviciniineae); they meet at (=ncbi:186771+3 Jungermanniopsida)
+! (worms:382480+1 Liliaceae*) maps by name to (=ncbi:4677+19 Liliaceae*) which is disjoint from mrca (=ncbi:703538+24 Asphodeloideae); they meet at (=ncbi:1437197+6 Petrosaviidae)
+! (worms:415271+1 Cynanchum*) maps by name to (=ncbi:126747+97 Cynanchum*) which is disjoint from mrca (=ncbi:126745+8 Funastrum); they meet at (=ncbi:167488+25 Asclepiadeae)
+! (worms:447753+1 Monomorphina*?) maps by name to (=silva:AF190814/#10+10 Monomorphina*) which is disjoint from mrca (=silva:AF061338/#10+52 Phacus*); they meet at (=silva:AF061338/#8+11 Euglenea)
+! (worms:136751+1 Trichosidae*?) maps by name to (=ncbi:498010 Trichosidae*?) which is disjoint from mrca (=silva:AB275106/#4+6 Flabellinia*); they meet at (=silva:D28490/#2+55 Amoebozoa*)
+! (worms:157469+2 Phaeosaccionaceae*?) maps by name to (=ncbi:134678 Phaeosaccionaceae*?) which is disjoint from mrca (=silva:AB365197/#5+2 Phaeothamniales*); they meet at (=silva:E17133/#3+179 Stramenopiles*)
+! (worms:249725+5 Ochromonas*?) maps by name to (=silva:M32704/#7+46 Ochromonas*) which is disjoint from mrca (=silva:U42382/#6+2 Chrysoxys*); they meet at (=silva:M32704/#4+62 Chrysophyceae*)
+! (worms:251744+1 Asteroplanus*?) maps by name to (=ncbi:497701 Asteroplanus*?) which is disjoint from mrca (=silva:Y10568/#7+9 Asterionellopsis*); they meet at (=silva:M87325/#4+111 Bacillariophyta)
+! (worms:149067+2 Rhizosoleniales*?) maps by name to (=ncbi:33844 Rhizosoleniales*) which is disjoint from mrca (=silva:M87329/#6+12 Rhizosolenids); they meet at (=silva:M87325/#4+111 Bacillariophyta)
+! (worms:149107+1 Corethrales*?) maps by name to (=ncbi:420269 Corethrales*) which is disjoint from mrca (=silva:X85400/#6+2 Corethrids); they meet at (=silva:M87325/#4+111 Bacillariophyta)
+! (worms:149052+1 Paraliales*?) maps by name to (=ncbi:216905+1 Paraliales*) which is disjoint from mrca (=silva:AJ535174/#6+2 Paralids); they meet at (=silva:M87325/#4+111 Bacillariophyta)
+! (worms:162752+1 Acanthocerataceae*?) maps by name to (=ncbi:1003312 Acanthocerataceae*) which is disjoint from mrca (=silva:X85389/#7+144 Chaetoceros*); they meet at (=silva:M87325/#4+111 Bacillariophyta)
+! (worms:415895+1 Pseudopfiesteria*?) maps by name to (=ncbi:410737 Pseudopfiesteria*?) which is disjoint from mrca (=silva:AF080098/#8+15 Pfiesteria*); they meet at (=silva:M64245/#6+5 Peridiniphycidae)
+! (worms:836483+2 Psammosa*?) maps by name to (=ncbi:1649659 Psammosa*?) which is disjoint from mrca (=silva:AB505506/#5+2 RM1-SGM49); they meet at (304358=silva:D11377/#1+199 Eukaryota*)
+! (worms:414910+1 Trimyemidae*?) maps by name to (=ncbi:35111 Trimyemidae*?) which is disjoint from mrca (=silva:Z29438/#8+9 Plagiopylida*); they meet at (=silva:L26446/#5+5 Intramacronucleata*)
+! (worms:425556+1 Colpidium*?) maps by name to (=ncbi:5926 Colpidium*?) which is disjoint from mrca (=ncbi:63335+11 Dexiostoma); they meet at (=silva:M26358/#7+18 Oligohymenophorea*)
+! (worms:425640+1 Paradiscocephalus*?) maps by name to (=ncbi:1081703 Paradiscocephalus*?) which is disjoint from mrca (=silva:EU684746/#8+3 Discocephalus*); they meet at (=silva:M14590/#6+27 Spirotrichea*)
+| LUB match: 15429 mismatch: 2349 graft: 26480 differ: 3423 bad: 62
+--- Augmenting union with new nodes from worms ---
+341 (worms:570933+7 Erysipelotrichaceae)
+!! Parent of (worms:565237+1 Eubacterium)'s children's images, (=silva:X76649/#6+6 Sarcina), does not descend from (=silva:M23927/#5+30 Eubacteriaceae*)
+!! Parent of (worms:393162+1 Sporosarcina)'s children's images, (=silva:AB490786/#6+102 Paenisporosarcina), does not descend from (=silva:A45315/#5+661 Bacillaceae*)
+! Trouble with inserting (worms:377976+2 Bacili) into (=silva:A45315/#2+885 Firmicutes*) is (=silva:L34616/#3+4 Erysipelotrichia)
+!! Parent of (worms:570033+1 Vampirovibrio)'s children's images, (=silva:AF445677/#3+1 SM1D11), does not descend from (=silva:AB286348/#5+8 Bdellovibrionaceae*)
+!! Parent of (worms:570029+2 Bacteriovorax)'s children's images, (=ncbi:1652133+5 Halobacteriovorax), does not descend from (=silva:AB013266/#5+13 Bacteriovoracaceae*)
+342 (worms:570029+2 Bacteriovorax)
+! Trouble with inserting (worms:393946+7 Oxalobacteriaceae) into (=silva:D14256/#4+168 Burkholderiales*) is (=silva:D14256/#5+199 Oxalobacteraceae)
+!! Parent of (worms:568279+1 Lutibacterium)'s children's images, (=silva:D12699/#6+532 Erythrobacter*), does not descend from (=silva:D13722/#5+249 Sphingomonadaceae*)
+!! Parent of (worms:415020+1 Agrobacterium)'s children's images, (=silva:D37923/#6+21618 Pseudomonas*), does not descend from (=silva:D11343/#5+1060 Rhizobiaceae*)
+! Trouble with inserting (worms:567838+4 Phaeobacter) into (=silva:D14431/#5+771 Rhodobacteraceae*) is (=silva:AB294940/#6+2 Gaetbulicola)
+! Trouble with inserting (worms:393690+1 Oceanibulbus?) into (=silva:D11342/#3+3158 Alphaproteobacteria*) is (=silva:DQ103628/#4+3 E6aD10)
+! Trouble with inserting (worms:394100+1 Phaeobacter?) into (=silva:D11342/#3+3158 Alphaproteobacteria*) is (=silva:DQ103628/#4+3 E6aD10)
+! Trouble with inserting (worms:393317+2 Stappia?) into (=silva:D11342/#3+3158 Alphaproteobacteria*) is (=silva:DQ103628/#4+3 E6aD10)
+! Trouble with inserting (worms:394041+3 Hahella?) into (=silva:A16379/#3+3481 Gammaproteobacteria*) is (=silva:AB015547/#4 BD3-1)
+!! Parent of (worms:564349+3 Herpetosiphon)'s children's images, (=silva:AB301494/#6+25 Lewinella*), does not descend from (=silva:X86447/#5+1 Herpetosiphonaceae*)
+343 (worms:564349+3 Herpetosiphon)
+! Trouble with inserting (worms:559522+2 Acidimicrobineae) into (=silva:U75647/#4+24 Acidimicrobiales*) is (=silva:AB694520/#5+7 Sva0996 marine group)
+! Trouble with inserting (worms:559799+1 Coriobacterineae) into (=silva:L34620/#4+6 Coriobacteriales*) is (=ncbi:1643824+2 Atopobiaceae)
+!! Parent of (worms:571931+1 Paraoerskovia)'s children's images, (=silva:X79450/#6+83 Sanguibacter*), does not descend from (=silva:X79454/#5+49 Cellulomonadaceae*)
+! Trouble with inserting (worms:743074+1 Nitrospira) into (=silva:M79383/#5+63 Nitrospiraceae*) is (=silva:X82558/#6+21 Nitrospira)
+! Trouble with inserting (worms:571374+1 Nitrospira) into (=silva:M79383/#2+37 Nitrospirae*) is (=silva:M79383/#3+6 Nitrospira)
+344 (worms:160571+13 Synechococcoideae)
+!! Parent of (worms:599617+1 Gloeobacteraceae)'s children's images, (=silva:D88288/#5+187 FamilyI), does not descend from (=ncbi:1118 Chroococcales*?)
+!! Parent of (worms:146556+6 Microcystaceae)'s children's images, (=silva:D88288/#5+187 FamilyI), does not descend from (=ncbi:1118 Chroococcales*?)
+345 (worms:146556+6 Microcystaceae)
+!! Parent of (worms:146664+4 Dermocarpellaceae)'s children's images, (=silva:AB039008/#5+2 FamilyI), does not descend from (=ncbi:1118 Chroococcales*?)
+346 (worms:146544+17 Chroococcaceae)
+347 (worms:146665+7 Xenococcaceae)
+348 (worms:493882+12 Cyanobacteriaceae)
+349 (worms:146707+15 Phormidioideae)
+350 (worms:146548+24 Oscillatoriaceae)
+351 (worms:576879+18 Hapalosiphonaceae)
+!! Parent of (worms:562573+1 Coccinistipes)'s children's images, (=silva:AB125062/#6+13 Owenweeksia*), does not descend from (=silva:D12656/#5+651 Flavobacteriaceae*)
+! Trouble with inserting (worms:456502+65 Pyrgiscus) into (=ncbi:160015+24 Pyramidellidae*) is (=ncbi:904404+1 Pyrgisculus)
+!! Parent of (worms:148381+2 Bosmina)'s children's images, (=ncbi:200858+10 Eubosmina), does not descend from (=ncbi:27402+25 Bosmina*)
+!! Parent of (worms:178157+2 Trichosporon)'s children's images, (=ncbi:1539853+51 Yamadazyma/Candida clade), does not descend from (=if:81493+5 Trichosporonaceae*)
+!! Parent of (worms:21243+1 Chlorocystidales)'s children's images, (=ncbi:31306+18 Ulotrichales*), does not descend from (=ncbi:3166+83 Chlorophyceae*)
+!! Parent of (worms:341295+6 Cyclotrichium?)'s children's images, (=silva:AB505512/#8+4 Cryptocaryon*), does not descend from (=ncbi:197898+2 Didiniidae*)
+! Trouble with inserting (worms:368686+1 Ahnfeltiophycidae) into (=silva:L19345/#4+34 Florideophycidae*) is (=silva:Z14139/#5+1 Ahnfeltiophycidae)
+** Preventing transfer of extinct flag from (worms:345553 Umbilicosphaera foliosa*?) to (=ncbi:221443 Umbilicosphaera sibogae var. foliosa*)
+** Preventing transfer of extinct flag from (worms:540196 Lima colorata*?) to (=ncbi:1048594 Lima zealandica*)
+** Preventing transfer of extinct flag from (worms:722307 Caudriella*?) to (=ncbi:76346+1 Margaritella*?)
+** Preventing transfer of extinct flag from (worms:832152 Xymene pulcherrimus*?) to (=ncbi:1183099 Zeatrophon pulcherrimus*)
+** Preventing transfer of extinct flag from (worms:765852+1 Tylocidaris*?) to (=ncbi:1105224+1 Psychocidaris*)
+** Preventing transfer of extinct flag from (worms:547454 Conticribra guillardii*?) to (=ncbi:159748 Thalassiosira guillardii*)
+| Started with: 5 roots, 1624485 taxa + 1 source roots, 287035 source taxa
+|   extinct-transfer-prevented: 6
+|   incomplete conflict: 280
+|   merged: 759
+|   move to parent of former container, instead of to container: 2195
+|   new/graft: 24598
+|   new/refinement: 643
+|   new/tip: 202552
+|   not-placed/already-unplaced: 46
+|   not-placed/does-not-descend: 981
+|   not-placed/same-taxon: 999
+|   not-placed/would-lose-information: 2
+|   not-refinement/hidden: 188
+|   not-refinement/nonsurjective: 604
+|   promoted/internal: 585
+|   reject/inconsistent: 442
+|   reject/otu: 13
+|   reported conflict: 229
+|   sibling-sink mismatch: 350
+| Ended with: 5 roots, 1853479 taxa
+| Added 196004 synonyms
+* (=ncbi:42328 Ephedra gerardiana) hidden false -> false
+--- Mapping if into union ---
+| Names in common: 3273
+| lumped: 94
+| not-same/division: 5
+| not-same/incompatible: 8
+| not-same/prunedp: 13
+| not-same/weak-division: 9
+| same/by-division-name: 3
+| synonym-match: 290
+| unresolved/blocked: 270
+| Of 8687 nodes in if: 2757 with name in common, of which 2738 matched with existing, 19 blocked
+! (if:20199+2 Elina*?) maps by name to (=ncbi:366051+1 Elina*) which is disjoint from mrca (=worms:119093+2 Elina?); they meet at (304358=silva:D11377/#1+493 Eukaryota*)
+! (if:81099+1 Palavasciaceae*?) maps by name to (=worms:147688 Palavasciaceae*) which is disjoint from mrca (=silva:U25637/#6+16 Ichthyophonidae); they meet at (=silva:D11377/#2+7 Opisthokonta)
+! (if:20217+2 Enteropogon*?) maps by name to (=ncbi:110882+10 Enteropogon*) which is disjoint from mrca (=silva:AY336705/#7+1 Enteropogon); they meet at (304358=silva:D11377/#1+493 Eukaryota*)
+! (if:90420+19 Eccrinales*?) maps by name to (=ncbi:251709+3 Eccrinales*?) which is disjoint from mrca (=silva:U25637/#6+16 Ichthyophonidae); they meet at (=silva:D11377/#2+7 Opisthokonta)
+| LUB match: 256 mismatch: 129 graft: 268 differ: 71 bad: 4
+--- Augmenting union with new nodes from if ---
+! Trouble with inserting (if:30416+2 Isocystis?) into (-+17 *) is (805080=silva:0+254 life)
+570 (if:22113+2 Cystobacter?)
+! Trouble with inserting (if:22375+2 Torulopsidosira?) into (-+41 *) is (805080=silva:0+254 life)
+! Trouble with inserting (if:22140+1 Elytrosporangium?) into (-+48 *) is (805080=silva:0+254 life)
+! Trouble with inserting (if:803502+1 Trigonopsaceae) into (=h2007:47+1561 Saccharomycetales*) is (=ncbi:1540145+3 Trigonopsidaceae)
+| Placing previously unplaced (=ncbi:399469 Candida scorzettiae*?) in (=ncbi:1535326+116 Candida*)
+! Trouble with inserting (if:81980+4 Eremotheciaceae) into (=h2007:47+1470 Saccharomycetales*) is (=ncbi:1540145+4 Trigonopsidaceae)
+! Trouble with inserting (if:548312+5 Cladothrix?) into (-+56 *) is (805080=silva:0+254 life)
+! Trouble with inserting (if:27859+22 Conferva?) into (-+62 *) is (805080=silva:0+254 life)
+! Trouble with inserting (if:22057+53 Byssus?) into (-+69 *) is (805080=silva:0+254 life)
+! Trouble with inserting (if:27353+7 Proactinomyces?) into (-+70 *) is (805080=silva:0+254 life)
+571 (if:517558+15 Ovatisporangium?)
+!! Parent of (if:82105+1 Haptoglossaceae?)'s children's images, (=silva:E17133/#4+155 Peronosporomycetes*), does not descend from (=worms:591218 Haptoglossales*?)
+572 (if:27334+6 Salilagenidium?)
+!! Parent of (if:99036+1 Amoebida?)'s children's images, (=silva:AY294146/#5+13 Glaeseria), does not descend from (=silva:L29455/#4+12 Ichthyosporea*)
+!! Parent of (if:80776+1 Fonticulaceae?)'s children's images, (=silva:AB252776/#6+1 Fonticulidae), does not descend from (=ncbi:43693+4 Acrasida*)
+!! Parent of (if:90877+1 Tetramitia?)'s children's images, (=silva:L35076/#4+2 Discicristata), does not descend from (=worms:451648 Percolozoa*?)
+!! Parent of (if:81900+2 Echinosteliaceae?)'s children's images, (=ncbi:300232+1 Echinosteliidae), does not descend from (=worms:582192 Myxogastrea*?)
+!! Parent of (if:90807+2 Echinostelida?)'s children's images, (=ncbi:137622+3 Echinosteliales), does not descend from (=worms:582192+2 Myxogastrea*?)
+| Started with: 5 roots, 1853479 taxa + 148 source roots, 8687 source taxa
+|   incomplete conflict: 6
+|   merged: 14
+|   move to parent of former container, instead of to container: 234
+|   new/graft: 240
+|   new/refinement: 2
+|   new/tip: 5611
+|   not-placed/already-unplaced: 1
+|   not-placed/does-not-descend: 40
+|   not-placed/same-taxon: 27
+|   not-refinement/hidden: 12
+|   not-refinement/nonsurjective: 9
+|   promoted/internal: 138
+|   reject/inconsistent: 6
+|   reject/otu: 1
+|   reported conflict: 3
+|   sibling-sink mismatch: 6
+| Ended with: 85 roots, 1859352 taxa
+| Added 3835 synonyms
+--- Reading tax/gbif/ ---
+! No header row - saw 1
+500000
+1000000
+1500000
+| 1014 names normalized
+| Eliding Thermodesulfobacteria in Thermodesulfobacteria, 1 children
+| Eliding Lentisphaerae in Lentisphaerae, 2 children
+| Eliding Fusobacteria in Fusobacteria, 1 children
+| Eliding Thermomicrobia in Thermomicrobia, 1 children
+| Eliding Chrysiogenetes in Chrysiogenetes, 1 children
+| Eliding Aquificae in Aquificae, 1 children
+| Eliding Deferribacteres in Deferribacteres, 1 children
+| Eliding Gemmatimonadetes in Gemmatimonadetes, 1 children
+| Eliding Fibrobacteres in Fibrobacteres, 1 children
+...
+* (gbif:2653389 Ephedra gerardiana) hidden false -> false
+| 4462 homonyms, of which 114 name cousin taxa, 137 name sibling taxa
+| 1 roots + 176707 internal + 1687110 tips = 1863818 total
+| Smushing 137 node sets
+** Ranks out of order: (gbif:4865225+7 Chonetoidea) genus has child (gbif:3252414+30 Rugosochonetidae) family
+** Ranks out of order: (gbif:2050173+1 Alydus calcaratus) species has child (gbif:3265607+5 Camptopus) genus
+** Ranks out of order: (gbif:1010609+8 Limulus) genus has child (gbif:4649996+1 Paleolimulidae) family
+** Ranks out of order: (gbif:4587706+4 Nuculoidea) genus has child (gbif:4587862+2 Nucularcidae) family
+| Placing previously unplaced (gbif:4381351+1 Ophiotuba?) in (=ncbi:2759+47 Eukaryota)
+| Placing previously unplaced (gbif:4908851+2 Ceratestina?) in (=ncbi:2759+166 Eukaryota)
+| (gbif:70+31 Haptophyta?) is already a child of (=ncbi:2759+294 Eukaryota)
+| (gbif:5+597 Fungi) is already a child of (=ncbi:2759+294 Eukaryota)
+| (gbif:6+568 Chloroplastida) is already a child of (=ncbi:2759+294 Eukaryota)
+flipping Chryso-Hypnum >< Chryso-hypnum
+** no taxon 'Drepano-hypnum' in gbif (True)
+** no taxon 'Drepano-Hypnum' in gbif (True)
+** claim failed: Whether_same('Drepano-Hypnum', 'Drepano-hypnum', True, None)
+** no taxon 'Complanato-hypnum' in gbif (True)
+** no taxon 'Complanato-Hypnum' in gbif (True)
+** claim failed: Whether_same('Complanato-Hypnum', 'Complanato-hypnum', True, None)
+** no taxon 'Leptorrhyncho-hypnum' in gbif (True)
+** no taxon 'Leptorrhyncho-Hypnum' in gbif (True)
+** claim failed: Whether_same('Leptorrhyncho-Hypnum', 'Leptorrhyncho-hypnum', True, None)
+** claim failed: Whether_same('Hypocrea', With_ancestor('Trichoderma', 'Hypocrea rufa'), True, 'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86')
+flipping Cyrto-Hypnum cylindraceum >< Cyrto-hypnum cylindraceum
+flipping Cyrto-Hypnum lepidoziaceum >< Cyrto-hypnum lepidoziaceum
+flipping Cyrto-Hypnum intermedium >< Cyrto-hypnum intermedium
+flipping Cyrto-Hypnum espinosae >< Cyrto-hypnum espinosae
+flipping Cyrto-Hypnum pseudoinvolvens >< Cyrto-hypnum pseudoinvolvens
+flipping Cyrto-Hypnum arzobispoae >< Cyrto-hypnum arzobispoae
+flipping Cyrto-Hypnum sharpii >< Cyrto-hypnum sharpii
+flipping Cyrto-Hypnum frontinoae >< Cyrto-hypnum frontinoae
+flipping Cyrto-Hypnum atlanticum >< Cyrto-hypnum atlanticum
+flipping Cyrto-Hypnum stevensii >< Cyrto-hypnum stevensii
+flipping Cyrto-Hypnum brachythecium >< Cyrto-hypnum brachythecium
+** No unique taxon found with this name: 6101461
+** No unique taxon found with name Gorkadinium in context Dinophyta
+** No unique taxon found with name Calothrix in context Rivulariaceae
+* (gbif:2653389 Ephedra gerardiana) hidden false -> false
+* (=ncbi:42328 Ephedra gerardiana) hidden false -> false
+--- Mapping gbif into union ---
+| Names in common: 738106
+| lumped: 38433
+| not-same/division: 2518
+| not-same/incompatible: 130
+| not-same/weak-division: 1064
+| same/by-division-name: 27
+| synonym-match: 53696
+| unresolved/ambiguous: 117
+| unresolved/blocked: 157
+| unresolved/contentious: 184
+| Of 1863665 nodes in gbif: 741962 with name in common, of which 737793 matched with existing, 4169 blocked
+! (gbif:3228411+1 Acetomicrobium*?) maps by name to (=ncbi:49894 Acetomicrobium*?) which is disjoint from mrca (=silva:U50711/#6+15 Anaerobaculum*); they meet at (844192=silva:A16379/#1+50161 Bacteria*)
+! (gbif:5918899+1 Coccinistipes*?) maps by name to (=ncbi:414360 Coccinistipes*?) which is disjoint from mrca (=silva:AB125062/#6+13 Owenweeksia*); they meet at (=silva:D12656/#4+111 Flavobacteriales*)
+! (gbif:3216018+2 Amphithrix*?) maps by name to (=worms:600965+1 Amphithrix*?) which is disjoint from mrca (=ncbi:890417+3 Tapinothrix?); they meet at (=silva:D88288/#3+1243 Cyanobacteria*)
+! (gbif:3226211+1 Thermohydrogenium*?) maps by name to (=ncbi:937253 Thermohydrogenium*?) which is disjoint from mrca (=silva:L09169/#6+125 Thermoanaerobacterium*?); they meet at (=silva:D14137/#3+93 Clostridia*)
+! (gbif:3227173+1 Agitococcus*?) maps by name to (=ncbi:186829+2 Agitococcus*) which is disjoint from mrca (=silva:D64049/#5+69 Moraxellaceae*); they meet at (844192=silva:A16379/#1+50161 Bacteria*)
+! (gbif:5903384+1 Paraoerskovia*?) maps by name to (=ncbi:665568 Paraoerskovia*?) which is disjoint from mrca (=silva:X79450/#6+83 Sanguibacter*); they meet at (=silva:D17751/#4+187 Micrococcales)
+! (gbif:5912532+1 Kopriimonadaceae*?) maps by name to (=worms:565583 Kopriimonadaceae*) which is disjoint from mrca (=silva:AF530148/#6+13 Kiloniella*?); they meet at (=silva:D11342/#3+3160 Alphaproteobacteria*)
+! (gbif:5911905+1 Lutibacterium*?) maps by name to (=ncbi:179836 Lutibacterium*?) which is disjoint from mrca (=silva:D12699/#6+532 Erythrobacter*); they meet at (=silva:D12699/#4+58 Sphingomonadales*)
+! (gbif:3221058+1 Terasakiella*?) maps by name to (=ncbi:196080 Terasakiella*?) which is disjoint from mrca (=silva:AB006768/#6+258 Thalassospira*); they meet at (=silva:D11342/#3+3160 Alphaproteobacteria*)
+! (gbif:3220763+1 Carbophilus*?) maps by name to (=ncbi:376164 Carbophilus*?) which is disjoint from mrca (=silva:L20802/#6+54 Aminobacter*); they meet at (=silva:D11342/#4+286 Rhizobiales*)
+! (gbif:3220935+1 Seliberia*?) maps by name to (=ncbi:204477 Seliberia*?) which is disjoint from mrca (=silva:D11345/#6+7941 Bradyrhizobium*); they meet at (=silva:D11342/#4+286 Rhizobiales*)
+! (gbif:3220904+1 Aquabacter*?) maps by name to (=ncbi:45402 Aquabacter*?) which is disjoint from mrca (=silva:U62887/#6+79 Xanthobacter*); they meet at (=silva:D11342/#4+286 Rhizobiales*)
+! (gbif:3219913+2 Thermothrix*?) maps by name to (=ncbi:48381 Thermothrix*?) which is disjoint from mrca (=silva:L77876/#6+23 Hydrogenobacter*); they meet at (844192=silva:A16379/#1+50161 Bacteria*)
+! (gbif:3220184+1 Prolinoborus*?) maps by name to (=ncbi:206375 Prolinoborus*?) which is disjoint from mrca (=silva:M34139/#6+4123 Acinetobacter*); they meet at (=silva:A16379/#2+646 Proteobacteria*)
+! (gbif:3220684+1 Vampirovibrio*?) maps by name to (=ncbi:213484 Vampirovibrio*?) which is disjoint from mrca (=silva:AF445677/#3+1 SM1D11); they meet at (844192=silva:A16379/#1+50161 Bacteria*)
+! (gbif:2330260+1 Salix*) maps by name to (=worms:264935 Salix*) which is disjoint from mrca (=ncbi:205337+4 Exostoma*); they meet at (125642=ncbi:7711+10 Chordata*)
+! (gbif:2372014+1 Vieja*) maps by name to (=ncbi:63179+17 Paraneetroplus*) which is disjoint from mrca (=ncbi:8114+28 Cichlasoma*); they meet at (=ncbi:318559+5 Cichlasomatinae)
+! (gbif:2443587+3 Chinemys*) maps by name to (=ncbi:8488 Chinemys*) which is disjoint from mrca (=ncbi:74925+15 Mauremys*); they meet at (=ncbi:328320+4 Geoemydidae*)
+! (gbif:2447741+1 Bogertia*) maps by name to (=ncbi:933635 Bogertia*) which is disjoint from mrca (=ncbi:298115+4 Phyllopezus*); they meet at (=ncbi:8560+44 Gekkota)
+! (gbif:3240857+2 Boulengerina*) maps by name to (=ncbi:8608+1 Boulengerina*) which is disjoint from mrca (=ncbi:8638+30 Naja*); they meet at (=ncbi:8602+24 Elapidae*)
+! (gbif:2470431+1 Paranaja*) maps by name to (=ncbi:111946 Paranaja*) which is disjoint from mrca (=ncbi:8638+30 Naja*); they meet at (=ncbi:8602+24 Elapidae*)
+! (gbif:2506578+1 Nareda*?) maps by name to (=ncbi:120983+96 Amphiporus*) which is disjoint from mrca (=ncbi:1003058+4 Diplomma*); they meet at (=ncbi:6227+45 Monostilifera*)
+! (gbif:4872368+2 Procassidulus*) maps by name to (=worms:512652+17 Procassidulus*?) which is disjoint from mrca (=ncbi:39158+18 Cassidulus*); they meet at (=ncbi:7638+36 Euechinoidea)
+! (gbif:4875410+1 Glyptocidaridae*) maps by name to (=worms:510741 Glyptocidaridae*?) which is disjoint from mrca (=ncbi:41316+11 Phymosomatidae*?); they meet at (=ncbi:7638+36 Euechinoidea)
+! (gbif:4859553+1 Oahuhawaiiana*) maps by name to (=worms:479564 Oahuhawaiiana*?) which is disjoint from mrca (=ncbi:1070817+4 Pentacoelum*); they meet at (=ncbi:46764+3 Bdellouridae*)
+! (gbif:2505741+1 Paralecithobotrys*) maps by name to (=worms:765722+1 Paralecithobotrys*) which is disjoint from mrca (=ncbi:1561373+1 Litosaccus); they meet at (=ncbi:116937+13 Haploporidae*)
+! (gbif:2501186+1 Euchlora*) maps by name to (=worms:264984 Euchlora*) which is disjoint from mrca (=ncbi:140468+4 Haeckelia*); they meet at (=ncbi:50341+23 Cydippida*)
+! (gbif:1620152+6 Asmeringa*) maps by name to (=worms:494211 Asmeringa*) which is disjoint from mrca (=worms:494209+1 Tronamyia*); they meet at (=ncbi:48991+20 Ephydridae*)
+! (gbif:1152389+10 Megopis*) maps by name to (=ncbi:398076+2 Megopis*) which is disjoint from mrca (=ncbi:1554466+1 Aegosoma*); they meet at (=ncbi:41154+11 Prioninae)
+! (gbif:1037106+3 Micratopus*) maps by name to (=ncbi:931404+1 Micratopus*) which is disjoint from mrca (=ncbi:879041+1 Blemus); they meet at (=ncbi:686349+7 Trechinae)
+! (gbif:6949+2 Galacticidae*) maps by name to (=ncbi:1368819+1 Galacticidae*) which is disjoint from mrca (=ncbi:51653+27 Plutellidae*); they meet at (=ncbi:37567+11 Ditrysia)
+! (gbif:1745346+8 Eucoenogenes*) maps by name to (=ncbi:581478+1 Eucoenogenes*) which is disjoint from mrca (=ncbi:581411+2 Fibuloides); they meet at (=ncbi:81687+40 Olethreutinae)
+! (gbif:2122339+7 Ptenothrix*) maps by name to (=ncbi:187690+2 Ptenothrix*) which is disjoint from mrca (=ncbi:135964+5 Dicyrtoma*); they meet at (=ncbi:79710+11 Dicyrtomidae*)
+! (gbif:4304405+1 Eryonidae*) maps by name to (=worms:196151 Eryonidae*) which is disjoint from mrca (=worms:106673+239 Brachyura); they meet at (=worms:1130+177 Decapoda*)
+! (gbif:2218711+1 Sympleustes*) maps by name to (=worms:101733+8 Stenopleustes*) which is disjoint from mrca (=worms:549320+2 Shoemakeroides*); they meet at (=worms:101404+12 Pleustidae*)
+! (gbif:6459848+1 Microniscidae*) maps by name to (=worms:445794 Bopyroidea incertae sedis*?) which is disjoint from mrca (=worms:248319+11 Styloniscidae*); they meet at (=worms:1131+279 Isopoda*)
+! (gbif:9058+1 Cephalobaenidae*) maps by name to (=ncbi:311329+1 Cephalobaenidae*) which is disjoint from mrca (=worms:730052+2 Raillietiellidae); they meet at (=ncbi:7561+4 Pentastomida)
+! (gbif:5166061+185 Canthocamptus*) maps by name to (=ncbi:1322215+3 Canthocamptus*) which is disjoint from mrca (=worms:115341+2 Microsetella*); they meet at (=ncbi:41212+88 Harpacticoida*)
+! (gbif:4407865+5 Sphaeromicola*) maps by name to (=worms:416201 Sphaeromicola*) which is disjoint from mrca (=worms:768235+1 Hartiella); they meet at (=ncbi:1112823+6 Entocytheridae*)
+! (gbif:4807883+1 Murrayina*) maps by name to (=worms:459815+20 Murrayina*) which is disjoint from mrca (=worms:127627+14 Muellerina*); they meet at (=ncbi:182511+52 Cytheroidea*)
+! (gbif:1030098+1 Pseudocytheretta*) maps by name to (=worms:459646+3 Pseudocytheretta*?) which is disjoint from mrca (=worms:127586+144 Cytheretta*); they meet at (=ncbi:182511+52 Cytheroidea*)
+! (gbif:1030112+1 Hemicytherideis*) maps by name to (=worms:768575+3 Hemicytherideis*) which is disjoint from mrca (=worms:391235+59 Cushmanidea*); they meet at (=ncbi:182511+52 Cytheroidea*)
+! (gbif:3254924+1 Microcheilinellidae*) maps by name to (=worms:715804 Microcheilinellidae*?) which is disjoint from mrca (=worms:715805+9 Pachydomellidae?); they meet at (=ncbi:84319+13 Bairdiocopina)
+! (gbif:8256+6 Pseudospirobolellidae*) maps by name to (=ncbi:421759+3 Pseudospirobolellidae*) which is disjoint from mrca (=worms:414883+1 Saipanettidae*); they meet at (=ncbi:197563+37 Mandibulata)
+! (gbif:3046+2 Collothecidae*) maps by name to (=worms:134914 Collothecidae*?) which is disjoint from mrca (=ncbi:104789+10 Flosculariidae*); they meet at (=ncbi:1709199+2 Gnesiotrocha)
+! (gbif:4305293+3 Mactromyidae*) maps by name to (=worms:833287 Mactromyidae*?) which is disjoint from mrca (=ncbi:6592+111 Veneridae*); they meet at (=ncbi:735337+33 Euheterodonta)
+! (gbif:6527076+2 Cyrenidae*?) maps by name to (=ncbi:1176409+1 Cyrenidae*) which is disjoint from mrca (=ncbi:45947+7 Corbiculidae*); they meet at (=ncbi:6580+26 Veneroida*)
+! (gbif:3460+3 Cardiniidae*) maps by name to (=worms:492210 Cardiniidae*?) which is disjoint from mrca (=ncbi:42655+66 Lucinidae*); they meet at (=ncbi:6599+2 Heteroconchia)
+! (gbif:3247892+27 Modiomorphidae*?) maps by name to (=worms:833294 Modiomorphidae*?) which is disjoint from mrca (=ncbi:102402+6 Poromyidae*); they meet at (=ncbi:6544+28 Bivalvia*)
+! (gbif:3247842+11 Cycloconchidae*?) maps by name to (=worms:833266 Cycloconchidae*?) which is disjoint from mrca (=worms:852411+31 Pterotrigoniidae); they meet at (=ncbi:47520+7 Palaeoheterodonta)
+| LUB match: 79838 mismatch: 10826 graft: 76485 differ: 9321 bad: 219
+--- Augmenting union with new nodes from gbif ---
+!! Parent of (gbif:3228411+1 Acetomicrobium?)'s children's images, (=silva:U50711/#6+15 Anaerobaculum*), does not descend from (=silva:L16484/#5+163 Bacteroidaceae*)
+!! Parent of (gbif:5918899+1 Coccinistipes?)'s children's images, (=silva:AB125062/#6+13 Owenweeksia*), does not descend from (=silva:D12656/#5+651 Flavobacteriaceae*)
+!! Parent of (gbif:3216018+2 Amphithrix?)'s children's images, (=ncbi:890417+3 Tapinothrix?), does not descend from (=worms:493890 Symphyonemataceae*)
+!! Parent of (gbif:7101+1 Beggiatoaceae?)'s children's images, (=silva:L40993/#5+34 Thiotrichaceae*), does not descend from (=silva:D88288/#3+1215 Cyanobacteria*)
+!! Parent of (gbif:2894+2 Fischerellaceae?)'s children's images, (=silva:X68780/#5+56 FamilyI), does not descend from (=ncbi:1189 Stigonematales*?)
+!! Parent of (gbif:6201+1 Mastigocladopsidaceae?)'s children's images, (=silva:D88288/#5+287 FamilyI), does not descend from (=ncbi:1189 Stigonematales*?)
+| Placing previously unplaced (=worms:601777 Leptopogon*?) in (=worms:493891+6 Stigonemataceae*)
+!! Parent of (gbif:3226211+1 Thermohydrogenium?)'s children's images, (=silva:L09169/#6+125 Thermoanaerobacterium*?), does not descend from (=silva:X99980/#5+30 Syntrophomonadaceae*)
+!! Parent of (gbif:3226824+1 Micromonas?)'s children's images, (=silva:D14143/#6+30 Parvimonas?), does not descend from (=silva:L04166/#5+229 Peptostreptococcaceae*)
+!! Parent of (gbif:3226456+1 Thermoterrabacterium?)'s children's images, (=silva:U76363/#6+9 Carboxydothermus*), does not descend from (=silva:L15628/#5+64 Peptococcaceae*)
+!! Parent of (gbif:7794+1 Turicibacteraceae?)'s children's images, (=silva:AB188596/#5+1 Erysipelotrichaceae), does not descend from (=silva:A45315/#4+328 Bacillales*)
+!! Parent of (gbif:1199+1 Lactobacillales?)'s children's images, (=silva:U75647/#4+25 Acidimicrobiales), does not descend from (=silva:A58083/#3+1581 Actinobacteria*)
+!! Parent of (gbif:5903384+1 Paraoerskovia?)'s children's images, (=silva:X79450/#6+83 Sanguibacter*), does not descend from (=silva:X79454/#5+49 Cellulomonadaceae*)
+| (=if:20352+1 Myceliochytrium*?) moved from root to (=silva:D63912/#5+139 Micromonosporaceae*) because (gbif:3838+16 Micromonosporaceae*?)
+| (=if:22215+1 Lepocolla*?) moved from root to (=silva:D37876/#5+122 Nocardiaceae*) because (gbif:8085+5 Nocardiaceae*?)
+!! Parent of (gbif:5911905+1 Lutibacterium?)'s children's images, (=silva:D12699/#6+532 Erythrobacter*), does not descend from (=silva:D13722/#5+249 Sphingomonadaceae*)
+!! Parent of (gbif:3221058+1 Terasakiella?)'s children's images, (=silva:AB006768/#6+258 Thalassospira*), does not descend from (=silva:L20844/#5+65 Methylocystaceae*)
+!! Parent of (gbif:3220763+1 Carbophilus?)'s children's images, (=silva:L20802/#6+54 Aminobacter*), does not descend from (=silva:D11343/#5+1060 Rhizobiaceae*)
+!! Parent of (gbif:3220935+1 Seliberia?)'s children's images, (=silva:D11345/#6+7941 Bradyrhizobium*), does not descend from (=silva:D25311/#5+35 Hyphomicrobiaceae*)
+573 (gbif:3219913+2 Thermothrix?)
+!! Parent of (gbif:3220684+1 Vampirovibrio?)'s children's images, (=silva:AF445677/#3+1 SM1D11), does not descend from (=silva:AB286348/#5+8 Bdellovibrionaceae*)
+| (=if:22176+1 Gremlia*?) moved from root to (=silva:M94275/#5+37 Polyangiaceae*) because (gbif:4876+8 Polyangiaceae*?)
+! Trouble with inserting (gbif:1442+4 Pleurogona) into (=ncbi:7713+15 Ascidiacea*) is (=ncbi:7720+9 Stolidobranchia)
+! Trouble with inserting (gbif:4838468+2 Platysomidae?) into (=ncbi:7898+25 Actinopterygii*) is (=ncbi:1338366+1 Cladistia)
+! Trouble with inserting (gbif:5961575+1 Elassomatiformes) into (=ncbi:7898+25 Actinopterygii*) is (=ncbi:1338366+1 Cladistia)
+! Trouble with inserting (gbif:4837771+2 Trigonopoma) into (=ncbi:7953+358 Cyprinidae*) is (=ncbi:1204387+1 Incisilabeo)
+! Trouble with inserting (gbif:3241034+4 Hemigrammocapoeta) into (=ncbi:7953+358 Cyprinidae*) is (=ncbi:1204387+1 Incisilabeo)
+! Trouble with inserting (gbif:4837590+1 Rasboroides) into (=ncbi:7953+358 Cyprinidae*) is (=ncbi:1204387+1 Incisilabeo)
+! Trouble with inserting (gbif:4837862+3 Hedinichthys) into (=ncbi:278171+22 Nemacheilidae*) is (=ncbi:1652671+1 Tarimichthys)
+! Trouble with inserting (gbif:2339011+1 Oligancistrus) into (=ncbi:31002+10 Loricariidae*) is (=ncbi:503164+33 Ancistrinae)
+! Trouble with inserting (gbif:2373880+1 Katria) into (=ncbi:8113+7 Cichlidae*) is (=ncbi:318545+3 Etroplinae)
+! Trouble with inserting (gbif:2372014+1 Vieja) into (=ncbi:8113+7 Cichlidae*) is (=ncbi:318545+3 Etroplinae)
+! Trouble with inserting (gbif:4849441+1 Micropternus) into (=ncbi:9220+33 Picidae*) is (=ncbi:1638937+1 Ipophilus)
+574 (gbif:7342222+2 Dendroplex)
+575 (gbif:7341331+4 Ochetorhynchus)
+576 (gbif:2486546+4 Hylacola)
+577 (gbif:9344+5 Remizidae)
+578 (gbif:5295+2 Viduidae)
+579 (gbif:7341907+8 Fulvetta)
+580 (gbif:7341742+3 Phyllergates)
+!! Parent of (gbif:2491908+2 Lysurus)'s children's images, (=ncbi:241749+16 Arremon*), does not descend from (=ncbi:62155+20 Emberizinae*)
+581 (gbif:2491908+2 Lysurus)
+582 (gbif:3238752+13 Mosasauridae)
+583 (gbif:2453439+2 Dromophis)
+! Trouble with inserting (gbif:776+2 Tetraphyllidea) into (=ncbi:6157+37 Platyhelminthes*) is (=ncbi:37945+2 Monogenea)
+| (- Neoptera*?) moved from root to (=ncbi:27474+509 Tachinidae*) because (gbif:6918+2302 Tachinidae*?)
+| (=if:1869+5 Epiphloea*?) moved from root to (=ncbi:1173045+2 Glomeridellidae*) because (gbif:8565+3 Glomeridellidae*)
+| Placing previously unplaced (=worms:432479+1 Iwaoa*?) in (=worms:577985 Horaiclavidae*?)
+| (=if:608+3 Bogoriella*?) moved from root to (=if:81910+65 Verrucariaceae*) because (gbif:4841+111 Verrucariaceae*?)
+!! Parent of (gbif:2588187+3 Goidanichiella?)'s children's images, (=if:513879+6 Goidanichiella?), does not descend from (=if:80871+128 Hyaloscyphaceae*)
+!! Parent of (gbif:2583379+1 Harziella?)'s children's images, (=if:514102+3 Lepisticola?), does not descend from (=if:80582+43 Chaetomiaceae*)
+| (=study713:83+14 Buchnera*?) moved from root to (=study713:78+26 Orobanchaceae*) because (gbif:6651+38 Orobanchaceae*)
+| (=if:531810+3 Pyxidaria*?) moved from root to (=study713:39+237 Scrophulariaceae*) because (gbif:2390+524 Scrophulariaceae*)
+! Trouble with inserting (gbif:7219203+1 Psilotopsida) into (361838=silva:D13324/#3+340 Chloroplastida*) is (=ncbi:35493+16 Streptophyta)
+| (=if:22056+6 Busseella*?) moved from root to (=ncbi:35445+14 Trentepohliaceae*) because (gbif:7559+8 Trentepohliaceae*)
+!! Parent of (gbif:1349+1 Chlorocystidales)'s children's images, (=ncbi:31306+19 Ulotrichales*), does not descend from (=ncbi:3166+86 Chlorophyceae*)
+!! Parent of (gbif:7228679+3 Psilotopsida)'s children's images, (=ncbi:1521257+2 Ophioglossidae), does not descend from (=worms:234484 Pteridophyta*)
+| Placing previously unplaced (=worms:600929+3 Tetraplektron*?) in (=ncbi:195996 Pleurochloridaceae*?)
+!! Parent of (gbif:3236236+9 Eucyrtidium?)'s children's images, (=silva:AB179735/#7+9 Eucyrtidium), does not descend from (=ncbi:278981 Theoperidae*?)
+| Placing previously unplaced (=worms:601934+1 Permocalculus*?) in (=ncbi:66801+16 Gymnodiniaceae*)
+| Placing previously unplaced (=worms:602131+3 Systematophora*?) in (=ncbi:33834+70 Gonyaulacaceae*)
+!! Parent of (gbif:3236+1 Fonticulaceae?)'s children's images, (=silva:AB252776/#6+1 Fonticulidae), does not descend from (=ncbi:43693+6 Acrasida*)
+| Placing previously unplaced (=worms:369471+1 Chiracanthia*?) in (=ncbi:2803 Rhodomelaceae*?)
+| Placing previously unplaced (=worms:376557 Phyllymenia papenfussii*?) in (=worms:370044 Phyllymenia*)
+| Started with: 86 roots, 1859353 taxa + 1 source roots, 1863665 source taxa
+|   incomplete conflict: 321
+|   merged: 1021
+|   move to parent of former container, instead of to container: 2326
+|   new/graft: 74745
+|   new/refinement: 154
+|   new/tip: 1048316
+|   not-placed/already-unplaced: 15
+|   not-placed/does-not-descend: 5577
+|   not-placed/same-taxon: 3961
+|   not-placed/would-lose-information: 1
+|   not-refinement/hidden: 463
+|   not-refinement/nonsurjective: 748
+|   promoted/from-root: 9
+|   promoted/internal: 2759
+|   reject/inconsistent: 315
+|   reject/otu: 32
+|   reported conflict: 273
+|   sibling-sink mismatch: 404
+| Ended with: 37 roots, 2983904 taxa
+| Added 54556 synonyms
+--- Reading tax/irmng/ ---
+! No header row - saw 0
+500000
+** (- Rhagium lineatum) is the 75th to have the name 'Rhagium lineatum'
+1000000
+** (- Monochamus scutellatus) is the 75th to have the name 'Monochamus scutellatus'
+** (- Trachyderes succinctus) is the 75th to have the name 'Trachyderes succinctus'
+1500000
+** (- Oncideres cingulatus) is the 75th to have the name 'Oncideres cingulatus'
+** (- Hippopsis lemniscata) is the 75th to have the name 'Hippopsis lemniscata'
+** (- Rhagium inquisitor) is the 75th to have the name 'Rhagium inquisitor'
+** (- Callidium antennatum) is the 75th to have the name 'Callidium antennatum'
+** (- Oncideres cingulata) is the 75th to have the name 'Oncideres cingulata'
+| 445 names normalized
+| 99 unrecognized parent ids, 99 nodes that have them
+| 583153 synonyms
+| Eliding Spirochaetes in Spirochaetes, 1 children
+| Eliding Thermotogae in Thermotogae, 1 children
+| Eliding Satellite Viruses in Satellite Viruses, 2 children
+| Eliding Thermomicrobia in Thermomicrobia, 1 children
+| Eliding Aquificae in Aquificae, 1 children
+| Eliding Deferribacteres in Deferribacteres, 1 children
+| Eliding Fusobacteria in Fusobacteria, 1 children
+| Eliding Chrysiogenetes in Chrysiogenetes, 1 children
+| Eliding Unaccepted in Unaccepted, 1 children
+...
+* (tax2:10212699 Ephedra gerardiana) hidden false -> false
+| 31925 homonyms, of which 1247 name cousin taxa, 17937 name sibling taxa
+| 408 roots + 155238 internal + 1561333 tips = 1716979 total
+| Smushing 18204 node sets
+| Placing previously unplaced (irmng:1321710 Orbicula?) in (=ncbi:2759+98 Eukaryota)
+| Placing previously unplaced (irmng:1180730+2 Ceratestina?) in (=ncbi:2759+110 Eukaryota)
+| Placing previously unplaced (irmng:1410351 Conchopsis?) in (=ncbi:2759+191 Eukaryota)
+| Placing previously unplaced (irmng:1173827 Xystonella?) in (=ncbi:2759+252 Eukaryota)
+| Placing previously unplaced (irmng:1136336 Silicosigmoilina?) in (=ncbi:2759+443 Eukaryota)
+| Placing previously unplaced (irmng:1214909 Rhumbleria?) in (=ncbi:2759+500 Eukaryota)
+| Placing previously unplaced (irmng:1128047 Perichaenella?) in (=ncbi:2759+566 Eukaryota)
+| Placing previously unplaced (irmng:1394188 Terebralina?) in (=ncbi:2759+611 Eukaryota)
+| Placing previously unplaced (irmng:1305260 Millettia?) in (=ncbi:2759+641 Eukaryota)
+| Placing previously unplaced (irmng:1120566 Aulographis?) in (=ncbi:2759+947 Eukaryota)
+| Placing previously unplaced (irmng:1382629 Meneghinia?) in (=ncbi:2759+1017 Eukaryota)
+| Placing previously unplaced (irmng:1124050 Karyamoebina?) in (=ncbi:2759+1217 Eukaryota)
+| Placing previously unplaced (irmng:1157539 Nummulitella?) in (=ncbi:2759+1541 Eukaryota)
+| (irmng:243+2 Haptophyta?) is already a child of (=ncbi:2759+1829 Eukaryota)
+| (irmng:14+750 Fungi) is already a child of (=ncbi:2759+1829 Eukaryota)
+| (irmng:15+4168 Chloroplastida) is already a child of (=ncbi:2759+1829 Eukaryota)
+** No unique taxon found with name Ophiurina in context Ophiurinidae
+** No unique taxon found with name Gorkadinium in context Dinophyceae
+* (irmng:10212699 Ephedra gerardiana) hidden false -> true
+* (=ncbi:42328 Ephedra gerardiana) hidden false -> false
+--- Mapping irmng into union ---
+| Names in common: 1163926
+| blocked-because-not-same/division: 7
+| blocked-because-not-same/incompatible: 4
+| blocked-because-not-same/weak-division: 8
+| blocked-because-same/parent+ancestor: 1
+| blocked-because-same/parent+parent: 13
+| blocked-because-unresolved/ambiguous: 1
+| blocked-because-unresolved/blocked: 1
+| blocked-because-unresolved/contentious: 26
+| lumped: 33138
+| not-same/division: 6026
+| not-same/incompatible: 70
+| not-same/prunedp: 178
+| not-same/weak-division: 3301
+| same/ancestor+parent: 1
+| same/by-division-name: 27
+| same/division: 5
+| same/is-subsumed-by: 4
+| same/overlaps: 1
+| same/parent+ancestor: 4
+| same/parent+parent: 45
+| synonym-match: 49730
+| unresolved/ambiguous: 243
+| unresolved/blocked: 1298
+| unresolved/contentious: 1681
+| Of 1689773 nodes in irmng: 1149514 with name in common, of which 1136926 matched with existing, 12588 blocked
+! (irmng:1063524+1 Anaerorhabdus*?) maps by name to (=ncbi:118966+1 Anaerorhabdus*) which is disjoint from mrca (=silva:L34616/#5+103 Erysipelotrichaceae*); they meet at (844192=silva:A16379/#1+50169 Bacteria*)
+! (irmng:1467089+1 Coccinistipes*?) maps by name to (=ncbi:414360 Coccinistipes*?) which is disjoint from mrca (=silva:AB125062/#6+13 Owenweeksia*); they meet at (=silva:D12656/#4+111 Flavobacteriales*)
+! (irmng:1021531+1 Thermohydrogenium*?) maps by name to (=ncbi:937253 Thermohydrogenium*?) which is disjoint from mrca (=silva:L09169/#6+125 Thermoanaerobacterium*); they meet at (=silva:D14137/#3+93 Clostridia*)
+! (irmng:1100671+1 Thermoterrabacterium*?) maps by name to (=gbif:3226456 Thermoterrabacterium*?) which is disjoint from mrca (=silva:U76363/#6+9 Carboxydothermus*); they meet at (=silva:D14137/#3+93 Clostridia*)
+! (irmng:1038834+1 Acetoanaerobium*?) maps by name to (=gbif:3227040 Acetoanaerobium*?) which is disjoint from mrca (=silva:L04166/#5+238 Peptostreptococcaceae*); they meet at (=silva:A45315/#2+885 Firmicutes*)
+! (irmng:1318997+1 Agitococcus*?) maps by name to (=gbif:3227173 Agitococcus*?) which is disjoint from mrca (=silva:D64049/#5+69 Moraxellaceae*); they meet at (844192=silva:A16379/#1+50169 Bacteria*)
+! (irmng:1108644+1 Vampirovibrio*?) maps by name to (=ncbi:213484 Vampirovibrio*?) which is disjoint from mrca (=silva:AF445677/#3+1 SM1D11); they meet at (844192=silva:A16379/#1+50169 Bacteria*)
+! (irmng:1023385+2 Thermothrix*?) maps by name to (=ncbi:48381 Thermothrix*?) which is disjoint from mrca (=silva:L77876/#6+23 Hydrogenobacter*); they meet at (844192=silva:A16379/#1+50169 Bacteria*)
+! (irmng:1065970+1 Prolinoborus*?) maps by name to (=ncbi:206375 Prolinoborus*?) which is disjoint from mrca (=silva:M34139/#6+4123 Acinetobacter*); they meet at (=silva:A16379/#2+649 Proteobacteria*)
+! (irmng:1321229+1 Spirillum*?) maps by name to (=ncbi:967 Spirillum*) which is disjoint from mrca (=silva:M79426/#6+83 Thiobacillus*); they meet at (=silva:D14254/#3+1433 Betaproteobacteria*)
+! (irmng:1303438+1 Carbophilus*?) maps by name to (=ncbi:376164 Carbophilus*?) which is disjoint from mrca (=silva:L20802/#6+54 Aminobacter*); they meet at (=silva:D11342/#4+286 Rhizobiales*)
+! (irmng:1061853+1 Aquabacter*?) maps by name to (=ncbi:45402 Aquabacter*?) which is disjoint from mrca (=silva:U62887/#6+79 Xanthobacter*); they meet at (=silva:D11342/#4+286 Rhizobiales*)
+! (irmng:1341058+1 Seliberia*?) maps by name to (=ncbi:204477 Seliberia*?) which is disjoint from mrca (=silva:D11345/#6+7941 Bradyrhizobium*); they meet at (=silva:D11342/#4+286 Rhizobiales*)
+! (irmng:1023791+1 Terasakiella*?) maps by name to (=ncbi:196080 Terasakiella*?) which is disjoint from mrca (=silva:AB006768/#6+258 Thalassospira*); they meet at (=silva:D11342/#3+3162 Alphaproteobacteria*)
+! (irmng:1469087+1 Lutibacterium*?) maps by name to (=ncbi:179836 Lutibacterium*?) which is disjoint from mrca (=silva:D12699/#6+532 Erythrobacter*); they meet at (=silva:D12699/#4+58 Sphingomonadales*)
+! (irmng:1452096+1 Limnococcus*?) maps by name to (=ncbi:665904+2 Limnococcus*) which is disjoint from mrca (=silva:AB039000/#6+6 Gleocapsa); they meet at (=silva:D88288/#3+1167 Cyanobacteria*)
+! (irmng:1452088+1 Crocosphaera*?) maps by name to (=ncbi:263510+2 Crocosphaera*) which is disjoint from mrca (=silva:D88288/#5+287 FamilyI); they meet at (=silva:D88288/#3+1167 Cyanobacteria*)
+! (irmng:107027+2 Branhamaceae*?) maps by name to (=silva:D64049/#5+69 Moraxellaceae*) which is disjoint from mrca (=silva:D11343/#5+1060 Rhizobiaceae*); they meet at (=silva:A16379/#2+649 Proteobacteria*)
+! (irmng:104806+3 Nevskiaceae*?) maps by name to (=silva:AB518684/#5+4 Nevskiaceae*) which is disjoint from mrca (=silva:L06164/#5+90 Neisseriaceae*); they meet at (=silva:A16379/#2+649 Proteobacteria*)
+! (irmng:108717+1 Nitrobacteraceae*?) maps by name to (=gbif:4306418 Nitrobacteraceae*?) which is disjoint from mrca (=silva:L35509/#5+336 Nitrosomonadaceae*); they meet at (=silva:A16379/#2+649 Proteobacteria*)
+! (irmng:1469472+1 Paraoerskovia*?) maps by name to (=ncbi:665568 Paraoerskovia*?) which is disjoint from mrca (=silva:X79450/#6+83 Sanguibacter*); they meet at (=silva:D17751/#4+187 Micrococcales)
+! (irmng:1294290+1 Microcyclus*?) maps by name to (=gbif:3220943 Microcyclus*?) which is disjoint from mrca (=silva:M62790/#6+57 Ancylobacter*); they meet at (844192=silva:A16379/#1+50169 Bacteria*)
+! (irmng:1288929+1 Pelczaria*?) maps by name to (=gbif:3223543 Pelczaria*?) which is disjoint from mrca (=silva:X80749/#6+921 Kocuria*); they meet at (=silva:A58083/#3+1583 Actinobacteria*)
+! (irmng:12192+4 Cincta*?) maps by name to (=gbif:5430304 Cincta*) which is disjoint from mrca (=ncbi:7586+91 Echinodermata*); they meet at (=ncbi:33213+7 Bilateria)
+! (irmng:1316970+1 Desorella*?) maps by name to (=gbif:4875461 Desorella*) which is disjoint from mrca (=worms:512843+2 Protenaster*); they meet at (=ncbi:7638+30 Euechinoidea)
+! (irmng:1279769+1 Lonchophorus*) maps by name to (=gbif:3249628 Lonchophorus*) which is disjoint from mrca (=ncbi:1357421+8 Nacospatangus*); they meet at (=ncbi:41317+50 Spatangoida*)
+! (irmng:1243453+1 Procassidulus*?) maps by name to (=worms:512652+17 Procassidulus*?) which is disjoint from mrca (=ncbi:39158+18 Cassidulus*); they meet at (=ncbi:7638+30 Euechinoidea)
+! (irmng:1044431+1 Porocidaris*) maps by name to (=worms:123381+2 Porocidaris*?) which is disjoint from mrca (=ncbi:1105217+19 Histocidaris*); they meet at (=ncbi:7627+18 Cidaroida*)
+! (irmng:115324+4 Calclamnidae*) maps by name to (=gbif:3249768 Calclamnidae*) which is disjoint from mrca (=ncbi:93912+5 Dallinidae*); they meet at (=ncbi:33213+7 Bilateria)
+! (irmng:1293725+1 Monochoerus*) maps by name to (=worms:380107 Monochoerus*?) which is disjoint from mrca (=worms:142125+4 Adenopea*); they meet at (=ncbi:33213+7 Bilateria)
+! (irmng:1050743+1 Pseudocytheretta*) maps by name to (=worms:459646+3 Pseudocytheretta*?) which is disjoint from mrca (=worms:127586+145 Cytheretta*); they meet at (=ncbi:182511+51 Cytheroidea)
+! (irmng:1023457+1 Sphaeromicola*) maps by name to (=worms:416201 Sphaeromicola*) which is disjoint from mrca (=worms:768235+5 Hartiella); they meet at (=ncbi:1112823+28 Entocytheridae*)
+! (irmng:1404973+1 Murrayina*?) maps by name to (=worms:459815+20 Murrayina*) which is disjoint from mrca (=worms:127627+15 Muellerina*); they meet at (=ncbi:182511+51 Cytheroidea)
+! (irmng:117286+1 Berounellidae*?) maps by name to (=worms:715795 Berounellidae*?) which is disjoint from mrca (=ncbi:182506+93 Bythocytheridae*); they meet at (=ncbi:116576+2 Cytherocopina)
+! (irmng:117628+2 Microcheilinellidae*?) maps by name to (=worms:715804 Microcheilinellidae*?) which is disjoint from mrca (=worms:715805+9 Pachydomellidae*?); they meet at (=ncbi:84319+13 Bairdiocopina)
+! (irmng:1049345+1 Mastigobolbina*?) maps by name to (=worms:768626+21 Mastigobolbina*?) which is disjoint from mrca (=worms:768605+21 Kozlowskiella*?); they meet at (=worms:459454+48 Palaeocopida*)
+! (irmng:103008+1 Eurychilinidae*?) maps by name to (=worms:715535+3 Eurychilinidae*?) which is disjoint from mrca (=worms:715770+14 Primitiidae*?); they meet at (=ncbi:6670+1904 Ostracoda*)
+! (irmng:106444+1 Parartemiidae*) maps by name to (=gbif:3678 Parartemiidae*?) which is disjoint from mrca (=worms:390954+58 Parabathynellidae*); they meet at (=ncbi:6657+15 Crustacea)
+! (irmng:1041853+1 Paravespula*) maps by name to (=gbif:1331503 Paravespula*?) which is disjoint from mrca (=ncbi:7451+37 Vespula*); they meet at (=ncbi:7438+39 Vespidae*)
+! (irmng:1379477+1 Brachysomus*) maps by name to (=gbif:1214760 Brachysomus*?) which is disjoint from mrca (=ncbi:159792+19 Brachycerus*); they meet at (=ncbi:71529+19 Curculionoidea)
+! (irmng:1241472+2 Pseudodorcatoma*) maps by name to (=gbif:4717613 Pseudodorcatoma*) which is disjoint from mrca (=gbif:1095636+1 Cryptoramorphus); they meet at (=ncbi:75547+11 Bostrichoidea)
+! (irmng:1296698+2 Micratopus*) maps by name to (=ncbi:931404+1 Micratopus*) which is disjoint from mrca (=ncbi:879041+3 Blemus*); they meet at (=ncbi:686349+7 Trechinae)
+! (irmng:1329270+1 Typitium*) maps by name to (=gbif:4743617 Typitium*) which is disjoint from mrca (=ncbi:433160+7 Cephaloon*); they meet at (=ncbi:71527+55 Tenebrionoidea)
+! (irmng:1404135+1 Sponidium*) maps by name to (=gbif:4765537 Sponidium*) which is disjoint from mrca (=ncbi:433160+7 Cephaloon*); they meet at (=ncbi:71527+55 Tenebrionoidea)
+! (irmng:1130002+56 Psalydolytta*) maps by name to (=gbif:4718672 Psalydolytta*) which is disjoint from mrca (=ncbi:41098+42 Cantharis*); they meet at (=ncbi:41084+10 Polyphaga)
+! (irmng:1298741+11 Sibylla*) maps by name to (=ncbi:444761+13 Sibylla*) which is disjoint from mrca (=gbif:1102566+5 Sybilla); they meet at (=ncbi:33340+19 Neoptera)
+! (irmng:1024271+2 Aphodiocopris*) maps by name to (=gbif:4764912 Aphodiocopris*) which is disjoint from mrca (=gbif:1071552+10 Termitotrox*); they meet at (=ncbi:75546+23 Scarabaeoidea)
+! (irmng:1300420+37 Parorphnus*) maps by name to (=gbif:4769353 Parorphnus*) which is disjoint from mrca (=ncbi:702312+98 Orphnus*); they meet at (=ncbi:75546+23 Scarabaeoidea)
+! (irmng:1340634+1 Pachyorphnus*) maps by name to (=gbif:4573189 Pachyorphnus*) which is disjoint from mrca (=ncbi:702312+98 Orphnus*); they meet at (=ncbi:75546+23 Scarabaeoidea)
+! (irmng:1179853+2 Proatelura*) maps by name to (=gbif:4770427 Proatelura*) which is disjoint from mrca (=ncbi:1519136+1 Proatelurina); they meet at (=ncbi:30264+11 Zygentoma*)
+| LUB match: 111804 mismatch: 12775 graft: 4077 differ: 26521 bad: 285
+--- Augmenting union with new nodes from irmng ---
+!! Parent of (irmng:1467089+1 Coccinistipes?)'s children's images, (=silva:AB125062/#6+13 Owenweeksia*), does not descend from (=silva:D12656/#5+650 Flavobacteriaceae*)
+846 (irmng:1041745+3 Thermobacteroides?)
+!! Parent of (irmng:1021531+1 Thermohydrogenium?)'s children's images, (=silva:L09169/#6+125 Thermoanaerobacterium*), does not descend from (=silva:X99980/#5+33 Syntrophomonadaceae*)
+!! Parent of (irmng:1100671+1 Thermoterrabacterium?)'s children's images, (=silva:U76363/#6+9 Carboxydothermus*), does not descend from (=silva:L15628/#5+65 Peptococcaceae*)
+847 (irmng:1049547+3 Sulfobacillus?)
+!! Parent of (irmng:1108644+1 Vampirovibrio?)'s children's images, (=silva:AF445677/#3+1 SM1D11), does not descend from (=silva:AB286348/#5+8 Bdellovibrionaceae*)
+848 (irmng:1093039+4 Amoebobacter?)
+!! Parent of (irmng:1105017+1 Pfeifferella?)'s children's images, (=silva:U60101/#6+20 Riemerella*), does not descend from (=silva:D37923/#5+99 Pseudomonadaceae*)
+!! Parent of (irmng:1023385+2 Thermothrix?)'s children's images, (=silva:L77876/#6+23 Hydrogenobacter*), does not descend from (=silva:D87999/#5+395 Burkholderiaceae*)
+849 (irmng:1023385+2 Thermothrix?)
+!! Parent of (irmng:1065970+1 Prolinoborus?)'s children's images, (=silva:M34139/#6+4123 Acinetobacter*), does not descend from (=silva:L06164/#5+90 Neisseriaceae*)
+!! Parent of (irmng:1321229+1 Spirillum?)'s children's images, (=silva:M79426/#6+83 Thiobacillus*), does not descend from (=ncbi:119068+1 Spirillaceae*)
+!! Parent of (irmng:1303438+1 Carbophilus?)'s children's images, (=silva:L20802/#6+54 Aminobacter*), does not descend from (=silva:D11343/#5+1060 Rhizobiaceae*)
+!! Parent of (irmng:1061853+1 Aquabacter?)'s children's images, (=silva:U62887/#6+79 Xanthobacter*), does not descend from (=silva:D25311/#5+35 Hyphomicrobiaceae*)
+!! Parent of (irmng:1341058+1 Seliberia?)'s children's images, (=silva:D11345/#6+7941 Bradyrhizobium*), does not descend from (=silva:D25311/#5+35 Hyphomicrobiaceae*)
+!! Parent of (irmng:1023791+1 Terasakiella?)'s children's images, (=silva:AB006768/#6+258 Thalassospira*), does not descend from (=silva:L20844/#5+65 Methylocystaceae*)
+!! Parent of (irmng:1469087+1 Lutibacterium?)'s children's images, (=silva:D12699/#6+532 Erythrobacter*), does not descend from (=silva:D13722/#5+249 Sphingomonadaceae*)
+850 (irmng:1294059+31 Pleurocapsa?)
+851 (irmng:1259772+21 Leibleinia?)
+!! Parent of (irmng:1469472+1 Paraoerskovia?)'s children's images, (=silva:X79450/#6+83 Sanguibacter*), does not descend from (=silva:X79454/#5+49 Cellulomonadaceae*)
+852 (irmng:1324874+5 Micropolyspora?)
+! Trouble with inserting (irmng:11454+5 Goniactinida) into (=ncbi:7586+91 Echinodermata*) is (=ncbi:133550+2 Pelmatozoa)
+853 (irmng:10538+17 Pustulosida)
+! Trouble with inserting (irmng:11299+1 Peripoda) into (=ncbi:7588+48 Asteroidea*) is (=ncbi:41243+2 Valvatacea)
+854 (irmng:1361059+3 Pentaceros)
+! Trouble with inserting (irmng:11655+34 Isorophida?) into (=ncbi:7586+113 Echinodermata*) is (=ncbi:133550+2 Pelmatozoa)
+855 (irmng:11465+8 Hemizonida?)
+! Trouble with inserting (irmng:11723+2 Palaechinoida?) into (=ncbi:7625+19 Echinoidea*) is (=ncbi:7638+30 Euechinoidea)
+! Trouble with inserting (irmng:1286511+3 Ova) into (=ncbi:105647+34 Schizasteridae*) is (=ncbi:105637+1 Paraster)
+856 (irmng:12053+4 Oligopygoida?)
+! Trouble with inserting (irmng:10725+16 Echinocystitoida) into (=ncbi:7625+15 Echinoidea*) is (=ncbi:7638+32 Euechinoidea)
+! Trouble with inserting (irmng:121885+3 Catopygids (temporary name)?) into (=ncbi:7625+11 Echinoidea*) is (=ncbi:7638+31 Euechinoidea)
+! Trouble with inserting (irmng:12865+1 Triadotiaroida) into (=ncbi:7625+11 Echinoidea*) is (=ncbi:7638+31 Euechinoidea)
+! Trouble with inserting (irmng:1300898+1 Semperia) into (=ncbi:36325+78 Cucumariidae*) is (=worms:394032 Cucumariinae)
+! Trouble with inserting (irmng:12266+11 Stenurida?) into (=ncbi:7618+35 Ophiuroidea*) is (=ncbi:133710+2 Ophiuridea)
+! Trouble with inserting (irmng:1272780+3 Euryale) into (=ncbi:105882+36 Gorgonocephalidae*) is (=gbif:4872081 Astrodendron)
+| Placing previously unplaced (=gbif:1600380 Cecidomyia villosa*?) in (=gbif:1596159 Cecidomyia*?)
+| Placing previously unplaced (=gbif:1973877 Itame denticulodes*?) in (=gbif:1973722 Itame*?)
+!! Parent of (irmng:1259351+2 Grypacheus)'s children's images, (=worms:362584+2 Grypachaeus), does not descend from (=worms:106760+13 Majidae*)
+| Placing previously unplaced (=gbif:4639162+7 Spinagnostidae*?) in (=gbif:4639367+19 Agnostidae*?)
+!! Parent of (irmng:1462744+9 Liodes)'s children's images, (=ncbi:1401289+39 Neoliodes), does not descend from (=ncbi:66587+3 Liodidae*)
+| Placing previously unplaced (=gbif:3250495+8 Chonophyllidae*?) in (=worms:380373+381 Rugosa*?)
+| Placing previously unplaced (=gbif:3239001+19 Diplodocidae*?) in (=ncbi:436489+67 Saurischia*)
+| Placing previously unplaced (=gbif:4819769+8 Mosasaurus*?) in (=gbif:3238752 Mosasauridae*?)
+| (- Protaspis*?) moved from root to (=gbif:4842520+13 Pteraspididae*?) because (irmng:101282+11 Pteraspididae*?)
+!! Parent of (irmng:1368880+2 Lysurus)'s children's images, (=ncbi:241749+16 Arremon*), does not descend from (=ncbi:9133+18 Fringillidae*)
+| Placing previously unplaced (=gbif:4870581+1 Tyersella*?) in (=gbif:3251957 Dalmanellidae*?)
+| (- Retaria*?) moved from root to (=gbif:3252537+32 Productidae*?) because (irmng:100044+90 Productidae*?)
+| Placing previously unplaced (=gbif:3252379+1 Chonetellidae*?) in (=gbif:4865225+18 Chonetoidea*)
+| Placing previously unplaced (=gbif:6880357+1 Punctoproductidae*?) in (=gbif:4865225+37 Chonetoidea*)
+!! Parent of (irmng:1072877+1 Quistadrilus)'s children's images, (=gbif:2308420+1 Quistradrilus), does not descend from (=ncbi:41692+138 Naididae*)
+! Trouble with inserting (irmng:1309794+2 Alluaudella) into (=ncbi:122238+136 Syllidae*) is (=ncbi:146074+4 Petitia)
+| Placing previously unplaced (=gbif:3275028 Gloeocystidium pertenue*?) in (=if:17823+144 Hyphoderma*)
+!! Parent of (irmng:1349822+1 Kriegeria?)'s children's images, (=if:20598+4 Zymoxenogloea*?), does not descend from (=h2007:68+23 Microbotryomycetes*)
+| (=ncbi:63346+3 Diphylleia*?) moved from root to (=ncbi:41773+18 Berberidaceae*) because (irmng:115921+26 Berberidaceae*)
+!! Parent of (irmng:11221+1 Chlorocystidales)'s children's images, (=ncbi:31306+19 Ulotrichales*), does not descend from (=ncbi:3166+114 Chlorophyceae*)
+| Placing previously unplaced (=worms:601453+22 Chiastozygus*?) in (=gbif:3235110+9 Chiastozygaceae*?)
+!! Parent of (irmng:1381541+1 Guttulina?)'s children's images, (=if:12189+5 Pocheina?), does not descend from (=gbif:3235063 Guttulinidae*?)
+!! Parent of (irmng:1380132+4 Cyclotrichium?)'s children's images, (=silva:AB505512/#8+4 Cryptocaryon*), does not descend from (=ncbi:197898+8 Didiniidae*)
+!! Parent of (irmng:1341956+1 Apiosoma?)'s children's images, (=gbif:3204423+1 Apisoma?), does not descend from (=worms:163169 Epistylididae*?)
+!! Parent of (irmng:1282512+1 Diplotheca?)'s children's images, (=ncbi:1042545+2 Didymoeca), does not descend from (=silva:AF084233/#6+24 Acanthoecidae*)
+!! Parent of (irmng:12157+1 Aconchulinida?)'s children's images, (=silva:U03275/#4+151 Cercozoa*), does not descend from (=worms:1282 Filosa*?)
+!! Parent of (irmng:1320654+1 Linaresia?)'s children's images, (=worms:112100+37 Valvulineria*?), does not descend from (=ncbi:1659683+20 Gavelinellidae*)
+| Placing previously unplaced (=worms:604230+1 Keega*?) in (=gbif:4897090+1 Parachabakoviaceae*?)
+| (=if:27867+1 Lemania*?) moved from root to (=ncbi:31374+10 Lemaneaceae*) because (irmng:107709+14 Lemaneaceae*)
+** Preventing transfer of extinct flag from (irmng:10702742 Volvula radiola*?) to (=worms:736611 Volvulella radiola*)
+** Preventing transfer of extinct flag from (irmng:11280932 Volvula cylindrella*?) to (=worms:744734 Volvulella cylindrella*)
+** Preventing transfer of extinct flag from (irmng:10683190 Volvula spectabilis*?) to (=worms:744735 Volvulella spectabilis*)
+** Preventing transfer of extinct flag from (irmng:1179011 Paraspiroclypeus*?) to (=silva:AJ318226/#8+20 Nummulites*)
+** Preventing transfer of extinct flag from (irmng:1347031 Cochlea*?) to (=worms:112284+201 Lenticulina*?)
+** Preventing transfer of extinct flag from (irmng:1367821 Paranonion*?) to (=worms:527999+1 Eponidella*?)
+** Preventing transfer of extinct flag from (irmng:1173269 Oinomikadoina*?) to (=worms:490077+10 Caribeanella*?)
+** Preventing transfer of extinct flag from (irmng:1217260 Heteroclypeus*?) to (=ncbi:196919+6 Cycloclypeus*)
+** Preventing transfer of extinct flag from (irmng:1318128 Taramellina*?) to (=silva:AJ132369/#8+105 Sorites*)
+** Preventing transfer of extinct flag from (irmng:1254703 Hofkerinella*?) to (=ncbi:203414+6 Hyalinea*)
+** Preventing transfer of extinct flag from (irmng:1144415 Pseudonubeculina*?) to (=worms:112052+13 Nodobacularia*?)
+** Preventing transfer of extinct flag from (irmng:1372807 Caudriella*?) to (=ncbi:76346+1 Margaritella*?)
+** Preventing transfer of extinct flag from (irmng:1124871 Labyrinthomorpha*?) to (=silva:L27634/#4+35 Labyrinthulomycetes*)
+| Started with: 41 roots, 2983908 taxa + 397 source roots, 1689773 source taxa
+|   extinct-transfer-prevented: 520
+|   incomplete conflict: 263
+|   merged: 310
+|   move to parent of former container, instead of to container: 9582
+|   new/graft: 3443
+|   new/refinement: 36
+|   new/tip: 540490
+|   not-placed/already-unplaced: 1210
+|   not-placed/does-not-descend: 7710
+|   not-placed/same-taxon: 6508
+|   not-placed/would-lose-information: 16
+|   not-refinement/hidden: 78
+|   not-refinement/nonsurjective: 333
+|   promoted/from-root: 4
+|   promoted/internal: 4729
+|   reject/inconsistent: 159
+|   reject/otu: 16
+|   reported conflict: 209
+|   sibling-sink mismatch: 326
+| Ended with: 228 roots, 3528346 taxa
+| Added 515916 synonyms
+-- Putting families in Hibbett 2007 orders --
+| (=if:80492+63 Asterinaceae*) is already a child of (=h2007:208+7 Asterinales)
+| (=if:25163+13 Ascotaiwania*) is already a child of (=h2007:182+5 Savoryellales)
+| (=if:515145+13 Ascothailandia*) is already a child of (=h2007:182+5 Savoryellales)
+** No unique taxon found with this name: Hyaloraphidiaceae
+| (=if:81049+14 Mytilinidiaceae*) is already a child of (=h2007:214+3 Mytilinidiales)
+| (=if:511999+2 Gloniaceae) is already a child of (=h2007:214+3 Mytilinidiales)
+** claim seemed to be made, but not verified: Whether_same('Sarrameanales', 'Loxosporales', True, 'http://figshare.com/articles/Fungal_Classification_2015/1465038')
+flipping Sarrameanales >< Loxosporales
+** no taxon 'Stereopsidaceae' in union (True)
+** claim failed: Has_child('Stereopsidales', 'Stereopsidaceae')
+| Flagged 37108 of 38805 taxa from paleodb
+
+-- Chromista/Protozoa spreadsheet from Katz lab --
+** No unique taxon found with this name: Discorbidea
+** Ambiguous taxon name: Lituolina
+**   null Lituolina (suborder in order Lituolida)
+**   null Lituolina (genus in class Globothalamea)
+** No unique taxon found with this name: Lituolina
+** Ambiguous taxon name: Enigma
+**   null Enigma (genus in phylum Opisthokonta)
+**   null Enigma (genus in Archaeplastida)
+** No unique taxon found with this name: Enigma
+** Ambiguous taxon name: Acantharia
+**   null Acantharia (class in SAR)
+**   null Acantharia (genus in phylum Opisthokonta)
+** No unique taxon found with this name: Acantharia
+| Chromista successes 34 out of 170 (132 already):
+-- more patches --
+** No unique taxon found with name Heterolobosea in context Percolozoa
+| (=ncbi:21571+362 Boraginaceae*) is already a child of (=ncbi:1538097+35 Boraginales*)
+| (=ncbi:1538097+35 Boraginales*) is already a child of (=ncbi:91888+10 lamiids)
+| (=ncbi:91895+2 Vahliaceae*?) is already a child of (=ncbi:91888+10 lamiids)
+| (=silva:U81707/#2+13 Lentisphaerae*) is already a child of (844192=silva:A16379/#1+50230 Bacteria*)
+| Synonym already present: (=silva:AJ564767/#3+8 Telonema*) Teleonema
+| (=ncbi:9461+8 Lorisidae*) is already a child of (=ncbi:376917+2 Lorisiformes)
+| (=if:9365+1965 Phomopsis*) is already a child of (=if:80691+35 Diaporthaceae*)
+| (=if:5702+710 Valsa*) is already a child of (=if:81514+67 Valsaceae*)
+| (=if:17448+51 Cystoderma*) is already a child of (=if:80434+311 Agaricaceae*)
+| Synonym already present: (=ncbi:188311 Berendtiella rugosa) Berendtia rugosa
+| Synonym already present: (=silva:AJ564767/#3+8 Telonema*) Teleonema
+--- Applying edits from feed/ott/edits/bd_edits.tsv ---
+--- Applying edits from feed/ott/edits/Dail_L_changes.tsv ---
+! (move) Note: already in the right place: Oligotrichida
+! (move) Note: already in the right place: Petalotrichidae
+--- Applying edits from feed/ott/edits/flag-test.tsv ---
+--- Applying edits from feed/ott/edits/fungal-species.tsv ---
+! (add) Warning: taxon already present: Acanthotrema frischii
+! (add) Warning: taxon already present: Agaricus tlaxcalensis
+! (add) Warning: taxon already present: Botrytis sinoallii
+! (add) Warning: taxon already present: Brigantiaea sorediata
+! (add) Warning: taxon already present: Cantharellus texensis
+! (add) Warning: taxon already present: Chrysothrix caesia
+! (add) Warning: taxon already present: Cochliobolus sativus
+! (add) Warning: taxon already present: Epichloe liyangensis
+Synonym already known: Epichloë liyangensis
+! (add) Warning: taxon already present: Flavoparmelia caperatula
+! (add) Warning: taxon already present: Marasmiellus celebanticus
+! (add) Warning: taxon already present: Melanelixia glabratula
+! (add) Warning: taxon already present: Muscodor sutura
+! (add) Warning: taxon already present: Ophiostoma crescericum
+! (add) Warning: taxon already present: Ophiostoma euskadiense
+! (add) Warning: taxon already present: Ophiostoma nebulare
+! (add) Warning: taxon already present: Paraconiothyrium babiogorense
+! (add) Warning: taxon already present: Paraphysoderma
+! (add) Warning: taxon already present: Paraphysoderma sedebokerense
+! (add) Warning: taxon already present: Periglandula turbinae
+! (add) Warning: taxon already present: Phyllosticta cavendishii
+! (add) Warning: taxon already present: Phyllosticta hostae
+! (add) Warning: taxon already present: Phyllosticta schimae
+! Parent name Plectosphaerella missing in context Hypocreomycetidae
+! Parent name Plectosphaerella missing in context Hypocreomycetidae
+! (add) Warning: taxon already present: Pluteus stenotrichus
+! (add) Warning: taxon already present: Pluteus sublaevigatus
+! (add) Warning: taxon already present: Podosphaera filipendulae
+! (add) Warning: taxon already present: Psilachnum staphyleae
+! (add) Warning: taxon already present: Ramichloridium mali
+! (add) Warning: taxon already present: Rhodotorula rosulata
+! (add) Warning: taxon already present: Schizotrema zebrinum
+! (add) Warning: taxon already present: Sclerostagonospora cycadis
+! (add) Warning: taxon already present: Spiroplana
+! (add)	 ... with a different parent: Pezizomycotina not Pleosporales
+! (add) Warning: taxon already present: Spiroplana centripeta
+! (add) Warning: taxon already present: Trichoderma brunneoviride
+! (add)	 ... with a different parent: Hypocreaceae not Trichoderma
+! (add) Warning: taxon already present: Volvariella nullicystidiata
+! (add) Warning: taxon already present: Volvariella nivea
+! (add) Warning: taxon already present: Lignosus hainanensis
+! Parent name Hyaloperonospora missing in context Oomycetes
+--- Applying edits from feed/ott/edits/lost-from-gbif.tsv ---
+Synonym already known: Bacteroides coprophilus DSM 18228
+Synonym already known: Selysia prunifera
+Synonym already known: Viola brittoniana
+--- Applying edits from feed/ott/edits/misc_edits.tsv ---
+! (move) Note: already in the right place: Dermatobotrys
+! (move) Note: already in the right place: Triaenophora
+! (move) Note: already in the right place: Rehmannia
+! (move) Note: already in the right place: Stemodiopsis
+! (move) Note: already in the right place: Micranthemum
+! (move) Note: already in the right place: Bryodes
+--- Applying edits from feed/ott/edits/ott_edits.tsv ---
+Non-extincting NCBI
+| Deforesting: keeping life (3528089), 2nd biggest is (=if:550480+5 Leiolpidium?) (6)
+| Removed 227 smaller trees
+** No unique taxon found with name Epiphloea in context Halymeniaceae
+** No unique taxon found with name Rhynchonelloidea in context Rhynchonellidae
+** No unique taxon found with name Epiphloea in context Lichinales
+--- Reading tax/prev_ott/ ---
+! No header row - saw 805080
+** (- uncultured) is the 75th to have the name 'uncultured'
+500000
+1000000
+1500000
+2000000
+2500000
+3000000
+| 1360818 synonyms
+| Eliding Honigbergiellidae in Honigbergiellida, 2 children
+| Eliding Dictyocysta in Dictyocystidae, 36 children
+| Eliding Euduboscquella in Eudubosquellidae, 4 children
+| Eliding Rhizosoleniaceae in Rhizosoleniales, 8 children
+| Eliding Rhabdonemataceae in Rhabdonematales, 1 children
+| Eliding Biecheleria in Biecheleriaceae, 4 children
+| Eliding Tanaoceridae in Tanaoceroidea, 1 children
+| Eliding Eoacmaea in Eoacmaeidae, 12 children
+| Eliding Methylacidiphilum in Methylacidiphilaceae, 4 children
+...
+| Placing previously unplaced (4736958=gbif:4921402 Cupressinostrobus?) in (4736773=gbif:101+131 Pinophyta?)
+| Placing previously unplaced (5279169=irmng:1087935 Libocedroxylon?) in (4736773=gbif:101+175 Pinophyta?)
+| Flags fixed for 255040 nodes
+* (285360=ncbi:42328 Ephedra gerardiana) hidden false -> false
+| 14160 homonyms, of which 250 name cousin taxa, 1034 name sibling taxa
+| 1 roots + 244422 internal + 3062594 tips = 3307017 total
+* (285360=ncbi:42328 Ephedra gerardiana) hidden false -> false
+* (=ncbi:42328 Ephedra gerardiana) hidden false -> false
+--- Mapping ott into union ---
+!! Badly homonymic: Incertae Sedis 20 in source, 20 in union
+!! Badly homonymic: uncultured 237 in source, 237 in union
+!! Badly homonymic: Megastoma 8 in source, 7 in union
+!! Badly homonymic: Family Incertae Sedis 25 in source, 43 in union
+!! Badly homonymic: Order Incertae Sedis 11 in source, 18 in union
+!! Badly homonymic: mycorrhizal samples 11 in source, 11 in union
+!! Badly homonymic: Wilsonia 7 in source, 8 in union
+!! Badly homonymic: Fistularia 9 in source, 7 in union
+!! Badly homonymic: Microstoma 9 in source, 7 in union
+!! Badly homonymic: Pseudomonas putida 8 in source, 7 in union
+!! Badly homonymic: Microcystis aeruginosa 9 in source, 8 in union
+!! Badly homonymic: Auricularia 8 in source, 7 in union
+| Names in common: 3334350
+| blocked-because-not-same/division: 4
+| blocked-because-not-same/weak-division: 4
+| blocked-because-same/any-source-id-2: 1
+| blocked-because-same/parent+ancestor: 1
+| blocked-because-same/parent+parent: 4
+| blocked-because-unresolved/ambiguous: 8
+| blocked-because-unresolved/blocked: 1
+| lumped: 58839
+| not-same/division: 2033
+| not-same/incompatible: 168
+| not-same/weak-division: 1896
+| same/ancestor+parent: 5
+| same/any-source-id-2: 1
+| same/by-division-name: 28
+| same/division: 2
+| same/parent+ancestor: 2
+| same/parent+parent: 13
+| synonym-match: 67991
+| unresolved/ambiguous: 260
+| unresolved/blocked: 562
+| unresolved/contentious: 284
+| Of 3307017 nodes in ott: 3292465 with name in common, of which 3287277 matched with existing, 5188 blocked
+! (4022910=gbif:7557+2 Copromyxaceae*?) maps by name to (=gbif:7557 Copromyxaceae*?) which is disjoint from mrca (=silva:AB505543/#4+23 Euamoebida*); they meet at (304358=silva:D11377/#1+3183 Eukaryota*)
+! (5355150=irmng:12616+1 Phalansteriida*?) maps by name to (=worms:582253+1 Phalansteriida*?) which is disjoint from mrca (=silva:E17133/#3+215 Stramenopiles*); they meet at (304358=silva:D11377/#1+3183 Eukaryota*)
+! (488585=ncbi:73021+3 Cricosphaera*) maps by name to (=ncbi:73021 Cricosphaera*) which is disjoint from mrca (=silva:AB183596/#5+22 Pleurochrysis*); they meet at (=silva:X90992/#4+81 Coccolithales*)
+! (4024038=gbif:4377104+2 Psedolithoderma*) maps by name to (=gbif:4377104 Psedolithoderma*?) which is disjoint from mrca (=ncbi:371968+16 Pseudolithoderma*); they meet at (304358=silva:D11377/#1+3183 Eukaryota*)
+! (4014277=gbif:3202158+5 Gaarderia*) maps by name to (=worms:603235+4 Gaarderiella*?) which is disjoint from mrca (=silva:AM490987/#5+62 Syracosphaera*); they meet at (304358=silva:D11377/#1+3183 Eukaryota*)
+! (5288628=irmng:1170563+1 Hollandosphaera*?) maps by name to (=irmng:1170563 Hollandosphaera*?) which is disjoint from mrca (=worms:493285+1 Heliaster?); they meet at (304358=silva:D11377/#1+3183 Eukaryota*)
+! (5282579=irmng:1071872+1 Deflandrella*?) maps by name to (=irmng:1071872 Deflandrella*?) which is disjoint from mrca (=worms:493555+2 Neosemantis*?); they meet at (=silva:AB179732/#5+1035 Polycystinea*)
+! (4918683=gbif:3235770+1 Micatuba*?) maps by name to (=worms:111987 Micatuba*?) which is disjoint from mrca (=ncbi:212484+46 Bathysiphon*); they meet at (=silva:X86094/#5+504 Foraminifera*)
+! (4804107=gbif:4906951+1 Eponidella*?) maps by name to (=worms:527999+1 Eponidella*?) which is disjoint from mrca (=worms:415738+3 Palmerinella*?); they meet at (=ncbi:1696166+11 Epistomariidae*)
+! (4006197=gbif:4908475+1 Plecanium*?) maps by name to (=worms:479008 Plecanium*?) which is disjoint from mrca (=ncbi:46138+197 Textularia*); they meet at (=ncbi:203421+12 Textulariidae*)
+! (4022624=gbif:4904626+1 Haplostiche*?) maps by name to (=worms:711005 Haplostiche*?) which is disjoint from mrca (=ncbi:986705+5 Liebusella*); they meet at (=silva:X86095/#8+22 Textulariida*)
+! (4022711=gbif:4380932+4 Rhabdaminella*?) maps by name to (=gbif:4380932 Rhabdaminella*?) which is disjoint from mrca (=ncbi:1051375+12 Marsipella*); they meet at (=ncbi:46109+34 Astrorhizida*)
+! (5298491=irmng:1267639+1 Entzia*?) maps by name to (=worms:573688 Entzia*?) which is disjoint from mrca (=ncbi:164127+2 Jadammina*); they meet at (=silva:E17133/#2+4 SAR*)
+! (4006439=gbif:3211544+31 Clavulina*?) maps by name to (=if:17322+191 Clavulina*) which is disjoint from mrca (=silva:X86094/#5+504 Foraminifera*); they meet at (304358=silva:D11377/#1+3183 Eukaryota*)
+! (4021959=gbif:4899797+1 Stensioina*?) maps by name to (=gbif:4899797 Stensioina*?) which is disjoint from mrca (=worms:528014+3 Stensioeina*?); they meet at (=silva:X86094/#7+186 Rotaliida*)
+! (4918352=gbif:4905561+1 Spiroloxostoma*?) maps by name to (=worms:465904 Spiroloxostoma*?) which is disjoint from mrca (=worms:112271+1 Hopkinsinella?); they meet at (=silva:X86094/#7+186 Rotaliida*)
+! (4918381=gbif:4900034+2 Euloxostomum*?) maps by name to (=gbif:4900034 Euloxostomum*?) which is disjoint from mrca (=worms:465902+6 Euloxostoma?); they meet at (=silva:X86094/#7+186 Rotaliida*)
+! (4804220=gbif:4900567+1 Hottingeritidae*?) maps by name to (=worms:738636+1 Hottingeritidae*?) which is disjoint from mrca (=worms:739178+10 Amijiellinae?); they meet at (=worms:414704+5 Loftusiida?)
+! (4806617=gbif:4887829+1 Lituolina*?) maps by name to (=worms:737296+2 Lituolina*?) which is disjoint from mrca (=worms:112350+12 Lituola*?); they meet at (=silva:X86094/#5+504 Foraminifera*)
+! (5282540=irmng:115439+2 Spongomonadidae*?) maps by name to (=irmng:115439 Spongomonadidae*?) which is disjoint from mrca (=silva:L34671/#3+239 Prymnesiophyceae*); they meet at (304358=silva:D11377/#1+3183 Eukaryota*)
+! (2821034=gbif:4900824+1 Krobylopteris*?) maps by name to (=worms:604264 Krobylopteris*?) which is disjoint from mrca (=silva:L43060/#6+42 Desmarestia*); they meet at (=silva:L43056/#4+50 Phaeophyceae*)
+! (4921984=gbif:6789219+1 Protohalopteris*?) maps by name to (=worms:603244 Protohalopteris*?) which is disjoint from mrca (=ncbi:27947+44 Sphacelaria*); they meet at (=silva:AB252657/#5+42 Sphacelariales*)
+! (4922059=gbif:3236428+1 Myriotrichiaceae*?) maps by name to (=worms:143712 Myriotrichiaceae*?) which is disjoint from mrca (=ncbi:66220+153 Chordariaceae*); they meet at (=silva:L43056/#4+50 Phaeophyceae*)
+! (4922051=gbif:3236418+2 Striariaceae*?) maps by name to (=worms:143715 Striariaceae*?) which is disjoint from mrca (=ncbi:66220+153 Chordariaceae*); they meet at (=silva:L43056/#4+50 Phaeophyceae*)
+! (4922000=gbif:7722+1 Ascoseiraceae*?) maps by name to (=worms:368710 Ascoseiraceae*?) which is disjoint from mrca (=ncbi:2891+23 Scytosiphonaceae*); they meet at (=silva:L43056/#4+50 Phaeophyceae*)
+! (5282508=irmng:1371485+1 Sciadium*?) maps by name to (=irmng:1371485 Sciadium*?) which is disjoint from mrca (=silva:AM490835/#6+19 Ophiocytium*); they meet at (=silva:M55286/#4+26 Xanthophyceae*)
+! (4922122=gbif:4267481+1 Heterochloridaceae*?) maps by name to (=gbif:4267481 Heterochloridaceae*?) which is disjoint from mrca (=worms:573912+12 Chloramoebaceae*?); they meet at (=silva:E17133/#3+215 Stramenopiles*)
+! (4922110=gbif:7073632+3 Chloramoebales*?) maps by name to (=worms:573911+1 Chloramoebales*?) which is disjoint from mrca (=ncbi:420624+7 Rhizochloridales*); they meet at (=silva:E17133/#3+215 Stramenopiles*)
+! (5282502=irmng:1343618+1 Actinoglena*?) maps by name to (=irmng:1343618 Actinoglena*?) which is disjoint from mrca (=silva:U73220/#5+53 Synura*); they meet at (=silva:E17133/#3+215 Stramenopiles*)
+! (5358236=irmng:1469178+5 Phasganon*?) maps by name to (=irmng:1469178 Phasganon*?) which is disjoint from mrca (=ncbi:2888+31 Alaria*); they meet at (=silva:E17133/#3+215 Stramenopiles*)
+! (402893=ncbi:265588+4 Rhaponeidales*) maps by name to (=ncbi:265588+2 Rhaponeidales*) which is disjoint from mrca (=worms:149063+2 Rhaponeidales?); they meet at (=silva:M87325/#4+121 Bacillariophyta*)
+! (1081713=gbif:2918+3 Acanthocerataceae*?) maps by name to (=gbif:2918 Acanthocerataceae*?) which is disjoint from mrca (=silva:X85389/#7+642 Chaetoceros*); they meet at (=silva:M87325/#4+121 Bacillariophyta*)
+! (5248695=gbif:1095+2 Aulacoseirales*?) maps by name to (=gbif:1095 Aulacoseirales*?) which is disjoint from mrca (=silva:M87330/#6+22 Melosirids*); they meet at (=silva:M87325/#4+121 Bacillariophyta*)
+! (397609=gbif:507+1 Paraliales*?) maps by name to (=ncbi:216905+1 Paraliales*) which is disjoint from mrca (=silva:AJ535174/#6+3 Paralids*); they meet at (=silva:M87325/#4+121 Bacillariophyta*)
+! (4026124=gbif:489+2 Meloseirales*?) maps by name to (=gbif:489 Meloseirales*?) which is disjoint from mrca (=silva:M87330/#6+22 Melosirids*); they meet at (=silva:M87325/#4+121 Bacillariophyta*)
+! (2811935=gbif:3194154+1 Neocalyptrella*?) maps by name to (=worms:345490 Neocalyptrella*?) which is disjoint from mrca (=silva:AY485481/#7+1 Rhizosolenia*); they meet at (=silva:M87325/#4+121 Bacillariophyta*)
+! (5358234=irmng:1278178+2 Monoceros*?) maps by name to (=worms:163091 Monoceros*?) which is disjoint from mrca (=silva:X85389/#7+642 Chaetoceros*); they meet at (=silva:M87325/#5+2 Bacillariophytina*)
+! (4025660=gbif:2627575+1 Actinophaenia*?) maps by name to (=worms:601087 Actinophaenia*?) which is disjoint from mrca (=silva:AJ535182/#7+213 Actinoptychus*); they meet at (=silva:M87325/#4+121 Bacillariophyta*)
+! (2842823=gbif:4580590+2 Badiaga*?) maps by name to (=worms:603877 Badiaga*?) which is disjoint from mrca (=irmng:1144867+2 Badiaga?); they meet at (304358=silva:D11377/#1+3183 Eukaryota*)
+! (4921308=gbif:4900149+1 Bilorum*?) maps by name to (=worms:603899 Bilorum*?) which is disjoint from mrca (=irmng:1074504+1 Bilorum?); they meet at (304358=silva:D11377/#1+3183 Eukaryota*)
+! (4921442=gbif:4889786+1 Hydrolinum*?) maps by name to (=worms:602485 Hydrolinum*?) which is disjoint from mrca (=silva:DQ310229/#7+29 Berkeleya*); they meet at (=silva:M87325/#4+121 Bacillariophyta*)
+! (2818704=gbif:2628870+1 Microtabella*?) maps by name to (=gbif:2628870 Microtabella*?) which is disjoint from mrca (=ncbi:210450+1 Striatellaceae); they meet at (=silva:M87325/#4+121 Bacillariophyta*)
+! (4025950=gbif:4890574+1 Opephoropsis*?) maps by name to (=worms:602557 Opephoropsis*?) which is disjoint from mrca (=silva:AB436781/#7+18 Opephora*); they meet at (=silva:M87325/#4+121 Bacillariophyta*)
+! (4921240=gbif:6789298+1 Euceratoneis*?) maps by name to (=worms:602428 Euceratoneis*?) which is disjoint from mrca (=worms:180341+2 Hannaea*?); they meet at (=silva:M87325/#4+121 Bacillariophyta*)
+! (5385239=irmng:1363207+1 Spirodiscus*?) maps by name to (=worms:602666 Spirodiscus*?) which is disjoint from mrca (=silva:AM490835/#6+19 Ophiocytium*); they meet at (=silva:E17133/#3+215 Stramenopiles*)
+! (1011570=gbif:2916+2 Phaeosaccionaceae*?) maps by name to (=ncbi:134678 Phaeosaccionaceae*?) which is disjoint from mrca (=silva:AB365197/#5+5 Phaeothamniales*); they meet at (=silva:E17133/#3+215 Stramenopiles*)
+! (5282514=irmng:1285972+1 Didymophyes*?) maps by name to (=worms:562772 Didymophyes*?) which is disjoint from mrca (=ncbi:947089+3 Heliospora*); they meet at (=silva:L31799/#7+223 Eugregarinorida*)
+! (4038357=gbif:683+2 Dinamoebales*?) maps by name to (=gbif:683 Dinamoebales*?) which is disjoint from mrca (=worms:591147+1 Dinamoebida?); they meet at (=silva:L13716/#4+74 Dinoflagellata*)
+! (4806133=gbif:4899026+2 Manuelophryidae*?) maps by name to (=worms:425479 Manuelophryidae*?) which is disjoint from mrca (=worms:425472+3 Pseudogemmidae*?); they meet at (=silva:L26446/#8+26 Suctoria*)
+! (2828986=gbif:4893469+1 Collinophrya*?) maps by name to (=worms:431950 Collinophrya*?) which is disjoint from mrca (=worms:431952+4 Lecanophrya*?); they meet at (=ncbi:163656+19 Exogenida*)
+| LUB match: 228555 mismatch: 14340 graft: 511 differ: 675 bad: 342
+--- Assigning ids to union starting with ott ---
+| 3228090 ids transferred
+| Highest id before: 5561271 after: 5861451
+| new-id: 300180
+-- Checking realization of h2007
+** Barren taxon from h2007 Hyaloraphidiales
+** Barren taxon from h2007 Stereopsidales
+** Barren taxon from h2007 Sarrameanales
+* (285360=ncbi:42328 Ephedra gerardiana) hidden false -> false
+| Root is life edited
+Writing tax/ott/about.json
+Writing tax/ott/deprecated.tsv
+* (285360=ncbi:42328 Ephedra gerardiana) hidden false -> false
+* (285360=ncbi:42328 Ephedra gerardiana*) hidden false -> false
+.  continued-hidden: 1338
+.  emptied-container: 8
+.  id-retired/changed-divisions: 4
+.  id-retired/incompatible-use: 13
+.  id-retired/incompatible-uses: 1
+.  id-retired/possible-splitting: 3
+.  id-retired/probable-lumping: 13
+.  id-used-differently: 13
+.  lumped: 166
+.  merged: 155
+.  newly-hidden: 2075
+.  not-deprecated/exposed: 2317
+.  unimportant/mapped: 3124421
+.  unimportant/not-mapped: 20007
+Writing tax/ott/log.tsv
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: 
+| [getQualifiedId] Taxon has no id, using name: Ctenophora
+| [getQualifiedId] Taxon has no id, using name: Ctenophora
+| [getQualifiedId] Taxon has no id, using name: Ctenophora
+| [getQualifiedId] Taxon has no id, using name: Eukaryota
+| [getQualifiedId] Taxon has no id, using name: Eukaryota
+| [getQualifiedId] Taxon has no id, using name: Eukaryota
+| [getQualifiedId] Taxon has no id, using name: Eukaryota
+| [getQualifiedId] Taxon has no id, using name: Eukaryota
+| [getQualifiedId] Taxon has no id, using name: Eukaryota
+| [getQualifiedId] Taxon has no id, using name: Eukaryota
+| [getQualifiedId] Taxon has no id, using name: Eukaryota
+Writing tax/ott/weaklog.csv
+Writing tax/ott/new-forwards.tsv
+Writing tax/ott/conflicts.tsv
+1054 conflicts
+Writing tax/ott/taxonomy.tsv
+Writing tax/ott/synonyms.tsv
+-- Parent/child homonyms
+Polycystinea	irmng:11331
+Planctomycetaceae	ncbi:126,silva:X81948	NO CHILDREN
+Micrococcaceae	ncbi:1268,silva:DL489156	NO CHILDREN
+Proteocatella	ncbi:181069,silva:GM884481	NO CHILDREN
+Granulicatella	ncbi:117563,silva:GM884480	NO CHILDREN
+Alicyclobacillus	ncbi:29330,silva:DD152687	NO CHILDREN
+Jeotgalicoccus	ncbi:227979,silva:HD079707	NO CHILDREN
+Pseudomonas	ncbi:286,silva:HC510467	NO CHILDREN
+Methylocystis	ncbi:133,silva:DM169686	NO CHILDREN
+Methylosinus	ncbi:427,silva:M95664	NO CHILDREN
+Rhodobacter	ncbi:1060,silva:HH724482	NO CHILDREN
+Dermabacter	ncbi:36739,silva:S71384	NO CHILDREN
+Kocuria	ncbi:57493,silva:JA806255	NO CHILDREN
+Brevibacterium	ncbi:1696,silva:DL489154	NO CHILDREN
+Mycobacterium	ncbi:1763,silva:X93995	NO CHILDREN
+Audouinella	silva:AF079789/#7	NO CHILDREN
+Ceramioideae	worms:493996	NO CHILDREN
+Nodosaria	worms:711600	NO CHILDREN
+Hamacantha	worms:168428,gbif:2244420,irmng:1264959
+Echinochalina	ncbi:1336918,worms:167807
+Phlyctaenopora	worms:168700,irmng:1297878
+Chondrocladia	ncbi:1114242,worms:429352
+Coelosphaera	worms:168816,gbif:2239434
+Forcepia	ncbi:1342706,worms:168851,gbif:2239755
+Discocyclina	worms:848852	NO CHILDREN
+Anoxycalyx	worms:172008	NO COUSINS
+Ctenoplana	worms:559337,irmng:1238412
+Polystemma	worms:177078	NO CHILDREN
+Legnodesmus	worms:599782,irmng:1228476	NO CHILDREN
+Endothyra	worms:816956	NO CHILDREN
+Paradainella	worms:816940	NO CHILDREN
+Paratrochammina	worms:556188
+Rotalia	worms:478702	NO CHILDREN
+Sertularella diaphana	worms:717311	NO CHILDREN
+Actinoloba	worms:742386	NO CHILDREN
+Bunodactis	worms:741026	NO CHILDREN
+Sphenotrochus	worms:509478
+Lituola	worms:736525	NO CHILDREN
+Slabberia strangulata	worms:732890	NO CHILDREN
+Multipeniata	worms:480119
+Linhomoeus	ncbi:331542,worms:760508
+Lanicola	worms:714800	NO CHILDREN
+Axionice	worms:325589	ONE CHILD
+Nemertes	worms:176793	NO CHILDREN
+Kytorhynchus	ncbi:1311938,worms:480098
+Castrella	ncbi:297437,worms:480095	NO COUSINS
+Microdalyellia	ncbi:84088,worms:480101
+Doliolina	worms:719945
+Hemicidaris	worms:738327,irmng:1304346	NO CHILDREN
+Desmoscolex	ncbi:130202,worms:230305
+Lichvinella	worms:771323,irmng:1015423
+Antepaijenborchella	worms:771656	NO CHILDREN
+Maternella	worms:771765
+Renicytherura	worms:772154
+Sohnetta	worms:771717	ONE CHILD
+Kerocythere	worms:771753
+Flabellimutilus	worms:772140	ONE CHILD
+Orooniya	worms:771842	NO CHILDREN
+Pataviella	worms:771848
+Primitivothlipsurell	worms:771719	NO CHILDREN
+Waldeckella	worms:771697	NO CHILDREN
+Camptonectes	worms:394486	NO CHILDREN
+Janita	worms:394258	NO CHILDREN
+Rotularia	worms:325651
+Genicularia	worms:325612	ONE CHILD
+Gynaeconitis	worms:409678	ONE CHILD
+Scalisetosus	worms:326164	NO CHILDREN
+Lagisca	worms:325619	ONE CHILD
+Hermione	worms:326104	NO CHILDREN
+Schistotaenia	worms:836380	ONE CHILD
+Cheliplana	ncbi:84077,worms:479925
+Macrorhynchus	worms:155322	NO CHILDREN
+Castrada	ncbi:297401,worms:480093
+Sphalloplana	worms:480123	NO CHILDREN
+Trigonocidaris	worms:512984	ONE CHILD
+Myriotrochus	worms:242125
+Andora	worms:292775
+Phasoia	worms:771427	NO CHILDREN
+Kidderia	worms:849248,gbif:4590066,irmng:1041744	ONE CHILD
+Neritilia succinea	worms:532058	NO CHILDREN
+Melicerita	worms:472868
+Amphiblestrum	worms:472854	ONE CHILD
+Polycelis	ncbi:39784,worms:480103	NO COUSINS
+Isocrinus	worms:724417,gbif:3250104,irmng:1281509	NO COUSINS
+Acrosalenia	worms:764242	NO CHILDREN
+Amblypygus	worms:758979	NO CHILDREN
+Codiopsis	worms:758974	NO CHILDREN
+Apatocythere	worms:771284,irmng:1171298	ONE CHILD
+Urocythere	worms:771814
+Rectocythere	worms:771599
+Trianguloschmidtella	worms:771779
+Amphicythere	worms:771619	ONE CHILD
+Triassinella	worms:771831	NO CHILDREN
+Paracaudites	worms:771325,gbif:4807964,irmng:1048532
+Karsteneis	worms:771751
+Praeschuleridea	worms:771329,irmng:1053701	ONE CHILD
+Palaeocytheridella	worms:771769	NO CHILDREN
+Thrallella	worms:771718	ONE CHILD
+Nanacythere	worms:771690
+Macrodentina	worms:771761	ONE CHILD
+Gruendelicythere	worms:771290	ONE CHILD
+Falunia	worms:771739	NO CHILDREN
+Bertillonella	worms:771733
+Bolbozoe	worms:771725	ONE CHILD
+Sansabella	worms:771285,irmng:1340621
+Parabolbina	worms:771759
+Laccochilina	worms:771721
+Knoxina	worms:771758
+Schallreuteria	worms:771775	ONE CHILD
+Platybolbina	worms:771588
+Egorovella	worms:771738
+Eochilina	worms:771703
+Judahella	worms:771715
+Varilatella	worms:771706	ONE CHILD
+Klimphores	worms:771318,irmng:1196360
+Bolbineossia	worms:771735
+Jonesina	worms:771701	ONE CHILD
+Bradoria	worms:771833	NO CHILDREN
+Kunmingella	worms:771838
+Ranularia	worms:476415	NO CHILDREN
+Fulgurofusus	worms:459379	NO CHILDREN
+Puellina	worms:182929,gbif:1008211,irmng:1331504
+Adeonellopsis	ncbi:558774,worms:852853,gbif:1009977,irmng:10587260	ONE CHILD
+Kontikia	ncbi:1292333,worms:480114	ONE CHILD
+Micraster	worms:738333,irmng:1053108	ONE CHILD
+Echinosigra	worms:759076
+Entomoprimitia	worms:771723
+Richterina	worms:771698	ONE CHILD
+Euprimites	worms:768825,irmng:1283697
+Uhakiella	worms:768887	NO CHILDREN
+Eobromidella	worms:768824
+Bohemina	worms:768805	NO CHILDREN
+Tricornina	worms:772156
+Conchoprimitiella	worms:771784	NO CHILDREN
+Plesiocorys	worms:689470	NO CHILDREN
+Amphioplus	worms:196186
+Amphiodia	ncbi:869199,worms:242538
+Makrokylindrus	worms:110431
+Leucon	worms:110436
+Cumella	worms:181459
+Pseudocuma	worms:110439
+Eumonopia	worms:771859	NO CHILDREN
+Entomozoe	worms:768820
+Fidelitella	worms:771288,irmng:1330642
+Elenia	worms:730245	NO CHILDREN
+Ophiomastix	worms:244695	NO CHILDREN
+Paratelphusa	worms:450388	NO CHILDREN
+Parathephusa	worms:450401	NO CHILDREN
+Strengeria	worms:450472	NO CHILDREN
+Telphusa	worms:450475	NO CHILDREN
+Aceroides	worms:546981
+Ingolfiella	worms:491572
+Bodotria	worms:182675	ONE CHILD
+Atlantocuma	worms:181402
+Paramysis	worms:446774
+Anisomysis	worms:446380
+Heteromysis	worms:446444
+Bairdoppilata	worms:771800	NO CHILDREN
+Triebelina	worms:771607	ONE CHILD
+Bairdia	ncbi:84299,worms:771652
+Acratia	worms:771726
+Acanthoscapha	worms:768789,irmng:1132736
+Bythocypris	worms:771785
+Microcheilinella	worms:768845	NO CHILDREN
+Triplacera	worms:771600	NO CHILDREN
+Parasclerites	worms:771327,irmng:1068271
+Absina	worms:771712
+Quasillites	worms:768873
+Jenningsina	worms:768835,irmng:1379005
+Pseudohealdia	worms:771774	NO CHILDREN
+Ogmoconcha	worms:768850,irmng:1319281
+Torohealdia	worms:771708	ONE CHILD
+Healdia	worms:771711
+Pseudocythere	worms:576991	ONE CHILD
+Paraberounella	worms:768855
+Nemoceratina	worms:768981,gbif:4808111,irmng:1357045
+Sclerochilus	worms:459873
+Retibythere	worms:580023
+Eucythere	worms:771617	NO CHILDREN
+Aaleniella	worms:768783
+Mediocytherideis	worms:459868,irmng:1360509
+Callistocythere	worms:768894
+Microcytherura	worms:771639,gbif:1029652,irmng:1048110
+Hemingwayella	worms:771653	ONE CHILD
+Hemiparacytheridea	worms:771745
+Cytherura	worms:772133	ONE CHILD
+Orthonotacythere	worms:771646	ONE CHILD
+Eucytherura	worms:771790	NO CHILDREN
+Lophodentina	worms:771716	NO CHILDREN
+Cythereis	worms:504097	ONE CHILD
+Paijenborchella	worms:771668	NO CHILDREN
+Marslatourella	worms:771763	ONE CHILD
+Jankeijcythere	worms:459866	NO CHILDREN
+Delamarcythere	worms:772137	ONE CHILD
+Cushmanidea	worms:771602	NO CHILDREN
+Lutkevichinella	worms:771424,irmng:1437300	NO CHILDREN
+Amphicytherura	worms:771632	NO CHILDREN
+Neocyprideis	worms:771648	ONE CHILD
+Paracyprideis	worms:771802
+Dolocytheridea	worms:771737
+Alocopocythere	worms:771636
+Pterygocythere	worms:772151
+Hiltermannicythere	worms:771650	NO CHILDREN
+Basslerites	worms:459862
+Henryhowella	worms:771603	ONE CHILD
+Phalcocythere	worms:771647
+Buntonia	worms:771680
+Incongruellina	worms:768834	NO CHILDREN
+Oblitacythereis	worms:768848	NO CHILDREN
+Carinocythereis	worms:771788	NO CHILDREN
+Oertliella	worms:771767	NO CHILDREN
+Glenocythere	worms:850728	NO CHILDREN
+Idiocythere	worms:771620	ONE CHILD
+Ruggieria	worms:771807	NO CHILDREN
+Trachyleberidea	worms:771331,irmng:1167484	ONE CHILD
+Phacorhabdotus	worms:771664	NO CHILDREN
+Ordoniya	worms:771841
+Cletocythereis	worms:771594	NO CHILDREN
+Costa	worms:771816	ONE CHILD
+Climacoidea	worms:771846,gbif:4808018,irmng:1203017
+Strobilocythere	worms:459874	ONE CHILD
+Pterygocythereis	worms:768664,irmng:1048323
+Stigmatocythere	worms:771634
+Leguminocythereis	worms:771319,irmng:1062707	ONE CHILD
+Brachycythere	worms:771645
+Veenia	worms:771633	ONE CHILD
+Argenticytheretta	worms:771649	ONE CHILD
+Hemicytheria	worms:772143	NO CHILDREN
+Urocythereis	worms:771676
+Hemicythere	worms:771815	NO CHILDREN
+Procythereis	worms:771828	NO CHILDREN
+Finmarchinella	worms:127693
+Ambostracon	worms:771803	ONE CHILD
+Mandelstamia	worms:771762
+Cytherois	worms:459865
+Thaerocythere	worms:771623
+Quadracythere	worms:771787
+Krithe	worms:477457	ONE CHILD
+Uroleberis	worms:768890	ONE CHILD
+Neocythere	worms:771655
+Procytheridea	worms:771313,irmng:1045626	ONE CHILD
+Dicrorygma	worms:771736
+Cuneocythere	worms:768237
+Paranotacythere	worms:771684
+Paracytheridea	worms:771638	NO CHILDREN
+Acanthocythere	worms:768787
+Trichordis	worms:771689
+Loculicytheretta	worms:768903,irmng:1054894	ONE CHILD
+Mandocythere	worms:771654	NO CHILDREN
+Cytheretta	worms:771789	NO CHILDREN
+Asciocythere	worms:768909,irmng:1351528
+Schuleridea	worms:771844
+Argilloecia	worms:477454	NO CHILDREN
+Abyssocypris	worms:771611	NO CHILDREN
+Propontocypris	ncbi:182496,worms:459870
+Macrocypris	ncbi:182500,worms:771616
+Kirkbyella	worms:768915,irmng:1320484
+Amphissites	worms:768795
+Kirkbya	worms:771713	NO CHILDREN
+Rakverella	worms:768877,irmng:1064819	ONE CHILD
+Tetrada	worms:768879,irmng:1046111
+Quadritia	worms:768871
+Piretopsis	worms:768862,irmng:1062383
+Cerninella	worms:768811	ONE CHILD
+Kiesowia	worms:768837,irmng:1090950
+Hollinella	worms:768831
+Poloniella	worms:768864,irmng:1062591
+Cytherelloidea	worms:771660
+Sulcella	worms:771778
+Cavellina	worms:768809
+Isochilina	worms:771601	NO CHILDREN
+Leperditia	worms:771320
+Halliella	worms:771743	NO CHILDREN
+Haploprimitia	worms:771700	NO CHILDREN
+Lilita	worms:771421,irmng:1314210,irmng:1095237	NO CHILDREN
+Pseudopolycope	worms:596906
+Neomuelleriella	worms:771609	NO CHILDREN
+Philomedes	ncbi:388406,worms:127691
+Aparchites	worms:771727	NO CHILDREN
+Beyrichia	worms:768803
+Craspedobolbina	worms:768816
+Neobeyrichia	worms:768847
+Kozlowskiella	worms:768843,irmng:1222140
+Phlyctiscapha	worms:768859,irmng:1242953
+Guerichiella	worms:771679	ONE CHILD
+Gravia	worms:768829	NO CHILDREN
+Pribylites	worms:768870	NO CHILDREN
+Aechmina	worms:768791	ONE CHILD
+Ulrichia	worms:771781
+Tetradella	worms:768882	NO CHILDREN
+Ogmoopsis	worms:768852
+Glossomorphites	worms:768827
+Oecematobolbina	worms:768849	NO CHILDREN
+Perspicillum	worms:768857	NO CHILDREN
+Sigmoopsis	worms:768878	ONE CHILD
+Hippula	worms:768986
+Ctenobolbina	worms:768819	ONE CHILD
+Tachidius	ncbi:1245206,worms:115505	ONE CHILD
+Wellsopsyllus	worms:729904,gbif:2113225,irmng:1465654
+Leptopsyllus	worms:115500
+Neocyclops	worms:731101	NO CHILDREN
+Scheloribates	ncbi:471718,worms:508265
+Halacarus	ncbi:768089,worms:362707	ONE CHILD
+Sergestes	worms:585543,ncbi:397990	ONE CHILD
+Solenocera	worms:585498	NO CHILDREN
+Penaeopsis	worms:585014	NO CHILDREN
+Guernea	worms:489495
+Pleustes	worms:549691
+Munna	worms:249699	NO CHILDREN
+Janirella	worms:249491
+Jaera	worms:249490
+Cirolana	worms:249489,gbif:4303468
+Monolistra	worms:249710	NO CHILDREN
+Caecosphaeroma	worms:249708	NO CHILDREN
+Kikliocythere	worms:768841
+Cytheridea	worms:771674
+Klieana	worms:772146	NO CHILDREN
+Trachyleberis	ncbi:182611,worms:771613
+Parexophthalmocythere	worms:771663	NO CHILDREN
+Arculicythere	worms:771729	ONE CHILD
+Hechticythere	worms:771744
+Protocythere	worms:771330,irmng:1161440
+Pleurocythere	worms:768863
+Lophocythere	worms:771324,irmng:1172582	ONE CHILD
+Terquemula	worms:772155	NO CHILDREN
+Neurocythere	worms:771682
+Fuhrbergiella	worms:771741
+Progonocythere	worms:771686,gbif:4807048,irmng:1016600
+Doloria	worms:600550
+Enoplometopus	worms:382819	NO CHILDREN
+Jasus	worms:382790	NO CHILDREN
+Lophopagurus	worms:366500,gbif:4648229,irmng:1090520
+Spiropagurus	worms:411933	NO CHILDREN
+Pagurus	worms:411920	NO CHILDREN
+Munidopsis	worms:391975	NO CHILDREN
+Eumunida	worms:391973	ONE CHILD
+Pandalus	worms:589432	ONE CHILD
+Plesionika	worms:589520	NO CHILDREN
+Heterocarpus	worms:589548	NO CHILDREN
+Troglocaris	worms:586749	ONE CHILD
+Parapasiphae	worms:585671	NO CHILDREN
+Leptochela	worms:514079
+Acanthephyra	worms:585973	NO CHILDREN
+Hoplophorus	worms:586008	NO CHILDREN
+Glyphocrangon	worms:589778	ONE CHILD
+Crangon	worms:589680	ONE CHILD
+Liljeborgia	worms:743821	NO CHILDREN
+Orchomenella	worms:237638,gbif:4643762,irmng:1128366
+Bellibos	worms:249487
+Lipomera	worms:249492	ONE CHILD
+Pseudotanais	worms:246879
+Pectinapseudes	worms:247043
+Cyclopoapseudes	worms:719991
+Saltipedis	worms:739721
+Scyllarus	worms:382827	NO CHILDREN
+Pylocheles	worms:411916	NO CHILDREN
+Periclimenes	worms:587786	NO CHILDREN
+Coralliocaris	worms:587931	NO CHILDREN
+Pontonia	worms:587895	NO CHILDREN
+Palaemon	worms:587119
+Cryphiops	worms:587003	NO CHILDREN
+Homola	worms:246562	NO CHILDREN
+Caribitroides	worms:555623
+Hornellia	worms:490570,gbif:2219882,irmng:1205099
+Ceradocus	worms:531414
+Gammaropsis	worms:237567
+Stenogammarus	worms:550258	NO CHILDREN
+Otiorrhynchus	worms:150749	NO CHILDREN
+Cyclodorippe	worms:450309	NO CHILDREN
+Dromia	worms:450314	NO CHILDREN
+Notopus	worms:450374	NO CHILDREN
+Pseudozius	worms:450462	NO CHILDREN
+Elamena	worms:240972	ONE CHILD
+Inachus	worms:450341	NO CHILDREN
+Podochela	worms:450417	NO CHILDREN
+Mithrax	worms:450367	ONE CHILD
+Gecarcinucus	worms:450318	NO CHILDREN
+Parathelphusa	worms:450395	NO CHILDREN
+Liotelphusa	worms:450357	NO CHILDREN
+Holthuisana	worms:450335	NO CHILDREN
+Cancer	worms:148451	NO CHILDREN
+Neptunus	worms:450371	ONE CHILD
+Polybius	worms:154302	NO CHILDREN
+Lambrus	worms:450352
+Ethusa	worms:450317	NO CHILDREN
+Neodorippe	worms:450369	ONE CHILD
+Corystes	worms:450305	NO CHILDREN
+Pseudorhombila	worms:450454	NO CHILDREN
+Chlorodopsis	worms:450304	NO CHILDREN
+Troglocarcinus	worms:450482	NO CHILDREN
+Sesarma	worms:240973
+Grapsus	worms:450326	ONE CHILD
+Epigrapsus	worms:450316	ONE CHILD
+Protohyale	worms:237580
+Exampithoe	worms:488552,irmng:1319968
+Dasyhelea	ncbi:41822,worms:151030
+Leptoconops	ncbi:209698,worms:503263
+Hyastenus	worms:450337	NO CHILDREN
+Pisa	worms:450411	NO CHILDREN
+Lissa	worms:450358	NO CHILDREN
+Naxia	worms:450368	NO CHILDREN
+Leptomithrax	worms:450356	NO CHILDREN
+Paramithrax	worms:450385
+Maja	worms:450361	NO CHILDREN
+Portunus	worms:439967,gbif:4647437
+Lupocyclus	worms:450360	NO CHILDREN
+Charybdis	worms:439951
+Parthenope	worms:450402	NO CHILDREN
+Pseudothelphusa	worms:450458	ONE CHILD
+Guinotia	worms:450330	NO CHILDREN
+Potamocarcinus	worms:450429
+Hypolobocera	worms:450338
+Lophozozymus	worms:450359	NO CHILDREN
+Xantho	worms:450488	NO CHILDREN
+Potamonautes	worms:450452	NO CHILDREN
+Stoliczia	worms:450471	NO CHILDREN
+Potamiscus	worms:450423	NO CHILDREN
+Isolapotamon	worms:450346	NO CHILDREN
+Potamon	worms:450446
+Heteropanope	worms:450334	NO CHILDREN
+Pilumnus	worms:450410	NO CHILDREN
+Oreophorus	worms:450383	NO CHILDREN
+Ebalia	worms:450315	NO CHILDREN
+Persephona	worms:450409	NO CHILDREN
+Valdivia	worms:450487	ONE CHILD
+Dilocarcinus	worms:450311	NO CHILDREN
+Trichodactylus	worms:450478	ONE CHILD
+Uca	worms:439971
+Ocypode	worms:450375	NO CHILDREN
+Macrophthalmus	worms:439958
+Brachynotus	worms:450288	NO CHILDREN
+Siphonoecetes	worms:491878
+Ambicholestes	worms:491814
+Hymenocephalus	worms:126259	NO CHILDREN
+-- Inclusion tests
+Progenitohyus (3615889) is hidden
+Dendrosporium (5343662) is hidden
+** Acremonium is 5262599, not 5342243
+Tricellulortus peponiformis (321127) is hidden
+Acantharia (5342505) is hidden
+Campanella (5343447) is hidden
+Ciliophora (5343665) is hidden
+Coscinodiscus (5344432) is hidden
+** Crepidula is 24075, not 5394882
+** Epiphloea=5342482 not under Lichinales
+Epiphloea(5342482)
+ genus size:6
+	(5342482=if:1869+5 Epiphloea) < (111531=ncbi:1173045+4 Glomeridellidae) < (274376=ncbi:62004+20 Glomerida) < (827410=ncbi:118560+2 Pentazonia) < (1078162=ncbi:7553+142 Diplopoda) < (177526=ncbi:61985+12 Myriapoda) < (985907=ncbi:197563+37 Mandibulata) < (632179=ncbi:6656+4766 Arthropoda) < (816442=ncbi:88770+3 Panarthropoda) < (611099=ncbi:1206794+4 Ecdysozoa) ...
+	 Amphidium serrenea(5282242) species
+	 Latzelia antarctica(4927992) species
+	 Latzelia terrena(4927990) species
+	 Epiphloea terrena(4927991) species
+	 Latzelia serrenea(4927989) species
+Synonym: Latzelia
+Sources: if:1869,gbif:3255643,gbif:3269351,irmng:1364034,irmng:1342382
+Flags: 
+Hessea (5295839) is hidden
+Hessea (4925851) is hidden
+Protaspis (5345086) is hidden
+Protaspis (696938) is hidden
+Retaria (5297815) is hidden
+Gorkadinium (5279559) is hidden
+** Dischloridium is 946379, not 895423
+** Leucocryptos=111139 not under Katablepharidophyta
+Leucocryptos(111139)
+ genus size:2
+	(111139=silva:AY665083/#4+1 Leucocryptos) < (269577=silva:AB212285/#3+10 Kathablepharidae) < (5246159=silva:L28811/#2+42 Cryptophyceae) < (304358=silva:D11377/#1+3183 Eukaryota) < (93302=ncbi:131567+3 cellular organisms) < (805080=silva:0+461 life)
+	 Leucocryptos marina(111140) species
+Sources: silva:AY665083/#4,ncbi:299205,worms:17651,gbif:3202465,irmng:1008464
+Flags: 
+** Gloeosporium is 176780, not 75019
+-- Done
+echo 2.9draft12 >tax/ott/version.txt
+JYTHONPATH=util java -classpath ".:lib/*" -Xmx14G org.opentreeoflife.smasher.Smasher --diff tax/prev_ott/ tax/ott/ tax/ott/differences.tsv.new
+--- Reading tax/prev_ott/ ---
+! No header row - saw 805080
+** (- uncultured) is the 75th to have the name 'uncultured'
+500000
+1000000
+1500000
+2000000
+2500000
+3000000
+| 1360818 synonyms
+| Eliding Isochonidae in Exogemmida, 6 children
+| Eliding Candidatus Aschnera chinzeii in Candidatus Aschnera, 9 children
+| Eliding Andreiomyces in Andreiomycetaceae, 1 children
+| Eliding Sarcinochrysidaceae in Chrysapiales, 1 children
+| Eliding Euduboscquella in Eudubosquellidae, 4 children
+| Eliding Aulacanthidae in Phaeocystida, 2 children
+| Eliding Rhizosoleniaceae in Rhizosoleniales, 8 children
+| Eliding Eoacmaea in Eoacmaeidae, 12 children
+| Eliding Sagittaria in Sagittariidae, 3 children
+...
+| Placing previously unplaced (5279169=irmng:1087935 Libocedroxylon?) in (4736773=gbif:101+190 Pinophyta?)
+| Placing previously unplaced (4736958=gbif:4921402 Cupressinostrobus?) in (4736773=gbif:101+256 Pinophyta?)
+| Flags fixed for 255040 nodes
+* (285360=ncbi:42328 Ephedra gerardiana) hidden false -> false
+| 14160 homonyms, of which 250 name cousin taxa, 1034 name sibling taxa
+| 1 roots + 244422 internal + 3062594 tips = 3307017 total
+--- Reading tax/ott/ ---
+! No header row - saw 805080
+500000
+1000000
+1500000
+2000000
+2500000
+3000000
+** (- uncultured) is the 75th to have the name 'uncultured'
+3500000
+| 867366 synonyms
+| Eliding Anoxycalyx in Anoxycalyx, 2 children
+| Eliding Peronosporoides in Peronosporales, 2 children
+| Eliding Prolicnophora in Licnophorida, 1 children
+| Eliding Castrella in Castrella, 8 children
+| Eliding Ankistrodesmopsis in Chlorellales, 1 children
+| Eliding Myoscolex in Radiodonta, 1 children
+| Eliding Kontikia in Kontikia, 1 children
+| Eliding Isocrinus in Isocrinus, 4 children
+| Eliding Protocrucia in Protocruziida, 2 children
+...
+| Flags fixed for 270888 nodes
+* (285360=ncbi:42328 Ephedra gerardiana) hidden false -> false
+| 14036 homonyms, of which 181 name cousin taxa, 1209 name sibling taxa
+| 1 roots + 255062 internal + 3273276 tips = 3528339 total
+Writing tax/ott/differences.tsv.new
+mv tax/ott/differences.tsv.new tax/ott/differences.tsv
+wc tax/ott/differences.tsv
+  894005 7338111 73432232 tax/ott/differences.tsv
+JYTHONPATH=util java -classpath ".:lib/*" -Xmx14G org.opentreeoflife.smasher.Smasher --join ids-that-are-otus.tsv tax/ott/differences.tsv >tax/ott/otu_differences.tsv.new
+mv tax/ott/otu_differences.tsv.new tax/ott/otu_differences.tsv
+wc tax/ott/otu_differences.tsv
+   22581  265876 3003568 tax/ott/otu_differences.tsv
+cat legacy-forwards.tsv tax/ott/new-forwards.tsv | python util/get_forwards.py tax/ott/forwards.tsv.new
+mv tax/ott/forwards.tsv.new tax/ott/forwards.tsv

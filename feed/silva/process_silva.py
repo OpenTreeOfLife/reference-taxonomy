@@ -289,7 +289,7 @@ def processSilva(pathdict, indir, outdir):
             taxid = info.sample_accession    # becomes URL
             rank = 'samples'    # rank will be set from NCBI
             qid = "ncbi:%s" % ncbi_id
-            synonyms[qid] = taxid
+            # synonyms[qid] = taxid
             name = info.name
             taxfile.write("%s\t|\t%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n" %
                           (taxid, parentid, name, rank, qid))

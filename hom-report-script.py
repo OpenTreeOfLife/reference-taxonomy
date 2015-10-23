@@ -1,3 +1,6 @@
+# Requires python.security.respectJavaAccessibility = false
+# on java command line or in .jython
+
 from org.opentreeoflife.smasher import Taxonomy
 from org.opentreeoflife.smasher import HomonymReport 
 

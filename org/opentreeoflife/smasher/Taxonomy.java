@@ -319,9 +319,11 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	public static SourceTaxonomy getTaxonomy(String designator) throws IOException {
 		SourceTaxonomy tax = new SourceTaxonomy();
-		if (designator.startsWith("("))
-			tax.addRoot(Newick.newickToNode(designator, tax));
-		else {
+		if (designator.startsWith("(")) {
+            Taxon root = Newick.newickToNode(designator, tax);
+			tax.addRoot(root);
+            tax.assignNewIds(0);	// foo... why do we need this?  h2007?
+        } else {
 			if (!designator.endsWith("/")) {
 				System.err.println("Taxonomy designator should end in / but doesn't: " + designator);
 				designator = designator + "/";
@@ -337,6 +339,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
     // parser was used
 
     public void postProcessTaxonomy() {
+        this.placeBiggest(); // 'life' or biggest is placed
+
         // Topology changes:
 
         // Elide incertae-sedis-like containers and set some flags
@@ -385,13 +389,13 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	}
 
 	public static SourceTaxonomy getNewick(String filename) throws IOException {
-		SourceTaxonomy tax = new SourceTaxonomy();
 		BufferedReader br = Taxonomy.fileReader(filename);
+		SourceTaxonomy tax = new SourceTaxonomy();
         Taxon root = Newick.newickToNode(new java.io.PushbackReader(br), tax);
 		tax.addRoot(root);
         root.properFlags = 0;   // not unplaced
-		tax.investigateHomonyms();
 		tax.assignNewIds(0);	// foo
+        tax.postProcessTaxonomy();
 		return tax;
 	}
 
@@ -536,7 +540,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
                               parts[3], // rank
                               (this.flagscolumn != null ? parts[this.flagscolumn] : ""),
                               parts);
-                    if (!name.equals(rawname)) {
+                    if (name != null && !name.equals(rawname)) {
                         addSynonym(rawname, node);
                         ++normalizations;
                     }
@@ -601,8 +605,12 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	// Populate fields of a Taxon object from fields of row of taxonomy file
 	// parts = fields from row of dump file
 	void initTaxon(Taxon node, String id, String name, String rank, String flags, String[] parts) {
-        node.setId(id); // stores into this.idIndex
-        node.setName(name);
+        if (id.length() == 0)
+            System.err.format("!! Null id: %s\n", name);
+        else
+            node.setId(id);
+        if (name != null)
+            node.setName(name);
 
         if (flags.length() > 0)
             Flag.parseFlags(flags, node);
@@ -647,6 +655,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	//	 Convert upper case letters to lower case
 	//		e.g. genus Pechuel-Loeschea	 -- but these are all barren.
 	private static String normalizeName(String str) {
+        if (str.length() == 0) return null;
 		str = Normalizer.normalize(str, Normalizer.Form.NFD);
 		str = DIACRITICS_AND_FRIENDS.matcher(str).replaceAll("");
 		return str;
@@ -666,7 +675,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				&& node.parent.children.size() == 1
 				&& node.children != null)
 				if (!node.isPlaced()
-                    || node.parent.name.equals(node.name))
+                    || (node.parent.name != null
+                        && node.parent.name.equals(node.name)))
 					knuckles.add(node);
 		}
         int i = 0;
@@ -722,7 +732,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
                 if (compareTaxa(other, smallest) < 0)
                     smallest = other;
 
-            if (smallest.name == "Oncideres cingulatus")
+            if (smallest.name != null && smallest.name.equals("Oncideres cingulatus"))
                 System.out.format("| Smushing Oncideres cingulatus %s\n", nodes.size());
 
             for (Taxon other : nodes)
@@ -862,7 +872,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		// 1. parent_uid:
 		out.print(((node.taxonomy.hasRoot(node) || rootp) ? "" : node.parent.id)  + sep);
 		// 2. name:
-		out.print((node.name == null ? "?" : node.name)
+		out.print((node.name == null ? "" : node.name)
 				  + sep);
 		// 3. rank:
 		out.print((node.rank == Taxonomy.NO_RANK ?
@@ -964,7 +974,10 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 							System.err.println("...");
 						continue;
 					}
-					if (!node.name.equals(syn)) {
+                    if (node.name == null) {
+                        node.setName(syn);
+						++count;
+					} else if (!node.name.equals(syn)) {
 						addSynonym(syn, node);
 						++count;
 					}
@@ -980,7 +993,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
     // compare addToNameIndex
 
 	public boolean addSynonym(String syn, Taxon node) {
-        if (node.name.equals(syn))
+        if (node.name != null && node.name.equals(syn))
             return true;
 		if (node.taxonomy != this)
 			System.err.println("!? Synonym for a node that's not in this taxonomy: " + syn + " " + node);
@@ -1270,12 +1283,14 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	static void analyzeOTUs(Taxon node) {
 		// Prepare for recursive descent
-		if (notOtuRegex.matcher(node.name).find()) 
-			node.addFlag(NOT_OTU);
-		if (hybridRegex.matcher(node.name).find()) 
-			node.addFlag(HYBRID);
-		if (viralRegex.matcher(node.name).find()) 
-			node.addFlag(VIRAL);
+        if (node.name != null) {
+            if (notOtuRegex.matcher(node.name).find()) 
+                node.addFlag(NOT_OTU);
+            if (hybridRegex.matcher(node.name).find()) 
+                node.addFlag(HYBRID);
+            if (viralRegex.matcher(node.name).find()) 
+                node.addFlag(VIRAL);
+        }
 
 		// Recursive descent
 		if (node.children != null)
@@ -1298,12 +1313,14 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				analyzeContainers(child);
 
         int flag = 0;
-        if (unclassifiedRegex.matcher(node.name).find()) // Rule 3+5
-            flag = UNCLASSIFIED;  // includes uncultured
-        else if (environmentalRegex.matcher(node.name).find()) // Rule 3+5
-            flag = ENVIRONMENTAL;
-        else if (incertae_sedisRegex.matcher(node.name).find()) // Rule 3+5
-            flag = INCERTAE_SEDIS;
+        if (node.name != null) {
+            if (unclassifiedRegex.matcher(node.name).find()) // Rule 3+5
+                flag = UNCLASSIFIED;  // includes uncultured
+            else if (environmentalRegex.matcher(node.name).find()) // Rule 3+5
+                flag = ENVIRONMENTAL;
+            else if (incertae_sedisRegex.matcher(node.name).find()) // Rule 3+5
+                flag = INCERTAE_SEDIS;
+        }
 
         if (flag != 0) {
             node.addFlag(flag);
@@ -1331,7 +1348,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	private void heritFlags(Taxon node, int inferredFlags) {
         boolean before = node.isHidden();
 		node.inferredFlags = inferredFlags;
-        if (node.name.equals("Ephedra gerardiana"))
+        if (node.name != null
+            && node.name.equals("Ephedra gerardiana"))
             System.out.format("* %s hidden %s -> %s\n", node, before, node.isHidden());
 		if (node.children != null) {
 			int bequest = inferredFlags | node.properFlags;		// What the children inherit
@@ -1822,7 +1840,10 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	public static SourceTaxonomy parseNewick(String newick) {
 		SourceTaxonomy tax = new SourceTaxonomy();
-		tax.addRoot(Newick.newickToNode(newick, tax));
+        Taxon root = Newick.newickToNode(newick, tax);
+		tax.addRoot(root);
+        root.properFlags = 0;   // not unplaced
+		tax.assignNewIds(0);	// foo
 		return tax;
 	}
 
@@ -2007,8 +2028,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	public void parentChildHomonymReport() {
 		for (Taxon node : this)
-			if (!node.isRoot() &&
-				node.parent.name.equals(node.name))
+			if (!node.isRoot()
+                && node.parent.name != null
+				&& node.parent.name.equals(node.name))
 				System.out.format("%s\t%s%s\n",
 								  node.name,
 								  node.getSourceIdsString(),
@@ -2029,7 +2051,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	public void spellingVariationReport() {
 		for (String name : this.allNames())
-			if (name.endsWith("ae")) {
+			if (name != null
+                && name.endsWith("ae")) {
 				List<Taxon> sheep = this.lookup(name);
 				if (sheep == null) continue;
 				{	boolean win = false;
@@ -2166,7 +2189,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			Taxon otherCandidate = null;
 			// Chaetognatha
 			for (Taxon node : nodes)
-				if (!node.isRoot() && node.parent.name.equals(context))
+				if (!node.isRoot()
+                    && node.parent.name != null
+                    && node.parent.name.equals(context))
 					if (candidate == null)
 						candidate = node;
 					else {
@@ -2196,7 +2221,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			Taxon otherCandidate = null;
 			// Chaetognatha
 			for (Taxon node : nodes)
-				if (!node.isRoot() && node.parent.name.equals(name))
+				if (!node.isRoot()
+                    && node.parent.name != null
+                    && node.parent.name.equals(name))
 					if (candidate == null)
 						candidate = node.parent;
 					else {

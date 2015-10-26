@@ -1223,9 +1223,10 @@ public class Taxon {
 		System.out.format("%s(%s)\n %s size:%s\n	", this.name, this.id, this.rank, this.count());
         this.showLineage(this.taxonomy.forest);
 		if (this.children != null) {
-			java.util.Collections.sort(this.children, compareNodesBySize);
+            List<Taxon> sorted = new ArrayList(this.children);
+			java.util.Collections.sort(sorted, compareNodesBySize);
 			int count = 0;
-			for (Taxon child : this.children)
+			for (Taxon child : sorted)
 				if (++count < 10)
 					System.out.format("	 %s(%s) %s\n", child.name, child.id, child.rank);
 				else if (count == 10)

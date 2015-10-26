@@ -43,6 +43,8 @@ public class QualifiedId {
 		} else
 			return false;
 	}
-    // hashCode ?
+    public int hashCode() {
+        return this.prefix.hashCode() + this.id.hashCode();
+    }
 }
 

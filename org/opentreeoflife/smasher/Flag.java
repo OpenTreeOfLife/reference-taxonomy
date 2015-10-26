@@ -113,6 +113,10 @@ public enum Flag {
         out.print(toString(flags, iflags));
     }
 
+    public static String flagsAsString(Taxon node) {
+        return toString(node.properFlags, node.inferredFlags);
+    }
+
 	public static String toString(int flags, int iflags) {
 		boolean needComma = false;
 

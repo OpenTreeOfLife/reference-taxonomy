@@ -60,12 +60,11 @@ class UnionTaxonomy extends Taxonomy {
 		this.mergeIn(source);
 	}
 
-    public UnionTaxonomy target() {
-        return null;
-    }
+	public static UnionTaxonomy newTaxonomy() {
+		return new UnionTaxonomy();
+	}
 
     public void addSource(SourceTaxonomy source) {
-        source.setTarget(this);
         source.setEventLogger(this.eventlogger);
     }
 
@@ -237,7 +236,7 @@ class UnionTaxonomy extends Taxonomy {
 
 	Alignment align(SourceTaxonomy source) {
         UnionTaxonomy union = this;
-        source.setTarget(union);
+        union.addSource(source);
         Alignment n = new AlignmentByName(source, union);
         n.cacheInSourceNodes();
         if (false) {
@@ -279,13 +278,13 @@ class UnionTaxonomy extends Taxonomy {
 
 	public void assignIds(SourceTaxonomy idsource) {
 		this.idsource = idsource;
-        idsource.setTarget(this); // hmm...
+        this.addSource(idsource);
 
 		// idsource.tag = "ids";
 		Alignment a = this.align(idsource);
 
         // Reset event counters
-		this.resetEvents();
+		this.eventlogger.resetEvents();
 
 		// Phase 1: recycle previously assigned ids.
 		this.transferIds(idsource, a);
@@ -296,7 +295,7 @@ class UnionTaxonomy extends Taxonomy {
 		// remember, this = union, idsource = previous version of ott
 
         // Report event counts
-		this.eventsReport("| ");		// Taxon id clash
+		this.eventlogger.eventsReport("| ");		// Taxon id clash
 	}
 
 	public void transferIds(SourceTaxonomy idsource, Alignment a) {
@@ -519,7 +518,7 @@ class UnionTaxonomy extends Taxonomy {
 		out.println("id\tsize\tname\tsourceinfo\treason\twitness\treplacement" +
                     "\tstatus");
 
-        this.resetEvents();
+        this.eventlogger.resetEvents();
         this.inferFlags();  // was done earlier, but why not again
         idsource.inferFlags();  // was done earlier, but why not again
 
@@ -701,7 +700,6 @@ class UnionTaxonomy extends Taxonomy {
 					scrutinize.add(name);
 					break;
 				}
-        this.eventsReport(".  ");
 		return scrutinize;
 	}
 
@@ -771,55 +769,6 @@ class UnionTaxonomy extends Taxonomy {
 		out.close();
 	}
 
-    // Event logging
-    // Eventually replace the static event logger in Taxon.java
-
-	Map<String, Long> eventStats = new HashMap<String, Long>();
-	List<String> eventStatNames = new ArrayList<String>();
-
-	boolean markEvent(String tag) { // formerly startReport
-		Long probe = this.eventStats.get(tag);
-		long count;
-		if (probe == null) {
-			this.eventStatNames.add(tag);
-			count = 0;
-		} else
-			count = probe;
-		this.eventStats.put(tag, count+(long)1);
-		if (count <= 10) {
-			return true;
-		} else
-			return false;
-	}
-
-    boolean markEvent(String tag, Taxon node) {
-        // sort of a kludge
-        if (node.mapped != null)
-            return Answer.noinfo(node, node.mapped, tag, null).maybeLog(this);
-        else if (node.lub != null)
-            return Answer.noinfo(node, node.lub, tag, null).maybeLog(this);
-        else
-            return Answer.noinfo(node, null, tag, null).maybeLog(this);
-    }
-
-    boolean markEvent(String tag, Taxon node, Taxon unode) {
-        // sort of a kludge
-        return Answer.noinfo(node, unode, tag, null).maybeLog(this);
-    }
-
-    // Final report
-	void eventsReport(String prefix) {        // was printStats
-        Collections.sort(this.eventStatNames);
-		for (String tag : this.eventStatNames) {
-			System.out.println(prefix + tag + ": " + this.eventStats.get(tag));
-		}
-	}
-
-	void resetEvents() {         // was resetStats
-		this.eventStats = new HashMap<String, Long>();
-		this.eventStatNames = new ArrayList();
-	}
-
 	// N.b. this is in source taxonomy, match is in union
 	boolean separationReport(String note, Taxon foo, Taxon match) {
 		if (foo.startReport(note)) {
@@ -881,6 +830,90 @@ class UnionTaxonomy extends Taxonomy {
 		}
 		return false;
 	}
+    
+    // Methods meant to be called from jython (patches)
+
+	public boolean same(Taxon node1, Taxon node2) {
+		return sameness(node1, node2, true, true);
+	}
+
+	public boolean notSame(Taxon node1, Taxon node2) {
+		return sameness(node1, node2, false, true);
+	}
+
+	public boolean sameness(Taxon node1, Taxon node2, boolean whether, boolean setp) {
+		Taxon unode, snode;
+		if (node1 == null || node2 == null) return false; // Error already reported?
+		if (node1.taxonomy instanceof UnionTaxonomy) {
+			unode = node1;
+			snode = node2;
+		} else if (node2.taxonomy instanceof UnionTaxonomy) {
+			unode = node2;
+			snode = node1;
+		} else if (node1.mapped != null) {
+			unode = node1.mapped;
+			snode = node2;
+		} else if (node2.mapped != null) {
+			unode = node2.mapped;
+			snode = node1;
+		} else if (node1.taxonomy == node2.taxonomy) {
+            return whetherLumped(node1, node2, whether, setp);
+		} else {
+			System.err.format("** One of the two nodes must be already mapped to the union taxonomy: %s %s\n",
+							  node1, node2);
+			return false;
+		}
+		if (!(snode.taxonomy instanceof SourceTaxonomy)) {
+			System.err.format("** One of the two nodes must come from a source taxonomy: %s %s\n", unode, snode);
+			return false;
+		}
+        // start logging this name
+        if (snode.name != null && this.eventlogger != null)
+            this.eventlogger.namesOfInterest.add(snode.name);
+		if (whether) {			// same
+			if (snode.mapped != null) {
+				if (snode.mapped != unode) {
+					System.err.format("** The taxa have already been determined to be different: %s\n", snode);
+                    return false;
+                } else
+                    return true;
+			}
+            if (setp) {
+                this.alignWith(snode, unode, "same/ad-hoc");
+                return true;
+            } else return false;
+		} else {				// notSame
+			if (snode.mapped != null) {
+				if (snode.mapped == unode) {
+					System.err.format("** The taxa have already been determined to be the same: %s\n", snode);
+                    return false;
+                } else
+                    return true;
+			}
+            if (setp) {
+                // Give the source node (snode) a place to go in the union that is
+                // different from the union node it's different from
+                Taxon evader = new Taxon(unode.taxonomy, unode.name);
+                this.alignWith(snode, evader, "not-same/ad-hoc");
+
+                unode.taxonomy.addRoot(evader);
+                // Now evader != unode, as desired.
+                return true;
+            } else return false;
+		}
+	}
+
+	// The image of a taxon under an alignment.
+	public Taxon image(Taxon subject) {
+		if (subject.taxonomy == this)
+			return subject;
+		Taxon m = subject.mapped;
+		if (m == null)
+			return null;
+		if (m.taxonomy != this)
+			return null;
+		return m;
+	}
 
 }
 
@@ -901,7 +934,7 @@ class MergeMachine {
         // a is unused for the time being - alignment is cached in .mapped
 
         union.reset();
-        union.resetEvents();
+        union.eventlogger.resetEvents();
 
         // No need to inferFlags() at this point since merge doesn't
         // pay attention to inferred flags at any point (just the
@@ -933,7 +966,7 @@ class MergeMachine {
             report(source, startroots, startcount);
             if (union.count() == 0)
                 source.forest.show();
-            union.eventsReport("|   ");
+            union.eventlogger.eventsReport("|   ");
             System.out.format("| Ended with: %s roots, %s taxa\n",
                               union.rootCount(), union.count());
         }
@@ -1585,7 +1618,6 @@ abstract class Criterion {
     boolean metBy(Taxon node, Taxon unode) {
         return this.assess(node, unode).value > Answer.DUNNO;
     }
-
 }
 
 

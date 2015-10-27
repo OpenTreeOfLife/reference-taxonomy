@@ -253,7 +253,7 @@ public class AlignmentByName extends Alignment {
         Criterion[] criteria = Criterion.criteria;
 		if (source.rootCount() > 0) {
 
-			union.resetEvents();
+			union.eventlogger.resetEvents();
 			System.out.println("--- Mapping " + source.getTag() + " into union ---");
 
 			int beforeCount = union.numberOfNames();
@@ -310,7 +310,7 @@ public class AlignmentByName extends Alignment {
 			}
 			System.out.println("| Names in common: " + incommon);
 
-			union.eventsReport("| ");
+			union.eventlogger.eventsReport("| ");
 
 			// Report on how well the merge went.
 			Alignment.alignmentReport(source, union);

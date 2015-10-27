@@ -1,10 +1,10 @@
 # Jython script to build the "model village" taxonomy.
 
-from org.opentreeoflife.smasher import Taxonomy
+from org.opentreeoflife.smasher import Taxonomy, UnionTaxonomy
 from claim import Has_child
 
 # Create model taxonomy
-tax = Taxonomy.newTaxonomy()
+tax = UnionTaxonomy.newTaxonomy()
 
 # Establish homonym-resolution skeleton (not really used here)
 # skel = Taxonomy.getTaxonomy('tax/skel/', 'skel')

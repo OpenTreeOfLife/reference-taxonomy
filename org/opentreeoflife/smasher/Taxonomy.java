@@ -57,7 +57,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	JSONObject metadata = null;
 	int taxid = -1234;	  // kludge
 
-    EventLogger eventlogger = null;
+    public EventLogger eventlogger = null;
 
 	Taxonomy() { }
 
@@ -2095,10 +2095,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	// ----- Methods for use in jython scripts -----
 
-	public static UnionTaxonomy newTaxonomy() {
-		return new UnionTaxonomy();
-	}
-
 	public Taxon taxon(String name) {
 		Taxon probe = maybeTaxon(name);
 		if (probe == null)
@@ -2226,108 +2222,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
             t.setSourceIds(sourceIds);
         t.taxonomy.addRoot(t);
 		return t;
-	}
-
-	public boolean same(Taxon node1, Taxon node2) {
-		return sameness(node1, node2, true, true);
-	}
-
-	public boolean notSame(Taxon node1, Taxon node2) {
-		return sameness(node1, node2, false, true);
-	}
-
-    public boolean whetherLumped(Taxon node1, Taxon node2, boolean whether, boolean setp) {
-        if (whether) {
-            if (node1 == node2)
-                return true;
-            if (setp)
-                return node1.absorb(node2); // adds synonym, too
-            else
-                return false;
-        } else {
-            if (node1 != node2)
-                return true;
-            if (setp) {
-                System.out.format("** Cannot un-lump %s\n", node1);
-                return false;
-            }
-            else
-                return false;
-        }
-    }
-
-	public boolean sameness(Taxon node1, Taxon node2, boolean whether, boolean setp) {
-		Taxon unode, snode;
-		if (node1 == null || node2 == null) return false; // Error already reported?
-		if (node1.taxonomy instanceof UnionTaxonomy) {
-			unode = node1;
-			snode = node2;
-		} else if (node2.taxonomy instanceof UnionTaxonomy) {
-			unode = node2;
-			snode = node1;
-		} else if (node1.mapped != null) {
-			unode = node1.mapped;
-			snode = node2;
-		} else if (node2.mapped != null) {
-			unode = node2.mapped;
-			snode = node1;
-		} else if (node1.taxonomy == node2.taxonomy) {
-            return whetherLumped(node1, node2, whether, setp);
-		} else {
-			System.err.format("** One of the two nodes must be already mapped to the union taxonomy: %s %s\n",
-							  node1, node2);
-			return false;
-		}
-		if (!(snode.taxonomy instanceof SourceTaxonomy)) {
-			System.err.format("** One of the two nodes must come from a source taxonomy: %s %s\n", unode, snode);
-			return false;
-		}
-        // start logging this name
-        if (snode.name != null && this.eventlogger != null)
-            this.eventlogger.namesOfInterest.add(snode.name);
-		if (whether) {			// same
-			if (snode.mapped != null) {
-				if (snode.mapped != unode) {
-					System.err.format("** The taxa have already been determined to be different: %s\n", snode);
-                    return false;
-                } else
-                    return true;
-			}
-            if (setp) {
-                this.alignWith(snode, unode, "same/ad-hoc");
-                return true;
-            } else return false;
-		} else {				// notSame
-			if (snode.mapped != null) {
-				if (snode.mapped == unode) {
-					System.err.format("** The taxa have already been determined to be the same: %s\n", snode);
-                    return false;
-                } else
-                    return true;
-			}
-            if (setp) {
-                // Give the source node (snode) a place to go in the union that is
-                // different from the union node it's different from
-                Taxon evader = new Taxon(unode.taxonomy, unode.name);
-                this.alignWith(snode, evader, "not-same/ad-hoc");
-
-                unode.taxonomy.addRoot(evader);
-                // Now evader != unode, as desired.
-                return true;
-            } else return false;
-		}
-	}
-
-	// The image of a taxon under an alignment.
-	public Taxon image(Taxon subject) {
-		if (subject.taxonomy == this)
-			return subject;
-		Taxon m = subject.mapped;
-		if (m == null)
-			return null;
-		if (m.taxonomy != this)
-			return null;
-		return m;
 	}
 
 	public void describe() {
@@ -2581,9 +2475,54 @@ public abstract class Taxonomy implements Iterable<Taxon> {
         }
     }
 
+    // Overridden in subclass
+
+	public boolean sameness(Taxon node1, Taxon node2, boolean whether, boolean setp) {
+		Taxon unode, snode;
+        if (node1.taxonomy != this || node2.taxonomy != this) {
+			System.err.format("** One of the two nodes must be already mapped to the union taxonomy: %s %s\n",
+							  node1, node2);
+			return false;
+        } else
+            return whetherLumped(node1, node2, whether, setp);
+    }
+
+    public boolean whetherLumped(Taxon node1, Taxon node2, boolean whether, boolean setp) {
+        if (whether) {
+            if (node1 == node2)
+                return true;
+            if (setp)
+                return node1.absorb(node2); // adds synonym, too
+            else
+                return false;
+        } else {
+            if (node1 != node2)
+                return true;
+            if (setp) {
+                System.out.format("** Cannot un-lump %s\n", node1);
+                return false;
+            }
+            else
+                return false;
+        }
+    }
+
+    // Event logging
+
+	boolean markEvent(String tag) { // formerly startReport
+        return this.eventlogger.markEvent(tag);
+	}
+
+    boolean markEvent(String tag, Taxon node) {
+        return this.eventlogger.markEvent(tag, node);
+    }
+
+    boolean markEvent(String tag, Taxon node, Taxon unode) {
+        // sort of a kludge
+        return this.eventlogger.markEvent(tag, node, unode);
+    }
 
 }
-
 // end of class Taxonomy
 
 class Stat {
@@ -2596,18 +2535,8 @@ class Stat {
 
 class SourceTaxonomy extends Taxonomy {
 
-    // This is used for event logging (see Answer.maybeLog)
-    private UnionTaxonomy target = null;
-
 	SourceTaxonomy() {
 	}
-
-    public UnionTaxonomy target() {
-        return target;
-    }
-    public void setTarget(UnionTaxonomy union) {
-        this.target = union;
-    }
 
 	// This is the SourceTaxonomy version.
 	// Overrides dumpMetadata in class Taxonomy.

@@ -6,7 +6,7 @@
 
 import sys
 
-from org.opentreeoflife.smasher import Taxonomy
+from org.opentreeoflife.smasher import Taxonomy, UnionTaxonomy
 from ncbi_ott_assignments import ncbi_assignments_list
 sys.path.append("feed/misc/")
 from chromista_spreadsheet import fixChromista
@@ -28,7 +28,7 @@ def check_invariants(ott):
 
 def create_ott():
 
-    ott = Taxonomy.newTaxonomy()
+    ott = UnionTaxonomy.newTaxonomy()
 
     # There ought to be tests for all of these...
 

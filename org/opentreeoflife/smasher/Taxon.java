@@ -502,7 +502,10 @@ public class Taxon {
 	// Events - punt them to union taxonomy
 
 	boolean markEvent(String note) {
-        return false;
+        if (this.taxonomy instanceof SourceTaxonomy)
+            return this.taxonomy.markEvent(note, this);
+        else
+            return false;
 	}
     
 	boolean report(String note, Taxon othernode) {

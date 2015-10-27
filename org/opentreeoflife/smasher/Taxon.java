@@ -379,14 +379,7 @@ public class Taxon {
 
 	public Taxon dup(Taxonomy target, String reason) {
 
-        if (this.taxonomy instanceof UnionTaxonomy) {
-            System.out.format("** Dup source %s is not in a source taxonomy\n", target);
-            Taxon.backtrace();
-        }
-
 		Taxon newnode = new Taxon(target, this.name);
-        if (target instanceof SourceTaxonomy)
-            newnode.setId(this.id); // kludge for select
 
         // Compare this with transferProperties(newnode)
 		newnode.rank = this.rank;

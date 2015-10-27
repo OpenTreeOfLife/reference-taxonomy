@@ -72,7 +72,7 @@ public class Smasher {
 
 					else if (argv[i].equals("--ids")) {
 						// To smush or not to smush?
-						UnionTaxonomy union = tax.promote(); tax = union;
+						UnionTaxonomy union = promote(tax); tax = union;
 						SourceTaxonomy idsource = Taxonomy.getTaxonomy(argv[++i]);
 						union.assignIds(idsource);
 					}
@@ -90,7 +90,7 @@ public class Smasher {
 
 					else if (argv[i].equals("--edits")) {
 						String dirname = argv[++i];
-						UnionTaxonomy union = tax.promote(); tax = union;
+						UnionTaxonomy union = promote(tax); tax = union;
 						union.edit(dirname);
 					}
 
@@ -141,7 +141,7 @@ public class Smasher {
 					if (tax == null) 
 						tax = Taxonomy.getTaxonomy(argv[i]);
 					else {
-						UnionTaxonomy union = tax.promote();
+						UnionTaxonomy union = promote(tax);
 						SourceTaxonomy source = Taxonomy.getTaxonomy(argv[i]);
 						if (source != null)
 							union.mergeIn(source);
@@ -152,6 +152,15 @@ public class Smasher {
 		} else
 			jython("-");
 	}
+
+    static UnionTaxonomy promote(Taxonomy tax) {
+        if (tax instanceof SourceTaxonomy)
+            return new UnionTaxonomy((SourceTaxonomy)tax);
+        else if (tax instanceof UnionTaxonomy)
+            return (UnionTaxonomy)tax;
+        else
+            throw new RuntimeException(String.format("promotion error: %s", tax));
+    }
 
 	static void jython(String source) {
 		if (source.equals("-")) {

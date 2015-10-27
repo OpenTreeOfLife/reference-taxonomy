@@ -57,8 +57,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	JSONObject metadata = null;
 	int taxid = -1234;	  // kludge
 
-
-    public Set<String> namesOfInterest = new HashSet<String>();
+    EventLogger eventlogger = null;
 
 	Taxonomy() { }
 
@@ -66,8 +65,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		return "(taxonomy " + this.getTag() + ")";
 	}
 
-    public abstract UnionTaxonomy target(); // see Answer.maybeLog()
-    public abstract void setTarget(UnionTaxonomy target);
+    public void setEventLogger(EventLogger eventlogger) {
+        this.eventlogger = eventlogger;
+    }
 
     // Nodes
 
@@ -2283,8 +2283,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			return false;
 		}
         // start logging this name
-        if (snode.name != null)
-            this.namesOfInterest.add(snode.name);
+        if (snode.name != null && this.eventlogger != null)
+            this.eventlogger.namesOfInterest.add(snode.name);
 		if (whether) {			// same
 			if (snode.mapped != null) {
 				if (snode.mapped != unode) {
@@ -2596,7 +2596,8 @@ class Stat {
 
 class SourceTaxonomy extends Taxonomy {
 
-    private UnionTaxonomy target = null; // see claim.py
+    // This is used for event logging (see Answer.maybeLog)
+    private UnionTaxonomy target = null;
 
 	SourceTaxonomy() {
 	}

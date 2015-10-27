@@ -389,7 +389,7 @@ public class AlignmentByName extends Alignment {
                     Answer z = criterion.assess(x, y);
                     if (z.value == Answer.DUNNO)
                         continue;
-                    ((UnionTaxonomy)y.taxonomy).log(z);
+                    z.log(y.taxonomy);
                     if (z.value < Answer.DUNNO) {
                         suppressp[i][j] = z;
                         continue;
@@ -520,7 +520,7 @@ public class AlignmentByName extends Alignment {
                         } else {
                             for (int j = 0; j < n; ++j)
                                 if (suppressp[i][j] != null) // how does this happen?
-                                    union.log(suppressp[i][j]);
+                                    suppressp[i][j].log(union);
                             String kludge = null;
                             int badness = -100;
                             for (int j = 0; j < n; ++j) {

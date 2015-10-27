@@ -815,9 +815,6 @@ public class Taxon {
         return true;
     }
 
-	// TBD: Currently the code selects the smallest containing disambiguating taxon.
-	// In future maybe it should select the *largest* disambiguating taxon.
-
 	public String uniqueName() {
         String u = this.longUniqueName();
         if (u.equals(this.name))

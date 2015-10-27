@@ -52,10 +52,11 @@ class UnionTaxonomy extends Taxonomy {
 
 	UnionTaxonomy() {
 		this.tag = "union";
+        this.eventlogger = new EventLogger();
 	}
 
 	UnionTaxonomy(SourceTaxonomy source) {
-		this.tag = "union";
+		super();
 		this.mergeIn(source);
 	}
 
@@ -63,8 +64,9 @@ class UnionTaxonomy extends Taxonomy {
         return null;
     }
 
-    public void setTarget(UnionTaxonomy union) {
-        System.err.format("** setTarget\n");
+    public void addSource(SourceTaxonomy source) {
+        source.setTarget(this);
+        source.setEventLogger(this.eventlogger);
     }
 
 	// -----
@@ -426,10 +428,10 @@ class UnionTaxonomy extends Taxonomy {
 		this.dumpMetadata(outprefix + "about.json");
 
 		Set<String> scrutinize = new HashSet<String>();
-        scrutinize.addAll(this.namesOfInterest);
+        scrutinize.addAll(this.eventlogger.namesOfInterest);
 		if (this.idsource != null)
 			scrutinize.addAll(this.dumpDeprecated(this.idsource, outprefix + "deprecated.tsv"));
-        if (this.namesOfInterest.size() > 0)
+        if (this.eventlogger.namesOfInterest.size() > 0)
             this.dumpLog(outprefix + "log.tsv", scrutinize);
         if (this.weakLog.size() > 0)
             this.dumpWeakLog(outprefix + "weaklog.csv");
@@ -701,24 +703,6 @@ class UnionTaxonomy extends Taxonomy {
 				}
         this.eventsReport(".  ");
 		return scrutinize;
-	}
-
-	// Method on a union taxonomy ... see Answer.maybeLog().
-    // markEvent has already been called.
-
-	void log(Answer answer) {
-		String name = null;
-		if (answer.target != null) name = answer.target.name;
-		if (name == null) name = answer.subject.name;	 //could be synonym
-		if (name == null) return;					 // Hmmph.	No name to log it under.
-		List<Answer> lg = this.logs.get(name);
-		if (lg == null) {
-			// Kludge! Why not other names as well?
-			if (name.equals("environmental samples")) return; //3606 cohomonyms
-			lg = new ArrayList<Answer>(1);
-			this.logs.put(name, lg);
-		}
-		lg.add(answer);
 	}
 
 	// Called on union taxonomy
@@ -1604,138 +1588,4 @@ abstract class Criterion {
 
 }
 
-// Values for 'answer'
-//	 3	 good match - to the point of being uninteresting
-//	 2	 yes  - some evidence in favor, maybe some evidence against
-//	 1	 weak yes  - evidence from name only
-//	 0	 no information
-//	-1	 weak no - some evidence against
-//	-2	  (not used)
-//	-3	 no brainer - gotta be different
 
-// Subject is in source taxonomy, target is in union taxonomy
-
-class Answer {
-	Taxon subject, target;					// The question is: Where should subject be mapped?
-	int value;					// YES, NO, etc.
-	String reason;
-	String witness = null;
-	//gate c14
-	Answer(Taxon subject, Taxon target, int value, String reason, String witness) {
-        if (subject == null)
-            throw new RuntimeException("Subject of new Answer is null");
-        if (!(subject.taxonomy instanceof SourceTaxonomy))
-            throw new RuntimeException("Subject of new Answer is not in a source taxonomy");
-        if (target != null && !(target.taxonomy instanceof UnionTaxonomy))
-            throw new RuntimeException("Target of new Answer is not in a union taxonomy");
-		this.subject = subject; this.target = target;
-		this.value = value;
-		this.reason = reason;
-		this.witness = witness;
-	}
-
-    // Tally this answer, and if it's interesting enough, log it
-    boolean maybeLog() {
-        UnionTaxonomy union = null;
-        if (target != null)
-            union = (UnionTaxonomy)(target.taxonomy);
-        else if (this.target != null)
-            union = this.subject.taxonomy.target();
-        if (union != null)
-            return maybeLog(union);
-        else
-            return false;
-    }
-
-    boolean maybeLog(UnionTaxonomy union) {
-        boolean infirstfew = union.markEvent(this.reason);
-        // markEvent even if name is null
-        if (subject.name != null) {
-            if (infirstfew)
-                union.namesOfInterest.add(subject.name); // watch it play out
-            if (union.namesOfInterest.contains(subject.name) || infirstfew || this.subject.count() > 20000) {
-                if (true)
-                    // Log it for printing after we get ids
-                    union.log(this);
-                else 
-                    // Print it immediately
-                    System.out.println(this.dump());
-                return true;
-            }
-        }
-        return infirstfew;
-    }
-
-    Answer() {
-        this.subject = null;
-        this.target = null;
-        this.value = DUNNO;
-        this.reason = "no-info";
-    }
-
-	static final int HECK_YES = 3;
-	static final int YES = 2;
-	static final int WEAK_YES = 1;
-	static final int DUNNO = 0;
-	static final int WEAK_NO = -1;
-	static final int NO = -2;
-	static final int HECK_NO = -3;
-
-    boolean isYes() { return value > 0; }
-
-	static Answer heckYes(Taxon subject, Taxon target, String reason, String witness) { // Uninteresting
-		return new Answer(subject, target, HECK_YES, reason, witness);
-	}
-
-	static Answer yes(Taxon subject, Taxon target, String reason, String witness) {
-		return new Answer(subject, target, YES, reason, witness);
-	}
-
-	static Answer weakYes(Taxon subject, Taxon target, String reason, String witness) {
-		return new Answer(subject, target, WEAK_YES, reason, witness);
-	}
-
-	static Answer noinfo(Taxon subject, Taxon target, String reason, String witness) {
-		return new Answer(subject, target, DUNNO, reason, witness);
-	}
-
-	static Answer weakNo(Taxon subject, Taxon target, String reason, String witness) {
-		return new Answer(subject, target, WEAK_NO, reason, witness);
-	}
-
-	static Answer no(Taxon subject, Taxon target, String reason, String witness) {
-		return new Answer(subject, target, NO, reason, witness);
-	}
-
-	static Answer heckNo(Taxon subject, Taxon target, String reason, String witness) {
-		return new Answer(subject, target, HECK_NO, reason, witness);
-	}
-
-	static Answer NOINFO = new Answer();
-
-	// Does this determination warrant the display of the log entries
-	// for this name?
-	boolean isInteresting() {
-		return (this.value < HECK_YES) && (this.value > HECK_NO) && (this.value != DUNNO);
-	}
-
-	// Cf. dumpLog()
-	String dump() {
-		return
-			(((this.target != null ? this.target.name :
-			   this.subject.name))
-			 + "\t" +
-
-			 this.subject.getQualifiedId().toString() + "\t" +
-
-			 (this.value > DUNNO ?
-			  "=>" :
-			  (this.value < DUNNO ? "not=>" : "-")) + "\t" +
-
-			 (this.target == null ? "?" : this.target.id) + "\t" +
-
-			 this.reason + "\t" +
-
-			 (this.witness == null ? "" : this.witness) );
-	}
-}

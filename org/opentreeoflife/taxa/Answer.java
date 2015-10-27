@@ -1,5 +1,4 @@
-package org.opentreeoflife.smasher;
-
+package org.opentreeoflife.taxa;
 
 // Values for 'answer'
 //	 3	 good match - to the point of being uninteresting
@@ -12,13 +11,13 @@ package org.opentreeoflife.smasher;
 
 // Subject is in source taxonomy, target is in union taxonomy
 
-class Answer {
-	Taxon subject, target;					// The question is: Where should subject be mapped?
-	int value;					// YES, NO, etc.
-	String reason;
-	String witness = null;
+public class Answer {
+	public Taxon subject, target;					// The question is: Where should subject be mapped?
+	public int value;					// YES, NO, etc.
+	public String reason;
+	public String witness = null;
 	//gate c14
-	Answer(Taxon subject, Taxon target, int value, String reason, String witness) {
+	public Answer(Taxon subject, Taxon target, int value, String reason, String witness) {
         if (subject == null)
             throw new RuntimeException("Subject of new Answer is null");
         if (!(subject.taxonomy instanceof SourceTaxonomy))
@@ -42,7 +41,7 @@ class Answer {
     }
 
     // Tally this answer, and if it's interesting enough, log it
-    boolean maybeLog() {
+    public boolean maybeLog() {
         EventLogger e = this.eventlogger();
         if (e != null)
             return maybeLog(e);
@@ -50,7 +49,7 @@ class Answer {
             return false;
     }
 
-    boolean maybeLog(Taxonomy tax) {
+    public boolean maybeLog(Taxonomy tax) {
         if (tax.eventlogger != null)
             return maybeLog(tax.eventlogger);
         else
@@ -81,7 +80,7 @@ class Answer {
         if (e != null) e.log(this);
     }
 
-    void log(Taxonomy tax) {
+    public void log(Taxonomy tax) {
         if (tax.eventlogger != null)
             tax.eventlogger.log(this);
         else
@@ -98,51 +97,53 @@ class Answer {
 	static final int HECK_YES = 3;
 	static final int YES = 2;
 	static final int WEAK_YES = 1;
+    public
 	static final int DUNNO = 0;
 	static final int WEAK_NO = -1;
 	static final int NO = -2;
+    public
 	static final int HECK_NO = -3;
 
-    boolean isYes() { return value > 0; }
+    public boolean isYes() { return value > DUNNO; }
 
-	static Answer heckYes(Taxon subject, Taxon target, String reason, String witness) { // Uninteresting
+	public static Answer heckYes(Taxon subject, Taxon target, String reason, String witness) { // Uninteresting
 		return new Answer(subject, target, HECK_YES, reason, witness);
 	}
 
-	static Answer yes(Taxon subject, Taxon target, String reason, String witness) {
+	public static Answer yes(Taxon subject, Taxon target, String reason, String witness) {
 		return new Answer(subject, target, YES, reason, witness);
 	}
 
-	static Answer weakYes(Taxon subject, Taxon target, String reason, String witness) {
+	public static Answer weakYes(Taxon subject, Taxon target, String reason, String witness) {
 		return new Answer(subject, target, WEAK_YES, reason, witness);
 	}
 
-	static Answer noinfo(Taxon subject, Taxon target, String reason, String witness) {
+	public static Answer noinfo(Taxon subject, Taxon target, String reason, String witness) {
 		return new Answer(subject, target, DUNNO, reason, witness);
 	}
 
-	static Answer weakNo(Taxon subject, Taxon target, String reason, String witness) {
+	public static Answer weakNo(Taxon subject, Taxon target, String reason, String witness) {
 		return new Answer(subject, target, WEAK_NO, reason, witness);
 	}
 
-	static Answer no(Taxon subject, Taxon target, String reason, String witness) {
+	public static Answer no(Taxon subject, Taxon target, String reason, String witness) {
 		return new Answer(subject, target, NO, reason, witness);
 	}
 
-	static Answer heckNo(Taxon subject, Taxon target, String reason, String witness) {
+	public static Answer heckNo(Taxon subject, Taxon target, String reason, String witness) {
 		return new Answer(subject, target, HECK_NO, reason, witness);
 	}
 
-	static Answer NOINFO = new Answer();
+	public static Answer NOINFO = new Answer();
 
 	// Does this determination warrant the display of the log entries
 	// for this name?
-	boolean isInteresting() {
+	public boolean isInteresting() {
 		return (this.value < HECK_YES) && (this.value > HECK_NO) && (this.value != DUNNO);
 	}
 
-	// Cf. dumpLog()
-	String dump() {
+	// Cf. smasher dumpLog()
+	public String dump() {
 		return
 			(((this.target != null ? this.target.name :
 			   this.subject.name))

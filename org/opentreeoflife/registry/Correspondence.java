@@ -2,7 +2,7 @@
    A binary relation with both indexes.
 */
 
-package org.opentreeoflife.smasher;
+package org.opentreeoflife.registry;
 
 import java.util.List;
 import java.util.ArrayList;

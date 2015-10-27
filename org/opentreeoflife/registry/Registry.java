@@ -1,4 +1,8 @@
-package org.opentreeoflife.smasher;
+package org.opentreeoflife.registry;
+
+import org.opentreeoflife.taxa.Taxonomy;
+import org.opentreeoflife.taxa.Taxon;
+import org.opentreeoflife.taxa.QualifiedId;
 
 import java.util.List;
 import java.util.ArrayList;

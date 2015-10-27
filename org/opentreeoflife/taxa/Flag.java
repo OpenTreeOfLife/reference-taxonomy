@@ -4,7 +4,7 @@
  * and the process isn't complete yet.
  */
 
-package org.opentreeoflife.smasher;
+package org.opentreeoflife.taxa;
 
 import java.util.HashMap;
 import java.util.Map;

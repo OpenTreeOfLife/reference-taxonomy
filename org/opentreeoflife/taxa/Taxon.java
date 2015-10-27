@@ -1,4 +1,4 @@
-package org.opentreeoflife.smasher;
+package org.opentreeoflife.taxa;
 
 import java.util.Set;
 import java.util.HashMap;
@@ -22,33 +22,28 @@ public class Taxon {
 	public Taxonomy taxonomy;			// For subsumption checks etc.
 	int count = -1;             // cache of # nodes at or below here
 	int depth = -1;             // cache of distance from root
-	boolean prunedp = false;    // for lazy removal from nameIndex
-
-	int properFlags = 0, inferredFlags = 0, rankAsInt = 0;
-
+	public boolean prunedp = false;    // for lazy removal from nameIndex
+	public int properFlags = 0, inferredFlags = 0;
+	int rankAsInt = 0;
 	Taxon division = null;
 
 	// State during alignment
 	public Taxon mapped = null;	// source node -> union node
-	Taxon comapped = null;		// union node -> example source node
-	Answer answer = null;  // source nodes only
-    Taxon lub = null;                 // union node that is the lub of node's children
-
+	public Taxon comapped = null;		// union node -> example source node
+	public Answer answer = null;  // source nodes only
+    public Taxon lub = null;                 // union node that is the lub of node's children
 	// Cf. AlignmentByName.assignBrackets
-	int seq = 0;		// Self
-	int start = 0;	// First taxon included not including self
-	int end = 0;		// Next taxon *not* included
+	public int seq = 0;		// Self
+	public int start = 0;	// First taxon included not including self
+	public int end = 0;		// Next taxon *not* included
+    public boolean inSynthesis = false; // used only for final annotation
 
-    boolean inSynthesis = false; // used only for final annotation
 
-
-	static boolean windyp = true;
-
-	Taxon(Taxonomy tax) {
+	public Taxon(Taxonomy tax) {
 		this.taxonomy = tax;
 	}
 
-    Taxon(Taxonomy tax, String name) {
+    public Taxon(Taxonomy tax, String name) {
         this(tax);
         this.setName(name);
     }
@@ -82,7 +77,7 @@ public class Taxon {
 
 	static Pattern commaPattern = Pattern.compile(",");
 
-	void setSourceIds(String info) {
+	public void setSourceIds(String info) {
 		if (info.equals("null")) return;	// glitch in OTT 2.2
 		String[] ids = commaPattern.split(info);
 		if (ids.length > 0) {
@@ -153,7 +148,7 @@ public class Taxon {
 
     // This is for detached nodes (*not* in roots list)
 
-	void addChild(Taxon child) {
+	public void addChild(Taxon child) {
 		if (child.taxonomy != this.taxonomy) {
 			this.report("Attempt to add child that belongs to a different taxonomy", child);
 			Taxon.backtrace();
@@ -198,9 +193,7 @@ public class Taxon {
 		}
 	}
 
-    static int stealcount = 0;
-
-	void addChild(Taxon child, int flags) {
+	public void addChild(Taxon child, int flags) {
         this.addChild(child);
         child.properFlags &= ~Taxonomy.INCERTAE_SEDIS_ANY;
         this.addFlag(flags);
@@ -277,7 +270,8 @@ public class Taxon {
 		return (d.noMrca() ? "(no division)" : d.name);
 	}
 
-	void setDivision(Taxon division) {
+    // public because smasher
+	public void setDivision(Taxon division) {
 		if (this.division != null && this.division != division)
             // Could do a tree walk setting division to null...
 			this.report("!? changing divisions doesn't work");
@@ -294,7 +288,7 @@ public class Taxon {
 	}
 
 	// Homonym discounting synonyms
-	boolean isHomonym() {
+	public boolean isHomonym() {
 		List<Taxon> alts = this.taxonomy.lookup(this.name);
 		if (alts == null) {
 			System.err.println("Name not indexed !? " + this.name);
@@ -313,7 +307,7 @@ public class Taxon {
 	// However, the first one in the list is the original source.
 	// The others are merely inferred to be identical.
 
-	QualifiedId putativeSourceRef() {
+	public QualifiedId putativeSourceRef() {
 		if (this.sourceIds != null)
 			return this.sourceIds.get(0);
 		else
@@ -322,10 +316,7 @@ public class Taxon {
 
     // This is used when the union node is NOT new
 
-    void transferProperties() {
-        Taxon unode = this.mapped;
-        if (unode == null) return;
-
+    public void transferProperties(Taxon unode) {
         if (this.name != null) {
             if (unode.name == null)
                 unode.setName(this.name);
@@ -407,7 +398,7 @@ public class Taxon {
 			this.sourceIds.add(qid);
 	}
 
-	void addSource(Taxon source) {
+	public void addSource(Taxon source) {
 		if (source.id != null &&
 			!source.taxonomy.getTag().equals("skel")) //KLUDGE!!!
 			addSourceId(source.getQualifiedId());
@@ -417,7 +408,7 @@ public class Taxon {
 				addSourceId(qid);
 	}
 
-	QualifiedId getQualifiedId() {
+	public QualifiedId getQualifiedId() {
 		if (this.id != null)
 			return new QualifiedId(this.taxonomy.getTag(), this.id);
         else if (this.name != null) {
@@ -444,7 +435,7 @@ public class Taxon {
 		return this.toString(null);
 	}
 
-	String toString(Taxon other) {
+	public String toString(Taxon other) {
 		String twinkie = "";
 		if (this.mapped != null || this.comapped != null)
 			twinkie = "*";
@@ -501,14 +492,14 @@ public class Taxon {
 
 	// Events - punt them to union taxonomy
 
-	boolean markEvent(String note) {
+	public boolean markEvent(String note) {
         if (this.taxonomy instanceof SourceTaxonomy)
             return this.taxonomy.markEvent(note, this);
         else
             return false;
 	}
     
-	boolean report(String note, Taxon othernode) {
+	public boolean report(String note, Taxon othernode) {
 		return this.report(note, othernode, null);
 	}
 
@@ -526,7 +517,7 @@ public class Taxon {
 		return false;
 	}
 
-	boolean report(String note, List<Taxon> others) {
+	public boolean report(String note, List<Taxon> others) {
 		if (this.startReport(note)) {
 			System.out.println("| " + note);
 			this.report1("", null);
@@ -559,7 +550,8 @@ public class Taxon {
 		System.out.println(" " + tag + " " + output);
 	}
 
-    boolean startReport(String tag) {
+    public boolean startReport(String tag) {
+        // this doesn't seem right somehow
         return false;
     }
 
@@ -630,32 +622,8 @@ public class Taxon {
 		}
 	}
 
-	// Find a near-ancestor (parent, grandparent, etc) node that's in
-	// common with the other taxonomy
-	Taxon scan(Taxonomy other) {
-		Taxon up = this.parent;
-
-		// Cf. informative() method
-		// Without this we get ambiguities when the taxon is a species
-		while (up != null && up.name != null && this.name.startsWith(up.name))
-			up = up.parent;
-
-		while (up != null && up.name != null && other.lookup(up.name) == null)
-			up = up.parent;
-
-		if (up != null && up.name == null) {
-			System.err.println("!? Null name: " + up + " ancestor of " + this);
-			Taxon u = this;
-			while (u != null) {
-				System.err.println(u);
-				u = u.parent;
-			}
-		}
-		return up;
-	}
-
 	// Use getDepth() only after the tree is in its final form
-	int getDepth() {
+	public int getDepth() {
 		if (this.depth < 0) {
 			if (this.parent == null)
 				this.depth = 0;
@@ -673,18 +641,19 @@ public class Taxon {
     }
 
 	// Does not use cache - depths may change during merge
-	int measureDepth() {		// Robust in presence of insertions
+	public int measureDepth() {		// Robust in presence of insertions
 		if (this.parent == null)
             return 0;
 		else
 			return this.parent.measureDepth() + 1;
 	}
 
-    boolean noMrca() {
+    // Test the return value of mrca() to see if the two nodes are in separate trees
+    public boolean noMrca() {
         return this == this.taxonomy.forest; // forest
     }
 
-    Taxon carefulMrca(Taxon other) {
+    public Taxon carefulMrca(Taxon other) {
         if (other == null) return null; // Shouldn't happen, but...
         return this.mrca(other, this.measureDepth(), other.measureDepth());
     }
@@ -760,7 +729,7 @@ public class Taxon {
 	}
 
     // Map source taxon to nearest available union taxon
-    Taxon bridge() {
+    public Taxon bridge() {
         Taxon a = this;
         while (a.mapped == null) {
             if (a.parent == null)
@@ -1158,7 +1127,7 @@ public class Taxon {
 
     // Used to explain why a cycle would be created
 
-    void showLineage(Taxon stop) {
+    public void showLineage(Taxon stop) {
 		int qount = 0;
 		for (Taxon t = this; t != stop; t = t.parent) {
             if (t == null) break;

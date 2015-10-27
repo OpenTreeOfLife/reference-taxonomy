@@ -12,7 +12,7 @@
 
 */
 
-package org.opentreeoflife.smasher;
+package org.opentreeoflife.taxa;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -46,7 +46,7 @@ import org.semanticweb.skosapibinding.SKOSFormatExt;
 public abstract class Taxonomy implements Iterable<Taxon> {
     private Map<String, List<Taxon>> nameIndex = new HashMap<String, List<Taxon>>();
 	public Map<String, Taxon> idIndex = new HashMap<String, Taxon>();
-    Taxon forest = new Taxon(this, "");
+    public Taxon forest = new Taxon(this, "");
 	protected String tag = null;
 	String[] header = null;
 
@@ -54,12 +54,14 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	Integer sourceidcolumn = null;
 	Integer infocolumn = null;
 	Integer flagscolumn = null;
-	JSONObject metadata = null;
+	public JSONObject metadata = null;
 	int taxid = -1234;	  // kludge
 
     public EventLogger eventlogger = null;
 
-	Taxonomy() { }
+	public Taxonomy() {
+        initRanks();
+    }
 
 	public String toString() {
 		return "(taxonomy " + this.getTag() + ")";
@@ -206,6 +208,10 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			return this.tag;
 	}
 
+    public void setTag(String tag) {
+        this.tag = tag;
+    }
+
 	void setTag() {
 		if (this.tag != null) return;
 		List<Taxon> probe = this.lookup("Caenorhabditis elegans");
@@ -230,7 +236,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	}
 
 	// Most rootward node in this taxonomy having a given name
-	Taxon highest(String name) { // See pin()
+    // Maybe this should be moved to smasher
+	public Taxon highest(String name) { // See pin()
 		List<Taxon> l = this.lookup(name);
 		if (l == null) return null;
 		Taxon best = null, otherbest = null;
@@ -299,7 +306,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
        Nodes with shorter ids come before nodes with longer ids.
        */
 
-	static int compareTaxa(Taxon n1, Taxon n2) {
+	public static int compareTaxa(Taxon n1, Taxon n2) {
 		int q1 = (n1.children == null ? 0 : n1.children.size());
 		int q2 = (n2.children == null ? 0 : n2.children.size());
 		if (q1 != q2) return q2 - q1;
@@ -425,7 +432,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		// this.dumpHidden(outprefix + "hidden.tsv");
 	}
 
-    void prepareForDump(String outprefix, String sep) throws IOException {
+    public void prepareForDump(String outprefix, String sep) throws IOException {
         this.placeBiggest();         // End of topology modifications
 		this.assignNewIds(0);
         this.reset();                // maybe unnecessary; depths and comapped
@@ -468,9 +475,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		fr.close();
 	}
 
-	static String NO_RANK = null;
+	public static String NO_RANK = null;
 
-	abstract void dumpMetadata(String filename) throws IOException;
+	public abstract void dumpMetadata(String filename) throws IOException;
 
 	// load | dump taxonomy file
 
@@ -743,7 +750,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
         }
 	}
 
-	void dumpNodes(Iterable<Taxon> nodes, String outprefix, String sep) throws IOException {
+	public void dumpNodes(Iterable<Taxon> nodes, String outprefix, String sep) throws IOException {
 		PrintStream out = Taxonomy.openw(outprefix + "taxonomy.tsv");
 
 		out.format("uid%sparent_uid%sname%srank%ssourceinfo%suniqname%sflags%s\n",
@@ -1018,7 +1025,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		}
 	}
 
-	void dumpSynonyms(String filename, String sep) throws IOException {
+	public void dumpSynonyms(String filename, String sep) throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
 		out.println("name\t|\tuid\t|\ttype\t|\tuniqname\t|\t");
 		for (String name : this.allNames()) {
@@ -1161,8 +1168,11 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
     // Former containers
 	static final int WAS_CONTAINER       = (1 <<  0);  // unclassified, environmental, ic, etc
+    public
 	static final int INCONSISTENT		 = (1 <<  1);  // paraphyletic taxa
+    public
 	static final int MERGED  			 = (1 <<  2);  // merge-compatible taxa
+    public
 	static final int FORMER_CONTAINER =
         (WAS_CONTAINER | INCONSISTENT | MERGED);
 
@@ -1171,7 +1181,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	static final int UNCLASSIFIED		 = (1 <<  4);
 	static final int ENVIRONMENTAL		 = (1 <<  5);
 	static final int INCERTAE_SEDIS		 = (1 <<  6);
+    public
 	static final int UNPLACED			 = (1 <<  7);   // children of paraphyletic taxa
+    public
 	static final int INCERTAE_SEDIS_ANY	 = 
         (MAJOR_RANK_CONFLICT | UNCLASSIFIED | ENVIRONMENTAL
          | INCERTAE_SEDIS | UNPLACED
@@ -1491,15 +1503,18 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		 "samples"},
 	};
 
-	static Map<String, Integer> ranks = new HashMap<String, Integer>();
+	static Map<String, Integer> ranks = null;
 
 	static void initRanks() {
-		for (int i = 0; i < rankStrings.length; ++i) {
-			for (int j = 0; j < rankStrings[i].length; ++j)
-				ranks.put(rankStrings[i][j], (i+1)*100 + j*10);
-		}
-		ranks.put("no rank", -1);
-		SPECIES_RANK = ranks.get("species");
+        if (ranks == null) {    // do only once.  could use static { ... }
+            ranks = new HashMap<String, Integer>();
+            for (int i = 0; i < rankStrings.length; ++i) {
+                for (int j = 0; j < rankStrings[i].length; ++j)
+                    ranks.put(rankStrings[i][j], (i+1)*100 + j*10);
+            }
+            ranks.put("no rank", -1);
+            SPECIES_RANK = ranks.get("species");
+        }
 	}
 
 	static int SPECIES_RANK = -1; // ranks.get("species");
@@ -1795,28 +1810,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		out.close();
 	}
 
-	static PrintStream openw(String filename) throws IOException {
-		PrintStream out;
-		if (filename.equals("-")) {
-			out = System.out;
-			System.err.println("Writing to standard output");
-		} else {
-			out = new java.io.PrintStream(new java.io.BufferedOutputStream(new java.io.FileOutputStream(filename)),
-										  false,
-										  "UTF-8");
-
-			// PrintStream(OutputStream out, boolean autoFlush, String encoding)
-
-			// PrintStream(new OutputStream(new FileOutputStream(filename, "UTF-8")))
-
-			System.err.println("Writing " + filename);
-		}
-		return out;
-	}
-
     // The id of the node in the taxonomy that has highest numbered id.
 
-	long maxid() {
+	public long maxid() {
 		long id = -1;
 		for (Taxon node : this) {
             if (node.id != null) {
@@ -2233,17 +2229,40 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	// ----- Utilities -----
 
-	static BufferedReader fileReader(File filename) throws IOException {
+    // public because Registry
+	public static BufferedReader fileReader(File filename) throws IOException {
 		return
 			new BufferedReader(new InputStreamReader(new FileInputStream(filename),
 													 "UTF-8"));
 	}
 
-	static BufferedReader fileReader(String filename) throws IOException {
+	public static BufferedReader fileReader(String filename) throws IOException {
 		return
 			new BufferedReader(new InputStreamReader(new FileInputStream(filename),
 													 "UTF-8"));
 	}
+
+    // public because Registry
+	public static PrintStream openw(String filename) throws IOException {
+		PrintStream out;
+		if (filename.equals("-")) {
+			out = System.out;
+			System.err.println("Writing to standard output");
+		} else {
+			out = new java.io.PrintStream(new java.io.BufferedOutputStream(new java.io.FileOutputStream(filename)),
+										  false,
+										  "UTF-8");
+
+			// PrintStream(OutputStream out, boolean autoFlush, String encoding)
+
+			// PrintStream(new OutputStream(new FileOutputStream(filename, "UTF-8")))
+
+			System.err.println("Writing " + filename);
+		}
+		return out;
+	}
+
+    // ----
 
 	public void dumpDifferences(Taxonomy other, String filename) throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
@@ -2324,7 +2343,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		copySynonyms(target, false);
 	}
 
-	void copyMappedSynonyms(Taxonomy target) {
+	public void copyMappedSynonyms(Taxonomy target) {
 		copySynonyms(target, true);
 	}
 
@@ -2432,7 +2451,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	// unode is a preexisting node in this taxonomy.
 
-	void alignWith(Taxon node, Taxon unode, String reason) {
+	public void alignWith(Taxon node, Taxon unode, String reason) {
         try {
             Answer answer = Answer.yes(node, unode, reason, null);
             this.alignWith(node, unode, answer);
@@ -2444,7 +2463,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
     }
 
     // Set the 'mapped' property of this node, carefully
-	void alignWith(Taxon node, Taxon unode, Answer answer) {
+	public void alignWith(Taxon node, Taxon unode, Answer answer) {
 		if (node.mapped == unode) return; // redundant
         if (!(unode.taxonomy == this)) {
             System.out.format("** Alignment target %s is not in a union taxonomy\n", node);
@@ -2509,46 +2528,21 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
     // Event logging
 
-	boolean markEvent(String tag) { // formerly startReport
+	public boolean markEvent(String tag) { // formerly startReport
         return this.eventlogger.markEvent(tag);
 	}
 
-    boolean markEvent(String tag, Taxon node) {
+    public boolean markEvent(String tag, Taxon node) {
         return this.eventlogger.markEvent(tag, node);
     }
 
-    boolean markEvent(String tag, Taxon node, Taxon unode) {
+    public boolean markEvent(String tag, Taxon node, Taxon unode) {
         // sort of a kludge
         return this.eventlogger.markEvent(tag, node, unode);
     }
 
 }
 // end of class Taxonomy
-
-class Stat {
-    String tag;
-    int i = 0;
-    int inc(Taxon x, Answer n, Answer m) { if (i<5) System.out.format("%s %s %s %s\n", tag, x, n, m); return ++i; }
-    Stat(String tag) { this.tag = tag; }
-    public String toString() { return "" + i + " " + tag; }
-}
-
-class SourceTaxonomy extends Taxonomy {
-
-	SourceTaxonomy() {
-	}
-
-	// This is the SourceTaxonomy version.
-	// Overrides dumpMetadata in class Taxonomy.
-	void dumpMetadata(String filename)	throws IOException {
-		if (this.metadata != null) {
-			PrintStream out = Taxonomy.openw(filename);
-			out.println(this.metadata); // JSON
-			out.close();
-		}
-	}
-}
-
 
 /*
   -----

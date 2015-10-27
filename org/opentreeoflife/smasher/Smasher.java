@@ -9,6 +9,10 @@
 
 package org.opentreeoflife.smasher;
 
+import org.opentreeoflife.taxa.Taxonomy;
+import org.opentreeoflife.taxa.SourceTaxonomy;
+import org.opentreeoflife.taxa.Taxon;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -29,13 +33,11 @@ public class Smasher {
 
 	public static void main(String argv[]) throws Exception {
 
-		Taxonomy.initRanks();
-
 		if (argv.length > 0) {
 
 			Taxonomy tax = null;
 			boolean anyfile = false;
-			Taxon.windyp = false;
+			UnionTaxonomy.windyp = false;
 			String outprefix = null;
 
 			for (int i = 0; i < argv.length; ++i) {
@@ -154,9 +156,11 @@ public class Smasher {
 	}
 
     static UnionTaxonomy promote(Taxonomy tax) {
-        if (tax instanceof SourceTaxonomy)
-            return new UnionTaxonomy((SourceTaxonomy)tax);
-        else if (tax instanceof UnionTaxonomy)
+        if (tax instanceof SourceTaxonomy) {
+            UnionTaxonomy union = new UnionTaxonomy();
+            union.mergeIn((SourceTaxonomy)tax);
+            return union;
+        } else if (tax instanceof UnionTaxonomy)
             return (UnionTaxonomy)tax;
         else
             throw new RuntimeException(String.format("promotion error: %s", tax));

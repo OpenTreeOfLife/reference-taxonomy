@@ -18,6 +18,12 @@
 
 package org.opentreeoflife.smasher;
 
+import org.opentreeoflife.taxa.Taxon;
+import org.opentreeoflife.taxa.Taxonomy;
+import org.opentreeoflife.taxa.SourceTaxonomy;
+import org.opentreeoflife.taxa.Answer;
+import org.opentreeoflife.taxa.QualifiedId;
+
 public abstract class Alignment {
 
     abstract Answer answer(Taxon node);
@@ -35,7 +41,7 @@ public abstract class Alignment {
 
 	static void alignmentReport(SourceTaxonomy source, UnionTaxonomy union) {
 
-		if (Taxon.windyp) {
+		if (UnionTaxonomy.windyp) {
 
 			int total = 0;
 			int nonamematch = 0;

@@ -1,5 +1,11 @@
 package org.opentreeoflife.smasher;
 
+import org.opentreeoflife.taxa.Taxon;
+import org.opentreeoflife.taxa.Taxonomy;
+import org.opentreeoflife.taxa.SourceTaxonomy;
+import org.opentreeoflife.taxa.Answer;
+import org.opentreeoflife.taxa.QualifiedId;
+
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;

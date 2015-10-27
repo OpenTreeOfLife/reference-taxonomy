@@ -1,4 +1,4 @@
-package org.opentreeoflife.smasher;
+package org.opentreeoflife.taxa;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -111,14 +111,14 @@ public class EventLogger {
     }
 
     // Final report
-	void eventsReport(String prefix) {        // was printStats
+	public void eventsReport(String prefix) {        // was printStats
         Collections.sort(this.eventStatNames);
 		for (String tag : this.eventStatNames) {
 			System.out.println(prefix + tag + ": " + this.eventStats.get(tag));
 		}
 	}
 
-	void resetEvents() {         // was resetStats
+	public void resetEvents() {         // was resetStats
 		this.eventStats = new HashMap<String, Long>();
 		this.eventStatNames = new ArrayList();
 	}

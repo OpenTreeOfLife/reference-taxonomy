@@ -1,4 +1,4 @@
-package org.opentreeoflife.smasher;
+package org.opentreeoflife.taxa;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;

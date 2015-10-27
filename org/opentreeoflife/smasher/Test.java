@@ -1,5 +1,9 @@
 package org.opentreeoflife.smasher;
 
+import org.opentreeoflife.taxa.Taxon;
+import org.opentreeoflife.taxa.Taxonomy;
+import org.opentreeoflife.taxa.SourceTaxonomy;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Collections;

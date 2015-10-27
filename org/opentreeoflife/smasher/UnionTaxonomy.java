@@ -11,6 +11,14 @@
 
 package org.opentreeoflife.smasher;
 
+import org.opentreeoflife.taxa.Taxon;
+import org.opentreeoflife.taxa.Taxonomy;
+import org.opentreeoflife.taxa.SourceTaxonomy;
+import org.opentreeoflife.taxa.Answer;
+import org.opentreeoflife.taxa.QualifiedId;
+import org.opentreeoflife.taxa.Flag;
+import org.opentreeoflife.taxa.EventLogger;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileInputStream;
@@ -50,14 +58,12 @@ class UnionTaxonomy extends Taxonomy {
 	Map<String, List<Answer>> logs = new HashMap<String, List<Answer>>();
     List<Answer> weakLog = new ArrayList<Answer>();
 
-	UnionTaxonomy() {
-		this.tag = "union";
-        this.eventlogger = new EventLogger();
-	}
+	static boolean windyp = true;
 
-	UnionTaxonomy(SourceTaxonomy source) {
-		super();
-		this.mergeIn(source);
+	UnionTaxonomy() {
+        super();
+		this.setTag("union");
+        this.eventlogger = new EventLogger();
 	}
 
 	public static UnionTaxonomy newTaxonomy() {
@@ -231,7 +237,7 @@ class UnionTaxonomy extends Taxonomy {
 		Alignment a = this.align(source);
         new MergeMachine(source, this).augment(a);
 		source.copyMappedSynonyms(this); // this = union
-		Taxon.windyp = true; //kludge
+		UnionTaxonomy.windyp = true; //kludge
 	}
 
 	Alignment align(SourceTaxonomy source) {
@@ -280,7 +286,6 @@ class UnionTaxonomy extends Taxonomy {
 		this.idsource = idsource;
         this.addSource(idsource);
 
-		// idsource.tag = "ids";
 		Alignment a = this.align(idsource);
 
         // Reset event counters
@@ -339,6 +344,8 @@ class UnionTaxonomy extends Taxonomy {
             return 0;
         }
     }
+
+	private static Pattern tabPattern = Pattern.compile("\t");
 
     SourceTaxonomy importantIds = null;
     Map<String, Integer> importantIdsFoo = new HashMap<String, Integer>();
@@ -463,7 +470,7 @@ class UnionTaxonomy extends Taxonomy {
 
 	// This is the UnionTaxonomy version.  Overrides method in Taxonomy class.
 
-	void dumpMetadata(String filename)	throws IOException {
+	public void dumpMetadata(String filename)	throws IOException {
 		this.metadata = new JSONObject();
 		List<Object> sourceMetas = new ArrayList<Object>();
 		this.metadata.put("inputs", sourceMetas);
@@ -471,7 +478,7 @@ class UnionTaxonomy extends Taxonomy {
 			if (source.metadata != null)
 				sourceMetas.add(source.metadata);
 			else
-				sourceMetas.add(source.tag);
+				sourceMetas.add(source.getTag());
 		// this.metadata.put("prefix", "ott");
 		PrintStream out = Taxonomy.openw(filename);
 		out.println(this.metadata);
@@ -962,7 +969,7 @@ class MergeMachine {
 
         transferProperties(source);
 
-        if (Taxon.windyp) {
+        if (UnionTaxonomy.windyp) {
             report(source, startroots, startcount);
             if (union.count() == 0)
                 source.forest.show();
@@ -976,8 +983,11 @@ class MergeMachine {
 
     // Called on source taxonomy to transfer flags, rank, etc. to union taxonomy
     void transferProperties(Taxonomy source) {
-        for (Taxon node : source)
-            node.transferProperties();
+        for (Taxon node : source) {
+            Taxon unode = node.mapped;
+            if (unode != null)
+                node.transferProperties(unode);
+        }
     }
 
     Map<String, Integer> reasonCounts = new HashMap<String, Integer>();
@@ -1442,8 +1452,8 @@ abstract class Criterion {
 		new Criterion() {
 			public String toString() { return "same-ancestor"; }
 			Answer assess(Taxon x, Taxon target) {
-				Taxon y0 = target.scan(x.taxonomy);	  // ignore names not known in both taxonomies
-				Taxon x0 = x.scan(target.taxonomy);
+				Taxon y0 = scan(target, x.taxonomy);	  // ignore names not known in both taxonomies
+				Taxon x0 = scan(x, target.taxonomy);
 				if (x0 == null || y0 == null)
 					return Answer.NOINFO;
 
@@ -1465,6 +1475,30 @@ abstract class Criterion {
 					return Answer.NOINFO;
 			}
 		};
+
+	// Find a near-ancestor (parent, grandparent, etc) node that's in
+	// common with the other taxonomy
+	Taxon scan(Taxon node, Taxonomy other) {
+		Taxon up = node.parent;
+
+		// Cf. informative() method
+		// Without this we get ambiguities when the taxon is a species
+		while (up != null && up.name != null && node.name.startsWith(up.name))
+			up = up.parent;
+
+		while (up != null && up.name != null && other.lookup(up.name) == null)
+			up = up.parent;
+
+		if (up != null && up.name == null) {
+			System.err.println("!? Null name: " + up + " ancestor of " + node);
+			Taxon u = node;
+			while (u != null) {
+				System.err.println(u);
+				u = u.parent;
+			}
+		}
+		return up;
+	}
 
 	static boolean online(String name, Taxon node) {
 		for ( ; node != null; node = node.parent)
@@ -1616,8 +1650,16 @@ abstract class Criterion {
     };
 
     boolean metBy(Taxon node, Taxon unode) {
-        return this.assess(node, unode).value > Answer.DUNNO;
+        return this.assess(node, unode).isYes();
     }
 }
 
+
+class Stat {
+    String tag;
+    int i = 0;
+    int inc(Taxon x, Answer n, Answer m) { if (i<5) System.out.format("%s %s %s %s\n", tag, x, n, m); return ++i; }
+    Stat(String tag) { this.tag = tag; }
+    public String toString() { return "" + i + " " + tag; }
+}
 

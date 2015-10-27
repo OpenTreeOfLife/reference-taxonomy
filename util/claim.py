@@ -1,10 +1,10 @@
 # Use this with 'from claim import *'
 #   ... which unfortunately doesn't work in jython
 
-from org.opentreeoflife.smasher import Taxonomy, UnionTaxonomy
+from org.opentreeoflife.taxa import Taxonomy, SourceTaxonomy
 
 def test():
-    tax = UnionTaxonomy.newTaxonomy()
+    tax = SourceTaxonomy()
     tax.newTaxon('Mouse', 'species', 'about:blank')
     tax.newTaxon('Dog', 'species', 'about:blank')
     tax.newTaxon('Mammal', 'class', 'about:blank')

@@ -1,6 +1,7 @@
 # Jython script to build the "model village" taxonomy.
 
-from org.opentreeoflife.smasher import Taxonomy, UnionTaxonomy
+from org.opentreeoflife.taxa import Taxonomy
+from org.opentreeoflife.smasher import UnionTaxonomy
 from claim import Has_child
 
 # Create model taxonomy

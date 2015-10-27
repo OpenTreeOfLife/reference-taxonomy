@@ -19,7 +19,6 @@ public class Taxon {
 	public String name, rank = null;
 	public List<Taxon> children = null;
 	public List<QualifiedId> sourceIds = null;
-    public List<Synonym> synonyms = null;
 	public Taxonomy taxonomy;			// For subsumption checks etc.
 	int count = -1;             // cache of # nodes at or below here
 	int depth = -1;             // cache of distance from root
@@ -500,26 +499,10 @@ public class Taxon {
 			return "";
 	}
 
-    // For reporting
-    UnionTaxonomy getUnion() {
-        if (this.taxonomy instanceof UnionTaxonomy)
-            return (UnionTaxonomy)(this.taxonomy);
-        else if (this.taxonomy.target() != null)
-            return this.taxonomy.target();
-        else
-            return null;
-    }
-
 	// Events - punt them to union taxonomy
 
 	boolean markEvent(String note) {
-        UnionTaxonomy u = this.getUnion();
-        if (u == null)
-            return false;
-        else if (this.taxonomy instanceof SourceTaxonomy)
-            return u.markEvent(note, this);
-        else
-            return u.markEvent(note);
+        return false;
 	}
     
 	boolean report(String note, Taxon othernode) {
@@ -574,74 +557,8 @@ public class Taxon {
 	}
 
     boolean startReport(String tag) {
-        UnionTaxonomy u = this.getUnion();
-        if (u != null)
-            return u.markEvent(tag);
-        else
-            return false;
+        return false;
     }
-
-	// N.b. this is in source taxonomy, match is in union
-	boolean separationReport(String note, Taxon match) {
-		if (this.startReport(note)) {
-			System.out.println(note);
-
-			Taxon nearestMapped = this;			 // in source taxonomy
-			Taxon nearestMappedMapped = this;	 // in union taxonomy
-
-			if (this.taxonomy != match.taxonomy) {
-				if (!(this.taxonomy instanceof SourceTaxonomy) ||
-					!(match.taxonomy instanceof UnionTaxonomy)) {
-					this.report("Type dysfunction", match);
-					return true;
-				}
-				// Need to cross from source taxonomy over into the union one
-				while (nearestMapped != null && nearestMapped.mapped == null)
-					nearestMapped = nearestMapped.parent;
-				if (nearestMapped == null) {
-					this.report("No matches, can't compute mrca", match);
-					return true;
-				}
-				nearestMappedMapped = nearestMapped.mapped;
-				if (nearestMappedMapped.taxonomy != match.taxonomy) {
-					this.report("Not in matched taxonomies", match);
-					return true;
-				}
-			}
-
-			Taxon mrca = match.carefulMrca(nearestMappedMapped); // in union tree
-			if (mrca == null || mrca.noMrca()) {
-				this.report("In unconnected trees !?", match);
-				return true;
-			}
-
-			// Number of steps in source tree before crossing over
-			int d0 = this.measureDepth() - nearestMapped.measureDepth();
-
-			// Steps from source node up to mrca
-            int dm = mrca.measureDepth();
-			int d1 = d0 + (nearestMappedMapped.measureDepth() - dm);
-			int d2 = match.measureDepth() - dm;
-			int d3 = (d2 > d1 ? d2 : d1);
-			String spaces = "                                                                ";
-			Taxon n1 = this;
-			for (int i = d3 - d1; i <= d3; ++i) {
-				if (n1 == nearestMapped)
-					n1 = nearestMappedMapped;
-				System.out.println("  " + spaces.substring(0, i) + n1.toString(match));
-				n1 = n1.parent;
-			}
-			Taxon n2 = match;
-			for (int i = d3 - d2; i <= d3; ++i) {
-				System.out.println("  " + spaces.substring(0, i) + n2.toString(this));
-				n2 = n2.parent;
-			}
-			if (n1 != n2)
-				System.err.println("Bug: " + n1 + " != " + n2);
-			return true;
-		}
-		return false;
-	}
 
 	String elaboratedString(Taxonomy tax) {
 		if (this.mapped != null)
@@ -810,8 +727,11 @@ public class Taxon {
 	public Taxon[] divergence(Taxon other) {
         Taxon a = this, b = other;
         if (a.taxonomy != b.taxonomy) {
-            a = this.bridge();
-            b = other.bridge();
+            Taxon new_a = a.bridge();
+            if (new_a == a)
+                b = other.bridge();
+            else
+                a = new_a;
         }
         if (a == null || b == null) return null;
 		if (a.taxonomy != b.taxonomy)
@@ -838,21 +758,15 @@ public class Taxon {
 
     // Map source taxon to nearest available union taxon
     Taxon bridge() {
-        if (this.taxonomy instanceof UnionTaxonomy)
-            return this;
-        else {
-            Taxon a = this;
-            while (a.mapped == null) {
-                if (a.parent == null)
-                    // No bridge!  Shouldn't happen
-                    // see uniqueName (of e.g. Trachelius) for example
-                    return null; //throw new RuntimeException(String.format("No bridge from %s", this));
-                a = a.parent;
-            }
-            if (!(a.mapped.taxonomy instanceof UnionTaxonomy))
-                throw new RuntimeException(String.format("Taxon %s mapped to non-union %s", a, a.mapped));
-            return a.mapped;
+        Taxon a = this;
+        while (a.mapped == null) {
+            if (a.parent == null)
+                // No bridge!  Shouldn't happen
+                // see uniqueName (of e.g. Trachelius) for example
+                return this;
+            a = a.parent;
         }
+        return a.mapped;
     }
 
 	// For cycle detection, etc.
@@ -1270,18 +1184,4 @@ public class Taxon {
         return binomialPattern.matcher(name).find();
     }
 
-}
-
-class Synonym {
-    String name;
-    String sourceTag;
-    String type;
-    Taxon target;
-    // Taxonomy taxonomy;
-    Synonym(String name, String type, String sourceTag, Taxon target) {
-        this.name = name;
-        this.type = type;
-        this.sourceTag = sourceTag;
-        this.target = target;
-    }
 }

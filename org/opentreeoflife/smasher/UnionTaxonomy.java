@@ -836,6 +836,67 @@ class UnionTaxonomy extends Taxonomy {
 		this.eventStatNames = new ArrayList();
 	}
 
+	// N.b. this is in source taxonomy, match is in union
+	boolean separationReport(String note, Taxon foo, Taxon match) {
+		if (foo.startReport(note)) {
+			System.out.println(note);
+
+			Taxon nearestMapped = foo;			 // in source taxonomy
+			Taxon nearestMappedMapped = foo;	 // in union taxonomy
+
+			if (foo.taxonomy != match.taxonomy) {
+				if (!(foo.taxonomy instanceof SourceTaxonomy) ||
+					!(match.taxonomy instanceof UnionTaxonomy)) {
+					foo.report("Type dysfunction", match);
+					return true;
+				}
+				// Need to cross from source taxonomy over into the union one
+				while (nearestMapped != null && nearestMapped.mapped == null)
+					nearestMapped = nearestMapped.parent;
+				if (nearestMapped == null) {
+					foo.report("No matches, can't compute mrca", match);
+					return true;
+				}
+				nearestMappedMapped = nearestMapped.mapped;
+				if (nearestMappedMapped.taxonomy != match.taxonomy) {
+					foo.report("Not in matched taxonomies", match);
+					return true;
+				}
+			}
+
+			Taxon mrca = match.carefulMrca(nearestMappedMapped); // in union tree
+			if (mrca == null || mrca.noMrca()) {
+				foo.report("In unconnected trees !?", match);
+				return true;
+			}
+
+			// Number of steps in source tree before crossing over
+			int d0 = foo.measureDepth() - nearestMapped.measureDepth();
+
+			// Steps from source node up to mrca
+            int dm = mrca.measureDepth();
+			int d1 = d0 + (nearestMappedMapped.measureDepth() - dm);
+			int d2 = match.measureDepth() - dm;
+			int d3 = (d2 > d1 ? d2 : d1);
+			String spaces = "                                                                ";
+			Taxon n1 = foo;
+			for (int i = d3 - d1; i <= d3; ++i) {
+				if (n1 == nearestMapped)
+					n1 = nearestMappedMapped;
+				System.out.println("  " + spaces.substring(0, i) + n1.toString(match));
+				n1 = n1.parent;
+			}
+			Taxon n2 = match;
+			for (int i = d3 - d2; i <= d3; ++i) {
+				System.out.println("  " + spaces.substring(0, i) + n2.toString(foo));
+				n2 = n2.parent;
+			}
+			if (n1 != n2)
+				System.err.println("Bug: " + n1 + " != " + n2);
+			return true;
+		}
+		return false;
+	}
 
 }
 

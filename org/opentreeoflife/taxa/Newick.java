@@ -161,7 +161,8 @@ class Newick {
 	}
 
     static private String spacify(String s) {
-        return s.replaceAll("_", " ");
+        String r = s.replaceAll("_", " ");
+        return (r.length() == 0 ? null : r);
     }
 
     // ----- WRITE -----

@@ -168,7 +168,7 @@ public class Smasher {
 
 	static void jython(String source) {
 		if (source.equals("-")) {
-			System.out.format("Consider doing:\nfrom org.opentreeoflife.smasher import Taxonomy\n");
+			System.out.format("Consider doing:\nfrom org.opentreeoflife.taxa import Taxonomy\n");
 			org.python.util.InteractiveConsole j = new org.python.util.JLineConsole();
 			j.interact();
 		} else {

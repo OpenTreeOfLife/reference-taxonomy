@@ -1,5 +1,5 @@
-from org.opentreeoflife.smasher import Taxonomy, Flag
-from org.opentreeoflife.smasher import Registry
+from org.opentreeoflife.taxa import Taxonomy, Flag
+from org.opentreeoflife.registry import Registry
 
 import sys
 
@@ -108,12 +108,12 @@ def run_test(t1, t2):
 # ott28 = Taxonomy.getTaxonomy('../tax/prev_ott/')
 # ott28.select(ott28.taxon('Asterales')).dump('asterales-ott28/')
 
-# run_test('asterales-ott28/', 'asterales-synth/')
+run_test('asterales-ott28/', 'asterales-synth/')
 
 # Fungi
 
 # ott28.select(ott28.taxon('Fungi')).dump('fungi-ott28/')
-run_test('fungi-ott28/', 'fungi-synth3/')
+# run_test('fungi-ott28/', 'fungi-synth3/')
 
 # Plants
 

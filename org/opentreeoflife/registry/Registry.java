@@ -16,6 +16,10 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.BufferedReader;
 
+import org.python.util.PythonInterpreter;
+import org.python.util.InteractiveConsole;
+import org.python.util.JLineConsole;
+
 public class Registry {
 
     // State
@@ -48,11 +52,31 @@ public class Registry {
         Map<QualifiedId, Taxon> qidIndex = makeQidIndex(taxonomy);
         Correspondence<Registration, Taxon> byMetadata = mapTaxaByMetadata(taxonomy, qidIndex);
         Correspondence<Registration, Taxon> result = new Correspondence<Registration, Taxon>();
+        // 1. Look up samples using metadata (see chooseTaxon)
+        // 2. Look up internal nodes by topology (using metadata to disambiguate)
+        // 3. Look up remaining tips by metadata
+        int i = 0;
         for (Registration reg : this.allRegistrations()) {
-            List<Taxon> taxa = this.registrationToTaxa(reg, byMetadata);
-            if (taxa != null)
+            // findByTopology has the side effect of entering samples in result
+            List<Taxon> taxa = this.findByTopology(reg, byMetadata, result);
+            if (taxa != null) {
                 result.put(reg, taxa);
+                ++i;
+            }
         }
+        int j = 0;
+        for (Registration reg : this.allRegistrations()) {
+            if (result.get(reg) == null && reg.samples == null && reg.exclusions == null) {
+                List<Taxon> taxa = byMetadata.get(reg);
+                if (taxa != null) {
+                    result.put(reg, taxa);
+                    ++j;
+                }
+            }
+        }
+        System.out.format("of %s registrations, mapped %s to internal nodes, %s to samples, %s to non-samples\n",
+                          registrations.size(), i, result.size() - i - j, j);
+        System.out.format("mapped to %s taxa\n", result.cosize());
         return result;
     }
 
@@ -60,13 +84,13 @@ public class Registry {
     // Do we really need to reify taxaByMetadata as a Map ?
 
     Correspondence<Registration, Taxon> mapTaxaByMetadata(Taxonomy taxonomy, Map<QualifiedId, Taxon> qidIndex) {
-        Correspondence<Registration, Taxon> registrationToTaxa = new Correspondence<Registration, Taxon>();
+        Correspondence<Registration, Taxon> byMetadata = new Correspondence<Registration, Taxon>();
         for (Registration reg : this.allRegistrations()) {
             List<Taxon> taxa = taxaByMetadata(reg, taxonomy, qidIndex);
             if (taxa != null && taxa.size() > 0)
-                registrationToTaxa.put(reg, taxa);
+                byMetadata.put(reg, taxa);
         }
-        return registrationToTaxa;
+        return byMetadata;
     }
 
     // Find compatible taxa, using metadata, for one registation.
@@ -137,14 +161,11 @@ public class Registry {
     }
 
     // Find all the taxa that match a single Registration.
-    // Attempt to reduce topological ambiguity by using clues from metadata.
+    // When there is topological ambiguity, attempt to reduce it using clues from metadata.
 
-    List<Taxon> registrationToTaxa(Registration reg, Correspondence<Registration, Taxon> byMetadata) {
-        Taxon[] path = constrainedPath(reg, byMetadata);
-        if (path == null)
-            // No path.  Treat as tip
-            return byMetadata.get(reg);
-        else {
+    List<Taxon> findByTopology(Registration reg, Correspondence<Registration, Taxon> byMetadata, Correspondence<Registration, Taxon> registrationToTaxa) {
+        Taxon[] path = constrainedPath(reg, byMetadata, registrationToTaxa);
+        if (path != null) {
             Taxon m = path[0], a = path[1]; // mrca, ancestor
             if (m.parent != a) {
                 // Ambiguous.  Attempt to clear it up using metadata... this may be the wrong place to do this
@@ -164,21 +185,23 @@ public class Registry {
             for (Taxon n = m; n != a; n = n.parent)
                 candidates.add(n);
             return candidates;
-        }
+        } else return null;
     }
 
     // Find compatible taxa, using topological constraints, for one registration.
     // Return value is {m, a} where a is an ancestor of m.  Compatible taxa are
     // m and its ancestors up to be not including a.
 
-    Taxon[] constrainedPath(Registration reg, Correspondence<Registration, Taxon> byMetadata) {
+    Taxon[] constrainedPath(Registration reg,
+                            Correspondence<Registration, Taxon> byMetadata,
+                            Correspondence<Registration, Taxon> registrationToTaxa) {
         if (reg.samples == null || reg.exclusions == null)
             return null;
 
         Taxon m = null;
 
         for (Registration s : reg.samples) {
-            Taxon snode = chooseTaxon(s, byMetadata);
+            Taxon snode = chooseTaxon(s, byMetadata, registrationToTaxa);
             if (snode != null) {
                 if (m == null)
                     m = snode;
@@ -193,7 +216,7 @@ public class Registry {
 
         if (m != null && reg.exclusions != null && reg.exclusions.size() > 0) {
             for (Registration s : reg.exclusions) {
-                Taxon snode = chooseTaxon(s, byMetadata);
+                Taxon snode = chooseTaxon(s, byMetadata, registrationToTaxa);
                 if (snode != null) {
                     Taxon b = m.mrca(snode);
                     if (a == null)
@@ -219,13 +242,15 @@ public class Registry {
 
     void register(Taxonomy tax,
                   Correspondence<Registration, Taxon> registrationToTaxa) {
-        Map<Taxon, Registration> newRegistrations = new HashMap<Taxon, Registration>();
+        Map<Taxon, Registration> needExclusions = new HashMap<Taxon, Registration>();
         int before = registrationToTaxa.size();
+        // 1. Register all unregistered tips
+        // 2. Register all unregistered internal nodes
         for (Taxon root : tax.roots())
-            registerSubtree(root, registrationToTaxa, newRegistrations);
-        System.out.format("%s internal, %s tips\n", newRegistrations.size(), registrationToTaxa.size() - before);
-        for (Taxon node : newRegistrations.keySet())
-            addExclusions(node, newRegistrations, registrationToTaxa);
+            registerSubtree(root, registrationToTaxa, needExclusions);
+        System.out.format("%s internal, %s tips\n", needExclusions.size(), registrationToTaxa.size() - before);
+        for (Taxon node : needExclusions.keySet())
+            addExclusions(node, needExclusions, registrationToTaxa);
     }
 
     // Returns a registration that would uniquely select the given node.
@@ -234,16 +259,35 @@ public class Registry {
 
     Registration registerSubtree(Taxon node,
                                  Correspondence<Registration, Taxon> registrationToTaxa,
-                                 Map<Taxon, Registration> newRegistrations) {
+                                 Map<Taxon, Registration> needExclusions) {
         // ? Exclude nodes that have names that are homonyms ?
         List<List<Registration>> childSamples = new ArrayList<List<Registration>>();
         // Preorder traversal
-        if (node.children != null) {
+        Registration probe = chooseRegistration(node, registrationToTaxa);
+        if (node.children == null) {
+            // Look to see if we already have a (tip?) registration for this node
+            // ****
+            if (probe != null)
+                return probe;
+            Registration reg = registrationForTaxon(node);
+            // Tip.  Add to correspondence so that it can be used as a sample.
+            registrationToTaxa.add(reg, node);
+            Registration check = chooseRegistration(node, registrationToTaxa);
+            if (check != reg)
+                // this is not good.
+                System.out.format("** registrationToTaxa.add(%s, %s) failed\n", reg, node);
+            return reg;
+        } else if (probe != null) {
+            Collections.sort(node.children, betterAsType);
+            for (Taxon child : node.children)
+                registerSubtree(child, registrationToTaxa, needExclusions);
+            return probe;
+        } else {
             // Persistent side effect to list of children in that node!
             // (the order will be assumed when finding exclusions, as well)
             Collections.sort(node.children, betterAsType);
             for (Taxon child : node.children) {
-                Registration reg = registerSubtree(child, registrationToTaxa, newRegistrations);
+                Registration reg = registerSubtree(child, registrationToTaxa, needExclusions);
                 if (reg.samples != null)
                     childSamples.add(reg.samples);
                 else {
@@ -252,29 +296,31 @@ public class Registry {
                     childSamples.add(single);
                 }
             }
-        } else {
-            // Look to see if we already have a (tip?) registration for this node
-            // ****
-            Registration probe = chooseRegistration(node, registrationToTaxa);
-            if (probe != null)
-                // discard samples, don't need
-                return probe;
-        }
-        // Novel taxon, or multiple registrations are compatible
-        // with it.  Make up a new registration.
-        List<Registration> samples = new ArrayList<Registration>();
-        for (int i = 0; ; ++i) {
-            boolean gotOne = false;
-            for (List<Registration> regs : childSamples) {
-                if (i < regs.size()) {
-                    gotOne = true;
-                    samples.add(regs.get(i));
-                    if (samples.size() >= nsamples) break;
+            // Novel taxon, or multiple registrations are compatible
+            // with it.  Make up a new registration.
+            List<Registration> samples = new ArrayList<Registration>();
+            for (int i = 0; ; ++i) {
+                boolean gotOne = false;
+                for (List<Registration> regs : childSamples) {
+                    if (i < regs.size()) {
+                        gotOne = true;
+                        samples.add(regs.get(i));
+                        if (samples.size() >= nsamples) break;
+                    }
                 }
+                if (samples.size() >= nsamples) break;
+                if (!gotOne) break;
             }
-            if (samples.size() >= nsamples) break;
-            if (!gotOne) break;
+            // there will always be at least one sample (because this is an internal node)
+            Registration reg = registrationForTaxon(node);
+            reg.samples = samples;
+            // To do on second pass: exclusions
+            needExclusions.put(node, reg);
+            return reg;
         }
+    }
+
+    Registration registrationForTaxon(Taxon node) {
         Registration reg = newRegistration();
         // Set metadata from node
         reg.name = node.name;
@@ -282,35 +328,23 @@ public class Registry {
             reg.qid = node.sourceIds.get(0);
         if (node.name != null)
             reg.ottid = node.id;
-        if (samples.size() > 0) {
-            reg.samples = samples;
-            // To do on second pass: exclusions
-            newRegistrations.put(node, reg);
-        } else {
-            // Tip.  Add to correspondence so that later it can become a sample.
-            registrationToTaxa.add(reg, node);
-            Registration check = chooseRegistration(node, registrationToTaxa);
-            if (check == null)
-                // this is not good.
-                System.out.format("** registrationToTaxa.add(%s, %s) failed\n", reg, node);
-        }
         return reg;
     }
 
     // Second pass after registrations have been created with inclusions
 
     void addExclusions(Taxon node,
-                       Map<Taxon, Registration> newRegistrations,
+                       Map<Taxon, Registration> needExclusions,
                        Correspondence<Registration, Taxon> registrationToTaxa) {
         // Add the new registration to those already there for this taxon
-        Registration reg = newRegistrations.get(node);
+        Registration reg = needExclusions.get(node);
         if (reg.samples != null) {
             for (Taxon n = node; n.parent != null; n = n.parent) {
                 Taxon p = n.parent;
                 if (p.children.size() >= 2) {
                     Taxon sib = p.children.get(0);
                     if (sib == n) sib = p.children.get(1);
-                    Registration sib_reg = newRegistrations.get(sib);
+                    Registration sib_reg = needExclusions.get(sib);
                     if (sib_reg == null) sib_reg = chooseRegistration(sib, registrationToTaxa);
                     if (sib_reg != null) {
                         Registration ex = sib_reg;
@@ -371,7 +405,7 @@ public class Registry {
                 // in which case try using metadata to filter
                 if (node.sourceIds != null && node.sourceIds.get(0).equals(reg.qid)) {
                     if (answer != null) {
-                        System.out.format("ambiguous (1): %s %s %s\n", node, reg, answer);
+                        System.out.format("ambiguous (1): %s %s %s qid=%s\n", node, reg, answer, reg.qid);
                         return null;      // FAIL ???
                     } else
                         answer = reg;
@@ -386,7 +420,7 @@ public class Registry {
             if (probe != null && probe.size() == 1 && probe.get(0) == node) {
                 if (node.sourceIds != null && node.sourceIds.contains(reg.qid)) {
                     if (answer != null) {
-                        System.out.format("ambiguous (2): %s %s %s\n", node, reg, answer);
+                        System.out.format("ambiguous (2): %s %s %s qid=%s\n", node, reg, answer, reg.qid);
                         return null;      // FAIL ???
                     } else
                         answer = reg;
@@ -401,7 +435,7 @@ public class Registry {
             if (probe != null && probe.size() == 1 && probe.get(0) == node) {
                 if (node.id != null && node.name != null && node.id.equals(reg.ottid)) {
                     if (answer != null) {
-                        System.out.format("ambiguous (3): %s %s %s\n", node, reg, answer);
+                        System.out.format("ambiguous: %s has same id %s as both %s and %s\n", node, node.id, reg, answer);
                         return null;      // FAIL ???
                     } else
                         answer = reg;
@@ -442,17 +476,31 @@ public class Registry {
         return answer;
     }
 
-    public Taxon chooseTaxon(Registration reg, Correspondence<Registration, Taxon> registrationToTaxa) {
-        List<Taxon> taxa = registrationToTaxa.get(reg);
-        if (taxa != null && taxa.size() == 1)
-            return taxa.get(0);
-        return null;
+    public Taxon chooseTaxon(Registration reg,
+                             Correspondence<Registration, Taxon> byMetadata,
+                             Correspondence<Registration, Taxon> registrationToTaxa) {
+        List<Taxon> seen = registrationToTaxa.get(reg);
+        if (seen != null && seen.size() == 1) // grumble
+            return seen.get(0);
+        else if (byMetadata != null) {
+            List<Taxon> taxa = byMetadata.get(reg);
+            if (taxa == null) {
+                System.out.format("no such taxon: %s\n", reg);
+                return null;
+            } else if (taxa.size() == 1) {
+                registrationToTaxa.add(reg, taxa.get(0));
+                return taxa.get(0);
+            } else {
+                System.out.format("taxon-ambiguous registration: %s %s\n", reg, taxa);
+                return null;
+            }
+        } else return null;
     }
 
     public String explain(Taxon node, Registration reg, Correspondence<Registration, Taxon> corr) {
         if (reg.samples != null)
             for (Registration sreg : reg.samples) {
-                Taxon sample = chooseTaxon(sreg, corr);
+                Taxon sample = chooseTaxon(sreg, null, corr);
                 if (sample == null)
                     return String.format("no sample taxon for sample %s", sreg);
                 if (!sample.descendsFrom(node))
@@ -460,7 +508,7 @@ public class Registry {
             }
         if (reg.exclusions != null)
             for (Registration xreg : reg.exclusions) {
-                Taxon exclusion = chooseTaxon(xreg, corr);
+                Taxon exclusion = chooseTaxon(xreg, null, corr);
                 if (exclusion == null)
                     return String.format("no exclusion taxon for sample %s", xreg);
                 if (exclusion.descendsFrom(node))
@@ -525,6 +573,20 @@ public class Registry {
         for (Registration reg : allRegistrations())
             reg.dump(out);
         out.close();
+    }
+
+    // entry from shell
+
+	public static void main(String argv[]) throws Exception {
+		if (argv.length > 0) {
+			PythonInterpreter j = new PythonInterpreter();
+            for (String source : argv)
+                j.execfile(source);
+        } else {
+			System.out.format("Consider doing:\nfrom org.opentreeoflife.taxa import Taxonomy\n");
+			InteractiveConsole j = new JLineConsole();
+			j.interact();
+        }
     }
 
 }

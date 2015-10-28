@@ -1,4 +1,15 @@
-from org.opentreeoflife.taxa import Taxonomy, Flag
+"""
+Start with an empty registry.
+Register a taxonomy.
+Resolve a second taxonomy and see how different it is from the first.
+Register the second taxonomy.
+Resolve second taxonomy.
+At this point we should have 'best' registry ids for every node in the second taxonomy.  If not, there is something wrong.
+TBD: Test the first taxonomy against the augmented registry and see if we get the same answer.
+"""
+
+
+from org.opentreeoflife.taxa import Taxonomy
 from org.opentreeoflife.registry import Registry
 
 import sys
@@ -70,7 +81,7 @@ def run_test(t1, t2):
         print '---'
         print tax1.getTag(), 'taxa:', tax1.count()
 
-        corr = r.mapRegistrationsToTaxa(tax1)
+        corr = r.resolve(tax1)
         analyze(r, tax1, corr, 'before register:')
 
         # this should create new registrations for all taxa
@@ -80,42 +91,68 @@ def run_test(t1, t2):
 
         # see whether lookup is repeatable.
         # this should match most, if not, all, taxa with registrations in r
-        newcorr = r.mapRegistrationsToTaxa(tax1)
+        newcorr = r.resolve(tax1)
         analyze(r, tax1, newcorr, 'after remap:')
         compare_correspondences(corr, newcorr)
 
-        loser = tax1.maybeTaxon('5507785')
-        if loser != None:
-            x = loser.parent.children.get(0)
-            y = loser.parent.children.get(1)
-            print 'siblings:', loser.parent.children
-            print 'hidden:', x.isHidden(), y.isHidden()
-            print 'flags:', Flag.flagsAsString(x), Flag.flagsAsString(y)
-            print 'compare:', r.betterAsType.compare(x, y)
+        return newcorr
+
+    # WORK IN PROGRESS
+    def compare_taxonomies(tax1, tax2, corr1, corr2):
+        for node1 in tax1:
+            if node1.id != None:
+                node2 = tax2.lookupId(node1)
+                if corr1.coget(node1) != corr2.coget(node2):
+                    print "mismatch", node1, node2
 
     r = Registry.newRegistry()
 
-    do_taxonomy(Taxonomy.getTaxonomy(t1, t1.split('/')[-2]), r)
-    do_taxonomy(Taxonomy.getTaxonomy(t2, t2.split('/')[-2]), r)
+    tax1 = Taxonomy.getTaxonomy(t1, t1.split('/')[-2])
+    corr1 = do_taxonomy(tax1, r)
+
+    tax2 = Taxonomy.getTaxonomy(t2, t2.split('/')[-2])
+    corr2 = do_taxonomy(tax2, r)
+
+    # compare_taxonomies(tax1, tax2, corr1 corr2)
 
     r.dump('registry.csv')
 
 
+# You can run the test on any pair of taxonomies.
+# It will make more sense if the second is derived from the first,
+# either a successor taxonomy version of a new synthetic tree.
+
 # Asterales
 
+# Two different versions of the asterales taxonomy (on JAR's disk)
 # run_test('../t/tax/aster.2/', '../t/tax/aster/')
 
-# ott28 = Taxonomy.getTaxonomy('../tax/prev_ott/')
-# ott28.select(ott28.taxon('Asterales')).dump('asterales-ott28/')
+# How to extract the Asterales subtree from OTT 2.8:
+#   unpack http://files.opentreeoflife.org/ott/ott2.8/ott2.8.tgz to ../tax/prev_ott
+#   smash
+#   ott28 = Taxonomy.getTaxonomy('../tax/prev_ott/')
+#   ott28.select(ott28.taxon('Asterales')).dump('asterales-ott28/')
+# Similarly for any other taxon, e.g. Fungi, Chloroplastida, etc.
+# Extract from synthetic tree v3.0:
+#   unpack http://files.opentreeoflife.org/trees/draftversion3.tre.gz
+#   smash
+#   synth3 = Taxonomy.getNewick('draftversion3.tre', 'synth')
+#   synth3.select(synth3.taxon('Asterales')).dump('asterales-synth3/')
 
-run_test('asterales-ott28/', 'asterales-synth/')
+# run_test('asterales-ott28/', 'asterales-synth/')
 
 # Fungi
 
-# ott28.select(ott28.taxon('Fungi')).dump('fungi-ott28/')
+#   ott28.select(ott28.taxon('Fungi')).dump('fungi-ott28/')
+#   synth3.select(synth3.taxon('Fungi')).dump('fungi-synth3/')
 # run_test('fungi-ott28/', 'fungi-synth3/')
 
 # Plants
 
-# ott28.select(ott28.taxon('Chloroplastida')).dump('plants-ott28/')
-# run_test('plants-ott28/', 'plants-synth3/'')
+#   ott28.select(ott28.taxon('Chloroplastida')).dump('plants-ott28/')
+#   synth3.select(synth3.taxon('Chloroplastida')).dump('plants-synth3/')
+
+if len(sys.argv) > 1:
+    run_test(sys.argv[1], sys.argv[2])
+else:
+    run_test('plants-ott28/', 'plants-synth3/')

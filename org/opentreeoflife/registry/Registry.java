@@ -48,7 +48,7 @@ public class Registry {
 
     // Find all compatible taxa for every registration in the registry.
 
-    public Correspondence<Registration, Taxon> mapRegistrationsToTaxa(Taxonomy taxonomy) {
+    public Correspondence<Registration, Taxon> resolve(Taxonomy taxonomy) {
         Map<QualifiedId, Taxon> qidIndex = makeQidIndex(taxonomy);
         Correspondence<Registration, Taxon> byMetadata = mapTaxaByMetadata(taxonomy, qidIndex);
         Correspondence<Registration, Taxon> result = new Correspondence<Registration, Taxon>();
@@ -485,7 +485,7 @@ public class Registry {
         else if (byMetadata != null) {
             List<Taxon> taxa = byMetadata.get(reg);
             if (taxa == null) {
-                System.out.format("no such taxon: %s\n", reg);
+                // System.out.format("no such taxon: %s\n", reg);
                 return null;
             } else if (taxa.size() == 1) {
                 registrationToTaxa.add(reg, taxa.get(0));
@@ -583,7 +583,9 @@ public class Registry {
             for (String source : argv)
                 j.execfile(source);
         } else {
-			System.out.format("Consider doing:\nfrom org.opentreeoflife.taxa import Taxonomy\n");
+			System.out.format("Consider doing:\n" +
+                              "from org.opentreeoflife.taxa import Taxonomy\n" +
+                              "from org.opentreeoflife.registry import Registry\n");
 			InteractiveConsole j = new JLineConsole();
 			j.interact();
         }

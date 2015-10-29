@@ -46,7 +46,10 @@ public class Registry {
         return registrations.size();
     }
 
-    // Find all compatible taxa for every registration in the registry.
+    // Find the compatible taxon (pathologically: taxa), if any, 
+    // for every registration in the registry.
+    // With this in hand, use chooseRegistration to resolve a registration to a taxon,
+    // and chooseTaxon() to find the registration assigned to a taxon.
 
     public Correspondence<Registration, Taxon> resolve(Taxonomy taxonomy) {
         Map<QualifiedId, Taxon> qidIndex = makeQidIndex(taxonomy);
@@ -239,6 +242,7 @@ public class Registry {
     // Create registrations for any taxa that don't have them
     // uniquely.  Performs side effects on the taxon to registration
     // correspondence.
+    // call this 'extend' ???
 
     void register(Taxonomy tax,
                   Correspondence<Registration, Taxon> registrationToTaxa) {
@@ -476,6 +480,12 @@ public class Registry {
         return answer;
     }
 
+    // public interface
+    public Taxon chooseTaxon(Registration reg,
+                             Correspondence<Registration, Taxon> registrationToTaxa) {
+        return chooseTaxon(reg, null, registrationToTaxa);
+    }
+
     public Taxon chooseTaxon(Registration reg,
                              Correspondence<Registration, Taxon> byMetadata,
                              Correspondence<Registration, Taxon> registrationToTaxa) {
@@ -500,7 +510,7 @@ public class Registry {
     public String explain(Taxon node, Registration reg, Correspondence<Registration, Taxon> corr) {
         if (reg.samples != null)
             for (Registration sreg : reg.samples) {
-                Taxon sample = chooseTaxon(sreg, null, corr);
+                Taxon sample = chooseTaxon(sreg, corr);
                 if (sample == null)
                     return String.format("no sample taxon for sample %s", sreg);
                 if (!sample.descendsFrom(node))
@@ -508,7 +518,7 @@ public class Registry {
             }
         if (reg.exclusions != null)
             for (Registration xreg : reg.exclusions) {
-                Taxon exclusion = chooseTaxon(xreg, null, corr);
+                Taxon exclusion = chooseTaxon(xreg, corr);
                 if (exclusion == null)
                     return String.format("no exclusion taxon for sample %s", xreg);
                 if (exclusion.descendsFrom(node))

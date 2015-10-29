@@ -66,7 +66,7 @@ Topological constraints are specified by two sets of registrations
 sample constraint is met by any node from which the node corresponding
 to the sample registration descends.  An exclusion constraint is met
 by any node from which the node corresponding to the exclusion
-registration descends.  If there is no unique sample or exclusion
+registration does not descend.  If there is no unique sample or exclusion
 node, then it is not known whether the constraint is met.
 
 Registration metadata consists of a set of properties that a node
@@ -90,8 +90,8 @@ A registration R and a node N may be compatible, or not, where
 compatibility is defined as follows:
 
 If R has topological constraints and they are all satisfied by N, then
-R and N are compatible.  (If R also has metadata, that metadata is not
-taken into consideration.)
+R and N are compatible.  (This check is blind to any metadata that R
+or N might have.)
 
 If R has topological constraints and any is not satisfied by N, then R
 and N are not compatible.
@@ -255,8 +255,10 @@ The registry tool is
 [a Java program](../org/opentreeoflife/registry/Registry.java)
 in the org.opentreeoflife.registry
 package; the source code is in this repository.  Its main operations
-are resolving (Registry.resolve method) and registering
-(Registry.register method) the nodes in a taxonomy against a registry.
+are assigning registrations to the nodes in a taxonomy (Registry.assign method)
+and extending a registry with new registrations as needed so that
+all nodes in a taxonomy have assigned registrations
+(Registry.extend method).
 It references taxonomy support classes defined in the
 org.opentreeoflife.taxa package.  It can be scripted using jython.  To
 get an interactive jython interpreter, do:

@@ -1,9 +1,9 @@
 """
 Start with an empty registry.
 Register a taxonomy.
-Resolve a second taxonomy and see how different it is from the first.
+Assign ids for a second taxonomy and see how different it is from the first.
 Register the second taxonomy.
-Resolve second taxonomy.
+Assign ids for second taxonomy.
 At this point we should have 'best' registry ids for every node in the second taxonomy.  If not, there is something wrong.
 TBD: Test the first taxonomy against the augmented registry and see if we get the same answer.
 """
@@ -49,7 +49,7 @@ def run_test(t1, t2):
                     i += 1
                 else:
                     j += 1
-        print ' no reg chosen: %s (0), %s (1), %s (>1)' % (h, i, j)
+        print ' no reg assigned: %s (0 compatible regs), %s (1), %s (>1)' % (h, i, j)
 
     def show_unmapped(tax, r, corr):
         i = 0
@@ -81,17 +81,21 @@ def run_test(t1, t2):
         print '---'
         print tax1.getTag(), 'taxa:', tax1.count()
 
-        corr = r.resolve(tax1)
-        analyze(r, tax1, corr, 'before register:')
+        # 
+        print 'Assigning registrations to nodes in', tax1
+        corr = r.assign(tax1)
+        analyze(r, tax1, corr, 'before extend:')
 
         # this should create new registrations for all taxa
-        r.register(tax1, corr)
-        analyze(r, tax1, corr, 'after register:')
+        print 'Extending registry for', tax1
+        r.extend(tax1, corr)
+        analyze(r, tax1, corr, 'after extend:')
         show_unmapped(tax1, r, corr)
 
         # see whether lookup is repeatable.
         # this should match most, if not, all, taxa with registrations in r
-        newcorr = r.resolve(tax1)
+        print 'Re-assigning registrations to nodes in', tax1
+        newcorr = r.assign(tax1)
         analyze(r, tax1, newcorr, 'after remap:')
         compare_correspondences(corr, newcorr)
 
@@ -105,7 +109,7 @@ def run_test(t1, t2):
                 if corr1.coget(node1) != corr2.coget(node2):
                     print "mismatch", node1, node2
 
-    r = Registry.newRegistry()
+    r = Registry()
 
     tax1 = Taxonomy.getTaxonomy(t1, t1.split('/')[-2])
     corr1 = do_taxonomy(tax1, r)

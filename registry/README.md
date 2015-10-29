@@ -213,11 +213,40 @@ resolve fine to A in the original version.  It should also resolve to
 the child-possessing A node in the new version.  I think this works
 but it should be tested.
 
-Suppose that A, B, and C are children of E in a tree, and in its
-successor A and B are children of D which is a child of E.  The
-outcome depends on where the samples for E's constraints were taken.
-(To be continued)
+### Polytomy refinement
 
+Suppose a tree has (using Newick notation) the arrangement (A,B,C)E,
+i.e. it has a node E with direct children A, B, C.  The tree is then
+'revised' to have ((A,B)D,C)E.  What registrations are assigned to
+nodes D and E in the new version?  This depends on which samples were
+chosen when E was originally registered, and on what metadata is
+available.
+
+Suppose E is originally assigned registration R.  If at least one
+sample descends from A or B and one descends from C, then the new E
+node will have only be compatible with the registration for the old E
+node, so will be assigned that registration.
+
+On the other hand, if all the samples for R descend from A and B, then
+both D and E in the new tree will satisfy R's topological constrains.
+If R and the new E have metadata, and the new E is a better metadata
+match to R than D, then E will be assigned R and D will get a new
+registration (one with a descendant of C as an exclusion).  But if
+metadata is not helpful, R will be unrecoverably ambiguous and both D
+and E will get new registrations.  The new registration for D will
+have samples descended from A and B and an exclusion descended from C,
+while the new registration for E will have one or more sample
+descended from D, one or more descended from C, and some exclusion
+outside E.
+
+This problem of 'losing' R - its identifier becoming obsolete or
+ambiguous as a result of polytomy refinement - can be made less
+frequent by increasing the number of samples and exclusions.  In the
+limit this would mean the samples list would include all descendant
+tips of E at the time that R was created and added to the registry.
+But the problem cannot be eliminated completely, because new nodes
+similar to C can be introduced in new versions of the tree, creating
+the same D/E ambiguity that C creates above.
 
 
 ### The code
@@ -261,3 +290,10 @@ or
 (Instructions needed on how to do taxonomy and synthetic tree
 selections e.g. plants, fungi, chordates.  There are some hints in the .py
 file.)
+
+See the (sparse) code comments for some information on how the
+resolution and registration operations work.
+
+Currently topological constraints consist of at most two samples and
+at most one exclusion.  The number of samples can be increased easily;
+increasing the number of exclusions will require additional coding.

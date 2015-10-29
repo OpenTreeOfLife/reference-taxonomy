@@ -26,9 +26,6 @@ public class Registry {
 
     private Map<Integer, Registration> registrations = new HashMap<Integer, Registration>();
 
-    // DEFER IMPLEMENTATION OF SOURCE REFERENCE LOGIC
-    // private Map<String, List<Registration>> sourcerefToRegistrations = ...
-
     static final int nsamples = 2;
     static final int nexclusions = 1;
 
@@ -48,16 +45,18 @@ public class Registry {
 
     // Find the compatible taxon (pathologically: taxa), if any, 
     // for every registration in the registry.
-    // With this in hand, use chooseRegistration to resolve a registration to a taxon,
-    // and chooseTaxon() to find the registration assigned to a taxon.
+    // With this in hand, use chooseTaxon() to resolve a registration to a taxon,
+    // and chooseRegistration() to find the registration assigned to a taxon.
 
     public Correspondence<Registration, Taxon> resolve(Taxonomy taxonomy) {
         Map<QualifiedId, Taxon> qidIndex = makeQidIndex(taxonomy);
         Correspondence<Registration, Taxon> byMetadata = mapTaxaByMetadata(taxonomy, qidIndex);
         Correspondence<Registration, Taxon> result = new Correspondence<Registration, Taxon>();
-        // 1. Look up samples using metadata (see chooseTaxon)
+        // 1. Look up sample/exclusion nodes using metadata (see chooseTaxon)
         // 2. Look up internal nodes by topology (using metadata to disambiguate)
         // 3. Look up remaining tips by metadata
+        // Steps 1 and 2 are done together by the following loop;
+        // samples/exclusions are resolved as they are encountered:
         int i = 0;
         for (Registration reg : this.allRegistrations()) {
             // findByTopology has the side effect of entering samples in result
@@ -67,6 +66,7 @@ public class Registry {
                 ++i;
             }
         }
+        // Step 3:
         int j = 0;
         for (Registration reg : this.allRegistrations()) {
             if (result.get(reg) == null && reg.samples == null && reg.exclusions == null) {

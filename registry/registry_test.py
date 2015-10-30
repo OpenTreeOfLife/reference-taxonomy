@@ -10,7 +10,7 @@ TBD: Test the first taxonomy against the augmented registry and see if we get th
 
 
 from org.opentreeoflife.taxa import Taxonomy
-from org.opentreeoflife.registry import Registry
+from org.opentreeoflife.registry import Registry, Correspondence
 
 import sys
 
@@ -40,7 +40,7 @@ def run_test(t1, t2):
         i = 0
         j = 0
         for taxon in t:
-            probe = r.chooseRegistration(taxon, corr)
+            probe = corr.chooseRegistration(taxon, corr)
             if probe == None:
                 probes = corr.coget(taxon)
                 if probes == None:
@@ -54,7 +54,7 @@ def run_test(t1, t2):
     def show_unmapped(tax, r, corr):
         i = 0
         for taxon in tax:
-            probe = r.chooseRegistration(taxon, corr)
+            probe = corr.chooseRegistration(taxon, corr)
             if probe == None:
                 if i < 5:
                     print 'missing registration:', taxon, corr.coget(taxon)
@@ -62,17 +62,17 @@ def run_test(t1, t2):
         print i, 'unmapped'
 
     def compare_correspondences(corr, newcorr):
-        for taxon in corr.goats():
-            probe = r.chooseRegistration(taxon, newcorr)
+        for taxon in corr.taxa():
+            probe = newcorr.chooseRegistration(taxon, newcorr)
             if probe == None:
                 regs = newcorr.coget(taxon)
                 if regs == None:
-                    oldprobe = r.chooseRegistration(taxon, corr)
+                    oldprobe = corr.chooseRegistration(taxon, corr)
                     if oldprobe == None:
                         print 'for %s, no compatible registration(s) in either correspondence' % (taxon,)
                     else:
                         print 'for %s, registration(s) %s disappeared' % (taxon, oldprobe)
-                        print '| %s' % (r.explain(taxon, oldprobe, newcorr),)
+                        print '| %s' % (newcorr.explain(taxon, oldprobe, newcorr),)
                 else:
                     for oldreg in corr.coget(taxon):
                         if not (oldreg in regs):
@@ -83,20 +83,22 @@ def run_test(t1, t2):
         print tax1.getTag(), 'taxa:', tax1.count()
 
         # 
+        corr = Correspondence(r, tax1)
         print 'Assigning registrations to nodes in', tax1
-        corr = r.assign(tax1)
+        corr.assign()
         analyze(r, tax1, corr, 'before extend:')
 
         # this should create new registrations for all taxa
         print 'Extending registry for', tax1
-        r.extend(tax1, corr)
+        corr.extend(tax1, corr)
         analyze(r, tax1, corr, 'after extend:')
         show_unmapped(tax1, r, corr)
 
         # see whether lookup is repeatable.
         # this should match most, if not, all, taxa with registrations in r
         print 'Re-assigning registrations to nodes in', tax1
-        newcorr = r.assign(tax1)
+        newcorr = Correspondence(r, tax1)
+        newcorr.assign()
         analyze(r, tax1, newcorr, 'after remap:')
         compare_correspondences(corr, newcorr)
 
@@ -108,11 +110,11 @@ def run_test(t1, t2):
             if (not node1.isHidden()) and node1.id != None:
                 node2 = tax2.lookupId(node1.id)
                 if node2 != None and (not node2.isHidden()):
-                    reg1 = r.chooseRegistration(node1, corr1)
-                    reg2 = r.chooseRegistration(node2, corr2)
+                    reg1 = corr1.chooseRegistration(node1, corr1)
+                    reg2 = corr2.chooseRegistration(node2, corr2)
                     if reg1 != reg2:
                         print "node id goes to different registrations", node1, reg1, node2, reg2
-                        print r.explain(node2, reg1, corr2)
+                        print corr2.explain(node2, reg1, corr2)
 
     r = Registry()
 

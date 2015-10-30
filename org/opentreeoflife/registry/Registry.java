@@ -57,7 +57,7 @@ public class Registry {
     public Correspondence<Registration, Taxon> assign(Taxonomy taxonomy) {
         clearEvents();
         Map<QualifiedId, Taxon> qidIndex = makeQidIndex(taxonomy);
-        Correspondence<Registration, Taxon> byMetadata = mapTaxaByMetadata(taxonomy, qidIndex);
+        Map<Registration, Taxon> byMetadata = resolveAllByMetadata(taxonomy, qidIndex);
         Correspondence<Registration, Taxon> result = new Correspondence<Registration, Taxon>();
 
         // 1. Resolve sample/exclusion registrations using metadata (see chooseTaxon)
@@ -101,34 +101,33 @@ public class Registry {
     }
 
     private boolean byMetadataOnly(Registration reg, // little utility for above
-                                   Correspondence<Registration, Taxon> byMetadata,
+                                   Map<Registration, Taxon> byMetadata,
                                    Correspondence<Registration, Taxon> result) {
         if (result.get(reg) == null) {
-            List<Taxon> taxa = byMetadata.get(reg);
-            if (taxa != null) {
-                if (taxa.size() == 1)
-                    event("resolved uniquely by metadata", reg, taxa.get(0));
-                else
-                    event("resolved ambiguously by metadata", reg, taxa);
-                result.put(reg, taxa);
+            Taxon node = byMetadata.get(reg);
+            if (node != null) {
+                event("resolved uniquely by metadata", reg, node);
+                result.add(reg, node);
                 return true;
             } else {
-                event("metadata-only registration with no compatible nodes", reg);
+                event("registration with no metadata-compatible nodes", reg);
                 return false;
             }
         } else
             return false;
     }
 
-    // Find compatible taxa using metadata, for all registrations.
-    // Do we really need to reify taxaByMetadata as a Map ?
+    // Resolve every taxon using metadata, for all registrations.
+    // Do we really need to reify resolveAllByMetadata as a Map ? - no,
+    // could be done dynamically, but that would require a special
+    // object to carry the taxonomy and qidIndex
 
-    Correspondence<Registration, Taxon> mapTaxaByMetadata(Taxonomy taxonomy, Map<QualifiedId, Taxon> qidIndex) {
-        Correspondence<Registration, Taxon> byMetadata = new Correspondence<Registration, Taxon>();
+    Map<Registration, Taxon> resolveAllByMetadata(Taxonomy taxonomy, Map<QualifiedId, Taxon> qidIndex) {
+        Map<Registration, Taxon> byMetadata = new HashMap<Registration, Taxon>();
         for (Registration reg : this.allRegistrations()) {
-            List<Taxon> taxa = taxaByMetadata(reg, taxonomy, qidIndex);
-            if (taxa != null && taxa.size() > 0)
-                byMetadata.put(reg, taxa);
+            Taxon node = resolveByMetadata(reg, taxonomy, qidIndex);
+            if (node != null)
+                byMetadata.put(reg, node);
         }
         return byMetadata;
     }
@@ -138,51 +137,41 @@ public class Registry {
     // This is how the samples and exclusions get mapped to nodes.
     // This gets only the "best metadata matches" for the registration.
 
-    List<Taxon> taxaByMetadata(Registration reg, Taxonomy taxonomy, Map<QualifiedId, Taxon> qidIndex) {
-        List<Taxon> result = new ArrayList<Taxon>(1);
+    Taxon resolveByMetadata(Registration reg, Taxonomy taxonomy, Map<QualifiedId, Taxon> qidIndex) {
         if (reg.qid != null) {
             // Collisions have already been winnowed out
             Taxon probe = qidIndex.get(reg.qid);
-            if (probe != null) {
-                // Sanity check
-                List<Taxon> taxa = taxonomy.lookup(reg.name);
-                if (taxa != null) {
-                    boolean found = false;
-                    for (Taxon node : taxa)
-                        if (node == probe)
-                            { found = true; break; }
-                    if (!found)
-                        System.out.format("source id / name mismatch: %s %s %s %s\n", reg.qid, reg.name, probe, taxa);
-                }
-                result.add(probe);
-                return result;
-            }
+            if (probe != null)
+                return probe;
         }
         if (reg.ottid != null) {
             Taxon probe = taxonomy.lookupId(reg.ottid);
-            if (probe != null) {
-                result.add(probe);
-                return result;
-            }
+            if (probe != null)
+                return probe;
         }
         if (reg.name != null) {
             List<Taxon> nodes = taxonomy.lookup(reg.name);
             if (nodes != null) {
-                if (result.size() == 0) return nodes;
                 // First consider exact name matches
-                boolean gotOne = false;
+                Taxon result = null;
                 for (Taxon node : nodes)
                     if (node.name.equals(reg.name)) {
-                        result.add(node);
-                        gotOne = true;
+                        if (result != null) {
+                            interesting("resolution failed due to name ambiguity", reg);
+                            return null; // ambiguous
+                        }
+                        result = node;
                     }
-                if (gotOne) return result;
+                if (result != null) return result;
                 // Next consider reg.name as a synonym
-                for (Taxon node : nodes)
-                    result.add(node);
+                if (nodes.size() > 1) {
+                    interesting("resolution failed due to name mismatch", reg);
+                    return null;
+                }
+                return nodes.get(0);
             }
         }
-        return result;
+        return null;
     }
 
     public Map<QualifiedId, Taxon> makeQidIndex(Taxonomy taxonomy) {
@@ -205,33 +194,26 @@ public class Registry {
 
     // Find all the taxa that match a single Registration.
     // When there is topological ambiguity, attempt to reduce it using clues from metadata.
+    // If a sample or exclusion fails to resolve, throw a ResolutionFailure exception.
 
     List<Taxon> findByTopology(Registration reg,
-                               Correspondence<Registration, Taxon> byMetadata,
+                               Map<Registration, Taxon> byMetadata,
                                Correspondence<Registration, Taxon> registrationToTaxa)
     throws ResolutionFailure
     {
-        Taxon[] path = constrainedPath(reg, registrationToTaxa);
+        List<Taxon> path = constrainedPath(reg, registrationToTaxa);
         if (path != null) {
-            Taxon m = path[0], a = path[1]; // mrca, ancestor
-            if (m.parent != a) {
+            if (path.size() > 1) {
                 // Ambiguous.  Attempt to clear it up using metadata... this may be the wrong place to do this
-                List<Taxon> mets = byMetadata.get(reg);
-                if (mets != null) {
+                Taxon node = byMetadata.get(reg);
+                if (node != null && path.contains(node)) {
                     List<Taxon> candidates = new ArrayList<Taxon>();
-                    for (Taxon n = m; n != a; n = n.parent)
-                        if (mets.contains(n))
-                            candidates.add(n);
-                    if (candidates.size() > 0)
-                        return candidates;
-                    // fall through
+                    candidates.add(node);
+                    return candidates;
                 }
                 // fall through
             }
-            List<Taxon> candidates = new ArrayList<Taxon>();
-            for (Taxon n = m; n != a; n = n.parent)
-                candidates.add(n);
-            return candidates;
+            return path;
         } else
             return null;
     }
@@ -240,12 +222,12 @@ public class Registry {
     // Return value is {m, a} where a is an ancestor of m.  Compatible taxa are
     // m and its ancestors up to be not including a.
 
-    Taxon[] constrainedPath(Registration reg,
-                            Correspondence<Registration, Taxon> registrationToTaxa)
+    List<Taxon> constrainedPath(Registration reg,
+                                Correspondence<Registration, Taxon> registrationToTaxa)
     throws ResolutionFailure
     {
         ResolutionFailure fail = null;
-        Taxon[] result;
+        List<Taxon> result;
         Taxon m = null;
         for (Registration s : reg.samples) {
             Taxon snode = chooseTaxon(s, registrationToTaxa);
@@ -278,15 +260,24 @@ public class Registry {
                         // We can sometimes prove there is no such node
                         // even if not all samples and exclusions resolve.
                         return null;
-                    result = new Taxon[]{m, a};
+                    // Copy the path from m to a out of the taxonomy
+                    result = new ArrayList<Taxon>();
+                    for (Taxon n = m; n != a; n = n.parent)
+                        result.add(n);
                 } else result = null;
             } else {
+                // This case should only happen for the root of the tree
+                result = new ArrayList<Taxon>();
                 Taxon a = m;
-                while (!a.isRoot()) a = a.parent;
-                a = a.parent;
-                result = new Taxon[]{m, a}; // Kludge for root of tree
+                while (!a.isRoot()) {
+                    result.add(a);
+                    a = a.parent;
+                }
+                result.add(a);              // add the root
             }
-        } else result = null;
+        } else
+            // Should only happen in fail case (always at least one sample)
+            result = null;
         if (fail != null) throw fail;
         return result;
     }
@@ -298,10 +289,7 @@ public class Registry {
         }
     }
 
-    // ------------------------------------------------------------
-    // Resolution and assignment
-
-    // Rsolution: choose one taxon for the given registration, based
+    // Resolution: choose one taxon for the given registration, based
     // on compatibility relation.
 
     public Taxon chooseTaxon(Registration reg,
@@ -313,94 +301,8 @@ public class Registry {
             return null;
     }
 
-    // Assignment: Choose one registration from among several that apply.
-
-    public Registration chooseRegistration(Taxon node,
-                                           Correspondence<Registration, Taxon> registrationToTaxa) {
-        List<Registration> regs = registrationToTaxa.coget(node);
-        if (regs == null) return null;
-        Registration answer = null;
-
-        // Check primary source id (e.g. ncbi:1234)
-        for (Registration reg : regs) {
-            List<Taxon> probe = registrationToTaxa.get(reg);
-            if (probe != null && probe.size() == 1 && probe.get(0) == node) {
-                // keep going to see if there's more than one
-                // in which case try using metadata to filter
-                if (node.sourceIds != null && node.sourceIds.get(0).equals(reg.qid)) {
-                    if (answer != null) {
-                        System.out.format("ambiguous (1): %s %s %s qid=%s\n", node, reg, answer, reg.qid);
-                        return null;      // FAIL ???
-                    } else
-                        answer = reg;
-                }
-            }
-        }
-        if (answer != null) return answer;
-
-        // Check other source ids (e.g. match gbid:5678 to [ncbi:1234, gbif:5678]
-        for (Registration reg : regs) {
-            List<Taxon> probe = registrationToTaxa.get(reg);
-            if (probe != null && probe.size() == 1 && probe.get(0) == node) {
-                if (node.sourceIds != null && node.sourceIds.contains(reg.qid)) {
-                    if (answer != null) {
-                        System.out.format("ambiguous (2): %s %s %s qid=%s\n", node, reg, answer, reg.qid);
-                        return null;      // FAIL ???
-                    } else
-                        answer = reg;
-                }
-            }
-        }
-        if (answer != null) return answer;
-
-        // Check OTT id
-        for (Registration reg : regs) {
-            List<Taxon> probe = registrationToTaxa.get(reg);
-            if (probe != null && probe.size() == 1 && probe.get(0) == node) {
-                if (node.id != null && node.name != null && node.id.equals(reg.ottid)) {
-                    if (answer != null) {
-                        System.out.format("ambiguous: %s has same id %s as both %s and %s\n", node, node.id, reg, answer);
-                        return null;      // FAIL ???
-                    } else
-                        answer = reg;
-                }
-            }
-        }
-        if (answer != null) return answer;
-
-        // Check primary name
-        for (Registration reg : regs) {
-            List<Taxon> probe = registrationToTaxa.get(reg);
-            if (probe != null && probe.size() == 1 && probe.get(0) == node) {
-                if (node.name != null && node.name.equals(reg.name)) {
-                    if (answer != null) {
-                        System.out.format("ambiguous (4): %s -> %s or %s\n", node, reg, answer);
-                        return null;      // FAIL ???
-                    } else
-                        answer = reg;
-                }
-            }
-        }
-        if (answer != null) return answer;
-
-        // Something to consider: synonyms - node.taxonomy.lookup(reg.name).contains(node)
-
-        // Try anything
-        for (Registration reg : regs) {
-            List<Taxon> probe = registrationToTaxa.get(reg);
-            if (probe != null && probe.size() == 1 && probe.get(0) == node) {
-                // keep going to see if there's more than one
-                if (answer != null) {
-                    System.out.format("ambiguous (5): %s -> %s or %s\n", node, reg, answer);
-                    return null;      // FAIL ???
-                }
-                answer = reg;
-            }
-        }
-        return answer;
-    }
-
     // ------------------------------------------------------------
+    // Assignment - inverse of resolution
 
     // Create registrations for any taxa that don't have them
     // uniquely.  Performs side effects on the taxon to registration
@@ -472,7 +374,7 @@ public class Registry {
                 event("new registration created for tip", node, reg);
             return reg;
         } else if (probe != null) {
-            event("found registration for internal node", node, probe);
+            event("found registration assigned to internal node", node, probe);
             for (Taxon child : node.children)
                 registerSubtree(child, registrationToTaxa, needExclusions);
             return probe;
@@ -599,14 +501,107 @@ public class Registry {
             }
         };
 
+    // Assignment: Choose one best (most specific) registration from
+    // among several that resolve to the node.
+    // This code looks all wrong to me.
+
+    public Registration chooseRegistration(Taxon node,
+                                           Correspondence<Registration, Taxon> registrationToTaxa) {
+        List<Registration> regs = registrationToTaxa.coget(node);
+        if (regs == null) return null;
+        if (regs.size() == 1) return regs.get(0);
+
+        Registration answer = null;
+
+        if (node.sourceIds != null) {
+            // Check primary source id (e.g. ncbi:1234)
+            QualifiedId nodeQid = node.sourceIds.get(0);
+            for (Registration reg : regs) {
+                List<Taxon> probe = registrationToTaxa.get(reg);
+                if (probe != null && probe.size() == 1 && probe.get(0) == node) {
+                    // keep going to see if there's more than one
+                    // in which case try using metadata to filter
+                    if (nodeQid.equals(reg.qid)) {
+                        if (answer != null) {
+                            System.out.format("ambiguous (1): %s %s %s qid=%s\n", node, reg, answer, nodeQid);
+                            answer = null;
+                            break;
+                        } else
+                            answer = reg;
+                    }
+                }
+            }
+            if (answer != null) return answer;
+
+            // Check other source ids (e.g. match gbid:5678 to [ncbi:1234, gbif:5678]
+            for (Registration reg : regs) {
+                List<Taxon> probe = registrationToTaxa.get(reg);
+                if (probe != null && probe.size() == 1 && probe.get(0) == node) {
+                    if (node.sourceIds.contains(reg.qid)) {
+                        if (answer != null) {
+                            System.out.format("ambiguous (2): %s %s %s qid=%s\n", node, reg, answer, reg.qid);
+                            answer = null;
+                            break;
+                        } else
+                            answer = reg;
+                    }
+                }
+            }
+            if (answer != null) return answer;
+        }
+
+        // Check OTT id
+        // Nameless nodes do not have OTT ids; and id present is fake
+        if (node.id != null && node.name != null) {
+            for (Registration reg : regs) {
+                List<Taxon> probe = registrationToTaxa.get(reg);
+                if (probe != null && probe.size() == 1 && probe.get(0) == node) {
+                    if (node.id.equals(reg.ottid)) {
+                        if (answer != null) {
+                            System.out.format("ambiguous (3): %s has same id %s as both %s and %s\n", node, node.id, reg, answer);
+                            answer = null;
+                            break;
+                        } else
+                            answer = reg;
+                    }
+                }
+            }
+            if (answer != null) return answer;
+        }
+
+        // Check primary name
+        if (node.name != null) {
+            for (Registration reg : regs) {
+                List<Taxon> probe = registrationToTaxa.get(reg);
+                if (probe != null && probe.size() == 1 && probe.get(0) == node) {
+                    if (node.name.equals(reg.name)) {
+                        if (answer != null) {
+                            System.out.format("ambiguous (4): %s -> %s or %s\n", node, reg, answer);
+                            answer = null;
+                            break;
+                        } else
+                            answer = reg;
+                    }
+                }
+            }
+            if (answer != null) return answer;
+
+            // Consider looking at synonyms - node.taxonomy.lookup(reg.name).contains(node)
+        }
+
+        // None of the candidate nodes have metadata, or all metadata is ambiguous.
+        interesting("node equally compatible with multiple registrations", node, regs.get(0), regs.get(1));
+        return null;      // FAIL
+    }
+
     // Explains why reg is not assigned to node / reg does not resolve to node
 
-    public String explain(Taxon node, Registration reg, Correspondence<Registration, Taxon> corr) {
+    public String explain(Taxon node, Registration reg, Correspondence<Registration, Taxon> registrationToTaxa) {
         if (reg.samples != null)
             for (Registration sreg : reg.samples) {
-                if (corr.get(sreg) == null)
+                if (registrationToTaxa.get(sreg) == null)
                     return String.format("no taxon compatible with sample %s", sreg);
-                Taxon sample = chooseTaxon(sreg, corr);
+                Taxon sample = chooseTaxon(sreg, registrationToTaxa);
                 if (sample == null)
                     return String.format("no taxon chosen for sample %s", sreg);
                 if (!sample.descendsFrom(node))
@@ -614,9 +609,9 @@ public class Registry {
             }
         if (reg.exclusions != null)
             for (Registration xreg : reg.exclusions) {
-                if (corr.get(xreg) == null)
+                if (registrationToTaxa.get(xreg) == null)
                     return String.format("no taxon compatible with exclusion %s", xreg);
-                Taxon exclusion = chooseTaxon(xreg, corr);
+                Taxon exclusion = chooseTaxon(xreg, registrationToTaxa);
                 if (exclusion == null)
                     return String.format("no taxon chosen for exclusion %s", xreg);
                 if (exclusion.descendsFrom(node))
@@ -625,22 +620,22 @@ public class Registry {
 
         // Should look at metadata...
 
-        if (corr.get(reg) == null)
+        if (registrationToTaxa.get(reg) == null)
             return "no taxa for registration";
 
-        if (!corr.get(reg).contains(node))
+        if (!registrationToTaxa.get(reg).contains(node))
             return "taxon not compatible with registration";
 
-        if (chooseRegistration(node, corr) == null)
+        if (chooseRegistration(node, registrationToTaxa) == null)
             return "chooseRegistration failed, probably ambiguous";
 
-        if (corr.coget(node) == null)
+        if (registrationToTaxa.coget(node) == null)
             return "no registrations for taxon";
 
-        if (!corr.coget(node).contains(reg))
+        if (!registrationToTaxa.coget(node).contains(reg))
             return "taxon not compatible with registration"; // redundant
 
-        if (chooseTaxon(reg, corr) == null)
+        if (chooseTaxon(reg, registrationToTaxa) == null)
             return "chooseTaxon failed";
 
         return "looks OK";

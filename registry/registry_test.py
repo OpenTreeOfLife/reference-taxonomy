@@ -31,9 +31,10 @@ def run_test(t1, t2):
 
     def analyze(r, tax, corr, comment):
         # corr is a registration <-> taxa correspondence
-        print ('%s %s registrations, %s applied registrations, %s taxa covered' %
-               (comment, r.size(), corr.size(), corr.cosize()))
-        check(tax, r, corr)
+        if False:               # FIX ME
+            print ('%s %s registrations, %s applied registrations, %s taxa covered' %
+                   (comment, r.size(), corr.size(), corr.cosize()))
+        # check(tax, r, corr)
 
     def check(t, r, corr):
         h = 0
@@ -42,7 +43,7 @@ def run_test(t1, t2):
         for taxon in t:
             probe = corr.assignedRegistration(taxon)
             if probe == None:
-                probes = corr.coget(taxon)
+                probes = corr.coget(taxon) # FIX ME
                 if probes == None:
                     h += 1
                 elif len(probes) == 1:
@@ -57,12 +58,12 @@ def run_test(t1, t2):
             probe = corr.assignedRegistration(taxon)
             if probe == None:
                 if i < 5:
-                    print 'missing registration:', taxon, corr.coget(taxon)
+                    print 'missing registration:', taxon
                 i = i + 1
         print i, 'unmapped'
 
     def compare_correspondences(corr, newcorr):
-        for taxon in corr.taxa():
+        for taxon in corr.taxonomy:
             probe = newcorr.assignedRegistration(taxon)
             if probe == None:
                 regs = newcorr.coget(taxon)
@@ -85,7 +86,7 @@ def run_test(t1, t2):
         # 
         corr = Correspondence(r, tax1)
         print 'Assigning registrations to nodes in', tax1
-        corr.assign()
+        corr.resolve()
         analyze(r, tax1, corr, 'before extend:')
 
         # this should create new registrations for all taxa
@@ -98,7 +99,7 @@ def run_test(t1, t2):
         # this should match most, if not, all, taxa with registrations in r
         print 'Re-assigning registrations to nodes in', tax1
         newcorr = Correspondence(r, tax1)
-        newcorr.assign()
+        newcorr.resolve()
         analyze(r, tax1, newcorr, 'after remap:')
         compare_correspondences(corr, newcorr)
 

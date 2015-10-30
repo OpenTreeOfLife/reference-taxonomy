@@ -255,7 +255,7 @@ The registry tool is
 [a Java program](../org/opentreeoflife/registry/Registry.java)
 in the org.opentreeoflife.registry
 package; the source code is in this repository.  Its main operations
-are assigning registrations to the nodes in a taxonomy (Registry.assign method)
+are resolving registrations to nodes in a taxonomy (Registry.resolve method)
 and extending a registry with new registrations as needed so that
 all nodes in a taxonomy have assigned registrations
 (Registry.extend method).

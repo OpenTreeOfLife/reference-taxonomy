@@ -64,7 +64,8 @@ public class Registry {
         return getRegistration(nextid++);
     }
 
-    Registration registrationForTaxon(Taxon node) {
+    Registration newRegistrationForTaxon(Taxon node) {
+        // (reuse ott id as registration id when possible ?)
         Registration reg = newRegistration();
         // Set metadata from node
         reg.name = node.name;
@@ -72,6 +73,7 @@ public class Registry {
             reg.qid = node.sourceIds.get(0);
         if (node.name != null)
             reg.ottid = node.id;
+        if (!node.isHidden()) ++reg.quality;
         return reg;
     }
 
@@ -91,12 +93,18 @@ public class Registry {
         br.close();
         for (Registration reg : registry.allRegistrations()) {
             if (reg.samples != null)
-                Collections.sort(reg.samples, Correspondence.betterQuality);
+                Collections.sort(reg.samples, betterQuality);
             if (reg.exclusions != null)
-                Collections.sort(reg.exclusions, Correspondence.betterQuality);
+                Collections.sort(reg.exclusions, betterQuality);
         }
         return registry;
     }
+
+    public static Comparator<Registration> betterQuality = new Comparator<Registration>() {
+            public int compare(Registration a, Registration b) {
+                return b.quality - a.quality;
+            }
+        };
 
     // write registry
 

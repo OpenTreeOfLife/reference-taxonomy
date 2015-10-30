@@ -23,12 +23,19 @@ public class Correspondence {
     static final int nsamples = 2;
     static final int nexclusions = 1;
 
+    enum Status { UNSATISFIABLE, UNRESOLVED, PATH, AMBIGUOUS, NONE };
+    enum Clue { AMBIGUITY, PATH };
+
     // State
     public Registry registry;
     public Taxonomy taxonomy;
     Map<QualifiedId, Taxon> qidIndex;
-    Map<Registration, List<Taxon>> registrationToTaxa = new HashMap<Registration, List<Taxon>>();
-    Map<Taxon, List<Registration>> taxonToRegistration = new HashMap<Taxon, List<Registration>>();
+    Map<Registration, Taxon> resolutionMap = new HashMap<Registration, Taxon>();
+    Map<Registration, List<Taxon>> paths = new HashMap<Registration, List<Taxon>>();
+    Map<Registration, Status> statuses = new HashMap<Registration, Status>();
+
+    Map<Taxon, Registration> assignments = new HashMap<Taxon, Registration>();
+    Map<Taxon, Clue> clues = new HashMap<Taxon, Clue>();
 
     // Constructor
     public Correspondence(Registry registry, Taxonomy taxonomy) {
@@ -37,132 +44,102 @@ public class Correspondence {
         qidIndex = makeQidIndex(taxonomy);
     }
 
-    // Methods
-    public void add(Registration s, Taxon g) {
-        List<Taxon> gs = registrationToTaxa.get(s);
-        if (gs == null) {
-            gs = new ArrayList<Taxon>();
-            registrationToTaxa.put(s, gs);
-        }
-        gs.add(g);
-        List<Registration> ss = taxonToRegistration.get(g);
-        if (ss == null) {
-            ss = new ArrayList<Registration>();
-            taxonToRegistration.put(g, ss);
-        }
-        ss.add(s);
+    void setClue(List<Taxon> taxa, Clue clue) {
+        for (Taxon node : taxa)
+            clues.put(node, clue);
     }
 
-    public Iterable registration() {
-        return registrationToTaxa.keySet();
+    public void setResolution(Registration reg, Taxon node) {
+        Taxon prev = resolutionMap.get(reg);
+        if (prev != null && prev != node)
+            interesting("changing resolution (probably a bug)", reg, prev, node);
+        resolutionMap.put(reg, node);
+        Registration verp = assignments.get(node);
+        if (verp != null && verp != reg)
+            interesting("changing assignment (probably OK)", reg, verp, node);
+        assignments.put(node, reg);
     }
-
-    public Iterable taxa() {
-        return taxonToRegistration.keySet();
-    }
-
-    public void put(Registration s, List<Taxon> gs) {
-        // registrationToTaxa.put(s, gs);
-        for (Taxon g : gs)
-            add(s, g);
-    }
-
-    public List<Taxon> get(Registration s) {
-        return registrationToTaxa.get(s);
-    }
-
-    public List<Registration> coget(Taxon g) {
-        return taxonToRegistration.get(g);
-    }
-
-    public int size() { return registrationToTaxa.size(); }
-    public int cosize() { return taxonToRegistration.size(); }
 
     // Find the compatible taxon (pathologically: taxa), if any, 
     // for every registration in the registry.
     // With this in hand, use resolve() to resolve a registration to a taxon,
     // and assignedRegistration() to find the registration assigned to a taxon.
 
-    void assign() {
+    void resolve() {
         clearEvents();
-        Map<Registration, Taxon> byMetadata = resolveAllByMetadata(taxonomy, qidIndex);
 
         // 1. Resolve sample/exclusion registrations using metadata (see resolve)
         // 2. Resolve metadata-only registrations using metadata
 
         for (Registration reg : registry.allRegistrations()) {
-            if (reg.samples != null || reg.exclusions != null) {
-                if (reg.samples != null)
-                    for (Registration s : reg.samples)
-                        byMetadataOnly(s, byMetadata);
+            if (reg.samples != null) {
+                for (Registration s : reg.samples)
+                    byMetadataOnly(s);
                 if (reg.exclusions != null)
                     for (Registration s : reg.exclusions)
-                        byMetadataOnly(s, byMetadata);
+                        byMetadataOnly(s);
             } else 
-                byMetadataOnly(reg, byMetadata);
+                byMetadataOnly(reg);
         }
 
         // 3. Resolve registrations that have topological constraints (using metadata to disambiguate)
 
         for (Registration reg : registry.allRegistrations()) {
-            if (reg.samples != null || reg.exclusions != null) {
+            if (reg.samples != null)
                 try {
-                    List<Taxon> taxa = findByTopology(reg, byMetadata);
+                    List<Taxon> taxa = findByTopology(reg);
                     if (taxa != null) {
-                        this.put(reg, taxa);
-                        if (taxa.size() == 1)
+                        if (taxa.size() == 1) {
+                            setResolution(reg, taxa.get(0));
                             event("resolved uniquely by topology", reg, taxa.get(0));
-                        else
-                            event("resolved ambiguously by topology", reg, taxa);
-                    } else
+                        } else {
+                            paths.put(reg, taxa);
+                            setClue(taxa, Clue.PATH);
+                            statuses.put(reg, Status.PATH);
+                            event("registration is ambiguous along path", reg, taxa);
+                        }
+                    } else {
                         event("topological constraints are inconsistent", reg);
+                        statuses.put(reg, Status.UNSATISFIABLE);
+                    }
                 } catch (ResolutionFailure fail) {
                     event("punt on topology, try metadata", reg, fail.registration);
-                    if (byMetadataOnly(reg, byMetadata))
-                        event("metadata worked where topology failed", reg);
+                    if (byMetadataOnly(reg))
+                        interesting("metadata worked where topology failed", reg);
+                    else {
+                        interesting("resolution failed due to unresolved sample(s)", reg, fail.registration);
+                        statuses.put(reg, Status.UNRESOLVED);
+                    }
                 }
-            }
         }
         reportEvents();
+        taxonomyReport();
     }
 
-    private boolean byMetadataOnly(Registration reg, // little utility for above
-                                   Map<Registration, Taxon> byMetadata) {
-        if (this.get(reg) == null) {
-            Taxon node = byMetadata.get(reg);
+    // little utility for above
+    private boolean byMetadataOnly(Registration reg) {
+        if (resolutionMap.get(reg) == null) {
+            Taxon node = resolveByMetadata(reg);
             if (node != null) {
+                setResolution(reg, node);
                 event("resolved uniquely by metadata", reg, node);
-                this.add(reg, node);
                 return true;
             } else {
                 event("registration with no metadata-compatible nodes", reg);
                 return false;
             }
         } else
+            // was computed previously
             return false;
-    }
-
-    // Resolve every taxon using metadata, for all registrations.
-    // Do we really need to reify resolveAllByMetadata as a Map ? - no,
-    // could be done dynamically, but that would require a special
-    // object to carry the taxonomy and qidIndex
-
-    Map<Registration, Taxon> resolveAllByMetadata(Taxonomy taxonomy, Map<QualifiedId, Taxon> qidIndex) {
-        Map<Registration, Taxon> byMetadata = new HashMap<Registration, Taxon>();
-        for (Registration reg : registry.allRegistrations()) {
-            Taxon node = resolveByMetadata(reg, taxonomy, qidIndex);
-            if (node != null)
-                byMetadata.put(reg, node);
-        }
-        return byMetadata;
     }
 
     // Find taxa, using metadata, for one registation.
     // (Not sure how to divide labor between this method and assignedRegistration.)
     // This is how the samples and exclusions get mapped to nodes.
     // This gets only the "best metadata matches" for the registration.
+    // Side effect: enter status in status table.
 
-    Taxon resolveByMetadata(Registration reg, Taxonomy taxonomy, Map<QualifiedId, Taxon> qidIndex) {
+    Taxon resolveByMetadata(Registration reg) {
         if (reg.qid != null) {
             // Collisions have already been winnowed out
             Taxon probe = qidIndex.get(reg.qid);
@@ -183,6 +160,7 @@ public class Correspondence {
                     if (node.name.equals(reg.name)) {
                         if (result != null) {
                             interesting("resolution failed due to name ambiguity", reg);
+                            statuses.put(reg, Status.AMBIGUOUS);
                             return null; // ambiguous
                         }
                         result = node;
@@ -190,48 +168,31 @@ public class Correspondence {
                 if (result != null) return result;
                 // Next consider reg.name as a synonym
                 if (nodes.size() > 1) {
+                    statuses.put(reg, Status.NONE);
+                    setClue(nodes, Clue.AMBIGUITY);
                     interesting("resolution failed due to name mismatch", reg);
                     return null;
                 }
                 return nodes.get(0);
             }
         }
+        if (statuses.get(reg) != null)
+            statuses.put(reg, Status.NONE);
         return null;
-    }
-
-    // Index the taxonomy by qualified id (source taxonomy reference)
-
-    public Map<QualifiedId, Taxon> makeQidIndex(Taxonomy taxonomy) {
-        Map <QualifiedId, Taxon> qidIndex = new HashMap<QualifiedId, Taxon>();
-        List<QualifiedId> ambiguous = new ArrayList<QualifiedId>();
-        for (Taxon node : taxonomy) {
-            if (node.sourceIds != null)
-                for (QualifiedId qid : node.sourceIds) {
-                    if (qidIndex.get(qid) != null)
-                        // Should deal with silva/ncbi situation here
-                        ambiguous.add(qid);
-                    else
-                        qidIndex.put(qid, node);
-                }
-        }
-        for (QualifiedId qid : ambiguous)
-            qidIndex.remove(qid);
-        return qidIndex;
     }
 
     // Find all the taxa that match a single Registration.
     // When there is topological ambiguity, attempt to reduce it using clues from metadata.
     // If a sample or exclusion fails to resolve, throw a ResolutionFailure exception.
 
-    List<Taxon> findByTopology(Registration reg,
-                               Map<Registration, Taxon> byMetadata)
+    List<Taxon> findByTopology(Registration reg)
     throws ResolutionFailure
     {
         List<Taxon> path = constrainedPath(reg);
         if (path != null) {
             if (path.size() > 1) {
                 // Ambiguous.  Attempt to clear it up using metadata... this may be the wrong place to do this
-                Taxon node = byMetadata.get(reg);
+                Taxon node = resolveByMetadata(reg);
                 if (node != null && path.contains(node)) {
                     List<Taxon> candidates = new ArrayList<Taxon>();
                     candidates.add(node);
@@ -318,11 +279,29 @@ public class Correspondence {
     // on compatibility relation.
 
     public Taxon resolve(Registration reg) {
-        List<Taxon> seen = this.get(reg);
-        if (seen != null && seen.size() == 1) // ** sort by goodness of match ??
-            return seen.get(0);
-        else
-            return null;
+        return resolutionMap.get(reg);
+    }
+
+    // Index the taxonomy by qualified id (source taxonomy reference)
+
+    public Map<QualifiedId, Taxon> makeQidIndex(Taxonomy taxonomy) {
+        Map <QualifiedId, Taxon> qidIndex = new HashMap<QualifiedId, Taxon>();
+        List<QualifiedId> ambiguous = new ArrayList<QualifiedId>();
+        for (Taxon node : taxonomy) {
+            if (node.sourceIds != null)
+                for (QualifiedId qid : node.sourceIds) {
+                    if (qidIndex.get(qid) != null)
+                        // Should deal with silva/ncbi situation here
+                        ambiguous.add(qid);
+                    else
+                        qidIndex.put(qid, node);
+                }
+        }
+        for (QualifiedId qid : ambiguous) {
+            qidIndex.remove(qid);
+            interesting("ambiguous qualified id", qid);
+        }
+        return qidIndex;
     }
 
     // ------------------------------------------------------------
@@ -335,7 +314,6 @@ public class Correspondence {
     void extend() {
         clearEvents();
         Map<Taxon, Registration> needExclusions = new HashMap<Taxon, Registration>();
-        int before = this.size();
         // 1. Register all unregistered tips
         // 2. Register all unregistered internal nodes
         for (Taxon root : taxonomy.roots())
@@ -344,6 +322,7 @@ public class Correspondence {
             addExclusions(node, needExclusions);
         reportEvents();
         checkRegistrations();
+        taxonomyReport();
     }
 
     void checkRegistrations() {
@@ -383,10 +362,14 @@ public class Correspondence {
                 event("found registration assigned to tip", node, probe);
                 return probe;
             }
-            Registration reg = registry.registrationForTaxon(node);
-            if (!node.isHidden()) ++reg.quality;
+            // Look at clues.  If a registration maps
+            // equally well to this node and another node, then
+            // creating a new registration isn't going to help.
+            if (clues.get(node) == Clue.AMBIGUITY)
+                interesting("creating new registration for ambiguity isn't likely to help", node);
+            Registration reg = registry.newRegistrationForTaxon(node);
             // Tip.  Add to correspondence so that it can be used as a sample.
-            this.add(reg, node);
+            setResolution(reg, node);
             Registration check = assignedRegistration(node);
             if (check != reg)
                 // this is not good.
@@ -429,8 +412,8 @@ public class Correspondence {
                 if (!gotOne) break;
             }
             // there will always be at least one sample (because this is an internal node)
-            Registration reg = registry.registrationForTaxon(node);
-            Collections.sort(samples, betterQuality);
+            Registration reg = registry.newRegistrationForTaxon(node);
+            Collections.sort(samples, Registry.betterQuality);
             reg.samples = samples;
             for (Registration s : samples)
                 if (s.quality > 0) ++reg.quality;
@@ -440,12 +423,6 @@ public class Correspondence {
             return reg;
         }
     }
-
-    public static Comparator<Registration> betterQuality = new Comparator<Registration>() {
-            public int compare(Registration a, Registration b) {
-                return b.quality - a.quality;
-            }
-        };
 
     // Second pass (after registrations have been created with inclusions only)
 
@@ -480,7 +457,7 @@ public class Correspondence {
             for (Registration s : reg.exclusions)
                 if (s.quality > 0) ++reg.quality;
 
-        this.add(reg, node);
+        setResolution(reg, node);
         Registration check = assignedRegistration(node);
         if (check == null)
             // this is not good.
@@ -515,91 +492,7 @@ public class Correspondence {
     // This code looks all wrong to me.
 
     public Registration assignedRegistration(Taxon node) {
-        List<Registration> regs = this.coget(node);
-        if (regs == null) return null;
-        if (regs.size() == 1) return regs.get(0);
-
-        Registration answer = null;
-
-        if (node.sourceIds != null) {
-            // Check primary source id (e.g. ncbi:1234)
-            QualifiedId nodeQid = node.sourceIds.get(0);
-            for (Registration reg : regs) {
-                List<Taxon> probe = this.get(reg);
-                if (probe != null && probe.size() == 1 && probe.get(0) == node) {
-                    // keep going to see if there's more than one
-                    // in which case try using metadata to filter
-                    if (nodeQid.equals(reg.qid)) {
-                        if (answer != null) {
-                            System.out.format("ambiguous (1): %s %s %s qid=%s\n", node, reg, answer, nodeQid);
-                            answer = null;
-                            break;
-                        } else
-                            answer = reg;
-                    }
-                }
-            }
-            if (answer != null) return answer;
-
-            // Check other source ids (e.g. match gbid:5678 to [ncbi:1234, gbif:5678]
-            for (Registration reg : regs) {
-                List<Taxon> probe = this.get(reg);
-                if (probe != null && probe.size() == 1 && probe.get(0) == node) {
-                    if (node.sourceIds.contains(reg.qid)) {
-                        if (answer != null) {
-                            System.out.format("ambiguous (2): %s %s %s qid=%s\n", node, reg, answer, reg.qid);
-                            answer = null;
-                            break;
-                        } else
-                            answer = reg;
-                    }
-                }
-            }
-            if (answer != null) return answer;
-        }
-
-        // Check OTT id
-        // Nameless nodes do not have OTT ids; and id present is fake
-        if (node.id != null && node.name != null) {
-            for (Registration reg : regs) {
-                List<Taxon> probe = this.get(reg);
-                if (probe != null && probe.size() == 1 && probe.get(0) == node) {
-                    if (node.id.equals(reg.ottid)) {
-                        if (answer != null) {
-                            System.out.format("ambiguous (3): %s has same id %s as both %s and %s\n", node, node.id, reg, answer);
-                            answer = null;
-                            break;
-                        } else
-                            answer = reg;
-                    }
-                }
-            }
-            if (answer != null) return answer;
-        }
-
-        // Check primary name
-        if (node.name != null) {
-            for (Registration reg : regs) {
-                List<Taxon> probe = this.get(reg);
-                if (probe != null && probe.size() == 1 && probe.get(0) == node) {
-                    if (node.name.equals(reg.name)) {
-                        if (answer != null) {
-                            System.out.format("ambiguous (4): %s -> %s or %s\n", node, reg, answer);
-                            answer = null;
-                            break;
-                        } else
-                            answer = reg;
-                    }
-                }
-            }
-            if (answer != null) return answer;
-
-            // Consider looking at synonyms - node.taxonomy.lookup(reg.name).contains(node)
-        }
-
-        // None of the candidate nodes have metadata, or all metadata is ambiguous.
-        interesting("node equally metadata-compatible with multiple registrations", node, regs.get(0), regs.get(1));
-        return null;      // FAIL
+        return assignments.get(node);
     }
 
     // Explains why reg is not assigned to node / reg does not resolve to node
@@ -607,7 +500,7 @@ public class Correspondence {
     public String explain(Taxon node, Registration reg) {
         if (reg.samples != null)
             for (Registration sreg : reg.samples) {
-                if (this.get(sreg) == null)
+                if (resolutionMap.get(sreg) == null)
                     return String.format("no taxon compatible with sample %s", sreg);
                 Taxon sample = resolve(sreg);
                 if (sample == null)
@@ -617,7 +510,7 @@ public class Correspondence {
             }
         if (reg.exclusions != null)
             for (Registration xreg : reg.exclusions) {
-                if (this.get(xreg) == null)
+                if (resolutionMap.get(xreg) == null)
                     return String.format("no taxon compatible with exclusion %s", xreg);
                 Taxon exclusion = resolve(xreg);
                 if (exclusion == null)
@@ -628,23 +521,37 @@ public class Correspondence {
 
         // Should look at metadata...
 
-        if (this.get(reg) == null)
-            return "no taxa for registration";
+        switch(clues.get(node)) {
+        case AMBIGUITY:
+            return "a would-be registration is ambiguous";
+        case PATH:
+            return "taxon is part of a path ambiguity";
+        }
 
-        if (!this.get(reg).contains(node))
-            return "taxon not compatible with registration";
+        switch(statuses.get(reg)) {
+        case UNSATISFIABLE:
+            return "registration's topological constraints are unsatisfiable";
+        case UNRESOLVED:
+            return "a sample is unresolved"; // covered above
+        case PATH:
+            return "registration is a path ambiguity";
+        case AMBIGUOUS:
+            return "registration's resolution is ambiguous";
+        case NONE:
+            return "registration has no hope of resolution";
+        }
+
+        if (resolve(reg) == null)
+            return "no taxon for registration";
+
+        if (resolve(reg) != node)
+            return "registration does not resolve to taxon";
 
         if (assignedRegistration(node) == null)
             return "assignedRegistration failed, probably ambiguous";
 
-        if (this.coget(node) == null)
-            return "no registrations for taxon";
-
-        if (!this.coget(node).contains(reg))
-            return "taxon not compatible with registration"; // redundant
-
-        if (resolve(reg) == null)
-            return "resolve failed";
+        if (assignedRegistration(node) != reg)
+            return "registration is not assigned to this taxon"; // redundant
 
         return "looks OK";
     }
@@ -689,4 +596,22 @@ public class Correspondence {
         clearEvents();
 	}
 
+    void taxonomyReport() {
+        int tips = 0, mappedTips = 0;
+        int internal = 0, mappedInternal = 0;
+        for (Taxon node : taxonomy)
+            if (node.children == null) {
+                ++tips;
+                if (assignedRegistration(node) != null)
+                    ++mappedTips;
+            } else {
+                ++internal;
+                if (assignedRegistration(node) != null)
+                    ++mappedInternal;
+            }
+        System.out.format("%s/%s tips with registrations, %s/%s internal nodes with registrations, %s/%s total\n",
+                          mappedTips, tips, mappedInternal, internal,
+                          (mappedTips + mappedInternal),
+                          (tips + internal));
+    }
 }

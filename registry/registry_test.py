@@ -69,13 +69,14 @@ def run_test(t1, t2):
                 if regs == None:
                     oldprobe = r.chooseRegistration(taxon, corr)
                     if oldprobe == None:
-                        print 'no registration(s) in either correspondence:', taxon
+                        print 'for %s, no compatible registration(s) in either correspondence' % (taxon,)
                     else:
-                        print 'registration(s) disappeared:', taxon, oldprobe, r.explain(taxon, oldprobe, newcorr)
+                        print 'for %s, registration(s) %s disappeared' % (taxon, oldprobe)
+                        print '| %s' % (r.explain(taxon, oldprobe, newcorr),)
                 else:
                     for oldreg in corr.coget(taxon):
                         if not (oldreg in regs):
-                            print 'registration %s not in %s for %s' % (oldreg, regs, taxon)
+                            print 'for %s, registration %s not among compatible registrations %s' % (taxon, oldreg, regs)
 
     def do_taxonomy(tax1, r):
         print '---'
@@ -102,12 +103,16 @@ def run_test(t1, t2):
         return newcorr
 
     # WORK IN PROGRESS
-    def compare_taxonomies(tax1, tax2, corr1, corr2):
+    def compare_how_taxonomies_map(tax1, tax2, corr1, corr2):
         for node1 in tax1:
-            if node1.id != None:
-                node2 = tax2.lookupId(node1)
-                if corr1.coget(node1) != corr2.coget(node2):
-                    print "mismatch", node1, node2
+            if (not node1.isHidden()) and node1.id != None:
+                node2 = tax2.lookupId(node1.id)
+                if node2 != None and (not node2.isHidden()):
+                    reg1 = r.chooseRegistration(node1, corr1)
+                    reg2 = r.chooseRegistration(node2, corr2)
+                    if reg1 != reg2:
+                        print "node id goes to different registrations", node1, reg1, node2, reg2
+                        print r.explain(node2, reg1, corr2)
 
     r = Registry()
 
@@ -117,7 +122,7 @@ def run_test(t1, t2):
     tax2 = Taxonomy.getTaxonomy(t2, t2.split('/')[-2])
     corr2 = do_taxonomy(tax2, r)
 
-    # compare_taxonomies(tax1, tax2, corr1 corr2)
+    compare_how_taxonomies_map(tax1, tax2, corr1, corr2)
 
     r.dump('registry.csv')
 

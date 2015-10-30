@@ -1183,10 +1183,12 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	static final int INCERTAE_SEDIS		 = (1 <<  6);
     public
 	static final int UNPLACED			 = (1 <<  7);   // children of paraphyletic taxa
+	static final int TATTERED			 = (1 <<  8);   // children of paraphyletic taxa
     public
 	static final int INCERTAE_SEDIS_ANY	 = 
         (MAJOR_RANK_CONFLICT | UNCLASSIFIED | ENVIRONMENTAL
          | INCERTAE_SEDIS | UNPLACED
+         | TATTERED  // deprecated
          | FORMER_CONTAINER);   // kludge, review
 
 	// Individually troublesome - not sticky - combine using &  ? no, | ?
@@ -1529,17 +1531,14 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		if (sel != null) {
 			Taxonomy tax2 = new SourceTaxonomy();
 			tax2.tag = this.tag; // ???
-			Taxon selectionRoot = this.select(sel, tax2);
-			System.out.println("| Selection has " + selectionRoot.count() + " taxa");
-			tax2.addRoot(selectionRoot);
-			this.copySelectedSynonyms(tax2);
-			return tax2;
+            return finishSelection(tax2, this.select(sel, tax2));
 		} else {
 			System.err.println("** Missing or ambiguous selection name");
 			return null;
 		}
 	}
 
+    // Recursion
 	// node is in source taxonomy, tax is the destination taxonomy ('union' or similar)
 	static Taxon select(Taxon node, Taxonomy tax) {
 		Taxon sam = dup(node, tax, "select");
@@ -1551,6 +1550,14 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		return sam;
 	}
 
+    Taxonomy finishSelection(Taxonomy tax2, Taxon selection) {
+        System.out.println("| Selection has " + selection.count() + " taxa");
+        tax2.addRoot(selection);
+        this.copySelectedSynonyms(tax2);
+        tax2.inferFlags();
+        return tax2;
+    }
+
 	// Select subtree rooted at a specified node, down to given depth
 
 	public Taxonomy selectToDepth(String designator, int depth) {
@@ -1561,11 +1568,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		if (sel != null) {
 			Taxonomy tax2 = new SourceTaxonomy();
 			tax2.tag = this.tag; // ???
-			Taxon selection = selectToDepth(sel, tax2, depth);
-			System.out.println("| Selection has " + selection.count() + " taxa");
-			tax2.addRoot(selection);
-			this.copySelectedSynonyms(tax2);
-			return tax2;
+            return finishSelection(tax2, selectToDepth(sel, tax2, depth));
 		} else {
 			System.err.println("** Missing or ambiguous name: " + sel);
 			return null;
@@ -1588,11 +1591,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		Taxon sel = this.taxon(designator);
 		if (sel != null) {
 			Taxonomy tax2 = new SourceTaxonomy();
-			Taxon selection = selectVisible(sel, tax2);
-			System.out.println("| Selection has " + selection.count() + " taxa");
-			tax2.addRoot(selection);
-			this.copySelectedSynonyms(tax2);
-			return tax2;
+			return finishSelection(tax2, selectVisible(sel, tax2));
 		} else
 			return null;
 	}
@@ -2529,16 +2528,22 @@ public abstract class Taxonomy implements Iterable<Taxon> {
     // Event logging
 
 	public boolean markEvent(String tag) { // formerly startReport
-        return this.eventlogger.markEvent(tag);
+        if (this.eventlogger != null)
+            return this.eventlogger.markEvent(tag);
+        else return false;
 	}
 
     public boolean markEvent(String tag, Taxon node) {
-        return this.eventlogger.markEvent(tag, node);
+        if (this.eventlogger != null)
+            return this.eventlogger.markEvent(tag, node);
+        else return false;
     }
 
     public boolean markEvent(String tag, Taxon node, Taxon unode) {
         // sort of a kludge
-        return this.eventlogger.markEvent(tag, node, unode);
+        if (this.eventlogger != null)
+            return this.eventlogger.markEvent(tag, node, unode);
+        else return false;
     }
 
 }

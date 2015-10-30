@@ -79,24 +79,30 @@ public class Registry {
 
         for (Registration reg : this.allRegistrations()) {
             if (reg.samples != null || reg.exclusions != null) {
-                List<Taxon> taxa = this.findByTopology(reg, byMetadata, result);
-                if (taxa != null) {
-                    result.put(reg, taxa);
-                    if (taxa.size() == 1)
-                        event("resolved uniquely by topology", reg, taxa.get(0));
-                    else
-                        event("resolved ambiguously by topology", reg, taxa);
-                } else
-                    event("topological constraints not met", reg);
+                try {
+                    List<Taxon> taxa = this.findByTopology(reg, byMetadata, result);
+                    if (taxa != null) {
+                        result.put(reg, taxa);
+                        if (taxa.size() == 1)
+                            event("resolved uniquely by topology", reg, taxa.get(0));
+                        else
+                            event("resolved ambiguously by topology", reg, taxa);
+                    } else
+                        event("topological constraints are inconsistent", reg);
+                } catch (ResolutionFailure fail) {
+                    event("punt on topology, try metadata", reg, fail.registration);
+                    if (byMetadataOnly(reg, byMetadata, result))
+                        event("metadata worked where topology failed", reg);
+                }
             }
         }
         reportEvents();
         return result;
     }
 
-    private void byMetadataOnly(Registration reg, // little utility for above
-                                Correspondence<Registration, Taxon> byMetadata,
-                                Correspondence<Registration, Taxon> result) {
+    private boolean byMetadataOnly(Registration reg, // little utility for above
+                                   Correspondence<Registration, Taxon> byMetadata,
+                                   Correspondence<Registration, Taxon> result) {
         if (result.get(reg) == null) {
             List<Taxon> taxa = byMetadata.get(reg);
             if (taxa != null) {
@@ -105,9 +111,13 @@ public class Registry {
                 else
                     event("resolved ambiguously by metadata", reg, taxa);
                 result.put(reg, taxa);
-            } else
+                return true;
+            } else {
                 event("metadata-only registration with no compatible nodes", reg);
-        }
+                return false;
+            }
+        } else
+            return false;
     }
 
     // Find compatible taxa using metadata, for all registrations.
@@ -196,7 +206,11 @@ public class Registry {
     // Find all the taxa that match a single Registration.
     // When there is topological ambiguity, attempt to reduce it using clues from metadata.
 
-    List<Taxon> findByTopology(Registration reg, Correspondence<Registration, Taxon> byMetadata, Correspondence<Registration, Taxon> registrationToTaxa) {
+    List<Taxon> findByTopology(Registration reg,
+                               Correspondence<Registration, Taxon> byMetadata,
+                               Correspondence<Registration, Taxon> registrationToTaxa)
+    throws ResolutionFailure
+    {
         Taxon[] path = constrainedPath(reg, registrationToTaxa);
         if (path != null) {
             Taxon m = path[0], a = path[1]; // mrca, ancestor
@@ -227,7 +241,11 @@ public class Registry {
     // m and its ancestors up to be not including a.
 
     Taxon[] constrainedPath(Registration reg,
-                            Correspondence<Registration, Taxon> registrationToTaxa) {
+                            Correspondence<Registration, Taxon> registrationToTaxa)
+    throws ResolutionFailure
+    {
+        ResolutionFailure fail = null;
+        Taxon[] result;
         Taxon m = null;
         for (Registration s : reg.samples) {
             Taxon snode = chooseTaxon(s, registrationToTaxa);
@@ -237,31 +255,46 @@ public class Registry {
                 else
                     m = m.mrca(snode);
             } else
-                return null;    // Couldn't find sample in taxonomy
+                // Couldn't find sample in taxonomy
+                fail = new ResolutionFailure(s);
         }
-        if (m == null || m.noMrca()) return null;
-
-        if (reg.exclusions != null && reg.exclusions.size() > 0) {
-            Taxon a = null;
-            for (Registration s : reg.exclusions) {
-                Taxon snode = chooseTaxon(s, registrationToTaxa);
-                if (snode != null) {
-                    Taxon b = m.mrca(snode);
-                    if (a == null)
-                        a = b;
-                    else if (b.descendsFrom(a))
-                        a = b;
-                } else
-                    return null; // couldn't find exclusion in taxonomy
+        if (m != null && !m.noMrca()) {
+            if (reg.exclusions != null && reg.exclusions.size() > 0) {
+                Taxon a = null;
+                for (Registration s : reg.exclusions) {
+                    Taxon snode = chooseTaxon(s, registrationToTaxa);
+                    if (snode != null) {
+                        Taxon b = m.mrca(snode);
+                        if (a == null)
+                            a = b;
+                        else if (b.descendsFrom(a))
+                            a = b;
+                    } else
+                        // Couldn't find exclusion in taxonomy
+                        fail = new ResolutionFailure(s);
+                }
+                if (a != null && !a.noMrca()) {
+                    if (!m.descendsFrom(a))
+                        // We can sometimes prove there is no such node
+                        // even if not all samples and exclusions resolve.
+                        return null;
+                    result = new Taxon[]{m, a};
+                } else result = null;
+            } else {
+                Taxon a = m;
+                while (!a.isRoot()) a = a.parent;
+                a = a.parent;
+                result = new Taxon[]{m, a}; // Kludge for root of tree
             }
-            if (a == null || a.noMrca()) return null;
-            if (a == m) return null; // Registration is paraphyletic in this taxonomy
-            return new Taxon[]{m, a};
-        } else {
-            Taxon a = m;
-            while (!a.isRoot()) a = a.parent;
-            a = a.parent;
-            return new Taxon[]{m, a}; // Kludge for root of tree
+        } else result = null;
+        if (fail != null) throw fail;
+        return result;
+    }
+
+    class ResolutionFailure extends Exception {
+        Registration registration;
+        ResolutionFailure(Registration reg) {
+            registration = reg;
         }
     }
 
@@ -341,7 +374,7 @@ public class Registry {
             if (probe != null && probe.size() == 1 && probe.get(0) == node) {
                 if (node.name != null && node.name.equals(reg.name)) {
                     if (answer != null) {
-                        System.out.format("ambiguous (4): %s %s %s\n", node, reg, answer);
+                        System.out.format("ambiguous (4): %s -> %s or %s\n", node, reg, answer);
                         return null;      // FAIL ???
                     } else
                         answer = reg;
@@ -358,7 +391,7 @@ public class Registry {
             if (probe != null && probe.size() == 1 && probe.get(0) == node) {
                 // keep going to see if there's more than one
                 if (answer != null) {
-                    System.out.format("ambiguous (5): %s %s %s\n", node, reg, answer);
+                    System.out.format("ambiguous (5): %s -> %s or %s\n", node, reg, answer);
                     return null;      // FAIL ???
                 }
                 answer = reg;
@@ -390,21 +423,23 @@ public class Registry {
     }
 
     void checkRegistrations(Taxonomy tax, Correspondence<Registration, Taxon> registrationToTaxa) {
-        boolean win = true;
+        int losers = 0;
         Set<Registration> seen = new HashSet<Registration>();
         for (Taxon node : tax) {
             Registration reg = this.chooseRegistration(node, registrationToTaxa);
             if (reg == null) {
                 interesting("no registration for node", node);
-                win = false;
+                ++losers;
             } else if (seen.contains(reg)) {
                 interesting("registration also assigned to a node other than this one", node);
-                win = false;
+                ++losers;
             } else
                 seen.add(reg);
         }
-        if (win)
-            System.out.println("Success: unique registrations are assigned to all nodes\n");
+        if (losers == 0)
+            System.out.format("Success: unique registrations are assigned to all nodes\n");
+        else
+            System.out.format("Failure: %s nodes do not have registrations assigned\n", losers);
     }
 
     // Returns a registration that would uniquely select the given node.
@@ -426,6 +461,7 @@ public class Registry {
                 return probe;
             }
             Registration reg = registrationForTaxon(node);
+            if (!node.isHidden()) ++reg.quality;
             // Tip.  Add to correspondence so that it can be used as a sample.
             registrationToTaxa.add(reg, node);
             Registration check = chooseRegistration(node, registrationToTaxa);
@@ -436,7 +472,6 @@ public class Registry {
                 event("new registration created for tip", node, reg);
             return reg;
         } else if (probe != null) {
-            Collections.sort(node.children, betterAsType);
             event("found registration for internal node", node, probe);
             for (Taxon child : node.children)
                 registerSubtree(child, registrationToTaxa, needExclusions);
@@ -444,7 +479,7 @@ public class Registry {
         } else {
             // Persistent side effect to list of children in that node!
             // (the order will be assumed when finding exclusions, as well)
-            Collections.sort(node.children, betterAsType);
+            Collections.sort(node.children, betterSampleSource);
             for (Taxon child : node.children) {
                 Registration reg = registerSubtree(child, registrationToTaxa, needExclusions);
                 if (reg.samples != null)
@@ -472,13 +507,22 @@ public class Registry {
             }
             // there will always be at least one sample (because this is an internal node)
             Registration reg = registrationForTaxon(node);
+            Collections.sort(samples, betterQuality);
             reg.samples = samples;
+            for (Registration s : samples)
+                if (s.quality > 0) ++reg.quality;
             // To do on second pass: exclusions
             needExclusions.put(node, reg);
             event("new registration created for internal node", node, reg);
             return reg;
         }
     }
+
+    public static Comparator<Registration> betterQuality = new Comparator<Registration>() {
+            public int compare(Registration a, Registration b) {
+                return b.quality - a.quality;
+            }
+        };
 
     Registration registrationForTaxon(Taxon node) {
         Registration reg = newRegistration();
@@ -504,6 +548,8 @@ public class Registry {
                 if (p.children.size() >= 2) {
                     Taxon sib = p.children.get(0);
                     if (sib == n) sib = p.children.get(1);
+                    if (sib.isHidden() && !node.isHidden())
+                        interesting("hidden exclusion", node, reg);
                     Registration sib_reg = needExclusions.get(sib);
                     if (sib_reg == null) sib_reg = chooseRegistration(sib, registrationToTaxa);
                     if (sib_reg != null) {
@@ -519,6 +565,10 @@ public class Registry {
         }
         if (reg.exclusions == null)
             System.out.format("No exclusions for %s <-> %s\n", node, reg);
+        else
+            for (Registration s : reg.exclusions)
+                if (s.quality > 0) ++reg.quality;
+
         registrationToTaxa.add(reg, node);
         Registration check = chooseRegistration(node, registrationToTaxa);
         if (check == null)
@@ -526,13 +576,13 @@ public class Registry {
             System.out.format("** registrationToTaxa.add(%s, %s) failed\n", reg, node);
     }
 
-    // Returns negative if a would make a better 'type' (i.e. sample) than b.
+    // Returns negative if a is a better place than b to get samples.
     // Prefer larger taxa to smaller ones.
     // Prefer less homonymic names.
     // Prefer larger number of source taxonomies.
     // Try to ignore anything below species rank.
 
-    public Comparator<Taxon> betterAsType = new Comparator<Taxon>() {
+    public Comparator<Taxon> betterSampleSource = new Comparator<Taxon>() {
             public int compare(Taxon a, Taxon b) {
                 int avis = (a.isHidden() ? 1 : 0);
                 int bvis = (b.isHidden() ? 1 : 0);
@@ -549,36 +599,51 @@ public class Registry {
             }
         };
 
+    // Explains why reg is not assigned to node / reg does not resolve to node
+
     public String explain(Taxon node, Registration reg, Correspondence<Registration, Taxon> corr) {
         if (reg.samples != null)
             for (Registration sreg : reg.samples) {
+                if (corr.get(sreg) == null)
+                    return String.format("no taxon compatible with sample %s", sreg);
                 Taxon sample = chooseTaxon(sreg, corr);
                 if (sample == null)
-                    return String.format("no sample taxon for sample %s", sreg);
+                    return String.format("no taxon chosen for sample %s", sreg);
                 if (!sample.descendsFrom(node))
-                    return String.format("sample %s does not descend", sample);
+                    return String.format("sample %s does not descend from %s", sample, node);
             }
         if (reg.exclusions != null)
             for (Registration xreg : reg.exclusions) {
+                if (corr.get(xreg) == null)
+                    return String.format("no taxon compatible with exclusion %s", xreg);
                 Taxon exclusion = chooseTaxon(xreg, corr);
                 if (exclusion == null)
-                    return String.format("no exclusion taxon for sample %s", xreg);
+                    return String.format("no taxon chosen for exclusion %s", xreg);
                 if (exclusion.descendsFrom(node))
-                    return String.format("exclusion %s descends", exclusion);
+                    return String.format("exclusion %s descends from %s", exclusion, node);
             }
 
         // Should look at metadata...
 
-        if (corr.coget(node) == null)
-            return "no registrations for taxon";
-
         if (corr.get(reg) == null)
             return "no taxa for registration";
+
+        if (!corr.get(reg).contains(node))
+            return "taxon not compatible with registration";
 
         if (chooseRegistration(node, corr) == null)
             return "chooseRegistration failed, probably ambiguous";
 
-        return null;
+        if (corr.coget(node) == null)
+            return "no registrations for taxon";
+
+        if (!corr.coget(node).contains(reg))
+            return "taxon not compatible with registration"; // redundant
+
+        if (chooseTaxon(reg, corr) == null)
+            return "chooseTaxon failed";
+
+        return "looks OK";
     }
 
     // Create Registration records on demand
@@ -613,8 +678,12 @@ public class Registry {
         }
         System.out.format("%s registrations loaded\n", registry.registrations.size());
         br.close();
-
-        // index by name?
+        for (Registration reg : registry.allRegistrations()) {
+            if (reg.samples != null)
+                Collections.sort(reg.samples, betterQuality);
+            if (reg.exclusions != null)
+                Collections.sort(reg.exclusions, betterQuality);
+        }
         return registry;
     }
 
@@ -692,6 +761,7 @@ class Registration {
     String ottid = null;
     List<Registration> samples = null;
     List<Registration> exclusions = null;
+    int quality = 0;
 
     Registration(int id) {
         this.id = id;
@@ -717,8 +787,8 @@ class Registration {
         int id = Integer.parseInt(cells[0]);
         String name = cells[1];
         String qid = cells[2];
-        // TBD: error if there's already a registration with that id
-        Registration entry = new Registration(id);
+        // TBD: error if we've already seen a row for this id
+        Registration entry = registry.getRegistration(id);
         if (name.length() > 0) entry.name = name;
         if (qid.length() > 0) entry.qid = new QualifiedId(qid);
         entry.ottid = cells[3];

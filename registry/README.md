@@ -296,6 +296,26 @@ file.)
 See the (sparse) code comments for some information on how the
 resolution and registration operations work.
 
+Extracting subtrees of a synthetic tree: (first get the compressed
+Newick file from files.opentreeoflife.org, then uncompress putting the
+result in e.g. 'draftversion3.tre' or 'draftversion4.tre')
+
+    java -Xmx14G org.python.util.jython
+    from org.opentreeoflife.taxa import Taxonomy
+    synth3 = Taxonomy.getNewick('draftversion3.tre', 'synth')
+    synth3.select('Chloroplastida').dump('plants-synth3/')
+
+Extracting subtrees of OTT: (first get the compressed tarball from
+files.opentreeoflife.org, then unpack to directory ott28/ (or ott29,
+etc.)
+
+    java -Xmx14G org.python.util.jython
+    from org.opentreeoflife.taxa import Taxonomy
+    ott28 = Taxonomy.getTaxonomy('ott28/', 'ott')
+    ott28.select('Chloroplastida').dump('plants-ott28/')
+
+### Implementation note
+
 Currently topological constraints consist of at most two samples and
 at most one exclusion.  The number of samples can be increased easily;
 increasing the number of exclusions will require additional coding.

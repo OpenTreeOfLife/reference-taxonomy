@@ -40,7 +40,7 @@ def run_test(t1, t2):
         i = 0
         j = 0
         for taxon in t:
-            probe = corr.chooseRegistration(taxon, corr)
+            probe = corr.assignedRegistration(taxon)
             if probe == None:
                 probes = corr.coget(taxon)
                 if probes == None:
@@ -54,7 +54,7 @@ def run_test(t1, t2):
     def show_unmapped(tax, r, corr):
         i = 0
         for taxon in tax:
-            probe = corr.chooseRegistration(taxon, corr)
+            probe = corr.assignedRegistration(taxon)
             if probe == None:
                 if i < 5:
                     print 'missing registration:', taxon, corr.coget(taxon)
@@ -63,16 +63,16 @@ def run_test(t1, t2):
 
     def compare_correspondences(corr, newcorr):
         for taxon in corr.taxa():
-            probe = newcorr.chooseRegistration(taxon, newcorr)
+            probe = newcorr.assignedRegistration(taxon)
             if probe == None:
                 regs = newcorr.coget(taxon)
                 if regs == None:
-                    oldprobe = corr.chooseRegistration(taxon, corr)
+                    oldprobe = corr.assignedRegistration(taxon)
                     if oldprobe == None:
                         print 'for %s, no compatible registration(s) in either correspondence' % (taxon,)
                     else:
                         print 'for %s, registration(s) %s disappeared' % (taxon, oldprobe)
-                        print '| %s' % (newcorr.explain(taxon, oldprobe, newcorr),)
+                        print '| %s' % (newcorr.explain(taxon, oldprobe),)
                 else:
                     for oldreg in corr.coget(taxon):
                         if not (oldreg in regs):
@@ -90,7 +90,7 @@ def run_test(t1, t2):
 
         # this should create new registrations for all taxa
         print 'Extending registry for', tax1
-        corr.extend(tax1, corr)
+        corr.extend()
         analyze(r, tax1, corr, 'after extend:')
         show_unmapped(tax1, r, corr)
 
@@ -110,10 +110,10 @@ def run_test(t1, t2):
             if (not node1.isHidden()) and node1.id != None:
                 node2 = tax2.lookupId(node1.id)
                 if node2 != None and (not node2.isHidden()):
-                    reg1 = corr1.chooseRegistration(node1, corr1)
-                    reg2 = corr2.chooseRegistration(node2, corr2)
+                    reg1 = corr1.assignedRegistration(node1)
+                    reg2 = corr2.assignedRegistration(node2)
                     if reg1 != reg2:
-                        print "node id goes to different registrations", node1, reg1, node2, reg2
+                        print "registration for node id differs between the two taxonomies", node1, reg1, node2, reg2
                         print corr2.explain(node2, reg1, corr2)
 
     r = Registry()

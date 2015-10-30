@@ -80,27 +80,26 @@ public class Correspondence {
 
     // Find the compatible taxon (pathologically: taxa), if any, 
     // for every registration in the registry.
-    // With this in hand, use chooseTaxon() to resolve a registration to a taxon,
-    // and chooseRegistration() to find the registration assigned to a taxon.
+    // With this in hand, use resolve() to resolve a registration to a taxon,
+    // and assignedRegistration() to find the registration assigned to a taxon.
 
     void assign() {
         clearEvents();
         Map<Registration, Taxon> byMetadata = resolveAllByMetadata(taxonomy, qidIndex);
-        Correspondence result = this;
 
-        // 1. Resolve sample/exclusion registrations using metadata (see chooseTaxon)
+        // 1. Resolve sample/exclusion registrations using metadata (see resolve)
         // 2. Resolve metadata-only registrations using metadata
 
         for (Registration reg : registry.allRegistrations()) {
             if (reg.samples != null || reg.exclusions != null) {
                 if (reg.samples != null)
                     for (Registration s : reg.samples)
-                        result.byMetadataOnly(s, byMetadata);
+                        byMetadataOnly(s, byMetadata);
                 if (reg.exclusions != null)
                     for (Registration s : reg.exclusions)
-                        result.byMetadataOnly(s, byMetadata);
+                        byMetadataOnly(s, byMetadata);
             } else 
-                result.byMetadataOnly(reg, byMetadata);
+                byMetadataOnly(reg, byMetadata);
         }
 
         // 3. Resolve registrations that have topological constraints (using metadata to disambiguate)
@@ -108,9 +107,9 @@ public class Correspondence {
         for (Registration reg : registry.allRegistrations()) {
             if (reg.samples != null || reg.exclusions != null) {
                 try {
-                    List<Taxon> taxa = findByTopology(reg, byMetadata, result);
+                    List<Taxon> taxa = findByTopology(reg, byMetadata);
                     if (taxa != null) {
-                        result.put(reg, taxa);
+                        this.put(reg, taxa);
                         if (taxa.size() == 1)
                             event("resolved uniquely by topology", reg, taxa.get(0));
                         else
@@ -119,7 +118,7 @@ public class Correspondence {
                         event("topological constraints are inconsistent", reg);
                 } catch (ResolutionFailure fail) {
                     event("punt on topology, try metadata", reg, fail.registration);
-                    if (result.byMetadataOnly(reg, byMetadata))
+                    if (byMetadataOnly(reg, byMetadata))
                         event("metadata worked where topology failed", reg);
                 }
             }
@@ -159,7 +158,7 @@ public class Correspondence {
     }
 
     // Find taxa, using metadata, for one registation.
-    // (Not sure how to divide labor between this method and chooseRegistration.)
+    // (Not sure how to divide labor between this method and assignedRegistration.)
     // This is how the samples and exclusions get mapped to nodes.
     // This gets only the "best metadata matches" for the registration.
 
@@ -225,11 +224,10 @@ public class Correspondence {
     // If a sample or exclusion fails to resolve, throw a ResolutionFailure exception.
 
     List<Taxon> findByTopology(Registration reg,
-                               Map<Registration, Taxon> byMetadata,
-                               Correspondence registrationToTaxa)
+                               Map<Registration, Taxon> byMetadata)
     throws ResolutionFailure
     {
-        List<Taxon> path = constrainedPath(reg, registrationToTaxa);
+        List<Taxon> path = constrainedPath(reg);
         if (path != null) {
             if (path.size() > 1) {
                 // Ambiguous.  Attempt to clear it up using metadata... this may be the wrong place to do this
@@ -250,15 +248,14 @@ public class Correspondence {
     // Return value is {m, a} where a is an ancestor of m.  Compatible taxa are
     // m and its ancestors up to be not including a.
 
-    List<Taxon> constrainedPath(Registration reg,
-                                Correspondence registrationToTaxa)
+    List<Taxon> constrainedPath(Registration reg)
     throws ResolutionFailure
     {
         ResolutionFailure fail = null;
         List<Taxon> result;
         Taxon m = null;
         for (Registration s : reg.samples) {
-            Taxon snode = chooseTaxon(s, registrationToTaxa);
+            Taxon snode = resolve(s);
             if (snode != null) {
                 if (m == null)
                     m = snode;
@@ -272,7 +269,7 @@ public class Correspondence {
             if (reg.exclusions != null && reg.exclusions.size() > 0) {
                 Taxon a = null;
                 for (Registration s : reg.exclusions) {
-                    Taxon snode = chooseTaxon(s, registrationToTaxa);
+                    Taxon snode = resolve(s);
                     if (snode != null) {
                         Taxon b = m.mrca(snode);
                         if (a == null)
@@ -320,9 +317,8 @@ public class Correspondence {
     // Resolution: choose one taxon for the given registration, based
     // on compatibility relation.
 
-    public Taxon chooseTaxon(Registration reg,
-                             Correspondence registrationToTaxa) {
-        List<Taxon> seen = registrationToTaxa.get(reg);
+    public Taxon resolve(Registration reg) {
+        List<Taxon> seen = this.get(reg);
         if (seen != null && seen.size() == 1) // ** sort by goodness of match ??
             return seen.get(0);
         else
@@ -333,35 +329,33 @@ public class Correspondence {
     // Assignment - inverse of resolution
 
     // Create registrations for any taxa that don't have them
-    // uniquely.  Performs side effects on the taxon to registration
+    // uniquely.  Performs side effects on the taxon-to-registration
     // correspondence.
-    // call this 'extend' ???
 
-    void extend(Taxonomy tax,
-                Correspondence registrationToTaxa) {
+    void extend() {
         clearEvents();
         Map<Taxon, Registration> needExclusions = new HashMap<Taxon, Registration>();
-        int before = registrationToTaxa.size();
+        int before = this.size();
         // 1. Register all unregistered tips
         // 2. Register all unregistered internal nodes
-        for (Taxon root : tax.roots())
-            registerSubtree(root, registrationToTaxa, needExclusions);
+        for (Taxon root : taxonomy.roots())
+            registerSubtree(root, needExclusions);
         for (Taxon node : needExclusions.keySet())
-            addExclusions(node, needExclusions, registrationToTaxa);
+            addExclusions(node, needExclusions);
         reportEvents();
-        checkRegistrations(tax, registrationToTaxa);
+        checkRegistrations();
     }
 
-    void checkRegistrations(Taxonomy tax, Correspondence registrationToTaxa) {
+    void checkRegistrations() {
         int losers = 0;
         Set<Registration> seen = new HashSet<Registration>();
-        for (Taxon node : tax) {
-            Registration reg = chooseRegistration(node, registrationToTaxa);
+        for (Taxon node : taxonomy) {
+            Registration reg = assignedRegistration(node);
             if (reg == null) {
                 interesting("no registration for node", node);
                 ++losers;
             } else if (seen.contains(reg)) {
-                interesting("registration also assigned to a node other than this one", node);
+                interesting("registration also assigned to a node other than this one", reg, node);
                 ++losers;
             } else
                 seen.add(reg);
@@ -377,12 +371,11 @@ public class Correspondence {
     // and store in the registrationToTaxa table.
 
     Registration registerSubtree(Taxon node,
-                                 Correspondence registrationToTaxa,
                                  Map<Taxon, Registration> needExclusions) {
         // ? Exclude nodes that have names that are homonyms ?
         List<List<Registration>> childSamples = new ArrayList<List<Registration>>();
         // Preorder traversal
-        Registration probe = chooseRegistration(node, registrationToTaxa);
+        Registration probe = assignedRegistration(node);
         if (node.children == null) {
             // Look to see if we already have a (tip?) registration for this node
             // ****
@@ -393,25 +386,25 @@ public class Correspondence {
             Registration reg = registry.registrationForTaxon(node);
             if (!node.isHidden()) ++reg.quality;
             // Tip.  Add to correspondence so that it can be used as a sample.
-            registrationToTaxa.add(reg, node);
-            Registration check = chooseRegistration(node, registrationToTaxa);
+            this.add(reg, node);
+            Registration check = assignedRegistration(node);
             if (check != reg)
                 // this is not good.
-                interesting("** registrationToTaxa.add(%s, %s) failed (bug)", reg, node, check);
+                interesting("** add(%s, %s) failed (bug)", reg, node, check);
             else
                 event("new registration created for tip", node, reg);
             return reg;
         } else if (probe != null) {
             event("found registration assigned to internal node", node, probe);
             for (Taxon child : node.children)
-                registerSubtree(child, registrationToTaxa, needExclusions);
+                registerSubtree(child, needExclusions);
             return probe;
         } else {
             // Persistent side effect to list of children in that node!
             // (the order will be assumed when finding exclusions, as well)
             Collections.sort(node.children, betterSampleSource);
             for (Taxon child : node.children) {
-                Registration reg = registerSubtree(child, registrationToTaxa, needExclusions);
+                Registration reg = registerSubtree(child, needExclusions);
                 if (reg.samples != null)
                     childSamples.add(reg.samples);
                 else {
@@ -454,11 +447,10 @@ public class Correspondence {
             }
         };
 
-    // Second pass after registrations have been created with inclusions
+    // Second pass (after registrations have been created with inclusions only)
 
     void addExclusions(Taxon node,
-                       Map<Taxon, Registration> needExclusions,
-                       Correspondence registrationToTaxa) {
+                       Map<Taxon, Registration> needExclusions) {
         // Add the new registration to those already there for this taxon
         Registration reg = needExclusions.get(node);
         if (reg.samples != null) {
@@ -470,7 +462,7 @@ public class Correspondence {
                     if (sib.isHidden() && !node.isHidden())
                         interesting("hidden exclusion", node, reg);
                     Registration sib_reg = needExclusions.get(sib);
-                    if (sib_reg == null) sib_reg = chooseRegistration(sib, registrationToTaxa);
+                    if (sib_reg == null) sib_reg = assignedRegistration(sib);
                     if (sib_reg != null) {
                         Registration ex = sib_reg;
                         if (sib_reg.samples != null) ex = sib_reg.samples.get(0);
@@ -488,11 +480,11 @@ public class Correspondence {
             for (Registration s : reg.exclusions)
                 if (s.quality > 0) ++reg.quality;
 
-        registrationToTaxa.add(reg, node);
-        Registration check = chooseRegistration(node, registrationToTaxa);
+        this.add(reg, node);
+        Registration check = assignedRegistration(node);
         if (check == null)
             // this is not good.
-            interesting("** registrationToTaxa.add failed #2 (bug)", reg, node);
+            interesting("** add failed #2 (bug)", reg, node);
     }
 
     // Returns negative if a is a better place than b to get samples.
@@ -522,9 +514,8 @@ public class Correspondence {
     // among several that resolve to the node.
     // This code looks all wrong to me.
 
-    public Registration chooseRegistration(Taxon node,
-                                           Correspondence registrationToTaxa) {
-        List<Registration> regs = registrationToTaxa.coget(node);
+    public Registration assignedRegistration(Taxon node) {
+        List<Registration> regs = this.coget(node);
         if (regs == null) return null;
         if (regs.size() == 1) return regs.get(0);
 
@@ -534,7 +525,7 @@ public class Correspondence {
             // Check primary source id (e.g. ncbi:1234)
             QualifiedId nodeQid = node.sourceIds.get(0);
             for (Registration reg : regs) {
-                List<Taxon> probe = registrationToTaxa.get(reg);
+                List<Taxon> probe = this.get(reg);
                 if (probe != null && probe.size() == 1 && probe.get(0) == node) {
                     // keep going to see if there's more than one
                     // in which case try using metadata to filter
@@ -552,7 +543,7 @@ public class Correspondence {
 
             // Check other source ids (e.g. match gbid:5678 to [ncbi:1234, gbif:5678]
             for (Registration reg : regs) {
-                List<Taxon> probe = registrationToTaxa.get(reg);
+                List<Taxon> probe = this.get(reg);
                 if (probe != null && probe.size() == 1 && probe.get(0) == node) {
                     if (node.sourceIds.contains(reg.qid)) {
                         if (answer != null) {
@@ -571,7 +562,7 @@ public class Correspondence {
         // Nameless nodes do not have OTT ids; and id present is fake
         if (node.id != null && node.name != null) {
             for (Registration reg : regs) {
-                List<Taxon> probe = registrationToTaxa.get(reg);
+                List<Taxon> probe = this.get(reg);
                 if (probe != null && probe.size() == 1 && probe.get(0) == node) {
                     if (node.id.equals(reg.ottid)) {
                         if (answer != null) {
@@ -589,7 +580,7 @@ public class Correspondence {
         // Check primary name
         if (node.name != null) {
             for (Registration reg : regs) {
-                List<Taxon> probe = registrationToTaxa.get(reg);
+                List<Taxon> probe = this.get(reg);
                 if (probe != null && probe.size() == 1 && probe.get(0) == node) {
                     if (node.name.equals(reg.name)) {
                         if (answer != null) {
@@ -613,12 +604,12 @@ public class Correspondence {
 
     // Explains why reg is not assigned to node / reg does not resolve to node
 
-    public String explain(Taxon node, Registration reg, Correspondence registrationToTaxa) {
+    public String explain(Taxon node, Registration reg) {
         if (reg.samples != null)
             for (Registration sreg : reg.samples) {
-                if (registrationToTaxa.get(sreg) == null)
+                if (this.get(sreg) == null)
                     return String.format("no taxon compatible with sample %s", sreg);
-                Taxon sample = chooseTaxon(sreg, registrationToTaxa);
+                Taxon sample = resolve(sreg);
                 if (sample == null)
                     return String.format("no taxon chosen for sample %s", sreg);
                 if (!sample.descendsFrom(node))
@@ -626,9 +617,9 @@ public class Correspondence {
             }
         if (reg.exclusions != null)
             for (Registration xreg : reg.exclusions) {
-                if (registrationToTaxa.get(xreg) == null)
+                if (this.get(xreg) == null)
                     return String.format("no taxon compatible with exclusion %s", xreg);
-                Taxon exclusion = chooseTaxon(xreg, registrationToTaxa);
+                Taxon exclusion = resolve(xreg);
                 if (exclusion == null)
                     return String.format("no taxon chosen for exclusion %s", xreg);
                 if (exclusion.descendsFrom(node))
@@ -637,23 +628,23 @@ public class Correspondence {
 
         // Should look at metadata...
 
-        if (registrationToTaxa.get(reg) == null)
+        if (this.get(reg) == null)
             return "no taxa for registration";
 
-        if (!registrationToTaxa.get(reg).contains(node))
+        if (!this.get(reg).contains(node))
             return "taxon not compatible with registration";
 
-        if (chooseRegistration(node, registrationToTaxa) == null)
-            return "chooseRegistration failed, probably ambiguous";
+        if (assignedRegistration(node) == null)
+            return "assignedRegistration failed, probably ambiguous";
 
-        if (registrationToTaxa.coget(node) == null)
+        if (this.coget(node) == null)
             return "no registrations for taxon";
 
-        if (!registrationToTaxa.coget(node).contains(reg))
+        if (!this.coget(node).contains(reg))
             return "taxon not compatible with registration"; // redundant
 
-        if (chooseTaxon(reg, registrationToTaxa) == null)
-            return "chooseTaxon failed";
+        if (resolve(reg) == null)
+            return "resolve failed";
 
         return "looks OK";
     }

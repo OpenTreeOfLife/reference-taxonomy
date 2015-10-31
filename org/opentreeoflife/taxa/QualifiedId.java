@@ -36,9 +36,10 @@ public class QualifiedId {
 	public boolean equals(Object o) {
 		if (o instanceof QualifiedId) {
 			QualifiedId qid = (QualifiedId)o;
-            if (!qid.prefix.equals(prefix)) return false;
-            if ((id == null) != (qid.id == null)) return false;
-            if (qid != null && !qid.id.equals(id)) return false;
+            if (!qid.prefix.equals(this.prefix)) return false;
+            if (qid.id == null)
+                return (this.id == null);
+            if (!qid.id.equals(this.id)) return false;
             return true;
 		} else
 			return false;

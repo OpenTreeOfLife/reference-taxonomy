@@ -136,7 +136,7 @@ public class Correspondence {
     // (Not sure how to divide labor between this method and assignedRegistration.)
     // This is how the samples and exclusions get mapped to nodes.
     // This gets only the "best metadata matches" for the registration.
-    // Side effect: enter status in status table.
+    // Side effect: when result is null, enter status in status table.
 
     Taxon resolveByMetadata(Registration reg) {
         if (reg.ottid != null) {
@@ -192,7 +192,7 @@ public class Correspondence {
                     return result;
             }
         }
-        if (statuses.get(reg) != null)
+        if (statuses.get(reg) == null)
             statuses.put(reg, Status.NO_CANDIDATES);
         return null;
     }
@@ -529,6 +529,8 @@ public class Correspondence {
             return "no registration is assigned";
         }
 
+
+
         if (reg.samples != null)
             for (Registration sreg : reg.samples) {
                 Taxon sample = resolve(sreg);
@@ -568,13 +570,17 @@ public class Correspondence {
             case QIDS_DIFFER:
                 return String.format("no taxon with same source reference %s as registration", reg.qid);
             case NO_CANDIDATES:
-                return "registration has no candidate resolutions";
+                // a synonym in the old taxonomy matched a taxon in the new taxonomy?
+                // and then the synonym wasn't carried over?
+                return "registration has no candidate resolutions by metadata";
             }
         }
 
         List<Taxon> path = paths.get(reg);
         if (path != null)
             return "registration is a path ambiguity";
+
+        // Answer should have been found via constraints, paths, status, etc., but wasn't.
 
         Taxon other = resolve(reg);
 

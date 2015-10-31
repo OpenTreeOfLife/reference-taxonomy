@@ -44,10 +44,14 @@ def compare_correspondences(corr1, corr2):
                         print 'for %s, assigned in second correspondence only %s' % (node2, reg2)
                         print '| %s' % (corr2.explain(node2, reg1),)
                     elif reg1 != reg2:
-                        if (corr2.resolve(reg1) == node2):
+                        node3 = corr2.resolve(reg1)
+                        if node3 == node2:
                             True
                             #print 'old registration %s resolves to new node %s' % (reg1, node2)
                             #print '| %s' % (corr2.explain(node2, reg1),)
+                        elif node3 == None:
+                            print 'for %s, assignment %s (dead) changed to %s' % (node1, reg1, reg2)
+                            print '| %s' % (corr2.explain(node2, reg1),)
                         else:
                             print 'for %s, assignment %s changed to %s' % (node1, reg1, reg2)
                             print '| %s' % (corr2.explain(node2, reg1),)

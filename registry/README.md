@@ -281,6 +281,10 @@ A scripted test is available via 'make test' in the registry directory
 - but beware, this does some big file transfers, and can take a while
 (15 minutes? haven't measured it).
 
+A variety of other tests, e.g. comparing different versions of OTT,
+are listed as other targets in the Makefile.
+
+
 ### Interactive use
 
 The registry references taxonomy support classes defined in the
@@ -332,3 +336,76 @@ etc.  Then
     from org.opentreeoflife.taxa import Taxonomy
     ott28 = Taxonomy.getTaxonomy('ott2.8/', 'ott')
     ott28.select('Chloroplastida').dump('plants-ott28/')
+
+## Outcomes of tests
+
+The system can be stress tested in many ways; so far I have one
+generic test (in registry_test.py) that can be applied to a pair of
+trees, and "old" tree A and a "new" tree B.  It performs the following
+sequence of operations:
+
+1. Start with an empty registry
+2. Extend it by making new registrations for nodes in tree A
+3. Resolve registrations against tree B
+4. Extend registry by making new registrations for nodes in tree B
+   lacking assigned registrations
+
+We can then analyze the outcome as follows.  Look at every node N1 in
+tree A that has a counterpart N2 in tree B (as determined by
+OTT id).  N1 was assigned registration R1 after step 2, and N2 was
+assigned registration R2 after step 4.  If R1 = R2, the registry has
+successfully rediscovered that the nodes correspond.  If R1 != R2, but
+R1 resolves to N2, we probably have a case where nodes were merged.
+Otherwise, the registry has decided that the two nodes, which were
+determined to be "the same" by smasher, are so different that they
+need distinct ids, i.e. annotations applied to N1 may not be
+applicable to N2.
+
+Such a change might occur if the topological constraints for R1 cannot
+be satisfied in the new tree, or if a taxon in the old tree is simply
+not present ("deleted") from the new tree.
+
+The consequence of a change in assignment (i.e. registry id) is that
+occurrences of the old ids in annotations will not resolve in the
+newer tree.  The assignment is therefore "lost" if one is consulting
+the newer tree to resolve identifiers.  Information about the
+identifier is retained in the registry, however, and that may enable
+some kind of recovery.
+
+To simplify matters, we ignore 'hidden' nodes (incertae sedis etc.)
+in the analysis.
+
+### Comparing taxonomy with synthetic tree
+
+We can apply this test to a taxonomy and a synthetic tree produced
+based on it.  When we apply it to the plants branch of OTT 2.9 and the
+plants branch of the draft 4 synthetic tree, 10 non-merge node pairs
+have "changed" registrations.  In every case this is because
+registrations mentioned in topological constraints do not resolve
+because the synthetic tree lacks a node that's present in the
+taxonomy.
+
+The fact that topological constraints are always satisfied is a result
+of the way the synthesis procedure assigns OTT ids to internal nodes:
+it ensures that a tip descends from a node in the synthetic tree if
+and only if the taxon corresponding to the tip descends, in the
+taxonomy, from the taxon corresponding to taxon with the assigned id.
+
+Nodes missing from the synthetic tree are almost all 'hidden' nodes,
+which means that we have 
+
+This test is the 'test29_4' target in the Makefile.
+
+### Comparing taxonomy versions
+
+We can also apply the test to successive versions of OTT.  When we
+apply it to the plants branch of OTT 2.8 and the plants branch of OTT
+2.9, 859 non-merge node pairs have distinct registrations.  In
+every case this is because the topological constraints from the old
+tree are not satisfied in the new tree.
+
+This test is the 'test28_29' target in the Makefile.
+
+### Other tests
+
+I haven't run tests involving three or more trees.

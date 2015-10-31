@@ -69,8 +69,14 @@ public class Registry {
         Registration reg = newRegistration();
         // Set metadata from node
         reg.name = node.name;
-        if (node.sourceIds != null)
-            reg.qid = node.sourceIds.get(0);
+        if (node.sourceIds != null) {
+            if (node.sourceIds.size() >= 2
+                && node.sourceIds.get(0).id.equals("silva")
+                && node.sourceIds.get(1).id.equals("ncbi"))
+                reg.qid = node.sourceIds.get(1);
+            else
+                reg.qid = node.sourceIds.get(0);
+        }
         if (node.name != null)
             reg.ottid = node.id;
         if (!node.isHidden()) ++reg.quality;

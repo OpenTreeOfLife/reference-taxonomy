@@ -139,18 +139,19 @@ public class Correspondence {
     // Side effect: enter status in status table.
 
     Taxon resolveByMetadata(Registration reg) {
+        if (reg.ottid != null) {
+            Taxon probe = taxonomy.lookupId(reg.ottid);
+            if (probe != null && probe.name != null)
+                return probe;
+        }
         if (reg.qid != null) {
             // Collisions have already been winnowed out
             Taxon probe = qidIndex.get(reg.qid);
             if (probe != null)
-                return probe;
-        }
-        if (reg.ottid != null) {
-            Taxon probe = taxonomy.lookupId(reg.ottid);
-            if (probe != null && probe.name != null)
-                if (reg.qid != null && probe.sourceIds != null) {
-                    // should have been found in previous case
-                    statuses.put(reg, Status.QIDS_DIFFER);
+                if (probe.id != null && probe.name != null) {
+                    // If it has an OTT, it's the wrong one
+                    statuses.put(reg, Status.OTTIDS_DIFFER);
+                    interesting("resolution failed, qids match but ottids don't", reg, probe);
                     return null;
                 } else
                     return probe;
@@ -164,7 +165,7 @@ public class Correspondence {
                     if (node.name.equals(reg.name)) {
                         if (result != null) {
                             statuses.put(reg, Status.AMBIGUOUS);
-                            interesting("resolution failed due to name ambiguity", reg);
+                            interesting("resolution failed due to name ambiguity", reg, node, result);
                             return null; // ambiguous
                         }
                         result = node;
@@ -179,13 +180,15 @@ public class Correspondence {
                     }
                     result = nodes.get(0);
                 }
-                if (reg.qid != null && result.sourceIds != null) {
-                    statuses.put(reg, Status.QIDS_DIFFER);
-                    return null;
-                } else if (reg.ottid != null && result.id != null && result.name != null) {
+                if (reg.ottid != null && result.id != null && result.name != null) {
                     statuses.put(reg, Status.OTTIDS_DIFFER);
+                    interesting("resolution failed, names match but ottids don't", reg, result);
                     return null;
-                } else
+                } else if (reg.qid != null && result.sourceIds != null) {
+                    statuses.put(reg, Status.QIDS_DIFFER);
+                    interesting("resolution failed, names and OTT ids match but qids don't", reg, result);
+                    return null;
+                } else 
                     return result;
             }
         }
@@ -510,7 +513,7 @@ public class Correspondence {
         return assignments.get(node);
     }
 
-    // Explains why reg is not assigned to node / reg does not resolve to node
+    // Explains why reg is not assigned to node
 
     public String explain(Taxon node, Registration reg) {
         if (reg == null) {
@@ -561,27 +564,42 @@ public class Correspondence {
             case AMBIGUOUS:
                 return "registration's metadata is ambiguous, no single best taxon";
             case OTTIDS_DIFFER:
-                return "no taxa with same OTT id as registration";
+                return String.format("no taxon with same OTT id %s as registration", reg.ottid);
             case QIDS_DIFFER:
-                return "no taxa with same source reference as registration";
+                return String.format("no taxon with same source reference %s as registration", reg.qid);
             case NO_CANDIDATES:
-                return "registration has candidate resolutions";
+                return "registration has no candidate resolutions";
             }
         }
 
-        if (resolve(reg) == null)
-            return "no taxon for registration";
+        List<Taxon> path = paths.get(reg);
+        if (path != null)
+            return "registration is a path ambiguity";
 
-        if (resolve(reg) != node)
-            return "registration does not resolve to taxon";
+        Taxon other = resolve(reg);
 
-        if (assignedRegistration(node) == null)
+        if (other == null)
+            return "registration does not resolve";
+
+        if (other != node)
+            return String.format("registration resolves to %s", other);
+
+        Registration otherreg = assignedRegistration(node);
+
+        if (otherreg == null)
             return "assignedRegistration failed, probably ambiguous";
 
-        if (assignedRegistration(node) != reg)
-            return "registration is not assigned to this taxon"; // redundant
+        if (otherreg == reg)
+            return "looks OK";
 
-        return "looks OK";
+        List<Taxon> taxa = taxonomy.lookup(otherreg.name);
+        if (taxa != null) {
+            for (Taxon foo : taxa)
+                if (foo.name.equals(reg.name))
+                    return String.format("registration names are synonyms, probable merge");
+        }
+
+        return String.format("registration %s is assigned to this node", otherreg);
     }
 
     // instrumentation

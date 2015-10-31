@@ -485,6 +485,9 @@ class UnionTaxonomy extends Taxonomy {
 		out.close();
 	}
 
+    // Overrides dumpForwards in class Taxonomy
+    // *** TBD: also write out simple id aliases within the union taxonomy
+
     void dumpForwards(String filename) throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
 		out.format("id\treplacement\n");

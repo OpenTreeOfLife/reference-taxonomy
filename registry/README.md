@@ -16,26 +16,30 @@ knowledge base to another without distortion of meaning.
 
 ### Resolution and assignment
 
-The purpose of the registry is to assign ids to nodes in trees
-(including taxonomies) so that those nodes can be annotated, used in
-URLs, and otherwise referenced.  ("Compatible" is defined below.)
+The purpose of the registry is to assign ids to compatible nodes in
+trees (including taxonomies) so that those nodes can be annotated,
+used in URLs, and otherwise referenced.
 
-Ideally, for a given tree, we would have an injective mapping from
-nodes to their assigned registrations.  Such a mapping could be used
-to select a registration id when annotating a node, and (in the
-inverse direction) to resolve a registration id to the node again when
-an annotation using that id is encountered.  When consulting a
-different tree (such as a successor version of a taxonomy), the
-registration id might resolve to a node in that tree that is
-equivalent in some sense to the node in the original tree.
+Ideally, for a given tree, we would have a way to assign registrations
+(or their ids) to compatible nodes in the tree, with no registration
+assigned to two different nodes.  The assignment map would be used
+when annotating a node, and a resolution map (in the opposite
+direction) would resolve a registration id assigned to a node back to
+the node again when an annotation using that id is encountered.  When
+applying an annotation to a tree different from the one against which
+it was created (such as a successor version of a taxonomy), there
+might be a node in second tree compatible with the registration id, in
+which case we can take both nodes (the one in the firstree, and the
+one in the second) to stand for the same clade.
 
-An injective mapping from nodes to registrations is not always
-possible.  For example, the registry may contain no registrations
-compatible with a given node, or there may be ambiguity, i.e. no
-unique "best" registration for a node or unique "best" node for a
-registration.  Usually (always? I don't know) it is possible, however,
-to obtain an injective mapping by extending the registry with new
-registrations for nodes that do not map or map ambiguously.
+An injective mapping from nodes to compatible registrations is not
+always possible.  For example, the registry may contain no
+registrations compatible with a given node, or there may be ambiguity,
+i.e. no unique compatible node for a registration.  Usually (always?
+I don't know) it is possible, however, to obtain an injective mapping
+by extending the registry with new registrations for nodes that do not
+map or map ambiguously.  Ordinarily, when assigning registrations to
+nodes, the registry will have been extended in this way.
 
 ### Operations on registries
 
@@ -51,8 +55,8 @@ The registry implementation supports two operations:
 
 ### Registration constraints and metadata
 
-A registration contains information that permits determining the
-compatibility of nodes with that registration.  There are two kinds of
+A registry contains information that permits determining the
+compatibility of nodes with registrations.  There are two kinds of
 compatibility information, topological constraints and metadata, and a
 registration may have either kind by itself, or both kinds.
 Topological constraints are used to resolve registrations to internal
@@ -67,125 +71,123 @@ sample constraint is met by any node from which the node corresponding
 to the sample registration descends.  An exclusion constraint is met
 by any node from which the node corresponding to the exclusion
 registration does not descend.  If there is no unique sample or exclusion
-node, then it is not known whether the constraint is met.
+node, then it is not determined whether the constraint is met.
 
 Registration metadata consists of a set of properties that a node
-*could* be observed to have; currently those properties are all
-whether or not the node has some particular identifier or name, but
-this might be expanded in the future.  We cannot insist that a node
-have *all* of the properties listed in the registration, because (1)
-different trees possess different subsets of the metadata, and (2)
-some of the properties, such as the name, are unstable.
+*could* be observed to have.  Currently those properties are all
+whether or not the node has some particular identifier or name, so
+when you read "metadata" you can substitute "identifier" or "name",
+but this might be expanded in the future.  We cannot insist that a
+node have *all* of the properties listed in the registration, because
+(1) different trees possess different subsets of the metadata, and (2)
+some of the properties, such as the name, are unstable across taxonomy
+releases.
 
-Observe that the nodes satisfying a set of topological constraints
-(assuming it contains at least one sample) will form a path in the
-tree, starting with the nearest common ancestor of the samples and
-going up until just below the first ancestor that contains an
-exclusion node (or the root of the tree, if there are no exclusion
-nodes).
+Observe that the set of nodes satisfying a set of topological
+constraints (assuming it contains at least one sample) will form a
+path in the tree, starting with the nearest common ancestor of the
+samples and going up until just below the first ancestor that contains
+an exclusion node (or up until the root of the tree, if there are no
+exclusion nodes).
 
-### Compatibility
+### Resolution
 
-A registration R and a node N may be compatible, or not, where
-compatibility is defined as follows:
+The purpose of the registry is to manage the assignment (node to
+registration) and resolution (registration to node) maps.  The
+resolution map is defined as follows, and then the assignment map is
+derived from it.  This design is a best effort heuristic for the
+notion of nodes in different trees standing for the same clade.
 
-If R has topological constraints and they are all satisfied by N, then
-R and N are compatible.  (This check is blind to any metadata that R
-or N might have.)
+Let T be a tree, let R be a given registration.  
 
-If R has topological constraints and any is not satisfied by N, then R
-and N are not compatible.
+Define m(R,T) = the node N in T that is the only one that is
+metadata-compatible with R, or undefined if there is not exactly one
+such node.
 
-If R has a topological constraint that has an unresolved sample or
-exclusion registration, then it is not clear what to do.  TBD.
+Define resolve(R,T) to be either a node in T, or undefined, as
+follows:
 
-If R has no topological constraints, then it must have metadata.  N
-and R are then compatible if they have at least one metadata property
-(e.g. name or identifier) in common.
+* If R occurs as a constraint sample or exclusion in some other registration, 
+  then resolve(R,T) = m(R,T).
+* If R has no topological constraints, then
+  resolve(R,T) = m(R,T).
+* If R has topological constraints and the constraints are all satisfied by 
+  exactly one node N, then resolve(R,T) = N.
+* If R has topological constraints and the constraints are all
+  satisfied by more than one node, and the node m(R,T) is among those
+  nodes, then resolve(R,T) = m(R,T).
+* If R has topological constraints and any constraint is not satisfied by 
+  any node N, then resolve(R,T) = undefined.
+* If the previous conditions don't apply, and any of the samples
+  used in expressing a constraint does not resolve, then
+  resolve(R,T) = m(R,T).
 
-### Resolving registrations to nodes
+Resolution by metadata is based on registrations and nodes on both
+values of attributes such as identifier in source taxonomy, OTT id, or
+name, and on their presence or absence.  Attributes are checked in a
+priority order.  If a node and a registration both have a particular
+attribute, they are metadata-compatible if and only if that attribute
+has the same value for both.  m(R,T) is the unique such node if there
+is one.  Otherwise, the next attribute in order is considered.  If no
+attribute has values for both the node and the registration, then no
+nodes (or equivalently all nodes) are compatible with the
+registration.
 
-Resolution maps a registration to a set of compatible nodes.
-Ordinarily resolution will map to a single node.
+The procedure is heuristic, since sometimes attribute values can
+'change' and we want to allow for that.
 
-For the resolution map we choose the nodes among the compatible nodes
-that are the "best metadata match" to the registration.  There may be
-no compatible nodes, or there may be two or more compatible nodes that
-are equally "good" (typically this means two nodes with the same
-name and no other way to distinguish them).
+TBD: It would be a good idea for the implementation to give warnings when
+there are near misses or contradictions among the attributes.
 
-We have to define "best metadata match".  "Best metadata match" is a
-heuristic that is almost always just simple name comparison, but is
-elaborated because there are multiple kinds of names (identifiers) and
-they unfortunately collide and/or change.  "Best metadata match" might
-be evaluated as follows:
-
-Let N1, N2 be nodes compatible with R.  Then N2 is a better metadata
-match to R than N1 if
-
-* N2 and R have the same source reference (e.g. NCBI taxon id), while
-  N1 has a different source reference
-* The source references are unavailable or uninformative (don't 
-  determine whether N2 is a better match than N1), but N2 and R
-  have the same OTT id and N1 has a different one
-* Source references and OTT ids are uninformative, but N2 and R
-  have the same name and N1 has a different name
-
-The implementation may be more elaborate and clever than this (or
-less, which is how it stands right now).  It might be a good idea for
-the implementation to give warnings when there are near misses or
-contradictions among the properties.
-
-Since location within the tree (plant, animal, etc.) is such an
+TBD: Because location within the tree (plant, animal, etc.) is such an
 important means for resolving homonyms, it might be a good idea to add
 some location information to the metadata at some point.
 
 ### Assigning registrations to nodes
 
 In addition to resolving registrations to nodes, it is also necessary
-to assign registrations to nodes.  In good circumstances resolution
-(registration to node) and assignment (node to registration) are
-inverse operations.
+to assign registrations to nodes.
 
-It may be that multiple registrations resolve to the same node,
-e.g. if topological constraints apply to multiple nodes or if two
-nodes are "best metadata matches" to a registration.  It is then
-desirable to pick just one registration as the "best" one to assign to
-that node.
+If only one registration resolves to a node, then that registration is
+assigned to the node.
 
-If one of the registrations resolves only to that node, and not to any
-others, then that registration should be assigned to the node.  But
-there may be no such registration, in which case assignment is
-ambiguous (i.e. the node is assigned a set of registrations).  This
-ambiguity can be corrected by adding a new registration (below).
+However, more than one registration might resolve to a node, both
+because multiple registrations in the tree may have metadata that's
+compatible with that node, and because multiple registrations may have
+topological constraints all uniquely satisfied by that node.
+
+In this case there is no particular reason to assign one registration
+or another to the node, so a choice can be made arbitrarily.  (In the
+case of topological ambiguity, this would be a chance to decide
+whether we have a preference for less inclusive node-based clades, or
+more inclusive stem-based clades; for now we are neutral.)
 
 ### Creating new registrations
 
-If a node is assigned no "best" registration, either because there is no
-registration that resolves to it or because there's no single best
-registration resolving to it, then one can create a new registration
-that resolves to that node and to no other node in the tree.
+If a node is not assigned any registration, then it is possible to
+create a new registration that resolves to that node and to no other
+node in the tree.
 
 If the node is terminal, then it is likely that there is associated
-metadata that uniquely picks out the node.  E.g. if the tree is
-provided in Newick form, then all the tip labels should be distinct.
-In this case the new registration has metadata based on the tip label
-that applies better to that taxon than to any other.  (At least one
-hopes.)
+metadata that distinguishes that node from all other nodes in the
+tree.  E.g. if the tree is provided in Newick form, then one would
+hope that all the tip labels are distinct.  If the node metadata
+reflects all information present in the Newick tip, then the node will
+be distinguishable.
 
-If the node is internal, then descendants from each of at least two
-children are chosen as samples, and descendants from at least one of
-the node's siblings are chosen as exclusions.  The resulting
-registration will be, by construction, unique to that node.  (The
-node's metadata, if there is any, becomes the metadata in the
-registration.)
+If the node is internal, then topological constraints are generated.
+Descendants from each of at least two children are chosen as samples,
+and descendants from at least one of the node's siblings (or possibly
+'aunts and uncles' and so on) are chosen as exclusions.  The resulting
+registration will, by construction, resolve to that node.  (The node's
+metadata, if there is any, becomes the metadata in the registration.)
 
-When choosing the samples and exclusions, the child nodes are sorted
-according to quality heuristics that try to pick out nodes that are
-more stable.  E.g. nodes likely to be suppressed in downstream
-processing (extinct, unclassified, etc.) are given lower priority than
-visible ones, and nodes associated with a greater number of taxonomic
-sources are given priority over those with a lower number.
+When choosing the samples and exclusions, nodes are preferred that are
+more stable, i.e. more likely to occur in other trees (future
+versions).  Nodes more likely to be suppressed in downstream Open Tree
+processing (extinct, unclassified, etc.) are given lower priority, and
+nodes associated with a greater number of taxonomic sources are
+preferred to those with a lower number.
 
 ### Monotypic taxa
 
@@ -193,6 +195,9 @@ If node A has B as a child and no other nodes, then A and B cannot be
 distinguished by topological constraints as formulated above.  They
 must therefore be distinguished, if at all, using metadata.  This is
 one of the rare cases where the metadata for an internal node matters.
+
+A limitation of this system is that every node must have either
+metadata or more than one child.
 
 ### Topological changes to the tree
 
@@ -203,20 +208,20 @@ topological constraints, but this registration will be useless in the
 new version - the registrations given in the constraints will not
 resolve (assuming the children have been deleted rather than moved).
 It is highly desirable that the registration, which contains the
-appropriate metadata, resolve to the new node A nonetheless.  Work in
-progress.
+appropriate metadata, resolve to the new node A nonetheless.  This
+contingency is supported by the resolution rules given above.
 
 Suppose that a node A has no children in a tree, but node A has
 children in a new version of the tree.  We will have a registration
 for A containing no topological constraints, and the registration will
-resolve fine to A in the original version.  It should also resolve to
-the child-possessing A node in the new version.  I think this works
-but it should be tested.
+resolve to A in the original version.  It also resolve to the
+child-possessing A node in the new version, assuming all of
+the new A's resolved topological constraints are satisfied.
 
 ### Polytomy refinement
 
-Suppose a tree has (using Newick notation) the arrangement (A,B,C)E,
-i.e. it has a node E with direct children A, B, C.  The tree is then
+Suppose a tree contains the arrangement (using Newick notation) (A,B,C)E,
+i.e. it has a node E with direct children A, B, C.  The tree is later
 'revised' to have ((A,B)D,C)E.  What registrations are assigned to
 nodes D and E in the new version?  This depends on which samples were
 chosen when E was originally registered, and on what metadata is
@@ -244,12 +249,19 @@ ambiguous as a result of polytomy refinement - can be made less
 frequent by increasing the number of samples and exclusions.  In the
 limit this would mean the samples list would include all descendant
 tips of E at the time that R was created and added to the registry.
-But the problem cannot be eliminated completely, because new nodes
-similar to C can be introduced in new versions of the tree, creating
-the same D/E ambiguity that C creates above.
+But no matter how long the samples and exclusions lists, the problem
+cannot be eliminated completely, because new nodes similar to C can be
+introduced in new versions of the tree, creating the same D/E
+ambiguity that C creates above.
+
+### Implementation note
+
+Currently topological constraints consist of at most two samples and
+at most one exclusion.  The number of samples can be increased easily;
+increasing the number of exclusions will require additional coding.
 
 
-### The code
+## The code
 
 The registry tool is 
 [a Java program](../org/opentreeoflife/registry/Registry.java)
@@ -258,19 +270,33 @@ package; the source code is in this repository.  Its main operations
 are resolving registrations to nodes in a taxonomy (Registry.resolve method)
 and extending a registry with new registrations as needed so that
 all nodes in a taxonomy have assigned registrations
-(Registry.extend method).
-It references taxonomy support classes defined in the
-org.opentreeoflife.taxa package.  It can be scripted using jython.  To
-get an interactive jython interpreter, do:
+(Registry.extend method).  Typically the two are called in sequence for each taxonomy.
 
-    cd reference-taxonomy
+To compile:
+
+    cd reference-taxonomy/registry
     make compile
-    export CLASSPATH="$PWD:$PWD/lib/*"
+
+A scripted test is available via 'make test' in the registry directory
+- but beware, this does some big file transfers, and can take a while
+(15 minutes? haven't measured it).
+
+### Interactive use
+
+The registry references taxonomy support classes defined in the
+org.opentreeoflife.taxa package.  It can be scripted using jython.  To
+get an interactive jython interpreter, assuming you're in the registry
+directory, do:
+
+    export CLASSPATH="../$PWD:../$PWD/lib/*"
     java org.python.util.jython
 
 (probably would be better to create a shell executable and control visibility of classpath)
 
-At this point one would generally want to do one or both of the following
+### Scripted use
+
+In jython one would generally want to start a script with one or both
+of the following
 
     from org.opentreeoflife.taxa import Taxonomy
     from org.opentreeoflife.registry import Registry
@@ -279,16 +305,6 @@ To run a jython script from a file:
 
     java org.python.util.jython filename.py
 
-There's a test script in registry/registry_test.py, but it requires
-some setup.  See the comments in the file.  Work in progress.
-
-    cd registry
-    java org.python.util.jython registry_test.py
-
-or
-
-    java org.python.util.jython registry_test.py taxonomy1/ taxonomy2/
-
 (Instructions needed on how to do taxonomy and synthetic tree
 selections e.g. plants, fungi, chordates.  There are some hints in the .py
 file.)
@@ -296,26 +312,23 @@ file.)
 See the (sparse) code comments for some information on how the
 resolution and registration operations work.
 
-Extracting subtrees of a synthetic tree: (first get the compressed
-Newick file from files.opentreeoflife.org, then uncompress putting the
-result in e.g. 'draftversion3.tre' or 'draftversion4.tre')
+Extracting subtrees of a synthetic tree: First get the compressed
+Newick file from files.opentreeoflife.org, and uncompress putting the
+result in e.g. 'draftversion3.tre' or 'draftversion4.tre'.  There are
+rules in the Makefile for doing this.  Then
 
     java -Xmx14G org.python.util.jython
     from org.opentreeoflife.taxa import Taxonomy
     synth3 = Taxonomy.getNewick('draftversion3.tre', 'synth')
     synth3.select('Chloroplastida').dump('plants-synth3/')
 
-Extracting subtrees of OTT: (first get the compressed tarball from
-files.opentreeoflife.org, then unpack to directory ott28/ (or ott29,
-etc.)
+Or see rules in the Makefile that accomplish the same thing.
+
+Extracting subtrees of OTT:  First get the compressed tarball from
+files.opentreeoflife.org, then unpack to directory ott2.8/ (or ott2.9,
+etc.  Then
 
     java -Xmx14G org.python.util.jython
     from org.opentreeoflife.taxa import Taxonomy
-    ott28 = Taxonomy.getTaxonomy('ott28/', 'ott')
+    ott28 = Taxonomy.getTaxonomy('ott2.8/', 'ott')
     ott28.select('Chloroplastida').dump('plants-ott28/')
-
-### Implementation note
-
-Currently topological constraints consist of at most two samples and
-at most one exclusion.  The number of samples can be increased easily;
-increasing the number of exclusions will require additional coding.

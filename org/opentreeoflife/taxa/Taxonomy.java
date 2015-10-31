@@ -418,6 +418,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		this.loadMetadata(dirname + "about.json");
 		this.loadTaxonomyProper(dirname + "taxonomy.tsv");
 		this.loadSynonyms(dirname + "synonyms.tsv");
+        this.loadForwards(dirname + "forwards.tsv");
 	}
 
 	// This gets overridden in a subclass.
@@ -429,6 +430,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 		this.dumpNodes(this.roots(), outprefix, sep);
 		this.dumpSynonyms(outprefix + "synonyms.tsv", sep);
+        this.dumpForwards(outprefix + "forwards.tsv");
 		// this.dumpHidden(outprefix + "hidden.tsv");
 	}
 
@@ -914,6 +916,37 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			}
 	}
 
+    // load forwarding pointers
+
+	void loadForwards(String filename) throws IOException {
+		BufferedReader fr;
+		try {
+			fr = fileReader(filename);
+		} catch (java.io.FileNotFoundException e) {
+			fr = null;
+		}
+		if (fr != null) {
+            int count = 0;
+            fr.readLine();      // header row
+            String str;
+			while ((str = fr.readLine()) != null) {
+                String[] parts = tabOnly.split(str);
+                String alias = parts[0].trim();
+                String truth = parts[1].trim();
+                Taxon dest = lookupId(truth);
+                if (dest != null) {
+                    Taxon probe = lookupId(alias);
+                    if (probe == null) {
+                        this.idIndex.put(alias, dest);
+                        ++count;
+                    }
+                }
+            }
+            System.out.format("| %s id aliases\n", count);
+        }
+        fr.close();
+    }
+
 	// load | dump synonyms
 
 	void loadSynonyms(String filename) throws IOException {
@@ -1058,6 +1091,21 @@ public abstract class Taxonomy implements Iterable<Taxon> {
             }
 		out.close();
 	}
+
+    void dumpForwards(String filename) throws IOException {
+		PrintStream out = Taxonomy.openw(filename);
+        out.format("id\treplacement\n");
+        int count = 0;
+        for (String id : idIndex.keySet()) {
+            Taxon node = idIndex.get(id);
+            if (!node.id.equals(id)) {
+                out.format("%s\t%s\n", id, node.id);
+                ++count;
+            }
+        }
+        System.out.format("| %s id aliases\n", count);
+        out.close();
+    }
 
 	void dumpHidden(String filename) throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
@@ -1554,8 +1602,24 @@ public abstract class Taxonomy implements Iterable<Taxon> {
         System.out.println("| Selection has " + selection.count() + " taxa");
         tax2.addRoot(selection);
         this.copySelectedSynonyms(tax2);
+        this.copySelectedIds(tax2);
         tax2.inferFlags();
         return tax2;
+    }
+
+    // Copy aliased ids from larger taxonomy to selected subtaxonomy, as appropriate
+    // tax2 = the selection, this = where it came from
+
+    void copySelectedIds(Taxonomy tax2) {
+        int count = 0;
+        for (String id : this.idIndex.keySet()) {
+            Taxon node = this.idIndex.get(id);
+            if (!node.id.equals(id) && tax2.idIndex.get(node.id) != null) {
+                tax2.idIndex.put(id, node);
+                ++count;
+            }
+        }
+        System.out.format("| copied %s id aliases\n", count);
     }
 
 	// Select subtree rooted at a specified node, down to given depth

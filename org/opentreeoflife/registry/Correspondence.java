@@ -23,7 +23,7 @@ public class Correspondence {
     static final int nsamples = 2;
     static final int nexclusions = 1;
 
-    enum Status { UNSATISFIABLE, UNRESOLVED, PATH, AMBIGUOUS, NONE };
+    enum Status { UNSATISFIABLE, UNRESOLVED, PATH, AMBIGUOUS, OTTIDS_DIFFER, QIDS_DIFFER, NO_CANDIDATES };
     enum Clue { AMBIGUITY, PATH };
 
     // State
@@ -52,12 +52,13 @@ public class Correspondence {
     public void setResolution(Registration reg, Taxon node) {
         Taxon prev = resolutionMap.get(reg);
         if (prev != null && prev != node)
-            interesting("changing resolution (probably a bug)", reg, prev, node);
+            interesting("changing resolution (SHOULDN'T HAPPEN)", reg, prev, node);
         resolutionMap.put(reg, node);
         Registration verp = assignments.get(node);
         if (verp != null && verp != reg)
-            interesting("changing assignment (probably OK)", reg, verp, node);
-        assignments.put(node, reg);
+            interesting("multiple registrations resolve to this node (probably OK)", node, verp, reg);
+        else
+            assignments.put(node, reg);
     }
 
     // Find the compatible taxon (pathologically: taxa), if any, 
@@ -87,16 +88,14 @@ public class Correspondence {
         for (Registration reg : registry.allRegistrations()) {
             if (reg.samples != null)
                 try {
-                    List<Taxon> taxa = findByTopology(reg);
+                    List<Taxon> taxa = findByTopologyAndMaybeMetadata(reg);
                     if (taxa != null) {
                         if (taxa.size() == 1) {
                             setResolution(reg, taxa.get(0));
-                            event("resolved uniquely by topology", reg, taxa.get(0));
                         } else {
                             paths.put(reg, taxa);
                             setClue(taxa, Clue.PATH);
                             statuses.put(reg, Status.PATH);
-                            event("registration is ambiguous along path", reg, taxa);
                         }
                     } else {
                         event("topological constraints are inconsistent", reg);
@@ -148,8 +147,13 @@ public class Correspondence {
         }
         if (reg.ottid != null) {
             Taxon probe = taxonomy.lookupId(reg.ottid);
-            if (probe != null)
-                return probe;
+            if (probe != null && probe.name != null)
+                if (reg.qid != null && probe.sourceIds != null) {
+                    // should have been found in previous case
+                    statuses.put(reg, Status.QIDS_DIFFER);
+                    return null;
+                } else
+                    return probe;
         }
         if (reg.name != null) {
             List<Taxon> nodes = taxonomy.lookup(reg.name);
@@ -159,25 +163,34 @@ public class Correspondence {
                 for (Taxon node : nodes)
                     if (node.name.equals(reg.name)) {
                         if (result != null) {
-                            interesting("resolution failed due to name ambiguity", reg);
                             statuses.put(reg, Status.AMBIGUOUS);
+                            interesting("resolution failed due to name ambiguity", reg);
                             return null; // ambiguous
                         }
                         result = node;
                     }
-                if (result != null) return result;
-                // Next consider reg.name as a synonym
-                if (nodes.size() > 1) {
-                    statuses.put(reg, Status.NONE);
-                    setClue(nodes, Clue.AMBIGUITY);
-                    interesting("resolution failed due to name mismatch", reg);
-                    return null;
+                if (result == null) {
+                    // Next consider reg.name as a synonym
+                    if (nodes.size() > 1) {
+                        statuses.put(reg, Status.AMBIGUOUS);
+                        setClue(nodes, Clue.AMBIGUITY);
+                        interesting("resolution failed due to name mismatch", reg);
+                        return null;
+                    }
+                    result = nodes.get(0);
                 }
-                return nodes.get(0);
+                if (reg.qid != null && result.sourceIds != null) {
+                    statuses.put(reg, Status.QIDS_DIFFER);
+                    return null;
+                } else if (reg.ottid != null && result.id != null && result.name != null) {
+                    statuses.put(reg, Status.OTTIDS_DIFFER);
+                    return null;
+                } else
+                    return result;
             }
         }
         if (statuses.get(reg) != null)
-            statuses.put(reg, Status.NONE);
+            statuses.put(reg, Status.NO_CANDIDATES);
         return null;
     }
 
@@ -185,31 +198,33 @@ public class Correspondence {
     // When there is topological ambiguity, attempt to reduce it using clues from metadata.
     // If a sample or exclusion fails to resolve, throw a ResolutionFailure exception.
 
-    List<Taxon> findByTopology(Registration reg)
+    List<Taxon> findByTopologyAndMaybeMetadata(Registration reg)
     throws ResolutionFailure
     {
-        List<Taxon> path = constrainedPath(reg);
-        if (path != null) {
-            if (path.size() > 1) {
+        List<Taxon> path = findByTopology(reg);
+        if (path != null)
+            if (path.size() == 1)
+                event("resolved uniquely by topology", reg, path.get(0));
+            else {
                 // Ambiguous.  Attempt to clear it up using metadata... this may be the wrong place to do this
                 Taxon node = resolveByMetadata(reg);
                 if (node != null && path.contains(node)) {
                     List<Taxon> candidates = new ArrayList<Taxon>();
                     candidates.add(node);
+                    event("resolved uniquely by topology combined with metadata", reg, node);
                     return candidates;
                 }
+                event("registration is ambiguous along path", reg, path);
                 // fall through
             }
-            return path;
-        } else
-            return null;
+        return path;
     }
 
     // Find compatible taxa, using topological constraints, for one registration.
     // Return value is {m, a} where a is an ancestor of m.  Compatible taxa are
     // m and its ancestors up to be not including a.
 
-    List<Taxon> constrainedPath(Registration reg)
+    List<Taxon> findByTopology(Registration reg)
     throws ResolutionFailure
     {
         ResolutionFailure fail = null;
@@ -498,47 +513,60 @@ public class Correspondence {
     // Explains why reg is not assigned to node / reg does not resolve to node
 
     public String explain(Taxon node, Registration reg) {
+        if (reg == null) {
+            Clue clue = clues.get(node);
+            if (clue != null) {
+                switch(clue) {
+                case AMBIGUITY:
+                    return "a would-be registration is ambiguous";
+                case PATH:
+                    return "taxon is part of a path ambiguity";
+                }
+            }
+            return "no registration is assigned";
+        }
+
         if (reg.samples != null)
             for (Registration sreg : reg.samples) {
-                if (resolutionMap.get(sreg) == null)
-                    return String.format("no taxon compatible with sample %s", sreg);
                 Taxon sample = resolve(sreg);
                 if (sample == null)
-                    return String.format("no taxon chosen for sample %s", sreg);
+                    return String.format("sample %s does not resolve", sreg);
                 if (!sample.descendsFrom(node))
-                    return String.format("sample %s does not descend from %s", sample, node);
+                    return String.format("sample %s=%s does not descend from %s", sreg, sample, node);
             }
         if (reg.exclusions != null)
             for (Registration xreg : reg.exclusions) {
-                if (resolutionMap.get(xreg) == null)
-                    return String.format("no taxon compatible with exclusion %s", xreg);
                 Taxon exclusion = resolve(xreg);
                 if (exclusion == null)
-                    return String.format("no taxon chosen for exclusion %s", xreg);
+                    return String.format("exclusion %s does not resolve", xreg);
                 if (exclusion.descendsFrom(node))
-                    return String.format("exclusion %s descends from %s", exclusion, node);
+                    return String.format("exclusion %s=%s descends from %s", xreg, exclusion, node);
             }
 
         // Should look at metadata...
 
-        switch(clues.get(node)) {
-        case AMBIGUITY:
-            return "a would-be registration is ambiguous";
-        case PATH:
-            return "taxon is part of a path ambiguity";
-        }
-
-        switch(statuses.get(reg)) {
-        case UNSATISFIABLE:
-            return "registration's topological constraints are unsatisfiable";
-        case UNRESOLVED:
-            return "a sample is unresolved"; // covered above
-        case PATH:
-            return "registration is a path ambiguity";
-        case AMBIGUOUS:
-            return "registration's resolution is ambiguous";
-        case NONE:
-            return "registration has no hope of resolution";
+        Status status = statuses.get(reg);
+        if (status != null) {
+            switch(status) {
+            case UNSATISFIABLE:
+                return "registration's topological constraints are unsatisfiable";
+            case UNRESOLVED:
+                return "a sample is unresolved"; // covered above
+            case PATH:
+                try {
+                    return String.format("registration is a path ambiguity among %s", findByTopology(reg));
+                } catch (ResolutionFailure e) {
+                    return String.format("registration is a path ambiguity");
+                }
+            case AMBIGUOUS:
+                return "registration's metadata is ambiguous, no single best taxon";
+            case OTTIDS_DIFFER:
+                return "no taxa with same OTT id as registration";
+            case QIDS_DIFFER:
+                return "no taxa with same source reference as registration";
+            case NO_CANDIDATES:
+                return "registration has candidate resolutions";
+            }
         }
 
         if (resolve(reg) == null)

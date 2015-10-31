@@ -189,9 +189,9 @@ class Registration {
 
     public String toString() {
         if (this.samples != null) {
-            return String.format("(%s %s %s ...)", this.id, this.name, this.qid);
+            return String.format("[%s %s %s ...]", this.id, this.name, this.ottid);
         } else
-            return String.format("(%s %s %s)", this.id, this.name, this.qid);
+            return String.format("[%s %s %s]", this.id, this.name, this.ottid);
     }
 
 }

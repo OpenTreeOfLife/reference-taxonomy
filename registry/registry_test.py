@@ -16,106 +16,62 @@ import sys
 
 # export PYTHONPATH=`pwd`:$PYTHONPATH
 
-def run_test(t1, t2):
+def show_unmapped(tax, r, corr):
+    i = 0
+    for taxon in tax:
+        probe = corr.assignedRegistration(taxon)
+        if probe == None:
+            if i < 5:
+                print 'missing registration:', taxon
+            i = i + 1
+    print i, 'unmapped'
 
-    # A.
-    # - start with a registry.
-    # - find taxonomy T nodes matching the registry.
-    # - register all new nodes.
-    # B.
-    # - find taxonomy T nodes matching the registry.
-    # - report
-    # C.
-    # - find taxonomy T2 nodes matching the registry.
-    # - report
-
-    def analyze(r, tax, corr, comment):
-        # corr is a registration <-> taxa correspondence
-        if False:               # FIX ME
-            print ('%s %s registrations, %s applied registrations, %s taxa covered' %
-                   (comment, r.size(), corr.size(), corr.cosize()))
-        # check(tax, r, corr)
-
-    def check(t, r, corr):
-        h = 0
-        i = 0
-        j = 0
-        for taxon in t:
-            probe = corr.assignedRegistration(taxon)
-            if probe == None:
-                probes = corr.coget(taxon) # FIX ME
-                if probes == None:
-                    h += 1
-                elif len(probes) == 1:
-                    i += 1
-                else:
-                    j += 1
-        print ' no reg assigned: %s (0 compatible regs), %s (1), %s (>1)' % (h, i, j)
-
-    def show_unmapped(tax, r, corr):
-        i = 0
-        for taxon in tax:
-            probe = corr.assignedRegistration(taxon)
-            if probe == None:
-                if i < 5:
-                    print 'missing registration:', taxon
-                i = i + 1
-        print i, 'unmapped'
-
-    def compare_correspondences(corr, newcorr):
-        for taxon in corr.taxonomy:
-            probe = newcorr.assignedRegistration(taxon)
-            if probe == None:
-                regs = newcorr.coget(taxon)
-                if regs == None:
-                    oldprobe = corr.assignedRegistration(taxon)
-                    if oldprobe == None:
-                        print 'for %s, no compatible registration(s) in either correspondence' % (taxon,)
+def compare_correspondences(corr1, corr2):
+    for node1 in corr1.taxonomy:
+        if (not node1.isHidden()) and node1.id != None:
+            node2 = corr2.taxonomy.lookupId(node1.id)
+            if node2 != None and (not node2.isHidden()):
+                reg1 = corr1.assignedRegistration(node1)
+                reg2 = corr2.assignedRegistration(node2)
+                if reg2 == None:
+                    if reg1 == None:
+                        print 'for %s, no assigned registration in either correspondence' % (node1,)
                     else:
-                        print 'for %s, registration(s) %s disappeared' % (taxon, oldprobe)
-                        print '| %s' % (newcorr.explain(taxon, oldprobe),)
+                        print 'for %s, registration %s no longer resolves' % (node1, reg1)
+                        print '| %s' % (corr2.explain(node2, reg1),)
                 else:
-                    for oldreg in corr.coget(taxon):
-                        if not (oldreg in regs):
-                            print 'for %s, registration %s not among compatible registrations %s' % (taxon, oldreg, regs)
+                    if reg1 == None:
+                        print 'for %s, assigned in second correspondence only %s' % (node2, reg2)
+                        print '| %s' % (corr2.explain(node2, reg1),)
+                    elif reg1 != reg2:
+                        print 'for %s, assignment %s changed to %s' % (node1, reg1, reg2)
+                        print '| %s' % (corr2.explain(node2, reg1),)
 
-    def do_taxonomy(tax1, r):
-        print '---'
-        print tax1.getTag(), 'taxa:', tax1.count()
+def do_taxonomy(tax1, r):
+    print '---'
+    print tax1.getTag(), 'taxa:', tax1.count()
 
-        # 
-        corr = Correspondence(r, tax1)
-        print 'Assigning registrations to nodes in', tax1
-        corr.resolve()
-        analyze(r, tax1, corr, 'before extend:')
+    # 
+    corr = Correspondence(r, tax1)
+    print 'Assigning registrations to nodes in', tax1
+    corr.resolve()
 
-        # this should create new registrations for all taxa
-        print 'Extending registry for', tax1
-        corr.extend()
-        analyze(r, tax1, corr, 'after extend:')
-        show_unmapped(tax1, r, corr)
+    # this should create new registrations for all taxa
+    print 'Extending registry for', tax1
+    corr.extend()
+    show_unmapped(tax1, r, corr)
 
-        # see whether lookup is repeatable.
-        # this should match most, if not, all, taxa with registrations in r
-        print 'Re-assigning registrations to nodes in', tax1
-        newcorr = Correspondence(r, tax1)
-        newcorr.resolve()
-        analyze(r, tax1, newcorr, 'after remap:')
-        compare_correspondences(corr, newcorr)
+    # see whether lookup is repeatable.
+    # this should match most, if not, all, taxa with registrations in r
+    print 'Re-assigning registrations to nodes in', tax1
+    newcorr = Correspondence(r, tax1)
+    newcorr.resolve()
+    compare_correspondences(corr, newcorr)
 
-        return newcorr
+    return newcorr
 
-    # WORK IN PROGRESS
-    def compare_how_taxonomies_map(tax1, tax2, corr1, corr2):
-        for node1 in tax1:
-            if (not node1.isHidden()) and node1.id != None:
-                node2 = tax2.lookupId(node1.id)
-                if node2 != None and (not node2.isHidden()):
-                    reg1 = corr1.assignedRegistration(node1)
-                    reg2 = corr2.assignedRegistration(node2)
-                    if reg1 != reg2:
-                        print "registration for node id differs between the two taxonomies", node1, reg1, node2, reg2
-                        print corr2.explain(node2, reg1, corr2)
+
+def run_test(t1, t2):
 
     r = Registry()
 
@@ -125,7 +81,7 @@ def run_test(t1, t2):
     tax2 = Taxonomy.getTaxonomy(t2, t2.split('/')[-2])
     corr2 = do_taxonomy(tax2, r)
 
-    compare_how_taxonomies_map(tax1, tax2, corr1, corr2)
+    compare_correspondences(corr1, corr2)
 
     r.dump('registry.csv')
 

@@ -1,4 +1,4 @@
-Clade identifier registry 
+Node identifier registry 
 --------------------
 
 The 'registry' tool introduces a data structure called a registry.  A
@@ -18,7 +18,7 @@ knowledge base to another without distortion of meaning.
 
 The purpose of the registry is to assign ids to compatible nodes in
 trees (including taxonomies) so that those nodes can be annotated,
-used in URLs, and otherwise referenced.
+given URLs, and otherwise referenced.
 
 Ideally, for a given tree, we would have a way to assign registrations
 (or their ids) to compatible nodes in the tree, with no registration
@@ -57,21 +57,23 @@ The registry implementation supports two operations:
 
 A registry contains information that permits determining the
 compatibility of nodes with registrations.  There are two kinds of
-compatibility information, topological constraints and metadata, and a
+compatibility information, membership constraints and metadata, and a
 registration may have either kind by itself, or both kinds.
-Topological constraints are used to resolve registrations to internal
+Membership constraints are used to resolve registrations to internal
 nodes in trees, while metadata is mainly used to resolve to terminal
 nodes.  In exceptional circumstances both kinds of information are
 used in resolution, or metadata is used to resolve to an internal
 node.
 
-Topological constraints are specified by two sets of registrations
-(registration ids), one of *samples* and one of *exclusions*.  A
-sample constraint is met by any node from which the node corresponding
-to the sample registration descends.  An exclusion constraint is met
-by any node from which the node corresponding to the exclusion
-registration does not descend.  If there is no unique sample or exclusion
-node, then it is not determined whether the constraint is met.
+Membership constraints are specified by two sets of registrations
+(registration ids), one of *inclusions* and one of *exclusions*.
+(Collectively inclusions and exclusions are called *samples*.)  A
+inclusion constraint is met by any node from which the node
+corresponding to the inclusion registration descends.  An exclusion
+constraint is met by any node from which the node corresponding to the
+exclusion registration does not descend.  If a sample does
+not resolve to a node, then it is not determined whether the
+constraint is met.
 
 Registration metadata consists of a set of properties that a node
 *could* be observed to have.  Currently those properties are all
@@ -83,10 +85,10 @@ node have *all* of the properties listed in the registration, because
 some of the properties, such as the name, are unstable across taxonomy
 releases.
 
-Observe that the set of nodes satisfying a set of topological
-constraints (assuming it contains at least one sample) will form a
+Observe that the set of nodes satisfying a set of membership
+constraints (assuming it contains at least one inclusion) will form a
 path in the tree, starting with the nearest common ancestor of the
-samples and going up until just below the first ancestor that contains
+inclusions and going up until just below the first ancestor that contains
 an exclusion node (or up until the root of the tree, if there are no
 exclusion nodes).
 
@@ -107,31 +109,36 @@ such node.
 Define resolve(R,T) to be either a node in T, or undefined, as
 follows:
 
-* If R occurs as a constraint sample or exclusion in some other registration, 
+* If R occurs as a sample in constraint belonging to some other registration,
   then resolve(R,T) = m(R,T).
-* If R has no topological constraints, then
+* If R has no membership constraints, then
   resolve(R,T) = m(R,T).
-* If R has topological constraints and the constraints are all satisfied by 
+* If R has membership constraints and the constraints are all satisfied by 
   exactly one node N, then resolve(R,T) = N.
-* If R has topological constraints and the constraints are all
-  satisfied by more than one node, and the node m(R,T) is among those
-  nodes, then resolve(R,T) = m(R,T).
-* If R has topological constraints and any constraint is not satisfied by 
-  any node N, then resolve(R,T) = undefined.
-* If the previous conditions don't apply, and any of the samples
-  used in expressing a constraint does not resolve, then
-  resolve(R,T) = m(R,T).
+* If R has membership constraints and no node N satisfies all of
+  them (i.e. every node fails to satisfy at least one constraint),
+  then resolve(R,T) = undefined.
+* *Recovery from unresolved sample:* If the previous conditions don't
+  apply, and one or more sample registrations used in a
+  constraint does not resolve, then resolve(R,T) = m(R,T), assuming m(R,T)
+  satisfies all constraints that *do* resolve.  (This is risky because
+  m(R,T) might fail to satisfy some constraint if it *did* resolve,
+  but without this rule we get quite a large number of resolution failures.)
+* *Recovery from path ambiguity:* If R has membership constraints and 
+  there are two or more nodes that satisfy all of R's constraints,
+  and the node m(R,T) is among those
+  nodes, then resolve(R,T) = m(R,T).  (Not clear that this is a good idea.)
+* Otherwise resolve(R,T) is undefined.
 
-Resolution by metadata is based on registrations and nodes on both
-values of attributes such as identifier in source taxonomy, OTT id, or
-name, and on their presence or absence.  Attributes are checked in a
+Resolution by metadata is based on both
+values of attributes (such as identifier in source taxonomy, OTT id, or
+name) and on whether attributes are present or absent.  Attributes are checked in a
 priority order.  If a node and a registration both have a particular
 attribute, they are metadata-compatible if and only if that attribute
-has the same value for both.  m(R,T) is the unique such node if there
-is one.  Otherwise, the next attribute in order is considered.  If no
-attribute has values for both the node and the registration, then no
-nodes (or equivalently all nodes) are compatible with the
-registration.
+has the same value for both.  m(R,T) is then the unique such node if there
+is one.  Otherwise, the next attribute in priority order is considered.  If no
+attribute has values for both the node and the registration, then m(R,T)
+is undefined.
 
 The procedure is heuristic, since sometimes attribute values can
 'change' and we want to allow for that.
@@ -154,19 +161,19 @@ assigned to the node.
 However, more than one registration might resolve to a node, both
 because multiple registrations in the tree may have metadata that's
 compatible with that node, and because multiple registrations may have
-topological constraints all uniquely satisfied by that node.
+membership constraints all uniquely satisfied by that node.
 
-In this case there is no particular reason to assign one registration
-or another to the node, so a choice can be made arbitrarily.  (In the
-case of topological ambiguity, this would be a chance to decide
-whether we have a preference for less inclusive node-based clades, or
-more inclusive stem-based clades; for now we are neutral.)
+In this case there may be no particular reason to assign one
+registration or another to the node, and that's OK.  A choice can be
+made arbitrarily.
 
 ### Creating new registrations
 
-If a node is not assigned any registration, then it is possible to
-create a new registration that resolves to that node and to no other
-node in the tree.
+If a node is not assigned any registration, because no registration
+has metadata uniquely selecting that node or because of the node is
+one among several that satsify all of a registration's constraints,
+then it is (or should be) always possible to create a new registration
+that resolves to that node.
 
 If the node is terminal, then it is likely that there is associated
 metadata that distinguishes that node from all other nodes in the
@@ -175,36 +182,61 @@ hope that all the tip labels are distinct.  If the node metadata
 reflects all information present in the Newick tip, then the node will
 be distinguishable.
 
-If the node is internal, then topological constraints are generated.
-Descendants from each of at least two children are chosen as samples,
+If the node is internal, then membership constraints are generated
+that select that node and no others.
+Descendants from each of at least two children are chosen as inclusions,
 and descendants from at least one of the node's siblings (or possibly
 'aunts and uncles' and so on) are chosen as exclusions.  The resulting
 registration will, by construction, resolve to that node.  (The node's
 metadata, if there is any, becomes the metadata in the registration.)
 
-When choosing the samples and exclusions, nodes are preferred that are
-more stable, i.e. more likely to occur in other trees (future
-versions).  Nodes more likely to be suppressed in downstream Open Tree
+When choosing the inclusions and exclusions, nodes are preferred that are
+more stable, i.e. more likely to occur in other trees (including both future and past
+'versions' of the given tree).  Assessing future stability employs a set of heuristics.
+For example, nodes more likely to be suppressed in downstream Open Tree
 processing (extinct, unclassified, etc.) are given lower priority, and
 nodes associated with a greater number of taxonomic sources are
 preferred to those with a lower number.
 
+### Versioning (not yet implemented)
+
+Sometimes a registration will resolve in tree A but not in tree B, but
+there is a registration to a node in tree B that provides a good
+alternative.  It is useful to record the connection between the two
+registrations, with the new registration being a 'new version' of the
+previous one.
+
+For example, suppose the failure to resolve is due to a path ambiguity
+(multiple nodes satisfying the registration's constraints).  If the
+registration resolves to one of these nodes using metadata rather than
+membership constraints, then the registration assigned to that node
+is a 'new version' of the ambiguous registration.  (See below under
+'polytomy refinement'.)
+
+(Are there other cases?)
+
 ### Monotypic taxa
 
 If node A has B as a child and no other nodes, then A and B cannot be
-distinguished by topological constraints as formulated above.  They
+distinguished by membership constraints as formulated above.  They
 must therefore be distinguished, if at all, using metadata.  This is
 one of the rare cases where the metadata for an internal node matters.
 
-A limitation of this system is that every node must have either
-metadata or more than one child.
+(A slightly different formulation of this appropach is to create a
+'phantom' second chid of a monotypic node representing a hypothetical
+taxon that is a member of the monotypic taxon but not of the child
+taxon.  The parent's registration would be have inclusion of the
+phantom as a constraint, and the child's registration would have
+exclusion of the phantom as a constraint.  It's not obvious that this
+is better, although it seems to have the advantage of not depending on
+the child node's metadata.)
 
 ### Topological changes to the tree
 
 Suppose that a node A has children in a tree, but the node A in a new
 version of the tree (intended to be "the same" as the previous node A)
 has no children.  There will be a registration for A that has
-topological constraints, but this registration will be useless in the
+membership constraints, but this registration will be useless in the
 new version - the registrations given in the constraints will not
 resolve (assuming the children have been deleted rather than moved).
 It is highly desirable that the registration, which contains the
@@ -213,10 +245,10 @@ contingency is supported by the resolution rules given above.
 
 Suppose that a node A has no children in a tree, but node A has
 children in a new version of the tree.  We will have a registration
-for A containing no topological constraints, and the registration will
-resolve to A in the original version.  It also resolve to the
+for A containing no membership constraints, and the registration will
+resolve to A in the original version.  It also resolves to the
 child-possessing A node in the new version, assuming all of
-the new A's resolved topological constraints are satisfied.
+the new A's resolved membership constraints are satisfied.
 
 ### Polytomy refinement
 
@@ -228,36 +260,50 @@ chosen when E was originally registered, and on what metadata is
 available.
 
 Suppose E is originally assigned registration R.  If at least one
-sample descends from A or B and one descends from C, then the new E
+inclusion descends from A or B and one descends from C, then the new E
 node will have only be compatible with the registration for the old E
 node, so will be assigned that registration.
 
-On the other hand, if all the samples for R descend from A and B, then
-both D and E in the new tree will satisfy R's topological constrains.
+On the other hand, if all the inclusions for R descend from A and B, then
+both D and E in the new tree will satisfy R's membership constraints.
 If R and the new E have metadata, and the new E is a better metadata
 match to R than D, then E will be assigned R and D will get a new
 registration (one with a descendant of C as an exclusion).  But if
 metadata is not helpful, R will be unrecoverably ambiguous and both D
 and E will get new registrations.  The new registration for D will
-have samples descended from A and B and an exclusion descended from C,
-while the new registration for E will have one or more sample
+have inclusions descended from A and B and an exclusion descended from C,
+while the new registration for E will have one or more inclusion
 descended from D, one or more descended from C, and some exclusion
 outside E.
 
 This problem of 'losing' R - its identifier becoming obsolete or
 ambiguous as a result of polytomy refinement - can be made less
-frequent by increasing the number of samples and exclusions.  In the
-limit this would mean the samples list would include all descendant
-tips of E at the time that R was created and added to the registry.
-But no matter how long the samples and exclusions lists, the problem
+frequent by increasing the number of samples.  In the
+limit this would mean the inclusions list would include all descendant
+tips of E at the time that R was created and added to the registry,
+and the exclusions list would include all other nodes in the taxonomy.
+But no matter how long the inclusions and exclusions lists, the problem
 cannot be eliminated completely, because new nodes similar to C can be
 introduced in new versions of the tree, creating the same D/E
 ambiguity that C creates above.
 
+The new registration may or may not resolve in the old tree, depending
+on whether its constraints are resolvable and satisfiable, and it may
+or may not resolve to the same node that the previous registration
+did.  If the old registration's samples are all included among the new
+registration's samples, then at least the new registration cannot
+resolve to a different node; at worst it will be inconsistent and fail
+to resolve.
+
+As an alternative to sample retention, one can imagine a system that
+attempts to ensure that new registrations resolve correctly in old
+trees, but it would require keeping all old tree on hand, and this
+would be expensive.  (is that right?)
+
 ### Implementation note
 
-Currently topological constraints consist of at most two samples and
-at most one exclusion.  The number of samples can be increased easily;
+Currently membership constraints consist of at most two inclusions and
+at most one exclusion.  The number of inclusions can be increased easily;
 increasing the number of exclusions will require additional coding.
 
 
@@ -361,7 +407,7 @@ determined to be "the same" by smasher, are so different that they
 need distinct ids, i.e. annotations applied to N1 may not be
 applicable to N2.
 
-Such a change might occur if the topological constraints for R1 cannot
+Such a change might occur if the membership constraints for R1 cannot
 be satisfied in the new tree, or if a taxon in the old tree is simply
 not present ("deleted") from the new tree.
 
@@ -381,11 +427,11 @@ We can apply this test to a taxonomy and a synthetic tree produced
 based on it.  When we apply it to the plants branch of OTT 2.9 and the
 plants branch of the draft 4 synthetic tree, 10 non-merge node pairs
 have "changed" registrations.  In every case this is because
-registrations mentioned in topological constraints do not resolve
+registrations mentioned in membership constraints do not resolve
 because the synthetic tree lacks a node that's present in the
 taxonomy.
 
-The fact that topological constraints are always satisfied is a result
+The fact that membership constraints are always satisfied is a result
 of the way the synthesis procedure assigns OTT ids to internal nodes:
 it ensures that a tip descends from a node in the synthetic tree if
 and only if the taxon corresponding to the tip descends, in the
@@ -401,7 +447,7 @@ This test is the 'test29_4' target in the Makefile.
 We can also apply the test to successive versions of OTT.  When we
 apply it to the plants branch of OTT 2.8 and the plants branch of OTT
 2.9, 859 non-merge node pairs have distinct registrations.  In
-every case this is because the topological constraints from the old
+every case this is because the membership constraints from the old
 tree are not satisfied in the new tree.
 
 This test is the 'test28_29' target in the Makefile.
@@ -412,7 +458,7 @@ I haven't run tests involving three or more trees.
 
 ## Ideas for things to do
 
-Sample and exclusion choice have a big impact on identifier stability.
+Sample choice has a big impact on identifier stability.
 Here are some thoughts aimed at increasing stability:
 
 * In selecting samples, prefer to include the child
@@ -421,9 +467,9 @@ Here are some thoughts aimed at increasing stability:
 * Prefer samples that originate from higher priority source
   taxonomies.  E.g. a sample coming from NCBI should be chosen in
   preference to one from GBIF.
-* There should be no topological constraints for species
+* There should be no membership constraints for species
   (i.e. we should not use the presence or absence of subspecies as
-  topological constraints).
+  membership constraints).
 * Filter out 'hidden' nodes from sample sets when the taxon being
   registered is itself not hidden.  (This is to help make sure that
   registrations can be shared between taxonomy and synthetic tree.)

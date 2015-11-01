@@ -943,8 +943,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
                 }
             }
             System.out.format("| %s id aliases\n", count);
+            fr.close();
         }
-        fr.close();
     }
 
 	// load | dump synonyms

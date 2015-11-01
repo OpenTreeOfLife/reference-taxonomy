@@ -28,33 +28,39 @@ def show_unmapped(tax, r, corr):
 
 def compare_correspondences(corr1, corr2):
     for node1 in corr1.taxonomy:
-        if (not node1.isHidden()) and node1.id != None:
-            node2 = corr2.taxonomy.lookupId(node1.id)
-            if node2 != None and (not node2.isHidden()):
-                reg1 = corr1.assignedRegistration(node1)
-                reg2 = corr2.assignedRegistration(node2)
-                if reg2 == None:
-                    if reg1 == None:
-                        print 'for %s, no assigned registration in either correspondence' % (node1,)
-                    else:
-                        print 'for %s, registration %s no longer resolves' % (node1, reg1)
-                        print '| %s' % (corr2.explain(node2, reg1),)
-                else:
-                    if reg1 == None:
-                        print 'for %s, assigned in second correspondence only %s' % (node2, reg2)
-                        print '| %s' % (corr2.explain(node2, reg1),)
-                    elif reg1 != reg2:
-                        node3 = corr2.resolve(reg1)
-                        if node3 == node2:
-                            True
-                            #print 'old registration %s resolves to new node %s' % (reg1, node2)
-                            #print '| %s' % (corr2.explain(node2, reg1),)
-                        elif node3 == None:
-                            print 'for %s, assignment %s (dead) changed to %s' % (node1, reg1, reg2)
-                            print '| %s' % (corr2.explain(node2, reg1),)
+        if (not node1.isHidden()):
+            reg1 = corr1.assignedRegistration(node1)
+            if node1.name != None and node1.id != None:
+                node2 = corr2.taxonomy.lookupId(node1.id)
+                if node2 != None and (not node2.isHidden()):
+                    reg2 = corr2.assignedRegistration(node2)
+                    if reg2 == None:
+                        if reg1 == None:
+                            print 'for %s, no assigned registration in either correspondence' % (node1,)
                         else:
-                            print 'for %s, assignment %s changed to %s' % (node1, reg1, reg2)
+                            print 'for %s, registration %s no longer resolves' % (node1, reg1)
                             print '| %s' % (corr2.explain(node2, reg1),)
+                    else:
+                        if reg1 == None:
+                            print 'for %s, assigned in second correspondence only %s' % (node2, reg2)
+                            print '| %s' % (corr2.explain(node2, reg1),)
+                        elif reg1 != reg2:
+                            node3 = corr2.resolve(reg1)
+                            if node3 == node2:
+                                True
+                                #print 'old registration %s resolves to new node %s' % (reg1, node2)
+                                #print '| %s' % (corr2.explain(node2, reg1),)
+                            elif node3 == None:
+                                print 'for %s, assignment %s (dead) changed to %s' % (node1, reg1, reg2)
+                                print '| %s' % (corr2.explain(node2, reg1),)
+                            else:
+                                print 'for %s, assignment %s changed to %s' % (node1, reg1, reg2)
+                                print '| %s' % (corr2.explain(node2, reg1),)
+            elif False:
+                node2 = corr2.resolve(reg1)
+                if node2 == None:
+                    print 'cannot find new node corresponding to %s=%s', node1, reg1
+
 
 def do_taxonomy(tax1, r):
     print '---'

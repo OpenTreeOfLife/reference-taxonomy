@@ -409,3 +409,53 @@ This test is the 'test28_29' target in the Makefile.
 ### Other tests
 
 I haven't run tests involving three or more trees.
+
+## Ideas for things to do
+
+Sample and exclusion choice have a big impact on identifier stability.
+Here are some thoughts aimed at increasing stability:
+
+* In selecting samples, prefer to include the child
+  whose name shares a stem with its parent's name.  E.g. genus 'Rana'
+  should be chosen as a sample for family 'Ranidae'.
+* Prefer samples that originate from higher priority source
+  taxonomies.  E.g. a sample coming from NCBI should be chosen in
+  preference to one from GBIF.
+* There should be no topological constraints for species
+  (i.e. we should not use the presence or absence of subspecies as
+  topological constraints).
+* Filter out 'hidden' nodes from sample sets when the taxon being
+  registered is itself not hidden.  (This is to help make sure that
+  registrations can be shared between taxonomy and synthetic tree.)
+* In selecting samples, prefer registrations that are already in use
+  as samples in other registrations.
+
+Ideas relating to metadata
+
+* Ideally OTT ids should not be used as metadata (i.e. for determining
+  identity) because they are hard to understand.  But currently this
+  is not possible.  Measure how often OTT id is redundant, or
+  conflicting, with other metadata.
+* The registration id should be set to the originating node's OTT id
+  when possible (assuming the taxonomy is one that uses OTT ids as
+  node identifiers).
+* Maybe registrations should record the creation or access date for
+  any source taxonomy record?
+
+Registry revision
+
+* Think about how to "revise" registrations by adding metadata.  (This
+  may be the only way to phase out reliance on smasher and OTT ids.)
+  This could be done by having multiple registrations that are related
+  to one another bidirectionally.  The relationship need not be
+  surfaced in the identifier syntax, but it could be (17.4, 17.5,
+  etc.).  This feature could be used, for example, when a source
+  taxonomy changes the identifier associated with a taxon, or when a
+  taxon from a lower priority source is added to a higher priority
+  source.
+* Similarly, merge events (when it is discovered that two identifiers
+  refer to the same taxon) could be recorded as links between
+  registrations.
+* Instead of using metadata to choose between nodes on a path, create
+  a new specific constraint-based registration, and link it to the 
+  previous one.

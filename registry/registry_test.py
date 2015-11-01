@@ -55,6 +55,7 @@ def compare_correspondences(corr1, corr2):
                                 print '| %s' % (corr2.explain(node2, reg1),)
                             else:
                                 print 'for %s, assignment %s changed to %s' % (node1, reg1, reg2)
+                                print '| (old registration %s now resolves to %s)' % (reg1, node3)
                                 print '| %s' % (corr2.explain(node2, reg1),)
             elif False:
                 node2 = corr2.resolve(reg1)

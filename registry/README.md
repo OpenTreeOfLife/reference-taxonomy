@@ -190,13 +190,15 @@ and descendants from at least one of the node's siblings (or possibly
 registration will, by construction, resolve to that node.  (The node's
 metadata, if there is any, becomes the metadata in the registration.)
 
-When choosing the inclusions and exclusions, nodes are preferred that are
-more stable, i.e. more likely to occur in other trees (including both future and past
-'versions' of the given tree).  Assessing future stability employs a set of heuristics.
-For example, nodes more likely to be suppressed in downstream Open Tree
-processing (extinct, unclassified, etc.) are given lower priority, and
-nodes associated with a greater number of taxonomic sources are
-preferred to those with a lower number.
+When choosing the inclusions and exclusions, nodes are preferred that
+are more stable, i.e. more likely to occur in other trees (including
+both future and past 'versions' of the given tree).  Assessing future
+stability employs a set of heuristics.  For example, nodes more likely
+to be suppressed in downstream Open Tree processing (extinct,
+unclassified, etc.) are given lower priority, nodes from higher
+priority taxonomic sources preferred (e.g. NCBI is higher priority
+than GBIF), and nodes associated with a greater number of taxonomic
+sources are preferred to those with a lower number.
 
 ### Versioning (not yet implemented)
 
@@ -230,6 +232,30 @@ phantom as a constraint, and the child's registration would have
 exclusion of the phantom as a constraint.  It's not obvious that this
 is better, although it seems to have the advantage of not depending on
 the child node's metadata.)
+
+## Change scenarios
+
+### Example
+
+In OTT 2.8, the species *Orontium cochinchinense* is chosen as one of
+the inclusions for the registration for genus *Orontium*.  In OTT 2.9,
+the species has been synonymized with *Acorus calamus*, which
+according to OTT 2.9 is not in what it calls the genus *Orontium*.
+The registry system therefore thinks the two nodes stand for "different"
+clades, and gives them distinct registrations and ids.  As it happens,
+the old registration does not resolve in OTT 2.9, i.e. OTT 2.9 has no
+taxon equivalent to what OTT 2.8 called *Orontium*.
+
+*Ammochloinae* is similar: The registration changes because inclusion
+*Cutandia memphitica* is no longer in the taxon (i.e. is not in the
+OTT 2.9 *Ammochloinae* taxon).  However this time the old
+registration does resolve; it resolves to the OTT 2.9 taxon
+*Parapholiinae*.
+
+There are 351 cases like this one in plants.  In 43 of them, the 2.8
+registration resolves in OTT 2.9, to a taxon with a different OTT id.
+To put this in perspective, almost all of these cases are at the genus
+level, and there are 46510 genera in OTT 2.9.
 
 ### Topological changes to the tree
 
@@ -464,9 +490,6 @@ Here are some thoughts aimed at increasing stability:
 * In selecting samples, prefer to include the child
   whose name shares a stem with its parent's name.  E.g. genus 'Rana'
   should be chosen as a sample for family 'Ranidae'.
-* Prefer samples that originate from higher priority source
-  taxonomies.  E.g. a sample coming from NCBI should be chosen in
-  preference to one from GBIF.
 * There should be no membership constraints for species
   (i.e. we should not use the presence or absence of subspecies as
   membership constraints).

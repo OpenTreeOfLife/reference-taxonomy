@@ -57,8 +57,7 @@ public class Correspondence {
         Registration verp = assignments.get(node);
         if (verp != null && verp != reg)
             interesting("multiple registrations resolve to this node (probably OK)", node, verp, reg);
-        else
-            assignments.put(node, reg);
+        assignments.put(node, reg);
     }
 
     // Find the compatible taxon (pathologically: taxa), if any, 
@@ -300,6 +299,14 @@ public class Correspondence {
         return resolutionMap.get(reg);
     }
 
+    // Assignment: Choose one best (most specific) registration from
+    // among several that resolve to the node.
+    // This code looks all wrong to me.
+
+    public Registration assignedRegistration(Taxon node) {
+        return assignments.get(node);
+    }
+
     // Index the taxonomy by qualified id (source taxonomy reference)
 
     public Map<QualifiedId, Taxon> makeQidIndex(Taxonomy taxonomy) {
@@ -369,48 +376,50 @@ public class Correspondence {
 
     Registration registerSubtree(Taxon node,
                                  Map<Taxon, Registration> needExclusions) {
-        // ? Exclude nodes that have names that are homonyms ?
-        List<List<Registration>> childSamples = new ArrayList<List<Registration>>();
         // Preorder traversal
+        if (node.children != null)
+            for (Taxon child : node.children)
+                registerSubtree(child, needExclusions);
+
+        // Return registration if already there
         Registration probe = assignedRegistration(node);
-        if (node.children == null) {
-            // Look to see if we already have a (tip?) registration for this node
-            // ****
-            if (probe != null) {
+        if (probe != null) {
+            if (node.children == null)
                 event("found registration assigned to tip", node, probe);
-                return probe;
-            }
+            else
+                event("found registration assigned to internal node", node, probe);
+            return probe;
+        }
+
+        Registration reg;
+
+        // Create new registration
+        if (node.children == null || speciesp(node)) {
             // Look at clues.  If a registration maps
             // equally well to this node and another node, then
             // creating a new registration isn't going to help.
             if (clues.get(node) == Clue.AMBIGUITY)
                 interesting("creating new registration for ambiguity isn't likely to help", node);
-            Registration reg = registry.newRegistrationForTaxon(node);
-            // Tip.  Add to correspondence so that it can be used as a sample.
-            setResolution(reg, node);
-            Registration check = assignedRegistration(node);
-            if (check != reg)
-                // this is not good.
-                interesting("** add(%s, %s) failed (bug)", reg, node, check);
-            else
+            reg = registry.newRegistrationForTaxon(node);
+            if (node.children == null)
                 event("new registration created for tip", node, reg);
-            return reg;
-        } else if (probe != null) {
-            event("found registration assigned to internal node", node, probe);
-            for (Taxon child : node.children)
-                registerSubtree(child, needExclusions);
-            return probe;
+            else
+                event("new registration created for non-tip species", node, reg);
+            // Tip.  Add to correspondence so that it can be used as a sample.
         } else {
             // Persistent side effect to list of children in that node!
             // (the order will be assumed when finding exclusions, as well)
             Collections.sort(node.children, betterSampleSource);
+            // ? Exclude nodes that have names that are homonyms ?
+            List<List<Registration>> childSamples = new ArrayList<List<Registration>>();
             for (Taxon child : node.children) {
-                Registration reg = registerSubtree(child, needExclusions);
-                if (reg.samples != null)
-                    childSamples.add(reg.samples);
+                Registration chreg = assignedRegistration(child);
+                // if (chreg == null) ... shouldn't happen
+                if (chreg.samples != null)
+                    childSamples.add(chreg.samples);
                 else {
                     List<Registration> single = new ArrayList<Registration>();
-                    single.add(reg);
+                    single.add(chreg);
                     childSamples.add(single);
                 }
             }
@@ -430,7 +439,7 @@ public class Correspondence {
                 if (!gotOne) break;
             }
             // there will always be at least one sample (because this is an internal node)
-            Registration reg = registry.newRegistrationForTaxon(node);
+            reg = registry.newRegistrationForTaxon(node);
             Collections.sort(samples, Registry.betterQuality);
             reg.samples = samples;
             for (Registration s : samples)
@@ -438,8 +447,13 @@ public class Correspondence {
             // To do on second pass: exclusions
             needExclusions.put(node, reg);
             event("new registration created for internal node", node, reg);
-            return reg;
         }
+        setResolution(reg, node);
+        return reg;
+    }
+
+    boolean speciesp(Taxon node) {
+        return node.rank != null && node.rank.equals("species");
     }
 
     // Second pass (after registrations have been created with inclusions only)
@@ -474,12 +488,6 @@ public class Correspondence {
         else
             for (Registration s : reg.exclusions)
                 if (s.quality > 0) ++reg.quality;
-
-        setResolution(reg, node);
-        Registration check = assignedRegistration(node);
-        if (check == null)
-            // this is not good.
-            interesting("** add failed #2 (bug)", reg, node);
     }
 
     // Returns negative if a is a better place than b to get samples.
@@ -493,25 +501,45 @@ public class Correspondence {
                 int avis = (a.isHidden() ? 1 : 0);
                 int bvis = (b.isHidden() ? 1 : 0);
                 if (avis != bvis) return avis - bvis;
+
+                int apri = encodeSourcePriority(a);
+                int bpri = encodeSourcePriority(b);
+                if (apri != bpri) return bpri - apri; // higher priority is better
+
                 int asize = ((a.rank != null && a.rank.equals("species")) ? 1 : a.count());
                 int bsize = ((b.rank != null && b.rank.equals("species")) ? 1 : b.count());
-                if (asize != bsize) return asize - bsize;
+                if (asize != bsize) return bsize - asize; // bigger is better
+
                 int ahom = (a.name != null ? a.taxonomy.lookup(a.name).size() : 2);
                 int bhom = (b.name != null ? b.taxonomy.lookup(b.name).size() : 2);
-                if (ahom != bhom) return bhom - ahom;
-                int asrc = (a.sourceIds != null ? a.sourceIds.size() : 0);
-                int bsrc = (b.sourceIds != null ? b.sourceIds.size() : 0);
-                return asrc - bsrc;
+                if (ahom != bhom) return ahom - bhom; // smaller is better
+
+                return 0;
             }
         };
 
-    // Assignment: Choose one best (most specific) registration from
-    // among several that resolve to the node.
-    // This code looks all wrong to me.
-
-    public Registration assignedRegistration(Taxon node) {
-        return assignments.get(node);
+    public int encodeSourcePriority(Taxon node) {
+        if (node.sourceIds == null)
+            return 0;
+        int answer = 0;
+        for (QualifiedId qid : node.sourceIds) {
+            Integer mask = sourcePriority.get(qid.prefix);
+            if (mask != null)
+                answer |= mask.intValue();
+        }
+        return answer;
     }
+
+    static Map<String, Integer> sourcePriority = new HashMap<String, Integer>();
+    static {
+        String[] sources = {"h2007", "if", "worms", "ncbi", "silva", "gbif", "irmng"};
+        int q = 1 << sources.length;
+        for (String source : sources) {
+            sourcePriority.put(source, q);
+            q = q >> 1;
+        }
+    }
+
 
     // Explains why reg is not assigned to node
 

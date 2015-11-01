@@ -460,9 +460,11 @@ public class Taxon {
 		}
 
 		return 
-			"(" + ids +
+			"(" +
+            this.name +
+			" " +
+            ids +
 			(this.children == null ? "" : "+" + ((Object)(this.children.size())).toString()) +
-			" " + this.name +
 			twinkie +				// tbd: indicate division top with "#" 
             (this.isDirectlyHidden() ? "?" : "") +
 			")";
@@ -850,6 +852,8 @@ public class Taxon {
 
 	static Comparator<Taxon> compareNodesBySize = new Comparator<Taxon>() {
 		public int compare(Taxon x, Taxon y) {
+            int h = (x.isHidden() ? 1 : 0) - (y.isHidden() ? 1 : 0);
+            if (h != 0) return h;
 			return x.count() - y.count();
 		}
 	};
@@ -1104,7 +1108,7 @@ public class Taxon {
 			int count = 0;
 			for (Taxon child : sorted)
 				if (++count < 10)
-					System.out.format("	 %s(%s) %s\n", child.name, child.id, child.rank);
+					System.out.format("	 %s %s%s\n", child, child.rank);
 				else if (count == 10)
 					System.out.format("	 ...\n");
 		}

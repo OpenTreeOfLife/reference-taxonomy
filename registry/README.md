@@ -487,9 +487,6 @@ I haven't run tests involving three or more trees.
 Sample choice has a big impact on identifier stability.
 Here are some thoughts aimed at increasing stability:
 
-* In selecting samples, prefer to include the child
-  whose name shares a stem with its parent's name.  E.g. genus 'Rana'
-  should be chosen as a sample for family 'Ranidae'.
 * There should be no membership constraints for species
   (i.e. we should not use the presence or absence of subspecies as
   membership constraints).

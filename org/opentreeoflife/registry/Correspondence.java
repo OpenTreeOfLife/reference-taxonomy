@@ -409,10 +409,11 @@ public class Correspondence {
         } else {
             // Persistent side effect to list of children in that node!
             // (the order will be assumed when finding exclusions, as well)
-            Collections.sort(node.children, betterSampleSource);
+            List<Taxon> children = orderChildrenByPreference(node);
+
             // ? Exclude nodes that have names that are homonyms ?
             List<List<Registration>> childSamples = new ArrayList<List<Registration>>();
-            for (Taxon child : node.children) {
+            for (Taxon child : children) {
                 Registration chreg = assignedRegistration(child);
                 // if (chreg == null) ... shouldn't happen
                 if (chreg.samples != null)
@@ -490,6 +491,17 @@ public class Correspondence {
                 if (s.quality > 0) ++reg.quality;
     }
 
+    List<Taxon> orderChildrenByPreference(Taxon node) {
+        List<Taxon> children = node.children;
+        Collections.sort(children, betterSampleSource);
+        Taxon typ = findType(node);
+        if (typ != null && typ != children.get(0)) {
+            children.remove(typ);
+            children.add(0, typ);
+        }
+        return children;
+    }
+
     // Returns negative if a is a better place than b to get samples.
     // Prefer larger taxa to smaller ones.
     // Prefer less homonymic names.
@@ -517,6 +529,46 @@ public class Correspondence {
                 return 0;
             }
         };
+
+    // Search list of children to find one that looks like a 'type',
+    // i.e. shares a stem with the parent.
+    public Taxon findType(Taxon node) {
+        String name = node.name;
+        if (name == null) return null;
+
+        // In a binomial, look only at the epithet
+        String lastpart = name;
+        int e = name.lastIndexOf(' ');
+        if (e > 0) lastpart = name.substring(e+1);
+
+        String stem = getStem(lastpart);
+
+        for (Taxon child : node.children) {
+            if (child.isHidden() != node.isHidden()) return null;
+            if (child.name != null) {
+                String childlastpart = child.name;
+                int f = childlastpart.lastIndexOf(' ');
+                if (f > 0) childlastpart = childlastpart.substring(f+1);
+                if (childlastpart.startsWith(stem)) {
+                    interesting("found typish child", node, child);
+                    return child;
+                }
+            }
+        }
+        return null;
+    }
+
+    // This is a kludge but (a) it seems to mostly work, (b) it
+    // doesn't matter a whole lot if occasionally it doesn't.
+    String getStem(String name) {
+        int z = name.length() - 5;
+        if (z < 3) {
+            z = 3;
+            if (z > name.length())
+                z = name.length();
+        }
+        return name.substring(0, z);
+    }
 
     public int encodeSourcePriority(Taxon node) {
         if (node.sourceIds == null)

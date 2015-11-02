@@ -1,3 +1,7 @@
+This document describes work in progress, not production code.  It
+assumes you know something about the Open Tree of Life project
+(e.g. what a 'synthetic tree' is and what OTT and OTT id mean).
+
 Node identifier registry 
 --------------------
 
@@ -67,7 +71,7 @@ node.
 
 Membership constraints are specified by two sets of registrations
 (registration ids), one of *inclusions* and one of *exclusions*.
-(Collectively inclusions and exclusions are called *samples*.)  A
+(Collectively inclusions and exclusions are called *samples*.)  An
 inclusion constraint is met by any node from which the node
 corresponding to the inclusion registration descends.  An exclusion
 constraint is met by any node from which the node corresponding to the
@@ -233,9 +237,58 @@ exclusion of the phantom as a constraint.  It's not obvious that this
 is better, although it seems to have the advantage of not depending on
 the child node's metadata.)
 
-## Change scenarios
+### Implementation note
 
-### Example
+Currently membership constraints consist of at most two inclusions and
+at most one exclusion.  The number of inclusions can be increased easily;
+increasing the number of exclusions will require additional coding.
+
+### Test framework
+
+The system can be stress tested in many ways; so far I have one
+generic test (in registry_test.py) that can be applied to a pair of
+trees, and "old" tree A and a "new" tree B.  It performs the following
+sequence of operations:
+
+1. Start with an empty registry
+2. Extend it by making new registrations for nodes in tree A
+3. Resolve registrations against tree B
+4. Extend registry by making new registrations for nodes in tree B
+   lacking assigned registrations
+
+We can then analyze the outcome as follows.  Look at every node N1 in
+tree A that has a counterpart N2 in tree B (as determined by
+OTT id).  N1 was assigned registration R1 after step 2, and N2 was
+assigned registration R2 after step 4.  If R1 = R2, the registry has
+successfully rediscovered that the nodes correspond.  If R1 != R2, but
+R1 resolves to N2, we probably have a case where nodes were merged.
+Otherwise, the registry has decided that the two nodes, which were
+determined to be "the same" by smasher, are so different that they
+need distinct ids, i.e. annotations applied to N1 may not be
+applicable to N2.
+
+Such a change might occur if the membership constraints for R1 cannot
+be satisfied in the new tree, or if a taxon in the old tree is simply
+not present ("deleted") from the new tree.
+
+The consequence of a change in assignment (i.e. registry id) is that
+occurrences of the old ids in annotations will not resolve in the
+newer tree.  The assignment is therefore "lost" if one is consulting
+the newer tree to resolve identifiers.  Information about the
+identifier is retained in the registry, however, and that may enable
+some kind of recovery.
+
+To simplify matters, we ignore 'hidden' nodes (incertae sedis etc.)
+in the analysis.
+
+## Results
+
+### One taxonomy compare to the next
+
+One can apply the simple test framework to successive versions of a
+taxonomy, such as the Open Tree reference taxonomy (OTT).  
+I applied it to the plants branch of OTT 2.8 and the plants branch of
+OTT 2.9.  This test is the 'test28_29' target in the Makefile.
 
 In OTT 2.8, the species *Orontium cochinchinense* is chosen as one of
 the inclusions for the registration for genus *Orontium*.  In OTT 2.9,
@@ -256,6 +309,75 @@ There are 351 cases like this one in plants.  In 43 of them, the 2.8
 registration resolves in OTT 2.9, to a taxon with a different OTT id.
 To put this in perspective, almost all of these cases are at the genus
 level, and there are 46510 genera in OTT 2.9.
+
+Every instance of OTT id / registration id inconsistency in this
+experiment is of this form.
+
+### Taxonomy compared to synthetic tree
+
+One can also apply the simple test framework to a taxonomy and a
+synthetic tree that is based on that taxonomy.  When we apply it to the plants
+branch of OTT 2.9 and the plants branch of the draft 4 synthetic tree,
+10 non-merge node pairs have "changed" registrations.  In every case
+this is because registrations mentioned in membership constraints do
+not resolve because the synthetic tree lacks a sample node that's present in
+the taxonomy.
+
+The fact that membership constraints are always satisfied is a result
+of the way the synthesis procedure assigns OTT ids to internal nodes:
+it ensures that a tip descends from a node in the synthetic tree if
+and only if the taxon corresponding to the tip descends, in the
+taxonomy, from the taxon corresponding to taxon with the assigned id.
+
+Nodes missing from the synthetic tree are almost all 'hidden' nodes,
+because the synthesis procedure erases them before processing begins.
+
+Another measurement of interest is that 9,025 plant registrations from
+OTT 2.9, e.g. *Halimeda*, become ambiguous (i.e. compatible with
+more than one node) when applied to the draft 4 synthetic tree, compared with 10,624 that resolve uniquely using constraints. This means
+that the samples chosen based on taxonomy were not 'tight' enough to
+hone in on the correct node in the synthetic tree. Either an
+exclusion that belongs to a sibling in the taxonomy does not belong to
+any sibling in the synthetic tree, or the samples, which come from
+different children in the taxonomy, all come from the same child in
+the synthetic tree. 
+
+(It should be possible to reduce this number reduced by increasing the
+number of samples per taxon.  TBD.)
+
+*Work in progress here. I don't understand these numbers.* 11,699 new,
+more specific registrations (8,689 named, 3,010 unnamed or
+synthesis-only) are created to separate path ambiguities.  The node
+that synthesis has identified as having the same membership as the
+taxon (i.e. the metadata match for the ambiguous registration) should
+be recorded as the replacement for the ambiguous one (not yet
+implemented).
+
+If the "Recovery from path ambiguity" clause from the resolution
+procedure is disabled (see above), a new registration for the
+metadata-match taxon is created and the registration id assigned to
+the node will appear to have "changed" (although the old id will still
+resolve to that node).  If the clause is enabled, resolution will be
+to the existing node, assuming a metadata match.
+
+Interesting: 55 registrations resolve to nodes in the synthetic tree
+that do not correspond to taxonomy (in the sense of compatible
+membership).  These are situations where the membership of the taxon
+is not compatible with the membership (descent) of any synthetic tree
+node, yet the registry includes a set of membership constraints
+satisfied by both a taxon and a synthetic tree node.
+
+This test is the 'test29_4' target in the Makefile.  It currently
+accesses draft 4 from a protected location; this should be fixed.
+
+### Other tests
+
+I haven't run tests involving three or more trees, other parts of the
+tree, older taxonomies, etc.
+
+
+
+## Discussion
 
 ### Topological changes to the tree
 
@@ -325,12 +447,6 @@ As an alternative to sample retention, one can imagine a system that
 attempts to ensure that new registrations resolve correctly in old
 trees, but it would require keeping all old tree on hand, and this
 would be expensive.  (is that right?)
-
-### Implementation note
-
-Currently membership constraints consist of at most two inclusions and
-at most one exclusion.  The number of inclusions can be increased easily;
-increasing the number of exclusions will require additional coding.
 
 
 ## The code
@@ -409,79 +525,6 @@ etc.  Then
     ott28 = Taxonomy.getTaxonomy('ott2.8/', 'ott')
     ott28.select('Chloroplastida').dump('plants-ott28/')
 
-## Outcomes of tests
-
-The system can be stress tested in many ways; so far I have one
-generic test (in registry_test.py) that can be applied to a pair of
-trees, and "old" tree A and a "new" tree B.  It performs the following
-sequence of operations:
-
-1. Start with an empty registry
-2. Extend it by making new registrations for nodes in tree A
-3. Resolve registrations against tree B
-4. Extend registry by making new registrations for nodes in tree B
-   lacking assigned registrations
-
-We can then analyze the outcome as follows.  Look at every node N1 in
-tree A that has a counterpart N2 in tree B (as determined by
-OTT id).  N1 was assigned registration R1 after step 2, and N2 was
-assigned registration R2 after step 4.  If R1 = R2, the registry has
-successfully rediscovered that the nodes correspond.  If R1 != R2, but
-R1 resolves to N2, we probably have a case where nodes were merged.
-Otherwise, the registry has decided that the two nodes, which were
-determined to be "the same" by smasher, are so different that they
-need distinct ids, i.e. annotations applied to N1 may not be
-applicable to N2.
-
-Such a change might occur if the membership constraints for R1 cannot
-be satisfied in the new tree, or if a taxon in the old tree is simply
-not present ("deleted") from the new tree.
-
-The consequence of a change in assignment (i.e. registry id) is that
-occurrences of the old ids in annotations will not resolve in the
-newer tree.  The assignment is therefore "lost" if one is consulting
-the newer tree to resolve identifiers.  Information about the
-identifier is retained in the registry, however, and that may enable
-some kind of recovery.
-
-To simplify matters, we ignore 'hidden' nodes (incertae sedis etc.)
-in the analysis.
-
-### Comparing taxonomy with synthetic tree
-
-We can apply this test to a taxonomy and a synthetic tree produced
-based on it.  When we apply it to the plants branch of OTT 2.9 and the
-plants branch of the draft 4 synthetic tree, 10 non-merge node pairs
-have "changed" registrations.  In every case this is because
-registrations mentioned in membership constraints do not resolve
-because the synthetic tree lacks a node that's present in the
-taxonomy.
-
-The fact that membership constraints are always satisfied is a result
-of the way the synthesis procedure assigns OTT ids to internal nodes:
-it ensures that a tip descends from a node in the synthetic tree if
-and only if the taxon corresponding to the tip descends, in the
-taxonomy, from the taxon corresponding to taxon with the assigned id.
-
-Nodes missing from the synthetic tree are almost all 'hidden' nodes,
-which means that we have 
-
-This test is the 'test29_4' target in the Makefile.
-
-### Comparing taxonomy versions
-
-We can also apply the test to successive versions of OTT.  When we
-apply it to the plants branch of OTT 2.8 and the plants branch of OTT
-2.9, 859 non-merge node pairs have distinct registrations.  In
-every case this is because the membership constraints from the old
-tree are not satisfied in the new tree.
-
-This test is the 'test28_29' target in the Makefile.
-
-### Other tests
-
-I haven't run tests involving three or more trees.
-
 ## Ideas for things to do
 
 Sample choice has a big impact on identifier stability.
@@ -525,3 +568,8 @@ Registry revision
 * Instead of using metadata to choose between nodes on a path, create
   a new specific constraint-based registration, and link it to the 
   previous one.
+
+Scholarship
+
+* Compare to phylocode
+* Acks

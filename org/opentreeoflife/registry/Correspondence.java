@@ -55,9 +55,12 @@ public class Correspondence {
             interesting("changing resolution (SHOULDN'T HAPPEN)", reg, prev, node);
         resolutionMap.put(reg, node);
         Registration verp = assignments.get(node);
-        if (verp != null && verp != reg)
+        if (verp != null && verp != reg) {
             interesting("multiple registrations resolve to this node (probably OK)", node, verp, reg);
-        assignments.put(node, reg);
+            if (reg.id > verp.id) // Assign the most recently registered registration
+                assignments.put(node, reg);
+        } else
+            assignments.put(node, reg);
     }
 
     // Find the compatible taxon (pathologically: taxa), if any, 
@@ -66,6 +69,9 @@ public class Correspondence {
     // and assignedRegistration() to find the registration assigned to a taxon.
 
     void resolve() {
+        resolve(false);
+    }
+    void resolve(boolean rescuep) {
         clearEvents();
 
         // 1. Resolve sample/exclusion registrations using metadata (see resolve)
@@ -87,7 +93,7 @@ public class Correspondence {
         for (Registration reg : registry.allRegistrations()) {
             if (reg.samples != null)
                 try {
-                    List<Taxon> taxa = findByTopologyAndMaybeMetadata(reg);
+                    List<Taxon> taxa = findByTopologyAndMaybeMetadata(reg, rescuep);
                     if (taxa != null) {
                         if (taxa.size() == 1) {
                             setResolution(reg, taxa.get(0));
@@ -200,21 +206,23 @@ public class Correspondence {
     // When there is topological ambiguity, attempt to reduce it using clues from metadata.
     // If a sample or exclusion fails to resolve, throw a ResolutionFailure exception.
 
-    List<Taxon> findByTopologyAndMaybeMetadata(Registration reg)
-    throws ResolutionFailure
+    List<Taxon> findByTopologyAndMaybeMetadata(Registration reg, boolean rescuep)
+        throws ResolutionFailure
     {
         List<Taxon> path = findByTopology(reg);
         if (path != null)
             if (path.size() == 1)
                 event("resolved uniquely by topology", reg, path.get(0));
             else {
-                // Ambiguous.  Attempt to clear it up using metadata... this may be the wrong place to do this
-                Taxon node = resolveByMetadata(reg);
-                if (node != null && path.contains(node)) {
-                    List<Taxon> candidates = new ArrayList<Taxon>();
-                    candidates.add(node);
-                    event("resolved uniquely by topology combined with metadata", reg, node);
-                    return candidates;
+                if (rescuep) {
+                    // Ambiguous.  Attempt to clear it up using metadata... this may be the wrong place to do this
+                    Taxon node = resolveByMetadata(reg);
+                    if (node != null && path.contains(node)) {
+                        List<Taxon> candidates = new ArrayList<Taxon>();
+                        candidates.add(node);
+                        event("resolved uniquely by topology combined with metadata", reg, node);
+                        return candidates;
+                    }
                 }
                 event("registration is ambiguous along path", reg, path);
                 // fall through
@@ -385,9 +393,11 @@ public class Correspondence {
         Registration probe = assignedRegistration(node);
         if (probe != null) {
             if (node.children == null)
-                event("found registration assigned to tip", node, probe);
+                event("registration resolves to tip node", node, probe);
+            else if (node.name == null)
+                interesting("registration resolves to anonymous internal node", node, probe);
             else
-                event("found registration assigned to internal node", node, probe);
+                event("registration resolves to named internal node", node, probe);
             return probe;
         }
 
@@ -398,10 +408,10 @@ public class Correspondence {
             // Look at clues.  If a registration maps
             // equally well to this node and another node, then
             // creating a new registration isn't going to help.
-            if (clues.get(node) == Clue.AMBIGUITY)
-                interesting("creating new registration for ambiguity isn't likely to help", node);
             reg = registry.newRegistrationForTaxon(node);
-            if (node.children == null)
+            if (clues.get(node) == Clue.AMBIGUITY)
+                interesting("creating new registration for ambiguity; not likely to help", node, reg);
+            else if (node.children == null)
                 event("new registration created for tip", node, reg);
             else
                 event("new registration created for non-tip species", node, reg);
@@ -447,7 +457,13 @@ public class Correspondence {
                 if (s.quality > 0) ++reg.quality;
             // To do on second pass: exclusions
             needExclusions.put(node, reg);
-            event("new registration created for internal node", node, reg);
+            if (clues.get(node) == Clue.PATH) {
+                if (node.name == null)
+                    event("new registration created for anonymous node in path ambiguity", node, reg);
+                else
+                    event("new registration created for node in path ambiguity", node, reg);
+            } else
+                event("new registration created for internal node", node, reg);
         }
         setResolution(reg, node);
         return reg;

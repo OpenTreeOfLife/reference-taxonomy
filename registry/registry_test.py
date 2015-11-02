@@ -70,7 +70,7 @@ def do_taxonomy(tax1, r):
     # 
     corr = Correspondence(r, tax1)
     print 'Assigning registrations to nodes in', tax1
-    corr.resolve()
+    corr.resolve(False)
 
     # this should create new registrations for all taxa
     print 'Extending registry for', tax1
@@ -81,7 +81,7 @@ def do_taxonomy(tax1, r):
     # this should match most, if not, all, taxa with registrations in r
     print 'Re-assigning registrations to nodes in', tax1
     newcorr = Correspondence(r, tax1)
-    newcorr.resolve()
+    newcorr.resolve(True)
     compare_correspondences(corr, newcorr)
 
     return newcorr

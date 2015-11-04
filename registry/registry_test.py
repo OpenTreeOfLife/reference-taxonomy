@@ -19,16 +19,17 @@ import sys
 def show_unmapped(tax, r, corr):
     i = 0
     for taxon in tax:
-        probe = corr.assignedRegistration(taxon)
-        if probe == None:
-            if i < 5:
-                print 'missing registration:', taxon
-            i = i + 1
+        if not Registry.isTerminalTaxon(taxon):
+            probe = corr.assignedRegistration(taxon)
+            if probe == None:
+                if i < 5:
+                    print 'missing registration:', taxon
+                i = i + 1
     print i, 'unmapped'
 
 def compare_correspondences(corr1, corr2):
     for node1 in corr1.taxonomy:
-        if (not node1.isHidden()):
+        if (not node1.isHidden()) and (not Registry.isTerminalTaxon(node1)):
             reg1 = corr1.assignedRegistration(node1)
             if node1.name != None and node1.id != None:
                 node2 = corr2.taxonomy.lookupId(node1.id)
@@ -64,40 +65,45 @@ def compare_correspondences(corr1, corr2):
 
 
 def do_taxonomy(tax1, r):
-    print '---'
     print tax1.getTag(), 'taxa:', tax1.count()
+    tax1.cleanRanks()
+    tax1.inferFlags()
 
     # 
     corr = Correspondence(r, tax1)
-    print 'Assigning registrations to nodes in', tax1
-    corr.resolve(False)
+    print '--- Assigning registrations to nodes in', tax1
+    corr.resolve()
 
     # this should create new registrations for all taxa
-    print 'Extending registry for', tax1
+    print '--- Extending registry for', tax1
     corr.extend()
     show_unmapped(tax1, r, corr)
 
     # see whether lookup is repeatable.
     # this should match most, if not, all, taxa with registrations in r
-    print 'Re-assigning registrations to nodes in', tax1
+    print '--- Re-assigning registrations to nodes in', tax1
     newcorr = Correspondence(r, tax1)
-    newcorr.resolve(True)
-    compare_correspondences(corr, newcorr)
+    newcorr.resolve()
+    # compare_correspondences(corr, newcorr)
 
     return newcorr
 
 
-def run_test(t1, t2):
+def run_tests(treenames):
 
     r = Registry()
 
-    tax1 = Taxonomy.getTaxonomy(t1, t1.split('/')[-2])
-    corr1 = do_taxonomy(tax1, r)
+    first = None
+    last = None
 
-    tax2 = Taxonomy.getTaxonomy(t2, t2.split('/')[-2])
-    corr2 = do_taxonomy(tax2, r)
+    for t1 in treenames:
 
-    compare_correspondences(corr1, corr2)
+        tree = Taxonomy.getTaxonomy(t1, t1.split('/')[-2])
+        last = do_taxonomy(tree, r)
+        if first == None:
+            first = last
+
+    # compare_correspondences(first, last)
 
     r.dump('registry.csv')
 
@@ -109,7 +115,7 @@ def run_test(t1, t2):
 # Asterales
 
 # Two different versions of the asterales taxonomy (on JAR's disk)
-# run_test('../t/tax/aster.2/', '../t/tax/aster/')
+# run_test(['../t/tax/aster.2/', '../t/tax/aster/'])
 
 # How to extract the Asterales subtree from OTT 2.8:
 #   unpack http://files.opentreeoflife.org/ott/ott2.8/ott2.8.tgz to ../tax/prev_ott
@@ -123,13 +129,13 @@ def run_test(t1, t2):
 #   synth3 = Taxonomy.getNewick('draftversion3.tre', 'synth')
 #   synth3.select(synth3.taxon('Asterales')).dump('asterales-synth3/')
 
-# run_test('asterales-ott28/', 'asterales-synth/')
+# run_test(['aster-ott28/', 'aster-synth3/'])
 
 # Fungi
 
 #   ott28.select(ott28.taxon('Fungi')).dump('fungi-ott28/')
 #   synth3.select(synth3.taxon('Fungi')).dump('fungi-synth3/')
-# run_test('fungi-ott28/', 'fungi-synth3/')
+# run_test(['fungi-ott28/', 'fungi-synth3/'])
 
 # Plants
 
@@ -137,6 +143,6 @@ def run_test(t1, t2):
 #   synth3.select(synth3.taxon('Chloroplastida')).dump('plants-synth3/')
 
 if len(sys.argv) > 1:
-    run_test(sys.argv[1], sys.argv[2])
+    run_tests(sys.argv[1:])
 else:
-    run_test('plants-ott28/', 'plants-synth3/')
+    run_tests(['plants-ott28/', 'plants-synth3/'])

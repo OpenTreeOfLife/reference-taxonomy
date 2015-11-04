@@ -42,10 +42,6 @@ public class Registry {
         return registrations.values();
     }
 
-    public int size() {
-        return registrations.size();
-    }
-
     // Create Registration records on demand
 
     public Registration getRegistration(int n) {
@@ -64,23 +60,9 @@ public class Registry {
         return getRegistration(nextid++);
     }
 
-    Registration newRegistrationForTaxon(Taxon node) {
-        // (reuse ott id as registration id when possible ?)
-        Registration reg = newRegistration();
-        // Set metadata from node
-        reg.name = node.name;
-        if (node.sourceIds != null) {
-            if (node.sourceIds.size() >= 2
-                && node.sourceIds.get(0).id.equals("silva")
-                && node.sourceIds.get(1).id.equals("ncbi"))
-                reg.qid = node.sourceIds.get(1);
-            else
-                reg.qid = node.sourceIds.get(0);
-        }
-        if (node.name != null)
-            reg.ottid = node.id;
-        if (!node.isHidden()) ++reg.quality;
-        return reg;
+    // jython convenience
+    public static boolean isTerminalTaxon(Taxon node) {
+        return Terminal.isTerminalTaxon(node);
     }
 
     // ------------------------------------------------------------
@@ -99,18 +81,12 @@ public class Registry {
         br.close();
         for (Registration reg : registry.allRegistrations()) {
             if (reg.samples != null)
-                Collections.sort(reg.samples, betterQuality);
+                Collections.sort(reg.samples, Terminal.betterQuality);
             if (reg.exclusions != null)
-                Collections.sort(reg.exclusions, betterQuality);
+                Collections.sort(reg.exclusions, Terminal.betterQuality);
         }
         return registry;
     }
-
-    public static Comparator<Registration> betterQuality = new Comparator<Registration>() {
-            public int compare(Registration a, Registration b) {
-                return b.quality - a.quality;
-            }
-        };
 
     // write registry
 
@@ -121,7 +97,7 @@ public class Registry {
         out.close();
     }
 
-    // entry from shell
+    // entry from shell.  not needed, use main method from org.python.util.jython
 
 	public static void main(String argv[]) throws Exception {
 		if (argv.length > 0) {
@@ -139,65 +115,118 @@ public class Registry {
 
 }
 
+// Registration record for an internal node
+
 class Registration {
 
     int id;                     // Positive
-    String name = null;
-    QualifiedId qid = null;
-    String ottid = null;
-    List<Registration> samples = null;
-    List<Registration> exclusions = null;
-    int quality = 0;
+    List<Terminal> samples = null;
+    List<Terminal> exclusions = null;
 
     Registration(int id) {
         this.id = id;
     }
 
     void dump(PrintStream out) throws IOException {
-        out.format("%s,%s,%s,%s",
-                   this.id,
-                   (this.name == null ? "" : this.name),
-                   (this.qid == null ? "" : this.qid.toString()),
-                   (this.ottid == null ? "" : this.ottid));
+        out.format("%s",
+                   this.id);
         if (samples != null)
-            for (Registration reg : samples)
-                out.format(",%s", reg.id);
+            for (Terminal term : samples)
+                out.format(",%s", term.id);
         if (exclusions != null)
-            for (Registration reg : exclusions)
-                out.format(",%s", -reg.id);
+            for (Terminal term : exclusions)
+                out.format(",-%s", term.id);
         out.println();
     }
 
     static Registration parse(String row, Registry registry) {
         String[] cells = row.split(",");
         int id = Integer.parseInt(cells[0]);
-        String name = cells[1];
-        String qid = cells[2];
         // TBD: error if we've already seen a row for this id
         Registration entry = registry.getRegistration(id);
-        if (name.length() > 0) entry.name = name;
-        if (qid.length() > 0) entry.qid = new QualifiedId(qid);
-        entry.ottid = cells[3];
-        List<Registration> samples = new ArrayList<Registration>();
-        List<Registration> exclusions = new ArrayList<Registration>();
-        for (int i = 4; i < cells.length; ++i)
-            if (cells[i].length() != 0) {
-                int n = Integer.parseInt(cells[i]);
-                if (n < 0)
-                    exclusions.add(registry.getRegistration(-n));
+        List<Terminal> samples = new ArrayList<Terminal>();
+        List<Terminal> exclusions = new ArrayList<Terminal>();
+        for (int i = 1; i < cells.length; ++i) {
+            String sid = cells[i];
+            if (sid.length() != 0) {
+                if (sid.startsWith("-"))
+                    exclusions.add(Terminal.getTerminal(sid.substring(1)));
                 else
-                    samples.add(registry.getRegistration(n));
+                    samples.add(Terminal.getTerminal(sid));
             }
+        }
         entry.samples = samples;
         entry.exclusions = exclusions;
         return entry;
     }
 
     public String toString() {
-        if (this.samples != null) {
-            return String.format("[%s %s %s ...]", this.id, this.name, this.ottid);
+        if (this.exclusions != null) {
+            return String.format("[%s = %s ... | %s ...]", this.id, this.samples.get(0), this.exclusions.get(0));
         } else
-            return String.format("[%s %s %s]", this.id, this.name, this.ottid);
+            return String.format("[%s = %s ... | ]", this.id, this.samples.get(0));
+    }
+
+}
+
+// Information from OTT
+
+class Terminal {
+
+    String id;                     // taxon id from taxonomy
+    String name = null;
+    QualifiedId qid = null;
+    int quality = 0;
+
+    static Map<String, Terminal> terminals = new HashMap<String, Terminal>();
+
+    private Terminal(String id) {
+        this.id = id;
+    }
+
+    public static boolean isTerminalTaxon(Taxon node) {
+        if (node.children == null)
+            return true;
+        if (node.rank != null && node.rank.equals("species"))
+            return true;
+        if (node.isInfraspecific())
+            return true;
+        return false;
+    }
+
+    static Terminal getTerminal(String id) {
+        Terminal probe = terminals.get(id);
+        if (probe != null) return probe;
+        Terminal term = new Terminal(id);
+        terminals.put(id, term);
+        return term;
+    }
+
+    static Terminal getTerminal(Taxon node) {
+        Terminal term = getTerminal(node.id);
+        // TBD: Detect alterations
+        term.name = node.name;
+        if (node.sourceIds != null) {
+            if (node.sourceIds.size() >= 2
+                && node.sourceIds.get(0).id.equals("silva")
+                && node.sourceIds.get(1).id.equals("ncbi"))
+                term.qid = node.sourceIds.get(1);
+            else
+                term.qid = node.sourceIds.get(0);
+        }
+        if (!node.isHidden()) ++term.quality;
+        terminals.put(node.id, term);
+        return term;
+    }
+
+    public static Comparator<Terminal> betterQuality = new Comparator<Terminal>() {
+            public int compare(Terminal a, Terminal b) {
+                return b.quality - a.quality;
+            }
+        };
+
+    public String toString() {
+        return String.format("[%s %s=%s]", this.name, this.id, this.qid);
     }
 
 }

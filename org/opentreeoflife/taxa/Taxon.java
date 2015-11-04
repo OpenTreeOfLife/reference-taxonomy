@@ -665,6 +665,7 @@ public class Taxon {
         return this.mrca(other, this.getDepth(), other.getDepth());
     }
 
+    // Always returns non-null (but possibly the noMrca node)
     Taxon mrca(Taxon other, int adepth, int bdepth) {
         if (this.taxonomy != other.taxonomy)
             throw new RuntimeException(String.format("Mrca across taxonomies: %s %s %s %s",
@@ -683,7 +684,7 @@ public class Taxon {
                 System.out.format("** shouldn't happen: %s %s?=%s / %s %s?=%s\n",
                                   this, this.getDepth(), this.measureDepth(), other, other.getDepth(), other.measureDepth());
                 // seen twice during augment of worms.  ugh.
-                // ought to measure the depths and loop around...
+                // measure the depths and loop around...
                 Taxon.backtrace();
                 return this.carefulMrca(other);
             }
@@ -881,6 +882,11 @@ public class Taxon {
 
 	public boolean isAnnotatedExtinct() { // blah, inconsistent naming
 		return (this.properFlags & Taxonomy.EXTINCT) != 0;
+    }
+
+    public boolean isInfraspecific() {
+		return ((this.properFlags | this.inferredFlags) &
+				Taxonomy.INFRASPECIFIC) != 0;
     }
 
 	// ----- Methods intended for use in jython scripts -----
@@ -1134,7 +1140,7 @@ public class Taxon {
     public void showLineage(Taxon stop) {
 		int qount = 0;
 		for (Taxon t = this; t != stop; t = t.parent) {
-            if (t == null) break;
+            if (t == null || t == this.taxonomy.forest) break;
             System.out.print(t.toString());
             if (t.parent != stop) {
                 if (++qount < 10) {

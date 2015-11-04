@@ -752,6 +752,25 @@ public abstract class Taxonomy implements Iterable<Taxon> {
         }
 	}
 
+    public void cleanRanks() {
+        for (Taxon node : this)
+            if (node.rank == null && node.name != null) {
+                if (Taxon.isBinomial(node.name))
+                    if (node.parent != null && node.parent.rank != null && node.parent.rank.equals("genus")) {
+                        System.out.format("| Setting rank of %s to species\n", node);
+                        node.rank = "species";
+                    }
+                else if (node.name.contains(" subsp.") || node.name.contains(" subsp ")) {
+                    System.out.format("| Setting rank of %s to subspecies\n", node);
+                    node.rank = "subspecies";
+                }
+                else if (node.name.contains(" var.")) {
+                    System.out.format("| Setting rank of %s to variety\n", node);
+                    node.rank = "variety";
+                }
+            }
+    }
+
 	public void dumpNodes(Iterable<Taxon> nodes, String outprefix, String sep) throws IOException {
 		PrintStream out = Taxonomy.openw(outprefix + "taxonomy.tsv");
 
@@ -1413,6 +1432,11 @@ public abstract class Taxonomy implements Iterable<Taxon> {
         if (node.name != null
             && node.name.equals("Ephedra gerardiana"))
             System.out.format("* %s hidden %s -> %s\n", node, before, node.isHidden());
+
+		if (node.rank != null && node.children != null && node.rank.equals("species"))
+			for (Taxon child : node.children)
+                child.inferredFlags |= Taxonomy.INFRASPECIFIC;
+
 		if (node.children != null) {
 			int bequest = inferredFlags | node.properFlags;		// What the children inherit
 			for (Taxon child : node.children)
@@ -1427,13 +1451,13 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	// 3. Propagate EXTINCT (inferred) upwards.
 
 	static void analyzeBarren(Taxon node) {
-		boolean infraspecific = false;
+		boolean specific = false;
 		boolean barren = true;      // No species?
 		if (node.rank != null) {
 			Integer rank = ranks.get(node.rank);
 			if (rank != null) {
 				if (rank == SPECIES_RANK)
-					infraspecific = true;
+					specific = true;
 				if (rank >= SPECIES_RANK)
 					barren = false;
 			}
@@ -1444,18 +1468,19 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		if (node.children != null) {
 			boolean allextinct = true;	   // Any descendant is extant?
 			for (Taxon child : node.children) {
-				if (infraspecific)
-					child.inferredFlags |= Taxonomy.INFRASPECIFIC;
-				else
-					child.inferredFlags &= ~Taxonomy.INFRASPECIFIC;
+                if (false)
+                    if (specific)
+                        child.properFlags |= Taxonomy.INFRASPECIFIC;
+                    else
+                        child.properFlags &= ~Taxonomy.INFRASPECIFIC;
 				analyzeBarren(child);
 				if ((child.inferredFlags & Taxonomy.BARREN) == 0) barren = false;
 				if ((child.inferredFlags & Taxonomy.EXTINCT) == 0) allextinct = false;
 			}
 			if (allextinct) {
 				node.inferredFlags |= EXTINCT;
-				if (node.sourceIds != null && node.sourceIds.get(0).prefix.equals("ncbi"))
-					;//System.out.format("| Induced extinct: %s\n", node);
+				//if (node.sourceIds != null && node.sourceIds.get(0).prefix.equals("ncbi"))
+					//;//System.out.format("| Induced extinct: %s\n", node);
 			}
 			// We could do something similar for all of the hidden-type flags
 		}

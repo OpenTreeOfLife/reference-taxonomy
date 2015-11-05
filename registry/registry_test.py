@@ -27,6 +27,26 @@ def show_unmapped(tax, r, corr):
                 i = i + 1
     print i, 'unmapped'
 
+def compare_correspondences_2(corr1, corr2):
+    unique = 0
+    unsatisfiable = 0
+    ambiguous = 0
+    err = 0
+    for node1 in corr1.taxonomy:
+        if (not node1.isHidden()) and (not Registry.isTerminalTaxon(node1)):
+            reg1 = corr1.assignedRegistration(node1)
+            nodes = corr2.findTaxa(reg1)
+            if nodes == None:
+                err += 1
+            elif len(nodes) == 0:
+                unsatisfiable += 1
+            elif len(nodes) == 1:
+                unique += 1
+            else:
+                ambiguous += 1
+    return [unique, ambiguous, unsatisfiable, err]
+
+
 def compare_correspondences(corr1, corr2):
     for node1 in corr1.taxonomy:
         if (not node1.isHidden()) and (not Registry.isTerminalTaxon(node1)):
@@ -64,13 +84,15 @@ def compare_correspondences(corr1, corr2):
                     print 'cannot find new node corresponding to %s=%s', node1, reg1
 
 
-def do_taxonomy(tax1, r):
+def do_taxonomy(tax1, r, n_inclusions):
     print tax1.getTag(), 'taxa:', tax1.count()
+    print n_inclusions, 'inclusions per split'
     tax1.cleanRanks()
     tax1.inferFlags()
 
     # 
     corr = Correspondence(r, tax1)
+    corr.setNumberOfInclusions(n_inclusions)
     print '--- Assigning registrations to nodes in', tax1
     corr.resolve()
 
@@ -89,7 +111,7 @@ def do_taxonomy(tax1, r):
     return newcorr
 
 
-def run_tests(treenames):
+def run_tests(treenames, n_inclusions=2):
 
     r = Registry()
 
@@ -98,14 +120,17 @@ def run_tests(treenames):
 
     for t1 in treenames:
 
-        tree = Taxonomy.getTaxonomy(t1, t1.split('/')[-2])
-        last = do_taxonomy(tree, r)
-        if first == None:
-            first = last
+        if t1.isdigit():
+            n_inclusions = int(t1)
+        else:
+            tree = Taxonomy.getTaxonomy(t1, t1.split('/')[-2])
+            last = do_taxonomy(tree, r, n_inclusions)
+            if first == None:
+                first = last
 
-    # compare_correspondences(first, last)
+    return compare_correspondences_2(first, last)
 
-    r.dump('registry.csv')
+    # r.dump('registry.csv')
 
 
 # You can run the test on any pair of taxonomies.
@@ -142,7 +167,14 @@ def run_tests(treenames):
 #   ott28.select(ott28.taxon('Chloroplastida')).dump('plants-ott28/')
 #   synth3.select(synth3.taxon('Chloroplastida')).dump('plants-synth3/')
 
-if len(sys.argv) > 1:
-    run_tests(sys.argv[1:])
-else:
-    run_tests(['plants-ott28/', 'plants-synth3/'])
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        report = run_tests(sys.argv[1:], 2)
+    else:
+        report = run_tests(['plants-ott28/', 'plants-synth3/'], 2)
+    print "--- Resolution report for %s -> %s" % (first.taxonomy.getTag(), last.taxonomy.getTag())
+    print "  Unique:        %s" % report[0]
+    print "  Ambiguous:     %s" % report[1]
+    print "  Unsatisfiable: %s" % report[2]
+    print "  Sample error:  %s" % report[3]
+

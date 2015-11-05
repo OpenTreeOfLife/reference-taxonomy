@@ -31,10 +31,10 @@ import java.util.Comparator;
 public class Correspondence {
 
     // Parameters
-    static final int nsamples = 2;
-    static final int nexclusions = nsamples;
+    int nsamples = 2;
+    int nexclusions = nsamples - 1;
 
-    enum Status { UNSATISFIABLE, UNRESOLVED, PATH, AMBIGUOUS, OTTIDS_DIFFER, QIDS_DIFFER, NO_CANDIDATES };
+    enum Status { UNSATISFIABLE, UNRESOLVED_SAMPLE, PATH };
     enum Clue { AMBIGUITY, PATH };
 
     // State
@@ -51,6 +51,11 @@ public class Correspondence {
     public Correspondence(Registry registry, Taxonomy taxonomy) {
         this.registry = registry;
         this.taxonomy = taxonomy;
+    }
+
+    public void setNumberOfInclusions(int n) {
+        nsamples = n;
+        nexclusions = n - 1;
     }
 
     void setClue(List<Taxon> taxa, Clue clue) {
@@ -79,29 +84,24 @@ public class Correspondence {
 
     void resolve() {
         clearEvents();
-
         for (Registration reg : registry.allRegistrations()) {
-            try {
-                List<Taxon> taxa = findByTopology(reg);
-                if (taxa != null) {
-                    if (taxa.size() == 1) {
-                        setResolution(reg, taxa.get(0));
-                        event("resolved uniquely by topology", reg, taxa.get(0));
-                    } else if (taxa.size() == 0) {
-                        event("null path; shouldn't happen", reg);
-                    } else {
-                        paths.put(reg, taxa);
-                        setClue(taxa, Clue.PATH);
-                        statuses.put(reg, Status.PATH);
-                        event("registration is ambiguous along path", reg, taxa);
-                    }
-                } else {
-                    event("topological constraints are inconsistent", reg);
+            List<Taxon> taxa = findNodes(reg);
+            if (taxa != null) {
+                if (taxa.size() == 1) {
+                    setResolution(reg, taxa.get(0));
+                    event("resolved uniquely by topology", reg, taxa.get(0));
+                } else if (taxa.size() == 0) {
                     statuses.put(reg, Status.UNSATISFIABLE);
+                    event("topological constraints are inconsistent", reg);
+                } else {
+                    paths.put(reg, taxa);
+                    setClue(taxa, Clue.PATH);
+                    statuses.put(reg, Status.PATH);
+                    event("registration is ambiguous along path", reg, taxa);
                 }
-            } catch (SampleFailure fail) {
-                // interesting("resolution failed due to unresolved sample(s)", reg, fail.terminal);
-                statuses.put(reg, Status.UNRESOLVED);
+            } else {
+                // interesting("resolution failed due to unresolved sample(s)", reg);
+                statuses.put(reg, Status.UNRESOLVED_SAMPLE);
             }
         }
         reportEvents();
@@ -112,14 +112,15 @@ public class Correspondence {
     // registration.  Return value is the set of nodes from m
     // (inclusive) to a (exclusive), where m is the mrca of the
     // inclusions and a is the mrca of m with the 'nearest' exclusion.
-    // Return value of null means that no node simultaneously
+    // Return value of empty list means that no node simultaneously
     // satisfies all the constraints.
+    // Returns null if a sample needed to calculate the answer failed
+    // to resolve.
 
-    List<Taxon> findByTopology(Registration reg)
-    throws SampleFailure
-    {
+    public List<Taxon> findNodes(Registration reg) {
         Taxon m = null;
         Terminal loser = null;  // resolution failure
+        List<Taxon> result = new ArrayList<Taxon>();
         for (Terminal s : reg.samples) {
             Taxon snode = resolve(s);
             if (snode != null) {
@@ -129,7 +130,7 @@ public class Correspondence {
                     m = m.mrca(snode);
                     if (m.noMrca()) {
                         interesting("different trees, no mrca - shouldn't happen", reg, m, snode);
-                        return null; // different trees, no way to satisfy
+                        return result; // different trees, no way to satisfy
                     }
                 }
             } else
@@ -154,7 +155,7 @@ public class Correspondence {
                         }
                         if (a == m)  // = a.descendsFrom(m)
                             // Inconsistent constraints!
-                            return null;
+                            return result;
                     } else
                         // Couldn't find this exclusion in tree
                         loser = s;
@@ -164,43 +165,33 @@ public class Correspondence {
         if (m == null) {
             if (loser != null) {
                 interesting("no inclusions resolved", reg, loser);
-                throw new SampleFailure(loser);
+                return null;
             }
             interesting("no inclusions - shouldn't happen", reg);
-            return null;
-        } 
-        List<Taxon> result;
-        if (a != null) {
-            // Copy the path from m to a out of the taxonomy
-            result = new ArrayList<Taxon>();
-            for (Taxon n = m; n != a; n = n.parent)
-                result.add(n);
         } else {
-            // This case should only happen for the root of the tree
-            result = new ArrayList<Taxon>();
-            Taxon n;
-            // We know m is nonnull; this was checked above
-            for (n = m; !n.isRoot(); n = n.parent)
-                result.add(n);
-            result.add(n);              // add the root
+            if (a != null) {
+                // Copy the path from m to a out of the taxonomy
+                for (Taxon n = m; n != a; n = n.parent)
+                    result.add(n);
+            } else {
+                // This case should only happen for the root of the tree
+                Taxon n;
+                // We know m is nonnull; this was checked above
+                for (n = m; !n.isRoot(); n = n.parent)
+                    result.add(n);
+                result.add(n);              // add the root
+            }
         }
         if (loser != null) {
             if (result.size() == 1) {
                 interesting("unique resolution in spite of missing sample(s)", reg, loser);
-                // throw new SampleFailure(loser);
+                // return null;
             } else {
                 interesting("path ambiguity possibly due to missing sample(s)", reg);
-                throw new SampleFailure(loser);
+                return null;
             }
         }
         return result;
-    }
-
-    class SampleFailure extends Exception {
-        Terminal terminal;
-        SampleFailure(Terminal term) {
-            terminal = term;
-        }
     }
 
     // Resolution: choose one taxon for the given registration, based
@@ -311,8 +302,10 @@ public class Correspondence {
         // with it.  Make up a new registration.
         List<Terminal> samples = new ArrayList<Terminal>();
         if (children.size() == 1) { // Monotypic
-            samples.add(Terminal.getTerminal(node));
-            event("monotypic taxon", node, node.children.get(0));
+            Terminal monotypic = Terminal.getTerminal(node);
+            monotypic.quality -= 10;
+            samples.add(monotypic);
+            event("monotypic taxon", node, monotypic);
         }
         for (int i = 0; ; ++i) {
             boolean gotOne = false;
@@ -350,8 +343,10 @@ public class Correspondence {
         Registration reg = needExclusions.get(node);
         List<Terminal> exclusions = new ArrayList<Terminal>();
         if (!node.isRoot() && node.parent.children.size() == 1) { // Monotypic parent
-            exclusions.add(Terminal.getTerminal(node.parent));
-            event("child of monotypic taxon", node, node.parent);
+            Terminal monotypic = Terminal.getTerminal(node.parent);
+            monotypic.quality -= 10;
+            exclusions.add(monotypic);
+            event("child of monotypic taxon", node, monotypic);
         }
         for (Taxon n = node; !n.isRoot(); n = n.parent) {
             if (exclusions.size() >= nexclusions) break;
@@ -377,25 +372,24 @@ public class Correspondence {
             System.out.format("No exclusions for %s <-> %s\n", node, reg);
         reg.exclusions = exclusions;
         // Sanity check
-        if (false)
-            try {
-                List<Taxon> taxa = findByTopology(reg);
-                if (taxa == null)
-                    interesting("newly created registration is inconsistent", node);
-                else if (taxa.size() <= 1)
-                    ;
-                else if (node.children.size() == 1)
-                    event("monotypic taxon", node);
-                else if (node.parent.children.size() == 1)
-                    event("child of monotypic taxon", node);
-                else {
-                    // Shoudn't happen!
-                    interesting("** newly created registration is ambiguous (shouldn't happen)", node, taxa);
-                    goryDetail(reg, taxa);
-                }
-            } catch(SampleFailure fail) {
-                interesting("newly created registration has unresolved sample", node, fail.terminal);
+        if (false) {
+            List<Taxon> taxa = findNodes(reg);
+            if (taxa == null)
+                interesting("newly created registration has unresolved sample", node);
+            else if (taxa.size() == 1)
+                ;
+            else if (taxa.size() == 0)
+                interesting("newly created registration has unresolved sample", node);
+            else if (node.children.size() == 1)
+                event("monotypic taxon", node);
+            else if (node.parent.children.size() == 1)
+                event("child of monotypic taxon", node);
+            else {
+                // Shoudn't happen!
+                interesting("** newly created registration is ambiguous (shouldn't happen)", node, taxa);
+                goryDetail(reg, taxa);
             }
+        }
     }
 
     void goryDetail(Registration reg, List<Taxon> taxa) {
@@ -565,20 +559,10 @@ public class Correspondence {
             switch(status) {
             case UNSATISFIABLE:
                 return "registration's topological constraints are unsatisfiable";
-            case UNRESOLVED:
+            case UNRESOLVED_SAMPLE:
                 return "a sample is unresolved"; // covered above
             case PATH:
-                try {
-                    return String.format("registration is a path ambiguity among %s", findByTopology(reg));
-                } catch (SampleFailure e) {
-                    return String.format("registration has an unresolved sample", e.terminal);
-                }
-            case AMBIGUOUS:
-                return "registration's metadata is ambiguous, no single best taxon";
-            case NO_CANDIDATES:
-                // a synonym in the old taxonomy matched a taxon in the new taxonomy?
-                // and then the synonym wasn't carried over?
-                return "registration has no candidate resolutions by metadata";
+                return String.format("registration is a path ambiguity among %s", findNodes(reg));
             }
         }
 

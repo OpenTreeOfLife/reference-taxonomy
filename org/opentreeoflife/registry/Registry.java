@@ -161,10 +161,13 @@ class Registration {
     }
 
     public String toString() {
-        if (this.exclusions != null) {
-            return String.format("[%s = %s ... | %s ...]", this.id, this.samples.get(0), this.exclusions.get(0));
-        } else
-            return String.format("[%s = %s ... | ]", this.id, this.samples.get(0));
+        String ii = "";
+        String ee = "";
+        if (this.samples != null && this.samples.size() > 0)
+            ii = String.format("%s ...", this.samples.get(0));
+        if (this.exclusions != null && this.exclusions.size() > 0)
+            ee = String.format("%s ...", this.exclusions.get(0));
+        return String.format("[%s = %s | %s]", this.id, ii, ee);
     }
 
 }

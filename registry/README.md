@@ -18,6 +18,11 @@ phylogenetic knowledge base.  Put another way, the purpose of the
 registry is to enable transfer of annotations from one version of a
 knowledge base to another without distortion of meaning.
 
+We consider here only registrations for taxa or clades above the
+species level, i.e. those that have children.  Ultimately we'll also
+need some kind of registry for species, but for now OTT will serve
+that purpose.
+
 ### Resolution and assignment
 
 The purpose of the registry is to assign ids to compatible nodes in
@@ -26,20 +31,20 @@ given URLs, and otherwise referenced.
 
 Ideally, for a given tree, we would have a way to assign registrations
 (or their ids) to compatible nodes in the tree, with no registration
-assigned to two different nodes.  The assignment map would be used
-when annotating a node, and a resolution map (in the opposite
-direction) would resolve a registration id assigned to a node back to
-the node again when an annotation using that id is encountered.  When
-applying an annotation to a tree different from the one against which
-it was created (such as a successor version of a taxonomy), there
-might be a node in second tree compatible with the registration id, in
-which case we can take both nodes (the one in the firstree, and the
-one in the second) to stand for the same clade.
+assigned to two different nodes.  The assignment map would be used to
+generate an id when annotating a node, and a resolution map (in the
+opposite direction) would resolve a registration id assigned to a node
+back to the node again when an annotation using that id is
+encountered.  When applying an annotation to a tree different from the
+one against which it was created (such as a successor version of a
+taxonomy), there might be a unique node in second tree compatible with
+the registration id, in which case we can take both nodes (the one in
+the firstree, and the one in the second) to stand for the same clade.
 
 An injective mapping from nodes to compatible registrations is not
 always possible.  For example, the registry may contain no
 registrations compatible with a given node, or there may be ambiguity,
-i.e. no unique compatible node for a registration.  Usually (always?
+i.e. multiple nodes compatible with a registration.  Usually (always?
 I don't know) it is possible, however, to obtain an injective mapping
 by extending the registry with new registrations for nodes that do not
 map or map ambiguously.  Ordinarily, when assigning registrations to
@@ -57,17 +62,11 @@ The registry implementation supports two operations:
   has all of its registrations, unchanged, plus additional ones as 
   needed.
 
-### Registration constraints and metadata
+### Membership constraints
 
 A registry contains information that permits determining the
-compatibility of nodes with registrations.  There are two kinds of
-compatibility information, membership constraints and metadata, and a
-registration may have either kind by itself, or both kinds.
-Membership constraints are used to resolve registrations to internal
-nodes in trees, while metadata is mainly used to resolve to terminal
-nodes.  In exceptional circumstances both kinds of information are
-used in resolution, or metadata is used to resolve to an internal
-node.
+compatibility of nodes with registrations.  
+Compatibility information consists of membership constraints.
 
 Membership constraints are specified by two sets of registrations
 (registration ids), one of *inclusions* and one of *exclusions*.
@@ -79,120 +78,56 @@ exclusion registration does not descend.  If a sample does
 not resolve to a node, then it is not determined whether the
 constraint is met.
 
-Registration metadata consists of a set of properties that a node
-*could* be observed to have.  Currently those properties are all
-whether or not the node has some particular identifier or name, so
-when you read "metadata" you can substitute "identifier" or "name",
-but this might be expanded in the future.  We cannot insist that a
-node have *all* of the properties listed in the registration, because
-(1) different trees possess different subsets of the metadata, and (2)
-some of the properties, such as the name, are unstable across taxonomy
-releases.
+A pair of such constraint sets is called a *split*.
 
 Observe that the set of nodes satisfying a set of membership
 constraints (assuming it contains at least one inclusion) will form a
 path in the tree, starting with the nearest common ancestor of the
 inclusions and going up until just below the first ancestor that contains
-an exclusion node (or up until the root of the tree, if there are no
-exclusion nodes).
+an exclusion node (or up to the root of the tree, if there are no
+exclusions).
 
 ### Resolution
 
 The purpose of the registry is to manage the assignment (node to
-registration) and resolution (registration to node) maps.  The
-resolution map is defined as follows, and then the assignment map is
-derived from it.  This design is a best effort heuristic for the
-notion of nodes in different trees standing for the same clade.
+registration) and resolution (registration to node) maps.
 
-Let T be a tree, let R be a given registration.  
+For a given tree T and a registration R, define compat(R,T) = the set
+of all nodes in T that are compatible with R.
 
-Define m(R,T) = the node N in T that is the only one that is
-metadata-compatible with R, or undefined if there is not exactly one
-such node.
-
-Define resolve(R,T) to be either a node in T, or undefined, as
-follows:
-
-* If R occurs as a sample in constraint belonging to some other registration,
-  then resolve(R,T) = m(R,T).
-* If R has no membership constraints, then
-  resolve(R,T) = m(R,T).
-* If R has membership constraints and the constraints are all satisfied by 
-  exactly one node N, then resolve(R,T) = N.
-* If R has membership constraints and no node N satisfies all of
-  them (i.e. every node fails to satisfy at least one constraint),
-  then resolve(R,T) = undefined.
-* *Recovery from unresolved sample:* If the previous conditions don't
-  apply, and one or more sample registrations used in a
-  constraint does not resolve, then resolve(R,T) = m(R,T), assuming m(R,T)
-  satisfies all constraints that *do* resolve.  (This is risky because
-  m(R,T) might fail to satisfy some constraint if it *did* resolve,
-  but without this rule we get quite a large number of resolution failures.)
-* *Recovery from path ambiguity:* If R has membership constraints and 
-  there are two or more nodes that satisfy all of R's constraints,
-  and the node m(R,T) is among those
-  nodes, then resolve(R,T) = m(R,T).  (Not clear that this is a good idea.)
-* Otherwise resolve(R,T) is undefined.
-
-Resolution by metadata is based on both
-values of attributes (such as identifier in source taxonomy, OTT id, or
-name) and on whether attributes are present or absent.  Attributes are checked in a
-priority order.  If a node and a registration both have a particular
-attribute, they are metadata-compatible if and only if that attribute
-has the same value for both.  m(R,T) is then the unique such node if there
-is one.  Otherwise, the next attribute in priority order is considered.  If no
-attribute has values for both the node and the registration, then m(R,T)
-is undefined.
-
-The procedure is heuristic, since sometimes attribute values can
-'change' and we want to allow for that.
-
-TBD: It would be a good idea for the implementation to give warnings when
-there are near misses or contradictions among the attributes.
-
-TBD: Because location within the tree (plant, animal, etc.) is such an
-important means for resolving homonyms, it might be a good idea to add
-some location information to the metadata at some point.
+For a deterministic resolution map, define resolve(R,T) to be the
+single member of compat(R,T), if compat(R,T) has cardinality 1, or
+undefined otherwise.
 
 ### Assigning registrations to nodes
 
 In addition to resolving registrations to nodes, it is also necessary
-to assign registrations to nodes.
+to assign registrations to nodes that don't have registrations that
+uniquely resolve to them.
 
 If only one registration resolves to a node, then that registration is
 assigned to the node.
 
-However, more than one registration might resolve to a node, both
-because multiple registrations in the tree may have metadata that's
-compatible with that node, and because multiple registrations may have
-membership constraints all uniquely satisfied by that node.
+However, more than one registration might resolve to a node, because
+multiple registrations may have membership constraints all uniquely
+satisfied by that node.
 
 In this case there may be no particular reason to assign one
 registration or another to the node, and that's OK.  A choice can be
-made arbitrarily.
+made arbitrarily.  (Currently the prototype picks the most recently
+created registration.)
 
 ### Creating new registrations
 
 If a node is not assigned any registration, because no registration
-has metadata uniquely selecting that node or because of the node is
-one among several that satsify all of a registration's constraints,
-then it is (or should be) always possible to create a new registration
-that resolves to that node.
+resolves uniquely to that node, then it is (or should be) always
+possible to create a new registration that resolves to that node.
 
-If the node is terminal, then it is likely that there is associated
-metadata that distinguishes that node from all other nodes in the
-tree.  E.g. if the tree is provided in Newick form, then one would
-hope that all the tip labels are distinct.  If the node metadata
-reflects all information present in the Newick tip, then the node will
-be distinguishable.
-
-If the node is internal, then membership constraints are generated
-that select that node and no others.
-Descendants from each of at least two children are chosen as inclusions,
-and descendants from at least one of the node's siblings (or possibly
-'aunts and uncles' and so on) are chosen as exclusions.  The resulting
-registration will, by construction, resolve to that node.  (The node's
-metadata, if there is any, becomes the metadata in the registration.)
+Membership constraints are generated that select that node and no
+others.  Descendants from each of at least two children are chosen as
+inclusions, and one or more samples not descending from the node are
+chosen as exclusions.  The resulting registration will, by
+construction, resolve to that node.  
 
 When choosing the inclusions and exclusions, nodes are preferred that
 are more stable, i.e. more likely to occur in other trees (including
@@ -206,42 +141,32 @@ sources are preferred to those with a lower number.
 
 ### Versioning (not yet implemented)
 
-Sometimes a registration will resolve in tree A but not in tree B, but
+Sometimes a registration will resolve in tree A but not uniquely in tree B, but
 there is a registration to a node in tree B that provides a good
 alternative.  It is useful to record the connection between the two
 registrations, with the new registration being a 'new version' of the
 previous one.
 
-For example, suppose the failure to resolve is due to a path ambiguity
-(multiple nodes satisfying the registration's constraints).  If the
-registration resolves to one of these nodes using metadata rather than
-membership constraints, then the registration assigned to that node
-is a 'new version' of the ambiguous registration.  (See below under
-'polytomy refinement'.)
-
-(Are there other cases?)
+Identification of this correspondence cannot be done using only
+information in the registry; it is contingent on additional
+information maintained by the procedure that creates the new tree.
 
 ### Monotypic taxa
 
 If node A has B as a child and no other nodes, then A and B cannot be
-distinguished by membership constraints as formulated above.  They
-must therefore be distinguished, if at all, using metadata.  This is
-one of the rare cases where the metadata for an internal node matters.
+distinguished by membership constraints as formulated above.
 
-(A slightly different formulation of this appropach is to create a
-'phantom' second chid of a monotypic node representing a hypothetical
-taxon that is a member of the monotypic taxon but not of the child
-taxon.  The parent's registration would be have inclusion of the
-phantom as a constraint, and the child's registration would have
-exclusion of the phantom as a constraint.  It's not obvious that this
-is better, although it seems to have the advantage of not depending on
-the child node's metadata.)
+In this case we employ a kludge.  We posit a 'phantom' second child of
+a monotypic node representing a hypothetical taxon that is a member of
+the monotypic taxon but not of the child taxon.  The parent's
+registration has inclusion of the phantom as a constraint, and the
+child's registration has exclusion of the phantom as a constraint.
 
 ### Implementation note
 
-Currently membership constraints consist of at most two inclusions and
-at most one exclusion.  The number of inclusions can be increased easily;
-increasing the number of exclusions will require additional coding.
+The size of the membership constraint set is an implementation
+parameter.  One may vary it to vary the tradeoff between
+inconsistency, ambiguity, and uniqueness.
 
 ### Test framework
 
@@ -315,6 +240,8 @@ experiment is of this form.
 
 ### Taxonomy compared to synthetic tree
 
+*This section needs to be rewritten in light of new tests experiments.py*
+
 One can also apply the simple test framework to a taxonomy and a
 synthetic tree that is based on that taxonomy.  When we apply it to the plants
 branch of OTT 2.9 and the plants branch of the draft 4 synthetic tree,
@@ -349,16 +276,8 @@ number of samples per taxon.  TBD.)
 more specific registrations (8,689 named, 3,010 unnamed or
 synthesis-only) are created to separate path ambiguities.  The node
 that synthesis has identified as having the same membership as the
-taxon (i.e. the metadata match for the ambiguous registration) should
-be recorded as the replacement for the ambiguous one (not yet
-implemented).
-
-If the "Recovery from path ambiguity" clause from the resolution
-procedure is disabled (see above), a new registration for the
-metadata-match taxon is created and the registration id assigned to
-the node will appear to have "changed" (although the old id will still
-resolve to that node).  If the clause is enabled, resolution will be
-to the existing node, assuming a metadata match.
+taxon should be recorded as the replacement for the ambiguous one (not
+yet implemented).
 
 Interesting: 55 registrations resolve to nodes in the synthetic tree
 that do not correspond to taxonomy (in the sense of compatible
@@ -387,9 +306,8 @@ has no children.  There will be a registration for A that has
 membership constraints, but this registration will be useless in the
 new version - the registrations given in the constraints will not
 resolve (assuming the children have been deleted rather than moved).
-It is highly desirable that the registration, which contains the
-appropriate metadata, resolve to the new node A nonetheless.  This
-contingency is supported by the resolution rules given above.
+It is highly desirable that the registration resolve to the new node A
+nonetheless.
 
 Suppose that a node A has no children in a tree, but node A has
 children in a new version of the tree.  We will have a registration
@@ -404,8 +322,7 @@ Suppose a tree contains the arrangement (using Newick notation) (A,B,C)E,
 i.e. it has a node E with direct children A, B, C.  The tree is later
 'revised' to have ((A,B)D,C)E.  What registrations are assigned to
 nodes D and E in the new version?  This depends on which samples were
-chosen when E was originally registered, and on what metadata is
-available.
+chosen when E was originally registered.
 
 Suppose E is originally assigned registration R.  If at least one
 inclusion descends from A or B and one descends from C, then the new E
@@ -414,10 +331,7 @@ node, so will be assigned that registration.
 
 On the other hand, if all the inclusions for R descend from A and B, then
 both D and E in the new tree will satisfy R's membership constraints.
-If R and the new E have metadata, and the new E is a better metadata
-match to R than D, then E will be assigned R and D will get a new
-registration (one with a descendant of C as an exclusion).  But if
-metadata is not helpful, R will be unrecoverably ambiguous and both D
+R will be unrecoverably ambiguous and both D
 and E will get new registrations.  The new registration for D will
 have inclusions descended from A and B and an exclusion descended from C,
 while the new registration for E will have one or more inclusion
@@ -530,44 +444,21 @@ etc.  Then
 Sample choice has a big impact on identifier stability.
 Here are some thoughts aimed at increasing stability:
 
-* There should be no membership constraints for species
-  (i.e. we should not use the presence or absence of subspecies as
-  membership constraints).
 * Filter out 'hidden' nodes from sample sets when the taxon being
   registered is itself not hidden.  (This is to help make sure that
   registrations can be shared between taxonomy and synthetic tree.)
 * In selecting samples, prefer registrations that are already in use
   as samples in other registrations.
 
-Ideas relating to metadata
+Changes in nonterminal / terminal status
 
-* Ideally OTT ids should not be used as metadata (i.e. for determining
-  identity) because they are hard to understand.  But currently this
-  is not possible.  Measure how often OTT id is redundant, or
-  conflicting, with other metadata.
-* The registration id should be set to the originating node's OTT id
-  when possible (assuming the taxonomy is one that uses OTT ids as
-  node identifiers).
-* Maybe registrations should record the creation or access date for
-  any source taxonomy record?
+Sometimes a node's children will all be deleted, and it will go from
+being nonterminal to terminal.  This needs to be handled somehow.
 
-Registry revision
+And vice versa, children can be added to a formerly nonterminal node,
+as when a species are added to genus with no species.
 
-* Think about how to "revise" registrations by adding metadata.  (This
-  may be the only way to phase out reliance on smasher and OTT ids.)
-  This could be done by having multiple registrations that are related
-  to one another bidirectionally.  The relationship need not be
-  surfaced in the identifier syntax, but it could be (17.4, 17.5,
-  etc.).  This feature could be used, for example, when a source
-  taxonomy changes the identifier associated with a taxon, or when a
-  taxon from a lower priority source is added to a higher priority
-  source.
-* Similarly, merge events (when it is discovered that two identifiers
-  refer to the same taxon) could be recorded as links between
-  registrations.
-* Instead of using metadata to choose between nodes on a path, create
-  a new specific constraint-based registration, and link it to the 
-  previous one.
+
 
 Scholarship
 

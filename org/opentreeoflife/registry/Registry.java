@@ -1,9 +1,6 @@
 /*
   TBD:
-  - treat infraspecific taxa specially
-  - figure out what to do with unresolvable samples/exclusions
-  - deal with root of tree
-  - do 'best metadata match' in chooseTaxon as well?
+    - fix exclusion selection logic (to be more 'fair')
 */
 
 
@@ -116,6 +113,7 @@ public class Registry {
 }
 
 // Registration record for an internal node
+// Consider renaming this to 'split'
 
 class Registration {
 

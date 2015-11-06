@@ -1,0 +1,387 @@
+
+
+<p>These are some notes intended to help understand the proposal to
+create identifiers defined according to a registry that associates
+them with "splits" or inclusion/exclusion set pairs.</p>
+
+<h2>Node identifiers based on sampled inclusion/exclusion</h2>
+
+<p>Consider the following tree:</p>
+
+<svg width="360" height="138">
+<path d="M 25 54 L 25 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="25" y="12" width="50" height="20" text-anchor="middle">a</text>
+<path d="M 75 54 L 75 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="75" y="12" width="50" height="20" text-anchor="middle">b</text>
+<path d="M 125 54 L 125 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="125" y="12" width="50" height="20" text-anchor="middle">c</text>
+<path d="M 175 54 L 175 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="175" y="12" width="50" height="20" text-anchor="middle">d</text>
+<path d="M 225 54 L 225 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="225" y="12" width="50" height="20" text-anchor="middle">e</text>
+<path d="M 23.5 54 L 226.5 54" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 125 87 L 125 54" stroke="black" stroke-width="3.0" fill="none" />
+<text x="135" y="74" width="50" height="20" text-anchor="middle">m</text>
+<path d="M 275 54 L 275 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="275" y="12" width="50" height="20" text-anchor="middle">x</text>
+<path d="M 325 54 L 325 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="325" y="12" width="50" height="20" text-anchor="middle">y</text>
+<path d="M 273.5 54 L 326.5 54" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 300 87 L 300 54" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 123.5 87 L 301.5 87" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 212 120 L 212 87" stroke="black" stroke-width="3.0" fill="none" />
+</svg>
+
+<p>Suppose the system generates an identifier - say, 327 -
+meant to be used to refer to node m.  Suppose id 327 is registered with
+inclusions c, d, e and exclusions x and y (i.e. the "split" {c d e | x
+y}).</p>
+
+<p>Below we consider a series of possible "changes" to the tree,
+i.e. trees that are variants on the original one given above.  These
+might be made as a result of incorporating new taxonomic or
+phylogenetic information.  After the change, we ask whether id 327 is
+effective at determining a node in the changed tree that we would want to consider
+the "same" as m in any sense.  </p>
+
+<p>All of the hazards listed below are inherent in the sampling
+approach to internal node identifier definition.</p>
+
+
+<h4>Success (unique resolution in spite of "change")</h4>
+
+<svg width="360" height="238">
+<path d="M 25 140 L 25 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="25" y="12" width="50" height="20" text-anchor="middle">a</text>
+<path d="M 75 60 L 75 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="75" y="12" width="50" height="20" text-anchor="middle">b</text>
+<path d="M 125 60 L 125 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="125" y="12" width="50" height="20" text-anchor="middle">c</text>
+<path d="M 73.5 60 L 126.5 60" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 100 100 L 100 60" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 175 100 L 175 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="175" y="12" width="50" height="20" text-anchor="middle">d</text>
+<path d="M 98.5 100 L 176.5 100" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 137 140 L 137 100" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 225 140 L 225 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="225" y="12" width="50" height="20" text-anchor="middle">e</text>
+<path d="M 23.5 140 L 226.5 140" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 125 180 L 125 140" stroke="black" stroke-width="3.0" fill="none" />
+<text x="135" y="160" width="50" height="20" text-anchor="middle">m</text>
+<path d="M 275 100 L 275 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="275" y="12" width="50" height="20" text-anchor="middle">x</text>
+<path d="M 325 100 L 325 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="325" y="12" width="50" height="20" text-anchor="middle">y</text>
+<path d="M 273.5 100 L 326.5 100" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 300 180 L 300 100" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 123.5 180 L 301.5 180" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 212 220 L 212 180" stroke="black" stroke-width="3.0" fill="none" />
+</svg>
+
+<p> In the modified tree, where the polytomy has been refined, we recover m from identifier 327 because m is the only node from which all the inclusions descend and none of the exclusions descend.</p>
+
+
+<h4>False positive</h4>
+
+Consider a change which moves b out of the a-e polytomy:</p>
+
+<svg width="360" height="138">
+<path d="M 25 54 L 25 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="25" y="12" width="50" height="20" text-anchor="middle">a</text>
+<path d="M 75 54 L 75 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="75" y="12" width="50" height="20" text-anchor="middle">c</text>
+<path d="M 125 54 L 125 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="125" y="12" width="50" height="20" text-anchor="middle">d</text>
+<path d="M 175 54 L 175 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="175" y="12" width="50" height="20" text-anchor="middle">e</text>
+<path d="M 23.5 54 L 176.5 54" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 100 87 L 100 54" stroke="black" stroke-width="3.0" fill="none" />
+<text x="110" y="74" width="50" height="20" text-anchor="middle">m1</text>
+<path d="M 225 54 L 225 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="225" y="12" width="50" height="20" text-anchor="middle">x</text>
+<path d="M 275 54 L 275 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="275" y="12" width="50" height="20" text-anchor="middle">b</text>
+<path d="M 325 54 L 325 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="325" y="12" width="50" height="20" text-anchor="middle">y</text>
+<path d="M 223.5 54 L 326.5 54" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 275 87 L 275 54" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 98.5 87 L 276.5 87" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 187 120 L 187 87" stroke="black" stroke-width="3.0" fill="none" />
+<text x="197" y="107" width="50" height="20" text-anchor="middle">m2</text>
+</svg>
+
+<p>It may be common knowledge that b is an m, that having b as a
+member is essential to m-ness.  Perhaps b is m's "type".  However, our
+automated system does not know this, and in creating the identifier
+327 didn't record b among the inclusion samples.  Identifier 327
+resolves uniquely in the changed tree to the node here labeled 'm1', even
+though b does not descend from it.  The node labeled 'm2' is probably the one
+that should get the label 'm', if b has to descend from it.</p>
+
+
+<h4>Ambiguous resolution</h4>
+
+<p>If the polytomy were to be refined as follows:</p>
+
+<svg width="360" height="188">
+<path d="M 25 96 L 25 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="25" y="12" width="50" height="20" text-anchor="middle">a</text>
+<path d="M 75 58 L 75 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="75" y="12" width="50" height="20" text-anchor="middle">b</text>
+<path d="M 125 58 L 125 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="125" y="12" width="50" height="20" text-anchor="middle">c</text>
+<path d="M 175 58 L 175 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="175" y="12" width="50" height="20" text-anchor="middle">d</text>
+<path d="M 225 58 L 225 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="225" y="12" width="50" height="20" text-anchor="middle">e</text>
+<path d="M 73.5 58 L 226.5 58" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 150 96 L 150 58" stroke="black" stroke-width="3.0" fill="none" />
+<text x="160" y="78" width="50" height="20" text-anchor="middle">m?</text>
+<path d="M 23.5 96 L 151.5 96" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 87 133 L 87 96" stroke="black" stroke-width="3.0" fill="none" />
+<text x="97" y="116" width="50" height="20" text-anchor="middle">m?</text>
+<path d="M 275 77 L 275 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="275" y="12" width="50" height="20" text-anchor="middle">x</text>
+<path d="M 325 77 L 325 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="325" y="12" width="50" height="20" text-anchor="middle">y</text>
+<path d="M 273.5 77 L 326.5 77" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 300 133 L 300 77" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 85.5 133 L 301.5 133" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 193 170 L 193 133" stroke="black" stroke-width="3.0" fill="none" />
+</svg>
+
+<p> then id 327 would not resolve unambiguously to m, because 
+two nodes are compatible with the split (one is the MRCA of the inclusions, and the other is the one labeled 'm').
+There is no way to tell which would match the intentions of whoever decided to use the identifier in the first place.</p>
+
+<p>(There could be other information accompanying the original reference 327, however, 
+such as a name, and maybe the name could be used to decide which node is meant.)</p>
+
+
+<h4>No resolution</h4>
+
+<p>On the other hand, the change might tell us
+that x is "actually" inside of m, not outside it.  (This might happen if
+node m is supposed to be an apomorphy-based clade and there had been
+an earlier error implying that x did not possess the apomorphy when it
+did.)</p>
+
+<svg width="360" height="138">
+<path d="M 25 54 L 25 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="25" y="12" width="50" height="20" text-anchor="middle">a</text>
+<path d="M 75 54 L 75 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="75" y="12" width="50" height="20" text-anchor="middle">b</text>
+<path d="M 125 54 L 125 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="125" y="12" width="50" height="20" text-anchor="middle">c</text>
+<path d="M 175 54 L 175 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="175" y="12" width="50" height="20" text-anchor="middle">x</text>
+<path d="M 225 54 L 225 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="225" y="12" width="50" height="20" text-anchor="middle">d</text>
+<path d="M 275 54 L 275 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="275" y="12" width="50" height="20" text-anchor="middle">e</text>
+<path d="M 23.5 54 L 276.5 54" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 150 87 L 150 54" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 325 87 L 325 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="325" y="12" width="50" height="20" text-anchor="middle">y</text>
+<path d="M 148.5 87 L 326.5 87" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 237 120 L 237 87" stroke="black" stroke-width="3.0" fill="none" />
+</svg>
+
+<p>Now there are no nodes in the tree compatible with the 327 split, i.e.
+every node from which the inclusions all descend also has at least one of the exclusions descending from it.</p>
+
+<p>(It is of course easy to find a nearby node that might serve pretty well
+(for navigation purposes at least); e.g. one could use the MRCA of the inclusions.)</p>
+
+<p>It should be clear that a problem with cross-tree node identifiers is that
+it's not clear until one wants to use an identifier what meaning one
+wants to give it.  At least with this approach one can say exactly
+what an identifier means both inferentially and operationally: it
+means a clade containing the inclusions and not containing the
+exclusions.  If the inclusion and exclusion sets are made apparent to
+users, and expectations are set correctly, this should be a pretty
+strong system, and perhaps not worse than any other.
+
+
+<h4>Taxon relocation</h4>
+
+<p>A taxon might "move" out of clade m.  If the changed tree doesn't include one of the non-samples, e.g., nothing much changes; we still get unique resolution.  This might happen either due to fixing a clerical error, i.e. when its placement in m was just a mistake.  It could also be due to scientific revision (replacing an earlier hypothesis with a newer, better one).</p>
+
+<svg width="360" height="188">
+<path d="M 25 77 L 25 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="25" y="12" width="50" height="20" text-anchor="middle">b</text>
+<path d="M 75 77 L 75 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="75" y="12" width="50" height="20" text-anchor="middle">c</text>
+<path d="M 125 77 L 125 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="125" y="12" width="50" height="20" text-anchor="middle">d</text>
+<path d="M 175 77 L 175 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="175" y="12" width="50" height="20" text-anchor="middle">e</text>
+<path d="M 23.5 77 L 176.5 77" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 100 133 L 100 77" stroke="black" stroke-width="3.0" fill="none" />
+<text x="110" y="97" width="50" height="20" text-anchor="middle">m</text>
+<path d="M 225 96 L 225 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="225" y="12" width="50" height="20" text-anchor="middle">a</text>
+<path d="M 275 58 L 275 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="275" y="12" width="50" height="20" text-anchor="middle">x</text>
+<path d="M 325 58 L 325 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="325" y="12" width="50" height="20" text-anchor="middle">y</text>
+<path d="M 273.5 58 L 326.5 58" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 300 96 L 300 58" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 223.5 96 L 301.5 96" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 262 133 L 262 96" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 98.5 133 L 263.5 133" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 181 170 L 181 133" stroke="black" stroke-width="3.0" fill="none" />
+</svg>
+
+<p>A taxon could also be "deleted"; the situation is similar.</p>
+
+
+<h4>Loss of a sample</h4>
+
+<p>Often we can lose one or more
+samples without forfeiting unique resolution.</p>
+
+<svg width="260" height="138">
+<path d="M 25 54 L 25 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="25" y="12" width="50" height="20" text-anchor="middle">a</text>
+<path d="M 75 54 L 75 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="75" y="12" width="50" height="20" text-anchor="middle">b</text>
+<path d="M 125 54 L 125 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="125" y="12" width="50" height="20" text-anchor="middle">d</text>
+<path d="M 175 54 L 175 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="175" y="12" width="50" height="20" text-anchor="middle">e</text>
+<path d="M 23.5 54 L 176.5 54" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 100 87 L 100 54" stroke="black" stroke-width="3.0" fill="none" />
+<text x="110" y="74" width="50" height="20" text-anchor="middle">m</text>
+<path d="M 225 87 L 225 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="225" y="12" width="50" height="20" text-anchor="middle">y</text>
+<path d="M 98.5 87 L 226.5 87" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 162 120 L 162 87" stroke="black" stroke-width="3.0" fill="none" />
+</svg>
+
+<p>Sample loss can also create ambiguity.  If all inclusion samples are
+lost, all bets are off.</p>
+
+
+<h4>Gaining new taxa</h4>
+
+<p>Often the addition of a taxon will make no difference, but a new
+taxon can create an ambiguity for an identifier when it's inserted above the node the identifier originally resolved to:</p>
+
+<svg width="410" height="188">
+<path d="M 25 58 L 25 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="25" y="12" width="50" height="20" text-anchor="middle">a</text>
+<path d="M 75 58 L 75 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="75" y="12" width="50" height="20" text-anchor="middle">b</text>
+<path d="M 125 58 L 125 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="125" y="12" width="50" height="20" text-anchor="middle">c</text>
+<path d="M 175 58 L 175 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="175" y="12" width="50" height="20" text-anchor="middle">d</text>
+<path d="M 225 58 L 225 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="225" y="12" width="50" height="20" text-anchor="middle">e</text>
+<path d="M 23.5 58 L 226.5 58" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 125 96 L 125 58" stroke="black" stroke-width="3.0" fill="none" />
+<text x="135" y="78" width="50" height="20" text-anchor="middle">m?</text>
+<path d="M 275 96 L 275 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="275" y="12" width="50" height="20" text-anchor="middle">z</text>
+<path d="M 123.5 96 L 276.5 96" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 200 133 L 200 96" stroke="black" stroke-width="3.0" fill="none" />
+<text x="210" y="116" width="50" height="20" text-anchor="middle">m?</text>
+<path d="M 325 77 L 325 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="325" y="12" width="50" height="20" text-anchor="middle">x</text>
+<path d="M 375 77 L 375 20" stroke="black" stroke-width="3.0" fill="none" />
+<text x="375" y="12" width="50" height="20" text-anchor="middle">y</text>
+<path d="M 323.5 77 L 376.5 77" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 350 133 L 350 77" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 198.5 133 L 351.5 133" stroke="black" stroke-width="3.0" fill="none" />
+<path d="M 275 170 L 275 133" stroke="black" stroke-width="3.0" fill="none" />
+</svg>
+
+<p></p>
+
+
+<h2>Discussion</h2>
+
+<h3>Identifier succession</h3>
+
+<p>When resolving an ambiguity, it may be useful to create a new
+identifier for each candidate node.  Then we can use the new
+identifiers to refer unambiguously to those nodes, and 'retire' the
+original identifier.</p>
+
+<p>When creating a new identifier from an old one, it may be useful
+for the inclusion set of the new id be a superset of the inclusion set
+of the ambiguous id, or the same as it, and similarly for the exclusion sets.</p>
+
+<p>When this is done, it would make sense to record the fact that id2
+derives from id1, since this might come in handy (e.g. when searching
+an annotation database).</p>
+
+<p>If there is a way to figure out which of the new identifiers is the
+proper "heir" to id1 in a new tree, then one might say that the "heir"
+id2 is a new "version" of id1.  But there doesn't seem to be any good
+way to designate an "heir", since such a relationship would be
+dependent on which pair of trees one was talking about.  So it's not
+clear (to me) how useful or coherent this idea is (even though I had
+championed it earlier).</p>
+
+<p>So although we had talked about versioning, I'm not sure now that
+we need it, and if we don't need it, we don't need to figure out how
+to make it make sense.</p>
+
+<h3>Names</h3>
+
+<p>We currently have procedures for assigning names (labels) to
+internal nodes.  The names come from the source taxonomies.</p>
+
+<p>There is no need for the id registry to get involved with names
+associated with identifiers, since they are not needed for identifier
+assignment or resolution, and the names can be assigned independently
+by the taxonomy manager (or whatever process it is that generates the
+tree).</p>
+
+<p>We could store one or more names in the table that defines the
+identifiers, but as these change over time this would only be for
+debugging purposes.</p>
+
+<p>Since name assignment and identifier assignment are orthogonal, it
+will frequently be the case that the "same" node as judged by name
+and/or metadata will have different ids in two trees (either because
+membership changes or because of an ambiguity), and that the "same"
+node as judged by id will have different names in two trees (usually
+because of taxonomic information updates).</p>
+
+<p>E.g. the genus <i>Anolis</i> is subject to lumping and splitting.
+After each lumping or splitting event, one can expect the id
+associated with the name <i>Anolis</i> to change.  The different ids
+will refer variously to larger or smaller groups of species.  </p>
+
+<p>Similarly it might be discovered from identical identifier
+assignment that two names (e.g. from older and newer versions of a
+tree) name the same group, even though no there was no synonymy stated
+in the source taxonomies.</p>
+
+
+<h3>Assigning identifiers to nodes in trees</h3>
+
+<p>Both the taxonomy manager and the synthetic tree pipeline create
+internal nodes with attached metadata.  The registry manager is
+perfectly capable of assigning identifiers to all internal nodes,
+without appeal to any of the metadata.</p>
+
+<p>These identifiers can then be used in forming URLs, placed in data
+structures, and so on, and later resolved to nodes in the same tree or
+a different tree, by looking up the samples and performing MRCA
+operations.  As seen above, most of the time there will be a unique
+node in the tree for the identifier, but sometimes there will be more
+than one, or zero.  These situations can be handled in a
+discrimination UI, or at the API level, exceptions can be raised,
+flags can control what happens in the exceptional cases, etc.</p>
+
+<p>Another boundary case worth noting is that two different
+identifiers might resolve uniquely to the same node.  (And they might
+resolve ambiguously in another tree, or to different nodes in yet
+another.)  These aliases shouldn't matter for the purpose to which
+these identifiers are put, which is referring to nodes.</p>
+
+

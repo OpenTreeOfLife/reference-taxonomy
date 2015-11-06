@@ -1,11 +1,11 @@
 
+<h2>Node identifiers based on sampled inclusion/exclusion</h2>
+
 <p>These are some notes intended to help understand the proposal to
 create a system of node identifiers that are defined according to
 "splits," or inclusion/exclusion set pairs.</p>
 
 <p>The proposal itself is <a href="../README.md">here</a>.</p>
-
-<h2>Node identifiers based on sampled inclusion/exclusion</h2>
 
 <p>Consider the following tree:</p>
 
@@ -16,7 +16,7 @@ meant to be used to refer to node m.  Suppose id 327 is registered with
 inclusions c, d, e and exclusions x and y (i.e. the "split" {c d e | x
 y}).</p>
 
-<p>Below we consider a series of possible "changes" to the tree,
+<p>Below we consider a series of possible "changes" to this tree,
 i.e. trees that are variants on the original one given above.  These
 might be made as a result of incorporating new taxonomic or
 phylogenetic information.  After the change, we ask whether id 327 is
@@ -29,6 +29,9 @@ approach to internal node identifier definition.</p>
 
 <h4>Success (unique resolution in spite of "change")</h4>
 
+<p>We hope that the most common event will be the addition
+  of consistent phylogenetic information, also called 'polytomy refinement'.  For example:</p>
+
 <img src="http://files.opentreeoflife.org/registry-svg/unique-resolution.svg"/>
 
 <p> In the modified tree, where the polytomy has been refined, we recover m from identifier 327 because m is the only node from which all the inclusions descend and none of the exclusions descend.</p>
@@ -36,68 +39,78 @@ approach to internal node identifier definition.</p>
 
 <h4>False positive</h4>
 
-<p>Consider a change which moves b out of the a-e polytomy:</p>
+<p>Consider a change which moves b from the a-e polytomy to a
+  different part of the tree:</p>
 
 <img src="http://files.opentreeoflife.org/registry-svg/false-positive.svg"/>
 
 <p>It may be common knowledge that b is an m, that having b as a
 member is essential to m-ness.  Perhaps b is m's "type".  However, our
 automated system does not know this, and in creating the identifier
-327 didn't record b among the inclusion samples.  Identifier 327
+327 it didn't record b among the inclusion samples.  Identifier 327
 resolves uniquely in the changed tree to the node here labeled 'm1', even
-though b does not descend from it.  The node labeled 'm2' is probably the one
-that should get the label 'm', if b has to descend from it.</p>
+though b does not descend from m1.  The node labeled 'm2' is the one
+that one would to get the label 'm', if membership of b essential to m-ness.</p>
+
+<p>Motion into the a-e polytomy from the outside is the same in
+  reverse: b may not be in the exclusion set, even though its
+  exclusion may be essential to m-ness.</p>
 
 
 <h4>Ambiguous resolution</h4>
 
-<p>If the polytomy were to be refined as follows:</p>
+<p>If the polytomy m were to be refined as follows:</p>
 
 <img src="http://files.opentreeoflife.org/registry-svg/ambiguous-resolution.svg"/>
 
-<p> then id 327 would not resolve unambiguously to m, because 
-two nodes are compatible with the split (one is the MRCA of the inclusions, and the other is the one labeled 'm').
-There is no way to tell which would match the intentions of whoever decided to use the identifier in the first place.</p>
+<p> then id 327 would not resolve unambiguously, because 
+two nodes are now merge-compatible with the split.  (One is the MRCA of the inclusions, and the other is the one labeled 'm'.)
+There is no way to tell from the samples which node would best match
+  what is m.  Presumably the correct answer is m2, because it includes 
+  a and m1 doesn't, but the identifier registry happened not to record a as a sample.</p>
 
-<p>Ambiguity is not a terrible thing; there are various ways to recover from it and select a single node.</p>
+<p>The problem arises just because we had the bad luck not to include a or b in the inclusion set.</p>
 
-<ol>
-  <li>If other information, such as a name, accompanies the original reference 327 and the new identifiers,
-    one might select among the new nodes by comparing the names.</li>
-  <li>One could arbitrarily choose the least inclusive choice or the most inclusive choice.</li>
-  <li>One could expose the choice to the UI or API user and ask them to decide.</li>
-</ol>
+<p>Ambiguity is not a terrible thing; there are various ways to
+  recover from it and select a single node.  See below.</p>
 
 
 <h4>No resolution</h4>
 
 <p>On the other hand, the change might tell us
-that x is "actually" inside of m, not outside it.  (This might happen if
+that a tip x is "actually" inside of m, not outside it.  (This might happen if
 node m is supposed to be an apomorphy-based clade and there had been
 an earlier error implying that x did not possess the apomorphy when it
 did.)</p>
 
+<p>The common case would be correction of paraphyly.</p>
+
 <img src="http://files.opentreeoflife.org/registry-svg/no-resolution.svg"/>
 
-<p>Now there are no nodes in the tree compatible with the 327 split, i.e.
+<p>Now there are no nodes in the tree that are merge-compatible with the 327 split, i.e.
 every node from which the inclusions all descend also has at least one of the exclusions descending from it.</p>
-
-<p>(It is of course easy to find a nearby node that might serve pretty well
-(for navigation purposes at least); e.g. one could use the MRCA of the inclusions.)</p>
-
-<p>It should be clear that a problem with cross-tree node identifiers is that
-it's not clear until one wants to use an identifier what meaning one
-wants to give it.  At least with this approach one can say exactly
-what an identifier means both inferentially and operationally: it
-means a clade containing the inclusions and not containing the
-exclusions.  If the inclusion and exclusion sets are made apparent to
-users, and expectations are set correctly, this should be a pretty
-strong system, and perhaps not worse than any other.
 
 
 <h4>Taxon relocation</h4>
 
-<p>A taxon might "move" out of clade m.  If the changed tree doesn't include one of the non-samples, e.g., nothing much changes; we still get unique resolution.  This might happen either due to fixing a clerical error, i.e. when its placement in m was just a mistake.  It could also be due to scientific revision (replacing an earlier hypothesis with a newer, better one).</p>
+<p>A taxon might "move" out of clade m.  This might happen either due to fixing a clerical error, i.e. when its
+placement in m was just a mistake.  It could also be due to scientific
+revision (replacing an earlier hypothesis with a newer, better
+one).</p>
+
+<p>A system based on total
+  splits, where the inclusion set is all tips descended from the
+  internal node and the exclusion set is all other tips in the tree,
+  would force a new identifier whenever there is any "move".  This
+  proposal is different in that identifiers are kept or not based
+  on the vagaries of sample choice.  If the moved taxon, say a, happens to not
+  be used
+  as a sample for node m, the change doesn't affect the identifier
+  chosen for m (if by m we mean the node that is m according to all
+  non-a evidence); if it is, then it will.  Since the number of
+  samples is usually quite small relative to the number of tips in m,
+  the chance that one or a few "motions" like this will affect the
+  identification is also small.</p>
 
 <img src="http://files.opentreeoflife.org/registry-svg/relocation.svg"/>
 
@@ -111,8 +124,10 @@ samples without forfeiting unique resolution.</p>
 
 <img src="http://files.opentreeoflife.org/registry-svg/sample-loss.svg"/>
 
-<p>Sample loss can also create ambiguity.  If all inclusion samples are
-lost, all bets are off.</p>
+<p>But losing "too many" samples can lead to problems.  Sample loss
+can also create ambiguity.  If all samples for an identifier
+are lost, all bets are off - you can't even get close to where it was
+  in the original tree.</p>
 
 
 <h4>Gaining new taxa</h4>
@@ -122,11 +137,26 @@ taxon can create an ambiguity for an identifier when it's inserted above the nod
 
 <img src="http://files.opentreeoflife.org/registry-svg/new-taxon.svg"/>
 
-<p></p>
+<p>The problem is that we don't know whether w should be considered
+  an m or not.  m might be associated with an apomorphy, and we could
+  then check to see whether w possesses the apomorphy or not.  But
+  this kind of reasoning is not available to the identifier system.</p>
 
+<p>The information might be available outside the identifier system,
+  of course, in which case it would be possible to connect the old
+  identifier with the "correct" new one (see below).</p>
 
 
 <h2>Discussion</h2>
+
+<p>It should be clear that a problem with cross-tree node identifiers is that
+it's not clear until one wants to use an identifier what meaning one
+wants to give it.  At least with this approach one can say exactly
+what an identifier means both inferentially and operationally: it
+means a clade containing the inclusions and not containing the
+exclusions.  If the inclusion and exclusion sets are made apparent to
+users, and expectations are set correctly, this should be a pretty
+strong system, and perhaps not worse than any other.</p>
 
 <h3>Identifier succession</h3>
 
@@ -199,13 +229,7 @@ without appeal to any of the metadata.</p>
 <p>These identifiers can then be used in forming URLs, placed in data
 structures, and so on, and later resolved to nodes in the same tree or
 a different tree, by looking up the samples and performing MRCA
-operations.  As seen above, most of the time there will be a unique
-node in the tree for the identifier, but sometimes there will be more
-than one, or zero.  We can recover from nonunique resolution in a
-variety of ways.  There could be a discrimination UI, or at the API
-level, exceptions can be raised, flags can control what happens in the
-exceptional cases, etc.  A default replacement node could always be
-offered, such as the MRCA of the inclusion set.</p>
+operations.</p>
 
 <p>Another boundary case worth noting is that two different
 identifiers might resolve uniquely to the same node.  (And they might
@@ -214,3 +238,73 @@ another.)  These aliases shouldn't matter for the purpose to which
 these identifiers are put, which is referring to nodes.  But it means
 that using identifier equality as a proxy for node equality is not
 going to work in the obvious way.</p>
+
+<h3>Recovery</h3>
+
+<p>Most of the time there will be a unique
+node in the tree for the identifier, but sometimes there will be more
+than one, or zero.  We can recover from nonunique resolution in a
+variety of ways.
+
+<ol>
+  <li>If other information, such as a name, accompanies the original reference 327 and the new identifiers,
+    one might select among the new nodes by comparing the names.</li>
+  <li>One could arbitrarily choose the least inclusive choice (the
+    MRCA of the inclusions) or the most inclusive choice (the largest
+    node not containing any of the exclusions).</li>
+  <li>One could expose the choice to the UI or API user, and ask them to decide.</li>
+</ol>
+
+<h3>Alternative: maximal splits</h3>
+
+<p>
+  A more principled approach might be to connect identifiers to
+  particular trees, so the entire inclusion and exclusion sets - all
+  the tips under the given node, and all the ones that aren't - are
+  available in determining the identifier's "meaning".  It is
+  instructive to compare the sampling idea with maximal splits.</p>
+
+<p>
+  This solves the nondeterminism introduced
+  by sampling, i.e. not knowing whether a given change will force new
+  identifiers or not.  An identifier can be kept if the splits are
+  merge-compatible, i.e. if no tip is either a descendant of the node before
+  but not after or vice versa - assuming there is only one
+  merge-compatible node in the new tree, not multiple such nodes.
+</p>
+
+<p>
+  False positives also go away; instead we get inconsistency, i.e. no
+  compatible nodes for the identifier.  The ambiguity scenario is
+  solved because there would be no non-samples with unknown affinities.
+</p>
+
+<p>
+  The main logical issue with maximal splits would be that so many
+  identifiers would be deprecated by inconsequential changes, such as
+  clerical changes, or conditions that nobody ought to be relying on.
+  The effect of this would be that fixing problems like sparrows being
+  misplaced under rhodophytes (a <a href="https://github.com/OpenTreeOfLife/feedback/issues/141">recent case</a> that came up) would force
+  the deprecation of identifiers in between the wrong place and the
+  right place.  With the sampling approach, it probably wouldn't be
+  noticed that there were any sparrows under rhodophytes, except quite
+  near the location in rhodophytes, where some sparrows were unhappily
+  chosen as samples.
+</p>
+
+<p>
+  But more important than the logical issues is that it's difficult or
+  maybe impossible to
+  implement maximal splits efficiently.
+  Keeping every tree that was used as an identifier origin would be
+  very expensive and not scalable.
+</p>
+
+<p>
+  The practical consequence of deprecated identifiers would be the
+  need for a recovery mechanism: how can we find a location in the new
+  tree that's similar, in most regards, to the original location in
+  the old tree, the one for which we only have a deprecated
+  identifier?  How would one find such a node, other than by
+  sampling?
+</p>

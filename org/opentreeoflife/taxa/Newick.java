@@ -36,9 +36,11 @@ class Newick {
 				while ((child = newickToNode(in, dest)) != null) {
 					children.add(child);
 					int d = in.read();
-					if (d < 0 || d == ')') break;
-					if (d != ',')
-						System.out.println("shouldn't happen: " + d);
+					if (d < 0 || d >= 65535 || d == ')') break;
+					if (d != ',') {
+						System.out.format("Newick syntax error: expected comma or right paren: %s %s\n", d, children);
+                        break;  // ???
+                    }
 				}
 			}
 			Taxon node = newickToNode(in, dest); // get postfix name, x in (a,b)x
@@ -71,12 +73,12 @@ class Newick {
         if (c == '\'')
             while (true) {
                 c = in.read();
-                if (c < 0)
+                if (c < 0 || c >= 65535)
                     break;
                 else if (c == '\'') {
                     // Either end of label, or ''
                     c = in.read();
-                    if (c < 0)
+                    if (c < 0 || c >= 65535)
                         break;
                     else if (c == '\'') {
                         buf.appendCodePoint(c);
@@ -91,7 +93,7 @@ class Newick {
             }
         else
             while (true) {
-                if (c < 0)
+                if (c < 0 || c >= 65535)
                     break;
                 else if (c == ')' || c == ',' || c == ';') {
                     in.unread(c);

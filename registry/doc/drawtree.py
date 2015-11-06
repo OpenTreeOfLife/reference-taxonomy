@@ -91,14 +91,14 @@ def newick_to_svg(newick, outfilename):
     print >>outfile, '''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">'''
-    print >>outfile, drawtree(Taxonomy.getTaxonomy(u'((a,b,c,d,e)m,(x,y));'))
+    print >>outfile, drawtree(Taxonomy.getTaxonomy(newick))
     outfile.close()
 
 newick_to_svg(u'((a,b,c,d,e)m,(x,y));', 'svg/example.svg')
-newick_to_svg(u'((a,((b,c),d),e)m,(x,y));', 'svg/unique-resolution.svg')
+newick_to_svg(u'(((a,(b,c)),(d,e))m,(x,y));', 'svg/unique-resolution.svg')
 newick_to_svg(u'((a,c,d,e)m1,(x,b,y))m2;', 'svg/false-positive.svg')
-newick_to_svg(u'((a,(b,c,d,e)m?)m?,(x,y));', 'svg/ambiguous-resolution.svg')
+newick_to_svg(u'((a,(b,c,d,e)m1)m2,(x,y));', 'svg/ambiguous-resolution.svg')
 newick_to_svg(u'((a,b,c,x,d,e),y);', 'svg/no-resolution.svg')
 newick_to_svg(u'((b,c,d,e)m,(a,(x,y)));', 'svg/relocation.svg')
 newick_to_svg(u'((a,b,d,e)m,y);', 'svg/sample-loss.svg')
-newick_to_svg(u'(((a,b,c,d,e)m?,z)m?,(x,y));', 'svg/new-taxon.svg')
+newick_to_svg(u'(((a,b,c,d,e)m?,w)m?,(x,y));', 'svg/new-taxon.svg')

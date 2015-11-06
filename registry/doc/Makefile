@@ -6,5 +6,5 @@ svg/example.svg: drawtree.py
 	java -cp $(TAXONOMY_HOME):$(TAXONOMY_HOME)/lib/* org.python.util.jython drawtree.py 
 
 # Assume .ssh/config defines aliase 'files'
-export: scenarios.html
+export: svg/example.svg
 	scp -pr scenarios.html svg/*.svg files:files.opentreeoflife.org/registry-svg/

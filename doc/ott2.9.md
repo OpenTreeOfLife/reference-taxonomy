@@ -90,7 +90,7 @@ retrieved.
     <br />
     Download location: [http://purl.org/opentree/ott/ott2.8/inputs/lamiales-20140118.tsv](http://purl.oeg/opentree/ott/ott2.8/inputs/lamiales-20140118.tsv)
 
-1.  World Registry of Marine Species (WoRMS) - harvested from web site using web API over two weeks ending around 4 August 2014.
+1.  World Registry of Marine Species (WoRMS) - harvested from web site using web API over several days ending around 1 October 2015.
     [http://www.marinespecies.org/aphia.php](http://www.marinespecies.org/aphia.php)
 
 1.  NCBI Taxonomy, from the 

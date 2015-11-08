@@ -191,3 +191,7 @@ Generic content changes (processing):
 * As a heuristic, taxa that come *only* from PaleoDB are marked extinct
 * 'skeleton' feature replaces 'pinning' for homonym separation (see
   tax/skel/ for list of barrier nodes)
+
+## Previous versions
+
+See <a href="http://files.opentreeoflife.org/ott/">http://files.opentreeoflife.org/ott/</a>

@@ -1,6 +1,6 @@
 # Open Tree of Life reference taxonomy version 2.9
 
-Version 2.9 is not released yet.  Version 2.9 draft 12 was generated on 12 October 2015.
+Version 2.9 draft 12 was generated on 12 October 2015.  Draft 12 is the final draft in the 2.9 series of drafts.
 
 ## Download
 

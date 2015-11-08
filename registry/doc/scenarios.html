@@ -66,10 +66,12 @@ that one would to get the label 'm', if membership of b essential to m-ness.</p>
 <p> then id 327 would not resolve unambiguously, because 
 two nodes are now merge-compatible with the split.  (One is the MRCA of the inclusions, and the other is the one labeled 'm'.)
 There is no way to tell from the samples which node would best match
-  what is m.  Presumably the correct answer is m2, because it includes 
-  a and m1 doesn't, but the identifier registry happened not to record a as a sample.</p>
+  what is m.  Presumably the correct answer is m2, because it and m include
+  a while m1 doesn't, but the identifier registry happened not to record a as a sample.</p>
 
-<p>The problem arises just because we had the bad luck not to include a or b in the inclusion set.</p>
+<p>The problem arises just because we had the bad luck not to include
+  a or b in the inclusion set.  Clearly, this risk goes down as the
+  number of samples goes up.</p>
 
 <p>Ambiguity is not a terrible thing; there are various ways to
   recover from it and select a single node.  See below.</p>

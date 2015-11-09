@@ -1114,7 +1114,7 @@ public class Taxon {
 			int count = 0;
 			for (Taxon child : sorted)
 				if (++count < 10)
-					System.out.format("	 %s %s%s\n", child, child.rank);
+					System.out.format("	 %s %s\n", child, child.rank);
 				else if (count == 10)
 					System.out.format("	 ...\n");
 		}

@@ -430,7 +430,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 		this.dumpNodes(this.roots(), outprefix, sep);
 		this.dumpSynonyms(outprefix + "synonyms.tsv", sep);
-        this.dumpForwards(outprefix + "forwards.tsv");
+        this.dumpForwards(outprefix + "new-forwards.tsv");
 		// this.dumpHidden(outprefix + "hidden.tsv");
 	}
 

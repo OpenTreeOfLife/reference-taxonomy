@@ -35,17 +35,30 @@ def compare_correspondences_2(corr1, corr2):
     for node1 in corr1.taxonomy:
         if (not node1.isHidden()) and (not Registry.isTerminalTaxon(node1)):
             reg1 = corr1.assignedRegistration(node1)
-            nodes = corr2.findTaxa(reg1)
-            if nodes == None:
-                err += 1
-            elif len(nodes) == 0:
-                unsatisfiable += 1
-            elif len(nodes) == 1:
-                unique += 1
-            else:
-                ambiguous += 1
+            if reg1 != None:    # Should never be None, but sometimes it is
+                nodes = corr2.findNodes(reg1)
+                if nodes == None:
+                    err += 1
+                elif len(nodes) == 0:
+                    unsatisfiable += 1
+                elif len(nodes) == 1:
+                    unique += 1
+                else:
+                    ambiguous += 1
     return [unique, ambiguous, unsatisfiable, err]
 
+# This isn's about the registry, just an OTT id comparison, for comparison.
+def compare_taxonomies(tax1, tax2):
+    count = 0
+    lost = 0
+    for node in tax1:
+        if not Registry.isTerminalTaxon(node):
+            count += 1
+            node2 = tax2.lookupId(node.id)
+            if node2 == None:
+                lost += 1
+    print ('%s has %s internal nodes of which %s not present in %s' %
+           (tax1.getTag(), count, lost, tax2.getTag()))
 
 def compare_correspondences(corr1, corr2):
     for node1 in corr1.taxonomy:
@@ -128,6 +141,7 @@ def run_tests(treenames, n_inclusions=2):
             if first == None:
                 first = last
 
+    compare_taxonomies(first.taxonomy, last.taxonomy)
     return compare_correspondences_2(first, last)
 
     # r.dump('registry.csv')
@@ -172,7 +186,7 @@ if __name__ == '__main__':
         report = run_tests(sys.argv[1:], 2)
     else:
         report = run_tests(['plants-ott28/', 'plants-synth3/'], 2)
-    print "--- Resolution report for %s -> %s" % (first.taxonomy.getTag(), last.taxonomy.getTag())
+    #print "--- Resolution report for %s -> %s" % (first.taxonomy.getTag(), last.taxonomy.getTag())
     print "  Unique:        %s" % report[0]
     print "  Ambiguous:     %s" % report[1]
     print "  Unsatisfiable: %s" % report[2]

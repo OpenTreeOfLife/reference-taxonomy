@@ -128,7 +128,8 @@ public class Correspondence {
                     m = snode;
                 else {
                     m = m.mrca(snode);
-                    if (m.noMrca()) {
+                    if (m == null || m.noMrca()) {
+                        // I don't see how the m == null case can happen, but it did
                         interesting("different trees, no mrca - shouldn't happen", reg, m, snode);
                         return result; // different trees, no way to satisfy
                     }
@@ -300,7 +301,7 @@ public class Correspondence {
         }
         // Novel taxon, or multiple registrations are compatible
         // with it.  Make up a new registration.
-        List<Terminal> samples = new ArrayList<Terminal>();
+        List<Terminal> samples = new ArrayList<Terminal>(nsamples);
         if (children.size() == 1) { // Monotypic
             Terminal monotypic = Terminal.getTerminal(node);
             monotypic.quality -= 10;
@@ -442,8 +443,8 @@ public class Correspondence {
                 int bpri = encodeSourcePriority(b);
                 if (apri != bpri) return bpri - apri; // higher priority is better
 
-                int asize = ((a.rank != null && a.rank.equals("species")) ? 1 : a.count());
-                int bsize = ((b.rank != null && b.rank.equals("species")) ? 1 : b.count());
+                int asize = (Terminal.isTerminalTaxon(a) ? 1 : a.count());
+                int bsize = (Terminal.isTerminalTaxon(b) ? 1 : b.count());
                 if (asize != bsize) return bsize - asize; // bigger is better
 
                 int ahom = (a.name != null ? a.taxonomy.lookup(a.name).size() : 2);

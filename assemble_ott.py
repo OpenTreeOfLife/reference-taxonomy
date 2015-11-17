@@ -6,7 +6,8 @@
 
 import sys
 
-from org.opentreeoflife.smasher import Taxonomy
+from org.opentreeoflife.taxa import Taxonomy, SourceTaxonomy
+from org.opentreeoflife.smasher import UnionTaxonomy
 from ncbi_ott_assignments import ncbi_assignments_list
 sys.path.append("feed/misc/")
 from chromista_spreadsheet import fixChromista
@@ -28,12 +29,12 @@ def check_invariants(ott):
 
 def create_ott():
 
-    ott = Taxonomy.newTaxonomy()
+    ott = UnionTaxonomy.newTaxonomy()
 
     # There ought to be tests for all of these...
 
     for name in names_of_interest:
-        ott.namesOfInterest.add(name)
+        ott.eventlogger.namesOfInterest.add(name)
 
     # When lumping, prefer to use ids that have been used in OTU matching
     # This list could be used for all sorts of purposes...
@@ -151,7 +152,7 @@ def create_ott():
 # ----- SILVA microbial taxonomy -----
 def prepare_silva(ott):
     silva = taxonomies.load_silva()
-    silva.setTarget(ott)
+    ott.addSource(silva)
 
     # JAR 2014-05-13 scrutinizing pin() and BarrierNodes.  Wikipedia
     # confirms this synonymy.  Dail L. prefers -phyta to -phyceae
@@ -168,6 +169,7 @@ def prepare_silva(ott):
 
 def prepare_h2007(ott):
     h2007 = taxonomies.load_h2007()
+    ott.addSource(h2007)
     return h2007
 
 # ----- Index Fungorum -----
@@ -178,7 +180,7 @@ def prepare_h2007(ott):
 
 def prepare_fungorum(ott):
     fungorum = taxonomies.load_fung()
-    fungorum.setTarget(ott)
+    ott.addSource(fungorum)
 
     fungi_root = fungorum.taxon('Fungi')
     fungi = fungorum.select(fungi_root)
@@ -278,6 +280,7 @@ def prepare_fungorum(ott):
 def prepare_lamiales(ott):
     study713  = taxonomies.load_713()
         # ### CHECK: was silva.taxon
+    ott.addSource(study713)
     ott.notSame(study713.taxon('Buchnera', 'Orobanchaceae'), ott.taxon('Buchnera', 'Enterobacteriaceae'))
     return study713
 
@@ -285,6 +288,8 @@ def prepare_lamiales(ott):
 
 def prepare_worms(ott):
     worms = taxonomies.load_worms()
+    ott.addSource(worms)
+
     worms.taxon('Viruses').prune("make-ott.py")
 
     # Malacostraca instead of Decapoda because it's in the skeleton
@@ -307,6 +312,7 @@ def prepare_worms(ott):
 def prepare_ncbi(ott):
 
     ncbi = taxonomies.load_ncbi()
+    ott.addSource(ncbi)
 
     # David Hibbett has requested that for Fungi, only Index Fungorum
     # should be seen.  Rather than delete the NCBI fungal taxa, we just
@@ -418,7 +424,7 @@ def align_ncbi_to_silva(ncbi, silva, ott):
 def prepare_gbif(ott):
 
     gbif = taxonomies.load_gbif()
-    gbif.setTarget(ott)
+    ott.addSource(gbif)
 
     gbif.taxon('Viruses').hide()
 
@@ -515,6 +521,7 @@ def prepare_gbif(ott):
 def prepare_irmng(ott):
 
     irmng = taxonomies.load_irmng()
+    ott.addSource(irmng)
 
     irmng.taxon('Viruses').hide()
 
@@ -1047,7 +1054,7 @@ names_of_interest = ['Ciliophora',
                      'Parmeliaceae',
                      'Heterolepa',
                      'Acanthokara',
+                     'Epigrapsus notatus',  # occurs twice in worms, should be merged...
                      'Carduelis barbata',  # 'incompatible-use'
                      'Spinus barbatus',
                      ]
-

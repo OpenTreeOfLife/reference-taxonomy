@@ -1,19 +1,19 @@
 
-package org.opentreeoflife.smasher;
+package org.opentreeoflife.taxa;
 
 import java.util.regex.Pattern;
 
 
 public class QualifiedId {
-	String prefix;
-	String id;
+	public String prefix;
+	public String id;
 
-	static Pattern colonPattern = Pattern.compile(":");
+	private static Pattern colonPattern = Pattern.compile(":");
 
-	QualifiedId(String prefix, String id) {
+	public QualifiedId(String prefix, String id) {
 		this.prefix = prefix; this.id = id;
 	}
-	QualifiedId(String qid) {
+	public QualifiedId(String qid) {
         String[] foo = colonPattern.split(qid, 2);
         if (foo.length == 1)
             { this.prefix = foo[0]; this.id = null; }
@@ -36,13 +36,16 @@ public class QualifiedId {
 	public boolean equals(Object o) {
 		if (o instanceof QualifiedId) {
 			QualifiedId qid = (QualifiedId)o;
-            if (!qid.prefix.equals(prefix)) return false;
-            if ((id == null) != (qid.id == null)) return false;
-            if (qid != null && !qid.id.equals(id)) return false;
+            if (!qid.prefix.equals(this.prefix)) return false;
+            if (qid.id == null)
+                return (this.id == null);
+            if (!qid.id.equals(this.id)) return false;
             return true;
 		} else
 			return false;
 	}
-    // hashCode ?
+    public int hashCode() {
+        return this.prefix.hashCode() + this.id.hashCode();
+    }
 }
 

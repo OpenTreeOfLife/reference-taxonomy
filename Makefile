@@ -29,7 +29,7 @@ JAVA=JYTHONPATH=util java $(CP)
 BIG_JAVA=$(JAVA) -Xmx14G
 SMASH=org.opentreeoflife.smasher.Smasher
 CLASS=org/opentreeoflife/smasher/Smasher.class
-JAVASOURCES=$(shell find org/opentreeoflife/smasher -name "*.java")
+JAVASOURCES=$(shell find org/opentreeoflife -name "*.java")
 
 all: ott
 

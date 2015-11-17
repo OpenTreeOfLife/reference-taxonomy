@@ -1,5 +1,11 @@
 package org.opentreeoflife.smasher;
 
+import org.opentreeoflife.taxa.Taxon;
+import org.opentreeoflife.taxa.Taxonomy;
+import org.opentreeoflife.taxa.SourceTaxonomy;
+import org.opentreeoflife.taxa.Answer;
+import org.opentreeoflife.taxa.QualifiedId;
+
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -253,7 +259,7 @@ public class AlignmentByName extends Alignment {
         Criterion[] criteria = Criterion.criteria;
 		if (source.rootCount() > 0) {
 
-			union.resetEvents();
+			union.eventlogger.resetEvents();
 			System.out.println("--- Mapping " + source.getTag() + " into union ---");
 
 			int beforeCount = union.numberOfNames();
@@ -310,7 +316,7 @@ public class AlignmentByName extends Alignment {
 			}
 			System.out.println("| Names in common: " + incommon);
 
-			union.eventsReport("| ");
+			union.eventlogger.eventsReport("| ");
 
 			// Report on how well the merge went.
 			Alignment.alignmentReport(source, union);
@@ -389,7 +395,7 @@ public class AlignmentByName extends Alignment {
                     Answer z = criterion.assess(x, y);
                     if (z.value == Answer.DUNNO)
                         continue;
-                    ((UnionTaxonomy)y.taxonomy).log(z);
+                    z.log(y.taxonomy);
                     if (z.value < Answer.DUNNO) {
                         suppressp[i][j] = z;
                         continue;
@@ -520,7 +526,7 @@ public class AlignmentByName extends Alignment {
                         } else {
                             for (int j = 0; j < n; ++j)
                                 if (suppressp[i][j] != null) // how does this happen?
-                                    union.log(suppressp[i][j]);
+                                    suppressp[i][j].log(union);
                             String kludge = null;
                             int badness = -100;
                             for (int j = 0; j < n; ++j) {

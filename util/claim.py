@@ -1,10 +1,10 @@
 # Use this with 'from claim import *'
 #   ... which unfortunately doesn't work in jython
 
-from org.opentreeoflife.smasher import Taxonomy
+from org.opentreeoflife.taxa import Taxonomy, SourceTaxonomy
 
 def test():
-    tax = Taxonomy.newTaxonomy()
+    tax = SourceTaxonomy()
     tax.newTaxon('Mouse', 'species', 'about:blank')
     tax.newTaxon('Dog', 'species', 'about:blank')
     tax.newTaxon('Mammal', 'class', 'about:blank')
@@ -65,7 +65,9 @@ def find_surprises(tax, claims):
 # -- Claims --
 
 # That two taxa are the same
-# The name the latter is preferred to that of the former
+# The second taxon is the one whose properties don't change.
+# I.e. the name and placement of the second are preferred to 
+# that of the first.
 
 class Whether_same:
     def __init__(self, source, target, whether, reason=None):
@@ -78,8 +80,9 @@ class Whether_same:
         source_taxon = resolve_in(self.source, taxonomy, windy=False)
         target_taxon = resolve_in(self.target, taxonomy, windy=False)
 
-        if source_taxon != None:
-            attempt_mapping(source_taxon, self.target, self.whether)
+        if source_taxon != None and target_taxon != None:
+            source_taxon.whetherHasName(target_taxon.name, self.whether, True)
+            taxonomy.sameness(source_taxon, target_taxon, self.whether, True)
 
         if source_taxon == None and target_taxon != None:
             print 'flipping', self.source, '><', self.target
@@ -123,14 +126,6 @@ class Whether_same:
 
     def unapply(self):
         return ('Whether_same', [self.source, self.target, self.whether, self.reason])
-
-def attempt_mapping(source_taxon, target, whether):
-    union = source_taxon.taxonomy.target()
-    if union != None:
-        union_target = resolve_in(target, union, windy=False)
-        if union_target != None:
-            source_taxon.whetherHasName(union_target.name, whether, True)
-            union.sameness(source_taxon, union_target, whether, True)
 
 
 # That one taxon has another as a child.

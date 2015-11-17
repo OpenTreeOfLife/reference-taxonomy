@@ -758,7 +758,16 @@ public abstract class Taxonomy implements Iterable<Taxon> {
                 if (Taxon.isBinomial(node.name))
                     if (node.parent != null && node.parent.rank != null && node.parent.rank.equals("genus")) {
                         System.out.format("| Setting rank of %s to species\n", node);
-                        node.rank = "species";
+                        /* Problems:
+                           Bhanja serogroup
+                           Ignatzschineria larvae
+                           Euphorbia unplaced
+                           Hypherpes complex
+                           Mauremys hybrids
+                           Sylvaemus group
+                        */
+                        if (!node.name.endsWith("group"))
+                            node.rank = "species";
                     }
                 else if (node.name.contains(" subsp.") || node.name.contains(" subsp ")) {
                     System.out.format("| Setting rank of %s to subspecies\n", node);
@@ -1371,6 +1380,17 @@ public abstract class Taxonomy implements Iterable<Taxon> {
                 node.addFlag(HYBRID);
             if (viralRegex.matcher(node.name).find()) 
                 node.addFlag(VIRAL);
+
+            if (unclassifiedRegex.matcher(node.name).find()) // Rule 3+5
+                // sometimes happens in NCBI, e.g. 
+                // unclassified Peltospiridae Taxonomy ID: 1037581
+                node.addFlag(UNCLASSIFIED);
+            else if (environmentalRegex.matcher(node.name).find()) // Rule 3+5
+                // doesn't happen
+                node.addFlag(ENVIRONMENTAL);
+            else if (incertae_sedisRegex.matcher(node.name).find()) // Rule 3+5
+                // doesn't happen (I believe)
+                node.addFlag(INCERTAE_SEDIS);
         }
 
 		// Recursive descent
@@ -1381,7 +1401,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
     // Elide 'incertae sedis'-like containers, encoding the
     // incertaesedisness of their children in flags.
-    // This gets called for every taxonomy, not just NCBI, on ingest.
+    // This gets applied to every taxonomy, not just NCBI, on ingest.
 
 	public void analyzeContainers() {
         analyzeContainers(forest);
@@ -1389,30 +1409,30 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	public static void analyzeContainers(Taxon node) {
 		// Recursive descent
-		if (node.children != null)
+		if (node.children != null) {
 			for (Taxon child : new ArrayList<Taxon>(node.children))
 				analyzeContainers(child);
 
-        int flag = 0;
-        if (node.name != null) {
-            if (unclassifiedRegex.matcher(node.name).find()) // Rule 3+5
-                flag = UNCLASSIFIED;  // includes uncultured
-            else if (environmentalRegex.matcher(node.name).find()) // Rule 3+5
-                flag = ENVIRONMENTAL;
-            else if (incertae_sedisRegex.matcher(node.name).find()) // Rule 3+5
-                flag = INCERTAE_SEDIS;
-        }
-
-        if (flag != 0) {
-            node.addFlag(flag);
-            // After (compare elide())
-            // Splice the node out of the hierarchy, but leave it as a
-            // residual terminal non-OTU node.
-            if (node.children != null && !node.isRoot()) {
-                for (Taxon child : new ArrayList<Taxon>(node.children))
-                    // changeParent sets properFlags
-                    child.changeParent(node.parent, flag);
-                node.addFlag(WAS_CONTAINER);
+            int flag = 0;
+            if (node.name != null) {
+                if (unclassifiedRegex.matcher(node.name).find()) // Rule 3+5
+                    flag = UNCLASSIFIED;
+                else if (environmentalRegex.matcher(node.name).find()) // Rule 3+5
+                    flag = ENVIRONMENTAL;
+                else if (incertae_sedisRegex.matcher(node.name).find()) // Rule 3+5
+                    flag = INCERTAE_SEDIS;
+            }
+            if (flag != 0) {
+                node.addFlag(flag);
+                // After (compare elide())
+                // Splice the node out of the hierarchy, but leave it as a
+                // residual terminal non-OTU node.
+                if (!node.isRoot()) {
+                    for (Taxon child : new ArrayList<Taxon>(node.children))
+                        // changeParent sets properFlags
+                        child.changeParent(node.parent, flag);
+                    node.addFlag(WAS_CONTAINER);
+                }
             }
         }
 	}
@@ -1431,7 +1451,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		node.inferredFlags = inferredFlags;
         if (node.name != null
             && node.name.equals("Ephedra gerardiana"))
-            System.out.format("* %s hidden %s -> %s\n", node, before, node.isHidden());
+            if (before != node.isHidden())
+                System.out.format("* %s hidden %s -> %s\n", node, before, node.isHidden());
 
 		if (node.rank != null && node.children != null && node.rank.equals("species"))
 			for (Taxon child : node.children)
@@ -1519,9 +1540,12 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	static Pattern unclassifiedRegex =
 		Pattern.compile(
+                        // Always container
 						"\\bmycorrhizal samples\\b|" +
-						"\\buncultured\\b|" +
+                        // Sometimes container, sometimes not
 						"\\b[Uu]nclassified\\b|" +
+                        // These never occur as containers
+						"\\buncultured\\b|" +       // maybe these aren't OTUs!
 						"\\bendophyte\\b|" +
 						"\\bendophytic\\b"
 						);
@@ -1591,6 +1615,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
             SPECIES_RANK = ranks.get("species");
         }
 	}
+
+    static { initRanks(); }
 
 	static int SPECIES_RANK = -1; // ranks.get("species");
 

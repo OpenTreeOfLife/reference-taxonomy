@@ -1027,8 +1027,13 @@ public class Taxon {
         } else if (newchild == this) {
 			System.err.format("** A taxon cannot be its own parent: %s %s\n", newchild, this);
 			return false;
+        } else if (newchild.parent == this) {
+            System.err.format("* Note: %s is already a child of %s\n", newchild, this);
+            return true;
         } else {
             // if (!newchild.isDetached()) newchild.detach();  - not needed given change to newTaxon.
+            if (newchild.descendsFrom(this))
+                System.err.format("* Note: %s already descends from %s, lifting it up to child\n", newchild, this);
             newchild.changeParent(this, 0);
 			this.addFlag(Taxonomy.EDITED);
             return true;

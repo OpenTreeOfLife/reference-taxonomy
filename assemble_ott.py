@@ -662,7 +662,7 @@ def patch_ott(ott):
     ott.taxon('Heterolobosea','Discicristata').absorb(ott.taxon('Heterolobosea','Percolozoa'))
     ott.taxon('Excavata','Eukaryota').take(ott.taxon('Oxymonadida','Eukaryota'))
 
-    # Work in progress - Joseph
+    # There is no Reptilia in OTT 2.9, so this can probably be deleted
     if ott.maybeTaxon('Reptilia') != None:
         ott.taxon('Reptilia').hide()
 
@@ -672,9 +672,9 @@ def patch_ott(ott):
     ott.taxon('Lophotrochozoa').take(ott.taxon('Platyhelminthes'))
     ott.taxon('Polychaeta','Annelida').take(ott.taxon('Myzostomida'))
     ott.taxon('Lophotrochozoa').take(ott.taxon('Gnathostomulida'))
-    ott.taxon('Bilateria').take(ott.taxon('Acoela'))
-    ott.taxon('Bilateria').take(ott.taxon('Xenoturbella'))
-    ott.taxon('Bilateria').take(ott.taxon('Nemertodermatida'))
+    # https://dx.doi.org/10.1007/s13127-011-0044-4
+    # Not in deuterostomes
+    ott.taxon('Bilateria').take(ott.taxon('Xenacoelomorpha'))
     #  8) Stauromedusae should be a class (Staurozoa; Marques and Collins 2004) and should be removed from Scyphozoa
     ott.taxon('Cnidaria').take(ott.taxon('Stauromedusae'))
     ott.taxon('Copepoda').take(ott.taxon('Prionodiaptomus'))

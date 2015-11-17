@@ -1,6 +1,6 @@
 # Open Tree of Life reference taxonomy version 2.9
 
-Version 2.9 is not released yet.  Version 2.9 draft 12 was generated on 12 October 2015.
+Version 2.9 draft 12 was generated on 12 October 2015.  Draft 12 is the final draft in the 2.9 series of drafts.
 
 ## Download
 
@@ -90,7 +90,7 @@ retrieved.
     <br />
     Download location: [http://purl.org/opentree/ott/ott2.8/inputs/lamiales-20140118.tsv](http://purl.oeg/opentree/ott/ott2.8/inputs/lamiales-20140118.tsv)
 
-1.  World Registry of Marine Species (WoRMS) - harvested from web site using web API over two weeks ending around 4 August 2014.
+1.  World Registry of Marine Species (WoRMS) - harvested from web site using web API over several days ending around 1 October 2015.
     [http://www.marinespecies.org/aphia.php](http://www.marinespecies.org/aphia.php)
 
 1.  NCBI Taxonomy, from the 
@@ -191,3 +191,7 @@ Generic content changes (processing):
 * As a heuristic, taxa that come *only* from PaleoDB are marked extinct
 * 'skeleton' feature replaces 'pinning' for homonym separation (see
   tax/skel/ for list of barrier nodes)
+
+## Previous versions
+
+See <a href="http://files.opentreeoflife.org/ott/">http://files.opentreeoflife.org/ott/</a>

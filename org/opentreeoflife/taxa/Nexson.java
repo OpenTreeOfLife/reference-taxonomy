@@ -1,3 +1,11 @@
+/**
+   Utility for converting a tree in a Nexson file to a Taxonomy object.
+
+   Warning - this code is preliminary, and very brittle.  If you feed
+   it something that's not valid Nexson HBF 1.2, you'll get a null
+   pointer or class cast exception.
+*/
+
 
 package org.opentreeoflife.taxa;
 

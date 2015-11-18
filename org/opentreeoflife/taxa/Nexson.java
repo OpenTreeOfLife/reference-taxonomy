@@ -120,7 +120,7 @@ public class Nexson {
                 JSONObject otu = ((JSONObject)otus.get(otuId));
                 Object ottidObj = otu.get("^ot:ottId");
                 if (ottidObj != null) {
-                    String ottid = ottidObj.toString();
+                    String ottid = ottidObj.toString();  // it's a Long
                     if (tax.lookupId(ottid) == null)
                         taxon.setId(ottid);
                     else

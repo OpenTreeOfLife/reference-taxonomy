@@ -754,7 +754,12 @@ public class Taxon {
 
 	static Comparator<Taxon> compareNodes = new Comparator<Taxon>() {
 		public int compare(Taxon x, Taxon y) {
-			return x.name.compareTo(y.name);
+            if (x.name != null && y.name != null)
+                return x.name.compareTo(y.name);
+            else if (x.id != null && y.id != null)
+                return x.id.compareTo(y.id);
+            else
+                return 0;
 		}
 	};
 

@@ -1,7 +1,7 @@
 # One-off script prepared to provide data to David Hibbett and Romina Gazis.
 # Lists numbers of species in each fungal order.
 
-from org.opentreeoflife.smasher import Taxonomy
+from org.opentreeoflife.taxa import Taxonomy
 import csv, sys
 from taxonomies import load_fung, load_ncbi, load_gbif, load_irmng
 

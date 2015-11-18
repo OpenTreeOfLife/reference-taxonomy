@@ -354,9 +354,9 @@ def link_to_h2007(tax):
             some_claims.append(Has_child(order, family, h2007_fam))
     make_claims(tax, some_claims)
     # Loxosporales,synonym of Sarrameanales
-    make_claim(Whether_same('Sarrameanales', 'Loxosporales',
-                            True, h2007_fam),
-               fungorum)
+    make_claim(fungorum,
+               Whether_same('Sarrameanales', 'Loxosporales',
+                            True, h2007_fam))
 
 def load_713():
     study713 = Taxonomy.getTaxonomy('tax/713/', 'study713')

@@ -10,6 +10,10 @@
 
 package org.opentreeoflife.smasher;
 
+import org.opentreeoflife.taxa.Taxon;
+import org.opentreeoflife.taxa.Taxonomy;
+import org.opentreeoflife.taxa.QualifiedId;
+
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -189,6 +193,6 @@ public class Reportx {
 		if (sourceIds != null)
 			return sourceIds.get(0).prefix;
 		else
-			return node.taxonomy.tag;
+			return node.taxonomy.getTag();
 	}
 }

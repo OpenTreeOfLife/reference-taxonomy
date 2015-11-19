@@ -575,6 +575,43 @@ In draft12:
 
 much better.
 
+### Nitzschia elongata
+
+Most interesting homonym from homonym analysis: Nitzschia elongata
+
+1. gbif:2628276 in SAR
+2628276	2628185		Nitzschia elongata Hantzsch, nom. illeg.	Nitzschia elongata	species	accepted		Nitzschia	elongata			The Catalogue of Life, 3rd January 2011	Plantae	Bacillariophyta	Bacillariophyceae Haeckel, 1878	Bacillariales Hendey	Bacillariaceae Ehrenb.
+Modern CoL gets the record from WoRMS.
+2011 CoL has this coming from Algaebase.
+
+2. worms:119438 in Opisthokonta
+Nitzschia elongata (Nitzsch, 1826)
+Parent: Nitzschia Baer, 1826
+in Platyhelminthes 
+
+### Gyrophora decussata
+
+Second most interesting homonym:
+Gyrophora decussata	gbif:7240665	1	Basidiomycota	gbif:7249027	1	Ascomycota	361372	Division=Dikarya	0
+Not in CoL.
+7249027	2600611		Gyrophora decussata	Gyrophora decussata	species	accepted		Gyrophora	decussata			Index Fungorum	Fungi	Ascomycota Caval.-Sm.	Lecanoromycetes O.E. Erikss. & Winka	Umbilicariales Lumbsch, Hestmark & Lutzoni	Umbilicariaceae Chevall.
+7240665	2521517		Gyrophora decussata	Gyrophora decussata	species	accepted		Gyrophora	decussata			NUB Generator [implicit canonical]	Fungi	Basidiomycota R.T. Moore	Agaricomycetes Doweld	Boletales E.-J. Gilbert	Serpulaceae Jarosch & Bresinsky
+
+Index Fungorum on the web has it: 357139.
+ Umbilicariaceae, Umbilicariales, Umbilicariomycetidae, Lecanoromycetes, Pezizomycotina, Ascomycota, Fungi
+Species Fungorum current name:
+Umbilicaria decussata (Vill.) Zahlbr. 1932
+which is in our version of IF.
+
+Our IF synonyms file has:
+408094	|	Gyrophora decussata (Vill.) Zahlbr. 1927	|	authority	|		|	
+where if:408094 = Umbilicaria decussata
+
+Solution: (1) delete gbif:7240665 in Basidiomycota, (2) do same() of
+gbif:7249027 with 'Umbilicaria decussata' in Ascomycota in IF.
+
+
+
 ## Division problems
 
 ? Poorly divided: (gbif:3326448. Clitocybe paxillus?) in Fungi vs. (=if:134911. Clitocybe paxillus?) in Eukaryota

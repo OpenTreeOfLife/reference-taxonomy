@@ -1,4 +1,4 @@
-package org.opentreeoflife.smasher;
+package org.opentreeoflife.taxa;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -36,9 +36,11 @@ class Newick {
 				while ((child = newickToNode(in, dest)) != null) {
 					children.add(child);
 					int d = in.read();
-					if (d < 0 || d == ')') break;
-					if (d != ',')
-						System.out.println("shouldn't happen: " + d);
+					if (d < 0 || d >= 65535 || d == ')') break;
+					if (d != ',') {
+						System.out.format("Newick syntax error: expected comma or right paren: %s %s\n", d, children);
+                        break;  // ???
+                    }
 				}
 			}
 			Taxon node = newickToNode(in, dest); // get postfix name, x in (a,b)x
@@ -71,12 +73,12 @@ class Newick {
         if (c == '\'')
             while (true) {
                 c = in.read();
-                if (c < 0)
+                if (c < 0 || c >= 65535)
                     break;
                 else if (c == '\'') {
                     // Either end of label, or ''
                     c = in.read();
-                    if (c < 0)
+                    if (c < 0 || c >= 65535)
                         break;
                     else if (c == '\'') {
                         buf.appendCodePoint(c);
@@ -91,7 +93,7 @@ class Newick {
             }
         else
             while (true) {
-                if (c < 0)
+                if (c < 0 || c >= 65535)
                     break;
                 else if (c == ')' || c == ',' || c == ';') {
                     in.unread(c);
@@ -120,6 +122,8 @@ class Newick {
         return c;
     }
 
+    static Pattern ottidPattern = Pattern.compile("(.*)_ott([0-9]+)");
+
 	// Specially hacked to support the Hibbett 2007 spreadsheet & synthesis output
 	static void initNewickNode(Taxon node, String label) {
 
@@ -129,11 +133,13 @@ class Newick {
         }
 
         // Look for special synthesis output pattern e.g. Picomonas_judraskeda_ott4738960
-        int i = label.indexOf("_ott");
-        if (i >= 0) {
+        Matcher m = ottidPattern.matcher(label);
+        if (m.matches()) {
+            
+            // int i = label.indexOf("_ott"); label.substring(i+4) label.substring(0,i)
             node.rank = Taxonomy.NO_RANK;
-            node.setId(label.substring(i+4));
-            node.setName(label.substring(0,i));
+            node.setId(m.group(2));
+            node.setName(spacify(m.group(1)));
             return;
         }
 
@@ -143,16 +149,23 @@ class Newick {
             String rank = label.substring(0,pos).toLowerCase();
             if (Taxonomy.ranks.get(rank) != null) {
                 node.rank = rank;
-                node.setName(label.substring(pos+1));
+                node.setName(spacify(label.substring(pos+1)));
             } else {
+                System.out.format("** Unrecognized rank: %s\n", label);
                 node.rank = Taxonomy.NO_RANK;
-                node.setName(label);
+                node.setName(spacify(label));
             }
+
 		} else {
 			node.rank = Taxonomy.NO_RANK;
-			node.setName(label);
+			node.setName(spacify(label));
 		}
 	}
+
+    static private String spacify(String s) {
+        String r = s.replaceAll("_", " ");
+        return (r.length() == 0 ? null : r);
+    }
 
     // ----- WRITE -----
 

@@ -1,6 +1,6 @@
 # Jython script to add names as 3rd column to otu OTT ids file
 
-from org.opentreeoflife.smasher import Taxonomy
+from org.opentreeoflife.taxa import Taxonomy, SourceTaxonomy
 import csv
 
 ottdirname = 'tax/prev_ott/'
@@ -9,7 +9,7 @@ outfilename = 'ids-that-are-otus.tsv.new'
 
 # Load OTT
 
-ids = Taxonomy.getTaxonomy(ottdirname)
+ids = SourceTaxonomy(ottdirname)
 
 # Load ids file and write ids file
 

@@ -5,7 +5,7 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.9draft12
+WHICH=2.10draft1
 PREV_WHICH=2.8
 
 #  $^ = all prerequisites
@@ -29,7 +29,7 @@ JAVA=JYTHONPATH=util java $(CP)
 BIG_JAVA=$(JAVA) -Xmx14G
 SMASH=org.opentreeoflife.smasher.Smasher
 CLASS=org/opentreeoflife/smasher/Smasher.class
-JAVASOURCES=$(shell find org/opentreeoflife/smasher -name "*.java")
+JAVASOURCES=$(shell find org/opentreeoflife -name "*.java")
 
 all: ott
 

@@ -4,7 +4,7 @@
  * and the process isn't complete yet.
  */
 
-package org.opentreeoflife.smasher;
+package org.opentreeoflife.taxa;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +27,7 @@ public enum Flag {
 						  "major_rank_conflict_inherited",
 						  Taxonomy.MAJOR_RANK_CONFLICT),     // Parent-dependent.  Retain value
     UNPLACED             ("unplaced", "unplaced_inherited", Taxonomy.UNPLACED),
+    TATTERED             ("tattered", "tattered_inherited", Taxonomy.TATTERED), // DEPRECATED
 
 	// Not suitable for use as OTUs
 	NOT_OTU			     ("not_otu", "not_otu", Taxonomy.NOT_OTU),
@@ -71,8 +72,8 @@ public enum Flag {
         lookupTable.put("extinct_direct",	EXTINCT);
 
         // 'Tattered' replaced with 'inconsistent' in 2.9
-        lookupTable.put("tattered",	UNPLACED);
-        lookupInheritedTable.put("tattered_inherited",	UNPLACED);
+        // lookupTable.put("tattered",	UNPLACED);
+        // lookupInheritedTable.put("tattered_inherited",	UNPLACED);
 	}
 
 	static Flag lookup(String name) {
@@ -111,6 +112,10 @@ public enum Flag {
 
 	public static void printFlags(int flags, int iflags, PrintStream out) {
         out.print(toString(flags, iflags));
+    }
+
+    public static String flagsAsString(Taxon node) {
+        return toString(node.properFlags, node.inferredFlags);
     }
 
 	public static String toString(int flags, int iflags) {

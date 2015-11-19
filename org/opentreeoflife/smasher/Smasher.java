@@ -9,6 +9,10 @@
 
 package org.opentreeoflife.smasher;
 
+import org.opentreeoflife.taxa.Taxonomy;
+import org.opentreeoflife.taxa.SourceTaxonomy;
+import org.opentreeoflife.taxa.Taxon;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -29,13 +33,11 @@ public class Smasher {
 
 	public static void main(String argv[]) throws Exception {
 
-		Taxonomy.initRanks();
-
 		if (argv.length > 0) {
 
 			Taxonomy tax = null;
 			boolean anyfile = false;
-			Taxon.windyp = false;
+			UnionTaxonomy.windyp = false;
 			String outprefix = null;
 
 			for (int i = 0; i < argv.length; ++i) {
@@ -72,7 +74,7 @@ public class Smasher {
 
 					else if (argv[i].equals("--ids")) {
 						// To smush or not to smush?
-						UnionTaxonomy union = tax.promote(); tax = union;
+						UnionTaxonomy union = promote(tax); tax = union;
 						SourceTaxonomy idsource = Taxonomy.getTaxonomy(argv[++i]);
 						union.assignIds(idsource);
 					}
@@ -90,7 +92,7 @@ public class Smasher {
 
 					else if (argv[i].equals("--edits")) {
 						String dirname = argv[++i];
-						UnionTaxonomy union = tax.promote(); tax = union;
+						UnionTaxonomy union = promote(tax); tax = union;
 						union.edit(dirname);
 					}
 
@@ -141,7 +143,7 @@ public class Smasher {
 					if (tax == null) 
 						tax = Taxonomy.getTaxonomy(argv[i]);
 					else {
-						UnionTaxonomy union = tax.promote();
+						UnionTaxonomy union = promote(tax);
 						SourceTaxonomy source = Taxonomy.getTaxonomy(argv[i]);
 						if (source != null)
 							union.mergeIn(source);
@@ -153,9 +155,20 @@ public class Smasher {
 			jython("-");
 	}
 
+    static UnionTaxonomy promote(Taxonomy tax) {
+        if (tax instanceof SourceTaxonomy) {
+            UnionTaxonomy union = new UnionTaxonomy();
+            union.mergeIn((SourceTaxonomy)tax);
+            return union;
+        } else if (tax instanceof UnionTaxonomy)
+            return (UnionTaxonomy)tax;
+        else
+            throw new RuntimeException(String.format("promotion error: %s", tax));
+    }
+
 	static void jython(String source) {
 		if (source.equals("-")) {
-			System.out.format("Consider doing:\nfrom org.opentreeoflife.smasher import Taxonomy\n");
+			System.out.format("Consider doing:\nfrom org.opentreeoflife.taxa import Taxonomy\n");
 			org.python.util.InteractiveConsole j = new org.python.util.JLineConsole();
 			j.interact();
 		} else {

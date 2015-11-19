@@ -1,7 +1,7 @@
 # Go through inclusion tests in germinator repo
 # smash --jython util/check_inclusions.py
 
-from org.opentreeoflife.smasher import Taxonomy
+from org.opentreeoflife.taxa import Taxonomy
 import csv, sys
 
 def check(ott):

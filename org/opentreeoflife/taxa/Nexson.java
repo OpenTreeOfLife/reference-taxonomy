@@ -111,7 +111,7 @@ public class Nexson {
         "^ot:ottTaxonName": "Palaemon pacificus"
         }
     */
-    public static SourceTaxonomy importTree(JSONObject treeson, Map<String, JSONObject> otus) {
+    public static SourceTaxonomy importTree(JSONObject treeson, Map<String, JSONObject> otus, Taxonomy forForwarding) {
         JSONObject nodes = (JSONObject)treeson.get("nodeById");
         JSONObject sources = (JSONObject)treeson.get("edgeBySourceId");
         SourceTaxonomy tax = new SourceTaxonomy();
@@ -129,6 +129,13 @@ public class Nexson {
                 Object ottidObj = otu.get("^ot:ottId");
                 if (ottidObj != null) {
                     String ottid = ottidObj.toString();  // it's a Long
+                    if (forForwarding != null) {
+                        Taxon probe = forForwarding.lookupId(ottid);
+                        if (probe != null && !ottid.equals(probe.id)) {
+                            System.out.format("Forwarding %s to %s\n", ottid, probe);
+                            ottid = probe.id;
+                        }
+                    }
                     if (tax.lookupId(ottid) == null)
                         taxon.setId(ottid);
                     else

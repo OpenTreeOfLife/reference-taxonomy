@@ -38,13 +38,13 @@ compile: $(CLASS)
 # this is getting tedious
 
 $(CLASS): $(JAVASOURCES) \
-	  lib/jscheme.jar lib/json-simple-1.1.1.jar lib/jython-standalone-2.5.3.jar \
+	  lib/jscheme.jar lib/json-simple-1.1.1.jar lib/jython-standalone-2.7.0.jar \
 	  lib/junit-4.12.jar
 	javac -g $(CP) $(JAVASOURCES)
 
-lib/jython-standalone-2.5.3.jar:
+lib/jython-standalone-2.7.0.jar:
 	wget -O "$@" --no-check-certificate \
-	 "http://search.maven.org/remotecontent?filepath=org/python/jython-standalone/2.5.3/jython-standalone-2.5.3.jar"
+	 "http://search.maven.org/remotecontent?filepath=org/python/jython-standalone/2.7.0/jython-standalone-2.7.0.jar"
 	@ls -l $@
 
 # --------------------------------------------------------------------------

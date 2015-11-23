@@ -2,11 +2,9 @@ This repository contains the following:
 
 * taxa, Java classes for taxa and taxonomies
 * smasher, a Java program for combining taxonomies
-* registry, a management utility for clade id registries (experimental).  See registry/README.md
-* OTT: jython and shell scripts for creating the Open Tree Taxonomy
+* jython and shell scripts for creating OTT, the Open Tree reference taxonomy
 
-
-## Documentation for how to use 'smasher'
+## How to use 'smasher'
 
 See file doc/scripting.md for documentation on using the scripting features of smasher for building, subsetting, querying and other operations on taxonomies. 
 
@@ -16,9 +14,9 @@ Taxonomies are represented as directories, see
 To test to see whether you can run Smasher, do 'make aster'.
 
 If you're puzzled by some decision the algorithm has made, it might be
-helpful to look at the log.tsv file.
+helpful to look at log.tsv and conflicts.tsv.
 
-## To create a new version of OTT
+## How to create a new version of OTT
 
 See files in the doc/ directory for release notes for the taxonomy itself.
 

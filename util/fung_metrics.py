@@ -1,9 +1,9 @@
-from org.opentreeoflife.smasher import Taxonomy
+from org.opentreeoflife.taxa import Taxonomy
 
 """
 Usage:
 
-from org.opentreeoflife.smasher import Taxonomy
+from org.opentreeoflife.taxa import Taxonomy
 ott = Taxonomy.getTaxonomy('tax/ott2.8/')
 import fung_metrics
 fung = ott.select('Fungi')

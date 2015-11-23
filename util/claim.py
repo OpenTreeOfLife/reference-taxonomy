@@ -39,12 +39,16 @@ def test():
 def make_claims(tax, claims):
     passed = True
     for claim in claims:
-        if not claim.make_true(tax):
-            print '** claim failed:', stringify(claim)
-            passed = False
-        elif not claim.check(tax):
-            print '** claim seemed to be made, but not verified:', stringify(claim)
+        passed = passed and make_claim(tax, claim)
     return passed
+
+def make_claim(tax, claim):
+    if not claim.make_true(tax):
+        print '** claim failed:', stringify(claim)
+        return False
+    elif not claim.check(tax):
+        print '** claim seemed to be made, but not verified:', stringify(claim)
+    return True
 
 def test_claims(tax, claims):
     passed = True

@@ -5,7 +5,7 @@ from org.opentreeoflife.smasher import UnionTaxonomy
 from claim import Has_child
 
 # Create model taxonomy
-tax = UnionTaxonomy.newTaxonomy()
+tax = UnionTaxonomy()
 
 # Establish homonym-resolution skeleton (not really used here)
 # skel = Taxonomy.getTaxonomy('tax/skel/', 'skel')

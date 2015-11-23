@@ -6,7 +6,8 @@
 
 import sys
 
-from org.opentreeoflife.smasher import Taxonomy, UnionTaxonomy
+from org.opentreeoflife.taxa import Taxonomy, SourceTaxonomy
+from org.opentreeoflife.smasher import UnionTaxonomy
 from ncbi_ott_assignments import ncbi_assignments_list
 sys.path.append("feed/misc/")
 from chromista_spreadsheet import fixChromista
@@ -33,7 +34,7 @@ def create_ott():
     # There ought to be tests for all of these...
 
     for name in names_of_interest:
-        ott.namesOfInterest.add(name)
+        ott.eventlogger.namesOfInterest.add(name)
 
     # When lumping, prefer to use ids that have been used in OTU matching
     # This list could be used for all sorts of purposes...

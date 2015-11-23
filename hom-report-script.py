@@ -1,10 +1,10 @@
 # Requires python.security.respectJavaAccessibility = false
 # on java command line or in .jython
 
-from org.opentreeoflife.smasher import Taxonomy
-from org.opentreeoflife.smasher import HomonymReport 
+from org.opentreeoflife.taxa import Taxonomy
+from org.opentreeoflife.smasher import UnionTaxonomy, HomonymReport 
 
-union = Taxonomy.newTaxonomy()
+union = UnionTaxonomy()
 skel = Taxonomy.getTaxonomy('tax/skel/', 'skel')
 union.setSkeleton(skel)
 

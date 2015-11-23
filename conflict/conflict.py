@@ -1,6 +1,6 @@
 
 import sys, os, json, argparse, csv
-from org.opentreeoflife.taxa import Taxonomy, Nexson
+from org.opentreeoflife.taxa import Taxonomy, Nexson, Flag
 from org.opentreeoflife.conflict import ConflictAnalysis
 
 repo_dir = '../..'              # directory containing repo clones
@@ -25,7 +25,8 @@ def report_on_tree(tree_id, refs, study, format, writer):
         in_synth = 'yes'
 
     if format == 'long':
-        print study.id, tree_id, study.get(u'^ot:studyYear'), 'candidate:', cand_status, 'in synthesis:', in_synth
+        print ('\n%s %s %s candidate: %s in synthesis: %s' %
+               (study.id, tree_id, study.get(u'^ot:studyYear'), cand_status, in_synth))
     else:
         row = [study.id,
                tree_id,
@@ -40,14 +41,25 @@ def report_on_tree(tree_id, refs, study, format, writer):
         analysis = ConflictAnalysis(input, ref, ingroup(treeson)).analyze()
         skew = compute_skew(study, analysis)
         if format == 'long':
-            print 'skew: %s' % skew
-            analysis.printReport()
-            sys.stdout.write('\n')
+            print ("\n%s nodes, %s tips, %s mapped, %s mapped from input to ref, %s from ref to input, skew %s" %
+                   (input.count(), input.tipCount(), analysis.countOtus(analysis.ingroup),
+                    analysis.map.size(), analysis.comap.size(), skew))
+            print ("%s conflicts out of %s opportunities (%.2f)" %
+                   (analysis.conflicting, analysis.opportunities, analysis.conflictivity()))
+            i = 0
+            for conflict in analysis.conflicts:
+                writer.writerow([study.id, tree_id, ref.getTag(),
+                                 cobble_name(conflict.node), conflict.node.count(),
+                                 cobble_name(conflict.bounce), conflict.bounce.count()
+                                 cobble_name(conflict.outlier), cobble_name(conflict.inlier),
+                                 ConflictAnalysis.distance(conflict.node, conflict.bounce),
+                                 ConflictAnalysis.distance(conflict.outlier, conflict.bounce)])
+                i += 1
+                if i >= 20:
+                    writer.writerow(['...'])
+                    break
         else:
-            name = ''
-            if analysis.inducedIngroup != None:
-                name = cobble_name(analysis.inducedIngroup)
-            row = row + [name,
+            row = row + [cobble_name(analysis.inducedIngroup),
                          '%.2f' % analysis.unmappedness(),
                          '%.2f' % analysis.conflictivity(),
                          analysis.awfulness(),
@@ -58,20 +70,19 @@ def report_on_tree(tree_id, refs, study, format, writer):
 tree_report_header_1 = ['study', 'tree', 'year', 'type', 'candidate?', 'in synth?', 'tips']
 tree_report_header_2 = ['induced', 'unmapped', 'conflicted', 'awfulness', 'skew']
 
-def ingroup(treeson):
-    ingroup = treeson.get(u'^ot:inGroupClade')
-    if ingroup == '':
-        return None
-    else:
-        return ingroup
+taxa_report_header = ['study', 'tree', 'ref', 'node', 'count', 'bounce', 'bcount', 'outlier', 'inlier', 'node height', 'outlier height']
 
 def cobble_name(node):
+    if node == None: return ''
     if node.name != None:
-        return node.name
-    if True:
+        if node.isHidden():
+            return '*' + node.name
+        else:
+            return node.name
+    elif True:
         while node.name == None:
             node = node.parent
-        return '(' + node.name + ')'
+        return '(%s)' % node.name
     else:
         left = node
         while left.name == None:
@@ -80,6 +91,13 @@ def cobble_name(node):
         while right.name == None:
             right = right.children[-1]
         return 'mrca(%s,%s)' % (left.id, right.id)
+
+def ingroup(treeson):
+    ingroup = treeson.get(u'^ot:inGroupClade')
+    if ingroup == '':
+        return None
+    else:
+        return ingroup
 
 # Proxy object for nexson study
 
@@ -225,6 +243,8 @@ def print_header(format, refs, out):
         for ref in refs:
             row = row + tree_report_header_2
         writer.writerow(row)
+    else:
+        writer.writerow(taxa_report_header)
     return writer
 
 def report_on_studies(studies, shard, refs, format, outfile):
@@ -266,6 +286,13 @@ asterales_treespecs=[("pg_2539", "tree6294"), # Soltis et al. 2011
                ("pg_932", "tree1831")   # Goodeniaceae, tons of non monophyly
                ]
 
+def get_refs(paths, default):
+    if paths == None: paths = [default]
+    return map(path_to_tree, paths)
+
+def path_to_tree(path):
+    return Taxonomy.getTaxonomy(path, path.split('/')[-2])
+
 # consider comparing the "^ot:focalClade" to the induced root
 
 if __name__ == '__main__':
@@ -288,36 +315,25 @@ if __name__ == '__main__':
                            help='output format, long (many lines per tree) or short (one line per tree)')
     args = argparser.parse_args()
 
-    print 'refs =', args.refs
-
     if args.command == 'foo':
         read_synthesis_collections()
         print len(trees_in_synthesis)
         #print study_and_tree_ids(os.path.join(repo_dir, 'collections-1/collections-by-owner/opentreeoflife/fungi.json'))
     elif args.command == 'small':
         # Smaller test
-        rs = args.refs
-        if rs == None: rs = ['../registry/aster-ott29/']
-        refs = map(lambda (r): Taxonomy.getTaxonomy(r), rs)
-        #ref = Taxonomy.getTaxonomy('../registry/aster-synth4/')
+        refs = get_refs(args.refs, '../registry/aster-ott29/')
         report_on_trees(asterales_treespecs, args.shard, refs, args.format, args.outfile)
     elif args.command == 'larger':
         # Bigger test
-        rs = args.refs
-        if rs == None: rs = ['../registry/plants-ott29/']
-        refs = map(lambda (r): Taxonomy.getTaxonomy(r), rs)
+        refs = get_refs(args.refs, '../registry/plants-ott29/')
         # Get study list from asterales, but the studies themselves from phylesystem-1
         report_on_studies(all_study_ids(os.path.join(repo_dir, 'asterales-phylesystem')), args.shard, refs, args.format, args.outfile)
     elif args.command == 'all':
-        rs = args.refs
-        if rs == None: rs = '../registry/ott2.9/'
-        refs = map(lambda (r): Taxonomy.getTaxonomy(r), rs)
+        refs = get_refs(args.refs, '../registry/ott2.9/')
         report_on_studies(all_study_ids(args.shard), args.shard, refs, args.format, args.outfile)
     elif args.command == 'tree':
         # Report on a single tree
-        rs = args.refs
-        if rs == None: rs = '../registry/aster-ott29/'
-        refs = map(lambda (r): Taxonomy.getTaxonomy(r), rs)
+        refs = get_refs(args.refs, '../registry/aster-ott29/')
         report_on_trees([(args.study_id, args.tree_id)], args.shard, refs, args.format, args.outfile)
     else:
         print 'unrecognized command', args.command

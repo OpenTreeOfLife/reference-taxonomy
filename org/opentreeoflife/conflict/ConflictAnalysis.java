@@ -127,35 +127,49 @@ public class ConflictAnalysis {
         if (node.children != null)
             for (Taxon child : node.children)
                 mapInputTips(child);
-        else 
+        else {
             if (node.sourceIds != null) {
                 QualifiedId qid = node.sourceIds.get(0);
                 if (qid.prefix.equals("ott")) {
                     String ottid = qid.id;
                     Taxon refNode = ref.lookupId(ottid);
-                    map.put(node, refNode);
-                    comap.put(refNode, node);
+                    if (refNode != null) {
+                        map.put(node, refNode);
+                        comap.put(refNode, node);
+                        return;
+                    }
                 }
             }
+            if (false && node.name != null) {
+                Taxon probe = ref.unique(node.name);
+                if (probe != null) {
+                    // There are lots of these e.g. all of Metalasia in pg_1572
+                    System.out.format("OTU autolookup? %s\n", probe);
+                    // map.put(node, probe);
+                    // comap.put(probe, node);
+                }
+            }
+        }
     }
 
     class Conflict {
+        Taxon outlier, inlier;
         Taxon node, bounce;
-        Taxon[] outlier;
-        Conflict(Taxon node, Taxon bounce, Taxon[] outlier) {
-            this.node = node; this.bounce = bounce; this.outlier = outlier;
+        Conflict(Taxon outlier, Taxon inlier, Taxon node, Taxon bounce) {
+            this.outlier = outlier; this.inlier = inlier;
+            this.node = node; this.bounce = bounce;
         }
         int badness() {
             return (distance(this.node, this.bounce) +
-                    distance(this.outlier[0], this.bounce));
+                    distance(this.outlier, this.bounce));
         }
         void print() {
             System.out.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
                               node.name, node.count(),
                               bounce.name, bounce.count(),
-                              outlier[0].name + " + " + outlier[1].name,
+                              outlier.name + " + " + inlier.name,
                               distance(node, bounce),
-                              distance(outlier[0], bounce));
+                              distance(outlier, bounce));
         }
     }
 
@@ -193,9 +207,11 @@ public class ConflictAnalysis {
                 ++opportunities;
                 if (node.mrca(bounce) != node) {
                     ++conflicting;
-                    Taxon[] outlier = suspect(node);
-                    if (outlier != null)
-                        conflicts.add(new Conflict(node, bounce, outlier));
+                    if (!covered) {
+                        Conflict conflict = suspect(node, bounce);
+                        if (conflict != null)
+                            conflicts.add(conflict);
+                    }
                     return bounce;
                 }
             }
@@ -206,21 +222,19 @@ public class ConflictAnalysis {
     // Need a way to assign blame for paraphyly.
     // If the reference has ((a,b),d), and the input has ((a,d),b),
     // then we want to 'blame' the breakup of (a,b) on d.
-
-    Taxon[] suspect(Taxon node) {
-        Taxon conode = comap.get(node);
+    Conflict suspect(Taxon broken, Taxon bounce) {
+        Taxon conode = comap.get(broken);
         if (conode == null) return null;
-        return hunt(conode, node);
-        // return hunt2(node, comap.get(node));
+        return hunt(conode, broken, bounce);
+        // return hunt2(broken, comap.get(broken));
     }
 
     // Find a descendant of conode that is disjoint from
     // broken, but has a sibling that's not.
-
-    Taxon[] hunt(Taxon conode, Taxon broken) {
+    Conflict hunt(Taxon conode, Taxon broken, Taxon brokenbounce) {
         if (conode.children != null) {
             Taxon in = null, out = null;
-            Taxon[] more = null;
+            Conflict more = null;
             for (Taxon cochild : conode.children) {
                 Taxon bounce = map.get(cochild);
                 if (bounce != null) {
@@ -230,14 +244,14 @@ public class ConflictAnalysis {
                     else if (m != bounce)
                         out = bounce;
                     else if (more == null) {
-                        Taxon[] probe = hunt(cochild, broken);
+                        Conflict probe = hunt(cochild, broken, brokenbounce);
                         if (probe != null) more = probe;
                     }
                     if (in != null && out != null)
-                        return new Taxon[]{out, in};
+                        return new Conflict(out, in, broken, brokenbounce);
                 }
             }
-            if (more != null) return more;
+            return more;
         }
         return null;
     }

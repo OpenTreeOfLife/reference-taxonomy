@@ -5,11 +5,14 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.Collections;
 import java.util.Comparator;
 
 import org.opentreeoflife.taxa.Taxon;
 import org.opentreeoflife.taxa.Taxonomy;
+import org.opentreeoflife.taxa.SourceTaxonomy;
 import org.opentreeoflife.taxa.QualifiedId;
 
 public class ConflictAnalysis {
@@ -18,8 +21,10 @@ public class ConflictAnalysis {
     public Taxonomy input = null;
     public Taxonomy ref = null;
 
+    public Taxon inducedRoot = null;          // node in ref induced by whole input
     public Taxon inducedIngroup = null;       // node in ref induced by ingroup
-    public Taxon ingroup = null;
+
+    public Taxon ingroup = null;              // node in input
 
     // Taxonomy class allows multiple roots, but we can only deal with one
     Taxon inputRoot = null;
@@ -110,10 +115,11 @@ public class ConflictAnalysis {
             System.out.format("** No input tree %s\n", input.getTag());
         else {
             mapInputTips(inputRoot);
-            inducedIngroup = induce(ingroup, ref, map);
+            inducedRoot = induce(inputRoot, ref, map);
+            inducedIngroup = map.get(ingroup);
             // inducedIngroup = mrca in ref of all the shared tips in input
-            if (inducedIngroup != null) {
-                induce(inducedIngroup, input, comap);
+            if (inducedRoot != null) {
+                induce(inducedRoot, input, comap);
                 findConflicts(inducedIngroup);
                 Collections.sort(conflicts, worseThan);
             }
@@ -277,5 +283,69 @@ public class ConflictAnalysis {
         return map.get(node);
     }
 
+    // Set the name of any node that matches up with taxonomy
+
+    void setNames() {
+        setNames(inputRoot);
+    }
+
+    void setNames(Taxon conode) {
+        if (conode.children != null) {
+            conode.name = null;
+            conode.sourceIds = null;
+            Taxon node = map.get(conode); // in taxonomy or synth
+            if (node != null) {
+                Taxon cobounce = comap.get(node);
+                if (cobounce == conode) {
+                    conode.name = node.name;
+                    conode.addSourceId(new QualifiedId(ref.getTag(), node.id));
+                }
+            }
+            for (Taxon child : conode.children)
+                setNames(child);
+        }
+    }
+
+    // Tree derived from ref with tips from input
+    Taxonomy inducedTree() {
+        Set<Taxon> seen = new HashSet<Taxon>(); // set of ref nodes
+        Map<Taxon, Taxon> selected = new HashMap<Taxon, Taxon>(); // map from ref to induced
+        Taxonomy induced = new SourceTaxonomy(ref.getIdspace());
+        // Create node selection
+        for (Taxon node : inputRoot.descendants(true))
+            for (Taxon scan = node; scan != inputRoot; scan = scan.parent) {
+                if (scan.children != null && !seen.contains(scan))
+                    seen.add(scan);
+                else {
+                    Taxon refNode = map.get(scan);
+                    if (refNode != null) {
+                        Taxon sel = selected.get(refNode);
+                        if (sel != null) break;
+                        sel = new Taxon(induced);
+                        if (refNode.id != null)
+                            sel.setId(refNode.id);
+                        if (refNode.name != null)
+                            sel.setName(refNode.name);
+                        selected.put(refNode, sel);
+                    }
+                }
+            }
+        System.out.format("%s nodes in induced tree (%s seen, %s mapped)\n", selected.size(), seen.size(), map.size());
+        // Set parent pointers for all nodes
+        for (Taxon refNode : selected.keySet()) {
+            Taxon node = selected.get(refNode);
+            if (refNode == inducedRoot)
+                induced.addRoot(node);
+            else
+                for (Taxon scan = refNode.parent; scan != null; scan = scan.parent) {
+                    Taxon p = selected.get(scan);
+                    if (p != null) {
+                        p.addChild(node);
+                        break;
+                    }
+                }
+        }
+        return induced;
+    }
 
 }

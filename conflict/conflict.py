@@ -1,4 +1,3 @@
-
 import sys, os, json, argparse, csv
 from org.opentreeoflife.taxa import Taxonomy, Nexson, Flag
 from org.opentreeoflife.conflict import ConflictAnalysis
@@ -7,40 +6,19 @@ repo_dir = '../..'              # directory containing repo clones
 
 # Report conflicts between input tree and reference tree
 
-def report_on_tree(tree_id, refs, study, format, writer):
+def report_on_tree(tree_id, refs, study, format, out, writer):
     trees = study.trees
     treeson = trees[tree_id]
     input = Nexson.importTree(treeson, study.otus, tree_id)
-    ctype = treeson[u'^ot:curatedType']
-
-    cand_status = 'unknown'
-    if len(study.candidate_trees_for_synthesis) > 0:
-        if tree_id in study.candidate_trees_for_synthesis:
-            cand_status = 'yes'
-        else:
-            cand_status = 'no'
-
-    in_synth = 'no'
-    if in_synthesis(study.id, tree_id):
-        in_synth = 'yes'
 
     if format == 'long':
-        print ('\n%s %s %s candidate: %s in synthesis: %s' %
-               (study.id, tree_id, study.get(u'^ot:studyYear'), cand_status, in_synth))
-    else:
-        row = [study.id,
-               tree_id,
-               study.get(u'^ot:studyYear'),
-               ctype,
-               cand_status,
-               in_synth,
-               # focal, # = focal_clade(study, analysis) or ''
-               input.tipCount()]
-
-    for ref in refs:
-        analysis = ConflictAnalysis(input, ref, ingroup(treeson)).analyze()
-        skew = compute_skew(study, analysis)
-        if format == 'long':
+        # One row per tree
+        print ('\n%s %s %s preferred: %s in synthesis: %s' %
+               (study.id, tree_id, study.get(u'^ot:studyYear'),
+                preferred_status(tree_id, study), synthesis_status(tree_id, study)))
+        for ref in refs:
+            analysis = ConflictAnalysis(input, ref, ingroup(treeson)).analyze()
+            skew = compute_skew(study, analysis)
             print ("\n%s nodes, %s tips, %s mapped, %s mapped from input to ref, %s from ref to input, skew %s" %
                    (input.count(), input.tipCount(), analysis.countOtus(analysis.ingroup),
                     analysis.map.size(), analysis.comap.size(), skew))
@@ -50,7 +28,7 @@ def report_on_tree(tree_id, refs, study, format, writer):
             for conflict in analysis.conflicts:
                 writer.writerow([study.id, tree_id, ref.getTag(),
                                  cobble_name(conflict.node), conflict.node.count(),
-                                 cobble_name(conflict.bounce), conflict.bounce.count()
+                                 cobble_name(conflict.bounce), conflict.bounce.count(),
                                  cobble_name(conflict.outlier), cobble_name(conflict.inlier),
                                  ConflictAnalysis.distance(conflict.node, conflict.bounce),
                                  ConflictAnalysis.distance(conflict.outlier, conflict.bounce)])
@@ -58,14 +36,55 @@ def report_on_tree(tree_id, refs, study, format, writer):
                 if i >= 20:
                     writer.writerow(['...'])
                     break
-        else:
+    elif format == 'short':
+        # One row per study
+        ctype = treeson[u'^ot:curatedType']
+        row = [study.id,
+               tree_id,
+               study.get(u'^ot:studyYear'),
+               ctype.encode("utf-8"),
+               preferred_status(tree_id, study),
+               synthesis_status(tree_id, study),
+               # focal, # = focal_clade(study, analysis) or ''
+               input.tipCount()]
+        for ref in refs:
+            analysis = ConflictAnalysis(input, ref, ingroup(treeson)).analyze()
+            skew = compute_skew(study, analysis)
             row = row + [cobble_name(analysis.inducedIngroup),
                          '%.2f' % analysis.unmappedness(),
                          '%.2f' % analysis.conflictivity(),
                          analysis.awfulness(),
                          skew]
-    if format != 'long':
         writer.writerow(row)
+    elif format == 'newick':
+        for ref in refs:
+            analysis = ConflictAnalysis(input, ref, ingroup(treeson)).analyze()
+            analysis.setNames()
+            out.write(input.toNewick(False))
+            out.write('\n')
+    elif format == 'induced':
+        for ref in refs:
+            analysis = ConflictAnalysis(input, ref, ingroup(treeson)).analyze()
+            out.write(analysis.inducedTree().toNewick(False))
+            out.write('\n')
+    else:
+        print '** unrecognized format', format
+
+def preferred_status(tree_id, study):
+    if len(study.preferred_trees) > 0:
+        if tree_id in study.preferred_trees:
+            return 'yes'
+        else:
+            return 'no'
+    else:
+        return 'unknown'
+
+def synthesis_status(tree_id, study):
+    if in_synthesis(study.id, tree_id):
+        return 'yes'
+    else:
+        return 'no'
+
 
 tree_report_header_1 = ['study', 'tree', 'year', 'type', 'candidate?', 'in synth?', 'tips']
 tree_report_header_2 = ['induced', 'unmapped', 'conflicted', 'awfulness', 'skew']
@@ -107,7 +126,7 @@ class Study:
         self.nexson = None
         self.otus = {}
         self.trees = {}
-        self.candidate_trees_for_synthesis = []
+        self.preferred_trees = []
 
     def get(self, attribute):
         if attribute in self.nexson[u'nexml']:
@@ -123,7 +142,7 @@ class Study:
                 self.otus = Nexson.getOtus(self.nexson)
                 self.trees = Nexson.getTrees(self.nexson)
                 z = self.get(u'^ot:candidateTreeForSynthesis')
-                if z != None: self.candidate_trees_for_synthesis = z
+                if z != None: self.preferred_trees = z
             else:
                 print '** Not found:', path
 
@@ -191,24 +210,27 @@ def study_and_tree_ids(path):
         return map(lambda coll: (coll[u'studyID'], coll[u'treeID']),
                    collection_json[u'decisions'])
 
+synthesis_treespecs = []
 trees_in_synthesis = {}
 
 def read_synthesis_collections():
+    if len(synthesis_treespecs) > 0: return
     for collection_name in ['fungi',
                             'safe-microbes',
                             'metazoa',
                             'plants']:
         path = os.path.join(repo_dir, 'collections-1/collections-by-owner/opentreeoflife', collection_name + '.json')
         print 'reading', path
-        for pair in study_and_tree_ids(path):
-            trees_in_synthesis[pair] = True
+        for treespec in study_and_tree_ids(path):
+            synthesis_treespecs.append(treespec)
+            trees_in_synthesis[treespec] = True
 
 def in_synthesis(study_id, tree_id):
     if len(trees_in_synthesis) == 0:
         read_synthesis_collections()
-    pair = (study_id, tree_id)
-    if pair in trees_in_synthesis:
-        return trees_in_synthesis[pair]
+    treespec = (study_id, tree_id)
+    if treespec in trees_in_synthesis:
+        return trees_in_synthesis[treespec]
     else:
         return False
 
@@ -234,7 +256,7 @@ def compute_skew(study, analysis):
                 return ConflictAnalysis.distance(focal, analysis.inducedIngroup)
             else:
                 return 'focal clade / tree conflict'
-    return None
+    return 'nfc'
 
 def print_header(format, refs, out):
     writer = csv.writer(out)
@@ -243,7 +265,7 @@ def print_header(format, refs, out):
         for ref in refs:
             row = row + tree_report_header_2
         writer.writerow(row)
-    else:
+    elif format == 'long':
         writer.writerow(taxa_report_header)
     return writer
 
@@ -257,12 +279,12 @@ def report_on_studies(studies, shard, refs, format, outfile):
             candidates = study.candidate_trees_for_synthesis
             if candidates != None and len(candidates) > 0:
                 for tree_id in candidates:
-                    report_on_tree(tree_id, refs, study, format, writer)
+                    report_on_tree(tree_id, refs, study, format, out, writer)
             else:
                 # look at "^ot:treesElementOrder" ?
                 for tree_id in study.trees:
-                    report_on_tree(tree_id, refs, study, format, writer)
-    if outfile == '-': out.close()
+                    report_on_tree(tree_id, refs, study, format, out, writer)
+    if outfile != '-': out.close()
 
 def report_on_trees(treespecs, shard, refs, format, outfile):
     out = sys.stderr
@@ -271,7 +293,7 @@ def report_on_trees(treespecs, shard, refs, format, outfile):
     for (study_id, tree_id) in treespecs:
         study = gobble_study(study_id, shard)
         if check_study(study):
-            report_on_tree(tree_id, refs, study, format, writer)
+            report_on_tree(tree_id, refs, study, format, out, writer)
     if outfile == '-': out.close()
 
 # These are some asterales studies.  List is from gcmdr repo.
@@ -323,6 +345,11 @@ if __name__ == '__main__':
         # Smaller test
         refs = get_refs(args.refs, '../registry/aster-ott29/')
         report_on_trees(asterales_treespecs, args.shard, refs, args.format, args.outfile)
+    elif args.command == 'synthesis':
+        # Smaller test
+        refs = get_refs(args.refs, '../registry/ott2.9/')
+        read_synthesis_collections()
+        report_on_trees(synthesis_treespecs, args.shard, refs, args.format, args.outfile)
     elif args.command == 'larger':
         # Bigger test
         refs = get_refs(args.refs, '../registry/plants-ott29/')

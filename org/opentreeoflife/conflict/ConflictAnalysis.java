@@ -313,38 +313,56 @@ public class ConflictAnalysis {
         Taxonomy induced = new SourceTaxonomy(ref.getIdspace());
         // Create node selection
         for (Taxon node : inputRoot.descendants(true))
-            for (Taxon scan = node; scan != inputRoot; scan = scan.parent) {
-                if (scan.children != null && !seen.contains(scan))
-                    seen.add(scan);
-                else {
-                    Taxon refNode = map.get(scan);
-                    if (refNode != null) {
-                        Taxon sel = selected.get(refNode);
-                        if (sel != null) break;
-                        sel = new Taxon(induced);
-                        if (refNode.id != null)
-                            sel.setId(refNode.id);
-                        if (refNode.name != null)
-                            sel.setName(refNode.name);
-                        selected.put(refNode, sel);
+            if (node.children == null) {
+                Taxon refNode = map.get(node);
+                if (refNode != null && selected.get(refNode) == null) {
+                    Taxon tip = new Taxon(induced);
+                    if (refNode.id != null) tip.setId(refNode.id);
+                    if (refNode.name != null) tip.setName(refNode.name);
+                    selected.put(refNode, tip);
+                    seen.add(refNode);
+
+                    // Scan rootward through taxonomy from every tip (OTU)
+                    for (Taxon scan = refNode.parent; scan != null; scan = scan.parent) {
+                        if (!seen.contains(scan))
+                            seen.add(scan);
+                        else {
+                            // seen twice or more
+                            Taxon sel = selected.get(scan);
+                            if (sel == null) {
+                                // second visit
+                                sel = new Taxon(induced);
+                                if (scan.id != null) sel.setId(scan.id);
+                                if (scan.name != null) sel.setName(scan.name);
+                                selected.put(scan, sel);
+                            }
+                            break;
+                        }
                     }
                 }
             }
         System.out.format("%s nodes in induced tree (%s seen, %s mapped)\n", selected.size(), seen.size(), map.size());
         // Set parent pointers for all nodes
+        int nroots = 0;
         for (Taxon refNode : selected.keySet()) {
             Taxon node = selected.get(refNode);
-            if (refNode == inducedRoot)
-                induced.addRoot(node);
-            else
-                for (Taxon scan = refNode.parent; scan != null; scan = scan.parent) {
-                    Taxon p = selected.get(scan);
-                    if (p != null) {
-                        p.addChild(node);
-                        break;
-                    }
+            boolean rootp = true;
+            // Find parent of node
+            for (Taxon scan = refNode.parent; scan != null; scan = scan.parent) {
+                Taxon p = selected.get(scan);
+                if (p != null) {
+                    p.addChild(node);
+                    rootp = false;
+                    break;
                 }
+            }
+            if (rootp) {
+                induced.addRoot(node);
+                ++nroots;
+            }
         }
+        if (nroots != 1)
+            System.out.format("Induced tree has %s roots, should have 1\n", nroots);
         return induced;
     }
 

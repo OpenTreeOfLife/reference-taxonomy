@@ -48,6 +48,45 @@ public class Taxon {
         this.setName(name);
     }
 
+    public Iterable<Taxon> descendants(final boolean includeSelf) {
+        final Taxon node = this;
+        return new Iterable<Taxon>() {
+            public Iterator<Taxon> iterator() {
+
+                final List<Iterator<Taxon>> stack = new ArrayList<Iterator<Taxon>>();
+                final Taxon[] starting = new Taxon[1]; // locative
+                if (includeSelf)
+                    starting[0] = node;
+                else
+                    stack.add(node.children.iterator());
+
+                return new Iterator<Taxon>() {
+                    public boolean hasNext() {
+                        if (starting[0] != null) return true;
+                        while (true) {
+                            if (stack.size() == 0) return false;
+                            if (stack.get(0).hasNext()) return true;
+                            else stack.remove(0);
+                        }
+                    }
+                    public Taxon next() {
+                        Taxon node = starting[0];
+                        if (node != null)
+                            starting[0] = null;
+                        else
+                            // Caller has previously called hasNext(), so we're good to go
+                            // Was: .get(stack.size()-1)
+                            node = stack.get(0).next();
+                        if (node.children != null)
+                            stack.add(node.children.iterator());
+                        return node;
+                    }
+                    public void remove() { throw new UnsupportedOperationException(); }
+                };
+            }
+        };
+    }
+
     public boolean isRoot() {
         return this.taxonomy.hasRoot(this);
     }
@@ -391,7 +430,7 @@ public class Taxon {
 	// either as new names, fragmented taxa, or (occasionally)
 	// new homonyms, or vertical insertions.
 
-	void addSourceId(QualifiedId qid) {
+	public void addSourceId(QualifiedId qid) {
 		if (this.sourceIds == null)
 			this.sourceIds = new ArrayList<QualifiedId>(1);
 		if (!this.sourceIds.contains(qid))

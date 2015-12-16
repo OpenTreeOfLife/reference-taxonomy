@@ -6,7 +6,7 @@
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
 WHICH=2.10draft1
-PREV_WHICH=2.8
+PREV_WHICH=2.9
 
 #  $^ = all prerequisites
 #  $< = first prerequisite
@@ -25,8 +25,8 @@ FUNG=tax/fung
 PREOTTOL=../../preottol
 
 CP=-classpath ".:lib/*"
-JAVA=JYTHONPATH=util java $(CP)
-BIG_JAVA=$(JAVA) -Xmx14G
+JAVAFLAGS=-Xmx14G
+JAVA=JYTHONPATH=util java $(JAVAFLAGS) $(CP)
 SMASH=org.opentreeoflife.smasher.Smasher
 CLASS=org/opentreeoflife/smasher/Smasher.class
 JAVASOURCES=$(shell find org/opentreeoflife -name "*.java")
@@ -35,17 +35,22 @@ all: ott
 
 compile: $(CLASS)
 
-# this is getting tedious
-
 $(CLASS): $(JAVASOURCES) \
-	  lib/jscheme.jar lib/json-simple-1.1.1.jar lib/jython-standalone-2.5.3.jar \
+	  lib/json-simple-1.1.1.jar lib/jython-standalone-2.7.0.jar \
 	  lib/junit-4.12.jar
 	javac -g $(CP) $(JAVASOURCES)
 
-lib/jython-standalone-2.5.3.jar:
+lib/jython-standalone-2.7.0.jar:
 	wget -O "$@" --no-check-certificate \
-	 "http://search.maven.org/remotecontent?filepath=org/python/jython-standalone/2.5.3/jython-standalone-2.5.3.jar"
+	 "http://search.maven.org/remotecontent?filepath=org/python/jython-standalone/2.7.0/jython-standalone-2.7.0.jar"
 	@ls -l $@
+
+bin/jython:
+	mkdir -p bin
+	(echo "#!/bin/bash"; \
+	 echo "export JYTHONPATH=.:$$PWD:$$PWD/util:$$PWD/lib/json-simple-1.1.1.jar"; \
+	 echo exec java -jar "$(JAVAFLAGS)" $$PWD/lib/jython-standalone-2.7.0.jar $*) >$@
+	chmod +x $@
 
 # --------------------------------------------------------------------------
 

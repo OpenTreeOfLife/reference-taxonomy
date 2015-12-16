@@ -18,8 +18,8 @@ import org.opentreeoflife.taxa.QualifiedId;
 public class ConflictAnalysis {
 
     // input is an input tree, ref is a 'reference' tree (either taxonomy or synthetic tree)
-    public Taxonomy input = null;
-    public Taxonomy ref = null;
+    public Taxonomy input;
+    public Taxonomy ref;
 
     public Taxon inducedRoot = null;          // node in ref induced by whole input
     public Taxon inducedIngroup = null;       // node in ref induced by ingroup
@@ -35,9 +35,14 @@ public class ConflictAnalysis {
     int conflicting = 0;
     int opportunities = 0;
 
+    boolean includeIncertaeSedis;
+
     List<Conflict> conflicts = new ArrayList<Conflict>();
 
     public ConflictAnalysis(Taxonomy input, Taxonomy ref, String ingroup) {
+        this(input, ref, ingroup, true);
+    }
+    public ConflictAnalysis(Taxonomy input, Taxonomy ref, String ingroup, boolean includeIncertaeSedis) {
         this.input = input;
         this.ref = ref;
         for (Taxon r : input.roots()) {
@@ -51,6 +56,7 @@ public class ConflictAnalysis {
         this.ingroup = input.lookupId(ingroup);
         if (this.ingroup == null)
             this.ingroup = inputRoot;
+        this.analyze();
     }
 
     // One measure of conflict is #conflicting divided by #opportunities
@@ -139,7 +145,8 @@ public class ConflictAnalysis {
                 if (qid.prefix.equals("ott")) {
                     String ottid = qid.id;
                     Taxon refNode = ref.lookupId(ottid);
-                    if (refNode != null) {
+                    if (refNode != null
+                        && (includeIncertaeSedis || !refNode.isHidden())) {
                         map.put(node, refNode);
                         comap.put(refNode, node);
                         return;
@@ -161,9 +168,10 @@ public class ConflictAnalysis {
     class Conflict {
         Taxon outlier, inlier;
         Taxon node, bounce;
-        Conflict(Taxon outlier, Taxon inlier, Taxon node, Taxon bounce) {
+        Taxon comesFrom;
+        Conflict(Taxon outlier, Taxon inlier, Taxon node, Taxon bounce, Taxon comesFrom) {
             this.outlier = outlier; this.inlier = inlier;
-            this.node = node; this.bounce = bounce;
+            this.node = node; this.bounce = bounce; this.comesFrom = comesFrom;
         }
         int badness() {
             return (distance(this.node, this.bounce) +
@@ -196,29 +204,32 @@ public class ConflictAnalysis {
     }
 
     // Recursive.  Return value is 'bounce' in ref 
-    Taxon findConflicts(Taxon node) {
+    Conflict findConflicts(Taxon node) {
         Taxon conode = comap.get(node);
         if (conode != null) {
             Taxon bounce = map.get(conode);
             if (bounce != null) {
-                // Preorder traversal
-                boolean covered = false;
+                // Preorder traversal.
+                Conflict covered = null;
                 if (node.children != null)
                     for (Taxon child : node.children) {
-                        Taxon childBounce = findConflicts(child);
-                        if (childBounce == bounce)
-                            covered = true;
+                        Conflict childConflict = findConflicts(child);
+                        if (childConflict != null) {
+                            if (childConflict.bounce == bounce)
+                                covered = childConflict;
+                        }
                     }
                 // Now deal with this node
                 ++opportunities;
-                if (node.mrca(bounce) != node) {
+                if (node.mrca(bounce) != node) { // if bounce doesn't descend from node
                     ++conflicting;
-                    if (!covered) {
+                    if (covered == null) {
                         Conflict conflict = suspect(node, bounce);
                         if (conflict != null)
                             conflicts.add(conflict);
-                    }
-                    return bounce;
+                        return conflict;
+                    } else
+                        return new Conflict(covered.outlier, covered.inlier, node, bounce, covered.node);
                 }
             }
         }
@@ -254,7 +265,7 @@ public class ConflictAnalysis {
                         if (probe != null) more = probe;
                     }
                     if (in != null && out != null)
-                        return new Conflict(out, in, broken, brokenbounce);
+                        return new Conflict(out, in, broken, brokenbounce, null);
                 }
             }
             return more;
@@ -283,10 +294,12 @@ public class ConflictAnalysis {
         return map.get(node);
     }
 
-    // Set the name of any node that matches up with taxonomy
+    // Set the name of any node that matches up with taxonomy.
+    // Also add ott:nnnnn as a source id for any named node, so we can tell which OTT taxon was matched.
 
-    void setNames() {
+    Taxonomy setNames() {
         setNames(inputRoot);
+        return input;
     }
 
     void setNames(Taxon conode) {

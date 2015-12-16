@@ -116,7 +116,6 @@ public class Nexson {
         JSONObject sources = (JSONObject)treeson.get("edgeBySourceId");
         SourceTaxonomy tax = new SourceTaxonomy();
         tax.setTag(tag);
-        Map<String, Taxon> taxa = new HashMap<String, Taxon>(); // maps otu id to Taxon
 
         // Make a Taxon object for each NeXML node in the tree
         for (Object idObj : nodes.keySet()) {
@@ -124,46 +123,53 @@ public class Nexson {
             // make one Taxon for every node
             Taxon taxon = new Taxon(tax);
             taxon.setId(id);
-
-            // for OTUs (tips), annotate Taxa with OTT id, if present
-            JSONObject node = (JSONObject)nodes.get(id);
-            Object otuIdObj = node.get("@otu");
-            if (otuIdObj != null) {
-                String otuId = ((String)otuIdObj);
-                JSONObject otu = ((JSONObject)otus.get(otuId));
-                Object ottidObj = otu.get("^ot:ottId");
-                if (ottidObj != null)
-                    taxon.addSourceId(new QualifiedId("ott", ottidObj.toString()));
-                Object label = otu.get("^ot:originalLabel");
-                if (label != null)
-                    taxon.setName((String)label);
-            }
-            taxa.put(id, taxon);
         }
+        // Transfer edges over from NeXML to Taxonomy instance
         for (Object idObj : sources.keySet()) {
             String id = (String)idObj;
-            Taxon src = taxa.get(id);
+            Taxon src = tax.lookupId(id);
             for (Object edgeObj : ((JSONObject)sources.get(id)).values()) {
-                String targetOtuId = ((String)(((JSONObject)edgeObj).get("@target")));
-                src.addChild(taxa.get(targetOtuId));
+                String targetNodeId = ((String)(((JSONObject)edgeObj).get("@target")));
+                src.addChild(tax.lookupId(targetNodeId));
             }
         }
+
+        // Set the root
         String rootid = (String)treeson.get("^ot:rootNodeId");
         if (rootid != null && rootid.length() == 0) rootid = null;
-
         String specid = (String)treeson.get("^ot:specifiedRoot");
-        if (specid != null && specid.length() == 0) specid = null;
         if (specid != null && rootid != null && !specid.equals(rootid))
             System.out.format("** Specified root %s not= represented root %s - rerooting NYI\n",
                               specid, rootid);
-
         if (rootid != null) {
             Taxon node = tax.lookupId(rootid);
             if (node != null)
                 tax.addRoot(node);
+            else
+                System.out.format("** Root node %s not found in %s\n", rootid, tag);
         } else
-            System.out.format("** Root node %s not found in %s\n", rootid, tag);
+            System.out.format("** No root node found for %s\n", tag);
 
+        // Store tip labels as Taxon names, OTT ids as sources
+        for (Taxon taxon : tax.taxa()) {
+            if (taxon.children == null) {
+                JSONObject node = (JSONObject)nodes.get(taxon.id);
+                Object otuIdObj = node.get("@otu");
+                if (otuIdObj != null) {
+                    String otuId = ((String)otuIdObj);
+                    JSONObject otu = ((JSONObject)otus.get(otuId));
+                    Object ottidObj = otu.get("^ot:ottId"); // an integer
+                    if (ottidObj != null)
+                        taxon.addSourceId(new QualifiedId("ott", ottidObj.toString()));
+                    Object label = otu.get("^ot:originalLabel");
+                    if (label == null)
+                        System.out.format("** No label for terminal node %s, otu = %s\n", taxon.id, otu);
+                    taxon.setName((String)label);
+                } else {
+                    System.out.format("** No @otu for terminal node %s\n", taxon.id);
+                }
+            }
+        }
         return tax;
     }
 

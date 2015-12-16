@@ -118,40 +118,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
     }
 
 	public Iterator<Taxon> iterator() {
-        // return this.forest.descendants(false).iterator();
-        return descendantsIterator(this.forest, false);
+        return this.taxa().iterator();
     }
-    // The iteration includes the start node itself!
-	public Iterator<Taxon> descendantsIterator(Taxon start, boolean includeStart) {
-		final List<Iterator<Taxon>> its = new ArrayList<Iterator<Taxon>>();
-		final Taxon[] current = new Taxon[1]; // locative
-        if (includeStart)
-            current[0] = start;
-
-		return new Iterator<Taxon>() {
-			public boolean hasNext() {
-				if (current[0] != null) return true;
-				while (true) {
-					if (its.size() == 0) return false;
-					if (its.get(0).hasNext()) return true;
-					else its.remove(0);
-				}
-			}
-			public Taxon next() {
-				Taxon node = current[0];
-				if (node != null)
-					current[0] = null;
-				else
-					// Caller has previously called hasNext(), so we're good to go
-					// Was: .get(its.size()-1)
-					node = its.get(0).next();
-				if (node.children != null)
-					its.add(node.children.iterator());
-				return node;
-			}
-			public void remove() { throw new UnsupportedOperationException(); }
-		};
-	}
 
 	public Taxon lookupId(String id) {
         return this.idIndex.get(id);

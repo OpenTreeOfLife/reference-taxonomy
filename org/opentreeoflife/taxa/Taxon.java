@@ -57,7 +57,7 @@ public class Taxon {
                 final Taxon[] starting = new Taxon[1]; // locative
                 if (includeSelf)
                     starting[0] = node;
-                else
+                else if (node.children != null)
                     stack.add(node.children.iterator());
 
                 return new Iterator<Taxon>() {
@@ -439,7 +439,7 @@ public class Taxon {
 
 	public void addSource(Taxon source) {
 		if (source.id != null &&
-			!source.taxonomy.getTag().equals("skel")) //KLUDGE!!!
+			!source.taxonomy.getIdspace().equals("skel")) //KLUDGE!!!
 			addSourceId(source.getQualifiedId());
 		// Accumulate ...
 		if (source.sourceIds != null)
@@ -449,22 +449,22 @@ public class Taxon {
 
 	public QualifiedId getQualifiedId() {
 		if (this.id != null)
-			return new QualifiedId(this.taxonomy.getTag(), this.id);
+			return new QualifiedId(this.taxonomy.getIdspace(), this.id);
         else if (this.name != null) {
 			System.err.println("| [getQualifiedId] Taxon has no id, using name: " + this.name);
-			return new QualifiedId(this.taxonomy.getTag(), this.name);
+			return new QualifiedId(this.taxonomy.getIdspace(), this.name);
         } else if (this.noMrca()) {
             // Shouldn't happen
 			System.err.println("| [getQualifiedId] Forest");
-			return new QualifiedId(this.taxonomy.getTag(), "<forest>");
+			return new QualifiedId(this.taxonomy.getIdspace(), "<forest>");
         } else if (this.parent == null) {
             // Shouldn't happen
 			System.err.println("| [getQualifiedId] Detached");
-            return new QualifiedId(this.taxonomy.getTag(), "<detached>");
+            return new QualifiedId(this.taxonomy.getIdspace(), "<detached>");
         } else {
 			// What if from a Newick string?
 			System.err.println("| [getQualifiedId] Nondescript");
-            return new QualifiedId(this.taxonomy.getTag(), "<nondescript>");
+            return new QualifiedId(this.taxonomy.getIdspace(), "<nondescript>");
         }
 	}
 
@@ -963,7 +963,8 @@ public class Taxon {
         } else {
             // if (!newchild.isDetached()) newchild.detach();  - not needed given change to newTaxon.
             if (newchild.descendsFrom(this))
-                System.err.format("* Note: %s already descends from %s, lifting it up to child\n", newchild, this);
+                System.err.format("* Note: %s already descends from %s, lifting it from %s to child\n",
+                                  newchild, this, newchild.parent);
             newchild.changeParent(this, 0);
 			this.addFlag(Taxonomy.EDITED);
             return true;

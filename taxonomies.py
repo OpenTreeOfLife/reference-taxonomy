@@ -2,7 +2,7 @@
 
 from org.opentreeoflife.taxa import Taxonomy
 from claim import Has_child, Whether_same, With_ancestor, With_descendant, \
-                  Whether_extant, make_claims
+                  Whether_extant, make_claim, make_claims
 
 this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/taxonomies.py'
 
@@ -354,7 +354,7 @@ def link_to_h2007(tax):
             some_claims.append(Has_child(order, family, h2007_fam))
     make_claims(tax, some_claims)
     # Loxosporales,synonym of Sarrameanales
-    make_claim(fungorum,
+    make_claim(tax,
                Whether_same('Sarrameanales', 'Loxosporales',
                             True, h2007_fam))
 

@@ -311,7 +311,7 @@ public class ConflictAnalysis {
                 Taxon cobounce = comap.get(node);
                 if (cobounce == conode) {
                     conode.name = node.name;
-                    conode.addSourceId(new QualifiedId(ref.getTag(), node.id));
+                    conode.addSourceId(new QualifiedId(ref.getIdspace(), node.id));
                 }
             }
             for (Taxon child : conode.children)

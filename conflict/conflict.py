@@ -13,65 +13,45 @@ default_shard = os.path.join(repo_dir, 'phylesystem-1')
 
 # Report on every preferred tree in each of the studies
 
-def report_on_studies(study_ids, shard, refs, format, outfile):
-    out = sys.stderr
+def report_on_studies(study_ids, shard, refs, report_type, outfile):
+    out = sys.stdout
     if outfile != '-': out = open(outfile, 'w')
-    writer = start_report(format, refs, out)
+    writer = start_report(report_type, refs, out)
     for study_id in study_ids:
-        study = gobble_study(study_id, shard)
+        study = get_study(study_id, shard)
         if study.nexson.get(u'^ot:notIntendedForSynthesis') != True:
             for tree in tree_iter_nexson_proxy(study):
                 if is_preferred(tree.tree_id, study):
-                    report_for_tree(tree, study, refs, format, writer)
+                    report_for_tree(tree, study, refs, report_type, writer)
     if outfile != '-': out.close()
 
-def report_on_trees(treespecs, shard, refs, format, outfile):
-    out = sys.stderr
+def report_on_trees(treespecs, shard, refs, report_type, outfile):
+    out = sys.stdout
     if outfile != '-': out = open(outfile, 'w')
-    writer = start_report(format, refs, out)
-
-    # There might be multiple trees per study, so it should help to cache.
-    cached_studies = {}
-    counts = tree_counts(treespecs)
-
+    writer = start_report(report_type, refs, out)
     for (study_id, tree_id) in treespecs:
-        if study_id in cached_studies:
-            study = cached_studies[study_id]
-        else:
-            study = gobble_study(study_id, shard)
-            cached_studies[study_id] = study
-        report_for_tree(study.get_tree(tree_id), study, refs, format, writer)
-        counts[study_id] -= 1
-        if counts[study_id] == 0:
-            del cached_studies[study_id] # GC
+        study = get_study(study_id, shard)
+        report_for_tree(study.get_tree(tree_id), study, refs, report_type, writer)
     if outfile == '-': out.close()
 
-def tree_counts(treespecs):
-    counts = {}
-    for (study_id, tree_id) in treespecs:
-        if study_id in counts:
-            counts[study_id] += 1
-        else:
-            counts[study_id] = 1
-    return counts
-
-def start_report(format, refs, out):
+def start_report(report_type, refs, out):
     writer = csv.writer(out)
-    if format == 'tree':
+    if report_type == 'tree':
         writer.writerow(tree_report_header(refs))
-    elif format == 'conflict':
+    elif report_type == 'conflict':
         writer.writerow(conflict_report_header)
     return writer
 
-def report_for_tree(tree, study, refs, format, writer):
-    if format == 'conflict':
-        report_conflicts(tree, study, refs, writer)
-    elif format == 'tree':
+def report_for_tree(tree, study, refs, report_type, writer):
+    if report_type == 'tree':
         report_on_tree(tree, study, refs, writer)
+    elif report_type == 'conflict':
+        report_conflicts(tree, study, refs, writer)
     else:
-        print '** unrecognized format', format
+        print '** unrecognized report_type', report_type
 
 
+# 'tree' report
 # Write one row for each conflict between the given tree and
 # taxonomy/synthesis.
 
@@ -90,10 +70,11 @@ def report_conflicts(tree, study, refs, writer):
         print ("\n%s nodes, %s tips, %s mapped, %s mapped from input to ref, %s from ref to input, skew %s" %
                (input.count(), input.tipCount(), analysis.countOtus(analysis.ingroup),
                 analysis.map.size(), analysis.comap.size(), skew))
+        conflicts = analysis.findConflicts()
         print ("%s conflicts out of %s opportunities (%.2f)" %
                (analysis.conflicting, analysis.opportunities, analysis.conflictivity()))
         i = 0
-        for conflict in analysis.conflicts:
+        for conflict in conflicts:
             writer.writerow([study.id, tree.tree_id, ref.getTag(),
                              cobble_name(conflict.node), conflict.node.count(),
                              cobble_name(conflict.bounce), conflict.bounce.count(),
@@ -105,6 +86,7 @@ def report_conflicts(tree, study, refs, writer):
                 writer.writerow(['...'])
                 break
 
+# 'conflict' report
 # Write one row using the given csv writer summarizing how the given
 # tree conflicts with taxonomy and/or synthesis.
 
@@ -132,6 +114,10 @@ def report_on_tree(tree, study, refs, writer):
            input.tipCount()]
     for ref in refs:
         analysis = ConflictAnalysis(input, ref, tree.ingroup())
+        if True:
+            (none, congruent, refines, conflicts) = analysis.dispositionCounts()
+        else:
+            analysis.findConflicts()
         skew = compute_skew(study, analysis)
         row = row + [cobble_name(analysis.inducedIngroup),
                      '%.2f' % analysis.unmappedness(),
@@ -298,6 +284,20 @@ def study_id_to_path(study_id, shard=default_shard):
 
 # Load a study
 
+single_study_cache = {'id': None, 'study': None}
+
+def get_study(study_id, shard):
+    if study_id == single_study_cache['id']:
+        study = single_study_cache['study']
+    else:
+        single_study_cache['id'] = None
+        single_study_cache['study'] = None
+        study = gobble_study(study_id, shard)
+        if study != None:
+            single_study_cache['study'] = study
+            single_study_cache['id'] = study_id
+    return study
+
 def gobble_study(study_id, phylesystem):
     filepath = study_id_to_path(study_id, phylesystem)
     # should do try/catch for file-not-found
@@ -423,7 +423,7 @@ if __name__ == '__main__':
                            help='root directory of repository containing nexsons')
     argparser.add_argument('--format', dest='format',
                            default='conflict',
-                           help='output format, long (many lines per tree) or short (one line per tree)')
+                           help='report type, long (many lines per tree) or short (one line per tree)')
     args = argparser.parse_args()
 
     if args.command == 'small':

@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.io.BufferedReader;
 import java.io.IOException;
 
+import org.json.simple.JSONValue; 
 import org.json.simple.JSONObject; 
 import org.json.simple.parser.JSONParser; 
 import org.json.simple.parser.ParseException;
@@ -27,8 +28,7 @@ public class Nexson {
     // json is what the JSON parser returned for the whole file.
     //  looks like {"nexml": {..., "treesById": {...}, ...}}
     // return value is a set of subnodes of that.
-    public static Map<String, JSONObject> getTrees(Object json) {
-        JSONObject obj = (JSONObject)json;
+    public static Map<String, JSONObject> getTrees(JSONObject obj) {
         JSONObject nexmlContent = (JSONObject)(obj.get("nexml"));
         JSONObject treesById = (JSONObject)(nexmlContent.get("treesById"));
         /* treesById is {"trees1": {
@@ -37,9 +37,17 @@ public class Nexson {
                                     "treeById": {
                                                  "tree1": { ...} ...} ...} ...}
         */
+        if (treesById == null) {
+            System.err.format("** No treesById\n");
+            return null;
+        }
         Map<String, JSONObject> result = new HashMap<String, JSONObject>();
         for (Object treeses : treesById.values()) {
             JSONObject trees = (JSONObject)(((JSONObject)treeses).get("treeById"));
+            if (trees == null) {
+                System.err.format("** Missing trees\n");
+                return null;
+            }
             for (Object id : trees.keySet()) {
                 result.put((String)id, (JSONObject)(trees.get(id)));
             }
@@ -47,8 +55,7 @@ public class Nexson {
         return result;
     }
 
-    public static Map<String, JSONObject> getOtus(Object json) {
-        JSONObject obj = (JSONObject)json;
+    public static Map<String, JSONObject> getOtus(JSONObject obj) {
         JSONObject nexmlContent = (JSONObject)(obj.get("nexml"));
         JSONObject otusById = (JSONObject)(nexmlContent.get("otusById"));
         Map<String, JSONObject> result = new HashMap<String, JSONObject>();
@@ -114,7 +121,7 @@ public class Nexson {
     public static SourceTaxonomy importTree(JSONObject treeson, Map<String, JSONObject> otus, String tag) {
         JSONObject nodes = (JSONObject)treeson.get("nodeById");
         JSONObject sources = (JSONObject)treeson.get("edgeBySourceId");
-        SourceTaxonomy tax = new SourceTaxonomy();
+        SourceTaxonomy tax = new SourceTaxonomy(tag); // arg is idspace, should be study id
         tax.setTag(tag);
 
         // Make a Taxon object for each NeXML node in the tree
@@ -150,6 +157,8 @@ public class Nexson {
         } else
             System.out.format("** No root node found for %s\n", tag);
 
+        tax.ingroupId = (String)treeson.get("^ot:inGroupClade");
+
         // Store tip labels as Taxon names, OTT ids as sources
         for (Taxon taxon : tax.taxa()) {
             if (taxon.children == null) {
@@ -173,11 +182,11 @@ public class Nexson {
         return tax;
     }
 
-    public static Object load(String path) throws IOException {
+    public static JSONObject load(String path) throws IOException {
 		BufferedReader fr = Taxonomy.fileReader(path);
 		JSONParser parser = new JSONParser();
 		try {
-			return parser.parse(fr);
+			return (JSONObject)parser.parse(fr);
 		} catch (ParseException e) {
 			System.err.println(e);
             return null;

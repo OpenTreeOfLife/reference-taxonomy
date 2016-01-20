@@ -43,7 +43,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
     private Map<String, List<Taxon>> nameIndex = new HashMap<String, List<Taxon>>();
 	public Map<String, Taxon> idIndex = new HashMap<String, Taxon>();
     public Taxon forest = new Taxon(this, "");
-	protected String idspace = null; // "ncbi", "ott", etc.
+	public String idspace = null; // "ncbi", "ott", etc.
 	String[] header = null;
 
 	Integer sourcecolumn = null;
@@ -51,6 +51,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	Integer infocolumn = null;
 	Integer flagscolumn = null;
 	public JSONObject metadata = null;
+    public String ingroupId = null;    // for trees, not taxonomies
 
 	private String tag = null;     // unique marker
 	private int taxid = -1234;	   // kludge

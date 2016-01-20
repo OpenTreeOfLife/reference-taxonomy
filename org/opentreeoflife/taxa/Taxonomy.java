@@ -325,7 +325,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		if (designator.startsWith("(")) {
             Taxon root = Newick.newickToNode(designator, tax);
 			tax.addRoot(root);
-            tax.assignNewIds(0);	// foo... why do we need this?  h2007?
         } else {
 			if (!designator.endsWith("/")) {
 				System.err.println("Taxonomy designator should end in / but doesn't: " + designator);
@@ -333,10 +332,27 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			}
 			System.out.println("--- Reading " + designator + " ---");
 			tax.loadTaxonomy(designator);
+            tax.purgeTemporaryIds();
 		}
         tax.postProcessTaxonomy();
 		return tax;
 	}
+
+	private static final Pattern NEGATIVE_NUMERAL = Pattern.compile("-[0-9]+");
+
+    void purgeTemporaryIds() {
+        List<Taxon> losers = new ArrayList<Taxon>();
+        for (Taxon node : idIndex.values())
+            if (node.id != null &&
+                NEGATIVE_NUMERAL.matcher(node.id).matches())
+                losers.add(node);
+        if (losers.size() > 0)
+            System.out.printf("| Removing %s temporary ids\n", losers.size());
+        for (Taxon node : losers) {
+            idIndex.remove(node);
+            node.id = null;
+        }
+    }
 
     // Perform a variety of post-intake tasks, independent of which
     // parser was used
@@ -397,7 +413,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
         Taxon root = Newick.newickToNode(new java.io.PushbackReader(br), tax);
 		tax.addRoot(root);
         root.properFlags = 0;   // not unplaced
-		tax.assignNewIds(0);	// foo
         tax.postProcessTaxonomy();
 		return tax;
 	}
@@ -415,6 +430,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		this.loadTaxonomyProper(dirname + "taxonomy.tsv");
 		this.loadSynonyms(dirname + "synonyms.tsv");
         this.loadForwards(dirname + "forwards.tsv");
+        this.purgeTemporaryIds();
 	}
 
 	// This gets overridden in a subclass.
@@ -432,7 +448,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
     public void prepareForDump(String outprefix, String sep) throws IOException {
         this.placeBiggest();         // End of topology modifications
-		this.assignNewIds(0);
+		this.assignDummyIds();
         this.reset();                // maybe unnecessary; depths and comapped
 		this.analyzeRankConflicts(); // set SIBLING_HIGHER
         this.inferFlags();           // infer BARREN & INFRASPECIFIC, and herit
@@ -1734,7 +1750,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
     static Taxon dup(Taxon node, Taxonomy tax, String reason) {
         Taxon newnode = node.dup(tax, reason);
-        newnode.setId(node.id);
+        if (node.id != null)
+            newnode.setId(node.id);
         return newnode;
     }
 
@@ -1829,6 +1846,10 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		return id;
 	}
 
+	public void assignNewIds() {
+        assignNewIds(0);
+    }
+
 	public void assignNewIds(long sourcemax) {
 		long maxid = this.maxid();
 		if (sourcemax > maxid) maxid = sourcemax;
@@ -1842,12 +1863,24 @@ public abstract class Taxonomy implements Iterable<Taxon> {
             System.out.format("| Highest id before: %s after: %s\n", start, maxid);
 	}
 
+    void assignDummyIds() {
+        long minid = -1L;
+		for (Taxon node : this)
+			if (node.id == null) {
+                String id;
+                do {
+                    id = Long.toString(minid--);
+                } while (lookupId(id) != null);
+				node.setId(id);
+				node.markEvent("no-id");
+			}
+    }
+
 	public static SourceTaxonomy parseNewick(String newick) {
 		SourceTaxonomy tax = new SourceTaxonomy();
         Taxon root = Newick.newickToNode(newick, tax);
 		tax.addRoot(root);
         root.properFlags = 0;   // not unplaced
-		tax.assignNewIds(0);	// foo
 		return tax;
 	}
 

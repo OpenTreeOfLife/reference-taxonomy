@@ -22,10 +22,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.BufferedReader;
 
-import org.python.util.PythonInterpreter;
-import org.python.util.InteractiveConsole;
-import org.python.util.JLineConsole;
-
 public class Registry {
 
     // State
@@ -92,22 +88,6 @@ public class Registry {
         for (Registration reg : allRegistrations())
             reg.dump(out);
         out.close();
-    }
-
-    // entry from shell.  not needed, use main method from org.python.util.jython
-
-	public static void main(String argv[]) throws Exception {
-		if (argv.length > 0) {
-			PythonInterpreter j = new PythonInterpreter();
-            for (String source : argv)
-                j.execfile(source);
-        } else {
-			System.out.format("Consider doing:\n" +
-                              "from org.opentreeoflife.taxa import Taxonomy\n" +
-                              "from org.opentreeoflife.registry import Registry\n");
-			InteractiveConsole j = new JLineConsole();
-			j.interact();
-        }
     }
 
 }

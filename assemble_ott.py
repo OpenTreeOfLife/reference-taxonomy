@@ -145,6 +145,9 @@ def create_ott():
     # Assign old ids to nodes in the new version
     ott.assignIds(ids)
 
+    # Assign new ids to nodes that don't have them
+    ott.assignNewIds()
+
     report_on_h2007(h2007, ott)
 
     return ott

@@ -100,12 +100,12 @@ def compare_correspondences(corr1, corr2):
 def do_taxonomy(tax1, r, n_inclusions):
     print tax1.getTag(), 'taxa:', tax1.count()
     print n_inclusions, 'inclusions per split'
+    n_exclusions = n_inclusions - 1
     tax1.cleanRanks()
     tax1.inferFlags()
 
     # 
-    corr = Correspondence(r, tax1)
-    corr.setNumberOfInclusions(n_inclusions)
+    corr = Correspondence(r, tax1, n_inclusions, n_exclusions)
     print '--- Assigning registrations to nodes in', tax1
     corr.resolve()
 
@@ -117,7 +117,7 @@ def do_taxonomy(tax1, r, n_inclusions):
     # see whether lookup is repeatable.
     # this should match most, if not, all, taxa with registrations in r
     print '--- Re-assigning registrations to nodes in', tax1
-    newcorr = Correspondence(r, tax1)
+    newcorr = Correspondence(r, tax1, n_inclusions, n_exclusions)
     newcorr.resolve()
     # compare_correspondences(corr, newcorr)
 

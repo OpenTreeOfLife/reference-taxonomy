@@ -48,9 +48,11 @@ public class Correspondence {
     Map<Taxon, Clue> clues = new HashMap<Taxon, Clue>();
 
     // Constructor
-    public Correspondence(Registry registry, Taxonomy taxonomy) {
+    public Correspondence(Registry registry, Taxonomy taxonomy, int i, int j) {
         this.registry = registry;
         this.taxonomy = taxonomy;
+        this.nsamples = i;
+        this.nexclusions = j;
     }
 
     public void setNumberOfInclusions(int n) {
@@ -138,51 +140,54 @@ public class Correspondence {
                 // Couldn't find sample in taxonomy
                 loser = s;
         }
-        Taxon a = null;  // start at root of tree and get progressively closer to m
-        if (m != null) {
-            if (reg.exclusions != null && reg.exclusions.size() > 0) {
-                // Find the exclusion that is nearest to m
-                for (Terminal s : reg.exclusions) {
-                    Taxon snode = resolve(s);
-                    if (snode != null) {
-                        Taxon e = snode.mrca(m);
-                        if (a == null)
-                            a = e;
-                        else {
-                            // if e descends from a, then e is closer to m. ratchet it in
-                            // e descends from a iff mrca(e,a) = a
-                            if (e.mrca(a) == a)
-                                a = e;
-                        }
-                        if (a == m)  // = a.descendsFrom(m)
-                            // Inconsistent constraints!
-                            return result;
-                    } else
-                        // Couldn't find this exclusion in tree
-                        loser = s;
-                }
-            }
-        }
         if (m == null) {
-            if (loser != null) {
+            if (loser != null)
                 interesting("no inclusions resolved", reg, loser);
-                return null;
-            }
-            interesting("no inclusions - shouldn't happen", reg);
-        } else {
-            if (a != null) {
-                // Copy the path from m to a out of the taxonomy
-                for (Taxon n = m; n != a; n = n.parent)
-                    result.add(n);
-            } else {
-                // This case should only happen for the root of the tree
-                Taxon n;
-                // We know m is nonnull; this was checked above
-                for (n = m; !n.isRoot(); n = n.parent)
-                    result.add(n);
-                result.add(n);              // add the root
+            else
+                interesting("no inclusions - shouldn't happen", reg);
+            return null;
+        }
+        if (nexclusions == 0) {
+            result.add(m);
+            return result;
+        }
+        Taxon a = null;  // start at root of tree and get progressively closer to m
+        if (reg.exclusions != null && reg.exclusions.size() > 0) {
+            // Find the exclusion that is nearest to m
+            for (Terminal s : reg.exclusions) {
+                Taxon snode = resolve(s);
+                if (snode != null) {
+                    Taxon e = snode.mrca(m);
+                    if (a == null)
+                        a = e;
+                    else {
+                        // if e descends from a, then e is closer to m. ratchet it in
+                        // e descends from a iff mrca(e,a) = a
+                        if (e.mrca(a) == a)
+                            a = e;
+                    }
+                    if (a == m)  // = a.descendsFrom(m)
+                        // Inconsistent constraints!
+                        return result;
+                } else
+                    // Couldn't find this exclusion in tree
+                    loser = s;
             }
         }
+
+        if (a != null) {
+            // Copy the path from m to a out of the taxonomy
+            for (Taxon n = m; n != a; n = n.parent)
+                result.add(n);
+        } else {
+            // This case should only happen for the root of the tree
+            Taxon n;
+            // We know m is nonnull; this was checked above
+            for (n = m; !n.isRoot(); n = n.parent)
+                result.add(n);
+            result.add(n);              // add the root
+        }
+
         if (loser != null) {
             if (result.size() == 1) {
                 interesting("unique resolution in spite of missing sample(s)", reg, loser);
@@ -369,7 +374,7 @@ public class Correspondence {
                 }
             }
         }
-        if (exclusions.size() == 0)
+        if (nexclusions > 0 && exclusions.size() == 0)
             System.out.format("No exclusions for %s <-> %s\n", node, reg);
         reg.exclusions = exclusions;
         // Sanity check

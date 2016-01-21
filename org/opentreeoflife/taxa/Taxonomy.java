@@ -43,7 +43,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
     private Map<String, List<Taxon>> nameIndex = new HashMap<String, List<Taxon>>();
 	public Map<String, Taxon> idIndex = new HashMap<String, Taxon>();
     public Taxon forest = new Taxon(this, "");
-	protected String tag = null;
+	public String idspace = null; // "ncbi", "ott", etc.
 	String[] header = null;
 
 	Integer sourcecolumn = null;
@@ -51,12 +51,18 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	Integer infocolumn = null;
 	Integer flagscolumn = null;
 	public JSONObject metadata = null;
-	int taxid = -1234;	  // kludge
+    public String ingroupId = null;    // for trees, not taxonomies
+
+	private String tag = null;     // unique marker
+	private int taxid = -1234;	   // kludge
 
     public EventLogger eventlogger = null;
 
 	public Taxonomy() {
-        initRanks();
+    }
+
+	public Taxonomy(String idspace) {
+        this.idspace = idspace;
     }
 
 	public String toString() {
@@ -108,36 +114,13 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	// Iterate over all nodes reachable from roots
 
-	public Iterator<Taxon> iterator() {
-		final List<Iterator<Taxon>> its = new ArrayList<Iterator<Taxon>>();
-		its.add(this.roots().iterator());
-		final Taxon[] current = new Taxon[1]; // locative
-		current[0] = null;
+    public Iterable<Taxon> taxa() {
+        return this.forest.descendants(false);
+    }
 
-		return new Iterator<Taxon>() {
-			public boolean hasNext() {
-				if (current[0] != null) return true;
-				while (true) {
-					if (its.size() == 0) return false;
-					if (its.get(0).hasNext()) return true;
-					else its.remove(0);
-				}
-			}
-			public Taxon next() {
-				Taxon node = current[0];
-				if (node != null)
-					current[0] = null;
-				else
-					// Caller has previously called hasNext(), so we're good to go
-					// Was: .get(its.size()-1)
-					node = its.get(0).next();
-				if (node.children != null)
-					its.add(node.children.iterator());
-				return node;
-			}
-			public void remove() { throw new UnsupportedOperationException(); }
-		};
-	}
+	public Iterator<Taxon> iterator() {
+        return this.taxa().iterator();
+    }
 
 	public Taxon lookupId(String id) {
         return this.idIndex.get(id);
@@ -195,40 +178,52 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	static int globalTaxonomyIdCounter = 1;
 
 	public String getTag() {
-		if (this.tag == null) this.setTag();
 		if (this.tag == null) {
 			if (this.taxid < 0)
 				this.taxid = globalTaxonomyIdCounter++;
-			return "tax" + taxid;
-		} else
-			return this.tag;
+            this.tag = this.getIdspace() + taxid;
+        }
+        return this.tag;
 	}
 
     public void setTag(String tag) {
         this.tag = tag;
     }
 
-	void setTag() {
-		if (this.tag != null) return;
-		List<Taxon> probe = this.lookup("Caenorhabditis elegans");
-		if (probe != null) {
-			String id = probe.get(0).id;
-			if (id.equals("6239")) this.tag = "ncbi";
-			else if (id.equals("2283683")) this.tag = "gbif";
-			else if (id.equals("395048")) this.tag = "ott";
-			else if (id.equals("100968828")) this.tag = "aux"; // preottol
-			else if (id.equals("4722")) this.tag = "nem"; // testing
-		}
+    // The 'idspace' string will show up as a prefix in QualifiedNames
+
+	public String getIdspace() {
+		if (this.idspace == null)
+            this.setIdspace();
+        return this.idspace;
+	}
+
+	void setIdspace() {
+		if (this.idspace != null) return;
+        idspace = this.idspace;
+		if (idspace == null) {
+            List<Taxon> probe = this.lookup("Caenorhabditis elegans");
+            if (probe != null) {
+                String id = probe.get(0).id;
+                if (id.equals("6239")) idspace = "ncbi";
+                else if (id.equals("2283683")) idspace = "gbif";
+                else if (id.equals("395048")) idspace = "ott";
+                else if (id.equals("100968828")) idspace = "aux"; // preottol
+            }
+        }
 		// TEMPORARY KLUDGE
-		if (this.tag == null) {
+		if (idspace == null) {
 			List<Taxon> probe2 = this.lookup("Asterales");
 			if (probe2 != null) {
 				String id = probe2.get(0).id;
-				if (id.equals("4209")) this.tag = "ncbi";
-				if (id.equals("414")) this.tag = "gbif";
-				if (id.equals("1042120")) this.tag = "ott";
+				if (id.equals("4209")) idspace = "ncbi";
+				if (id.equals("414")) idspace = "gbif";
+				if (id.equals("1042120")) idspace = "ott";
 			}
 		}
+        if (idspace == null)
+            idspace = "tax";
+        this.idspace = idspace;
 	}
 
 	// Most rootward node in this taxonomy having a given name
@@ -400,10 +395,10 @@ public abstract class Taxonomy implements Iterable<Taxon> {
         // Optional step after this: smush()
     }
 
-	public static SourceTaxonomy getTaxonomy(String designator, String tag)
+	public static SourceTaxonomy getTaxonomy(String designator, String idspace)
 		throws IOException {
 		SourceTaxonomy tax = getTaxonomy(designator);
-		tax.tag = tag;
+		tax.idspace = idspace;
 		return tax;
 	}
 
@@ -417,9 +412,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		return tax;
 	}
 
-	public static SourceTaxonomy getNewick(String filename, String tag) throws IOException {
+	public static SourceTaxonomy getNewick(String filename, String idspace) throws IOException {
 		SourceTaxonomy tax = getNewick(filename);
-		tax.tag = tag;
+		tax.idspace = idspace;
 		return tax;
 	}
 
@@ -480,7 +475,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 				Object prefix = jsonObject.get("prefix");
 				if (prefix != null)
-					this.tag = (String)prefix;
+					this.idspace = (String)prefix;
 			}
 
 		} catch (ParseException e) {
@@ -1533,7 +1528,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	public Taxonomy select(Taxon sel) {
 		if (sel != null) {
 			Taxonomy tax2 = new SourceTaxonomy();
-			tax2.tag = this.tag; // ???
+			tax2.idspace = this.idspace; // ???
             return finishSelection(tax2, this.select(sel, tax2));
 		} else {
 			System.err.println("** Missing or ambiguous selection name");
@@ -1586,7 +1581,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	public Taxonomy selectToDepth(Taxon sel, int depth) {
 		if (sel != null) {
 			Taxonomy tax2 = new SourceTaxonomy();
-			tax2.tag = this.tag; // ???
+			tax2.idspace = this.idspace; // ???
             return finishSelection(tax2, selectToDepth(sel, tax2, depth));
 		} else {
 			System.err.println("** Missing or ambiguous name: " + sel);
@@ -1725,7 +1720,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 			PrintStream out = 
 				openw(outprefix + cutting.name.replaceAll(" ", "_") + ".tre");
 			StringBuffer buf = new StringBuffer();
-			Newick.appendNewickTo(cutting, buf);
+			Newick.appendNewickTo(cutting, true, buf);
 			out.print(buf.toString());
 			out.close();
 		}
@@ -1815,9 +1810,13 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	// This feature is very primitive and only for debugging purposes!
 
 	public String toNewick() {
+        return this.toNewick(true);
+    }
+
+	public String toNewick(boolean useIds) {
 		StringBuffer buf = new StringBuffer();
 		for (Taxon root: this.roots()) {
-			Newick.appendNewickTo(root, buf);
+			Newick.appendNewickTo(root, useIds, buf);
 			buf.append(";");
 		}
 		return buf.toString();

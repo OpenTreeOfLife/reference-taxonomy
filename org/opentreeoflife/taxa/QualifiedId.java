@@ -29,7 +29,7 @@ public class QualifiedId {
     public String getId() { return id; }
 	public String toString() {
         if (id == null)
-            return prefix;
+            return prefix + ":";
         else
             return prefix + ":" + id;
 	}
@@ -45,7 +45,10 @@ public class QualifiedId {
 			return false;
 	}
     public int hashCode() {
-        return this.prefix.hashCode() + this.id.hashCode();
+        if (this.id == null)
+            return this.prefix.hashCode() + 1;
+        else
+            return this.prefix.hashCode() + this.id.hashCode();
     }
 }
 

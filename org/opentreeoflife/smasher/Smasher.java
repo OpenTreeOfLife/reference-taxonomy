@@ -52,11 +52,6 @@ public class Smasher {
 					if (argv[i].equals("--jython"))
 						jython(argv[++i]);
 
-					else if (argv[i].equals("--jscheme")) {
-						String[] jargs = {};
-						jscheme.REPL.main(jargs);
-					}
-
 					else if (argv[i].equals("--diff")) {
 						String name1 = argv[++i];
 						String name2 = argv[++i];

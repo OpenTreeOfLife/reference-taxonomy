@@ -1,3 +1,11 @@
+/**
+   Utility for converting a tree in a Nexson file to a Taxonomy object.
+
+   Warning - this code is preliminary, and very brittle.  If you feed
+   it something that's not valid Nexson HBF 1.2, you'll get a null
+   pointer or class cast exception.
+*/
+
 
 package org.opentreeoflife.taxa;
 
@@ -8,6 +16,7 @@ import java.util.ArrayList;
 import java.io.BufferedReader;
 import java.io.IOException;
 
+import org.json.simple.JSONValue; 
 import org.json.simple.JSONObject; 
 import org.json.simple.parser.JSONParser; 
 import org.json.simple.parser.ParseException;
@@ -19,8 +28,7 @@ public class Nexson {
     // json is what the JSON parser returned for the whole file.
     //  looks like {"nexml": {..., "treesById": {...}, ...}}
     // return value is a set of subnodes of that.
-    public static Map<String, JSONObject> getTrees(Object json) {
-        JSONObject obj = (JSONObject)json;
+    public static Map<String, JSONObject> getTrees(JSONObject obj) {
         JSONObject nexmlContent = (JSONObject)(obj.get("nexml"));
         JSONObject treesById = (JSONObject)(nexmlContent.get("treesById"));
         /* treesById is {"trees1": {
@@ -29,9 +37,17 @@ public class Nexson {
                                     "treeById": {
                                                  "tree1": { ...} ...} ...} ...}
         */
+        if (treesById == null) {
+            System.err.format("** No treesById\n");
+            return null;
+        }
         Map<String, JSONObject> result = new HashMap<String, JSONObject>();
         for (Object treeses : treesById.values()) {
             JSONObject trees = (JSONObject)(((JSONObject)treeses).get("treeById"));
+            if (trees == null) {
+                System.err.format("** Missing trees\n");
+                return null;
+            }
             for (Object id : trees.keySet()) {
                 result.put((String)id, (JSONObject)(trees.get(id)));
             }
@@ -39,8 +55,7 @@ public class Nexson {
         return result;
     }
 
-    public static Map<String, JSONObject> getOtus(Object json) {
-        JSONObject obj = (JSONObject)json;
+    public static Map<String, JSONObject> getOtus(JSONObject obj) {
         JSONObject nexmlContent = (JSONObject)(obj.get("nexml"));
         JSONObject otusById = (JSONObject)(nexmlContent.get("otusById"));
         Map<String, JSONObject> result = new HashMap<String, JSONObject>();
@@ -103,54 +118,75 @@ public class Nexson {
         "^ot:ottTaxonName": "Palaemon pacificus"
         }
     */
-    public static SourceTaxonomy importTree(JSONObject treeson, Map<String, JSONObject> otus) {
+    public static SourceTaxonomy importTree(JSONObject treeson, Map<String, JSONObject> otus, String tag) {
         JSONObject nodes = (JSONObject)treeson.get("nodeById");
         JSONObject sources = (JSONObject)treeson.get("edgeBySourceId");
-        SourceTaxonomy tax = new SourceTaxonomy();
-        Map<String, Taxon> taxa = new HashMap<String, Taxon>(); // maps otu id to Taxon
+        SourceTaxonomy tax = new SourceTaxonomy(tag); // arg is idspace, should be study id
+        tax.setTag(tag);
 
         // Make a Taxon object for each NeXML node in the tree
         for (Object idObj : nodes.keySet()) {
             String id = (String)idObj;
-            JSONObject node = (JSONObject)nodes.get(id);
+            // make one Taxon for every node
             Taxon taxon = new Taxon(tax);
-            Object otuIdObj = node.get("@otu");
-            if (otuIdObj != null) {
-                String otuId = ((String)otuIdObj);
-                JSONObject otu = ((JSONObject)otus.get(otuId));
-                Object ottidObj = otu.get("^ot:ottId");
-                if (ottidObj != null) {
-                    String ottid = ottidObj.toString();  // it's a Long
-                    if (tax.lookupId(ottid) == null)
-                        taxon.setId(ottid);
-                    else
-                        taxon.setId(otuId);
-                } else
-                    taxon.setId(otuId); // sure not to conflict with any OTT id
-                Object label = otu.get("^ot:originalLabel");
-                if (label != null)
-                    taxon.setName((String)label);
-            }
-            taxa.put(id, taxon);
+            taxon.setId(id);
         }
+        // Transfer edges over from NeXML to Taxonomy instance
         for (Object idObj : sources.keySet()) {
             String id = (String)idObj;
-            Taxon src = taxa.get(id);
+            Taxon src = tax.lookupId(id);
             for (Object edgeObj : ((JSONObject)sources.get(id)).values()) {
-                String targetOtuId = ((String)(((JSONObject)edgeObj).get("@target")));
-                src.addChild(taxa.get(targetOtuId));
+                String targetNodeId = ((String)(((JSONObject)edgeObj).get("@target")));
+                src.addChild(tax.lookupId(targetNodeId));
             }
         }
+
+        // Set the root
         String rootid = (String)treeson.get("^ot:rootNodeId");
-        tax.addRoot(taxa.get(rootid));
+        if (rootid != null && rootid.length() == 0) rootid = null;
+        String specid = (String)treeson.get("^ot:specifiedRoot");
+        if (specid != null && rootid != null && !specid.equals(rootid))
+            System.out.format("** Specified root %s not= represented root %s - rerooting NYI\n",
+                              specid, rootid);
+        if (rootid != null) {
+            Taxon node = tax.lookupId(rootid);
+            if (node != null)
+                tax.addRoot(node);
+            else
+                System.out.format("** Root node %s not found in %s\n", rootid, tag);
+        } else
+            System.out.format("** No root node found for %s\n", tag);
+
+        tax.ingroupId = (String)treeson.get("^ot:inGroupClade");
+
+        // Store tip labels as Taxon names, OTT ids as sources
+        for (Taxon taxon : tax.taxa()) {
+            if (taxon.children == null) {
+                JSONObject node = (JSONObject)nodes.get(taxon.id);
+                Object otuIdObj = node.get("@otu");
+                if (otuIdObj != null) {
+                    String otuId = ((String)otuIdObj);
+                    JSONObject otu = ((JSONObject)otus.get(otuId));
+                    Object ottidObj = otu.get("^ot:ottId"); // an integer
+                    if (ottidObj != null)
+                        taxon.addSourceId(new QualifiedId("ott", ottidObj.toString()));
+                    Object label = otu.get("^ot:originalLabel");
+                    if (label == null)
+                        System.out.format("** No label for terminal node %s, otu = %s\n", taxon.id, otu);
+                    taxon.setName((String)label);
+                } else {
+                    System.out.format("** No @otu for terminal node %s\n", taxon.id);
+                }
+            }
+        }
         return tax;
     }
 
-    public static Object load(String path) throws IOException {
+    public static JSONObject load(String path) throws IOException {
 		BufferedReader fr = Taxonomy.fileReader(path);
 		JSONParser parser = new JSONParser();
 		try {
-			return parser.parse(fr);
+			return (JSONObject)parser.parse(fr);
 		} catch (ParseException e) {
 			System.err.println(e);
             return null;

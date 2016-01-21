@@ -169,20 +169,20 @@ class Newick {
 
     // ----- WRITE -----
 
-	static void appendNewickTo(Taxon node, StringBuffer buf) {
+	static void appendNewickTo(Taxon node, boolean useIds, StringBuffer buf) {
 		if (node.children != null) {
 			buf.append("(");
 			Collections.sort(node.children, Taxon.compareNodes);
 			Taxon last = node.children.get(node.children.size()-1);
 			for (Taxon child : node.children) {
-				appendNewickTo(child, buf);
+				appendNewickTo(child, useIds, buf);
 				if (child != last)
 					buf.append(",");
 			}
 			buf.append(")");
 		}
 		if (node.name != null)
-			buf.append(newickName(node.name, node.taxonomy.getTag(), node.id));
+			buf.append(newickName(node.name, useIds, node.taxonomy.getTag(), node.id));
 	}
 
     // Newick stuff copied from src/main/java/opentree/GeneralUtils.java
@@ -206,7 +206,7 @@ class Newick {
 	 * @param origName
 	 * @return newickName
 	 */
-	public static String newickName(String origName, String tag, String id) {
+	public static String newickName(String origName, boolean useIds, String tag, String id) {
 		boolean needQuotes = false;
 		String newickName = origName;
 		
@@ -223,7 +223,7 @@ class Newick {
 			needQuotes = true;
         }
         // not sure about this one.  turn foo into foo_ott1234
-		if (tag != null && id != null)
+		if (useIds && tag != null && id != null)
 			newickName = String.format("%s_%s%s", newickName, tag, id);
 
 		// if offending characters are present, quotes are needed

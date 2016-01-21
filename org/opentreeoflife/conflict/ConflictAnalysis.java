@@ -181,7 +181,7 @@ public class ConflictAnalysis {
             System.err.format("** No tree %s\n", input.getTag());
         else {
             this.inducedRoot = induce(this.inputRoot, ref, map);
-            System.out.format("| mapped %s, comapped %s\n", map.size(), comap.size());
+            //System.out.format("| mapped %s, comapped %s\n", map.size(), comap.size());
             if (this.inducedRoot == null)
                 System.err.format("** Nothing maps\n");
             else
@@ -300,77 +300,66 @@ public class ConflictAnalysis {
     // ------------------------------------------------------------
     // Second attempt at conflict analysis
 
-    public Disposition disposition(Taxon node) {
+    public Articulation articulation(Taxon node) {
         if (node.taxonomy == input)
-            return disposition(node, map, comap);
+            return articulation(node, map, comap);
         else
-            return disposition(node, comap, map);
+            return articulation(node, comap, map);
     }
 
-    public Disposition disposition(Taxon node, Map<Taxon, Taxon> map, Map<Taxon, Taxon> comap) {
+    public Articulation articulation(Taxon node, Map<Taxon, Taxon> map, Map<Taxon, Taxon> comap) {
         if (node.children == null)
-            return Disposition.NONE;
+            return null;
         Taxon conode = map.get(node);
         if (conode == null)
-            return Disposition.NONE;
-        Taxon bounce = comap.get(conode);
-        if (bounce == null)
-            return Disposition.NONE; // shouldn't happen
-        if (bounce == node)
-            return Disposition.CONGRUENT;
-        if (node.parent == null)
-            return Disposition.NONE; // shouldn't happen
-        Taxon m = node.parent.mrca(bounce);
-        if (m == bounce)
-            // parent is, or descends from, bounce
-            return Disposition.REFINES;
-        else
-            return Disposition.CONFLICTS;
-    }
-
-    public int[] dispositionCounts() {
-        int none = 0, congruent = 0, refines = 0, conflicts = 0;
-        for (Taxon node : ingroup.descendants(true)) {
-            switch(this.disposition(node)) {
-            case NONE: ++none; break;
-            case CONGRUENT: ++congruent; break;
-            case REFINES: ++refines; break;
-            case CONFLICTS: ++conflicts; break;
-            }
-        }
-        conflicting = conflicts;
-        opportunities = congruent + refines + conflicts;
-        return new int[]{none, congruent, refines, conflicts};
-    }
-
-    public Taxon witness(Taxon node) {
-        Disposition d = disposition(node);
-        Map<Taxon, Taxon> map = this.map;
-        Map<Taxon, Taxon> comap = this.comap;
-        if (node.taxonomy == ref) {
-            map = this.comap;
-            comap = this.map;
-        }
-        switch(this.disposition(node, map, comap)) {
-        case NONE:
             return null;
-        case CONGRUENT:
-            return map.get(node);
-        case REFINES:
-            return map.get(node); // ???
-        case CONFLICTS:
-            return findConflicting(node, map, comap);
+        Taxon bounce = comap.get(conode);
+        if (bounce == null) {
+            System.err.format("Shouldn't happen 1 %s\n", node);
+            return null; // shouldn't happen
         }
-        // not reached
-        return null;
+        if (node.mrca(bounce) == node) // bounce descended from node?
+            return new Articulation(Disposition.CONGRUENT, conode);
+        if (node.parent == null) {
+            System.err.format("Shouldn't happen 2 %s\n", node);
+            return null; // shouldn't happen
+        }
+        Taxon conflicting = findConflicting(node, map, comap);
+        if (conflicting == null)
+            return new Articulation(Disposition.REFINES, conode);
+        else
+            return new Articulation(Disposition.CONFLICTS, conflicting);
     }
+
+    // Start with N with children a, b, c [child].
+    // a, b, c, map to a', b', c' [cochild].
+    // MRCA of a', b', c' is N' [map.get(node)].
+    // a', b', c' map back to a'', b'', c'' [childbounce]
+    // N' also has child d'.
+    // a', b', c', d' map back to a'', b'', c'', d''
+    // MRCA of a'', b'', c'', d'' is N'' (i.e. N' maps to N'').
+    // By supposition, N descends from N''.
+    // The claim here is that if a'', b'', and c'' are all under N,
+    // then N refines N'; N is not in conflict with N'.
+    // That is, N'' is above N only because of d'.
+    // If any a'', b'', c'' is not under N, then N is in conflict with 
+    // a', b', or c' (respectively).
 
     Taxon findConflicting(Taxon node, Map<Taxon, Taxon> map, Map<Taxon, Taxon> comap) {
         // Find a reference node that conflicts with this input node.
         // At least one child must map to a conflicting reference node (yes?).
+        Taxon conode = map.get(node);
         for (Taxon child : node.children) {
-            Taxon cochild = map.get(child);
+            Taxon cochild = map.get(child); // typically a taxonomy node
             if (cochild == null) continue;
+
+            // need to do something here
+            // follow cochild's lineage up to ... how far? ...
+            // no further than the mrca of all the cochildren (conode), but that's too far.
+            if (cochild.parent.mrca(conode) == conode)
+                while (cochild.parent != conode)
+                    cochild = cochild.parent;
+
             Taxon childbounce = comap.get(cochild);
             if (childbounce == null) continue;
             // Is childbounce under node?
@@ -378,8 +367,26 @@ public class ConflictAnalysis {
             if (m != node)
                 return cochild;
         }
-        System.err.format("** Failed to find reference node conflicting with %s\n", node);
         return null;
+    }
+
+    public int[] dispositionCounts() {
+        int none = 0, congruent = 0, refines = 0, conflicts = 0;
+        for (Taxon node : ingroup.descendants(true)) {
+            Articulation a = this.articulation(node);
+            if (a == null)
+                ++none;
+            else
+                switch(a.disposition) {
+                case NONE: ++none; break;
+                case CONGRUENT: ++congruent; break;
+                case REFINES: ++refines; break;
+                case CONFLICTS: ++conflicts; break;
+                }
+        }
+        conflicting = conflicts;
+        opportunities = congruent + refines + conflicts;
+        return new int[]{none, congruent, refines, conflicts};
     }
 
     // ------------------------------------------------------------------

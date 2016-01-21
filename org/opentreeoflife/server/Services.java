@@ -9,6 +9,8 @@ import java.io.Reader;
 import java.io.PrintWriter;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +31,7 @@ import org.json.simple.parser.ParseException;
 
 import org.opentreeoflife.conflict.ConflictAnalysis;
 import org.opentreeoflife.conflict.Disposition;
+import org.opentreeoflife.conflict.Articulation;
 import org.opentreeoflife.taxa.Taxonomy;
 import org.opentreeoflife.taxa.Taxon;
 import org.opentreeoflife.taxa.Nexson;
@@ -60,7 +63,60 @@ public class Services {
         server.start();
     }
 
+    interface CGItoJSON {
+        JSONObject run(Map<String, String> parameters);
+    }
+
+    HttpHandler wrapCGItoJSON(CGItoJSON fun) {
+        return exchange -> {
+            try {
+                if (exchange.getRequestMethod().toUpperCase().equals("GET")) {
+                    final Map<String, String> parameters = getParameters(exchange.getRequestURI());
+                    Map result = fun.run(parameters);
+                    final Headers headers = exchange.getResponseHeaders();
+                    headers.set("Content-Type", String.format("application/json; charset=%s",
+                                                              StandardCharsets.UTF_8));
+                    ByteArrayOutputStream ba = new ByteArrayOutputStream();
+                    PrintWriter pw = new PrintWriter(ba);
+                    JSONObject.writeJSONString(result, pw);
+                    pw.close();
+
+                    System.out.println(ba.size());
+                    exchange.sendResponseHeaders(STATUS_OK, ba.size());
+                    OutputStream out = exchange.getResponseBody();
+                    ba.writeTo(out);
+                    out.close();
+                } else
+                    nonget(exchange);
+            } catch(Exception e) {
+                final Headers headers = exchange.getResponseHeaders();
+                headers.set("Content-Type", String.format("text/plain; charset=%s",
+                                                          StandardCharsets.UTF_8));
+                ByteArrayOutputStream ba = new ByteArrayOutputStream();
+                PrintWriter pw = new PrintWriter(ba);
+                e.printStackTrace(pw);
+                pw.close();
+
+                System.out.println(ba.size());
+                exchange.sendResponseHeaders(599, ba.size());
+                OutputStream out = exchange.getResponseBody();
+                ba.writeTo(out);
+                out.close();
+            } finally {
+                exchange.close();
+            }
+        };
+    }
+
     private HttpHandler conflictStatus =
+        wrapCGItoJSON(new CGItoJSON() {
+                public JSONObject run(Map<String, String> parameters) {
+                    return conflictStatus(parameters.get("tree1"),
+                                          parameters.get("tree2"));
+                }
+            });
+
+    private HttpHandler conflictStatusOld =
         exchange -> {
         try {
             if (exchange.getRequestMethod().toUpperCase().equals("GET")) {
@@ -82,17 +138,25 @@ public class Services {
         }
     };
     
-    private JSONObject conflictStatus(String treespec1, String treespec2) throws IOException {
-        Taxonomy tree1 = specToTree(treespec1);
-        if (tree1 == null) {
-            System.err.format("** Can't find %s\n", treespec1);
-            return new JSONObject();
+    private JSONObject conflictStatus(String treespec1, String treespec2) {
+        try {
+            Taxonomy tree1 = specToTree(treespec1);
+            if (tree1 == null) {
+                System.err.format("** Can't find %s\n", treespec1);
+                return new JSONObject();
+            }
+            Taxonomy tree2 = specToTree(treespec2);
+            if (tree2 == null) {
+                System.err.format("** Can't find %s\n", treespec2);
+                return new JSONObject();
+            }
+            return conflictStatus(tree1, tree2);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        Taxonomy tree2 = specToTree(treespec2);
-        if (tree2 == null) {
-            System.err.format("** Can't find %s\n", treespec2);
-            return new JSONObject();
-        }
+    }
+
+    static JSONObject conflictStatus(Taxonomy tree1, Taxonomy tree2) {
         boolean flipped = false;
         Taxonomy input = tree1, ref = tree2;
         if (tree2.count() < tree1.count()) { // heuristic!
@@ -102,8 +166,14 @@ public class Services {
         JSONObject result = new JSONObject();
         Taxon start = flipped ? c.inducedRoot : c.ingroup;
         for (Taxon node : start.descendants(true)) {
+            if (node.id == null) {
+                System.err.format("** id-less node %s\n", node);
+                continue;
+            }
+            Articulation a = c.articulation(node);
+            if (a == null) continue;
             String tag = null;
-            switch (c.disposition(node)) {
+            switch (a.disposition) {
             case NONE: break;
             case CONGRUENT:
                 tag = "=";
@@ -117,8 +187,8 @@ public class Services {
             }
             if (tag != null) {
                 JSONObject info = new JSONObject();
-                Taxon w = c.witness(node);
-                if (w != null)
+                Taxon w = a.witness;
+                if (w != null && w.id != null)
                     info.put("witness", w.id);
                 info.put("status", tag);
                 result.put(node.id, info);

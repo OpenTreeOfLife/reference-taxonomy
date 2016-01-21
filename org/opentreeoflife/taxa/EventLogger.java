@@ -48,7 +48,7 @@ public class EventLogger {
 					"parity\t" +
 					"union_uid\t" +
 					"reason\t" +
-					"witness\t +");
+					"witness\t");
 
 		// this.logs is indexed by taxon name
 		if (false)

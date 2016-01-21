@@ -9,6 +9,10 @@ public class SourceTaxonomy extends Taxonomy {
         super();
 	}
 
+	public SourceTaxonomy(String idspace) {
+        super(idspace);
+	}
+
 	// This is the SourceTaxonomy version.
 	// Overrides dumpMetadata in class Taxonomy.
 	public void dumpMetadata(String filename)	throws IOException {

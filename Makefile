@@ -3,10 +3,13 @@
 # You'll need to put a copy of the previous (or baseline) version of OTT in tax/prev_ott/.
 # This is a manual step.
 # Get it from http://files.opentreeoflife.org/ott/
-# and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
+# Modify as appropriate to your own hardware
+JAVAFLAGS=-Xmx14G
+
+# Modify as appropriate
 WHICH=2.10draft1
-PREV_WHICH=2.8
+PREV_WHICH=2.9
 
 #  $^ = all prerequisites
 #  $< = first prerequisite
@@ -25,8 +28,7 @@ FUNG=tax/fung
 PREOTTOL=../../preottol
 
 CP=-classpath ".:lib/*"
-JAVA=JYTHONPATH=util java $(CP)
-BIG_JAVA=$(JAVA) -Xmx14G
+JAVA=JYTHONPATH=util java $(JAVAFLAGS) $(CP)
 SMASH=org.opentreeoflife.smasher.Smasher
 CLASS=org/opentreeoflife/smasher/Smasher.class
 JAVASOURCES=$(shell find org/opentreeoflife -name "*.java")
@@ -35,17 +37,22 @@ all: ott
 
 compile: $(CLASS)
 
-# this is getting tedious
-
 $(CLASS): $(JAVASOURCES) \
-	  lib/jscheme.jar lib/json-simple-1.1.1.jar lib/jython-standalone-2.5.3.jar \
+	  lib/json-simple-1.1.1.jar lib/jython-standalone-2.7.0.jar \
 	  lib/junit-4.12.jar
 	javac -g $(CP) $(JAVASOURCES)
 
-lib/jython-standalone-2.5.3.jar:
+lib/jython-standalone-2.7.0.jar:
 	wget -O "$@" --no-check-certificate \
-	 "http://search.maven.org/remotecontent?filepath=org/python/jython-standalone/2.5.3/jython-standalone-2.5.3.jar"
+	 "http://search.maven.org/remotecontent?filepath=org/python/jython-standalone/2.7.0/jython-standalone-2.7.0.jar"
 	@ls -l $@
+
+bin/jython:
+	mkdir -p bin
+	(echo "#!/bin/bash"; \
+	 echo "export JYTHONPATH=.:$$PWD:$$PWD/util:$$PWD/lib/json-simple-1.1.1.jar"; \
+	 echo exec java -jar "$(JAVAFLAGS)" $$PWD/lib/jython-standalone-2.7.0.jar '$$*') >$@
+	chmod +x $@
 
 # --------------------------------------------------------------------------
 
@@ -66,7 +73,7 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
 		    feed/misc/chromista_spreadsheet.py
 	@rm -f *py.class
 	@mkdir -p tax/ott
-	$(BIG_JAVA) $(SMASH) --jython make-ott.py
+	bin/jython make-ott.py
 	echo $(WHICH) >tax/ott/version.txt
 
 fung: tax/fung/taxonomy.tsv tax/fung/synonyms.tsv
@@ -89,7 +96,7 @@ tax/fung/about.json:
 # How does it know where to write to?
 
 tax/ott/aux.tsv: $(CLASS) tax/ott/log.tsv
-	$(BIG_JAVA) $(SMASH) tax/ott/ --aux $(PREOTTOL)/preottol-20121112.processed
+	$(JAVA) $(SMASH) tax/ott/ --aux $(PREOTTOL)/preottol-20121112.processed
 
 $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 	python process-preottol.py $< $@
@@ -267,22 +274,22 @@ ids-that-are-otus.tsv:
 	wc $@
 
 tax/ott/otu_deprecated.tsv: ids-that-are-otus.tsv tax/ott/deprecated.tsv
-	$(BIG_JAVA) $(SMASH) --join ids-that-are-otus.tsv tax/ott/deprecated.tsv >$@.new
+	$(JAVA) $(SMASH) --join ids-that-are-otus.tsv tax/ott/deprecated.tsv >$@.new
 	mv $@.new $@
 	wc $@
 
 tax/ott/differences.tsv: tax/prev_ott/taxonomy.tsv tax/ott/taxonomy.tsv
-	$(BIG_JAVA) $(SMASH) --diff tax/prev_ott/ tax/ott/ $@.new
+	$(JAVA) $(SMASH) --diff tax/prev_ott/ tax/ott/ $@.new
 	mv $@.new $@
 	wc $@
 
 tax/ott/otu_differences.tsv: tax/ott/differences.tsv
-	$(BIG_JAVA) $(SMASH) --join ids-that-are-otus.tsv tax/ott/differences.tsv >$@.new
+	$(JAVA) $(SMASH) --join ids-that-are-otus.tsv tax/ott/differences.tsv >$@.new
 	mv $@.new $@
 	wc $@
 
 tax/ott/otu_hidden.tsv: tax/ott/hidden.tsv
-	$(BIG_JAVA) $(SMASH) --join ids-that-are-otus.tsv tax/ott/hidden.tsv >$@.new
+	$(JAVA) $(SMASH) --join ids-that-are-otus.tsv tax/ott/hidden.tsv >$@.new
 	mv $@.new $@
 	wc $@
 
@@ -307,17 +314,17 @@ TAXON=Asterales
 # t/tax/prev/taxonomy.tsv: tax/prev_ott/taxonomy.tsv   - correct expensive
 t/tax/prev_aster/taxonomy.tsv: 
 	@mkdir -p `dirname $@`
-	$(BIG_JAVA) $(SMASH) tax/prev_ott/ --select2 $(TAXON) --out t/tax/prev_aster/
+	$(JAVA) $(SMASH) tax/prev_ott/ --select2 $(TAXON) --out t/tax/prev_aster/
 
 # dependency on tax/ncbi/taxonomy.tsv - correct expensive
 t/tax/ncbi_aster/taxonomy.tsv: 
 	@mkdir -p `dirname $@`
-	$(BIG_JAVA) $(SMASH) tax/ncbi/ --select2 $(TAXON) --out t/tax/ncbi_aster/
+	$(JAVA) $(SMASH) tax/ncbi/ --select2 $(TAXON) --out t/tax/ncbi_aster/
 
 # dependency on tax/gbif/taxonomy.tsv - correct but expensive
 t/tax/gbif_aster/taxonomy.tsv: 
 	@mkdir -p `dirname $@`
-	$(BIG_JAVA) $(SMASH) tax/gbif/ --select2 $(TAXON) --out t/tax/gbif_aster/
+	$(JAVA) $(SMASH) tax/gbif/ --select2 $(TAXON) --out t/tax/gbif_aster/
 
 # Previously:
 #t/tax/aster/taxonomy.tsv: $(CLASS) \
@@ -336,9 +343,10 @@ t/tax/aster/taxonomy.tsv: compile t/aster.py \
                           t/tax/ncbi_aster/taxonomy.tsv \
                           t/tax/gbif_aster/taxonomy.tsv \
                           t/tax/prev_aster/taxonomy.tsv \
-                          t/edits/edits.tsv
+                          t/edits/edits.tsv \
+			  bin/jython
 	@mkdir -p `dirname $@`
-	$(BIG_JAVA) $(SMASH) --jython t/aster.py
+	bin/jython t/aster.py
 
 test: aster
 aster: t/tax/aster/taxonomy.tsv

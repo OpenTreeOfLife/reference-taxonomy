@@ -24,10 +24,12 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.io.PrintStream;
 import java.io.File;
+/*
 import org.python.util.PythonInterpreter;
 import org.python.util.InteractiveInterpreter;
 import org.python.util.InteractiveConsole;
 import org.python.util.ReadlineConsole;
+*/
 
 public class Smasher {
 
@@ -49,11 +51,6 @@ public class Smasher {
 
 					if (argv[i].equals("--jython"))
 						jython(argv[++i]);
-
-					else if (argv[i].equals("--jscheme")) {
-						String[] jargs = {};
-						jscheme.REPL.main(jargs);
-					}
 
 					else if (argv[i].equals("--diff")) {
 						String name1 = argv[++i];
@@ -167,6 +164,8 @@ public class Smasher {
     }
 
 	static void jython(String source) {
+    /*
+     * This worked with jython 2.5.3, but is broken in jython 2.7.
 		if (source.equals("-")) {
 			System.out.format("Consider doing:\nfrom org.opentreeoflife.taxa import Taxonomy\n");
 			org.python.util.InteractiveConsole j = new org.python.util.JLineConsole();
@@ -175,6 +174,7 @@ public class Smasher {
 			PythonInterpreter j = new PythonInterpreter();
 			j.execfile(source);
 		}
+    */
 	}
 
 	static void test() {

@@ -5,7 +5,7 @@ JAVAFLAGS="-Xmx14G"
 CLASSPATH="..:../lib/json-simple-1.1.1.jar"
 JAVA="java ${JAVAFLAGS} -classpath ${CLASSPATH}"
 
-if [ $1 = "test" ]; then
+if [ $1x = "testx" ]; then
   # Use this version for testing
   ${JAVA} org.opentreeoflife.server.Services ../registry/aster-ott29 ../registry/aster-synth4/
 else
@@ -21,8 +21,10 @@ else
   fi
 
   if [ ! -e draftversion4.tre ]; then
-    echo Getting synthetic tree
-    wget http://files.opentreeoflife.org/trees/draftversion4.tre.gz
+    if [ ! -e draftversion4.tre.gz ]; then
+      echo Getting synthetic tree
+      wget http://files.opentreeoflife.org/trees/draftversion4.tre.gz
+    fi
     gunzip draftversion4.tre.gz
   fi
 

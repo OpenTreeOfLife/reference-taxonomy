@@ -160,7 +160,7 @@ public class Taxon {
 	}
 
 	public void setId(String id) {
-		if (this.id == null) {
+		if (id != null && this.id == null) {
             Taxon existing = this.taxonomy.idIndex.get(id);
 			if (existing != null && !existing.prunedp) {
                 System.err.format("** Id collision: %s wants id of %s\n", this, existing);

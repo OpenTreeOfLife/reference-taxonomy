@@ -23,6 +23,6 @@ else
     gunzip draftversion4.tre.gz
   fi
 
-  java org.opentreeoflife.server.Services ott draftversion4.tre
+  java org.opentreeoflife.server.Services ott/ draftversion4.tre
 
 fi

@@ -107,7 +107,6 @@ def patch_silva(silva):
 
 def load_h2007():
     h2007 = Taxonomy.getNewick('feed/h2007/tree.tre', 'h2007')
-    h2007.assignNewIds();
 
     # 2014-04-08 Misspelling
     if h2007.maybeTaxon('Chaetothryriomycetidae') != None:

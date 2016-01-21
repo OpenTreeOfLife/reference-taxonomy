@@ -4,7 +4,7 @@ Version 2.9 draft 12 was generated on 12 October 2015.  Draft 12 is the final dr
 
 ## Download
 
-[Download](http://files.opentreeoflife.org/ott/ott2.9/ott2.9draft12.tgz) (gzipped tar file, 91 Mbyte) 
+[Download](http://files.opentreeoflife.org/ott/ott2.9/ott2.9.tgz) (gzipped tar file, 91 Mbyte) 
 
 ## Contents
 All files are encoded UTF-8.  For documentation about file formats, see [the documentation in the reference taxonomy
@@ -38,12 +38,8 @@ The reference taxonomy is an algorithmic combination of several
 source taxonomies.  For code,
 see <a href="https://github.com/OpenTreeOfLife/reference-taxonomy">the
 source code repository</a>.
-Version 2.9 draft 9 was generated using 
-[commit d88b48a1](https://github.com/OpenTreeOfLife/reference-taxonomy/commit/?).
-
-Where taxonomies conflict regarding taxon relationships, they are
-resolved in favor of the higher priority taxonomy.  The priority
-ordering is as given below.
+Version 2.9 draft 12 was generated using 
+<a href="https://github.com/OpenTreeOfLife/reference-taxonomy/commit/a58f25af5a35c988684979c87f156a5e9364c54d">commit a58f25a</a>.</p>
 
 ## Sources
 
@@ -119,6 +115,23 @@ retrieved.
     [http://purl.org/opentree/ott/ott2.8/inputs/IRMNG\_DWC-2014-01-30.zip](http://purl.org/opentree/ott/ott2.8/inputs/IRMNG_DWC-2014-01-30.zip).
  
 1.  Taxon identifiers are carried over from [OTT 2.8](http://purl.org/opentree/ott/ott2.8/) when possible
+ 
+It has been requested that we relay the following statement:
+
+> REUSE OF IRMNG CONTENT:
+> IRMNG (the Interim Register of Marine and Nonmarine Genera) is assembled, with permission, from a range of third party data sources, certain of which permit data reuse only under specific conditions. In particular, for data originating from the Catalogue of Life (CoL), please refer to the relevant terms and conditions for reuse of CoL data as available at [http://www.catalogueoflife.org/content/terms-use](http://www.catalogueoflife.org/content/terms-use), and for data originating from the World Register of Marine Species (WoRMS) refer the paragraph "Terms of Use and Citation" at [http://www.marinespecies.org/about.php](http://www.marinespecies.org/about.php). The compilers of IRMNG accept no liability for any reuse of IRMNG content by downstream users which may be construed by the original data providers to violate their publicly available conditions of use.
+
+The Open Tree Taxonomy does not reproduce its sources in their
+entirety or in their original form of expression, but only uses
+limited information expressed in them. See "[Scientific names of
+organisms: attribution, rights, and licensing](http://dx.doi.org/10.1186/1756-0500-7-79)" ([http://dx.doi.org/10.1186/1756-0500-7-79](http://dx.doi.org/10.1186/1756-0500-7-79))
+regarding use of taxonomic information and attribution.
+
+## Priority
+
+Where taxonomies conflict regarding taxon relationships, they are
+resolved in favor of the higher priority taxonomy.  The priority
+ordering is as given above, with the following exceptions:
 
 The non-Fungi content of Index Fungorum is separated from the Fungi
 content and given a priority lower than NCBI but higher than GBIF.

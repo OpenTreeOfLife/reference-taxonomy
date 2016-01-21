@@ -1,10 +1,13 @@
 #!/bin/bash
 
-export CLASSPATH=..:../lib/json-simple-1.1.1.jar
+# Modify as appropriate to your own hardware
+JAVAFLAGS="-Xmx14G"
+CLASSPATH="..:../lib/json-simple-1.1.1.jar"
+JAVA="java ${JAVAFLAGS} -classpath ${CLASSPATH}"
 
-if true; then
+if [ $1 = "test" ]; then
   # Use this version for testing
-  java org.opentreeoflife.server.Services ../registry/aster-ott29 ../registry/aster-synth4/
+  ${JAVA} org.opentreeoflife.server.Services ../registry/aster-ott29 ../registry/aster-synth4/
 else
 
   # Use this version for real (takes a while to load up)
@@ -23,6 +26,6 @@ else
     gunzip draftversion4.tre.gz
   fi
 
-  java org.opentreeoflife.server.Services ott/ draftversion4.tre
+  ${JAVA} org.opentreeoflife.server.Services ott/ draftversion4.tre
 
 fi

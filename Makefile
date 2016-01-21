@@ -73,7 +73,7 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
 		    feed/misc/chromista_spreadsheet.py
 	@rm -f *py.class
 	@mkdir -p tax/ott
-	$(JAVA) $(SMASH) --jython make-ott.py
+	bin/jython make-ott.py
 	echo $(WHICH) >tax/ott/version.txt
 
 fung: tax/fung/taxonomy.tsv tax/fung/synonyms.tsv

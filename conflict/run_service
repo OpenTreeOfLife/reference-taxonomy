@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Set up symbolic links if these things already exist locally
+
+if [ ! -e ott ]; then
+  echo Getting OTT
+  wget http://files.opentreeoflife.org/ott/ott2.9/ott2.9.tgz
+  tar xzf ott2.9.tgz
+fi
+
+if [ ! -e draftversion4.tre ]; then
+  echo Getting synthetic tree
+  wget http://files.opentreeoflife.org/trees/draftversion4.tre.gz
+  gunzip draftversion4.tre.gz
+fi
+
+export CLASSPATH=..:../lib/json-simple-1.1.1.jar
+#java org.opentreeoflife.server.Services ott draftversion4.tre
+java org.opentreeoflife.server.Services ott ../registry/aster-synth4
+

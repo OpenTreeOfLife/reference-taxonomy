@@ -320,6 +320,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		if (designator.startsWith("(")) {
             Taxon root = Newick.newickToNode(designator, tax);
 			tax.addRoot(root);
+        } else if (designator.endsWith(".tre")) {
+			System.out.println("--- Reading " + designator + " ---");
+            return getNewick(designator); // calls postProcessTaxonomy
         } else {
 			if (!designator.endsWith("/")) {
 				System.err.println("Taxonomy designator should end in / but doesn't: " + designator);

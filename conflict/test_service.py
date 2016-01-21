@@ -1,7 +1,7 @@
 
-from org.opentreeoflife.server import Services;
-from org.opentreeoflife.taxa import Nexson, Taxonomy;
-from org.opentreeoflife.conflict import ConflictAnalysis;
+from org.opentreeoflife.server import Services
+from org.opentreeoflife.taxa import Nexson, Taxonomy
+from org.opentreeoflife.conflict import ConflictAnalysis
 
 def prep(newick):
     tax = Taxonomy.getTaxonomy(newick, 'test')

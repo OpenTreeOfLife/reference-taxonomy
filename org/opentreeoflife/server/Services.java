@@ -62,6 +62,7 @@ public class Services {
     public void serve(String hostname, int port) throws IOException {
         final HttpServer server = HttpServer.create(new InetSocketAddress(hostname, port), BACKLOG);
         server.createContext("/conflict-status", conflictStatus);
+        System.out.format("Starting HTTP server\n");
         server.start();
     }
 

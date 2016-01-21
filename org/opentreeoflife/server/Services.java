@@ -42,12 +42,14 @@ public class Services {
     private static final int STATUS_OK = 200;
     private static final int STATUS_METHOD_NOT_ALLOWED = 405;
 
+    private static final String idspace = "ott";
+
     private Taxonomy referenceTaxonomy;
     private Taxonomy syntheticTree;
 
     public static void main(final String... args) throws IOException {
-        new Services(args.length > 0 ? Taxonomy.getTaxonomy(args[0]) : null,
-                     args.length > 1 ? Taxonomy.getTaxonomy(args[1]) : null)
+        new Services(args.length > 0 ? Taxonomy.getTaxonomy(args[0], idspace) : null,
+                     args.length > 1 ? Taxonomy.getTaxonomy(args[1], idspace) : null)
             .serve("localhost", 8081);
     }
 
@@ -215,9 +217,9 @@ public class Services {
     }
 
     private Taxonomy getReferenceTree(String spec) {
-        if (spec.equals("ott"))
+        if (spec.startsWith(idspace))
             return referenceTaxonomy;
-        else if (spec.equals("synth"))
+        else if (spec.startsWith("synth"))
             return syntheticTree;
         else
             return null;

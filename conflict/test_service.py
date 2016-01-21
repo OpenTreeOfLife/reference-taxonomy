@@ -1,3 +1,7 @@
+# Test HTTP-based conflict service(s)
+# Start the server with this script, then exercise it using curl
+# e.g. 
+# curl -v "http://localhost:8081/conflict-status?tree1=pg_2539%23tree6294&tree2=ott"
 
 from org.opentreeoflife.server import Services
 from org.opentreeoflife.taxa import Nexson, Taxonomy
@@ -26,12 +30,13 @@ def test_two_trees(n1, n2):
         print 'got status', len(status)
         print status
 
-if True:
+if False:
     test_two_trees('((a,b),c)', '(a,(b,c))')
     test_two_trees('(a,b,c)', '(a,(b,c))')
     test_two_trees('(a,(b,c))', '(a,b,c)')
 else:
     tax = Taxonomy.getTaxonomy('../registry/aster-ott29/', 'ott')
+    tree = Taxonomy.getTaxonomy('../registry/aster-synth4/', ott')
 
     study_id = 'pg_2539'
     tree_id = 'tree6294'

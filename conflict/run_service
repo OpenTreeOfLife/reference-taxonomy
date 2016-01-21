@@ -1,7 +1,9 @@
 #!/bin/bash
 
 # Modify as appropriate to your own hardware
-JAVAFLAGS="-Xmx14G"
+if [ "x$JAVAFLAGS" = "x" ]; then
+    JAVAFLAGS="-Xmx14G"
+fi
 CLASSPATH="..:../lib/json-simple-1.1.1.jar"
 JAVA="java ${JAVAFLAGS} -classpath ${CLASSPATH}"
 

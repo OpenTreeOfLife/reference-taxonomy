@@ -49,7 +49,7 @@ import org.semanticweb.skosapibinding.SKOSManager;
 import org.semanticweb.skosapibinding.SKOSFormatExt;
 
 
-class UnionTaxonomy extends Taxonomy {
+public class UnionTaxonomy extends Taxonomy {
 
 	List<SourceTaxonomy> sources = new ArrayList<SourceTaxonomy>();
 	SourceTaxonomy idsource = null;

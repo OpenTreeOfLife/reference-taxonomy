@@ -93,8 +93,15 @@ public class Services {
                     OutputStream out = exchange.getResponseBody();
                     ba.writeTo(out);
                     out.close();
-                } else
-                    nonget(exchange);
+                } else {
+                    headers.set("Allow", "GET,OPTIONS");
+                    if (exchange.getRequestMethod().toUpperCase().equals("OPTIONS")) {
+                        headers.set("Access-Control-Allow-Headers", "content-type");
+                        exchange.sendResponseHeaders(STATUS_OK, -1);
+                    } else
+                        exchange.sendResponseHeaders(STATUS_METHOD_NOT_ALLOWED, -1);
+                }
+                
             } catch(Exception e) {
                 headers.set("Content-Type", String.format("text/plain; charset=%s",
                                                           StandardCharsets.UTF_8));
@@ -104,7 +111,7 @@ public class Services {
                 pw.close();
 
                 System.out.println(ba.size());
-                exchange.sendResponseHeaders(599, ba.size());
+                exchange.sendResponseHeaders(500, ba.size());
                 OutputStream out = exchange.getResponseBody();
                 ba.writeTo(out);
                 out.close();
@@ -266,14 +273,4 @@ public class Services {
         }
         return parameters;
     }
-
-    void nonget(HttpExchange exchange) throws IOException {
-        final Headers headers = exchange.getResponseHeaders();
-        headers.set("Allow", "GET,OPTIONS");
-        if (exchange.getRequestMethod().toUpperCase().equals("OPTIONS"))
-            exchange.sendResponseHeaders(STATUS_OK, -1);
-        else
-            exchange.sendResponseHeaders(STATUS_METHOD_NOT_ALLOWED, -1);
-    }
-
 }

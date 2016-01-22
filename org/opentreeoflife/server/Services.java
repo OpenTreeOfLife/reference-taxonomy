@@ -41,6 +41,7 @@ public class Services {
     private static final int BACKLOG = 10;
     private static final int STATUS_OK = 200;
     private static final int STATUS_METHOD_NOT_ALLOWED = 405;
+    private static final String ALLOWED_METHODS = "OPTIONS,GET";
 
     private static final String idspace = "ott";
 
@@ -62,6 +63,7 @@ public class Services {
     public void serve(String hostname, int port) throws IOException {
         final HttpServer server = HttpServer.create(new InetSocketAddress(port), BACKLOG);
         server.createContext("/conflict-status", conflictStatus);
+        server.createContext("/compare", conflictStatus);
         System.out.format("Starting HTTP server\n");
         server.start();
     }
@@ -72,11 +74,13 @@ public class Services {
 
     HttpHandler wrapCGItoJSON(CGItoJSON fun) {
         return exchange -> {
+            final Headers headers = exchange.getResponseHeaders();
+            headers.set("Access-Control-Allow-Origin", "*");
+            headers.set("Access-Control-Allow-Methods", ALLOWED_METHODS);
             try {
                 if (exchange.getRequestMethod().toUpperCase().equals("GET")) {
                     final Map<String, String> parameters = getParameters(exchange.getRequestURI());
                     Map result = fun.run(parameters);
-                    final Headers headers = exchange.getResponseHeaders();
                     headers.set("Content-Type", String.format("application/json; charset=%s",
                                                               StandardCharsets.UTF_8));
                     ByteArrayOutputStream ba = new ByteArrayOutputStream();
@@ -92,7 +96,6 @@ public class Services {
                 } else
                     nonget(exchange);
             } catch(Exception e) {
-                final Headers headers = exchange.getResponseHeaders();
                 headers.set("Content-Type", String.format("text/plain; charset=%s",
                                                           StandardCharsets.UTF_8));
                 ByteArrayOutputStream ba = new ByteArrayOutputStream();
@@ -263,8 +266,6 @@ public class Services {
         }
         return parameters;
     }
-
-    private static final String ALLOWED_METHODS = "OPTIONS,GET";
 
     void nonget(HttpExchange exchange) throws IOException {
         final Headers headers = exchange.getResponseHeaders();

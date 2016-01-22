@@ -114,41 +114,24 @@ public class Services {
     private HttpHandler conflictStatus =
         wrapCGItoJSON(new CGItoJSON() {
                 public JSONObject run(Map<String, String> parameters) {
+                    boolean useCache = true;
+                    String useCacheParam = parameters.get("use_cache");
+                    if (useCacheParam != null && useCacheParam.equals("false"))
+                        useCache = false;
                     return conflictStatus(parameters.get("tree1"),
-                                          parameters.get("tree2"));
+                                          parameters.get("tree2"),
+                                          useCache);
                 }
             });
 
-    private HttpHandler conflictStatusOld =
-        exchange -> {
+    private JSONObject conflictStatus(String treespec1, String treespec2, boolean useCache) {
         try {
-            if (exchange.getRequestMethod().toUpperCase().equals("GET")) {
-                final Map<String, String> parameters = getParameters(exchange.getRequestURI());
-
-                // exchange.getRequestHeaders();
-                Map result = conflictStatus(parameters.get("tree1"),
-                                            parameters.get("tree2"));
-                
-                final Headers headers = exchange.getResponseHeaders();
-                headers.set("Content-Type", String.format("application/json; charset=%s",
-                                                          StandardCharsets.UTF_8));
-
-                JSONObject.writeJSONString(result, new PrintWriter(exchange.getResponseBody()));
-            } else
-                nonget(exchange);
-        } finally {
-            exchange.close();
-        }
-    };
-    
-    private JSONObject conflictStatus(String treespec1, String treespec2) {
-        try {
-            Taxonomy tree1 = specToTree(treespec1);
+            Taxonomy tree1 = specToTree(treespec1, useCache);
             if (tree1 == null) {
                 System.err.format("** Can't find %s\n", treespec1);
                 return new JSONObject();
             }
-            Taxonomy tree2 = specToTree(treespec2);
+            Taxonomy tree2 = specToTree(treespec2, useCache);
             if (tree2 == null) {
                 System.err.format("** Can't find %s\n", treespec2);
                 return new JSONObject();
@@ -200,7 +183,7 @@ public class Services {
         return result;
     }
 
-    public Taxonomy specToTree(String spec) throws IOException {
+    public Taxonomy specToTree(String spec, boolean useCache) throws IOException {
         String[] parts = spec.split("#");
         if (parts.length == 0)
             return null;
@@ -209,7 +192,7 @@ public class Services {
             return getReferenceTree(parts[0]);
         } else {
             try {
-                return getSourceTree(parts[0], parts[1]);
+                return getSourceTree(parts[0], parts[1], useCache);
             } catch (ParseException e) {
                 System.err.format("** JSON parse exception for %s\n", spec);
                 return null;
@@ -226,8 +209,9 @@ public class Services {
             return null;
     }
 
-    private Taxonomy getSourceTree(String studyId, String treeId) throws IOException, ParseException {
-        JSONObject study = getStudy(studyId);
+    private Taxonomy getSourceTree(String studyId, String treeId, boolean useCache)
+        throws IOException, ParseException {
+        JSONObject study = getStudy(studyId, useCache);
         Taxonomy tree = Nexson.importTree(Nexson.getTrees(study).get(treeId), Nexson.getOtus(study), treeId);
         tree.idspace = studyId;
         return tree;
@@ -236,17 +220,20 @@ public class Services {
     private String singleCachedStudyId = null;
     private JSONObject singleCachedStudy = null;
 
-    private JSONObject getStudy(String studyId) throws IOException, ParseException {
+    private JSONObject getStudy(String studyId, boolean useCache) throws IOException, ParseException {
+        if (!useCache)
+            singleCachedStudyId = null; // Flush it
         if (studyId.equals(singleCachedStudyId))
             return singleCachedStudy;
         else {
             URL url = new URL("https://api.opentreeoflife.org/v2/study/" + studyId + "?output_nexml2json=1.2.1");
             HttpURLConnection conn = (HttpURLConnection)(url.openConnection());
-            if (conn.getResponseCode() == 200) {
+            if (conn.getResponseCode() == STATUS_OK) {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
                 JSONParser parser = new JSONParser();
                 JSONObject envelope = (JSONObject)parser.parse(reader);
                 JSONObject nexson = (JSONObject)envelope.get("data");
+                // JSONObject sha = (JSONObject)envelope.get("sha");
                 singleCachedStudyId = studyId;
                 singleCachedStudy = nexson; // also "sha" and other stuff
                 return nexson;

@@ -171,14 +171,18 @@ public class Services {
             String tag = null;
             switch (a.disposition) {
             case NONE: break;
-            case CONGRUENT:
-                tag = "=";
+            case SUPPORTED_BY:
+                tag = "supported_by";
                 break;
-            case REFINES:
-                tag = "<";
+            case PATH_SUPPORTED_BY:
+                // https://github.com/OpenTreeOfLife/opentree/wiki/Open-Tree-of-Life-APIs-v3#conflict-api-response-node-fields
+                tag = "partial_path_of";
                 break;
-            case CONFLICTS:
-                tag = "<>";
+            case RESOLVES:
+                tag = "resolves";
+                break;
+            case CONFLICTS_WITH:
+                tag = "conflicts_with";
                 break;
             }
             if (tag != null) {

@@ -318,17 +318,34 @@ public class ConflictAnalysis {
             System.err.format("Shouldn't happen 1 %s\n", node);
             return null; // shouldn't happen
         }
-        if (node.mrca(bounce) == node) // bounce descended from node?
-            return new Articulation(Disposition.CONGRUENT, conode);
+        if (node.mrca(bounce) == node) {  // bounce descended from node?
+            // Was: return new Articulation(Disposition.CONGRUENT, conode);
+            // If bounce and its parent both map to conode, then SUPPORTED_BY
+            // Otherwise, PATH_SUPPORTED_BY (or PARTIAL_PATH_OF)
+            if (true) {
+                Taxon bounceparent = bounce.parent;
+                if (bounceparent != null && map.get(bounceparent) == conode)
+                    return new Articulation(Disposition.PATH_SUPPORTED_BY, conode);
+                else
+                    return new Articulation(Disposition.SUPPORTED_BY, conode);
+            } else {
+                Taxon coparent = conode.parent;
+                if (coparent != null &&
+                    comap.get(coparent) == bounce)
+                    return new Articulation(Disposition.SUPPORTS_PATH, conode);
+                return new Articulation(Disposition.SUPPORTS, conode);
+            }
+        }
         if (node.parent == null) {
             System.err.format("Shouldn't happen 2 %s\n", node);
             return null; // shouldn't happen
         }
         Taxon conflicting = findConflicting(node, map, comap);
         if (conflicting == null)
-            return new Articulation(Disposition.REFINES, conode);
+            // what about RESOLVED_BY ?
+            return new Articulation(Disposition.RESOLVES, conode);
         else
-            return new Articulation(Disposition.CONFLICTS, conflicting);
+            return new Articulation(Disposition.CONFLICTS_WITH, conflicting);
     }
 
     // Start with N with children a, b, c [child].
@@ -340,7 +357,7 @@ public class ConflictAnalysis {
     // MRCA of a'', b'', c'', d'' is N'' (i.e. N' maps to N'').
     // By supposition, N descends from N''.
     // The claim here is that if a'', b'', and c'' are all under N,
-    // then N refines N'; N is not in conflict with N'.
+    // then N resolves N'; N is not in conflict with N'.
     // That is, N'' is above N only because of d'.
     // If any a'', b'', c'' is not under N, then N is in conflict with 
     // a', b', or c' (respectively).
@@ -371,7 +388,7 @@ public class ConflictAnalysis {
     }
 
     public int[] dispositionCounts() {
-        int none = 0, congruent = 0, refines = 0, conflicts = 0;
+        int none = 0, congruent = 0, resolves = 0, conflicts = 0;
         for (Taxon node : ingroup.descendants(true)) {
             Articulation a = this.articulation(node);
             if (a == null)
@@ -379,14 +396,16 @@ public class ConflictAnalysis {
             else
                 switch(a.disposition) {
                 case NONE: ++none; break;
+                case SUPPORTS: case SUPPORTS_PATH:
+                case SUPPORTED_BY: case PATH_SUPPORTED_BY:
                 case CONGRUENT: ++congruent; break;
-                case REFINES: ++refines; break;
-                case CONFLICTS: ++conflicts; break;
+                case RESOLVES: ++resolves; break;
+                case CONFLICTS_WITH: ++conflicts; break;
                 }
         }
         conflicting = conflicts;
-        opportunities = congruent + refines + conflicts;
-        return new int[]{none, congruent, refines, conflicts};
+        opportunities = congruent + resolves + conflicts;
+        return new int[]{none, congruent, resolves, conflicts};
     }
 
     // ------------------------------------------------------------------

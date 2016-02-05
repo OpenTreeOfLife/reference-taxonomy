@@ -3,6 +3,8 @@ This repository contains the following:
 * taxa, Java classes for taxa and taxonomies
 * smasher, a Java program for combining taxonomies
 * jython and shell scripts for creating OTT, the Open Tree reference taxonomy
+* 
+For Open Tree of Life documentation see [the germinator repository's wiki](https://github.com/OpenTreeOfLife/germinator/wiki).
 
 ## How to use 'smasher'
 

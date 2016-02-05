@@ -2,7 +2,7 @@
 
 The 'smasher' program does things with taxonomies.  It was written to support
 builds of the Open Tree Reference Taxonomy, but is a general purpose
-tool.  It is scriptable using Jython.  You
+tool.  It is scriptable using Python via the Java-based Python interpreter 'jython'.  You
 can see examples of taxonomy build scripts in these two locations in the repository:
 
     t/aster.py
@@ -30,28 +30,28 @@ You can test that Smasher functions with
 
 Smasher is invoked as follows
 
-    java -classpath ".:lib/*" org.opentreeoflife.smasher.Smasher --jython script.py
+    bin/jython script.py
 
 where the current directory is the home directory of the repository
 clone, and script.py is the name of a script file.  
-Or if you like you can skip the --jython parameter, and you'll get an interactive jython prompt.
+Or if you like you can skip the script.py parameter, and you'll get an interactive jython prompt.
 
-For convenience you might want to define a shell alias
-
-    alias smash='java -classpath ".:lib/*" org.opentreeoflife.smasher.Smasher'
+You may have a need to set the Java memory limit, which might be too large or too small for your purposes.  To do  this, edit JAVAFLAGS in the bin/jython script (or edit the Makefile and force re-creation of bin/jython).  The default is currently 14G.  I like to set it a bit smaller than the actual physical memory available on the machine.
 
 ## Using the library
 
 The first step in any build script is to gain access to the Taxonomy
-library:
+modules:
 
-    from org.opentreeoflife.smasher import Taxonomy
+    from org.opentreeoflife.taxa import Taxonomy
+    from org.opentreeoflife.smasher import UnionTaxonomy
+
 
 ## Taxonomies
 
-Initiate a taxonomy build by creating a new Taxonomy object:
+If you want to synthesize a new taxonomy, initiate the build by creating a new UnionTaxonomy object:
 
-    tax = Taxonomy.newTaxonomy()
+    tax = UnionTaxonomy.newTaxonomy()
 
 Taxonomies are usually built starting with one or more existing
 taxonomies (although they needn't be), obtained as follows:

@@ -4,6 +4,8 @@ This repository contains the following:
 * smasher, a Java program for combining taxonomies
 * jython and shell scripts for creating OTT, the Open Tree reference taxonomy
 
+For Open Tree of Life documentation see [the germinator repository's wiki](https://github.com/OpenTreeOfLife/germinator/wiki).
+
 ## How to use 'smasher'
 
 See file doc/scripting.md for documentation on using the scripting features of smasher for building, subsetting, querying and other operations on taxonomies. 

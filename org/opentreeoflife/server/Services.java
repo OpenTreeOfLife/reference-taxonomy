@@ -64,7 +64,7 @@ public class Services {
         final HttpServer server = HttpServer.create(new InetSocketAddress(port), BACKLOG);
         server.createContext("/conflict-status", conflictStatus);
         server.createContext("/compare", conflictStatus);
-        System.out.format("Starting HTTP server\n");
+        System.out.format("Starting HTTP server on port %s\n", port);
         server.start();
     }
 
@@ -188,8 +188,11 @@ public class Services {
             if (tag != null) {
                 JSONObject info = new JSONObject();
                 Taxon w = a.witness;
-                if (w != null && w.id != null)
+                if (w != null && w.id != null && !w.id.startsWith("-")) {
                     info.put("witness", w.id);
+                    if (w.name != null)
+                        info.put("witness_name", w.name);
+                }
                 info.put("status", tag);
                 result.put(node.id, info);
             }

@@ -51,7 +51,7 @@ bin/jython:
 	mkdir -p bin
 	(echo "#!/bin/bash"; \
 	 echo "export JYTHONPATH=.:$$PWD:$$PWD/util:$$PWD/lib/json-simple-1.1.1.jar"; \
-	 echo exec java -jar "$(JAVAFLAGS)" $$PWD/lib/jython-standalone-2.7.0.jar '$$*') >$@
+	 echo exec java "$(JAVAFLAGS)" -jar $$PWD/lib/jython-standalone-2.7.0.jar '$$*') >$@
 	chmod +x $@
 
 # --------------------------------------------------------------------------

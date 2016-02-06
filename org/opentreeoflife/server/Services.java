@@ -207,14 +207,15 @@ public class Services {
         else if (parts.length == 1) {
             // Otherwise, use saved ott or synth
             return getReferenceTree(parts[0]);
-        } else {
+        } else if (parts.length == 2) {
             try {
                 return getSourceTree(parts[0], parts[1], useCache);
             } catch (ParseException e) {
                 System.err.format("** JSON parse exception for %s\n", spec);
                 return null;
             }
-        }
+        } else
+            return null;
     }
 
     private Taxonomy getReferenceTree(String spec) {
@@ -240,9 +241,10 @@ public class Services {
     private JSONObject getStudy(String studyId, boolean useCache) throws IOException, ParseException {
         if (!useCache)
             singleCachedStudyId = null; // Flush it
-        if (studyId.equals(singleCachedStudyId))
+        if (studyId.equals(singleCachedStudyId)) {
+            System.out.format("Using cached %s %s\n", studyId, useCache);
             return singleCachedStudy;
-        else {
+        } else {
             URL url = new URL("https://api.opentreeoflife.org/v2/study/" + studyId + "?output_nexml2json=1.2.1");
             HttpURLConnection conn = (HttpURLConnection)(url.openConnection());
             if (conn.getResponseCode() == STATUS_OK) {
@@ -253,6 +255,7 @@ public class Services {
                 // JSONObject sha = (JSONObject)envelope.get("sha");
                 singleCachedStudyId = studyId;
                 singleCachedStudy = nexson; // also "sha" and other stuff
+                System.out.format("Cached %s %s\n", studyId, useCache);
                 return nexson;
             } else
                 System.err.format("** GET %s yielded %s\n", url, conn.getResponseCode());

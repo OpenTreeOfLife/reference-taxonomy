@@ -130,18 +130,7 @@ public class ConflictAnalysis {
             System.out.println("No nodes in common");
     }
 
-    // Find OTT ids for OTUs that have them, and use them to map
-    // bidirectionally between input tree tips and ref tips
-    // deprecated?
-    boolean mapTips(Taxon node, Taxonomy ref) {
-        if (node.children != null) {
-            boolean any = false;
-            for (Taxon child : node.children)
-                any = mapTips(child, ref) || any;
-            if (any) return true;
-        }
-        return mapTip(node, ref);
-    }
+    // Map tips bidirectionally
 
     boolean mapTip(Taxon node, Taxonomy ref) {
         String id = null;
@@ -156,11 +145,17 @@ public class ConflictAnalysis {
         Taxon node2 = ref.lookupId(id);
         if (node2 != null
             && (includeIncertaeSedis || !node2.isHidden())) {
-            map.put(node, node2);
-            comap.put(node2, node);
-            return true;
-        }
-        if (false && node.name != null) {
+            Taxon othernode = comap.get(node2);
+            if (othernode == null) {
+                map.put(node, node2);
+                comap.put(node2, node);
+                return true;
+            } else
+                // Multiple input nodes map to a single ref node.
+                // Map only one of them to the ref node, leaving the
+                // others unmapped.
+                return false;
+        } else if (false && node.name != null) {
             Taxon probe = ref.unique(node.name);
             if (probe != null) {
                 // There are lots of these e.g. all of Metalasia in pg_1572
@@ -191,6 +186,10 @@ public class ConflictAnalysis {
 
     // This runs twice, once in each direction input->ref / ref->input
     Taxon induce(Taxon node, Taxonomy other, Map<Taxon, Taxon> map) {
+        if (false) {
+            Taxon probe = map.get(node);
+            if (probe != null) return probe; // encountered as tip in other direction
+        }
         if (node.children != null) {
             Taxon mrca = null;
             for (Taxon child : node.children) {
@@ -319,22 +318,14 @@ public class ConflictAnalysis {
             return null; // shouldn't happen
         }
         if (node.mrca(bounce) == node) {  // bounce descended from node?
-            // Was: return new Articulation(Disposition.CONGRUENT, conode);
             // If bounce and its parent both map to conode, then SUPPORTED_BY
-            // Otherwise, PATH_SUPPORTED_BY (or PARTIAL_PATH_OF)
-            if (true) {
-                Taxon bounceparent = bounce.parent;
-                if (bounceparent != null && map.get(bounceparent) == conode)
-                    return new Articulation(Disposition.PATH_SUPPORTED_BY, conode);
-                else
-                    return new Articulation(Disposition.SUPPORTED_BY, conode);
-            } else {
-                Taxon coparent = conode.parent;
-                if (coparent != null &&
-                    comap.get(coparent) == bounce)
-                    return new Articulation(Disposition.SUPPORTS_PATH, conode);
-                return new Articulation(Disposition.SUPPORTS, conode);
-            }
+            // Otherwise, PARTIAL_PATH_OF
+            // TBD: get highest congruent ancestor of conode
+            Taxon bounceparent = bounce.parent;
+            if (bounceparent != null && map.get(bounceparent) == conode)
+                return new Articulation(Disposition.PATH_SUPPORTED_BY, conode);
+            else
+                return new Articulation(Disposition.SUPPORTED_BY, conode);
         }
         if (node.parent == null) {
             System.err.format("Shouldn't happen 2 %s\n", node);
@@ -348,24 +339,59 @@ public class ConflictAnalysis {
             return new Articulation(Disposition.CONFLICTS_WITH, conflicting);
     }
 
-    // Start with N with children a, b, c [child].
-    // a, b, c, map to a', b', c' [cochild].
-    // MRCA of a', b', c' is N' [map.get(node)].
-    // a', b', c' map back to a'', b'', c'' [childbounce]
-    // N' also has child d'.
-    // a', b', c', d' map back to a'', b'', c'', d''
-    // MRCA of a'', b'', c'', d'' is N'' (i.e. N' maps to N'').
-    // By supposition, N descends from N''.
-    // The claim here is that if a'', b'', and c'' are all under N,
-    // then N resolves N'; N is not in conflict with N'.
-    // That is, N'' is above N only because of d'.
-    // If any a'', b'', c'' is not under N, then N is in conflict with 
-    // a', b', or c' (respectively).
+    // Find a node in ref that conflicts with node.
+    // (Must rule out resolution case.)
+
+    // Suppose N maps to N', N' maps to N'', N'' bigger than N.
+    // Then N < N' < N''.  In particular N' does not conflict with N.
+    // But if it's not that N resolves N', then N must conflict with
+    // some node Q < N'.  We much find such a node Q.
+
+    // Q and N must intersect without containment or disjointness.
+
+    Taxon findConflicting(Taxon node, Taxon conode, Map<Taxon, Taxon> map, Map<Taxon, Taxon> comap) {
+        Taxon bounce = comap.get(conode);
+        if (bounce == null) return null;
+
+        // See if conode/bounce is entirely within node
+        Taxon m = bounce.mrca(node);
+        if (m == node)
+            // Yes, no conflict
+            return null;
+
+        // See if node and conode/bounce are disjoint
+        Taxon[] div = node.divergence(bounce);
+        if (div != null)
+            // Yes, no conflict
+            return null;
+
+        // See if node is entirely within conode/bounce
+        if (m == bounce) {
+            // Yes, so no conflict, but perhaps a descendant of conode conflicts.
+            if (conode.children != null)
+                for (Taxon cochild : conode.children) {
+                    Taxon n = findConflicting(node, cochild, map, comap);
+                    if (n != null)
+                        return n;
+                }
+            // No conflict.  Must be resolution.
+            return null;
+        }
+
+        // By process of elimination, node and conode must conflict.
+        return conode;
+    }
 
     Taxon findConflicting(Taxon node, Map<Taxon, Taxon> map, Map<Taxon, Taxon> comap) {
+        if (true)
+            return findConflicting(node, map.get(node), map, comap);
+
+        else {
+
         // Find a reference node that conflicts with this input node.
         // At least one child must map to a conflicting reference node (yes?).
         Taxon conode = map.get(node);
+
         for (Taxon child : node.children) {
             Taxon cochild = map.get(child); // typically a taxonomy node
             if (cochild == null) continue;
@@ -385,6 +411,7 @@ public class ConflictAnalysis {
                 return cochild;
         }
         return null;
+        }
     }
 
     public int[] dispositionCounts() {

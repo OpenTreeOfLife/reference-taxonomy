@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# Run with
+#     ./run_service test
+# or
+#     nohup ./run_service ../registry/plants-ott29/ ../registry/plants-synth4 & echo $! >service.pid
+# or
+#     nohup ./run_service & echo $! >service.pid
+
+# Check with pg_2606 tree6049
+# curl "http://localhost:8081/compare?tree1=pg_2606%23tree6049&tree2=ott" >curl.out
+
 # Modify as appropriate to your own hardware
 if [ "x$JAVAFLAGS" = "x" ]; then
     JAVAFLAGS="-Xmx14G"
@@ -9,7 +19,11 @@ JAVA="java ${JAVAFLAGS} -classpath ${CLASSPATH}"
 
 if [ $1x = "testx" ]; then
   # Use this version for testing
-  ${JAVA} org.opentreeoflife.server.Services ../registry/aster-ott29 ../registry/aster-synth4/
+  OTT=../registry/aster-ott29/
+  SYNTH=../registry/aster-synth4/
+elif [ $# = 2 ]; then
+  OTT=$1
+  SYNTH=$2
 else
 
   # Use this version for real (takes a while to load up)
@@ -21,6 +35,7 @@ else
     wget http://files.opentreeoflife.org/ott/ott2.9/ott2.9.tgz
     tar xzf ott2.9.tgz
   fi
+  OTT=ott/
 
   if [ ! -e draftversion4.tre ]; then
     if [ ! -e draftversion4.tre.gz ]; then
@@ -29,7 +44,7 @@ else
     fi
     gunzip draftversion4.tre.gz
   fi
-
-  ${JAVA} org.opentreeoflife.server.Services ott/ draftversion4.tre
-
+  SYNTH=draftversion4.tre
 fi
+
+exec ${JAVA} org.opentreeoflife.server.Services $OTT $SYNTH

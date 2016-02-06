@@ -1,0 +1,49 @@
+#!/bin/bash
+
+if [ $# != 1 ]; then
+   echo "Usage: $0 {start | stop | status}"
+fi
+
+case $1 in
+    start)
+        if [ -e service.pid ]; then
+            PID=`cat service.pid`
+            if ps | grep -q -w $PID; then
+                echo "Already running (pid $PID)"
+                exit 0
+            fi
+        fi
+        nohup ./run_service & (echo $!; sleep 1) >service.pid
+        ;;
+    stop)
+        if [ -e service.pid ]; then
+            PID=`cat service.pid`
+            if kill $PID; then
+                echo "Terminated"
+                rm service.pid
+            elif ps | grep -q -w $PID; then
+                echo "Running (pid $PID)"
+                echo "Failed to kill $PID !  Manual intervention required"
+                exit 1
+            else
+                echo "$PID apparently not running"
+                exit 1
+            fi
+        else
+            echo "No pid file - not started, or already stopped"
+            exit 1
+        fi
+        ;;
+    status)
+        if [ -e service.pid ]; then
+            PID=`cat service.pid`
+            if ps | grep -q -w $PID; then
+                echo "Running (pid $PID)"
+            else
+                echo "Not running, perhaps crashed or killed"
+            fi
+        else
+            echo "Not running"
+        fi
+esac
+

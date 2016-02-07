@@ -163,17 +163,27 @@ public class Nexson {
         for (Taxon taxon : tax.taxa()) {
             if (taxon.children == null) {
                 JSONObject node = (JSONObject)nodes.get(taxon.id);
+                /*
+                  "Tn10272676": {
+                  "@otu": "Tl1140566", 
+                  "^ot:isTaxonExemplar": false
+                  }, 
+                */
                 Object otuIdObj = node.get("@otu");
                 if (otuIdObj != null) {
                     String otuId = ((String)otuIdObj);
                     JSONObject otu = ((JSONObject)otus.get(otuId));
-                    Object ottidObj = otu.get("^ot:ottId"); // an integer
-                    if (ottidObj != null)
-                        taxon.addSourceId(new QualifiedId("ott", ottidObj.toString()));
                     Object label = otu.get("^ot:originalLabel");
                     if (label == null)
                         System.out.format("** No label for terminal node %s, otu = %s\n", taxon.id, otu);
                     taxon.setName((String)label);
+
+                    Object isExemplar = node.get("^ot:isTaxonExemplar");
+                    if (isExemplar != Boolean.FALSE) {
+                        Object ottidObj = otu.get("^ot:ottId"); // an integer
+                        if (ottidObj != null)
+                            taxon.addSourceId(new QualifiedId("ott", ottidObj.toString()));
+                    }
                 } else {
                     System.out.format("** No @otu for terminal node %s\n", taxon.id);
                 }

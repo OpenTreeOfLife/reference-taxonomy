@@ -152,7 +152,7 @@ public class Services {
         }
     }
 
-    static JSONObject conflictStatus(Taxonomy tree1, Taxonomy tree2) {
+    public static JSONObject conflictStatus(Taxonomy tree1, Taxonomy tree2) {
         boolean flipped = false;
         Taxonomy input = tree1, ref = tree2;
         if (tree2.count() < tree1.count()) { // heuristic!
@@ -227,7 +227,7 @@ public class Services {
             return null;
     }
 
-    private Taxonomy getSourceTree(String studyId, String treeId, boolean useCache)
+    public Taxonomy getSourceTree(String studyId, String treeId, boolean useCache)
         throws IOException, ParseException {
         JSONObject study = getStudy(studyId, useCache);
         Taxonomy tree = Nexson.importTree(Nexson.getTrees(study).get(treeId), Nexson.getOtus(study), treeId);
@@ -238,7 +238,7 @@ public class Services {
     private String singleCachedStudyId = null;
     private JSONObject singleCachedStudy = null;
 
-    private JSONObject getStudy(String studyId, boolean useCache) throws IOException, ParseException {
+    public JSONObject getStudy(String studyId, boolean useCache) throws IOException, ParseException {
         if (!useCache)
             singleCachedStudyId = null; // Flush it
         if (studyId.equals(singleCachedStudyId)) {

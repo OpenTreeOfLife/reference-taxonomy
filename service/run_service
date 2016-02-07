@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Problem: these assignments require manual update every time we
+# advance to a new version
+
+OTT=ott2.9
+SYNTH=draftversion4
+
 # Run with
 #     ./run_service test
 # or
@@ -32,19 +38,19 @@ else
 
   if [ ! -e ott ]; then
     echo Getting OTT
-    wget http://files.opentreeoflife.org/ott/ott2.9/ott2.9.tgz
-    tar xzf ott2.9.tgz
+    wget http://files.opentreeoflife.org/ott/${OTT}/${OTT}.tgz
+    tar xzf ${OTT}.tgz
   fi
   OTT=ott/
 
-  if [ ! -e draftversion4.tre ]; then
-    if [ ! -e draftversion4.tre.gz ]; then
+  if [ ! -e ${SYNTH}.tre ]; then
+    if [ ! -e ${SYNTH}.tre.gz ]; then
       echo Getting synthetic tree
-      wget http://files.opentreeoflife.org/trees/draftversion4.tre.gz
+      wget http://files.opentreeoflife.org/trees/${SYNTH}.tre.gz
     fi
-    gunzip draftversion4.tre.gz
+    gunzip ${SYNTH}.tre.gz
   fi
-  SYNTH=draftversion4.tre
+  SYNTH=${SYNTH}.tre
 fi
 
 exec ${JAVA} org.opentreeoflife.server.Services $OTT $SYNTH

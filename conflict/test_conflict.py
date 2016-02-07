@@ -1,4 +1,6 @@
-# Test HTTP-based conflict service(s)
+# Test the conflict service(s)
+
+# Another test:
 # Start the server with this script, then exercise it using curl
 # e.g. 
 # curl -v "http://localhost:8081/conflict-status?tree1=pg_2539%23tree6294&tree2=ott"
@@ -30,20 +32,21 @@ def test_two_trees(n1, n2):
         print 'got status', len(status)
         print status
 
-if False:
+def tree_tests():
     test_two_trees('((a,b),c)', '(a,(b,c))')
     test_two_trees('(a,b,c)', '(a,(b,c))')
     test_two_trees('(a,(b,c))', '(a,b,c)')
-else:
+
+def service_test():
     tax = Taxonomy.getTaxonomy('../registry/aster-ott29/', 'ott')
-    tree = Taxonomy.getTaxonomy('../registry/aster-synth4/', ott')
+    tree = Taxonomy.getTaxonomy('../registry/aster-synth4/', 'ott')
 
     study_id = 'pg_2539'
     tree_id = 'tree6294'
 
     services = Services(tax, None)
 
-    study = services.getStudy(study_id)
+    study = services.getStudy(study_id, True)
     if study == None: 
         print 'no study', study_id
     else:
@@ -71,3 +74,6 @@ else:
     print 'disposition', d
 
     print services.conflictStatus(treespec, 'ott')
+
+tree_tests()
+service_test()

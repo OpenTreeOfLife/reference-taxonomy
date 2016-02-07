@@ -58,7 +58,7 @@ bin/jython:
 bin/smasher:
 	mkdir -p bin
 	(echo "#!/bin/bash"; \
-	 echo "cd $$PWD/conflict"; \
+	 echo "cd $$PWD/service"; \
 	 echo ./service '$$*') >$@
 	chmod +x $@
 

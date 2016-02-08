@@ -15,7 +15,7 @@ case $1 in
                 exit 0
             fi
         fi
-        nohup ./run_service & (echo $!; sleep 1) >service.pid
+        nohup ./run_service 2>&1 >nohup.out & (echo $!; sleep 1) >service.pid
         ;;
     stop)
         if [ -e service.pid ]; then

@@ -3,8 +3,8 @@
 # Problem: these assignments require manual update every time we
 # advance to a new version
 
-OTT=ott2.9
-SYNTH=draftversion4
+OTT=ott2.9/
+SYNTH=draftversion4.tre
 
 # Run with
 #     ./run_service test
@@ -36,21 +36,19 @@ else
 
   # Set up symbolic links if these things don't already exist locally
 
-  if [ ! -e ott ]; then
+  if [ ! -e ${OTT} ]; then
     echo Getting OTT
-    wget http://files.opentreeoflife.org/ott/${OTT}/${OTT}.tgz
+    time wget -q http://files.opentreeoflife.org/ott/${OTT}/${OTT}.tgz
     tar xzf ${OTT}.tgz
   fi
-  OTT=ott/
 
-  if [ ! -e ${SYNTH}.tre ]; then
-    if [ ! -e ${SYNTH}.tre.gz ]; then
+  if [ ! -e ${SYNTH} ]; then
+    if [ ! -e ${SYNTH}.gz ]; then
       echo Getting synthetic tree
-      wget http://files.opentreeoflife.org/trees/${SYNTH}.tre.gz
+      time wget -q http://files.opentreeoflife.org/trees/${SYNTH}.gz
     fi
-    gunzip ${SYNTH}.tre.gz
+    gunzip ${SYNTH}.gz
   fi
-  SYNTH=${SYNTH}.tre
 fi
 
 exec ${JAVA} org.opentreeoflife.server.Services $OTT $SYNTH

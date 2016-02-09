@@ -13,6 +13,10 @@
 # Check with pg_2606 tree6049
 # curl "http://localhost:8081/compare?tree1=pg_2606%23tree6049&tree2=ott" >curl.out
 
+# Not a good location for this config file; fix later
+
+. service.config
+
 # Modify as appropriate to your own hardware
 if [ "x$JAVAFLAGS" = "x" ]; then
     JAVAFLAGS="-Xmx14G"
@@ -22,7 +26,9 @@ CLASSPATH="..:../lib/json-simple-1.1.1.jar"
 JAVA="java ${JAVAFLAGS} -classpath ${CLASSPATH}"
 
 
-if [ -d taxonomy ]; then
+if [ "x$TAXONOMY" != x ]; then
+  true
+elif [ -d taxonomy ]; then
   TAXONOMY=taxonomy/
 elif [ -r taxonomy.tre ]; then
   TAXONOMY=taxonomy.tre
@@ -31,7 +37,9 @@ else
   exit 1
 fi
 
-if [ -d synth ]; then
+if [ "x$SYNTH" != x ]; then
+  true
+elif [ -d synth ]; then
   SYNTH=synth/
 elif [ -r synth.tre ]; then
   SYNTH=synth.tre
@@ -40,5 +48,9 @@ else
   exit 1
 fi
 
-echo Starting services $TAXONOMY $SYNTH
-exec ${JAVA} org.opentreeoflife.server.Services $TAXONOMY $SYNTH
+if "x$STUDY_BASE_URL" = x; then
+  STUDY_BASE_URL="https://api.opentreeoflife.org/v2/study/"
+fi
+
+echo Starting services $TAXONOMY $SYNTH $STUDY_BASE_URL
+exec ${JAVA} org.opentreeoflife.server.Services $TAXONOMY $SYNTH $STUDY_BASE_URL

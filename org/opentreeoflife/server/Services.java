@@ -47,16 +47,19 @@ public class Services {
 
     private Taxonomy referenceTaxonomy;
     private Taxonomy syntheticTree;
+    private String studyBase;
 
     public static void main(final String... args) throws IOException {
         new Services(args.length > 0 ? Taxonomy.getTaxonomy(args[0], idspace) : null,
-                     args.length > 1 ? Taxonomy.getTaxonomy(args[1], idspace) : null)
+                     args.length > 1 ? Taxonomy.getTaxonomy(args[1], idspace) : null,
+                     args.length > 2 ? args[2] : "https://api.opentreeoflife.org/v2/study/")
             .serve("localhost", 8081);
     }
 
-    public Services(Taxonomy reftax, Taxonomy synth) {
+    public Services(Taxonomy reftax, Taxonomy synth, String studyBase) {
         this.referenceTaxonomy = reftax;
         this.syntheticTree = synth;
+        this.studyBase = studyBase;
     }
 
     // Does not return
@@ -245,7 +248,7 @@ public class Services {
             System.out.format("Using cached %s %s\n", studyId, useCache);
             return singleCachedStudy;
         } else {
-            URL url = new URL("https://api.opentreeoflife.org/v2/study/" + studyId + "?output_nexml2json=1.2.1");
+            URL url = new URL(studyBase + studyId + "?output_nexml2json=1.2.1");
             HttpURLConnection conn = (HttpURLConnection)(url.openConnection());
             if (conn.getResponseCode() == STATUS_OK) {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));

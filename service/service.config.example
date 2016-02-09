@@ -1,0 +1,3 @@
+# Parameters for services
+
+STUDY_BASE_URL="https://api.opentreeoflife.org/v2/study/"

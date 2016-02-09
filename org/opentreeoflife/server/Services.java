@@ -49,6 +49,12 @@ public class Services {
     private Taxonomy syntheticTree;
     private String studyBase;
 
+    class BadRequest extends RuntimeException {
+        BadRequest(String message) {
+            super(message);
+        }
+    }
+
     public static void main(final String... args) throws IOException {
         new Services(args.length > 0 ? Taxonomy.getTaxonomy(args[0], idspace) : null,
                      args.length > 1 ? Taxonomy.getTaxonomy(args[1], idspace) : null,
@@ -114,7 +120,10 @@ public class Services {
                 pw.close();
 
                 System.out.println(ba.size());
-                exchange.sendResponseHeaders(500, ba.size());
+                int status = 500;
+                if (e instanceof BadRequest)
+                    status = 400;
+                exchange.sendResponseHeaders(status, ba.size());
                 OutputStream out = exchange.getResponseBody();
                 ba.writeTo(out);
                 out.close();
@@ -138,16 +147,18 @@ public class Services {
             });
 
     private JSONObject conflictStatus(String treespec1, String treespec2, boolean useCache) {
+        if (treespec1 == null) throw new BadRequest("missing tree1");
+        if (treespec2 == null) throw new BadRequest("missing tree2");
         try {
             Taxonomy tree1 = specToTree(treespec1, useCache);
             if (tree1 == null) {
                 System.err.format("** Can't find %s\n", treespec1);
-                return new JSONObject();
+                throw new BadRequest(String.format("Can't find %s", treespec1));
             }
             Taxonomy tree2 = specToTree(treespec2, useCache);
             if (tree2 == null) {
                 System.err.format("** Can't find %s\n", treespec2);
-                return new JSONObject();
+                throw new BadRequest(String.format("Can't find %s", treespec2));
             }
             return conflictStatus(tree1, tree2);
         } catch (IOException e) {

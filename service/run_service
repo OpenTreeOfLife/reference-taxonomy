@@ -1,10 +1,7 @@
 #!/bin/bash
 
-# Problem: these assignments require manual update every time we
-# advance to a new version
-
-OTT=ott2.9/
-SYNTH=draftversion4.tre
+# Inputs are taxonomy/ or taxonomy.tre
+# and synth/ or synth.tre
 
 # Run with
 #     ./run_service test
@@ -20,35 +17,26 @@ SYNTH=draftversion4.tre
 if [ "x$JAVAFLAGS" = "x" ]; then
     JAVAFLAGS="-Xmx14G"
 fi
+
 CLASSPATH="..:../lib/json-simple-1.1.1.jar"
 JAVA="java ${JAVAFLAGS} -classpath ${CLASSPATH}"
 
-if [ $1x = "testx" ]; then
-  # Use this version for testing
-  OTT=../registry/aster-ott29/
-  SYNTH=../registry/aster-synth4/
-elif [ $# = 2 ]; then
-  OTT=$1
-  SYNTH=$2
+
+if [ -d taxonomy ]; then
+  TAXONOMY=taxonomy/
+elif [ -r taxonomy.tre ]; then
+  TAXONOMY=taxonomy.tre
 else
-
-  # Use this version for real (takes a while to load up)
-
-  # Set up symbolic links if these things don't already exist locally
-
-  if [ ! -e ${OTT} ]; then
-    echo Getting OTT
-    time wget -q http://files.opentreeoflife.org/ott/${OTT}/${OTT}.tgz
-    tar xzf ${OTT}.tgz
-  fi
-
-  if [ ! -e ${SYNTH} ]; then
-    if [ ! -e ${SYNTH}.gz ]; then
-      echo Getting synthetic tree
-      time wget -q http://files.opentreeoflife.org/trees/${SYNTH}.gz
-    fi
-    gunzip ${SYNTH}.gz
-  fi
+  echo "** No taxonomy found"
+  exit 1
 fi
 
-exec ${JAVA} org.opentreeoflife.server.Services $OTT $SYNTH
+if [ -d synth ]; then
+  SYNTH=synth/
+elif [ -r synth.tre ]; then
+  SYNTH=synth.tre
+  echo "** No synthetic tree found"
+  exit 1
+fi
+
+exec ${JAVA} org.opentreeoflife.server.Services $TAXONOMY $SYNTH

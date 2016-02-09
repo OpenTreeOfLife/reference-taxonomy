@@ -23,7 +23,7 @@ case $1 in
             if kill $PID; then
                 echo "Terminated"
                 rm service.pid
-            elif ps | grep -v grep | grep -q -w $PID; then
+            elif ps -U $USER | grep -v grep | grep -q -w $PID; then
                 echo "Running (pid $PID)"
                 echo "Failed to kill $PID !  Manual intervention required"
                 exit 1
@@ -42,7 +42,7 @@ case $1 in
     status)
         if [ -e service.pid ]; then
             PID=`cat service.pid`
-            if ps | grep -v grep | grep -q -w $PID; then
+            if ps -U $USER | grep -v grep | grep -q -w $PID; then
                 echo "Running (pid $PID)"
             else
                 echo "Not running, perhaps crashed or killed"

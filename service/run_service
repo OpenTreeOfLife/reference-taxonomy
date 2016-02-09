@@ -35,8 +35,10 @@ if [ -d synth ]; then
   SYNTH=synth/
 elif [ -r synth.tre ]; then
   SYNTH=synth.tre
+else
   echo "** No synthetic tree found"
   exit 1
 fi
 
+echo Starting services $TAXONOMY $SYNTH
 exec ${JAVA} org.opentreeoflife.server.Services $TAXONOMY $SYNTH

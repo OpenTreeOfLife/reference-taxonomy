@@ -49,7 +49,7 @@ public class Services {
     private Taxonomy syntheticTree;
     private String studyBase;
 
-    class BadRequest extends RuntimeException {
+    static class BadRequest extends RuntimeException {
         BadRequest(String message) {
             super(message);
         }
@@ -146,20 +146,16 @@ public class Services {
                 }
             });
 
-    private JSONObject conflictStatus(String treespec1, String treespec2, boolean useCache) {
+    public JSONObject conflictStatus(String treespec1, String treespec2, boolean useCache) {
         if (treespec1 == null) throw new BadRequest("missing tree1");
         if (treespec2 == null) throw new BadRequest("missing tree2");
         try {
             Taxonomy tree1 = specToTree(treespec1, useCache);
-            if (tree1 == null) {
-                System.err.format("** Can't find %s\n", treespec1);
+            if (tree1 == null)
                 throw new BadRequest(String.format("Can't find %s", treespec1));
-            }
             Taxonomy tree2 = specToTree(treespec2, useCache);
-            if (tree2 == null) {
-                System.err.format("** Can't find %s\n", treespec2);
+            if (tree2 == null)
                 throw new BadRequest(String.format("Can't find %s", treespec2));
-            }
             return conflictStatus(tree1, tree2);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -173,6 +169,8 @@ public class Services {
             input = tree2; ref = tree1; flipped = true;
         }
         ConflictAnalysis c = new ConflictAnalysis(input, ref);
+        if (c.inducedIngroup == null)
+            throw new BadRequest("No mapped OTUs");
         JSONObject result = new JSONObject();
         Taxon start = flipped ? c.inducedRoot : c.ingroup;
         for (Taxon node : start.descendants(true)) {
@@ -217,19 +215,14 @@ public class Services {
     public Taxonomy specToTree(String spec, boolean useCache) throws IOException {
         String[] parts = spec.split("#");
         if (parts.length == 0)
-            return null;
-        else if (parts.length == 1) {
+            throw new BadRequest("Empty tree specifier");
+        else if (parts.length == 1)
             // Otherwise, use saved ott or synth
             return getReferenceTree(parts[0]);
-        } else if (parts.length == 2) {
-            try {
-                return getSourceTree(parts[0], parts[1], useCache);
-            } catch (ParseException e) {
-                System.err.format("** JSON parse exception for %s\n", spec);
-                return null;
-            }
-        } else
-            return null;
+        else if (parts.length == 2)
+            return getSourceTree(parts[0], parts[1], useCache);
+        else
+            throw new BadRequest(String.format("Too many #'s: %s", spec));
     }
 
     private Taxonomy getReferenceTree(String spec) {
@@ -238,13 +231,21 @@ public class Services {
         else if (spec.startsWith("synth"))
             return syntheticTree;
         else
-            return null;
+            throw new BadRequest(String.format("Tree %s not known", spec));
     }
 
     public Taxonomy getSourceTree(String studyId, String treeId, boolean useCache)
-        throws IOException, ParseException {
+        throws IOException {
         JSONObject study = getStudy(studyId, useCache);
-        Taxonomy tree = Nexson.importTree(Nexson.getTrees(study).get(treeId), Nexson.getOtus(study), treeId);
+        if (study == null)
+            throw new BadRequest(String.format("Study %s not found", studyId));
+        JSONObject jtree = Nexson.getTrees(study).get(treeId);
+        if (jtree == null)
+            throw new BadRequest(String.format("Tree %s not found in study %s", treeId, studyId));
+        Map<String, JSONObject> otus = Nexson.getOtus(study);
+        if (otus.size() == 0)
+            throw new BadRequest(String.format("No OTUs found in study %s", studyId));
+        Taxonomy tree = Nexson.importTree(jtree, otus, treeId);
         tree.idspace = studyId;
         return tree;
     }
@@ -252,7 +253,7 @@ public class Services {
     private String singleCachedStudyId = null;
     private JSONObject singleCachedStudy = null;
 
-    public JSONObject getStudy(String studyId, boolean useCache) throws IOException, ParseException {
+    public JSONObject getStudy(String studyId, boolean useCache) throws IOException {
         if (!useCache)
             singleCachedStudyId = null; // Flush it
         if (studyId.equals(singleCachedStudyId)) {
@@ -263,17 +264,26 @@ public class Services {
             HttpURLConnection conn = (HttpURLConnection)(url.openConnection());
             if (conn.getResponseCode() == STATUS_OK) {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
-                JSONParser parser = new JSONParser();
-                JSONObject envelope = (JSONObject)parser.parse(reader);
-                JSONObject nexson = (JSONObject)envelope.get("data");
-                // JSONObject sha = (JSONObject)envelope.get("sha");
-                singleCachedStudyId = studyId;
-                singleCachedStudy = nexson; // also "sha" and other stuff
-                System.out.format("Cached %s %s\n", studyId, useCache);
-                return nexson;
+                try {
+                    JSONParser parser = new JSONParser();
+                    JSONObject envelope = (JSONObject)parser.parse(reader);
+                    JSONObject nexson = (JSONObject)envelope.get("data");
+                    if (nexson == null)
+                        throw new BadRequest(String.format("No 'data' property in response to GET %s", url));
+                    if (nexson.get("nexml") == null)
+                        throw new BadRequest(String.format("No 'nexml' element in json data blob from %s", url));
+
+                    // JSONObject sha = (JSONObject)envelope.get("sha");
+                    singleCachedStudyId = studyId;
+                    singleCachedStudy = nexson; // also "sha" and other stuff
+                    System.out.format("Cached %s %s\n", studyId, useCache);
+                    return nexson;
+                } catch (ParseException e) {
+                    System.err.format("** JSON parse exception for study %s\n", studyId);
+                    throw new BadRequest(String.format("JSON parse error for study %s (see log)", studyId));
+                }
             } else
-                System.err.format("** GET %s yielded %s\n", url, conn.getResponseCode());
-                return null;
+                throw new BadRequest(String.format("** GET %s yielded %s\n", url, conn.getResponseCode()));
         }
     }
 
@@ -290,7 +300,7 @@ public class Services {
                         // Last one wins
                         parameters.put(name, value);
                     } catch (UnsupportedEncodingException e) {
-                        System.err.println("UTF-8 is an unsupported encoding");
+                        throw new RuntimeException("UTF-8 is an unsupported encoding !?");
                     }
                 }
             }

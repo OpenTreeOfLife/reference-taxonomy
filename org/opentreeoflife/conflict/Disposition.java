@@ -6,8 +6,5 @@ public enum Disposition {
     RESOLVES,
     SUPPORTED_BY,
     PATH_SUPPORTED_BY,
-
-    CONTAINS,
     EXCLUDES,
-    SPLITS,
 }

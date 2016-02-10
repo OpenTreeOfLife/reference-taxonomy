@@ -336,92 +336,47 @@ public class ConflictAnalysis {
             return null;
         }
 
+        // ???? in (a,(b,c)) vs. (a,b,c)  (b,c) conflicts with a ????
+        
+        // Distinguish the conflict case from the resolution case.
+        // If node conflicts with anything, it conflicts with one of conode's children
+        // That is, if node either contains or excludes every child of
+        // conode, then node resolves conode, otherwise it conflicts.
         for (Taxon cochild : conode.children) {
-            if (checkConflict(node, cochild, map, comap) == Disposition.CONFLICTS_WITH)
+            Taxon back = comap.get(cochild);
+            if (back == null)
+                ;
+            else if (back.mrca(node) == node)
+                ;               // node includes cochild
+            else if (!intersects(node, cochild, comap))
+                ;               // node excludes cochild
+            else
+                // neither includes nor excludes
                 return new Articulation(Disposition.CONFLICTS_WITH, cochild);
         }
         return new Articulation(Disposition.RESOLVES, conode);
     }
 
-    Disposition checkConflict(Taxon node, Taxon conode, Map<Taxon, Taxon> map, Map<Taxon, Taxon> comap) {
-        Taxon bounce = comap.get(conode);
-        if (bounce == null) return null;
+    // Check whether conode shares any tips with node.
 
-        Taxon m = bounce.mrca(node);
-        if (m == node)
-            // Everything in cochild is in node
-            return Disposition.CONTAINS;
-        else if (bounce.children == null) {
-            return Disposition.EXCLUDES;
-        } else {
-            boolean c = false, e = false;
-            for (Taxon cochild : conode.children) {
-                Disposition d = checkConflict(node, cochild, map, comap);
-                if (d == null) continue;
-                if (d == Disposition.CONFLICTS_WITH)
-                    return d;
-                if (d == Disposition.CONTAINS) c = true;
-                if (d == Disposition.EXCLUDES) e = true;
-                if (c && e)
-                    return Disposition.CONFLICTS_WITH;
-            }
-            if (c) return Disposition.CONTAINS; // shouldn't happen
-            if (e) return Disposition.EXCLUDES;
-            return null;
+    // Result is same whether eager is true or false.  Unknown effect
+    // on running time.
+    static final boolean eager = false;
+
+    boolean intersects(Taxon node, Taxon conode, Map<Taxon, Taxon> comap) {
+        if (eager || conode.children == null) {
+            Taxon back = comap.get(conode);
+            if (back == null)
+                return false;
+            // Is conode under node ?
+            if (back.mrca(node) == node)
+                return true;
         }
-    }
-
-
-    // Find a node in ref that conflicts with node.
-    // (Must rule out resolution case.)
-
-    // Suppose N maps to N', N' maps to N'', N'' bigger than N.
-    // Then N < N' < N''.  In particular N' does not conflict with N.
-    // But if it's not that N resolves N', then N must conflict with
-    // some node Q < N'.  We much find such a node Q.
-
-    // Q and N must intersect without containment or disjointness.
-
-    Articulation findConflicting(Taxon node, Taxon conode, Map<Taxon, Taxon> map, Map<Taxon, Taxon> comap) {
-
-        Taxon bounce = comap.get(conode);
-        if (bounce == null) return null;
-
-        // Node and bounce are in the same tree, so they cannot conflict.
-
-        // See if bounce is entirely within node (if so, conode is too)
-        Taxon m = bounce.mrca(node);
-        if (m == node)
-            // Yes, congruence or resolution, not conflict
-            return new Articulation(Disposition.CONTAINS, conode);
-
-        if (m != bounce)
-            // node and bounce are disjoint, therefore node and conode are.
-            return new Articulation(Disposition.EXCLUDES, conode);
-
-        if (conode.children == null) return null;
-
-        // Perhaps a descendant of conode conflicts.
-        Articulation d = null, r = null, q = null;
-        for (Taxon cochild : conode.children) {
-            Articulation a = findConflicting(node, cochild, map, comap);
-            if (a != null)
-                switch(a.disposition) {
-                case EXCLUDES:
-                    d = a; break;
-                case CONTAINS:
-                    r = a; break;
-                case CONFLICTS_WITH:
-                    q = a;
-                }
-            if (a != null && d != null)
-                return new Articulation(Disposition.CONFLICTS_WITH, conode);
-            }
-        if (q != null)
-            return q;
-
-        // Failed to find conflict.  Probably conode resolves node.
-        return new Articulation(Disposition.CONTAINS, conode);
+        if (conode.children != null)
+            for (Taxon cochild : conode.children)
+                if (intersects(node, cochild, comap))
+                    return true;
+        return false;
     }
 
     /**

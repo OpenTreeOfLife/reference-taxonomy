@@ -766,6 +766,8 @@ public class Taxon {
 			a = a.parent;
 			b = b.parent;
 		}
+        if (a.parent == null)
+            throw new RuntimeException(String.format("%s %s in different trees", this, other));
         Taxon[] answer = {a, b};
         return answer;
 	}

@@ -7,9 +7,7 @@ public enum Disposition {
     SUPPORTED_BY,
     PATH_SUPPORTED_BY,
 
-    // Not used
-    CONGRUENT,                  // or IS_CONGRUENT_WITH ?
-    RESOLVED_BY,
-    SUPPORTS,
-    SUPPORTS_PATH,
+    CONTAINS,
+    EXCLUDES,
+    SPLITS,
 }

@@ -127,7 +127,7 @@ public class ConflictAnalysis {
                 }
             }
         } else
-            System.out.println("No nodes in common");
+            System.out.format("No nodes in common\n");
     }
 
     // Map tips bidirectionally
@@ -317,7 +317,7 @@ public class ConflictAnalysis {
             System.err.format("Shouldn't happen 1 %s\n", node);
             return null; // shouldn't happen
         }
-        if (node.mrca(bounce) == node) {  // bounce descended from node?
+        if (node.mrca(bounce) == node) {  // bounce <= node?
             // If bounce and its parent both map to conode, then SUPPORTED_BY
             // Otherwise, PARTIAL_PATH_OF
             // TBD: get highest congruent ancestor of conode
@@ -331,13 +331,46 @@ public class ConflictAnalysis {
             System.err.format("Shouldn't happen 2 %s\n", node);
             return null; // shouldn't happen
         }
-        Taxon conflicting = findConflicting(node, map, comap);
-        if (conflicting == null)
-            // what about RESOLVED_BY ?
-            return new Articulation(Disposition.RESOLVES, conode);
-        else
-            return new Articulation(Disposition.CONFLICTS_WITH, conflicting);
+        if (conode.children == null) {
+            System.out.format("** shouldn't happen\n");
+            return null;
+        }
+
+        for (Taxon cochild : conode.children) {
+            if (checkConflict(node, cochild, map, comap) == Disposition.CONFLICTS_WITH)
+                return new Articulation(Disposition.CONFLICTS_WITH, cochild);
+        }
+        return new Articulation(Disposition.RESOLVES, conode);
     }
+
+    Disposition checkConflict(Taxon node, Taxon conode, Map<Taxon, Taxon> map, Map<Taxon, Taxon> comap) {
+        Taxon bounce = comap.get(conode);
+        if (bounce == null) return null;
+
+        Taxon m = bounce.mrca(node);
+        if (m == node)
+            // Everything in cochild is in node
+            return Disposition.CONTAINS;
+        else if (bounce.children == null) {
+            return Disposition.EXCLUDES;
+        } else {
+            boolean c = false, e = false;
+            for (Taxon cochild : conode.children) {
+                Disposition d = checkConflict(node, cochild, map, comap);
+                if (d == null) continue;
+                if (d == Disposition.CONFLICTS_WITH)
+                    return d;
+                if (d == Disposition.CONTAINS) c = true;
+                if (d == Disposition.EXCLUDES) e = true;
+                if (c && e)
+                    return Disposition.CONFLICTS_WITH;
+            }
+            if (c) return Disposition.CONTAINS; // shouldn't happen
+            if (e) return Disposition.EXCLUDES;
+            return null;
+        }
+    }
+
 
     // Find a node in ref that conflicts with node.
     // (Must rule out resolution case.)
@@ -349,71 +382,49 @@ public class ConflictAnalysis {
 
     // Q and N must intersect without containment or disjointness.
 
-    Taxon findConflicting(Taxon node, Taxon conode, Map<Taxon, Taxon> map, Map<Taxon, Taxon> comap) {
+    Articulation findConflicting(Taxon node, Taxon conode, Map<Taxon, Taxon> map, Map<Taxon, Taxon> comap) {
+
         Taxon bounce = comap.get(conode);
         if (bounce == null) return null;
 
-        // See if conode/bounce is entirely within node
+        // Node and bounce are in the same tree, so they cannot conflict.
+
+        // See if bounce is entirely within node (if so, conode is too)
         Taxon m = bounce.mrca(node);
         if (m == node)
-            // Yes, no conflict
-            return null;
+            // Yes, congruence or resolution, not conflict
+            return new Articulation(Disposition.CONTAINS, conode);
 
-        // See if node and conode/bounce are disjoint
-        Taxon[] div = node.divergence(bounce);
-        if (div != null)
-            // Yes, no conflict
-            return null;
+        if (m != bounce)
+            // node and bounce are disjoint, therefore node and conode are.
+            return new Articulation(Disposition.EXCLUDES, conode);
 
-        // See if node is entirely within conode/bounce
-        if (m == bounce) {
-            // Yes, so no conflict, but perhaps a descendant of conode conflicts.
-            if (conode.children != null)
-                for (Taxon cochild : conode.children) {
-                    Taxon n = findConflicting(node, cochild, map, comap);
-                    if (n != null)
-                        return n;
+        if (conode.children == null) return null;
+
+        // Perhaps a descendant of conode conflicts.
+        Articulation d = null, r = null, q = null;
+        for (Taxon cochild : conode.children) {
+            Articulation a = findConflicting(node, cochild, map, comap);
+            if (a != null)
+                switch(a.disposition) {
+                case EXCLUDES:
+                    d = a; break;
+                case CONTAINS:
+                    r = a; break;
+                case CONFLICTS_WITH:
+                    q = a;
                 }
-            // No conflict.  Must be resolution.
-            return null;
-        }
+            if (a != null && d != null)
+                return new Articulation(Disposition.CONFLICTS_WITH, conode);
+            }
+        if (q != null)
+            return q;
 
-        // By process of elimination, node and conode must conflict.
-        return conode;
+        // Failed to find conflict.  Probably conode resolves node.
+        return new Articulation(Disposition.CONTAINS, conode);
     }
 
-    Taxon findConflicting(Taxon node, Map<Taxon, Taxon> map, Map<Taxon, Taxon> comap) {
-        if (true)
-            return findConflicting(node, map.get(node), map, comap);
-
-        else {
-
-        // Find a reference node that conflicts with this input node.
-        // At least one child must map to a conflicting reference node (yes?).
-        Taxon conode = map.get(node);
-
-        for (Taxon child : node.children) {
-            Taxon cochild = map.get(child); // typically a taxonomy node
-            if (cochild == null) continue;
-
-            // need to do something here
-            // follow cochild's lineage up to ... how far? ...
-            // no further than the mrca of all the cochildren (conode), but that's too far.
-            if (cochild.parent.mrca(conode) == conode)
-                while (cochild.parent != conode)
-                    cochild = cochild.parent;
-
-            Taxon childbounce = comap.get(cochild);
-            if (childbounce == null) continue;
-            // Is childbounce under node?
-            Taxon m = node.mrca(childbounce);
-            if (m != node)
-                return cochild;
-        }
-        return null;
-        }
-    }
-
+    /**
     public int[] dispositionCounts() {
         int none = 0, congruent = 0, resolves = 0, conflicts = 0;
         for (Taxon node : ingroup.descendants(true)) {
@@ -434,6 +445,7 @@ public class ConflictAnalysis {
         opportunities = congruent + resolves + conflicts;
         return new int[]{none, congruent, resolves, conflicts};
     }
+    */
 
     // ------------------------------------------------------------------
     // First attempt at conflict analysis
@@ -444,7 +456,7 @@ public class ConflictAnalysis {
             Collections.sort(conflicts, worseThan);
             return conflicts;
         } else {
-            System.err.println("** No induced ingroup\n");
+            System.err.format("** No induced ingroup\n");
             return null;
         }
     }

@@ -19,3 +19,8 @@ tax/ncbi
 tax/gbif
 tax/irmng
 t/tax/aster
+service/service.config
+service/service.pid
+service/nohup.out
+service/taxonomy
+service/synth

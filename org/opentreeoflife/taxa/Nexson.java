@@ -30,6 +30,8 @@ public class Nexson {
     // return value is a set of subnodes of that.
     public static Map<String, JSONObject> getTrees(JSONObject obj) {
         JSONObject nexmlContent = (JSONObject)(obj.get("nexml"));
+        if (nexmlContent == null)
+            throw new RuntimeException("No 'nexml' element in json blob");
         JSONObject treesById = (JSONObject)(nexmlContent.get("treesById"));
         /* treesById is {"trees1": {
                                     "@otus": "otus1", 
@@ -37,21 +39,18 @@ public class Nexson {
                                     "treeById": {
                                                  "tree1": { ...} ...} ...} ...}
         */
-        if (treesById == null) {
-            System.err.format("** No treesById\n");
-            return null;
-        }
         Map<String, JSONObject> result = new HashMap<String, JSONObject>();
-        for (Object treeses : treesById.values()) {
-            JSONObject trees = (JSONObject)(((JSONObject)treeses).get("treeById"));
-            if (trees == null) {
-                System.err.format("** Missing trees\n");
-                return null;
+        if (treesById != null)
+            for (Object treeses : treesById.values()) {
+                JSONObject trees = (JSONObject)(((JSONObject)treeses).get("treeById"));
+                if (trees == null) {
+                    System.err.format("** Missing trees\n");
+                    return null;
+                }
+                for (Object id : trees.keySet()) {
+                    result.put((String)id, (JSONObject)(trees.get(id)));
+                }
             }
-            for (Object id : trees.keySet()) {
-                result.put((String)id, (JSONObject)(trees.get(id)));
-            }
-        }
         return result;
     }
 

@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# Inputs are taxonomy/ or taxonomy.tre
+# and synth/ or synth.tre
+
+# Run with
+#     ./run_service test
+# or
+#     nohup ./run_service ../registry/plants-ott29/ ../registry/plants-synth4 & echo $! >service.pid
+# or
+#     nohup ./run_service & echo $! >service.pid
+
+# Check with pg_2606 tree6049
+# curl "http://localhost:8081/compare?tree1=pg_2606%23tree6049&tree2=ott" >curl.out
+
+# Not a good location for this config file; fix later
+
+. service.config
+
+# Modify as appropriate to your own hardware
+if [ "x$JAVAFLAGS" = "x" ]; then
+    JAVAFLAGS="-Xmx14G"
+fi
+
+CLASSPATH="..:../lib/json-simple-1.1.1.jar"
+JAVA="java ${JAVAFLAGS} -classpath ${CLASSPATH}"
+
+
+if [ "x$TAXONOMY" != x ]; then
+  true
+elif [ -d taxonomy ]; then
+  TAXONOMY=taxonomy/
+elif [ -r taxonomy.tre ]; then
+  TAXONOMY=taxonomy.tre
+else
+  echo "** No taxonomy found"
+  exit 1
+fi
+
+if [ "x$SYNTH" != x ]; then
+  true
+elif [ -d synth ]; then
+  SYNTH=synth/
+elif [ -r synth.tre ]; then
+  SYNTH=synth.tre
+else
+  echo "** No synthetic tree found"
+  exit 1
+fi
+
+if "x$STUDY_BASE_URL" = x; then
+  STUDY_BASE_URL="https://api.opentreeoflife.org/v2/study/"
+fi
+
+echo Starting services $TAXONOMY $SYNTH $STUDY_BASE_URL
+exec ${JAVA} org.opentreeoflife.server.Services $TAXONOMY $SYNTH $STUDY_BASE_URL

@@ -54,6 +54,14 @@ bin/jython:
 	 echo exec java "$(JAVAFLAGS)" -jar $$PWD/lib/jython-standalone-2.7.0.jar '$$*') >$@
 	chmod +x $@
 
+# Daemon
+bin/smasher:
+	mkdir -p bin
+	(echo "#!/bin/bash"; \
+	 echo "cd $$PWD/service"; \
+	 echo ./service '$$*') >$@
+	chmod +x $@
+
 # --------------------------------------------------------------------------
 
 OTT_ARGS=$(SMASH) $(SILVA)/ tax/713/ tax/fung/ $(NCBI)/ $(GBIF)/ \

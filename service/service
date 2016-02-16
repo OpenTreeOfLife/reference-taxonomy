@@ -25,7 +25,6 @@ case $1 in
                 echo "Terminated"
                 rm service.pid
             elif ps -U $USER | grep -v grep | grep -q -w $PID; then
-                echo "Running (pid $PID)"
                 echo "Failed to kill $PID !  Manual intervention required"
                 exit 1
             else

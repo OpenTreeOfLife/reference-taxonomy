@@ -136,10 +136,10 @@ public class Services {
     private HttpHandler conflictStatus =
         wrapCGItoJSON(new CGItoJSON() {
                 public JSONObject run(Map<String, String> parameters) {
-                    boolean useCache = true;
+                    boolean useCache = false;
                     String useCacheParam = parameters.get("use_cache");
-                    if (useCacheParam != null && useCacheParam.equals("false"))
-                        useCache = false;
+                    if (useCacheParam != null && useCacheParam.equals("true"))
+                        useCache = true;
                     return conflictStatus(parameters.get("tree1"),
                                           parameters.get("tree2"),
                                           useCache);

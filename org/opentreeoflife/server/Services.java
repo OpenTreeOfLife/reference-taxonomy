@@ -55,7 +55,7 @@ public class Services {
         }
     }
 
-    int port = 8081;
+    static int port = 8081;
 
     public static void main(final String... args) throws IOException {
         new Services(args.length > 0 ? Taxonomy.getTaxonomy(args[0], idspace) : null,

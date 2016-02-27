@@ -169,6 +169,10 @@ public class Services {
             input = tree2; ref = tree1; flipped = true;
         }
         ConflictAnalysis c = new ConflictAnalysis(input, ref);
+        return conflictAnalysisToJSON(c, flipped);
+    }
+
+    public static JSONObject conflictAnalysisToJSON(ConflictAnalysis c, boolean flipped) {
         if (c.inducedIngroup == null)
             throw new BadRequest("No mapped OTUs");
         JSONObject result = new JSONObject();

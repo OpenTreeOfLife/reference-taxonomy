@@ -30,8 +30,8 @@ public class ConflictAnalysis {
 
     public Taxon ingroup = null;              // node in input
 
-    Map<Taxon, Taxon> map = new HashMap<Taxon, Taxon>(); // input -> ref
-    Map<Taxon, Taxon> comap = new HashMap<Taxon, Taxon>(); // ref -> input
+    public Map<Taxon, Taxon> map = new HashMap<Taxon, Taxon>(); // input -> ref
+    public Map<Taxon, Taxon> comap = new HashMap<Taxon, Taxon>(); // ref -> input
 
     int conflicting = 0;
     int opportunities = 0;
@@ -41,7 +41,8 @@ public class ConflictAnalysis {
     List<Conflict> conflicts = new ArrayList<Conflict>();
 
     public ConflictAnalysis(Taxonomy input, Taxonomy ref) {
-        this(input, ref, null, true);
+        
+        this(input, ref, input.ingroupId, true);
     }
     public ConflictAnalysis(Taxonomy input, Taxonomy ref, String ingroupId) {
         this(input, ref, ingroupId, true);
@@ -306,6 +307,8 @@ public class ConflictAnalysis {
             return articulation(node, comap, map);
     }
 
+    public static boolean maximizeWitness = true;
+
     public Articulation articulation(Taxon node, Map<Taxon, Taxon> map, Map<Taxon, Taxon> comap) {
         if (node.children == null)
             return null;
@@ -318,14 +321,19 @@ public class ConflictAnalysis {
             return null; // shouldn't happen
         }
         if (node.mrca(bounce) == node) {  // bounce <= node?
+
+            Taxon witness = conode;
+            if (maximizeWitness)
+                // Witness should be largest congruent conode, not smallest
+                while (witness.parent != null && (comap.get(witness.parent) == bounce))
+                    witness = witness.parent;
+
             // If bounce and its parent both map to conode, then SUPPORTED_BY
             // Otherwise, PARTIAL_PATH_OF
-            // TBD: get highest congruent ancestor of conode
-            Taxon bounceparent = bounce.parent;
-            if (bounceparent != null && map.get(bounceparent) == conode)
-                return new Articulation(Disposition.PATH_SUPPORTED_BY, conode);
+            if (bounce.parent != null && (map.get(bounce.parent) == conode))
+                return new Articulation(Disposition.PATH_SUPPORTED_BY, witness);
             else
-                return new Articulation(Disposition.SUPPORTED_BY, conode);
+                return new Articulation(Disposition.SUPPORTED_BY, witness);
         }
         if (node.parent == null) {
             System.err.format("Shouldn't happen 2 %s\n", node);
@@ -359,48 +367,40 @@ public class ConflictAnalysis {
 
     // Check whether conode shares any tips with node.
 
-    // Result is same whether eager is true or false.  Unknown effect
-    // on running time.
-    static final boolean eager = false;
-
-    boolean intersects(Taxon node, Taxon conode, Map<Taxon, Taxon> comap) {
-        if (eager || conode.children == null) {
-            Taxon back = comap.get(conode);
-            if (back == null)
-                return false;
-            // Is conode under node ?
-            if (back.mrca(node) == node)
-                return true;
-        }
-        if (conode.children != null)
-            for (Taxon cochild : conode.children)
-                if (intersects(node, cochild, comap))
-                    return true;
-        return false;
-    }
-
-    /**
-    public int[] dispositionCounts() {
-        int none = 0, congruent = 0, resolves = 0, conflicts = 0;
-        for (Taxon node : ingroup.descendants(true)) {
-            Articulation a = this.articulation(node);
-            if (a == null)
-                ++none;
+    public boolean intersects(Taxon node, Taxon conode, Map<Taxon, Taxon> comap) {
+        Taxon back = comap.get(conode); // image of conode in tree1
+        if (back == null)
+            return false;
+        int hn = node.getDepth();
+        int hb = back.getDepth();
+        if (hn <= hb) {
+            Taxon b = back;
+            while (hb > hn) {
+                b = b.parent;
+                --hb;
+            }
+            if (b != node)
+                return false;   // node and back are disjoint
             else
-                switch(a.disposition) {
-                case NONE: ++none; break;
-                case SUPPORTS: case SUPPORTS_PATH:
-                case SUPPORTED_BY: case PATH_SUPPORTED_BY:
-                case CONGRUENT: ++congruent; break;
-                case RESOLVES: ++resolves; break;
-                case CONFLICTS_WITH: ++conflicts; break;
-                }
+                return true;    // back descends from node
+        } else {
+            Taxon n = node;
+            while (hn > hb) {
+                n = n.parent;
+                --hn;
+            }
+            if (n != back)
+                return false;    // node and back are disjoint
+            else {
+                // node descends from back.  Uninformative
+                if (conode.children != null)
+                    for (Taxon cochild : conode.children)
+                        if (intersects(node, cochild, comap))
+                            return true;
+                return false;
+            }
         }
-        conflicting = conflicts;
-        opportunities = congruent + resolves + conflicts;
-        return new int[]{none, congruent, resolves, conflicts};
     }
-    */
 
     // ------------------------------------------------------------------
     // First attempt at conflict analysis

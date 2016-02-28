@@ -1,3 +1,8 @@
 # Parameters for services
 
 STUDY_BASE_URL="https://api.opentreeoflife.org/v2/study/"
+
+TAXONOMY=ott2.9/
+
+SYNTH=draftversion4.tre
+

@@ -55,11 +55,13 @@ public class Services {
         }
     }
 
+    static int port = 8081;
+
     public static void main(final String... args) throws IOException {
         new Services(args.length > 0 ? Taxonomy.getTaxonomy(args[0], idspace) : null,
                      args.length > 1 ? Taxonomy.getTaxonomy(args[1], idspace) : null,
                      args.length > 2 ? args[2] : "https://api.opentreeoflife.org/v2/study/")
-            .serve("localhost", 8081);
+            .serve("localhost", port);
     }
 
     public Services(Taxonomy reftax, Taxonomy synth, String studyBase) {
@@ -169,6 +171,10 @@ public class Services {
             input = tree2; ref = tree1; flipped = true;
         }
         ConflictAnalysis c = new ConflictAnalysis(input, ref);
+        return conflictAnalysisToJSON(c, flipped);
+    }
+
+    public static JSONObject conflictAnalysisToJSON(ConflictAnalysis c, boolean flipped) {
         if (c.inducedIngroup == null)
             throw new BadRequest("No mapped OTUs");
         JSONObject result = new JSONObject();

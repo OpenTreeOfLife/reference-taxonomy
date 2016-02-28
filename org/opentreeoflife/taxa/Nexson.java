@@ -140,23 +140,33 @@ public class Nexson {
             }
         }
 
+        // Set the ingroup
+        tax.ingroupId = (String)treeson.get("^ot:inGroupClade");
+
         // Set the root
         String rootid = (String)treeson.get("^ot:rootNodeId");
         if (rootid != null && rootid.length() == 0) rootid = null;
-        String specid = (String)treeson.get("^ot:specifiedRoot");
-        if (specid != null && rootid != null && !specid.equals(rootid))
-            System.out.format("** Specified root %s not= represented root %s - rerooting NYI\n",
-                              specid, rootid);
         if (rootid != null) {
             Taxon node = tax.lookupId(rootid);
-            if (node != null)
+            if (node != null) {
+                String specid = (String)treeson.get("^ot:specifiedRoot");
+                if (specid != null && !specid.equals(rootid)) {
+                    // Specified root is not the represented root
+                    Taxon spec = tax.lookupId(specid);
+                    if (spec != null) {
+                        System.out.format("** Specified root %s not= represented root %s - rerooting NYI\n",
+                                          specid, rootid);
+                        Taxon ingroup = tax.ingroupId == null ? null : tax.lookupId(tax.ingroupId);
+                        if (ingroup != null && !ingroup.descendsFrom(spec))
+                            System.out.format("** BAD: Ingroup %s does not descend from specified root %s\n",
+                                              tax.ingroupId, specid);
+                    }
+                }
                 tax.addRoot(node);
-            else
+            } else
                 System.out.format("** Root node %s not found in %s\n", rootid, tag);
         } else
             System.out.format("** No root node found for %s\n", tag);
-
-        tax.ingroupId = (String)treeson.get("^ot:inGroupClade");
 
         // Store tip labels as Taxon names, OTT ids as sources
         for (Taxon taxon : tax.taxa()) {

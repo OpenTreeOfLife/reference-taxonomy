@@ -450,7 +450,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
         this.reset();                // maybe unnecessary; depths and comapped
 		this.analyzeRankConflicts(); // set SIBLING_HIGHER
         this.inferFlags();           // infer BARREN & INFRASPECIFIC, and herit
-        Taxon biggest = this.forest.children.get(0);
+        Taxon biggest = this.normalizeRoots().get(0);
         System.out.format("| Root is %s %s\n", biggest.name, Flag.toString(biggest.properFlags, 0));
     }
 
@@ -1670,8 +1670,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		List<Taxon> newChildren = new ArrayList<Taxon>();
 
 		if (node.children != null) {
-			java.util.Collections.sort(node.children, Taxon.compareNodesBySize);
-			for (Taxon child : node.children) {
+            List<Taxon> sorted = new ArrayList<Taxon>(node.children);
+			java.util.Collections.sort(sorted, Taxon.compareNodesBySize);
+			for (Taxon child : sorted) {
 
 				if (k1 >= k) break;	   // redundant?
 
@@ -1755,8 +1756,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
     // Idempotent
 	public void deforestate() {
-        this.normalizeRoots();
-        List<Taxon> rootsList = this.forest.children;
+        List<Taxon> rootsList = this.normalizeRoots();
         if (rootsList.size() > 1) {
             Taxon biggest = rootsList.get(0);
             Taxon second = rootsList.get(1);
@@ -1776,8 +1776,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	}
 
     // Sort by size and make sure the biggest one is placed.  This is idempotent.
-    public void normalizeRoots() {
-        List<Taxon> rootsList = this.forest.children;
+    public List<Taxon> normalizeRoots() {
+        List<Taxon> rootsList = new ArrayList(this.forest.children);
 		Collections.sort(rootsList, new Comparator<Taxon>() {
 				public int compare(Taxon source, Taxon target) {
                     int foo = ((source.name != null && source.name.equals("life") ? 0 : 1) -
@@ -1797,14 +1797,13 @@ public abstract class Taxonomy implements Iterable<Taxon> {
             if (rootsList.size() >= 2 && count1 < count2*500)
                 System.err.format("** Nontrivial forest: biggest is %s, 2nd biggest is %s\n", count1, count2);
         }
+        return rootsList;
     }
 
     public void placeBiggest() {
         Taxon biggest = this.unique("life");
-        if (biggest == null || !biggest.isRoot()) {
-            this.normalizeRoots();  // sort the roots list
-            biggest = this.forest.children.get(0);
-        } // avoid setting flag
+        if (biggest == null || !biggest.isRoot())
+            biggest = this.normalizeRoots().get(0);  // sort the roots list
         biggest.properFlags &= ~Taxonomy.HIDDEN_FLAGS;
     }
 

@@ -17,7 +17,7 @@ public class Taxon {
 	public String id = null;
 	public Taxon parent = null;
 	public String name, rank = null;
-	public List<Taxon> children = null;
+	public Collection<Taxon> children = null;
 	public List<QualifiedId> sourceIds = null;
 	public Taxonomy taxonomy;			// For subsumption checks etc.
 	int count = -1;             // cache of # nodes at or below here

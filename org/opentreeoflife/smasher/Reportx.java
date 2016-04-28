@@ -10,6 +10,7 @@
 
 package org.opentreeoflife.smasher;
 
+import org.opentreeoflife.taxa.Node;
 import org.opentreeoflife.taxa.Taxon;
 import org.opentreeoflife.taxa.Taxonomy;
 import org.opentreeoflife.taxa.QualifiedId;
@@ -89,13 +90,15 @@ public class Reportx {
 				   "src2", "branch2", "count2");
 
 		for (String name : tax.allNames()) {
-			Collection<Taxon> taxa = tax.lookup(name);
-			if (taxa.size() <= 1) continue;
+			Collection<Node> nodes = tax.lookup(name);
+			if (nodes.size() <= 1) continue;
 			if (name.startsWith("uncultured")) continue;
-			for (Taxon taxon1 : taxa) {
+			for (Node node1 : nodes) {
+                Taxon taxon1 = node1.taxon();
 				boolean primary1 = taxon1.name.equals(name);
 				if (taxon1.isHidden()) continue;
-				for (Taxon taxon2 : taxa) {
+				for (Node node2 : nodes) {
+                    Taxon taxon2 = node2.taxon();
 					if (taxon2.isHidden()) continue;
 					if (taxon1.id.compareTo(taxon2.id) < 0) {
 						if (taxon1.parent == taxon2.parent) {

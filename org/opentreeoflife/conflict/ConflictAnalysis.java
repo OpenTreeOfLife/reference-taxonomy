@@ -247,9 +247,8 @@ public class ConflictAnalysis {
             if (node.children == null) {
                 Taxon refNode = map.get(node);
                 if (refNode != null && selected.get(refNode) == null) {
-                    Taxon tip = new Taxon(induced);
+                    Taxon tip = new Taxon(induced, refNode.name);    //may be null
                     if (refNode.id != null) tip.setId(refNode.id);
-                    if (refNode.name != null) tip.setName(refNode.name);
                     selected.put(refNode, tip);
                     seen.add(refNode);
 
@@ -262,9 +261,8 @@ public class ConflictAnalysis {
                             Taxon sel = selected.get(scan);
                             if (sel == null) {
                                 // second visit
-                                sel = new Taxon(induced);
+                                sel = new Taxon(induced, scan.name);
                                 if (scan.id != null) sel.setId(scan.id);
-                                if (scan.name != null) sel.setName(scan.name);
                                 selected.put(scan, sel);
                             }
                             break;

@@ -40,7 +40,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 public abstract class Taxonomy implements Iterable<Taxon> {
-    private Map<String, List<Taxon>> nameIndex = new HashMap<String, List<Taxon>>();
+    private Map<String, List<Node>> nameIndex = new HashMap<String, List<Node>>();
 	public Map<String, Taxon> idIndex = new HashMap<String, Taxon>();
     public Taxon forest = new Taxon(this, "");
 	public String idspace = null; // "ncbi", "ott", etc.
@@ -128,8 +128,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
     // Names
 
-	public List<Taxon> lookup(String name) {
-		return this.nameIndex.get(name);
+	public List<Node> lookup(String name) {
+        return this.nameIndex.get(name);
 	}
 
     public int numberOfNames() {
@@ -141,33 +141,33 @@ public abstract class Taxonomy implements Iterable<Taxon> {
     }
 
 	public Taxon unique(String name) {
-		List<Taxon> probe = this.lookup(name);
+		List<Node> probe = this.lookup(name);
 		// TBD: Maybe rule out synonyms?
 		if (probe != null && probe.size() == 1)
-			return probe.get(0);
+			return probe.get(0).taxon();
 		else 
 			return this.lookupId(name);
 	}
 
     // compare addSynonym
-	void addToNameIndex(Taxon node, String name) {
-		List<Taxon> nodes = this.lookup(name);
+	void addToNameIndex(Node node, String name) {
+		List<Node> nodes = this.lookup(name);
 		if (nodes == null) {
-			nodes = new ArrayList<Taxon>(1); //default is 10
+			nodes = new ArrayList<Node>(1); //default is 10
             nodes.add(node);
 			this.nameIndex.put(name, nodes);
 		} else if (!nodes.contains(node)) {
             nodes.add(node);
             if (nodes.size() == 75) {
+                // should use eventlogger
                 System.err.format("** %s is the 75th to have the name '%s'\n", node, name);
-                // Taxon.backtrace();  - always happens in loadTaxonomyProper
             }
         }
     }
 
     // delete a synonym
-    public void removeFromNameIndex(Taxon node, String name) {
-		List<Taxon> nodes = node.taxonomy.lookup(name);
+    public void removeFromNameIndex(Node node, String name) {
+		List<Node> nodes = node.taxonomy.lookup(name);
         if (nodes != null) {
             nodes.remove(node);
             if (nodes.size() == 0)
@@ -202,9 +202,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		if (this.idspace != null) return;
         idspace = this.idspace;
 		if (idspace == null) {
-            List<Taxon> probe = this.lookup("Caenorhabditis elegans");
+            List<Node> probe = this.lookup("Caenorhabditis elegans");
             if (probe != null) {
-                String id = probe.get(0).id;
+                String id = probe.get(0).taxon().id;
                 if (id.equals("6239")) idspace = "ncbi";
                 else if (id.equals("2283683")) idspace = "gbif";
                 else if (id.equals("395048")) idspace = "ott";
@@ -213,9 +213,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
         }
 		// TEMPORARY KLUDGE
 		if (idspace == null) {
-			List<Taxon> probe2 = this.lookup("Asterales");
+			List<Node> probe2 = this.lookup("Asterales");
 			if (probe2 != null) {
-				String id = probe2.get(0).id;
+				String id = probe2.get(0).taxon().id;
 				if (id.equals("4209")) idspace = "ncbi";
 				if (id.equals("414")) idspace = "gbif";
 				if (id.equals("1042120")) idspace = "ott";
@@ -229,11 +229,12 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	// Most rootward node in this taxonomy having a given name
     // Maybe this should be moved to smasher
 	public Taxon highest(String name) { // See pin()
-		List<Taxon> l = this.lookup(name);
+		List<Node> l = this.lookup(name);
 		if (l == null) return null;
 		Taxon best = null, otherbest = null;
 		int depth = 1 << 30;
-		for (Taxon node : l) {
+		for (Node nodenode : l) {
+            Taxon node = nodenode.taxon();
 			int d = node.measureDepth();
 			if (d < depth) {
 				depth = d;
@@ -258,13 +259,15 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		int sibhoms = 0;
 		int cousinhoms = 0;
 		for (String name : allNames()) {
-			List<Taxon> nodes = this.lookup(name);
+			List<Node> nodes = this.lookup(name);
 			if (nodes.size() > 1) {
 				boolean homsp = false;
 				boolean sibhomsp = false;
 				boolean cuzhomsp = false;
-				for (Taxon n1: nodes)
-					for (Taxon n2: nodes) {
+				for (Node n1node: nodes) {
+                    Taxon n1 = n1node.taxon();
+					for (Node n2node: nodes) {
+                        Taxon n2 = n2node.taxon();
 						if (compareTaxa(n1, n2) < 0 &&
                             n1.name != null &&
                             n2.name != null &&
@@ -281,6 +284,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 							break;
 						}
 					}
+                }
 				if (sibhomsp) ++sibhoms;
 				if (cuzhomsp) ++cousinhoms;
 				if (homsp) ++homs;
@@ -637,7 +641,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
         if (rank.length() == 0 || rank.startsWith("no rank") ||
             rank.equals("terminal") || rank.equals("samples"))
             rank = Taxonomy.NO_RANK;
-        else if (Taxonomy.ranks.get(rank) == null) {
+        else if (Rank.getRank(rank) == null) {
             System.err.println("!! Unrecognized rank: " + rank + " " + node.id);
             rank = Taxonomy.NO_RANK;
         }
@@ -721,11 +725,12 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		List<List<Taxon>> smushlist = new ArrayList<List<Taxon>>();
 
         for (String name : this.allNames()) {
-            List<Taxon> t1 = this.lookup(name);
+            List<Node> t1 = this.lookup(name);
 
             // First, collate by parent
             Map<Taxon, List<Taxon>> childrenWithThisName = new HashMap<Taxon, List<Taxon>>();
-            for (Taxon node : t1) {
+            for (Node nodenode : t1) {
+                Taxon node = nodenode.taxon();
                 List<Taxon> c = childrenWithThisName.get(node.parent);
                 if (c == null) {
                     c = new ArrayList<Taxon>(1);
@@ -962,14 +967,14 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	// Returns true if a change was made
     // compare addToNameIndex
 
-	public boolean addSynonym(String syn, Taxon node) {
+	public boolean addSynonym(String syn, Node node) {
         if (node.name != null && node.name.equals(syn))
             return true;
 		if (node.taxonomy != this)
 			System.err.println("!? Synonym for a node that's not in this taxonomy: " + syn + " " + node);
-		List<Taxon> nodes = this.lookup(syn);
+		List<Node> nodes = this.lookup(syn);
 		if (nodes == null) {
-			nodes = new ArrayList<Taxon>(1);
+			nodes = new ArrayList<Node>(1);
 			this.nameIndex.put(syn, nodes);
             nodes.add(node);
             return true;
@@ -994,7 +999,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		for (String name : this.allNames()) {
             boolean primaryp = false;
             boolean synonymp = false;
-			for (Taxon node : this.lookup(name)) {
+			for (Node nodenode : this.lookup(name)) {
+                Taxon node = nodenode.taxon();
 				if (!node.prunedp)
                     if (node.name.equals(name))
                         // Never emit a synonym when the name is the primary name of something
@@ -1202,14 +1208,15 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	// value should be >= parentRank, but occasionally ranks get out
 	// of order when combinings taxonomies.
 
-	static int analyzeRankConflicts(Taxon node, boolean majorp) {
+	public static int analyzeRankConflicts(Taxon node, boolean majorp) {
 		Integer m = -1;			// "no rank" = -1
 		if (node.rank != null) {
-			m = ranks.get(node.rank);
-			if (m == null) {
+			Rank r = Rank.getRank(node.rank);
+			if (r == null) {
 				System.err.println("Unrecognized rank: " + node);
 				m = -1;
-			}
+			} else
+                m = r.level;
 		}
 		int myrank = m;
 		node.rankAsInt = myrank;
@@ -1377,11 +1384,11 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		boolean specific = false;
 		boolean barren = true;      // No species?
 		if (node.rank != null) {
-			Integer rank = ranks.get(node.rank);
+			Rank rank = Rank.getRank(node.rank);
 			if (rank != null) {
-				if (rank == SPECIES_RANK)
+				if (rank == Rank.SPECIES_RANK)
 					specific = true;
-				if (rank >= SPECIES_RANK)
+				if (rank.level >= Rank.SPECIES_RANK.level)
 					barren = false;
 			}
 		}
@@ -1458,69 +1465,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		Pattern.compile("\\b[Ii]ncertae [Ss]edis\\b|" +
                         "\\b[Ii]ncertae[Ss]edis\\b|" +
 						"[Uu]nallocated|\\b[Mm]itosporic\\b");
-
-	static String[][] rankStrings = {
-		{"domain",
-		 "superkingdom",
-		 "kingdom",
-		 "subkingdom",
-         "division",            // h2007
-		 "infrakingdom",		// worms
-		 "superphylum"},
-		{"phylum",
-		 "subphylum",
-		 "infraphylum",			// worms
-		 "subdivision",			// worms
-		 "superclass"},
-		{"class",
-		 "subclass",
-		 "infraclass",
-		 "superorder"},
-		{"order",
-		 "suborder",
-		 "infraorder",
-		 "parvorder",
-		 "section",				// worms
-		 "subsection",			// worms
-		 "superfamily"},
-		{"family",
-		 "subfamily",
-		 "supertribe",			// worms
-		 "tribe",
-		 "subtribe"},
-		{"genus",
-		 "subgenus",
-		 "species group",
-		 "species subgroup"},
-		{"species",
-		 "infraspecificname",
-		 "subspecies",
-         "natio",               // worms
-		 "variety",
-		 "varietas",
-		 "subvariety",
-		 "forma",
-		 "subform",
-		 "samples"},
-	};
-
-	static Map<String, Integer> ranks = null;
-
-	static void initRanks() {
-        if (ranks == null) {    // do only once.  could use static { ... }
-            ranks = new HashMap<String, Integer>();
-            for (int i = 0; i < rankStrings.length; ++i) {
-                for (int j = 0; j < rankStrings[i].length; ++j)
-                    ranks.put(rankStrings[i][j], (i+1)*100 + j*10);
-            }
-            ranks.put("no rank", -1);
-            SPECIES_RANK = ranks.get("species");
-        }
-	}
-
-    static { initRanks(); }
-
-	static int SPECIES_RANK = -1; // ranks.get("species");
 
 	// Select subtree rooted at a specified node
 
@@ -1747,7 +1691,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		return newnode;
 	}
 
-    static Taxon dup(Taxon node, Taxonomy tax, String reason) {
+    public static Taxon dup(Taxon node, Taxonomy tax, String reason) {
         Taxon newnode = node.dup(tax, reason);
         if (node.id != null)
             newnode.setId(node.id);
@@ -1830,6 +1774,14 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		out.close();
 	}
 
+	public static SourceTaxonomy parseNewick(String newick) {
+		SourceTaxonomy tax = new SourceTaxonomy();
+        Taxon root = Newick.newickToNode(newick, tax);
+		tax.addRoot(root);
+        root.properFlags = 0;   // not unplaced
+		return tax;
+	}
+
     // The id of the node in the taxonomy that has highest numbered id.
 
 	public long maxid() {
@@ -1876,14 +1828,6 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				node.markEvent("no-id");
 			}
     }
-
-	public static SourceTaxonomy parseNewick(String newick) {
-		SourceTaxonomy tax = new SourceTaxonomy();
-        Taxon root = Newick.newickToNode(newick, tax);
-		tax.addRoot(root);
-        root.properFlags = 0;   // not unplaced
-		return tax;
-	}
 
 	// ----- PATCH SYSTEM -----
 
@@ -2027,10 +1971,11 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	// Test case: Valsa
 	List<Taxon> filterByAncestor(String taxonName, String contextName) {
-		List<Taxon> nodes = this.lookup(taxonName);
+		List<Node> nodes = this.lookup(taxonName);
 		if (nodes == null) return null;
 		List<Taxon> fnodes = new ArrayList<Taxon>(1);
-		for (Taxon node : nodes) {
+		for (Node nodenode : nodes) {
+            Taxon node = nodenode.taxon();
 			// Follow ancestor chain to see whether this node is in the context
 			for (Taxon chain = node; chain != null; chain = chain.parent)
 				if (chain.name.equals(contextName)) {
@@ -2049,10 +1994,11 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	}
 
 	List<Taxon> filterByDescendant(String taxonName, String descendantName) {
-		List<Taxon> nodes = this.lookup(descendantName);
+		List<Node> nodes = this.lookup(descendantName);
 		if (nodes == null) return null;
 		List<Taxon> fnodes = new ArrayList<Taxon>(1);
-		for (Taxon node : nodes) {
+		for (Node nodenode : nodes) {
+            Taxon node = nodenode.taxon();
 			if (!node.name.equals(descendantName)) continue;
 			// Follow ancestor chain to see whether this node is an ancestor
 			for (Taxon chain = node; chain != null; chain = chain.parent)
@@ -2091,23 +2037,25 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		for (String name : this.allNames())
 			if (name != null
                 && name.endsWith("ae")) {
-				List<Taxon> sheep = this.lookup(name);
+				List<Node> sheep = this.lookup(name);
 				if (sheep == null) continue;
 				{	boolean win = false;
-					for (Taxon n : sheep) if (n.name.equals(name)) win = true;
+					for (Node n : sheep) if (n.name.equals(name)) win = true;
 					if (!win) continue;	  }
 
 				String namea = name.substring(0,name.length()-2) + "ea";
-				List<Taxon> goats = this.lookup(namea);
+				List<Node> goats = this.lookup(namea);
 				if (goats == null) continue;
 				{	boolean win = false;
-					for (Taxon n : goats) if (n.name.equals(namea)) win = true;
+					for (Node n : goats) if (n.name.equals(namea)) win = true;
 					if (!win) continue;	  }
 
 				if (sheep != null && goats != null) {
-					for (Taxon sh : sheep)
-						if (sh.name.equals(name))
-							for (Taxon gt : goats)
+					for (Node shnode : sheep) {
+                        Taxon sh = shnode.taxon();
+						if (sh.name.equals(name)) {
+							for (Node gtnode : goats) {
+                                Taxon gt = gtnode.taxon();
 								if (gt.name.equals(namea)) {
 									String shp = (!sh.isRoot() ? sh.parent.name : "(root)");
 									String gtp = (!gt.isRoot() ? gt.parent.name : "(root)");
@@ -2121,6 +2069,9 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 													  gtp,
 													  gt.getSourceIdsString());
 								}
+                            }
+                        }
+                    }
 				}
 			}
 	}
@@ -2136,21 +2087,22 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	// Look up a taxon by name or unique id.  Name must be unique in the taxonomy.
 	public Taxon maybeTaxon(String name) {
-		List<Taxon> probe = this.lookup(name);
+		List<Node> probe = this.lookup(name);
 		if (probe != null) {
 			if (probe.size() > 1) {
 				// This is extremely ad hoc.  Need a more general theory.
-				List<Taxon> replacement = new ArrayList<Taxon>();
-				for (Taxon node : probe)
+				List<Node> replacement = new ArrayList<Node>();
+				for (Node node : probe)
 					if (node.name.equals(name))
 						replacement.add(node);
 				if (replacement.size() == 1) probe = replacement;
 			}
 			if (probe.size() == 1)
-				return probe.get(0);
+				return probe.get(0).taxon();
 			else {
 				System.err.format("** Ambiguous taxon name: %s\n", name);
-				for (Taxon alt : probe) {
+				for (Node altnode : probe) {
+                    Taxon alt = altnode.taxon();
 					String u = alt.uniqueName();
 					if (u.equals("")) {
 						if (alt.name.equals(name))
@@ -2316,13 +2268,13 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		for (Taxon node : other) {
 			Taxon newnode = this.lookupId(node.id);
 			if (newnode == null) {
-				List<Taxon> newnodes = this.lookup(node.name);
+				List<Node> newnodes = this.lookup(node.name);
 				if (newnodes == null)
 					reportDifference("removed", node, null, null, out);
 				else if (newnodes.size() != 1)
 					reportDifference("multiple-replacements", node, null, null, out);
 				else {
-					newnode = newnodes.get(0);
+					newnode = newnodes.get(0).taxon();
 					if (newnode.name.equals(node.name))
 						reportDifference("changed-id-?", node, null, null, out);
 					else
@@ -2356,7 +2308,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 				if (other.lookup(newnode.name) != null)
 					reportDifference("changed-id?", newnode, null, null, out);
 				else {
-					List<Taxon> found = this.lookup(newnode.name);
+					List<Node> found = this.lookup(newnode.name);
 					if (found != null && found.size() > 1)
 						reportDifference("added-homonym", newnode, null, null, out);
 					else
@@ -2393,7 +2345,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		for (String syn : this.allNames()) {
 
 			// For each node that the name names...
-			for (Taxon node : this.lookup(syn)) {
+			for (Node nodenode : this.lookup(syn)) {
+                Taxon node = nodenode.taxon();
 				Taxon other =
 					(mappedp
 					 ? node.mapped
@@ -2464,7 +2417,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	public Map<Taxon, Collection<String>> makeSynonymIndex() {
 		Map<Taxon, Collection<String>> nameMap = new HashMap<Taxon, Collection<String>>();
 		for (String name : this.allNames())
-			for (Taxon node : this.lookup(name)) {
+			for (Node nodenode : this.lookup(name)) {
+                Taxon node = nodenode.taxon();
 				Collection<String> names = nameMap.get(node);  // of this node
 				if (names == null) {
 					names = new ArrayList(1);

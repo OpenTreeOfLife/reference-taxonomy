@@ -11,6 +11,7 @@
 
 package org.opentreeoflife.smasher;
 
+import org.opentreeoflife.taxa.Node;
 import org.opentreeoflife.taxa.Taxon;
 import org.opentreeoflife.taxa.Taxonomy;
 import org.opentreeoflife.taxa.SourceTaxonomy;
@@ -362,10 +363,14 @@ public class UnionTaxonomy extends Taxonomy {
 		while ((str = br.readLine()) != null) {
             String[] row = tabPattern.split(str);
 
+            // new - row[1] is list of studies
+            String name = null;
+            if (row.length > 2) name = row[2];
+
             String id = row[0];
             Taxon node = this.importantIds.lookupId(id);
             if (node == null) {
-                node = new Taxon(this.importantIds);
+                node = new Taxon(this.importantIds, name);
                 this.importantIds.addRoot(node);
             }
             node.setId(id);
@@ -373,9 +378,6 @@ public class UnionTaxonomy extends Taxonomy {
             // old
             importantIdsFoo.put(id, row[1].length());
 
-            // new - row[1] is list of studies
-            if (row.length > 2)
-                node.setName(row[2]);
             node.setSourceIds(row[1]);
             if (seriousp)
                 node.inSynthesis = true;
@@ -573,8 +575,8 @@ public class UnionTaxonomy extends Taxonomy {
                     }
                 } else {
                     // id has been retired
-                    List<Taxon> nodes = idsource.lookup(node.name);
-                    List<Taxon> unodes = this.lookup(node.name);
+                    List<Node> nodes = idsource.lookup(node.name);
+                    List<Node> unodes = this.lookup(node.name);
                     if (unodes == null) {
                         // 0/55
                         reason = "id-retired/name-retired";
@@ -590,7 +592,7 @@ public class UnionTaxonomy extends Taxonomy {
                         else if (unodes.size() == 1) {
                             // 14/55
                             reason = "id-retired/incompatible-use";
-                            Taxon[] div = node.divergence(unodes.get(0));
+                            Taxon[] div = node.divergence(unodes.get(0).taxon());
                             if (div != null)
                                 witness = div[0].name + "->" + div[1].name;
                         } else
@@ -602,12 +604,13 @@ public class UnionTaxonomy extends Taxonomy {
 
                         if (unodes.size() == 1) {
                             Taxon div1 = node.getDivision();
-                            Taxon div2 = unodes.get(0).getDivision();
+                            Taxon tax2 = unodes.get(0).taxon();
+                            Taxon div2 = tax2.getDivision();
                             if (div1 != div2) {
                                 reason = "id-retired/changed-divisions";
                                 witness = div1.name + "->" + div2.name;
                             }
-                            replacementId = "!" + unodes.get(0).id;
+                            replacementId = "!" + tax2.id;
                         }
                     }
                 }
@@ -705,8 +708,8 @@ public class UnionTaxonomy extends Taxonomy {
 
 		Set<String> scrutinize = new HashSet<String>();
 		for (String name : idsource.allNames())
-			for (Taxon node : idsource.lookup(name))
-				if (node.mapped == null) {
+			for (Node node : idsource.lookup(name))
+				if (node.taxon().mapped == null) {
 					scrutinize.add(name);
 					break;
 				}
@@ -1190,7 +1193,7 @@ class MergeMachine {
 
     void checkRejection(Taxon node, String reason) {
         if (union != null && union.importantIds != null) {
-            List<Taxon> probe = union.importantIds.lookup(node.name);
+            List<Node> probe = union.importantIds.lookup(node.name);
             if (probe != null) {
                 Answer.no(node, null, "reject/otu", reason).maybeLog(union);
                 // System.out.format("| Rejecting OTU %s (ott:%s) because %s\n", node, node.id, reason);
@@ -1442,12 +1445,25 @@ abstract class Criterion {
 			public String toString() { return "eschew-tattered"; }
 			Answer assess(Taxon x, Taxon target) {
 				if (!target.isPlaced() //from a previous merge
-					&& target.isHomonym())  
+					&& isHomonym(target))  
 					return Answer.weakNo(x, target, "not-same/unplaced", null);
 				else
 					return Answer.NOINFO;
 			}
 		};
+
+	// Homonym discounting synonyms
+	static boolean isHomonym(Taxon taxon) {
+		List<Node> alts = taxon.taxonomy.lookup(taxon.name);
+		if (alts == null) {
+			System.err.println("Name not indexed !? " + taxon.name);
+			return false;
+		}
+		for (Node alt : alts)
+			if (alt != taxon && alt.name.equals(taxon.name))
+				return true;
+		return false;
+	}
 
 	// x is source node, target is union node
 

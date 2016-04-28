@@ -611,6 +611,18 @@ Solution: (1) delete gbif:7240665 in Basidiomycota, (2) do same() of
 gbif:7249027 with 'Umbilicaria decussata' in Ascomycota in IF.
 
 
+### Uronema marina
+
+Uronema marina Womersley - Florabase 'This name is not current' - 
+  a marine alga - spelling should be 'Uronema marinum'
+
+Uronema GBIF:2639782 is in Chlorophyta in Plantae, from CoL, and has both
+spellings (as separate species).
+
+Uronema GBIF:3237269 is a Ciliophore in Protozoa, from CoL, and also
+has both spellings.
+
+This genus, and 4 of its members, are legitimate homonyms.  OTT 2.10 gets this wrong.
 
 ## Division problems
 

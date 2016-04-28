@@ -1,5 +1,6 @@
 package org.opentreeoflife.smasher;
 
+import org.opentreeoflife.taxa.Node;
 import org.opentreeoflife.taxa.Taxon;
 import org.opentreeoflife.taxa.Taxonomy;
 import org.opentreeoflife.taxa.SourceTaxonomy;
@@ -281,11 +282,14 @@ public class AlignmentByName extends Alignment {
 			// primary / primary
 			for (Taxon node : source)
 				if (!seen.contains(node.name)) {
-					List<Taxon> unodes = union.lookup(node.name);
+					List<Node> unodes = union.lookup(node.name);
 					if (unodes != null)
-						for (Taxon unode : unodes)
-							if (unode.name.equals(node.name))
-								{ seen.add(node.name); todo.add(node.name); break; }
+						for (Node unode : unodes)
+							if (unode.name.equals(node.name)) {
+                                seen.add(node.name);
+                                todo.add(node.name);
+                                break;
+                            }
 				}
 			// primary / synonym
 			for (Taxon unode : union)
@@ -302,10 +306,10 @@ public class AlignmentByName extends Alignment {
 			int incommon = 0;
 			int homcount = 0;
 			for (String name : todo) {
-				List<Taxon> unodes = union.lookup(name);
+				List<Node> unodes = union.lookup(name);
 				if (unodes != null) {
 					++incommon;
-					List<Taxon> nodes = source.lookup(name);
+					List<Node> nodes = source.lookup(name);
                     if (nodes != null) {
                         if (false &&
                             (((nodes.size() > 1 || unodes.size() > 1) && (++homcount % 1000 == 0))))
@@ -329,13 +333,13 @@ public class AlignmentByName extends Alignment {
     class Matrix {
 
         String name;
-        List<Taxon> nodes;
-        List<Taxon> unodes;
+        List<Node> nodes;
+        List<Node> unodes;
         int m;
         int n;
         Answer[][] suppressp;
 
-        Matrix(String name, List<Taxon> nodes, List<Taxon> unodes) {
+        Matrix(String name, List<Node> nodes, List<Node> unodes) {
             this.name = name;
             this.nodes = nodes;
             this.unodes = unodes;
@@ -358,13 +362,15 @@ public class AlignmentByName extends Alignment {
 
             // Log the fact that there are synonyms involved in these comparisons
             if (false)
-                for (Taxon node : nodes)
+                for (Node nodenode : nodes) {
+                    Taxon node = nodenode.taxon();
                     if (!node.name.equals(name)) {
-                        Taxon unode = unodes.get(0);
+                        Taxon unode = unodes.get(0).taxon();
                         // node.markEvent("synonym(s)");   ?
                         Answer.noinfo(node, unode, "synonym(s)", node.name).maybeLog();
                         break;
                     }
+                }
 
             for (Criterion criterion : criteria)
                 run(criterion);
@@ -388,10 +394,10 @@ public class AlignmentByName extends Alignment {
             Answer[] uanswer = new Answer[n];
 
             for (int i = 0; i < m; ++i) { // For each source node...
-                Taxon x = nodes.get(i);
+                Taxon x = nodes.get(i).taxon();
                 for (int j = 0; j < n; ++j) {  // Find a union node to map it to...
                     if (suppressp[i][j] != null) continue;
-                    Taxon y = unodes.get(j);
+                    Taxon y = unodes.get(j).taxon();
                     Answer z = criterion.assess(x, y);
                     if (z.value == Answer.DUNNO)
                         continue;
@@ -419,14 +425,14 @@ public class AlignmentByName extends Alignment {
                     int j = uniq[i];
                     // Avoid assigning two source nodes to the same union node (synonym creation)...
                     if (uuniq[j] >= 0 && suppressp[i][j] == null) {
-                        Taxon x = nodes.get(i); // == uuniq[j]
-                        Taxon y = unodes.get(j);
+                        Taxon x = nodes.get(i).taxon(); // == uuniq[j]
+                        Taxon y = unodes.get(j).taxon();
 
                         // Block out column, to prevent other source nodes from mapping to the same union node
                         if (false)
                         for (int ii = 0; ii < m; ++ii)
                             if (ii != i && suppressp[ii][j] == null)
-                                suppressp[ii][j] = Answer.no(nodes.get(ii),
+                                suppressp[ii][j] = Answer.no(nodes.get(ii).taxon(),
                                                              y,
                                                              "excluded(" + criterion.toString() +")",
                                                              x.getQualifiedId().toString());
@@ -435,7 +441,7 @@ public class AlignmentByName extends Alignment {
                             if (jj != j && suppressp[i][jj] == null)
                                 // This case seems to never happen
                                 suppressp[i][jj] = Answer.no(x,
-                                                             unodes.get(jj),
+                                                             unodes.get(jj).taxon(),
                                                              "coexcluded(" + criterion.toString() + ")",
                                                              null);
 
@@ -472,7 +478,7 @@ public class AlignmentByName extends Alignment {
         // Record reasons for mapping failure - for each unmapped source node, why didn't it map?
         void postmortem() {
             for (int i = 0; i < m; ++i) {
-                Taxon node = nodes.get(i);
+                Taxon node = nodes.get(i).taxon();
                 // Suppress synonyms
                 if (node.mapped == null) {
                     int alts = 0;	 // how many union nodes might we have gone to?
@@ -489,22 +495,22 @@ public class AlignmentByName extends Alignment {
                         String w = null;
                         for (int ii = 0; ii < m; ++ii)
                             if (suppressp[ii][altj] == null) {
-                                Taxon rival = nodes.get(ii);	// in source taxonomy or idsource
+                                Taxon rival = nodes.get(ii).taxon();	// in source taxonomy or idsource
                                 if (rival == node) continue;
                                 // if (rival.mapped == null) continue;	// ???
                                 QualifiedId qid = rival.getQualifiedId();
                                 if (w == null) w = qid.toString();
                                 else w += ("," + qid.toString());
                             }
-                        explanation = Answer.noinfo(node, unodes.get(altj), "unresolved/contentious", w);
+                        explanation = Answer.noinfo(node, unodes.get(altj).taxon(), "unresolved/contentious", w);
                     } else if (alts > 1) {
                         // Multiple union nodes to which this source can map... no way to tell
                         // ids have not been assigned yet
-                        //	  for (int j = 0; j < n; ++j) others.add(unodes.get(j).id);
+                        //	  for (int j = 0; j < n; ++j) others.add(unodes.get(j).taxon().id);
                         String w = null;
                         for (int j = 0; j < n; ++j)
                             if (suppressp[i][j] == null) {
-                                Taxon candidate = unodes.get(j);	// in union taxonomy
+                                Taxon candidate = unodes.get(j).taxon();	// in union taxonomy
                                 // if (candidate.comapped == null) continue;  // ???
                                 if (candidate.sourceIds == null)
                                     ;

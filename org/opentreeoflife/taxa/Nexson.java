@@ -127,7 +127,7 @@ public class Nexson {
         for (Object idObj : nodes.keySet()) {
             String id = (String)idObj;
             // make one Taxon for every node
-            Taxon taxon = new Taxon(tax);
+            Taxon taxon = new Taxon(tax, null);    // name set later
             taxon.setId(id);
         }
         // Transfer edges over from NeXML to Taxonomy instance

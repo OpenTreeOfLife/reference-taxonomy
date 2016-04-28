@@ -20,6 +20,7 @@
 
 package org.opentreeoflife.smasher;
 
+import org.opentreeoflife.taxa.Node;
 import org.opentreeoflife.taxa.Taxon;
 import org.opentreeoflife.taxa.Taxonomy;
 import org.opentreeoflife.taxa.SourceTaxonomy;
@@ -58,7 +59,7 @@ public class AlignmentByMembership extends Alignment {
 	Map<Taxon, Collection<Taxon>> candidatesMap =
 		new HashMap<Taxon, Collection<Taxon>>();
 
-    private static Taxon AMBIGUOUS = new Taxon(null);
+    private static Taxon AMBIGUOUS = new Taxon(null, null);
 
 	AlignmentByMembership(Taxonomy source, Taxonomy union) {
         // Invert the name->node map: for each node, store the names by
@@ -156,12 +157,14 @@ public class AlignmentByMembership extends Alignment {
         {
             // First try for exact name match.
             List<Taxon> candidates = new ArrayList<Taxon>();
-            List<Taxon> unionNodes = dest.lookup(node.name);
+            List<Node> unionNodes = dest.lookup(node.name);
             if (unionNodes != null)
-                for (Taxon unode : unionNodes)
-                    if (unode.name.equals(node.name))
-                        if (!differentDivisions(node, unode))
-                            candidates.add(unode);
+                for (Node unode : unionNodes)
+                    if (unode.name.equals(node.name)) {
+                        Taxon utaxon = unode.taxon();
+                        if (!differentDivisions(node, utaxon))
+                            candidates.add(utaxon);
+                    }
             Taxon unode = tryCandidates(node, candidates);
             if (unode != null) return unode; // possibly ambiguous
         }
@@ -177,11 +180,13 @@ public class AlignmentByMembership extends Alignment {
             // Consider all union nodes that have this node's primary
             // name among their names
             {
-                List<Taxon> unionNodes = dest.lookup(node.name);
+                List<Node> unionNodes = dest.lookup(node.name);
                 if (unionNodes != null)
-                    for (Taxon unode : unionNodes)
-                        if (!differentDivisions(node, unode))
-                            candidates.add(unode);
+                    for (Node unode : unionNodes) {
+                        Taxon utaxon = unode.taxon();
+                        if (!differentDivisions(node, utaxon))
+                            candidates.add(utaxon);
+                    }
             }
 
             // Consider all union nodes that have one of this nodes'
@@ -190,12 +195,14 @@ public class AlignmentByMembership extends Alignment {
             if (names != null)
                 for (String name : names) {
                     if (!name.equals(node.name)) {
-                        List<Taxon> unionNodes = dest.lookup(name);
+                        List<Node> unionNodes = dest.lookup(name);
                         if (unionNodes != null)
-                            for (Taxon unode : unionNodes)
-                                if (unode.name.equals(node.name))
-                                    if (!differentDivisions(node, unode))
-                                        candidates.add(unode);
+                            for (Node unode : unionNodes)
+                                if (unode.name.equals(node.name)) {
+                                    Taxon utaxon = unode.taxon();
+                                    if (!differentDivisions(node, utaxon))
+                                        candidates.add(utaxon);
+                                }
                     }
                 }
             return tryCandidates(node, candidates);

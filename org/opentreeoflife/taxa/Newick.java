@@ -61,7 +61,7 @@ class Newick {
             String label = readLabel(in);
             skipBranchLength(in);
 
-            Taxon node = new Taxon(dest); // no name
+            Taxon node = new Taxon(dest, null); // no name
             initNewickNode(node, label);
             return node;
         }
@@ -147,7 +147,7 @@ class Newick {
 		int pos = label.indexOf('=');
 		if (pos > 0) {
             String rank = label.substring(0,pos).toLowerCase();
-            if (Taxonomy.ranks.get(rank) != null) {
+            if (Rank.getRank(rank) != null) {
                 node.rank = rank;
                 node.setName(spacify(label.substring(pos+1)));
             } else {

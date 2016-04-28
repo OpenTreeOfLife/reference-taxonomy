@@ -13,13 +13,13 @@ import java.util.Collections;
 import java.util.Collection;
 import java.io.File;
 
-public class Taxon {
+public class Taxon extends Node {
+    // name and taxonomy are inherited from Node
 	public String id = null;
 	public Taxon parent = null;
-	public String name, rank = null;
+	public String rank = null;
 	public Collection<Taxon> children = null;
 	public List<QualifiedId> sourceIds = null;
-	public Taxonomy taxonomy;			// For subsumption checks etc.
 	int count = -1;             // cache of # nodes at or below here
 	int depth = -1;             // cache of distance from root
 	public boolean prunedp = false;    // for lazy removal from nameIndex
@@ -38,15 +38,12 @@ public class Taxon {
 	public int end = 0;		// Next taxon *not* included
     public boolean inSynthesis = false; // used only for final annotation
 
-
-	public Taxon(Taxonomy tax) {
-		this.taxonomy = tax;
-	}
-
     public Taxon(Taxonomy tax, String name) {
-        this(tax);
+        super(tax, name);
         this.setName(name);
     }
+
+    public Taxon taxon() { return this; }
 
     public Iterable<Taxon> descendants(final boolean includeSelf) {
         final Taxon node = this;
@@ -134,16 +131,6 @@ public class Taxon {
         }
         if (name.equals(this.name))
             return;
-        /* Formerly:  (this is silly)
-		if (this.name != null) {
-			List<Taxon> nodes = this.taxonomy.lookup(this.name);
-			nodes.remove(this);
-			if (nodes.size() == 0) {
-				//System.out.println("Removing name from index: " + this.name);
-				this.taxonomy.nameIndex.remove(this.name);
-			}
-		}
-        */
 		this.name = name;
         this.taxonomy.addToNameIndex(this, name);
 	}
@@ -324,19 +311,6 @@ public class Taxon {
 			   (this.name.startsWith(up.name) || up.taxonomy.lookup(up.name).size() > 1))
 			up = up.parent;
 		return up;
-	}
-
-	// Homonym discounting synonyms
-	public boolean isHomonym() {
-		List<Taxon> alts = this.taxonomy.lookup(this.name);
-		if (alts == null) {
-			System.err.println("Name not indexed !? " + this.name);
-			return false;
-		}
-		for (Taxon alt : alts)
-			if (alt != this && alt.name.equals(this.name))
-				return true;
-		return false;
 	}
 
 	//out.println("uid\t|\tparent_uid\t|\tname\t|\trank\t|\t" +
@@ -845,14 +819,15 @@ public class Taxon {
     }
 
 	public String longUniqueName() {
-		List<Taxon> nodes = this.taxonomy.lookup(this.name);
+		List<Node> nodes = this.taxonomy.lookup(this.name);
 		if (nodes == null)
             return this.getQualifiedId().toString();
 		boolean homonymp = false;
 
 		// Ancestor that distinguishes this taxon from all others with same name
 		Taxon unique = null;
-		for (Taxon other : nodes)
+		for (Node othernode : nodes) {
+            Taxon other = othernode.taxon();
 			if (other != this) {  //  && other.name.equals(this.name)
 				homonymp = true;
 				if (unique != this) {
@@ -865,6 +840,7 @@ public class Taxon {
 					}
 				}
 			}
+        }
         String result;
 		if (homonymp) {
 			String thisrank = ((this.rank == null) ? "" : (this.rank + " "));
@@ -1117,7 +1093,7 @@ public class Taxon {
             } else if (this.name.equals(name)) {
                 return true;
             } else {
-                List<Taxon> nodes = this.taxonomy.lookup(name);
+                List<Node> nodes = this.taxonomy.lookup(name);
                 if (nodes == null) {
                     if (setp) {
                         this.taxonomy.addSynonym(name, this);
@@ -1140,7 +1116,7 @@ public class Taxon {
                     return true;                    // yes, it does not have this name.
                 }
             } else {
-                List<Taxon> nodes = this.taxonomy.lookup(name);
+                List<Node> nodes = this.taxonomy.lookup(name);
                 if (nodes == null)
                     return true;
                 else if (setp) {

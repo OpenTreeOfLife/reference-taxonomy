@@ -12,6 +12,8 @@ import java.util.Comparator;
 import java.util.Collections;
 import java.util.Collection;
 import java.io.File;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 
 public class Taxon extends Node {
     // name and taxonomy are inherited from Node
@@ -142,11 +144,11 @@ public class Taxon extends Node {
 	public void clobberName(String name) {
 		String oldname = this.name;
 		if (!oldname.equals(name)) {
+            this.taxonomy.removeFromNameIndex(this, oldname);
 			Taxon existing = this.taxonomy.unique(name);
 			if (existing != null && existing != this)
 				System.err.format("** Warning: creating a homonym: %s\n", name);
-			this.setName(name);
-            this.taxonomy.removeFromNameIndex(this, oldname);
+			this.setName(name); // adds to index
 		}
 	}
 
@@ -947,7 +949,7 @@ public class Taxon extends Node {
     }
 
 	public void synonym(String name) {
-		if (!this.taxonomy.addSynonym(name, this))
+		if (!this.taxonomy.addSynonym(name, this, "synonym"))
 			System.err.format("| Synonym already present: %s %s\n", this, name);
 	}
 
@@ -955,7 +957,7 @@ public class Taxon extends Node {
 		String oldname = this.name;
 		if (!oldname.equals(name)) {
             this.clobberName(name);
-			this.taxonomy.addSynonym(oldname, this);  // awkward, maybe wrong
+			this.taxonomy.addSynonym(oldname, this, "synonym");  // awkward, maybe wrong
 		}
 	}
 
@@ -969,7 +971,7 @@ public class Taxon extends Node {
 		if (this.children != null) {
             // Compare smush()
             if (this.parent.children.size() == 1)
-                this.taxonomy.addSynonym(this.name, this.parent);
+                this.taxonomy.addSynonym(this.name, this.parent, "subsumed_by");
 			for (Taxon child : new ArrayList<Taxon>(this.children))
 				child.changeParent(this.parent, placedp ? 0 : Taxonomy.UNPLACED);
         }
@@ -993,7 +995,7 @@ public class Taxon extends Node {
 				// beware concurrent modification
 				child.changeParent(this.parent);
         // something about extinct flags here - extinct absorbing non-extinct
-		this.taxonomy.addSynonym(other.name, this);	// Not sure this is a good idea
+		this.taxonomy.addSynonym(other.name, this, "subsumed_by");	// Not sure this is a good idea
 		other.prune("absorb");
         return true;
 	}
@@ -1049,7 +1051,7 @@ public class Taxon extends Node {
             } else if (this.hasName(name)) {
                 return true;
             } else if (setp) {
-                this.taxonomy.addSynonym(name, this);
+                this.taxonomy.addSynonym(name, this, "synonym");
                 return true;
             } else
                 return false;
@@ -1143,5 +1145,22 @@ public class Taxon extends Node {
     public static boolean isBinomial(String name) {
         return binomialPattern.matcher(name).find();
     }
+
+	// From stackoverflow
+	public static final Pattern DIACRITICS_AND_FRIENDS
+		= Pattern.compile("[\\p{InCombiningDiacriticalMarks}\\p{IsLm}\\p{IsSk}]+");
+
+	// TO BE DONE:
+	//	 Umlaut letters of German origin (not diaresis) need to have an added 'e'
+	//	   ... but there's no way to determine this automatically.
+	//	   Xestoleberis y\u00FCchiae is not of Germanic origin.
+	//	 Convert upper case letters to lower case
+	//		e.g. genus Pechuel-Loeschea	 -- but these are all barren.
+	public static String normalizeName(String str) {
+        if (str.length() == 0) return null;
+		str = Normalizer.normalize(str, Normalizer.Form.NFD);
+		str = DIACRITICS_AND_FRIENDS.matcher(str).replaceAll("");
+		return str;
+	}
 
 }

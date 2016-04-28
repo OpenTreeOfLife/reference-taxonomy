@@ -12,16 +12,6 @@ public class SourceTaxonomy extends Taxonomy {
 	public SourceTaxonomy(String idspace) {
         super(idspace);
 	}
-
-	// This is the SourceTaxonomy version.
-	// Overrides dumpMetadata in class Taxonomy.
-	public void dumpMetadata(String filename)	throws IOException {
-		if (this.metadata != null) {
-			PrintStream out = Taxonomy.openw(filename);
-			out.println(this.metadata); // JSON
-			out.close();
-		}
-	}
 }
 
 

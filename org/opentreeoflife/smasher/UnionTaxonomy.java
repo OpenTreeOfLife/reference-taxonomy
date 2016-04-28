@@ -18,6 +18,7 @@ import org.opentreeoflife.taxa.SourceTaxonomy;
 import org.opentreeoflife.taxa.Answer;
 import org.opentreeoflife.taxa.QualifiedId;
 import org.opentreeoflife.taxa.Flag;
+import org.opentreeoflife.taxa.Rank;
 import org.opentreeoflife.taxa.EventLogger;
 
 import java.io.BufferedReader;
@@ -287,6 +288,8 @@ public class UnionTaxonomy extends Taxonomy {
 		this.idsource = idsource;
         this.addSource(idsource);
 
+        this.prepareMetadata();
+
 		Alignment a = this.align(idsource);
 
         // Reset event counters
@@ -425,34 +428,20 @@ public class UnionTaxonomy extends Taxonomy {
 			return Answer.NOINFO;
 	}
 
-	// x.getQualifiedId()
-
-	// Overrides dump method in class Taxonomy.
-	// outprefix should end with a / , but I guess . would work too
-
-	public void dump(String outprefix, String sep) throws IOException {
-		new File(outprefix).mkdirs();
-        this.prepareForDump(outprefix, sep);
-		this.dumpMetadata(outprefix + "about.json");
-
+    // Overrides method in class Taxonomy
+    public void dumpExtras(String outprefix) throws IOException {
 		Set<String> scrutinize = new HashSet<String>();
         scrutinize.addAll(this.eventlogger.namesOfInterest);
 		if (this.idsource != null)
 			scrutinize.addAll(this.dumpDeprecated(this.idsource, outprefix + "deprecated.tsv"));
         if (this.eventlogger.namesOfInterest.size() > 0)
             this.dumpLog(outprefix + "log.tsv", scrutinize);
-        if (this.weakLog.size() > 0)
-            this.dumpWeakLog(outprefix + "weaklog.csv");
-        if (this.idsource != null)
-            this.dumpForwards(outprefix + "new-forwards.tsv");
+        this.dumpWeakLog(outprefix + "weaklog.csv");
 		this.dumpConflicts(outprefix + "conflicts.tsv");
-
-		this.dumpNodes(this.roots(), outprefix, sep);
-		this.dumpSynonyms(outprefix + "synonyms.tsv", sep);
-		// this.dumpHidden(outprefix + "hidden.tsv");
-	}
+    }
 
     void dumpWeakLog(String filename) throws IOException {
+        if (this.weakLog.size() == 0) return;
         PrintStream out = Taxonomy.openw(filename);
         for (Answer a : this.weakLog)
             if (a.subject.mapped != null) {
@@ -470,27 +459,21 @@ public class UnionTaxonomy extends Taxonomy {
 		out.close();
     }
 
-	// This is the UnionTaxonomy version.  Overrides method in Taxonomy class.
-
-	public void dumpMetadata(String filename)	throws IOException {
-		this.metadata = new JSONObject();
+	public void prepareMetadata() {
 		List<Object> sourceMetas = new ArrayList<Object>();
-		this.metadata.put("inputs", sourceMetas);
 		for (Taxonomy source : this.sources)
-			if (source.metadata != null)
-				sourceMetas.add(source.metadata);
+			if (source.properties != null)
+				sourceMetas.add(source.properties);
 			else
 				sourceMetas.add(source.getTag());
-		// this.metadata.put("prefix", "ott");
-		PrintStream out = Taxonomy.openw(filename);
-		out.println(this.metadata);
-		out.close();
+		this.properties.put("inputs", sourceMetas);
 	}
 
     // Overrides dumpForwards in class Taxonomy
     // *** TBD: also write out simple id aliases within the union taxonomy
 
     void dumpForwards(String filename) throws IOException {
+        if (this.idsource == null) return;
 		PrintStream out = Taxonomy.openw(filename);
 		out.format("id\treplacement\n");
 		for (String id : idsource.idIndex.keySet()) {
@@ -1004,11 +987,11 @@ class MergeMachine {
                 unode.setName(node.name);
             else
                 // ???
-                unode.taxonomy.addSynonym(node.name, unode);
+                unode.taxonomy.addSynonym(node.name, unode, "synonym");
         }
 
-		if ((unode.rank == Taxonomy.NO_RANK || unode.rank.equals("samples"))
-            && (node.rank != Taxonomy.NO_RANK))
+		if ((unode.rank == Rank.NO_RANK || unode.rank.equals("samples"))
+            && (node.rank != Rank.NO_RANK))
             unode.rank = node.rank;
 
 		unode.addFlag(node.flagsToAdd(unode));
@@ -1663,7 +1646,7 @@ abstract class Criterion {
 			Answer assess(Taxon x, Taxon target) {
 				if ((x == null ?
 					 x == target :
-					 (x.rank != Taxonomy.NO_RANK &&
+					 (x.rank != Rank.NO_RANK &&
 					  x.rank.equals(target.rank))))
 					// Evidence of difference, but not good enough to overturn name evidence
 					return Answer.weakYes(x, target, "same/rank", x.rank);

@@ -33,8 +33,6 @@ import java.util.Collections;
 import java.util.Collection;
 import java.io.PrintStream;
 import java.io.File;
-import java.text.Normalizer;
-import java.text.Normalizer.Form;
 import org.json.simple.JSONObject; 
 import org.json.simple.parser.JSONParser; 
 import org.json.simple.parser.ParseException;
@@ -50,7 +48,7 @@ public abstract class Taxonomy {
 	Integer sourceidcolumn = null;
 	Integer infocolumn = null;
 	Integer flagscolumn = null;
-	public JSONObject metadata = null;
+	public JSONObject properties = new JSONObject();
     public String ingroupId = null;    // for trees, not taxonomies
 
 	private String tag = null;     // unique marker
@@ -315,9 +313,6 @@ public abstract class Taxonomy {
         else return n1.id.compareTo(n2.id);
 	}
 
-	static Pattern tabVbarTab = Pattern.compile("\t\\|\t?");
-	static Pattern tabOnly = Pattern.compile("\t");
-
 	// DWIMmish - does Newick if string starts with paren, otherwise
 	// loads from directory
 
@@ -335,7 +330,7 @@ public abstract class Taxonomy {
 				designator = designator + "/";
 			}
 			System.out.println("--- Reading " + designator + " ---");
-			tax.loadTaxonomy(designator);
+			new InterimFormat(tax).loadTaxonomy(designator);
             tax.purgeTemporaryIds();
 		}
         tax.postProcessTaxonomy();
@@ -427,264 +422,7 @@ public abstract class Taxonomy {
 		return tax;
 	}
 
-	// load | dump all taxonomy files
 
-	public void loadTaxonomy(String dirname) throws IOException {
-		this.loadMetadata(dirname + "about.json");
-		this.loadTaxonomyProper(dirname + "taxonomy.tsv");
-		this.loadSynonyms(dirname + "synonyms.tsv");
-        this.loadForwards(dirname + "forwards.tsv");
-        this.purgeTemporaryIds();
-	}
-
-	// This gets overridden in a subclass.
-    // Deforestate would have already been called, if it was going to be
-	public void dump(String outprefix, String sep) throws IOException {
-		new File(outprefix).mkdirs();
-        this.prepareForDump(outprefix, sep);
-		this.dumpMetadata(outprefix + "about.json");
-
-		this.dumpNodes(this.roots(), outprefix, sep);
-		this.dumpSynonyms(outprefix + "synonyms.tsv", sep);
-        this.dumpForwards(outprefix + "new-forwards.tsv");
-		// this.dumpHidden(outprefix + "hidden.tsv");
-	}
-
-    public void prepareForDump(String outprefix, String sep) throws IOException {
-        this.placeBiggest();         // End of topology modifications
-		this.assignDummyIds();
-        this.reset();                // maybe unnecessary; depths and comapped
-		this.analyzeRankConflicts(); // set SIBLING_HIGHER
-        this.inferFlags();           // infer BARREN & INFRASPECIFIC, and herit
-        Taxon biggest = this.normalizeRoots().get(0);
-        System.out.format("| Root is %s %s\n", biggest.name, Flag.toString(biggest.properFlags, 0));
-    }
-
-	public void dump(String outprefix) throws IOException {
-        this.dump(outprefix, "\t|\t");  //backward compatible
-    }
-
-	// load | dump metadata
-
-	void loadMetadata(String filename) throws IOException {
-		BufferedReader fr;
-		try {
-			fr = Taxonomy.fileReader(filename);
-		} catch (java.io.FileNotFoundException e) {
-			return;
-		}
-		JSONParser parser = new JSONParser();
-		try {
-			Object obj = parser.parse(fr);
-			JSONObject jsonObject = (JSONObject) obj;
-			if (jsonObject == null)
-				System.err.println("!! Opened file " + filename + " but no contents?");
-			else {
-				this.metadata = jsonObject;
-
-				Object prefix = jsonObject.get("prefix");
-				if (prefix != null)
-					this.idspace = (String)prefix;
-			}
-
-		} catch (ParseException e) {
-			System.err.println(e);
-		}
-		fr.close();
-	}
-
-	public static String NO_RANK = null;
-
-	public abstract void dumpMetadata(String filename) throws IOException;
-
-	// load | dump taxonomy file
-
-	void loadTaxonomyProper(String filename) throws IOException {
-		BufferedReader br = Taxonomy.fileReader(filename);
-		String str;
-		int row = 0;
-		int normalizations = 0;
-
-        Pattern pat = null;
-		String suffix = null;	// Java loses somehow.  I don't get it
-
-		Map<Taxon, String> parentMap = new HashMap<Taxon, String>();
-
-		while ((str = br.readLine()) != null) {
-            if (pat == null) {
-                String[] parts = tabOnly.split(str + "\t!");	 // Java loses
-                if (parts[1].equals("|")) {
-                    pat = tabVbarTab;
-					suffix = "\t|\t!";
-                } else {
-                    pat = tabOnly;
-					suffix = "\t!";
-				}
-            }
-			String[] parts = pat.split(str + suffix);	 // Java loses
-			if (parts.length < 3) {
-				System.out.println("Bad row: " + row + " has only " + parts.length + " parts");
-			} else {
-				if (row == 0) {
-					if (parts[0].equals("uid")) {
-						Map<String, Integer> headerx = new HashMap<String, Integer>();
-						for (int i = 0; i < parts.length; ++i)
-							headerx.put(parts[i], i);
-						// id | parentid | name | rank | ...
-						this.header = parts; // Stow it just in case...
-						this.sourcecolumn = headerx.get("source");
-						this.sourceidcolumn = headerx.get("sourceid");
-						this.infocolumn = headerx.get("sourceinfo");
-						this.flagscolumn = headerx.get("flags");
-						// this.preottolcolumn = headerx.get("preottol_id");
-						continue;
-					} else
-						System.out.println("! No header row - saw " + parts[0]);
-				}
-				String lastone = parts[parts.length - 1];
-				// The following is residue from an annoying bug that
-				// I never tracked down and that seems to have fixed
-				// itself
-				if (lastone.endsWith("!") && (parts.length < 4 ||
-											  lastone.length() > 1))
-					System.err.println("I don't get it: [" + lastone + "]");
-
-				String id = parts[0];
-				Taxon oldnode = this.lookupId(id);
-				if (oldnode != null) {
-					System.err.format("** Duplicate id definition: %s %s\n", id, oldnode.name);
-                } else if (parts.length <= 4) {
-                    System.err.format("** Too few columns in row: id = %s\n", id);
-                } else {
-                    String rawname = parts[2];
-                    String name = normalizeName(rawname);
-					Taxon node = new Taxon(this, name);
-                    initTaxon(node,
-                              id,
-                              name,
-                              parts[3], // rank
-                              (this.flagscolumn != null ? parts[this.flagscolumn] : ""),
-                              parts);
-                    if (name != null && !name.equals(rawname)) {
-                        addSynonym(rawname, node);
-                        ++normalizations;
-                    }
-
-                    // Delay until after all ids are defined
-                    String parentId = parts[1];
-                    if (parentId.equals("null") || parentId.equals("not found"))
-                        parentId = "";
-                    parentMap.put(node, parentId);
-                }
-            }
-			++row;
-			if (row % 500000 == 0)
-				System.out.println(row);
-		}
-		br.close();
-		if (normalizations > 0)
-			System.out.format("| %s names normalized\n", normalizations);
-
-        // Look up all the parent ids and store parent pointers in the nodes
-
-		Set<String> seen = new HashSet<String>();
-        int orphans = 0;
-		for (Taxon node : parentMap.keySet()) {
-			String parentId = parentMap.get(node);
-            if (parentId.length() == 0)
-                this.addRoot(node);
-            else {
-                Taxon parent = this.lookupId(parentId);
-                if (parent == null) {
-                    if (!seen.contains(parentId)) {
-                        ++orphans;
-                        seen.add(parentId);
-                    }
-                    this.addRoot(node);
-                } else if (parent == node) {
-                    System.err.format("** Taxon is its own parent: %s %s\n", node.id, node.name);
-                    this.addRoot(node);
-                } else if (parent.descendsFrom(node)) {
-                    System.err.format("** Cycle detected in input taxonomy: %s %s\n", node, parent);
-                    this.addRoot(node);
-                } else {
-                    parent.addChild(node);
-                }
-            }
-		}
-        if (orphans > 0)
-			System.out.format("| %s unrecognized parent ids, %s nodes that have them\n",
-                              seen.size(), orphans);
-
-        Taxon life = this.unique("life");
-        if (life != null) life.properFlags = 0;  // not unplaced
-
-        int total = this.count();
-        if (row != total)
-            // Shouldn't happen
-            System.err.println(this.getTag() + " is ill-formed: " +
-                               row + " rows, but only " + 
-                               total + " reachable from roots");
-	}
-
-	// Populate fields of a Taxon object from fields of row of taxonomy file
-	// parts = fields from row of dump file
-	void initTaxon(Taxon node, String id, String name, String rank, String flags, String[] parts) {
-        if (id.length() == 0)
-            System.err.format("!! Null id: %s\n", name);
-        else
-            node.setId(id);
-        if (name != null)
-            node.setName(name);
-
-        if (flags.length() > 0)
-            Flag.parseFlags(flags, node);
-
-        if (rank.length() == 0 || rank.startsWith("no rank") ||
-            rank.equals("terminal") || rank.equals("samples"))
-            rank = Taxonomy.NO_RANK;
-        else if (Rank.getRank(rank) == null) {
-            System.err.println("!! Unrecognized rank: " + rank + " " + node.id);
-            rank = Taxonomy.NO_RANK;
-        }
-        node.rank = rank;
-
-		if (this.infocolumn != null) {
-			if (parts.length <= this.infocolumn)
-				System.err.println("Missing sourceinfo column: " + node.id);
-			else {
-				String info = parts[this.infocolumn];
-				if (info != null && info.length() > 0)
-					node.setSourceIds(info);
-			}
-		}
-
-		else if (this.sourcecolumn != null &&
-			this.sourceidcolumn != null) {
-            // Legacy of OTT 1.0 days
-            String sourceTag = parts[this.sourcecolumn];
-            String idInSource = parts[this.sourceidcolumn];
-            if (sourceTag.length() > 0 && idInSource.length() > 0)
-                node.addSourceId(new QualifiedId(sourceTag, idInSource));
-		}
-	}
-
-	// From stackoverflow
-	public static final Pattern DIACRITICS_AND_FRIENDS
-		= Pattern.compile("[\\p{InCombiningDiacriticalMarks}\\p{IsLm}\\p{IsSk}]+");
-
-	// TO BE DONE:
-	//	 Umlaut letters of German origin (not diaresis) need to have an added 'e'
-	//	   ... but there's no way to determine this automatically.
-	//	   Xestoleberis y\u00FCchiae is not of Germanic origin.
-	//	 Convert upper case letters to lower case
-	//		e.g. genus Pechuel-Loeschea	 -- but these are all barren.
-	private static String normalizeName(String str) {
-        if (str.length() == 0) return null;
-		str = Normalizer.normalize(str, Normalizer.Form.NFD);
-		str = DIACRITICS_AND_FRIENDS.matcher(str).replaceAll("");
-		return str;
-	}
 	/*
 	void dumpName(String name) {
 		for (int i = 0; i < name.length(); ++i)
@@ -797,275 +535,73 @@ public abstract class Taxonomy {
             }
     }
 
-	public void dumpNodes(Iterable<Taxon> nodes, String outprefix, String sep) throws IOException {
-		PrintStream out = Taxonomy.openw(outprefix + "taxonomy.tsv");
-
-		out.format("uid%sparent_uid%sname%srank%ssourceinfo%suniqname%sflags%s\n",
-				   // 0  1		     2	   3     4	   		 5		   6
-                   sep, sep, sep, sep, sep, sep, sep
-					);
-
-		for (Taxon node : nodes)
-			if (!node.prunedp)
-				dumpNode(node, out, true, sep);
-		out.close();
-	}
-
-	// Recursive!
-	void dumpNode(Taxon node, PrintStream out, boolean rootp, String sep) {
-		// 0. uid:
-		out.print((node.id == null ? "?" : node.id) + sep);
-		// 1. parent_uid:
-		out.print(((node.taxonomy.hasRoot(node) || rootp) ? "" : node.parent.id)  + sep);
-		// 2. name:
-		out.print((node.name == null ? "" : node.name)
-				  + sep);
-		// 3. rank:
-		out.print((node.rank == Taxonomy.NO_RANK ?
-				   (node.children == null ?
-					"no rank - terminal" :
-					"no rank") :
-				   node.rank) + sep);
-
-		// 4. source information
-		// comma-separated list of URI-or-CURIE
-		out.print(node.getSourceIdsString() + sep);
-
-		// 5. uniqname
-		out.print(node.uniqueName() + sep);
-
-		// 6. flags
-		// (node.mode == null ? "" : node.mode)
-		Flag.printFlags(node.properFlags,
-                        node.inferredFlags,
-                        out);
-		out.print(sep);
-		// was: out.print(((node.flags != null) ? node.flags : "") + sep);
-
-		out.println();
-
-		if (node.children != null)
-			for (Taxon child : node.children) {
-				if (child == null)
-					System.err.println("null in children list!? " + node);
-				else
-					dumpNode(child, out, false, sep);
-			}
-	}
-
-    // load forwarding pointers
-
-	void loadForwards(String filename) throws IOException {
-		BufferedReader fr;
-		try {
-			fr = fileReader(filename);
-		} catch (java.io.FileNotFoundException e) {
-			fr = null;
-		}
-		if (fr != null) {
-            int count = 0;
-            fr.readLine();      // header row
-            String str;
-			while ((str = fr.readLine()) != null) {
-                String[] parts = tabOnly.split(str);
-                String alias = parts[0].trim();
-                String truth = parts[1].trim();
-                Taxon dest = lookupId(truth);
-                if (dest != null) {
-                    Taxon probe = lookupId(alias);
-                    if (probe == null) {
-                        this.idIndex.put(alias, dest);
-                        ++count;
-                    }
-                }
-            }
-            System.out.format("| %s id aliases\n", count);
-            fr.close();
-        }
-    }
-
-	// load | dump synonyms
-
-	void loadSynonyms(String filename) throws IOException {
-		BufferedReader fr;
-		try {
-			fr = fileReader(filename);
-		} catch (java.io.FileNotFoundException e) {
-			fr = null;
-		}
-		if (fr != null) {
-			// BufferedReader br = new BufferedReader(fr);
-			BufferedReader br = fr;
-			int count = 0;
-			String str;
-			int syn_column = 1;
-			int id_column = 0;
-			int type_column = Integer.MAX_VALUE;
-			int row = 0;
-			int losers = 0;
-            Pattern pat = null;
-			while ((str = br.readLine()) != null) {
-
-				if (pat == null) {
-					String[] parts = tabOnly.split(str + "!");	 // Java loses
-					if (parts[1].equals("|"))
-						pat = tabVbarTab;
-					else
-						pat = tabOnly;
-				}
-
-				String[] parts = pat.split(str);
-				// uid | name | type | ? |
-				// 36602	|	Sorbus alnifolia	|	synonym	|	|	
-				if (parts.length >= 2) {
-					if (row == 0) {
-						Map<String, Integer> headerx = new HashMap<String, Integer>();
-						for (int i = 0; i < parts.length; ++i)
-							headerx.put(parts[i], i);
-						Integer o2 = headerx.get("uid");
-						if (o2 == null) o2 = headerx.get("id");
-						if (o2 != null) {
-							id_column = o2;
-							Integer o1 = headerx.get("name");
-							if (o1 != null) syn_column = o1;
-							Integer o3 = headerx.get("type");
-							if (o3 != null) type_column = o3;
-							continue;
-						}
-					}
-					String id = parts[id_column];
-					String syn = parts[syn_column];
-					String type = (type_column < parts.length ?
-								   parts[type_column] :
-								   "");
-					Taxon node = this.lookupId(id);
-					if (type.equals("in-part")) continue;
-					if (type.equals("includes")) continue;
-					if (type.equals("type material")) continue;
-					if (type.endsWith("common name")) continue;
-					if (type.equals("authority")) continue;	   // keep?
-					if (node == null) {
-						if (false && ++losers < 10)
-							System.err.println("Identifier " + id + " unrecognized for synonym " + syn);
-						else if (losers == 10)
-							System.err.println("...");
-						continue;
-					}
-                    if (node.name == null) {
-                        node.setName(syn);
-						++count;
-					} else if (!node.name.equals(syn)) {
-						addSynonym(syn, node);
-						++count;
-					}
-				}
-			}
-			br.close();
-			if (count > 0)
-				System.out.println("| " + count + " synonyms");
-		}
-	}
-
 	// Returns true if a change was made
     // compare addToNameIndex
 
-	public boolean addSynonym(String name, Taxon node) {
-        return addSynonym(name, node, "synonym");
-    }
-
 	public boolean addSynonym(String name, Taxon taxon, String type) {
-        if (taxon.name != null && taxon.name.equals(name))
-            return true;
-		if (taxon.taxonomy != this)
+		if (taxon.taxonomy != this) {
 			System.err.println("!? Synonym for a taxon that's not in this taxonomy: " + name + " " + taxon);
-		List<Node> nodes = this.lookup(name);
-		if (nodes == null) {
-			nodes = new ArrayList<Node>(1);
-			this.nameIndex.put(name, nodes);
-            if (true)
-                nodes.add(taxon);
-            else
-                nodes.add(new Synonym(name, type, taxon));
+            return false;
+        } else if (taxon.hasName(name))
+            // No need for a new synonym - the taxon already has the name in question
+            //   (although maybe we should care about the type ...)
             return true;
-		} else {
-            // We don't want to create a homonym.
-            return nodes.contains(taxon);
-            /*
-			for (Taxon n : nodes)
-                if (n == node)
-                    return true; // already present (shouldn't happen)
-            if (false)
-                // There are gazillions of these warnings.
-                System.err.format("Making %s a synonym of %s would create a homonym\n", name, node);
-            return false;       // shouldn't happen
-            */
-		}
-	}
-
-	public void dumpSynonyms(String filename, String sep) throws IOException {
-		PrintStream out = Taxonomy.openw(filename);
-		out.println("name\t|\tuid\t|\ttype\t|\tuniqname\t|\t");
-		for (String name : this.allNames()) {
-            boolean primaryp = false;
-            boolean synonymp = false;
-			for (Node nodenode : this.lookup(name)) {
-                Taxon node = nodenode.taxon();
-				if (!node.prunedp)
-                    if (node.name.equals(name))
-                        // Never emit a synonym when the name is the primary name of something
-                        primaryp = true;
-                    else {
-                        synonymp = true;
-                        String uniq = node.uniqueName();
-                        if (uniq.length() == 0) uniq = node.name;
-                        if (node.id == null) {
-                            if (!node.isRoot()) {
-                                System.out.format("** Synonym for node with no id: %s\n", node.name);
-                                node.show();
-                            }
-                        } else
-                            out.println(name + sep +
-                                        node.id + sep +
-                                        "" + sep + // type, could be "synonym" etc.
-                                        name + " (synonym for " + uniq + ")" +
-                                        sep);
-                    }
-                }
-            if (false && primaryp && synonymp)
-                System.err.println("** Synonym in parallel with primary: " + name);
-            }
-		out.close();
-	}
-
-    void dumpForwards(String filename) throws IOException {
-		PrintStream out = Taxonomy.openw(filename);
-        out.format("id\treplacement\n");
-        int count = 0;
-        for (String id : idIndex.keySet()) {
-            Taxon node = idIndex.get(id);
-            if (!node.id.equals(id)) {
-                out.format("%s\t%s\n", id, node.id);
-                ++count;
+        else {
+            List<Node> nodes = this.lookup(name);
+            if (nodes == null) {
+                nodes = new ArrayList<Node>(1);
+                if (false)
+                    nodes.add(taxon);
+                else
+                    nodes.add(new Synonym(name, type, taxon));
+                this.nameIndex.put(name, nodes);
+                return true;
+            } else {
+                // We don't want to create a homonym.
+                return false;
             }
         }
-        System.out.format("| %s id aliases\n", count);
-        out.close();
-    }
+	}
 
-	void dumpHidden(String filename) throws IOException {
-		PrintStream out = Taxonomy.openw(filename);
+	// Propogate synonyms from source taxonomy (= this) to union or selection.
+	// Some names that are synonyms in the source might be primary names in the union,
+	//	and vice versa.
+	void copySynonyms(Taxonomy targetTaxonomy, boolean mappedp) {
 		int count = 0;
-		for (Taxon node : this.taxa()) {
-			if (node.isHidden()) {
-				++count;
-				out.format("%s\t%s\t%s\t%s\t", node.id, node.name, node.getSourceIdsString(),
-						   node.divisionName());
-				Flag.printFlags(node.properFlags, node.inferredFlags, out);
-				out.println();
+
+		// For each name in source taxonomy...
+		for (String syn : this.allNames()) {
+
+			// For each node that the name names...
+			for (Node node : this.lookup(syn)) {
+                Taxon taxon = node.taxon();
+				Taxon other =
+					(mappedp
+					 ? taxon.mapped
+					 : targetTaxonomy.lookupId(taxon.id));
+
+				// If that taxon maps to a union taxon with a different name....
+				if (other != null && !other.name.equals(syn)) {
+					// then the name is a synonym of the union taxon too
+					if (other.taxonomy != targetTaxonomy)
+						System.err.format("** copySynonyms logic error %s %s\n",
+										  other.taxonomy, targetTaxonomy);
+                    // TBD: copy type (and maybe other) information
+					else if (targetTaxonomy.addSynonym(syn, other, "synonym"))
+						++count;
+				}
 			}
 		}
-		out.close();
-		System.out.format("| %s hidden taxa\n", count);
+		if (count > 0)
+			System.err.println("| Added " + count + " synonyms");
+	}
+
+	void copySelectedSynonyms(Taxonomy target) {
+		copySynonyms(target, false);
+	}
+
+	public void copyMappedSynonyms(Taxonomy target) {
+		copySynonyms(target, true);
 	}
 
 	/*
@@ -1976,7 +1512,7 @@ public abstract class Taxonomy {
 				if (existing.children != null)
 					for (Taxon child: existing.children)
 						child.changeParent(parent, 0);
-				addSynonym(name, parent); //  ????
+				addSynonym(name, parent, "subsumed_by"); //  ????
 				existing.prune("edit/fold");
 			}
 
@@ -1997,7 +1533,7 @@ public abstract class Taxonomy {
 			if (existing != null)
 				System.err.println("Synonym already known: " + name);
 			else
-				addSynonym(name, parent);
+				addSynonym(name, parent, "synonym");
 
 		} else
 			System.err.println("Unrecognized edit command: " + command);
@@ -2359,46 +1895,6 @@ public abstract class Taxonomy {
 				   (newParent == null ? "" : newParent.name),
 				   node.divisionName());
 	}
-	
-	void copySelectedSynonyms(Taxonomy target) {
-		copySynonyms(target, false);
-	}
-
-	public void copyMappedSynonyms(Taxonomy target) {
-		copySynonyms(target, true);
-	}
-
-	// Propogate synonyms from source taxonomy (= this) to union.
-	// Some names that are synonyms in the source might be primary names in the union,
-	//	and vice versa.
-	void copySynonyms(Taxonomy target, boolean mappedp) {
-		int count = 0;
-
-		// For each name in source taxonomy...
-		for (String syn : this.allNames()) {
-
-			// For each node that the name names...
-			for (Node nodenode : this.lookup(syn)) {
-                Taxon node = nodenode.taxon();
-				Taxon other =
-					(mappedp
-					 ? node.mapped
-					 : target.lookupId(node.id));
-
-				// If that node maps to a union node with a different name....
-				if (other != null && !other.name.equals(syn)) {
-					// then the name is a synonym of the union node too
-					if (other.taxonomy != target)
-						System.err.format("** copySynonyms logic error %s %s\n",
-										  other.taxonomy, target);
-					else if (target.addSynonym(syn, other))
-						++count;
-				}
-			}
-		}
-		if (count > 0)
-			System.err.println("| Added " + count + " synonyms");
-	}
 
 	static Pattern binomialPattern = Pattern.compile("^[A-Z][a-z]+ [a-z]+$");
 	static Pattern monomialPattern = Pattern.compile("^[A-Z][a-z]*$");
@@ -2569,6 +2065,30 @@ public abstract class Taxonomy {
             return this.eventlogger.markEvent(tag, node, unode);
         else return false;
     }
+
+	// This gets overridden in a subclass.
+    // Deforestate would have already been called, if it was going to be
+	public void dump(String outprefix, String sep) throws IOException {
+        this.prepareForDump();
+        new InterimFormat(this).dump(outprefix, sep);
+	}
+
+    // Overridden by UnionTaxonomy
+    public void dumpExtras(String outprefix) throws IOException {
+        ;
+    }
+
+    public void prepareForDump() throws IOException {
+        Taxonomy tax = this;
+        tax.placeBiggest();         // End of topology modifications
+		tax.assignDummyIds();
+        tax.reset();                // maybe unnecessary; depths and comapped
+		tax.analyzeRankConflicts(); // set SIBLING_HIGHER
+        tax.inferFlags();           // infer BARREN & INFRASPECIFIC, and herit
+        Taxon biggest = tax.normalizeRoots().get(0);
+        System.out.format("| Root is %s %s\n", biggest.name, Flag.toString(biggest.properFlags, 0));
+    }
+
 
 }
 // end of class Taxonomy

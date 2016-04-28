@@ -52,7 +52,7 @@ class Newick {
 				for (Taxon child : children)
 					if (child.name == null || !child.name.startsWith("null"))
 						node.addChild(child);
-				node.rank = (children.size() > 0) ? Taxonomy.NO_RANK : "species";
+				node.rank = (children.size() > 0) ? Rank.NO_RANK : "species";
 				return node;
 			} else
 				return null;
@@ -128,7 +128,7 @@ class Newick {
 	static void initNewickNode(Taxon node, String label) {
 
         if (label == null) {
-            node.rank = Taxonomy.NO_RANK;
+            node.rank = Rank.NO_RANK;
             return;
         }
 
@@ -137,7 +137,7 @@ class Newick {
         if (m.matches()) {
             
             // int i = label.indexOf("_ott"); label.substring(i+4) label.substring(0,i)
-            node.rank = Taxonomy.NO_RANK;
+            node.rank = Rank.NO_RANK;
             node.setId(m.group(2));
             node.setName(spacify(m.group(1)));
             return;
@@ -152,12 +152,12 @@ class Newick {
                 node.setName(spacify(label.substring(pos+1)));
             } else {
                 System.out.format("** Unrecognized rank: %s\n", label);
-                node.rank = Taxonomy.NO_RANK;
+                node.rank = Rank.NO_RANK;
                 node.setName(spacify(label));
             }
 
 		} else {
-			node.rank = Taxonomy.NO_RANK;
+			node.rank = Rank.NO_RANK;
 			node.setName(spacify(label));
 		}
 	}

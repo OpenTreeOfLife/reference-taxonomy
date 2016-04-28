@@ -5,6 +5,8 @@ import java.util.HashMap;
 
 public class Rank {
 
+	public static String NO_RANK = null;
+
     public String name;
     public int level;
 

@@ -56,8 +56,8 @@ public class Smasher {
 						String name1 = argv[++i];
 						String name2 = argv[++i];
 						String filename = argv[++i];
-						Taxonomy t1 = Taxonomy.getTaxonomy(name1);
-						Taxonomy t2 = Taxonomy.getTaxonomy(name2);
+						Taxonomy t1 = Taxonomy.getTaxonomy(name1, null);
+						Taxonomy t2 = Taxonomy.getTaxonomy(name2, null);
 						t2.dumpDifferences(t1, filename);
 					}
 
@@ -72,7 +72,7 @@ public class Smasher {
 					else if (argv[i].equals("--ids")) {
 						// To smush or not to smush?
 						UnionTaxonomy union = promote(tax); tax = union;
-						SourceTaxonomy idsource = Taxonomy.getTaxonomy(argv[++i]);
+						SourceTaxonomy idsource = Taxonomy.getTaxonomy(argv[++i], "ott");
 						union.assignIds(idsource);
 					}
 
@@ -109,17 +109,12 @@ public class Smasher {
 						test();
 
 					else if (argv[i].equals("--start"))
-						tax = Taxonomy.getTaxonomy(argv[++i]);
+						tax = Taxonomy.getTaxonomy(argv[++i], null);
 
 					// Write a .tre (Newick) file
 					else if (argv[i].equals("--tre")) {
 						String outfile = argv[++i];
 						tax.dumpNewick(outfile);
-					}
-
-					// Read a .tre file
-					else if (argv[i].equals("--intre")) {
-						tax = Taxonomy.getNewick(argv[++i]);
 					}
 
 					else if (argv[i].equals("--newick")) {
@@ -138,10 +133,10 @@ public class Smasher {
 
 				else {
 					if (tax == null) 
-						tax = Taxonomy.getTaxonomy(argv[i]);
+						tax = Taxonomy.getTaxonomy(argv[i], null);
 					else {
 						UnionTaxonomy union = promote(tax);
-						SourceTaxonomy source = Taxonomy.getTaxonomy(argv[i]);
+						SourceTaxonomy source = Taxonomy.getTaxonomy(argv[i], null);
 						if (source != null)
 							union.mergeIn(source);
 						tax = union;

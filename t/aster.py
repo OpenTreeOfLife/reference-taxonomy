@@ -13,14 +13,14 @@ tax = UnionTaxonomy.newTaxonomy()
 
 
 # Add NCBI subset to the model taxonomy
-ncbi = Taxonomy.getTaxonomy('t/tax/ncbi_aster/')
+ncbi = Taxonomy.getTaxonomy('t/tax/ncbi_aster/', 'ncbi')
 # analyzeOTUs sets flags on questionable taxa ("unclassified" and so on)
 #  to allow the option of suppression downstream
 ncbi.analyzeOTUs()
 tax.absorb(ncbi)
 
 # Add GBIF subset fo the model taxonomy
-gbif = Taxonomy.getTaxonomy('t/tax/gbif_aster/')
+gbif = Taxonomy.getTaxonomy('t/tax/gbif_aster/', 'gbif')
 # analyzeMajorRankConflicts sets the "major_rank_conflict" flag when
 # intermediate ranks are missing (e.g. a family that's a child of a
 # class)
@@ -55,7 +55,7 @@ sp.prune("aster.py")
 
 # Assign identifiers to the taxa in the model taxonomy.  Identifiers
 # assigned in the previous version are carried over to this version.
-tax.assignIds(Taxonomy.getTaxonomy('t/tax/prev_aster/'))
+tax.assignIds(Taxonomy.getTaxonomy('t/tax/prev_aster/', 'ott'))
 
 # Write the model taxonomy out to a set of files
 tax.dump('t/tax/aster/', '\t|\t')

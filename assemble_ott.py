@@ -41,6 +41,7 @@ def create_ott():
     ott.loadPreferredIds('ids-that-are-otus.tsv', False)
     ott.loadPreferredIds('ids-in-synthesis.tsv', True)
 
+    # idspace string 'skel' is magical, see Taxon.addSource
     ott.setSkeleton(Taxonomy.getTaxonomy('tax/skel/', 'skel'))
 
     silva = prepare_silva(ott)

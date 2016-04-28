@@ -170,7 +170,7 @@ public class Taxon extends Node {
 		return parent;
 	}
 
-	static void backtrace() {
+	public static void backtrace() {
 		try {
 			throw new Exception("Backtrace");
 		} catch (Exception e) {

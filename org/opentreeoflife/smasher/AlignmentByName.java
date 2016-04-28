@@ -24,7 +24,8 @@ import java.io.IOException;
 
 public class AlignmentByName extends Alignment {
 
-	Taxonomy source, union;
+	Taxonomy source;
+    UnionTaxonomy union;
 
     // Return the node that this one maps to under this alignment, or null
     Answer answer(Taxon subject) {
@@ -241,8 +242,8 @@ public class AlignmentByName extends Alignment {
 	}
 
     public static void testWitness() throws Exception {
-        SourceTaxonomy t1 = Taxonomy.getTaxonomy("(a,b,c)d");
-        SourceTaxonomy t2 = Taxonomy.getTaxonomy("(a,b,c)d");
+        SourceTaxonomy t1 = Taxonomy.getTaxonomy("(a,b,c)d", "z");
+        SourceTaxonomy t2 = Taxonomy.getTaxonomy("(a,b,c)d", "z");
         UnionTaxonomy u = new UnionTaxonomy();
         u.mergeIn(t1);
         u.mergeIn(t2);
@@ -466,7 +467,7 @@ public class AlignmentByName extends Alignment {
                             x.answer = Answer.no(x, y, "redundant", null);
                             x.answer.maybeLog();
                         } else {
-                            y.taxonomy.alignWith(x, y, a); // sets .mapped, .answer
+                            union.alignWith(x, y, a); // sets .mapped, .answer
                         }
                         suppressp[i][j] = a;
                     }

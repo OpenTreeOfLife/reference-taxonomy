@@ -126,9 +126,9 @@ public class UnionTaxonomy extends Taxonomy {
 
     public void markDivisionsFromSkeleton(Taxonomy source, Taxonomy skel) {
         for (String name : skel.allNames()) {
-            Taxon skelnode = skel.highest(name);
-            Taxon node = source.highest(name);
-            Taxon unode = this.highest(name);
+            Taxon skelnode = highest(skel, name);
+            Taxon node = highest(source, name);
+            Taxon unode = highest(this, name);
             if (node != null)
                 node.setDivision(skelnode);
             if (unode != null)
@@ -146,7 +146,7 @@ public class UnionTaxonomy extends Taxonomy {
 
     /*
 	boolean checkDivisionsFromSkeleton(Taxon div, Taxonomy source) {
-		Taxon unode = this.highest(div.name);
+		Taxon unode = highest(this, div.name);
 		if (div.children != null) {
 			Taxon hit = null, miss = null;
 			for (Taxon child : div.children) {
@@ -160,7 +160,7 @@ public class UnionTaxonomy extends Taxonomy {
 		}
 		if (unode != null) {
 			unode.setDivision(unode);
-			Taxon node = source.highest(div.name);
+			Taxon node = highest(source, div.name);
 			if (node != null &&
 				(node.mapped == null || node.mapped == unode)) {   // Cf. notSame
 				node.setDivision(unode);
@@ -203,9 +203,9 @@ public class UnionTaxonomy extends Taxonomy {
 			// under all possible synonyms
 			for (int j = 0; j < names.length; ++j) {
 				String name = names[j];
-				Taxon m1 = source.highest(name);
+				Taxon m1 = highest(source, name);
 				if (m1 != null) n1 = m1;
-				Taxon m2 = this.highest(name);
+				Taxon m2 = highest(this, name);
 				if (m2 != null) div = m2;
 			}
 			if (div != null) {
@@ -222,12 +222,88 @@ public class UnionTaxonomy extends Taxonomy {
 			System.out.println("Pinned " + count + " out of " + pins.length);
 	}
 
+	// Most rootward node in this taxonomy having a given name
+	public Taxon highest(Taxonomy tax, String name) { // See pin()
+		List<Node> l = tax.lookup(name);
+		if (l == null) return null;
+		Taxon best = null, otherbest = null;
+		int depth = 1 << 30;
+		for (Node nodenode : l) {
+            Taxon node = nodenode.taxon();
+			int d = node.measureDepth();
+			if (d < depth) {
+				depth = d;
+				best = node;
+				otherbest = null;
+			} else if (d == depth)
+				otherbest = node;
+		}
+		if (otherbest != null) {
+			if (otherbest == best)
+				// shouldn't happen
+				System.err.format("** Multiply indexed: %s %s %s\n", best, otherbest, depth);
+			else
+				System.err.format("** Ambiguous division name: %s %s %s\n", best, otherbest, depth);
+            return null;
+		}
+		return best;
+	}
+
+    // -----
+
+	// unode is a preexisting node in this taxonomy.
+
+	public void alignWith(Taxon node, Taxon unode, String reason) {
+        try {
+            Answer answer = Answer.yes(node, unode, reason, null);
+            this.alignWith(node, unode, answer);
+            answer.maybeLog();
+        } catch (Exception e) {
+            System.err.format("Exception in alignWith\n");
+            e.printStackTrace();
+        }
+    }
+
+    // Set the 'mapped' property of this node, carefully
+	public void alignWith(Taxon node, Taxon unode, Answer answer) {
+		if (node.mapped == unode) return; // redundant
+        if (!(unode.taxonomy == this)) {
+            System.out.format("** Alignment target %s is not in a union taxonomy\n", node);
+            Taxon.backtrace();
+        } else if (node.taxonomy == this) {
+            System.out.format("** Alignment source %s is not in a source taxonomy\n", unode);
+            Taxon.backtrace();
+        } else if (node.noMrca() != unode.noMrca()) {
+            System.out.format("** attempt to unify forest %s with non-forest %s\n",
+                              node, unode);
+            Taxon.backtrace();
+        } else if (node.mapped != null) {
+			// Shouldn't happen - assigning a single source taxon to two
+			//	different union taxa
+			if (node.report("Already assigned to node in union:", unode))
+				Taxon.backtrace();
+		} else {
+            node.mapped = unode;
+            node.answer = answer;
+            if (node.name != null && unode.name != null && !node.name.equals(unode.name))
+                Answer.yes(node, unode, "synonym-match", node.name).maybeLog();
+            if (unode.comapped != null) {
+                // Union node has already been matched to, but synonyms are OK
+                if (unode.comapped != node)
+                    node.markEvent("lumped");
+            } else
+                unode.comapped = node;
+        }
+    }
+
 	// -----
 
     // Absorb a new source taxonomy
 
 	public void absorb(SourceTaxonomy tax) {
         try {
+            if (tax.idspace == null)
+                setIdspace(tax);
             this.mergeIn(tax);
         } catch (Exception e) {
             e.printStackTrace();
@@ -909,6 +985,37 @@ public class UnionTaxonomy extends Taxonomy {
 		if (m.taxonomy != this)
 			return null;
 		return m;
+	}
+
+    // Usually the idspace is set before we get here, bu for debugging
+    // it's handy to have the following 'logic'...
+
+	void setIdspace(Taxonomy tax) {
+		if (tax.idspace != null) return;
+        idspace = tax.idspace;
+		if (idspace == null) {
+            List<Node> probe = tax.lookup("Caenorhabditis elegans");
+            if (probe != null) {
+                String id = probe.get(0).taxon().id;
+                if (id.equals("6239")) idspace = "ncbi";
+                else if (id.equals("2283683")) idspace = "gbif";
+                else if (id.equals("395048")) idspace = "ott";
+                else if (id.equals("100968828")) idspace = "aux"; // preottol
+            }
+        }
+		// TEMPORARY KLUDGE
+		if (idspace == null) {
+			List<Node> probe2 = tax.lookup("Asterales");
+			if (probe2 != null) {
+				String id = probe2.get(0).taxon().id;
+				if (id.equals("4209")) idspace = "ncbi";
+				if (id.equals("414")) idspace = "gbif";
+				if (id.equals("1042120")) idspace = "ott";
+			}
+		}
+        if (idspace == null)
+            idspace = "tax";
+        tax.idspace = idspace;
 	}
 
 }

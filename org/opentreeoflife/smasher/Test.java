@@ -14,7 +14,7 @@ public class Test {
 
     public static void main(String argv[]) throws Exception {
         System.out.println("Hello");
-        Taxonomy.getTaxonomy("(a,b)c");
+        Taxonomy.getTaxonomy("(a,b)c", "z");
     }
 
     static boolean sameTree(Taxon node1, Taxon node2) {

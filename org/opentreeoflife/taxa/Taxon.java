@@ -14,6 +14,8 @@ import java.util.Collection;
 import java.io.File;
 
 public class Taxon extends Node {
+	public String name;         // TEMPORARY
+
     // name and taxonomy are inherited from Node
 	public String id = null;
 	public Taxon parent = null;
@@ -44,6 +46,10 @@ public class Taxon extends Node {
     }
 
     public Taxon taxon() { return this; }
+
+    public boolean taxonNameIs(String othername) {
+        return this.name.equals(othername);
+    }
 
     public Iterable<Taxon> descendants(final boolean includeSelf) {
         final Taxon node = this;
@@ -325,79 +331,6 @@ public class Taxon extends Node {
 			return this.sourceIds.get(0);
 		else
 			return null;
-	}
-
-    // This is used when the union node is NOT new
-
-    public void transferProperties(Taxon unode) {
-        if (this.name != null) {
-            if (unode.name == null)
-                unode.setName(this.name);
-            else
-                // ???
-                unode.taxonomy.addSynonym(this.name, unode);
-        }
-
-		if ((unode.rank == Taxonomy.NO_RANK || unode.rank.equals("samples"))
-            && (this.rank != Taxonomy.NO_RANK))
-            unode.rank = this.rank;
-
-        int flagsToAdd = (this.properFlags &
-                          (Taxonomy.FORCED_VISIBLE | Taxonomy.EDITED |
-                           Taxonomy.EXTINCT));
-        // Song and dance related to Bivalvia, Blattodea and a few others
-        if ((this.properFlags & Taxonomy.EXTINCT) != 0
-            && (unode.properFlags & Taxonomy.EXTINCT) == 0
-            && !this.name.equals(unode.name)) {
-            if (this.markEvent("extinct-transfer-prevented"))
-                System.out.format("** Preventing transfer of extinct flag from %s to %s\n", this, unode);
-            flagsToAdd &= ~Taxonomy.EXTINCT;
-        }
-		unode.addFlag(flagsToAdd);
-
-        // No change to hidden or incertae sedis flags.  Union node
-        // has precedence.
-
-        unode.addSource(this);
-        if (this.sourceIds != null)
-            for (QualifiedId id : this.sourceIds)
-                unode.addSourceId(id);
-
-        // ??? retains pointers to source taxonomy... may want to fix for gc purposes
-        if (unode.answer == null)
-            unode.answer = this.answer;
-	}
-
-        
-    public Taxon alignWithNew(Taxonomy target, String reason) {
-        Taxon newnode = this.dup(target, reason);
-        this.mapped = newnode;
-        newnode.comapped = this;
-        this.answer = Answer.yes(this, newnode, reason, null);
-        answer.maybeLog();
-        return newnode;
-    }
-
-	// Duplicate single source node yielding a source or union node
-
-	public Taxon dup(Taxonomy target, String reason) {
-
-		Taxon newnode = new Taxon(target, this.name);
-
-        // Compare this with transferProperties(newnode)
-		newnode.rank = this.rank;
-
-        // Retain placement flags, since the usual case is that we're
-        // going to attach this in a pretty similar place
-		newnode.properFlags = this.properFlags;
-
-        if (this.sourceIds != null)
-            // Unusual
-            newnode.sourceIds = new ArrayList<QualifiedId>(this.sourceIds);
-
-        // This might be the place to report on homonym creation
-
-		return newnode;
 	}
 
 	// Add most of the otherwise unmapped nodes to the union taxonomy,
@@ -909,6 +842,21 @@ public class Taxon extends Node {
     public boolean isInfraspecific() {
 		return ((this.properFlags | this.inferredFlags) &
 				Taxonomy.INFRASPECIFIC) != 0;
+    }
+
+    public int flagsToAdd(Taxon unode) {
+        int flagsToAdd = (this.properFlags &
+                          (Taxonomy.FORCED_VISIBLE | Taxonomy.EDITED |
+                           Taxonomy.EXTINCT));
+        // Song and dance related to Bivalvia, Blattodea and a few others
+        if ((this.properFlags & Taxonomy.EXTINCT) != 0
+            && (unode.properFlags & Taxonomy.EXTINCT) == 0
+            && !this.name.equals(unode.name)) {
+            if (this.markEvent("extinct-transfer-prevented"))
+                System.out.format("** Preventing transfer of extinct flag from %s to %s\n", this, unode);
+            flagsToAdd &= ~Taxonomy.EXTINCT;
+        }
+        return flagsToAdd;
     }
 
 	// ----- Methods intended for use in jython scripts -----

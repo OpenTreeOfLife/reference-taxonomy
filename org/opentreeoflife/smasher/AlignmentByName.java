@@ -285,7 +285,7 @@ public class AlignmentByName extends Alignment {
 					List<Node> unodes = union.lookup(node.name);
 					if (unodes != null)
 						for (Node unode : unodes)
-							if (unode.name.equals(node.name)) {
+							if (unode.taxonNameIs(node.name)) {
                                 seen.add(node.name);
                                 todo.add(node.name);
                                 break;

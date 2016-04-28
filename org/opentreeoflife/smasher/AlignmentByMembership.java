@@ -160,7 +160,7 @@ public class AlignmentByMembership extends Alignment {
             List<Node> unionNodes = dest.lookup(node.name);
             if (unionNodes != null)
                 for (Node unode : unionNodes)
-                    if (unode.name.equals(node.name)) {
+                    if (unode.taxonNameIs(node.name)) {
                         Taxon utaxon = unode.taxon();
                         if (!differentDivisions(node, utaxon))
                             candidates.add(utaxon);
@@ -198,7 +198,7 @@ public class AlignmentByMembership extends Alignment {
                         List<Node> unionNodes = dest.lookup(name);
                         if (unionNodes != null)
                             for (Node unode : unionNodes)
-                                if (unode.name.equals(node.name)) {
+                                if (unode.taxonNameIs(node.name)) {
                                     Taxon utaxon = unode.taxon();
                                     if (!differentDivisions(node, utaxon))
                                         candidates.add(utaxon);

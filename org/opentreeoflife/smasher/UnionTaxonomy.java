@@ -992,8 +992,47 @@ class MergeMachine {
         for (Taxon node : source.taxa()) {
             Taxon unode = node.mapped;
             if (unode != null)
-                node.transferProperties(unode);
+                transferProperties(node, unode);
         }
+    }
+
+    // This is used when the union node is NOT new
+
+    public void transferProperties(Taxon node, Taxon unode) {
+        if (node.name != null) {
+            if (unode.name == null)
+                unode.setName(node.name);
+            else
+                // ???
+                unode.taxonomy.addSynonym(node.name, unode);
+        }
+
+		if ((unode.rank == Taxonomy.NO_RANK || unode.rank.equals("samples"))
+            && (node.rank != Taxonomy.NO_RANK))
+            unode.rank = node.rank;
+
+		unode.addFlag(node.flagsToAdd(unode));
+
+        // No change to hidden or incertae sedis flags.  Union node
+        // has precedence.
+
+        unode.addSource(node);
+        if (node.sourceIds != null)
+            for (QualifiedId id : node.sourceIds)
+                unode.addSourceId(id);
+
+        // ??? retains pointers to source taxonomy... may want to fix for gc purposes
+        if (unode.answer == null)
+            unode.answer = node.answer;
+	}
+
+    public Taxon alignWithNew(Taxon node, Taxonomy target, String reason) {
+        Taxon newnode = target.dupWithoutId(node, reason);
+        node.mapped = newnode;
+        newnode.comapped = node;
+        node.answer = Answer.yes(node, newnode, reason, null);
+        node.answer.maybeLog();
+        return newnode;
     }
 
     Map<String, Integer> reasonCounts = new HashMap<String, Integer>();
@@ -1186,7 +1225,7 @@ class MergeMachine {
     Taxon acceptNew(Taxon node, String reason) {
         // dup makes the new node placed, iff the source node is.
         // various other properties carry over as well.
-        Taxon newnode = node.alignWithNew(union, reason);
+        Taxon newnode = alignWithNew(node, union, reason);
         newnode.addSource(node);
         return newnode;
 	}
@@ -1460,7 +1499,7 @@ abstract class Criterion {
 			return false;
 		}
 		for (Node alt : alts)
-			if (alt != taxon && alt.name.equals(taxon.name))
+			if (alt != taxon && alt.taxonNameIs(taxon.name))
 				return true;
 		return false;
 	}

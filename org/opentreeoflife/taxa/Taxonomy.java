@@ -106,10 +106,11 @@ public abstract class Taxonomy {
     // delete a synonym
     public void removeFromNameIndex(Node node, String name) {
 		List<Node> nodes = node.taxonomy.lookup(name);
+        // node.name is name for every node in nodes
         if (nodes != null) {
             nodes.remove(node);
             if (nodes.size() == 0)
-                node.taxonomy.nameIndex.remove(node.name);
+                node.taxonomy.nameIndex.remove(name);
         }
 	}
 
@@ -966,7 +967,7 @@ public abstract class Taxonomy {
 	// Returns true if a change was made
     // compare addToNameIndex
 
-	public boolean addSynonym(String syn, Node node) {
+	public boolean addSynonym(String syn, Taxon node) {
         if (node.name != null && node.name.equals(syn))
             return true;
 		if (node.taxonomy != this)
@@ -1485,7 +1486,7 @@ public abstract class Taxonomy {
     // Recursion
 	// node is in source taxonomy, tax is the destination taxonomy ('union' or similar)
 	static Taxon select(Taxon node, Taxonomy tax) {
-		Taxon sam = dup(node, tax, "select");
+		Taxon sam = tax.dup(node, "select");
 		if (node.children != null)
 			for (Taxon child : node.children) {
 				Taxon c = select(child, tax);
@@ -1536,7 +1537,7 @@ public abstract class Taxonomy {
 	}
 
 	Taxon selectToDepth(Taxon node, Taxonomy tax, int depth) {
-		Taxon sam = dup(node, tax, "selectToDepth");
+		Taxon sam = tax.dup(node, "selectToDepth");
 		if (node.children != null && depth > 0)
 			for (Taxon child : node.children) {
 				Taxon c = selectToDepth(child, tax, depth-1);
@@ -1562,13 +1563,13 @@ public abstract class Taxonomy {
 		if (node.isHidden()) return null;
 		Taxon sam = null;
 		if (node.children == null)
-			sam = dup(node, tax, "selectVisible");
+			sam = tax.dup(node, "selectVisible");
 		else
 			for (Taxon child : node.children) {
 				Taxon c = selectVisible(child, tax);
 				if (c != null) {
 					if (sam == null)
-						sam = dup(node, tax, "selectVisible");
+						sam = tax.dup(node, "selectVisible");
 					sam.addChild(c);
 				}
 			}
@@ -1645,7 +1646,7 @@ public abstract class Taxonomy {
 		if (newChildren.size() == 1)
 			return newChildren.get(0);
 
-		Taxon sam = dup(node, tax, "sample");
+		Taxon sam = tax.dup(node, "sample");
 		for (Taxon c : newChildren)
 			sam.addChild(c);
 		return sam;
@@ -1678,7 +1679,7 @@ public abstract class Taxonomy {
 
 	Taxon chop(Taxon node, int m, int n, List<Taxon> chopped, Taxonomy tax) {
 		int c = node.count();
-		Taxon newnode = dup(node, tax, "sample");
+		Taxon newnode = tax.dup(node, "sample");
 		if (m < c && c <= n) {
 			newnode.setName(newnode.name + " (" + node.count() + ")");
 			chopped.add(node);
@@ -1690,12 +1691,37 @@ public abstract class Taxonomy {
 		return newnode;
 	}
 
-    public static Taxon dup(Taxon node, Taxonomy tax, String reason) {
-        Taxon newnode = node.dup(tax, reason);
+    // Make a duplicate here of a node in another taxonomy
+
+    public Taxon dup(Taxon node, String reason) {
+        Taxon newnode = dupWithoutId(node, reason);
         if (node.id != null)
             newnode.setId(node.id);
         return newnode;
     }
+
+	// Duplicate single source node yielding a selection or union node
+
+	public Taxon dupWithoutId(Taxon node, String reason) {
+
+		Taxon newnode = new Taxon(this, node.name);
+
+        // Compare this with transferProperties(newnode)
+		newnode.rank = node.rank;
+
+        // Retain placement flags, since the usual case is that we're
+        // going to attach this in a pretty similar place
+		newnode.properFlags = node.properFlags;
+
+        if (node.sourceIds != null)
+            // Unusual.  This hack is causing too much trouble and really ought to be disabled.
+            newnode.sourceIds = new ArrayList<QualifiedId>(node.sourceIds);
+
+        // This might be the place to report on homonym creation
+
+		return newnode;
+	}
+
 
     // Idempotent
 	public void deforestate() {
@@ -2039,14 +2065,14 @@ public abstract class Taxonomy {
 				List<Node> sheep = this.lookup(name);
 				if (sheep == null) continue;
 				{	boolean win = false;
-					for (Node n : sheep) if (n.name.equals(name)) win = true;
+					for (Node n : sheep) if (n.taxonNameIs(name)) win = true;
 					if (!win) continue;	  }
 
 				String namea = name.substring(0,name.length()-2) + "ea";
 				List<Node> goats = this.lookup(namea);
 				if (goats == null) continue;
 				{	boolean win = false;
-					for (Node n : goats) if (n.name.equals(namea)) win = true;
+					for (Node n : goats) if (n.taxonNameIs(namea)) win = true;
 					if (!win) continue;	  }
 
 				if (sheep != null && goats != null) {
@@ -2092,7 +2118,7 @@ public abstract class Taxonomy {
 				// This is extremely ad hoc.  Need a more general theory.
 				List<Node> replacement = new ArrayList<Node>();
 				for (Node node : probe)
-					if (node.name.equals(name))
+					if (node.taxonNameIs(name))
 						replacement.add(node);
 				if (replacement.size() == 1) probe = replacement;
 			}

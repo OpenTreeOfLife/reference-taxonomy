@@ -76,7 +76,10 @@ public abstract class Taxonomy {
     // Every taxonomy defines a namespace, although not every node has a name.
 
 	public List<Node> lookup(String name) {
-        return this.nameIndex.get(name);
+        if (name == null)
+            return null;
+        else
+            return this.nameIndex.get(name);
 	}
 
     public int numberOfNames() {
@@ -117,7 +120,6 @@ public abstract class Taxonomy {
     // utility
 	public Taxon unique(String name) {
 		List<Node> probe = this.lookup(name);
-		// TBD: Maybe rule out synonyms?
 		if (probe != null && probe.size() == 1)
 			return probe.get(0).taxon();
 		else 
@@ -967,27 +969,34 @@ public abstract class Taxonomy {
 	// Returns true if a change was made
     // compare addToNameIndex
 
-	public boolean addSynonym(String syn, Taxon node) {
-        if (node.name != null && node.name.equals(syn))
+	public boolean addSynonym(String name, Taxon node) {
+        return addSynonym(name, node, "synonym");
+    }
+
+	public boolean addSynonym(String name, Taxon taxon, String type) {
+        if (taxon.name != null && taxon.name.equals(name))
             return true;
-		if (node.taxonomy != this)
-			System.err.println("!? Synonym for a node that's not in this taxonomy: " + syn + " " + node);
-		List<Node> nodes = this.lookup(syn);
+		if (taxon.taxonomy != this)
+			System.err.println("!? Synonym for a taxon that's not in this taxonomy: " + name + " " + taxon);
+		List<Node> nodes = this.lookup(name);
 		if (nodes == null) {
 			nodes = new ArrayList<Node>(1);
-			this.nameIndex.put(syn, nodes);
-            nodes.add(node);
+			this.nameIndex.put(name, nodes);
+            if (true)
+                nodes.add(taxon);
+            else
+                nodes.add(new Synonym(name, type, taxon));
             return true;
 		} else {
             // We don't want to create a homonym.
-            return nodes.contains(node);
+            return nodes.contains(taxon);
             /*
 			for (Taxon n : nodes)
                 if (n == node)
                     return true; // already present (shouldn't happen)
             if (false)
                 // There are gazillions of these warnings.
-                System.err.format("Making %s a synonym of %s would create a homonym\n", syn, node);
+                System.err.format("Making %s a synonym of %s would create a homonym\n", name, node);
             return false;       // shouldn't happen
             */
 		}
@@ -2185,7 +2194,6 @@ public abstract class Taxonomy {
 				return null;
 			}
 		}
-
 	}
 
 	public Taxon taxonThatContains(String name, String descendant) {

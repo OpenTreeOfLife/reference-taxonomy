@@ -14,8 +14,6 @@ import java.util.Collection;
 import java.io.File;
 
 public class Taxon extends Node {
-	public String name;         // TEMPORARY
-
     // name and taxonomy are inherited from Node
 	public String id = null;
 	public Taxon parent = null;
@@ -939,6 +937,15 @@ public class Taxon extends Node {
         return true;
 	}
 
+    public boolean hasName(String name) {
+        List<Node> nodes = this.taxonomy.lookup(name);
+        if (nodes == null) return false;
+        for (Node node : nodes)
+            if (node.taxon() == this)
+                return true;
+        return false;
+    }
+
 	public void synonym(String name) {
 		if (!this.taxonomy.addSynonym(name, this))
 			System.err.format("| Synonym already present: %s %s\n", this, name);
@@ -1037,24 +1044,15 @@ public class Taxon extends Node {
                 if (setp) {
                     this.setName(name);
                     return true;
-                }
-            } else if (this.name.equals(name)) {
+                } else
+                    return false;
+            } else if (this.hasName(name)) {
                 return true;
-            } else {
-                List<Node> nodes = this.taxonomy.lookup(name);
-                if (nodes == null) {
-                    if (setp) {
-                        this.taxonomy.addSynonym(name, this);
-                        return true;
-                    }
-                } else {
-                    if (nodes.contains(this)) {
-                        return true;
-                    } else if (setp) {
-                        return this.taxonomy.addSynonym(name, this);
-                    }
-                }
-            }
+            } else if (setp) {
+                this.taxonomy.addSynonym(name, this);
+                return true;
+            } else
+                return false;
         } else {
             if (this.name == null)
                 return true;    // yes, it does not have that name
@@ -1062,18 +1060,25 @@ public class Taxon extends Node {
                 if (setp) {
                     this.name = this.name + " NOT"; // or maybe null
                     return true;                    // yes, it does not have this name.
-                }
+                } else
+                    return false;
             } else {
                 List<Node> nodes = this.taxonomy.lookup(name);
                 if (nodes == null)
                     return true;
                 else if (setp) {
-                    nodes.remove(this);
+                    Node syn = null;
+                    for (Node node : nodes)
+                        if (node.taxon() == this) {
+                            syn = node;
+                            break;
+                        }
+                    nodes.remove(syn);
                     return true;
-                }
+                } else
+                    return false;
             }
         }
-        return false;
     }
 
 
@@ -1094,10 +1099,6 @@ public class Taxon extends Node {
 				else if (count == 10)
 					System.out.format("	 ...\n");
 		}
-		// Very inefficient, but this is not in an inner loop
-		for (String name : this.taxonomy.allNames())
-			if (this.taxonomy.lookup(name).contains(this) && !name.equals(this.name))
-				System.out.format("Synonym: %s\n", name);
 		if (this.sourceIds != null) {
 			if (this.sourceIds.size() == 1)
 				System.out.format("Source: %s\n", this.getSourceIdsString());
@@ -1109,6 +1110,10 @@ public class Taxon extends Node {
 			Flag.printFlags(this.properFlags, this.inferredFlags, System.out);
 			System.out.println();
 		}
+		// Very inefficient, but this is not in an inner loop
+		for (String name : this.taxonomy.allNames())
+			if (this.hasName(name) && !name.equals(this.name))
+				System.out.format("Synonym: %s\n", name);
 	}
 
     // Used to explain why a cycle would be created

@@ -31,8 +31,8 @@ def test():
         Whether_same('Mammal', 'Mammal', False),
     ]
     make_claims(tax, new_claims)
-    passed = test_claims(tax, expectations)
-    passed = test_claims(tax, new_claims)
+    passed = test_claims(tax, expectations, windy=True)
+    passed = test_claims(tax, new_claims, windy=True)
     find_surprises(tax, surprises)
     return passed
 
@@ -50,10 +50,10 @@ def make_claim(tax, claim):
         print '** claim seemed to be made, but not verified:', stringify(claim)
     return True
 
-def test_claims(tax, claims):
+def test_claims(tax, claims, windy=False):
     passed = True
     for claim in claims:
-        if not claim.check(tax): 
+        if not claim.check(tax, windy): 
             print '** test failed:', stringify(claim)
             passed = False
     return passed
@@ -121,9 +121,9 @@ class Whether_same:
 
         return False
 
-    def check(self, taxonomy):
-        source_taxon = resolve_in(self.source, taxonomy, windy=False)
-        target_taxon = resolve_in(self.target, taxonomy, windy=False)
+    def check(self, taxonomy, windy=False):
+        source_taxon = resolve_in(self.source, taxonomy, windy)
+        target_taxon = resolve_in(self.target, taxonomy, windy)
         if source_taxon != None and target_taxon != None:
             return (source_taxon == target_taxon) == self.whether
         return not self.whether
@@ -151,7 +151,7 @@ class Has_child:                # replaces .take
                 return parent_taxon.take(child_taxon)
         return False
 
-    def check(self, taxonomy):
+    def check(self, taxonomy, windy=False):
         child_taxon = resolve_in(self.child, taxonomy)
         parent_taxon = resolve_in(self.parent, taxonomy)
         if child_taxon != None and parent_taxon != None:
@@ -175,7 +175,7 @@ class Whether_monophyletic:
             return taxon.whetherMonophyletic(self.whether, True)
         return False
 
-    def check(self, taxonomy):
+    def check(self, taxonomy, windy=False):
         taxon = resolve_in(self.designator, taxonomy)
         if taxon != None:
             return taxon.whetherMonophyletic(self.whether, False)
@@ -198,7 +198,7 @@ class None_good:
             return taxon.prune()
         return False
 
-    def check(self, taxonomy):
+    def check(self, taxonomy, windy=False):
         return len(get_candidates(self.designator, taxonomy)) == 0
 
 # Whether it should have any children ('trim')
@@ -214,7 +214,7 @@ class Children_no_good:
             return taxon.trim()
         return False
 
-    def check(self, taxonomy):
+    def check(self, taxonomy, windy=False):
         taxon = resolve_in(self.designator, taxonomy)
         if taxon != None:
             return taxon.children == None
@@ -237,7 +237,7 @@ class Whether_visible:
                 return taxon.hide()
         return False
 
-    def check(self, taxonomy):
+    def check(self, taxonomy, windy=False):
         taxon = resolve_in(self.designator, taxonomy)
         return taxon.isHidden() == self.whether
 
@@ -258,7 +258,7 @@ class Whether_extant:
                 return taxon.extinct()
         return False
 
-    def check(self, taxonomy):
+    def check(self, taxonomy, windy=False):
         taxon = resolve_in(self.designator, taxonomy)
         return taxon.isExtant() == self.whether
 
@@ -277,7 +277,7 @@ class All_hidden:
             return taxon.hideDescendants()
         return False
 
-    def check(self, taxonomy):
+    def check(self, taxonomy, windy=False):
         taxon = resolve_in(self.designator, taxonomy)
         if (taxon != None):
             return taxon.isHidden()
@@ -342,11 +342,11 @@ def resolve_in(designator, taxonomy, windy=True):
         return candidates[0]
     elif len(candidates) == 0:
         if windy:
-            print '** no taxon %s in %s (%s)' % (stringify(designator), taxonomy.getTag(), windy)
+            print '| no taxon %s in %s (%s)' % (stringify(designator), taxonomy.getTag(), windy)
         return None
     else:
         if windy:
-            print '** %s is ambiguous' % stringify(designator)
+            print '| %s is ambiguous' % stringify(designator)
             for candidate in candidates:
                 print ' ', candidate
         return None
@@ -359,7 +359,8 @@ def get_candidates(designator, taxonomy):
         if candidates == None:
             return []
         else:
-            return candidates
+            return map(lambda node:node.taxon(),
+                       candidates)
     else:
         return designator.generate(taxonomy)
 

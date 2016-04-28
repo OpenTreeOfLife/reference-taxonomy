@@ -179,7 +179,7 @@ public class Smasher {
 
 	static void test() {
 		Taxonomy tax = SourceTaxonomy.parseNewick("(a,b,(e,f)c)d");
-		for (Taxon node : tax)
+		for (Taxon node : tax.taxa())
 			System.out.println(node);
 	}
 

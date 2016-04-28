@@ -35,7 +35,7 @@ public class Reportx {
 	//   ott.setSkeleton(skel)
 	public static void bogotypes(Taxonomy tax) {
 		Map<Taxon, Taxon> bogotypes = new HashMap<Taxon, Taxon>();
-		for (Taxon node : tax) {
+		for (Taxon node : tax.taxa()) {
 			Taxon div = node.getDivision();
 			if (div != null) {
 				Taxon have = bogotypes.get(div);

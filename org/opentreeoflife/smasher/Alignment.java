@@ -50,7 +50,7 @@ public abstract class Alignment {
 
 			// Could do a breakdown of matches and nonmatches by reason
 
-			for (Taxon node : source) {
+			for (Taxon node : source.taxa()) {
 				++total;
 				if (union.lookup(node.name) == null)
 					++nonamematch;

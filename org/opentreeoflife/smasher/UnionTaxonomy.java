@@ -94,7 +94,7 @@ public class UnionTaxonomy extends Taxonomy {
 	// Method usually used on union taxonomies, I would think...
 	public void setSkeletonUnion(SourceTaxonomy skel) {
 		// Prepare
-		for (Taxon div : skel)
+		for (Taxon div : skel.taxa())
 			div.setDivision(div);
 
 		UnionTaxonomy union = (UnionTaxonomy)this;
@@ -102,7 +102,7 @@ public class UnionTaxonomy extends Taxonomy {
 
 		// Copy skeleton into union
 		union.absorb(skel);		// ?
-		for (Taxon div : skel) div.mapped.setId(div.id); // ??!!!
+		for (Taxon div : skel.taxa()) div.mapped.setId(div.id); // ??!!!
 	}
 
 	// this = a union taxonomy.
@@ -256,7 +256,7 @@ public class UnionTaxonomy extends Taxonomy {
             Stat s2a = new Stat("mapped by name only (ambiguous)");
             Stat s3 = new Stat("mapped by membership only");
             Stat s4 = new Stat("incompatible mappings");
-            for (Taxon node : source) {
+            for (Taxon node : source.taxa()) {
                 Answer nAnswer = n.answer(node);
                 Answer mAnswer = m.answer(node);
                 if (nAnswer == null && mAnswer == null)
@@ -309,7 +309,7 @@ public class UnionTaxonomy extends Taxonomy {
 
         Map<Taxon, String> assignments = new HashMap<Taxon, String>();
 
-		for (Taxon node : idsource) {
+		for (Taxon node : idsource.taxa()) {
             // Consider using node.id as the id for the union node it maps to
 			Taxon unode = node.mapped;
 			if (unode != null &&
@@ -753,7 +753,7 @@ public class UnionTaxonomy extends Taxonomy {
 
 		if (false) {
 			Set<String> seen = new HashSet<String>();
-			for (Taxon node : this)	// preorder
+			for (Taxon node : this.taxa())	// preorder
 				if (!seen.contains(node.name)) {
 					List<Answer> answers = this.logs.get(node.name);
 					if (answers == null) continue; //shouldn't happen
@@ -962,7 +962,7 @@ class MergeMachine {
         int startcount = union.count();
 
         // This was supposed to be taken care of... guess not
-        for (Taxon node : source)
+        for (Taxon node : source.taxa())
             if (node.mapped != null)
                 node.mapped.comapped = node;
 
@@ -989,7 +989,7 @@ class MergeMachine {
 
     // Called on source taxonomy to transfer flags, rank, etc. to union taxonomy
     void transferProperties(Taxonomy source) {
-        for (Taxon node : source) {
+        for (Taxon node : source.taxa()) {
             Taxon unode = node.mapped;
             if (unode != null)
                 node.transferProperties(unode);
@@ -1005,7 +1005,7 @@ class MergeMachine {
                           startcount,
                           source.rootCount(),
                           source.count());
-        for (Taxon node : source) {
+        for (Taxon node : source.taxa()) {
             String reason;
             Answer answer = node.answer;
             if (answer == null) reason = "** no answer";

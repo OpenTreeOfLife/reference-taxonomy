@@ -39,7 +39,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser; 
 import org.json.simple.parser.ParseException;
 
-public abstract class Taxonomy implements Iterable<Taxon> {
+public abstract class Taxonomy {
     private Map<String, List<Node>> nameIndex = new HashMap<String, List<Node>>();
 	public Map<String, Taxon> idIndex = new HashMap<String, Taxon>();
     public Taxon forest = new Taxon(this, "");
@@ -73,7 +73,57 @@ public abstract class Taxonomy implements Iterable<Taxon> {
         this.eventlogger = eventlogger;
     }
 
-    // Nodes
+    // Every taxonomy defines a namespace, although not every node has a name.
+
+	public List<Node> lookup(String name) {
+        return this.nameIndex.get(name);
+	}
+
+    public int numberOfNames() {
+        return this.nameIndex.size();
+    }
+
+    public Collection<String> allNames() {
+        return this.nameIndex.keySet();
+    }
+
+    // compare addSynonym
+	void addToNameIndex(Node node, String name) {
+		List<Node> nodes = this.lookup(name);
+		if (nodes == null) {
+			nodes = new ArrayList<Node>(1); //default is 10
+            nodes.add(node);
+			this.nameIndex.put(name, nodes);
+		} else if (!nodes.contains(node)) {
+            nodes.add(node);
+            if (nodes.size() == 75) {
+                // should use eventlogger
+                System.err.format("** %s is the 75th to have the name '%s'\n", node, name);
+            }
+        }
+    }
+
+    // delete a synonym
+    public void removeFromNameIndex(Node node, String name) {
+		List<Node> nodes = node.taxonomy.lookup(name);
+        if (nodes != null) {
+            nodes.remove(node);
+            if (nodes.size() == 0)
+                node.taxonomy.nameIndex.remove(node.name);
+        }
+	}
+
+    // utility
+	public Taxon unique(String name) {
+		List<Node> probe = this.lookup(name);
+		// TBD: Maybe rule out synonyms?
+		if (probe != null && probe.size() == 1)
+			return probe.get(0).taxon();
+		else 
+			return this.lookupId(name);
+	}
+
+    // Roots - always Taxons, never Synonyms.
 
     public Iterable<Taxon> roots() {
         if (forest.children == null)
@@ -104,6 +154,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
             return this.forest.children.size();
     }
 
+    // The hierarchicy (see Taxon methods)
+
 	public int count() {
         return this.forest.count() - 1;
 	}
@@ -118,61 +170,8 @@ public abstract class Taxonomy implements Iterable<Taxon> {
         return this.forest.descendants(false);
     }
 
-	public Iterator<Taxon> iterator() {
-        return this.taxa().iterator();
-    }
-
 	public Taxon lookupId(String id) {
         return this.idIndex.get(id);
-	}
-
-    // Names
-
-	public List<Node> lookup(String name) {
-        return this.nameIndex.get(name);
-	}
-
-    public int numberOfNames() {
-        return this.nameIndex.size();
-    }
-
-    public Collection<String> allNames() {
-        return this.nameIndex.keySet();
-    }
-
-	public Taxon unique(String name) {
-		List<Node> probe = this.lookup(name);
-		// TBD: Maybe rule out synonyms?
-		if (probe != null && probe.size() == 1)
-			return probe.get(0).taxon();
-		else 
-			return this.lookupId(name);
-	}
-
-    // compare addSynonym
-	void addToNameIndex(Node node, String name) {
-		List<Node> nodes = this.lookup(name);
-		if (nodes == null) {
-			nodes = new ArrayList<Node>(1); //default is 10
-            nodes.add(node);
-			this.nameIndex.put(name, nodes);
-		} else if (!nodes.contains(node)) {
-            nodes.add(node);
-            if (nodes.size() == 75) {
-                // should use eventlogger
-                System.err.format("** %s is the 75th to have the name '%s'\n", node, name);
-            }
-        }
-    }
-
-    // delete a synonym
-    public void removeFromNameIndex(Node node, String name) {
-		List<Node> nodes = node.taxonomy.lookup(name);
-        if (nodes != null) {
-            nodes.remove(node);
-            if (nodes.size() == 0)
-                node.taxonomy.nameIndex.remove(node.name);
-        }
 	}
 
 	static int globalTaxonomyIdCounter = 1;
@@ -377,7 +376,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
         // Fix up the flags - putatively inherited flags that aren't, need to be promoted to original
         int flaggers = 0;
-        for (Taxon node: this)
+        for (Taxon node : this.taxa())
             if (!node.isRoot()) {
                 int wrongFlags = node.inferredFlags & ~(node.parent.properFlags | node.parent.inferredFlags);
                 if (wrongFlags != 0) {
@@ -693,7 +692,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	void elideRedundantIntermediateTaxa() {
 		Set<Taxon> knuckles = new HashSet<Taxon>();
-		for (Taxon node : this) {
+		for (Taxon node : this.taxa()) {
 			if (!node.isRoot()
 				&& node.parent.children.size() == 1
 				&& node.children != null)
@@ -768,7 +767,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	}
 
     public void cleanRanks() {
-        for (Taxon node : this)
+        for (Taxon node : this.taxa())
             if (node.rank == null && node.name != null) {
                 if (Taxon.isBinomial(node.name))
                     if (node.parent != null && node.parent.rank != null && node.parent.rank.equals("genus")) {
@@ -1046,7 +1045,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	void dumpHidden(String filename) throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
 		int count = 0;
-		for (Taxon node : this) {
+		for (Taxon node : this.taxa()) {
 			if (node.isHidden()) {
 				++count;
 				out.format("%s\t%s\t%s\t%s\t", node.id, node.name, node.getSourceIdsString(),
@@ -1786,7 +1785,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
 	public long maxid() {
 		long id = -1;
-		for (Taxon node : this) {
+		for (Taxon node : this.taxa()) {
             if (node.id != null) {
                 try {
                     long idAsLong = Long.parseLong(node.id);
@@ -1807,7 +1806,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 		long maxid = this.maxid();
 		if (sourcemax > maxid) maxid = sourcemax;
         long start = maxid;
-		for (Taxon node : this)
+		for (Taxon node : this.taxa())
 			if (node.id == null) {
 				node.setId(Long.toString(++maxid));
 				node.markEvent("new-id");
@@ -1818,7 +1817,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 
     void assignDummyIds() {
         long minid = -1L;
-		for (Taxon node : this)
+		for (Taxon node : this.taxa())
 			if (node.id == null) {
                 String id;
                 do {
@@ -2011,7 +2010,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	}
 
 	public void parentChildHomonymReport() {
-		for (Taxon node : this)
+		for (Taxon node : this.taxa())
 			if (!node.isRoot()
                 && node.parent.name != null
 				&& node.parent.name.equals(node.name))
@@ -2265,7 +2264,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 	// other would typically be an older version of the same taxonomy.
 	public void reportDifferences(Taxonomy other, PrintStream out) {
 		out.format("uid\twhat\tname\tsource\tfrom\tto\n");
-		for (Taxon node : other) {
+		for (Taxon node : other.taxa()) {
 			Taxon newnode = this.lookupId(node.id);
 			if (newnode == null) {
 				List<Node> newnodes = this.lookup(node.name);
@@ -2302,7 +2301,7 @@ public abstract class Taxonomy implements Iterable<Taxon> {
 					reportDifference("exposed", node, null, null, out);
 			}
 		}
-		for (Taxon newnode : this) {
+		for (Taxon newnode : this.taxa()) {
 			Taxon node = other.lookupId(newnode.id);
 			if (node == null) {
 				if (other.lookup(newnode.name) != null)

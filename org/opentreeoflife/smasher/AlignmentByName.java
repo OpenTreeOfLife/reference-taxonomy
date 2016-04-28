@@ -138,7 +138,7 @@ public class AlignmentByName extends Alignment {
         this.source.reset();    // depths and comapped
         this.union.reset();
 
-        for (Taxon node : this.source)
+        for (Taxon node : this.source.taxa())
             node.seq = NOT_SET;
 
 		for (Taxon root : this.union.roots())
@@ -280,7 +280,7 @@ public class AlignmentByName extends Alignment {
 			// way.	 This is a kludge.
 
 			// primary / primary
-			for (Taxon node : source)
+			for (Taxon node : source.taxa())
 				if (!seen.contains(node.name)) {
 					List<Node> unodes = union.lookup(node.name);
 					if (unodes != null)
@@ -292,12 +292,12 @@ public class AlignmentByName extends Alignment {
                             }
 				}
 			// primary / synonym
-			for (Taxon unode : union)
+			for (Taxon unode : union.taxa())
 				if (source.lookup(unode.name) != null &&
 					!seen.contains(unode.name))
 					{ seen.add(unode.name); todo.add(unode.name); }
 			// synonym / primary    -- maybe disallow !?
-			for (Taxon node : source)
+			for (Taxon node : source.taxa())
 				if (union.lookup(node.name) != null &&
 					!seen.contains(node.name))
 					{ seen.add(node.name); todo.add(node.name); }

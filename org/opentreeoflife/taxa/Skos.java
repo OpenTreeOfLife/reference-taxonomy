@@ -30,7 +30,7 @@ public class Skos {
                 manager.applyChanges(addAssertions);
                 
                 
-                for (Taxon node : tax) {
+                for (Taxon node : tax.taxa()) {
                     if (node == null) {
                         System.err.println("null in nodes list!?" );
                     }

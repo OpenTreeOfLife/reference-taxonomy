@@ -111,6 +111,8 @@ public abstract class Taxonomy {
 
     // compare addSynonym
 	void addToNameIndex(Node node, String name) {
+        if (name == null)
+            throw new RuntimeException("bug " + node);
 		List<Node> nodes = this.lookup(name);
 		if (nodes == null) {
 			nodes = new ArrayList<Node>(1); //default is 10
@@ -1495,8 +1497,10 @@ public abstract class Taxonomy {
 		int homs = 0;
 		int sibhoms = 0;
 		int cousinhoms = 0;
-		for (String name : allNames()) {
+		for (String name : this.allNames()) {
 			List<Node> nodes = this.lookup(name);
+            if (nodes == null)
+                throw new RuntimeException(String.format("bug %s %s", name, this));
 			if (nodes.size() > 1) {
 				boolean homsp = false;
 				boolean sibhomsp = false;
@@ -1726,49 +1730,51 @@ public abstract class Taxonomy {
 	// ----- METHODS FOR USE IN JYTHON SCRIPTS -----
 
 	public Taxon taxon(String name) {
-		Taxon probe = maybeTaxon(name);
-		if (probe == null)
-			System.err.format("** No unique taxon found with this name: %s\n", name);
-		return probe;
+		return maybeTaxon(name, true);
 	}
 
 	// Look up a taxon by name or unique id.  Name must be unique in the taxonomy.
 	public Taxon maybeTaxon(String name) {
-		List<Node> probe = this.lookup(name);
-		if (probe != null) {
-			if (probe.size() > 1) {
-				// This is extremely ad hoc.  Need a more general theory.
-				List<Node> replacement = new ArrayList<Node>();
-				for (Node node : probe)
-					if (node.taxonNameIs(name))
-						replacement.add(node);
-				if (replacement.size() == 1) probe = replacement;
-			}
-			if (probe.size() == 1)
-				return probe.get(0).taxon();
-			else {
-				System.err.format("** Ambiguous taxon name: %s\n", name);
-				for (Node altnode : probe) {
-                    Taxon alt = altnode.taxon();
-					String u = alt.uniqueName();
-					if (u.equals("")) {
-						if (alt.name.equals(name))
-							System.err.format("**   %s %s\n", alt.id, name);
-						else
-							System.err.format("**   %s %s (synonym for %s)\n", alt.id, name, alt.name);
-					} else
-						System.err.format("**   %s %s\n", alt.id, u);
-				}
-				return null;
-			}
-		}
-		return this.lookupId(name);
+        return maybeTaxon(name, false);
+    }
+
+	public Taxon maybeTaxon(String name, boolean windy) {
+		List<Node> nodes = this.lookup(name);
+		if (nodes != null) {
+			if (nodes.size() == 1)
+				return nodes.get(0).taxon();
+
+            // Filter out synonyms (if there are any...)
+            List<Node> nonsynonyms = new ArrayList<Node>();
+            for (Node node : nodes)
+                if (!(node instanceof Synonym))
+                    nonsynonyms.add(node);
+            if (nonsynonyms.size() == 1)
+                return nonsynonyms.get(0).taxon();
+
+            System.err.format("** Ambiguous taxon name: %s\n", name);
+            for (Node node : nodes) {
+                String uniq = node.uniqueName();
+                if (uniq.equals("")) uniq = name;
+                System.err.format("**   %s %s\n", node.taxon().id, uniq);
+            }
+            return null;
+		} else {
+            Taxon probe = this.lookupId(name);
+            if (windy && probe == null)
+                System.err.format("** No taxon found with this name: %s\n", name);
+            return probe;
+        }
 	}
 
 	public Taxon taxon(String name, String context) {
 		Taxon probe = maybeTaxon(name, context);
-		if (probe == null)
-			System.err.format("** No unique taxon found with name %s in context %s\n", name, context);
+		if (probe == null) {
+			System.err.format("** No taxon found with name %s in context %s\n", name, context);
+            probe = maybeTaxon(name);
+            if (probe != null)
+                System.err.format("    but note %s\n", probe);
+        }
 		return probe;
 	}
 
@@ -1802,7 +1808,7 @@ public abstract class Taxonomy {
 			if (otherCandidate == null)
 				return candidate;
 			else {
-				System.err.format("** Ancestor %s of %s does not disambiguate %s and %s\n",
+				System.err.format("** Ancestor %s of %s does not distinguish %s from %s\n",
 								  context, name, candidate.id, otherCandidate.id);
 				return null;
 			}
@@ -1812,7 +1818,10 @@ public abstract class Taxonomy {
 	public Taxon taxonThatContains(String name, String descendant) {
 		List<Taxon> nodes = filterByDescendant(name, descendant);
 		if (nodes == null) {
-			System.err.format("** No taxon with name %s with ancestor %s\n", descendant, name);
+			System.err.format("** Taxon %s doesn't contain anything named %s\n", name, descendant);
+            Taxon probe = maybeTaxon(name);
+            if (probe != null)
+                System.err.format("   but note %s\n", probe);
 			return null;
 		} else if (nodes.size() == 1)
 			return nodes.get(0);
@@ -1981,6 +1990,10 @@ public abstract class Taxonomy {
         this.prepareForDump();
         new InterimFormat(this).dump(outprefix, sep);
 	}
+
+	public void dump(String outprefix) throws IOException {
+        dump(outprefix, "\t|\t");
+    }
 
     // Overridden by UnionTaxonomy
     public void dumpExtras(String outprefix) throws IOException {

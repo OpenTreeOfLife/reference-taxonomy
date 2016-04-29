@@ -422,11 +422,13 @@ class InterimFormat {
                         ;
                     else if (type.equals("equivalent_name"))
                         ;
+                    else if (type.equals("valid")) // IRMNG - redundant
+                        continue;
                     else if (type.equals(""))
                         type = "synonym";
-                    else if (type.equals("equivalent name"))
+                    else if (type.equals("equivalent name")) // NCBI
                         type = "equivalent_name";
-                    else if (type.equals("misspelling"))
+                    else if (type.equals("misspelling")) // NCBI
                         type = "misspelling_of";
                     else
                         // type material, authority, common name, blast name
@@ -442,8 +444,8 @@ class InterimFormat {
                         node.setName(syn);
 						++zcount;
 					} else if (!node.name.equals(syn)) {
-						tax.addSynonym(syn, node, type);
-						++count;
+						if (tax.addSynonym(syn, node, type))
+                            ++count;
 					}
 				}
 			}
@@ -464,16 +466,14 @@ class InterimFormat {
                     synonymp = true;
                     Synonym syn = (Synonym)node;
                     Taxon taxon = syn.taxon;
-                    String uniq = taxon.uniqueName();
+                    String uniq = node.uniqueName();
                     String source = syn.source != null ? syn.source.toString() : "";
-                    if (uniq.length() == 0) uniq = taxon.name;
                     if (taxon.id == null) {
                         if (!taxon.isRoot()) {
                             System.out.format("** Synonym for node with no id: %s\n", taxon.name);
                             taxon.show();
                         }
                     } else
-                        uniq = name + " (synonym for " + uniq + ")";
                         out.println(name + sep +
                                     taxon.id + sep +
                                     syn.type + sep +

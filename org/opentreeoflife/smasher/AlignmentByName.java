@@ -114,7 +114,7 @@ public class AlignmentByName extends Alignment {
                     if (div != null && !div[0].isRoot()
                         // Hmm... allow siblings (and cousins) to merge.  Blumeria graminis
                         && (div[0] != mrca && div[1] != node.mapped)) {
-                        if (outlaws < 50)
+                        if (outlaws < 10)
                             System.out.format("! %s maps by name to %s which is disjoint from mrca %s; they meet at %s\n",
                                               node, node.mapped, mrca, div[0].parent);
                         ++outlaws;
@@ -242,9 +242,9 @@ public class AlignmentByName extends Alignment {
 	}
 
     public static void testWitness() throws Exception {
-        SourceTaxonomy t1 = Taxonomy.getTaxonomy("(a,b,c)d", "z");
-        SourceTaxonomy t2 = Taxonomy.getTaxonomy("(a,b,c)d", "z");
-        UnionTaxonomy u = new UnionTaxonomy();
+        SourceTaxonomy t1 = Taxonomy.getTaxonomy("(a,b,c)d", "z1");
+        SourceTaxonomy t2 = Taxonomy.getTaxonomy("(a,b,c)d", "z2");
+        UnionTaxonomy u = new UnionTaxonomy("u");
         u.mergeIn(t1);
         u.mergeIn(t2);
         System.out.println(witness(t1.taxon("d"), u.taxon("d")));

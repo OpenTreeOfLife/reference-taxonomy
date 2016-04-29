@@ -99,9 +99,11 @@ def patch_silva(silva):
 
     # 2015-10-12 JAR
     # It is proving difficult to separate the three Ctenophora homonyms.  
+    # (Ctenophora is a genus of diatoms.)
     # Maybe it  will help to add the phylum to our SILVA subset.  The 
     # phylum is in the full SILVA and contains cluster AF293678, which 
     # has ref seq identified as Pleurobrachia pileus.
+    print '(ignore warning about Ctenophora)'
     silva.taxon('Metazoa').take(silva.newTaxon('Ctenophora', 'phylum', 'silva:AF293678/#4'))
 
 
@@ -294,7 +296,7 @@ def patch_fung(fung):
 
     # 2015-10-06 JAR noticed while debugging deprecated taxa list:
     # This should cover Basidiomycota, Zygomycota, Glomeromycota, and Ascomycota
-    for taxon in fung:
+    for taxon in fung.taxa():
         if taxon.rank == 'phylum' and taxon.isRoot():
             fung.taxon('Fungi').take(taxon)
 

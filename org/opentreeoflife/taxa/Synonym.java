@@ -9,7 +9,7 @@ public class Synonym extends Node {
     QualifiedId source = null;   // idspace: ncbi, gbif, etc. (for union only)
 
     public Synonym(String name, String type, Taxon taxon) {
-        super(taxon.taxonomy, name);
+        super(taxon.taxonomy, name); // does addToNameIndex
         this.taxon = taxon;
         this.type = type;
     }
@@ -18,6 +18,12 @@ public class Synonym extends Node {
 
     public boolean taxonNameIs(String othername) {
         return taxon.name.equals(othername);
+    }
+
+    public String uniqueName() {
+        String uniq = taxon.uniqueName();
+        if (uniq.length() == 0) uniq = taxon.name;
+        return String.format("%s (synonym for %s)", this.name, uniq);
     }
 
 }

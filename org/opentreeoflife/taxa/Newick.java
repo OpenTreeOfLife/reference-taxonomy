@@ -47,7 +47,7 @@ class Newick {
 			if (node != null || children.size() > 0) {
 				if (node == null) {
 					// kludge
-					node = new Taxon(dest, "");
+					node = new Taxon(dest, null);
 				}
 				for (Taxon child : children)
 					if (child.name == null || !child.name.startsWith("null"))

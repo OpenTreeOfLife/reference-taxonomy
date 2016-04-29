@@ -62,14 +62,18 @@ public class UnionTaxonomy extends Taxonomy {
 
 	static boolean windyp = true;
 
-	UnionTaxonomy() {
-        super();
+	UnionTaxonomy(String idspace) {
+        super(idspace);
 		this.setTag("union");
         this.eventlogger = new EventLogger();
 	}
 
 	public static UnionTaxonomy newTaxonomy() {
-		return new UnionTaxonomy();
+		return new UnionTaxonomy(null);
+	}
+
+	public static UnionTaxonomy newTaxonomy(String idspace) {
+		return new UnionTaxonomy(idspace);
 	}
 
     public void addSource(SourceTaxonomy source) {
@@ -235,7 +239,7 @@ public class UnionTaxonomy extends Taxonomy {
 				depth = d;
 				best = node;
 				otherbest = null;
-			} else if (d == depth)
+			} else if (d == depth && node != best)
 				otherbest = node;
 		}
 		if (otherbest != null) {
@@ -408,8 +412,8 @@ public class UnionTaxonomy extends Taxonomy {
 
     // Return negative, zero, positive depending on whether id1 is better, same, worse than id2
     int compareIds(String id1, String id2) {
-        Integer p1 = this.importantIdsFoo.get(id1);
-        Integer p2 = this.importantIdsFoo.get(id2);
+        Integer p1 = this.importantIdsImportance.get(id1);
+        Integer p2 = this.importantIdsImportance.get(id2);
         if (p1 != null && p2 != null)
             // Longer study id list is better (ergo negative answer)
             return p2 - p1;
@@ -428,7 +432,7 @@ public class UnionTaxonomy extends Taxonomy {
 	private static Pattern tabPattern = Pattern.compile("\t");
 
     SourceTaxonomy importantIds = null;
-    Map<String, Integer> importantIdsFoo = new HashMap<String, Integer>();
+    Map<String, Integer> importantIdsImportance = new HashMap<String, Integer>();
 
     // e.g. "ids-that-are-otus.tsv", False
     // e.g. "ids-in-synthesis.tsv", True
@@ -450,12 +454,13 @@ public class UnionTaxonomy extends Taxonomy {
             Taxon node = this.importantIds.lookupId(id);
             if (node == null) {
                 node = new Taxon(this.importantIds, name);
+                node.addFlag(Taxonomy.UNPLACED); // prevent warning
                 this.importantIds.addRoot(node);
+                node.setId(id);
             }
-            node.setId(id);
 
             // old
-            importantIdsFoo.put(id, row[1].length());
+            importantIdsImportance.put(id, row[1].length());
 
             node.setSourceIds(row[1]);
             if (seriousp)
@@ -1202,7 +1207,7 @@ class MergeMachine {
                     // This is the philosophically troublesome case.
                     // Could be either an outlier/mistake, or something serious.
                     if (node.markEvent("sibling-sink mismatch"))
-                        System.out.format("!! Parent of %s's children's images, %s, does not descend from %s\n",
+                        System.out.format("!! Parent of %s's children's images, %s, is not a descendant of %s\n",
                                           node, common, sink);
                     inconsistent(node, sink);
                 } else if (refinementp(node, sink)) {
@@ -1266,6 +1271,7 @@ class MergeMachine {
                         // If we do decide to allow these, we
                         // ought to flag the siblings somehow.
                         if (node.markEvent("not-refinement/nonsurjective"))
+                          if (false)  // too much verbiage
                             System.out.format("! Trouble with inserting %s into %s is %s\n", node, target, child);
                         return false;
                     }
@@ -1727,7 +1733,8 @@ abstract class Criterion {
     static QualifiedId maybeQualifiedId(Taxon node) {
         QualifiedId qid = node.putativeSourceRef();
         if (qid != null) return qid;
-        if (node.id != null) return node.getQualifiedId();
+        if (node.id != null && node.taxonomy.getIdspace() != null)
+            return node.getQualifiedId();
         else return null;
     }
 

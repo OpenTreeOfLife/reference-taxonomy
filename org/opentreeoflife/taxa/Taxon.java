@@ -41,8 +41,7 @@ public class Taxon extends Node {
     public boolean inSynthesis = false; // used only for final annotation
 
     public Taxon(Taxonomy tax, String name) {
-        super(tax, name);
-        this.setName(name);
+        super(tax, name);       // does addToNameIndex
     }
 
     public Taxon taxon() { return this; }
@@ -142,7 +141,7 @@ public class Taxon extends Node {
 	}
 
 	public Synonym newSynonym(String name, String type) {
-        if (this.name == null)
+        if (this.name == null || name == null)
             return null;        // No synonyms for anonymous nodes
 		if (this.name.equals(name)) {
             return null;        // No self-synonyms
@@ -409,19 +408,18 @@ public class Taxon extends Node {
 			twinkie = "+";		// Name in common
 
 		String ids;
-		QualifiedId ref = this.putativeSourceRef();
-		if (ref != null)		// this is from idsource
-			ids = (this.id == null ? "" : this.id) + "=" + ref;
-		else {
-			ids = this.getSourceIdsString();
-			if (ids.length() == 0) {
-                if (this.id == null)
-                    ids = "-";
-                else
-                    ids = this.getQualifiedId().toString();
-			} else				// this is from union
-				ids = "{" + ids + "}";
-		}
+        if (this.sourceIds != null) {
+            QualifiedId ref = this.putativeSourceRef();
+            if (ref != null)		// this is from idsource
+                ids = (this.id == null ? "" : this.id) + "=" + ref;
+            else
+                ids = this.getSourceIdsString();
+        } else if (this.taxonomy.getIdspace() != null)
+            ids = this.getQualifiedId().toString();
+        else if (this.id != null)
+            ids = this.id;
+        else
+            ids = "-";
 
 		return 
 			"(" +
@@ -770,9 +768,19 @@ public class Taxon extends Node {
     }
 
 	public String longUniqueName() {
+        if (this.name == null) {
+            if (this.id == null)
+                return "(anonymous taxon)";
+            else
+                return String.format("(anonymous taxon with id %s)", this.id);
+        }
+
 		List<Node> nodes = this.taxonomy.lookup(this.name);
-		if (nodes == null)
-            return this.getQualifiedId().toString();
+		if (nodes == null) {
+            System.out.format("** Not in name index: %s\n", this);
+            return "(this shouldn't happen)";
+        }
+                
 		boolean homonymp = false;
 
 		// Ancestor that distinguishes this taxon from all others with same name
@@ -907,8 +915,8 @@ public class Taxon extends Node {
         } else {
             // if (!newchild.isDetached()) newchild.detach();  - not needed given change to newTaxon.
             if (newchild.descendsFrom(this))
-                System.err.format("* Note: %s already descends from %s, lifting it from %s to child\n",
-                                  newchild, this, newchild.parent);
+                System.err.format("* Note: now making %s a child of %s; it was already in %s\n",
+                                  newchild, newchild.parent, this);
             newchild.changeParent(this, 0);
 			this.addFlag(Taxonomy.EDITED);
             return true;

@@ -141,7 +141,7 @@ def create_ott():
 
 
     # Assign OTT ids to taxa that don't have them, re-using old ids when possible
-    ids = Taxonomy.getTaxonomy('tax/prev_ott/')
+    ids = Taxonomy.getTaxonomy('tax/prev_ott/', 'ott')
 
     # Assign old ids to nodes in the new version
     ott.assignIds(ids)
@@ -412,7 +412,7 @@ def align_ncbi_to_silva(ncbi, silva, ott):
                 # print '** no NCBI taxon', ncbi_id, 'for cluster', silva_cluster_id
                 True
         else:
-            print '** no such cluster', silva_cluster_id
+            print '| no such cluster', silva_cluster_id
     if wins > 0:
         print wins, 'NCBI ids mapped to clusters'
     if namings > 0:
@@ -987,7 +987,7 @@ def unextinct_ncbi(ncbi, ott):
 def report_on_h2007(h2007, ott):
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/40
     print '-- Checking realization of h2007'
-    for taxon in h2007:
+    for taxon in h2007.taxa():
         im = ott.image(taxon)
         if im != None:
             if im.children == None:

@@ -11,6 +11,8 @@ public class QualifiedId {
 	private static Pattern colonPattern = Pattern.compile(":");
 
 	public QualifiedId(String prefix, String id) {
+        if (prefix == null)
+            throw new IllegalArgumentException("wanted non-null qid prefix");
 		this.prefix = prefix; this.id = id;
 	}
 	public QualifiedId(String qid) {

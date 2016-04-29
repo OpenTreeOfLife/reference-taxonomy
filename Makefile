@@ -8,7 +8,7 @@
 JAVAFLAGS=-Xmx14G
 
 # Modify as appropriate
-WHICH=2.10draft1
+WHICH=2.10draft2
 PREV_WHICH=2.9
 
 #  $^ = all prerequisites
@@ -81,7 +81,7 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
 		    feed/misc/chromista_spreadsheet.py
 	@rm -f *py.class
 	@mkdir -p tax/ott
-	bin/jython make-ott.py
+	time bin/jython make-ott.py
 	echo $(WHICH) >tax/ott/version.txt
 
 fung: tax/fung/taxonomy.tsv tax/fung/synonyms.tsv

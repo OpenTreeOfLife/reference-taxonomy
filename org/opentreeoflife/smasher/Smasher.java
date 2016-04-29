@@ -1,5 +1,8 @@
 /*
 
+  This class is not used for taxonomy synthesis any more; synthesis is
+  now coordinated by jython scripts.
+
   Open Tree Reference Taxonomy (OTT) taxonomy combiner.
 
   In jython, say:
@@ -32,6 +35,8 @@ import org.python.util.ReadlineConsole;
 */
 
 public class Smasher {
+
+    private static String defaultIdspace = "ott";
 
 	public static void main(String argv[]) throws Exception {
 
@@ -72,7 +77,7 @@ public class Smasher {
 					else if (argv[i].equals("--ids")) {
 						// To smush or not to smush?
 						UnionTaxonomy union = promote(tax); tax = union;
-						SourceTaxonomy idsource = Taxonomy.getTaxonomy(argv[++i], "ott");
+						SourceTaxonomy idsource = Taxonomy.getTaxonomy(argv[++i], defaultIdspace);
 						union.assignIds(idsource);
 					}
 
@@ -149,7 +154,7 @@ public class Smasher {
 
     static UnionTaxonomy promote(Taxonomy tax) {
         if (tax instanceof SourceTaxonomy) {
-            UnionTaxonomy union = new UnionTaxonomy();
+            UnionTaxonomy union = new UnionTaxonomy(defaultIdspace);
             union.mergeIn((SourceTaxonomy)tax);
             return union;
         } else if (tax instanceof UnionTaxonomy)

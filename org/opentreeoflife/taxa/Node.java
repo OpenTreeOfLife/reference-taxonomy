@@ -7,11 +7,14 @@ public abstract class Node {
     public Node(Taxonomy tax, String name) {
         this.taxonomy = tax;
         this.name = name;
-        this.taxonomy.addToNameIndex(this, name);
+        if (name != null)
+            this.taxonomy.addToNameIndex(this, name);
     }
 
     public abstract Taxon taxon();
 
     public abstract boolean taxonNameIs(String othername);
+
+    public abstract String uniqueName();
 
 }

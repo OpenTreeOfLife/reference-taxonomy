@@ -172,8 +172,8 @@ public class Smasher {
     */
 	}
 
-	static void test() {
-		Taxonomy tax = SourceTaxonomy.parseNewick("(a,b,(e,f)c)d");
+	static void test() throws IOException {
+		Taxonomy tax = Taxonomy.getNewick("(a,b,(e,f)c)d", "z");
 		for (Taxon node : tax.taxa())
 			System.out.println(node);
 	}

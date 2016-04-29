@@ -1092,7 +1092,7 @@ class MergeMachine {
         if (node.name != null) {
             if (unode.name == null)
                 unode.setName(node.name);
-            else
+            else if (unode.name != node.name)
                 // ???
                 unode.taxonomy.addSynonym(node.name, unode, "synonym");
         }

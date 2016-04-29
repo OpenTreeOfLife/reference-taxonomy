@@ -141,6 +141,24 @@ public class Taxon extends Node {
         this.taxonomy.addToNameIndex(this, name);
 	}
 
+	public Synonym newSynonym(String name, String type) {
+        if (this.name == null)
+            return null;        // No synonyms for anonymous nodes
+		if (this.name.equals(name)) {
+            return null;        // No self-synonyms
+        } else {
+            List<Node> nodes = this.taxonomy.lookup(name);
+            if (nodes == null) {
+                Synonym syn = new Synonym(name, type, this);
+                this.taxonomy.addToNameIndex(syn, name);
+                return syn;
+            } else {
+                // We don't want to create a homonym.
+                return null;
+            }
+        }
+	}
+
 	public void clobberName(String name) {
 		String oldname = this.name;
 		if (!oldname.equals(name)) {

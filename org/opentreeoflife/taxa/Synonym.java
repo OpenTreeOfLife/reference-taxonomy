@@ -5,8 +5,8 @@ public class Synonym extends Node {
     // name inherited from class Node
 
     Taxon taxon;
-    String type;                // synonym, authority, common name, etc.
-    String source = null;       // idspace: ncbi, gbif, etc. (for union only)
+    String type;                 // synonym, authority, common name, etc.
+    QualifiedId source = null;   // idspace: ncbi, gbif, etc. (for union only)
 
     public Synonym(String name, String type, Taxon taxon) {
         super(taxon.taxonomy, name);

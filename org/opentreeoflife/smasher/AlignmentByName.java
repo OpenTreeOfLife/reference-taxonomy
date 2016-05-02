@@ -135,6 +135,8 @@ public class AlignmentByName extends Alignment {
 	int nextSequenceNumber = 0;
 
 	public void reset() {
+        System.out.format("start reset %s\n", source);
+
 		this.nextSequenceNumber = 0;
         this.source.reset();    // depths and comapped
         this.union.reset();
@@ -146,8 +148,9 @@ public class AlignmentByName extends Alignment {
 			assignBrackets(root);
 
         // unnecessary?
-        this.source.inferFlags(); 
-        this.union.inferFlags(); 
+        // this.source.inferFlags(); 
+        // this.union.inferFlags(); 
+        System.out.format("finished reset %s\n", source);
 
 	}
 

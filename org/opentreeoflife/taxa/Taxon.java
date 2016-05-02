@@ -372,23 +372,24 @@ public class Taxon extends Node {
 	}
 
 	public QualifiedId getQualifiedId() {
+        String space = this.taxonomy.getIdspace();
 		if (this.id != null)
-			return new QualifiedId(this.taxonomy.getIdspace(), this.id);
+			return new QualifiedId(space, this.id);
         else if (this.name != null) {
-			System.err.println("| [getQualifiedId] Taxon has no id, using name: " + this.name);
-			return new QualifiedId(this.taxonomy.getIdspace(), this.name);
+			System.err.format("| [getQualifiedId] Taxon has no id, using name: %s:%s\n", space, this.name);
+			return new QualifiedId(space, this.name);
         } else if (this.noMrca()) {
             // Shouldn't happen
 			System.err.println("| [getQualifiedId] Forest");
-			return new QualifiedId(this.taxonomy.getIdspace(), "<forest>");
+			return new QualifiedId(space, "<forest>");
         } else if (this.parent == null) {
             // Shouldn't happen
 			System.err.println("| [getQualifiedId] Detached");
-            return new QualifiedId(this.taxonomy.getIdspace(), "<detached>");
+            return new QualifiedId(space, "<detached>");
         } else {
 			// What if from a Newick string?
 			System.err.println("| [getQualifiedId] Nondescript");
-            return new QualifiedId(this.taxonomy.getIdspace(), "<nondescript>");
+            return new QualifiedId(space, "<nondescript>");
         }
 	}
 

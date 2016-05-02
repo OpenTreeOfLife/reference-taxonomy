@@ -342,12 +342,15 @@ public abstract class Taxonomy {
     // parser was used
 
     public void postLoadActions() {
+        // Flag changes - make sure inherited flags have something to inherit from
+        this.fixFlags();
+
         this.placeBiggest(); // 'life' or biggest is placed
 
         // Topology changes:
 
         // Elide incertae-sedis-like containers and set some flags
-		this.analyzeContainers();
+		this.elideContainers();
 
         // Foo
 		this.elideRedundantIntermediateTaxa();
@@ -355,34 +358,18 @@ public abstract class Taxonomy {
 		if (this.rootCount() == 0)
 			System.err.println("** No root nodes!");
 
-        // Flag changes:
-
-        // Fix up the flags - putatively inherited flags that aren't, need to be promoted to original
-        int flaggers = 0;
-        for (Taxon node : this.taxa())
-            if (!node.isRoot()) {
-                int wrongFlags = node.inferredFlags & ~(node.parent.properFlags | node.parent.inferredFlags);
-                if (wrongFlags != 0) {
-                    node.addFlag(wrongFlags);
-                    flaggers++;
-                }
-            }
-        if (flaggers > 0)
-            System.out.format("| Flags fixed for %s nodes\n", flaggers);
-
         // do we really want to do this?  it's clutter...
-        this.inferFlags();
+        // this.inferFlags();
 
         // Some statistics & reports
 		this.investigateHomonyms();
+        System.out.format("| y\n");
         int nroots = this.rootCount();
         int ntips = this.tipCount();
         int nnodes = this.count();
         int snodes = this.synonymCount();
         System.out.format("| %s roots + %s internal + %s tips = %s total, %s synonyms\n",
                           nroots, nnodes - (ntips + nroots), ntips, nnodes, snodes);
-
-        // Optional step after this: smush()
     }
 
     int synonymCount() {
@@ -399,15 +386,15 @@ public abstract class Taxonomy {
     // incertaesedisness of their children in flags.
     // This gets applied to every taxonomy, not just NCBI, on ingest.
 
-	public void analyzeContainers() {
-        analyzeContainers(forest);
+	public void elideContainers() {
+        elideContainers(forest);
 	}
 
-	public static void analyzeContainers(Taxon node) {
+	public static void elideContainers(Taxon node) {
 		// Recursive descent
 		if (node.children != null) {
 			for (Taxon child : new ArrayList<Taxon>(node.children))
-				analyzeContainers(child);
+				elideContainers(child);
 
             int flag = 0;
             if (node.name != null) {
@@ -420,7 +407,7 @@ public abstract class Taxonomy {
             }
             if (flag != 0) {
                 node.addFlag(flag);
-                // After (compare elide())
+                // After (compare elide() - why not use elide()?)
                 // Splice the node out of the hierarchy, but leave it as a
                 // residual terminal non-OTU node.
                 if (!node.isRoot()) {
@@ -432,6 +419,8 @@ public abstract class Taxonomy {
             }
         }
 	}
+
+    // If parent and child have the same name, we elide the child
 
 	void elideRedundantIntermediateTaxa() {
 		Set<Taxon> knuckles = new HashSet<Taxon>();
@@ -455,9 +444,11 @@ public abstract class Taxonomy {
                                    node.children.size())
                                   );
             else if (i == 10)
-                System.out.format("...\n");
+                System.out.format("| ...\n");
 			node.elide();
 		}
+        if (i > 0)
+            System.out.format("| Elided %s nodes\n", i);
 	}
 
 	// Fold sibling homonyms together into single taxa.
@@ -509,7 +500,7 @@ public abstract class Taxonomy {
         }
 	}
 
-    // -----
+    // ----- this appears to be unused at present -----
 
     public void cleanRanks() {
         for (Taxon node : this.taxa())
@@ -539,101 +530,7 @@ public abstract class Taxonomy {
             }
     }
 
-    // ----- Flags and such!
-
-    // Propagate heritable flags tipward.
-
-	public void inferFlags() {
-		for (Taxon root : this.roots()) {
-			this.heritFlags(root, 0);
-			this.analyzeBarren(root);
-            this.analyzeMinorRankConflicts();
-        }
-	}
-
-	private void heritFlags(Taxon node, int inferredFlags) {
-        boolean before = node.isHidden();
-		node.inferredFlags = inferredFlags;
-        if (node.name != null
-            && node.name.equals("Ephedra gerardiana"))
-            if (before != node.isHidden())
-                System.out.format("* %s hidden %s -> %s\n", node, before, node.isHidden());
-
-		if (node.rank != null && node.children != null && node.rank.equals("species"))
-			for (Taxon child : node.children)
-                child.inferredFlags |= Taxonomy.INFRASPECIFIC;
-
-		if (node.children != null) {
-			int bequest = inferredFlags | node.properFlags;		// What the children inherit
-			for (Taxon child : node.children)
-				heritFlags(child, bequest);
-		}
-	}
-
-
-	/*
-	   flags are:
-
-	   nototu # these are non-taxonomic entities that will never be made available for mapping to input tree nodes. we retain them so we can inform users if a tip is matched to one of these names
-	   unclassified # these are "dubious" taxa that will be made available for mapping but will not be included in synthesis unless they exist in a mapped source tree
-	   incertaesedis # these are (supposed to be) recognized taxa whose position is uncertain. they are generally mapped to some ancestral taxon, with the implication that a more precise placement is not possible (yet). shown in the synthesis tree whether they are mapped to a source tree or not
-	   hybrid # these are hybrids
-	   viral # these are viruses
-
-	   rules listed below, followed by keywords for that rule.
-	   rules should be applied to any names matching any keywords for that rule.
-	   flags are inherited (conservative approach), except for "incertaesedis", which is a taxonomically explicit case that we can confine to the exact relationship (hopefully).
-
-	   # removed keywords
-	   scgc # many of these are within unclassified groups, and will be treated accordingly. however there are some "scgc" taxa that are within recognized groups. e.g. http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Undef&id=939181&lvl=3&srchmode=2&keep=1&unlock . these should be left in. so i advocate removing this name and force-flagging all children of unclassified groups.
-
-	   ==== rules
-
-	   # rule 1: flag taxa and their descendents `nototu`
-	   # note: many of these are children of the "other sequences" container, but if we treat the cases individually then we will also catch any instances that may occur elsewhere (for some bizarre reason).
-	   # note: any taxa flagged `nototu` need not be otherwise flagged.
-	   other sequences
-	   metagenome
-	   artificial
-	   libraries
-	   bogus duplicates
-	   plasmids
-	   insertion sequences
-	   midvariant sequence
-	   transposons
-	   unknown
-	   unidentified
-	   unclassified sequences
-	   * .sp # apply this rule to "* .sp" taxa as well
-
-	   # rule 6: flag taxa and their descendents `hybrid`
-	   x
-
-	   # rule 7: flag taxa and their descendents `viral`
-	   viral
-	   viroids
-	   Viruses
-	   viruses
-	   virus
-
-	   # rule 3+5: if the taxon has descendents, 
-	   #			 flag descendents `unclassified` and elide,
-	   #			 else flag taxon `unclassified`.
-	   # (elide = move children to their grandparent and mark as 'not_otu')
-	   mycorrhizal samples
-	   uncultured
-	   unclassified
-	   endophyte
-	   endophytic
-
-	   # rule 2: if the taxon has descendents, 
-	   #			 flag descendents `unclassified` and elide,
-	   #			 else flag taxon 'not_otu'.
-	   environmental
-
-	   # rule 4: flag direct children `incertae_sedis` and elide taxon.
-	   incertae sedis
-	*/
+    // ----- Flags -----
 
 	// Each Taxon has two parallel sets of flags: 
 	//	 proper - applies particularly to this node
@@ -641,26 +538,9 @@ public abstract class Taxonomy {
 	//	   (where in some cases the ancestor may later be 'elided' so
 	//	   not an ancestor any more)
 
-	// NCBI only (not SILVA)
-	public void analyzeOTUs() {
-		for (Taxon root : this.roots())
-			analyzeOTUs(root);	// mutates the tree
-	}
-
-	// Set SIBLING_HIGHER flags
-	public void analyzeMinorRankConflicts() {
-		for (Taxon root : this.roots())
-			analyzeRankConflicts(root, false);  //SIBLING_HIGHER
-	}
-
-	// GBIF (and IF?) only
-	public void analyzeMajorRankConflicts() {
-		for (Taxon root : this.roots())
-			analyzeRankConflicts(root, true);
-	}
-
 	// Work in progress - don't laugh - will in due course be
 	// converting flag set representation from int to EnumSet<Flag>
+    // Should move all these to Flag class
 
     // Former containers
 	static final int WAS_CONTAINER       = (1 <<  0);  // unclassified, environmental, ic, etc
@@ -716,6 +596,118 @@ public abstract class Taxonomy {
                   Taxonomy.VIRAL |
                   Taxonomy.INCERTAE_SEDIS_ANY);
 
+    // ----- Flag inference -----
+
+    // Clean up the flags from taxonomy.tsv file.  Putatively
+    // inherited flags that aren't actually inherited need to be
+    // promoted to properly asserted.
+
+    void fixFlags() {
+        int flaggers = 0;
+        int counter = 0;
+        for (Taxon node : this.taxa()) {
+            if (!node.isRoot()) {
+                int wrongFlags = node.inferredFlags & ~(node.parent.properFlags | node.parent.inferredFlags);
+                if (wrongFlags != 0) {
+                    node.addFlag(wrongFlags);
+                    if (flaggers < 10)
+                        System.out.format("| Fixed flags %s for %s in %s\n",
+                                          Flag.flagsAsString(node),
+                                          node,
+                                          node.parent);
+                    flaggers++;
+                }
+            }
+        }
+        if (flaggers > 0)
+            System.out.format("| Flags fixed for %s nodes\n", flaggers);
+    }
+
+    // Propagate heritable flags from the top down.
+
+	public void inferFlags() {
+        int hcount = 0;
+		for (Taxon root : this.roots())
+			hcount += this.heritFlags(root, 0);
+        System.out.format("| %s nodes inheriting flags\n", hcount);
+        int bcount = 0;
+		for (Taxon root : this.roots())
+            bcount += this.analyzeBarren(root);
+        System.out.format("| %s barren nodes\n", bcount);
+        this.analyzeMinorRankConflicts();
+        System.out.format("| finished inferring\n");
+	}
+
+	private int heritFlags(Taxon node, int inferredFlags) {
+        int count = 0;
+        boolean before = node.isHidden();
+        if (node.inferredFlags != inferredFlags) {
+            node.inferredFlags = inferredFlags;
+            ++count;
+        }
+        if (node.name != null
+            && node.name.equals("Ephedra gerardiana"))
+            if (before != node.isHidden())
+                System.out.format("* %s hidden %s -> %s\n", node, before, node.isHidden());
+
+        int bequest = inferredFlags | node.properFlags;		// What the children inherit
+
+		if (node.rank != Rank.NO_RANK && node.rank.equals("species"))
+            bequest |= Taxonomy.INFRASPECIFIC;
+
+		if (node.children != null) {
+			for (Taxon child : node.children)
+				count += heritFlags(child, bequest);
+		}
+        return count;
+	}
+
+    // Propagate flags from the bottom up.
+
+	// 1. Set the (inferred) BARREN flag of any taxon that doesn't
+	// contain anything at species rank or below.
+	// 2. Propagate EXTINCT (inferred) upwards.
+
+	static private int analyzeBarren(Taxon node) {
+        int count = 0;
+		boolean barren = true;      // No species?
+		if (node.rank != null) {
+			Rank rank = Rank.getRank(node.rank);
+			if (rank != null) {
+				if (rank.level >= Rank.SPECIES_RANK.level)
+					barren = false;
+			}
+		}
+		if (node.rank == null && node.children == null)
+			// The "no rank - terminal" case
+			barren = false;
+		if (node.children != null) {
+			boolean allextinct = true;	   // Any descendant is extant?
+			for (Taxon child : node.children) {
+				count += analyzeBarren(child);
+				if ((child.inferredFlags & Taxonomy.BARREN) == 0) barren = false;
+				if ((child.inferredFlags & Taxonomy.EXTINCT) == 0) allextinct = false;
+			}
+			if (allextinct) {
+				node.inferredFlags |= EXTINCT;
+				//if (node.sourceIds != null && node.sourceIds.get(0).prefix.equals("ncbi"))
+					//;//System.out.format("| Induced extinct: %s\n", node);
+			}
+			// We could do something similar for all of the hidden-type flags
+		}
+		if (barren) {
+			node.inferredFlags |= Taxonomy.BARREN;
+            ++count;
+		} else
+			node.inferredFlags &= ~Taxonomy.BARREN;
+        return 0;
+	}
+	
+	// NCBI only (not SILVA)
+	public void analyzeOTUs() {
+		for (Taxon root : this.roots())
+			analyzeOTUs(root);	// mutates the tree
+	}
 	// analyzeOTUs: set taxon flags based on name, leading to dubious
 	// taxa being hidden.
 	// We use this for NCBI but not for SILVA.
@@ -738,52 +730,20 @@ public abstract class Taxonomy {
 				analyzeOTUs(child);
 	}
 
-	// 1. Set the (inferred) INFRASPECIFIC flag of any taxon that is a species or has
-	// one below it.  
-	// 2. Set the (inferred) BARREN flag of any taxon that doesn't
-	// contain anything at species rank or below.
-	// 3. Propagate EXTINCT (inferred) upwards.
-
-	static private void analyzeBarren(Taxon node) {
-		boolean specific = false;
-		boolean barren = true;      // No species?
-		if (node.rank != null) {
-			Rank rank = Rank.getRank(node.rank);
-			if (rank != null) {
-				if (rank == Rank.SPECIES_RANK)
-					specific = true;
-				if (rank.level >= Rank.SPECIES_RANK.level)
-					barren = false;
-			}
-		}
-		if (node.rank == null && node.children == null)
-			// The "no rank - terminal" case
-			barren = false;
-		if (node.children != null) {
-			boolean allextinct = true;	   // Any descendant is extant?
-			for (Taxon child : node.children) {
-                if (false)
-                    if (specific)
-                        child.properFlags |= Taxonomy.INFRASPECIFIC;
-                    else
-                        child.properFlags &= ~Taxonomy.INFRASPECIFIC;
-				analyzeBarren(child);
-				if ((child.inferredFlags & Taxonomy.BARREN) == 0) barren = false;
-				if ((child.inferredFlags & Taxonomy.EXTINCT) == 0) allextinct = false;
-			}
-			if (allextinct) {
-				node.inferredFlags |= EXTINCT;
-				//if (node.sourceIds != null && node.sourceIds.get(0).prefix.equals("ncbi"))
-					//;//System.out.format("| Induced extinct: %s\n", node);
-			}
-			// We could do something similar for all of the hidden-type flags
-		}
-		if (barren)
-			node.inferredFlags |= Taxonomy.BARREN;
-		else
-			node.inferredFlags &= ~Taxonomy.BARREN;
+	// Set SIBLING_HIGHER flags
+	public void analyzeMinorRankConflicts() {
+		for (Taxon root : this.roots())
+			analyzeRankConflicts(root, false);  //SIBLING_HIGHER
 	}
-	
+
+	// GBIF (and IF?) only
+	public void analyzeMajorRankConflicts() {
+        System.out.format("| looking for major rank conflicts\n");
+		for (Taxon root : this.roots())
+			analyzeRankConflicts(root, true);
+        System.out.format("| ... done\n");
+	}
+
 	// Returns the node's rank (as an int).  In general the return
 	// value should be >= parentRank, but occasionally ranks get out
 	// of order when combinings taxonomies.
@@ -939,7 +899,7 @@ public abstract class Taxonomy {
         tax2.addRoot(selection);
         this.copySelectedSynonyms(tax2);
         this.copySelectedIds(tax2);
-        tax2.inferFlags();
+        // tax2.inferFlags();
         return tax2;
     }
 
@@ -1167,8 +1127,9 @@ public abstract class Taxonomy {
         tax.placeBiggest();         // End of topology modifications
 		tax.assignDummyIds();
         tax.reset();                // maybe unnecessary; depths and comapped
-        tax.inferFlags();           // infer BARREN & INFRASPECIFIC, and herit
         Taxon biggest = tax.normalizeRoots().get(0);
+        System.out.format("| prepare flags for dump\n");
+        tax.inferFlags();           // infer BARREN & INFRASPECIFIC, and herit
         System.out.format("| Root is %s %s\n", biggest.name, Flag.toString(biggest.properFlags, 0));
     }
 
@@ -1987,6 +1948,7 @@ public abstract class Taxonomy {
 	// This gets overridden in a subclass.
     // Deforestate would have already been called, if it was going to be
 	public void dump(String outprefix, String sep) throws IOException {
+        System.out.format("| dumping to %s\n", outprefix);
         this.prepareForDump();
         new InterimFormat(this).dump(outprefix, sep);
 	}

@@ -415,24 +415,19 @@ class InterimFormat {
 								   parts[type_column] :
 								   "synonym");
 					Taxon node = tax.lookupId(id);
-                    // Keep only some synonyms
-                    if (type.equals("synonym"))
-                        ;
-                    else if (type.equals("misspelling_of"))
-                        ;
-                    else if (type.equals("equivalent_name"))
-                        ;
-                    else if (type.equals("valid")) // IRMNG - redundant
+
+                    if (type.equals("type material")) // NCBI
                         continue;
-                    else if (type.equals(""))
+                    if (type.equals("authority")) // NCBI
+                        continue;
+                    if (type.endsWith("common name")) // NCBI
+                        continue;
+                    if (type.equals("blast name")) // NCBI
+                        continue;
+                    if (type.equals("valid")) // IRMNG - redundant
+                        continue;
+                    if (type.equals(""))
                         type = "synonym";
-                    else if (type.equals("equivalent name")) // NCBI
-                        type = "equivalent_name";
-                    else if (type.equals("misspelling")) // NCBI
-                        type = "misspelling_of";
-                    else
-                        // type material, authority, common name, blast name
-                        continue;
 					if (node == null) {
 						if (false && ++losers < 10)
 							System.err.println("Identifier " + id + " unrecognized for synonym " + syn);

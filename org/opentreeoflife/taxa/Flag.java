@@ -245,3 +245,69 @@ public enum Flag {
         return out.toString();
     }
 }
+
+
+	/*
+	   flags are:
+
+	   nototu # these are non-taxonomic entities that will never be made available for mapping to input tree nodes. we retain them so we can inform users if a tip is matched to one of these names
+	   unclassified # these are "dubious" taxa that will be made available for mapping but will not be included in synthesis unless they exist in a mapped source tree
+	   incertaesedis # these are (supposed to be) recognized taxa whose position is uncertain. they are generally mapped to some ancestral taxon, with the implication that a more precise placement is not possible (yet). shown in the synthesis tree whether they are mapped to a source tree or not
+	   hybrid # these are hybrids
+	   viral # these are viruses
+
+	   rules listed below, followed by keywords for that rule.
+	   rules should be applied to any names matching any keywords for that rule.
+	   flags are inherited (conservative approach), except for "incertaesedis", which is a taxonomically explicit case that we can confine to the exact relationship (hopefully).
+
+	   # removed keywords
+	   scgc # many of these are within unclassified groups, and will be treated accordingly. however there are some "scgc" taxa that are within recognized groups. e.g. http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Undef&id=939181&lvl=3&srchmode=2&keep=1&unlock . these should be left in. so i advocate removing this name and force-flagging all children of unclassified groups.
+
+	   ==== rules
+
+	   # rule 1: flag taxa and their descendents `nototu`
+	   # note: many of these are children of the "other sequences" container, but if we treat the cases individually then we will also catch any instances that may occur elsewhere (for some bizarre reason).
+	   # note: any taxa flagged `nototu` need not be otherwise flagged.
+	   other sequences
+	   metagenome
+	   artificial
+	   libraries
+	   bogus duplicates
+	   plasmids
+	   insertion sequences
+	   midvariant sequence
+	   transposons
+	   unknown
+	   unidentified
+	   unclassified sequences
+	   * .sp # apply this rule to "* .sp" taxa as well
+
+	   # rule 6: flag taxa and their descendents `hybrid`
+	   x
+
+	   # rule 7: flag taxa and their descendents `viral`
+	   viral
+	   viroids
+	   Viruses
+	   viruses
+	   virus
+
+	   # rule 3+5: if the taxon has descendents, 
+	   #			 flag descendents `unclassified` and elide,
+	   #			 else flag taxon `unclassified`.
+	   # (elide = move children to their grandparent and mark as 'not_otu')
+	   mycorrhizal samples
+	   uncultured
+	   unclassified
+	   endophyte
+	   endophytic
+
+	   # rule 2: if the taxon has descendents, 
+	   #			 flag descendents `unclassified` and elide,
+	   #			 else flag taxon 'not_otu'.
+	   environmental
+
+	   # rule 4: flag direct children `incertae_sedis` and elide taxon.
+	   incertae sedis
+	*/
+

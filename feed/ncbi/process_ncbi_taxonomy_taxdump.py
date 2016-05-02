@@ -57,18 +57,17 @@ if __name__ == "__main__":
 	url = sys.argv[5]
 
 	aboutfilename = taxdir+"/about.json"
-	aboutfile = open(aboutfilename,"w")
-	aboutfile.write('{ "prefix": "ncbi",\n')
-	aboutfile.write('  "prefixDefinition": "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=",\n')
-	aboutfile.write('  "description": "NCBI Taxonomy",\n')
-	# Get file date from nodes.dmp in downloaddir
-	# os.path.getmtime(file)   => number of seconds since epoch
-	ncbitime = os.path.getmtime(nodesfilename)
-	tuple_time = time.gmtime(ncbitime)
-	iso_time = time.strftime("%Y-%m-%dT%H:%M:%S", tuple_time)
-	aboutfile.write('  "source": {"URL": "%s", "date": "%s"},\n'%(url, iso_time))
-	aboutfile.write('}\n')
-	aboutfile.close()
+	with open(aboutfilename, "w") as aboutfile:
+		aboutfile.write('{ "prefix": "ncbi",\n')
+		aboutfile.write('  "prefixDefinition": "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=",\n')
+		aboutfile.write('  "description": "NCBI Taxonomy",\n')
+		# Get file date from nodes.dmp in downloaddir
+		# os.path.getmtime(file)   => number of seconds since epoch
+		ncbitime = os.path.getmtime(nodesfilename)
+		tuple_time = time.gmtime(ncbitime)
+		iso_time = time.strftime("%Y-%m-%dT%H:%M:%S", tuple_time)
+		aboutfile.write('  "source": {"URL": "%s", "date": "%s"},\n'%(url, iso_time))
+		aboutfile.write('}\n')
 
 	outfile = open(taxdir+"/taxonomy.tsv","w")
 	outfilesy = open(taxdir+"/synonyms.tsv","w")
@@ -87,84 +86,89 @@ if __name__ == "__main__":
 		print namesfilename + " is not present"
 		sys.exit(0)
 
-	nodesf = open(nodesfilename,"r")
-	namesf = open(namesfilename,"r")
-
 	count = 0
 	pid = {} #key is the child id and the value is the parent
 	cid = {} #key is the parent and value is the list of children
 	nrank = {} #key is the node id and the value is the rank
-	for i in nodesf:
-		spls = i.split("\t|\t")
-		tid = spls[0].strip()
-		parentid = spls[1].strip()
-		rank = spls[2].strip()
-		pid[tid] = parentid
-		nrank[tid] = rank
-		if parentid not in cid: 
-			cid[parentid] = []
-		cid[parentid].append(tid)
-		count += 1
-		if count % 100000 == 0:
-			print count
-	nodesf.close()
+	with open(nodesfilename,"r") as nodesf:
+		for line in nodesf:
+			spls = line.split("\t|\t")
+			node_id = spls[0].strip()
+			parentid = spls[1].strip()
+			rank = spls[2].strip()
+			pid[node_id] = parentid
+			nrank[node_id] = rank
+			if parentid not in cid: 
+				cid[parentid] = []
+			cid[parentid].append(node_id)
+			count += 1
+			if count % 100000 == 0:
+				print count
 
 	# Removed "unclassified" 2013-04-25
 	skip = []
 	# skip = ["viral","other","viroids","viruses","artificial","x","environmental","unknown","unidentified","endophyte","endophytic","uncultured","scgc","libraries","virus","mycorrhizal samples"]
 	skipids = {}
 	#run through the skip ids file
-	skipidf = open(skipfile,"r")
-	for i in skipidf:
-		skipids[i.strip()] = True
-	skipidf.close()
+	if os.path.isfile(skipfile):
+		with open(skipfile,"r") as skipidf:
+			for line in skipidf:
+				skipids[line.strip()] = True
 	
 	count = 0
-	classes = []
 	idstoexclude = []
 	nm_storage = {}
 	lines = {}
 	synonyms = {}
 	namesd = []
 	allnames = []
-	for i in namesf:
-		spls = i.strip().split("\t|") #if you do \t|\t then you don't get the name class right because it is "\t|"
-		gid = spls[0].strip()
-		par = pid[gid]
-		# was nm = spls[1].strip().replace("[","").replace("]","")
-		nm = spls[1].strip()
-		homonc = spls[2].strip() #can get if it is a series here
-		nm_c = spls[3].strip()
-		if nm_c not in classes:
-			classes.append(nm_c)
-		nm_keep = True
-		nms = nm.split(" ")
-		for j in nms:
-			if j.lower() in skip:
+	with open(namesfilename,"r") as namesf:
+		for line in namesf:
+			line = line.strip()
+			spls = line.split("\t|") #if you do \t|\t then you don't get the name class right because it is "\t|"
+			node_id = spls[0].strip()
+			par = pid[node_id]
+			# was name = spls[1].strip().replace("[","").replace("]","")
+			name = spls[1].strip()
+			homonc = spls[2].strip() #can get if it is a series here
+			nm_c = spls[3].strip()	 # scientific name, synonym, etc.
+			nm_keep = True
+			name_parts = name.split(" ")
+			for j in name_parts:
+				if j.lower() in skip:
+					nm_keep = False
+			if node_id in skipids:
 				nm_keep = False
-		if gid in skipids:
-			nm_keep = False
-		if nm_keep == False:
-			idstoexclude.append(gid)
-			continue
-		if "<series>" in homonc:
-			nm = nm + " series"
-		if "subgroup <" in homonc: #corrects some nested homonyms
-			nm = homonc.replace("<","").replace(">","")
-		if nm_c != "scientific name":
-			if nm_c != "common name" and nm_c != "genbank common name" and nm_c != "type material":
-				if gid not in synonyms:
-					synonyms[gid] = []
-				synonyms[gid].append(i.strip())
-		else:
-			lines[gid] = i.strip()
-			nm_storage[gid] = nm
-			allnames.append(nm)
-		count += 1
-		if count % 100000 == 0:
-			print count
-	print "number of lines: ",count
-	namesf.close()
+			if nm_keep == False:
+				idstoexclude.append(node_id)
+				continue
+			if "<series>" in homonc:
+				name = name + " series"
+			if "subgroup <" in homonc: #corrects some nested homonyms
+				name = homonc.replace("<","").replace(">","")
+			if nm_c != "scientific name":
+				# scientific name	- the name used in OTT as primary.
+				# synonym
+				# equivalent name  - usually misspelling or spelling variant
+				# misspelling
+				# authority	 - always extends scientific name
+				# type material	 - bacterial strain as type for prokaryotic species ??
+				# common name
+				# genbank common name
+				# blast name   - 247 of them - a kind of common name
+				# in-part (e.g. Bacteria in-part: Monera)
+				# includes (what polarity?)
+				if node_id not in synonyms:
+					synonyms[node_id] = []
+				synonyms[node_id].append(line)
+			else:
+				lines[node_id] = line
+				nm_storage[node_id] = name
+				allnames.append(name)
+			count += 1
+			if count % 100000 == 0:
+				print count
+	print "number of lines in names file: ",count
 
 	#get the nameids that are double
 	c = Counter(allnames)
@@ -173,14 +177,13 @@ if __name__ == "__main__":
 		if c[i] > 1:
 			namesd.append(i)
 	ndoubles = []
-	namesf = open(namesfilename,"r")
-	for i in namesf:
-		spls = i.strip().split("\t|") #IF YOU DO \T|\T THEN YOU DON'T GET THE NAME CLASS RIGHT BECAUSE IT IS "\T|"
-		gid = spls[0].strip()
-		nm = spls[1].strip()
-		if nm in namesd:
-			ndoubles.append(gid)
-	namesf.close()
+	with open(namesfilename, "r") as namesf:
+		for line in namesf:
+			spls = line.strip().split("\t|") #IF YOU DO \T|\T THEN YOU DON'T GET THE NAME CLASS RIGHT BECAUSE IT IS "\T|"
+			node_id = spls[0].strip()
+			name = spls[1].strip()
+			if name in namesd:
+				ndoubles.append(node_id)
 
 	#now making sure that the taxonomy is functional before printing to the file
 
@@ -279,7 +282,7 @@ if __name__ == "__main__":
 	#need to print id, parent id, and name	 
 	for i in lines:
 		spls = lines[i].split("\t|\t")
-		id = spls[0].strip()
+		node_id = spls[0].strip()
 		prid = pid[spls[0]].strip()
 		sname = spls[1].strip()
 
@@ -300,8 +303,8 @@ if __name__ == "__main__":
 					synonyms[i] = []
 				# kludge, would be better to change synonyms table representation
 				synonyms[i].append('%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n' % (i, 'environmental samples', '', 'synonym'))
-		rankwrite = nrank[id]
-		outfile.write(id+"\t|\t"+prid+"\t|\t"+nametowrite+"\t|\t"+rankwrite+"\t|\t\n")
+		rankwrite = nrank[node_id]
+		outfile.write(node_id+"\t|\t"+prid+"\t|\t"+nametowrite+"\t|\t"+rankwrite+"\t|\t\n")
 
 	outfile.close()
 
@@ -311,8 +314,21 @@ if __name__ == "__main__":
 		if i in lines:
 			for j in synonyms[i]:
 				spls = j.split("\t|\t")
-				id = spls[0].strip()
+				node_id = spls[0].strip()
 				sname = spls[1].strip()
 				nametp = spls[3].strip()
-				outfilesy.write(id+"\t|\t"+sname+"\t|\t"+nametp+"\t|\t\n")
+				outfilesy.write(node_id+"\t|\t"+sname+"\t|\t"+nametp+"\t|\t\n")
 	outfilesy.close()
+
+	mergedfilename = downloaddir + "/merged.dmp"
+	if os.path.isfile(mergedfilename):
+		merge_count = 0
+		with open(mergedfilename, 'r') as mergedfile:
+			with open(taxdir + '/forwards.tsv', 'w') as forwardsfile:
+				for line in mergedfile:
+					row = line.split('|')
+					from_id = row[0].strip()
+					to_id = row[1].strip()
+					forwardsfile.write("%s\t%s\n" % (from_id, to_id))
+					merge_count += 1
+		print 'number of merges:', merge_count

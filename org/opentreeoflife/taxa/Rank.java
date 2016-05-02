@@ -55,6 +55,7 @@ public class Rank {
 		 "variety",
 		 "varietas",
 		 "subvariety",
+		 "form",                // 2016 GBIF
 		 "forma",
 		 "subform",
 		 "samples"},

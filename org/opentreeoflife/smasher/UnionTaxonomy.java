@@ -23,8 +23,6 @@ import org.opentreeoflife.taxa.EventLogger;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
@@ -34,21 +32,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
-import java.util.Iterator;
-import java.util.Comparator;
 import java.util.Collections;
 import java.util.Collection;
 import java.io.PrintStream;
 import java.io.File;
-import java.net.URI;
-import java.text.Normalizer;
-import java.text.Normalizer.Form;
-import org.json.simple.JSONObject; 
-import org.json.simple.parser.JSONParser; 
-import org.json.simple.parser.ParseException;
-import org.semanticweb.skos.*;
-import org.semanticweb.skosapibinding.SKOSManager;
-import org.semanticweb.skosapibinding.SKOSFormatExt;
 
 
 public class UnionTaxonomy extends Taxonomy {
@@ -80,7 +67,8 @@ public class UnionTaxonomy extends Taxonomy {
         source.setEventLogger(this.eventlogger);
     }
 
-	// -----
+	// ----- INITIALIZATION FOR EACH SOURCE -----
+
 	// The 'division' field of a Taxon is always either null or a
 	// taxon belonging to the skeleton taxonomy.
 
@@ -253,53 +241,6 @@ public class UnionTaxonomy extends Taxonomy {
 		return best;
 	}
 
-    // -----
-
-	// unode is a preexisting node in this taxonomy.
-
-	public void alignWith(Taxon node, Taxon unode, String reason) {
-        try {
-            Answer answer = Answer.yes(node, unode, reason, null);
-            this.alignWith(node, unode, answer);
-            answer.maybeLog();
-        } catch (Exception e) {
-            System.err.format("Exception in alignWith\n");
-            e.printStackTrace();
-        }
-    }
-
-    // Set the 'mapped' property of this node, carefully
-	public void alignWith(Taxon node, Taxon unode, Answer answer) {
-		if (node.mapped == unode) return; // redundant
-        if (!(unode.taxonomy == this)) {
-            System.out.format("** Alignment target %s is not in a union taxonomy\n", node);
-            Taxon.backtrace();
-        } else if (node.taxonomy == this) {
-            System.out.format("** Alignment source %s is not in a source taxonomy\n", unode);
-            Taxon.backtrace();
-        } else if (node.noMrca() != unode.noMrca()) {
-            System.out.format("** attempt to unify forest %s with non-forest %s\n",
-                              node, unode);
-            Taxon.backtrace();
-        } else if (node.mapped != null) {
-			// Shouldn't happen - assigning a single source taxon to two
-			//	different union taxa
-			if (node.report("Already assigned to node in union:", unode))
-				Taxon.backtrace();
-		} else {
-            node.mapped = unode;
-            node.answer = answer;
-            if (node.name != null && unode.name != null && !node.name.equals(unode.name))
-                Answer.yes(node, unode, "synonym-match", node.name).maybeLog();
-            if (unode.comapped != null) {
-                // Union node has already been matched to, but synonyms are OK
-                if (unode.comapped != node)
-                    node.markEvent("lumped");
-            } else
-                unode.comapped = node;
-        }
-    }
-
 	// -----
 
     // Absorb a new source taxonomy
@@ -361,6 +302,54 @@ public class UnionTaxonomy extends Taxonomy {
         return n;
 	}
 
+    // ----- Aligning individual nodes -----
+
+	// unode is a preexisting node in this taxonomy.
+
+	public void alignWith(Taxon node, Taxon unode, String reason) {
+        try {
+            Answer answer = Answer.yes(node, unode, reason, null);
+            this.alignWith(node, unode, answer);
+            answer.maybeLog();
+        } catch (Exception e) {
+            System.err.format("** Exception in alignWith %s %s\n", node, unode);
+            e.printStackTrace();
+        }
+    }
+
+    // Set the 'mapped' property of this node, carefully
+	public void alignWith(Taxon node, Taxon unode, Answer answer) {
+		if (node.mapped == unode) return; // redundant
+        if (!(unode.taxonomy == this)) {
+            System.out.format("** Alignment target %s is not in a union taxonomy\n", node);
+            Taxon.backtrace();
+        } else if (node.taxonomy == this) {
+            System.out.format("** Alignment source %s is not in a source taxonomy\n", unode);
+            Taxon.backtrace();
+        } else if (node.noMrca() != unode.noMrca()) {
+            System.out.format("** attempt to unify forest %s with non-forest %s\n",
+                              node, unode);
+            Taxon.backtrace();
+        } else if (node.mapped != null) {
+			// Shouldn't happen - assigning a single source taxon to two
+			//	different union taxa
+			if (node.report("Already assigned to node in union:", unode))
+				Taxon.backtrace();
+		} else {
+            node.mapped = unode;
+            node.answer = answer;
+            if (node.name != null && unode.name != null && !node.name.equals(unode.name))
+                Answer.yes(node, unode, "synonym-match", node.name).maybeLog();
+            if (unode.comapped != null) {
+                // Union node has already been matched to, but synonyms are OK
+                if (unode.comapped != node)
+                    node.markEvent("lumped");
+            } else
+                unode.comapped = node;
+        }
+    }
+
+    // ----- Finish up -----
 
 	// Assign ids, harvested from idsource and new ones as needed, to nodes in union.
 
@@ -428,6 +417,8 @@ public class UnionTaxonomy extends Taxonomy {
             return 0;
         }
     }
+
+    // ----- "Preferred" ids (those in phylesystem or synthesis) - for reporting -----
 
 	private static Pattern tabPattern = Pattern.compile("\t");
 
@@ -595,7 +586,9 @@ public class UnionTaxonomy extends Taxonomy {
                     "\tstatus");
 
         this.eventlogger.resetEvents();
-        this.inferFlags();  // was done earlier, but why not again
+        System.out.format("| prepare union for dump deprecated\n");
+        this.inferFlags();  // was done earlier, but why not again - for hidden
+        System.out.format("| prepare idsource for dump deprecated\n");
         idsource.inferFlags();  // was done earlier, but why not again
 
 		for (String id : idsource.idIndex.keySet()) {
@@ -908,7 +901,7 @@ public class UnionTaxonomy extends Taxonomy {
 		return false;
 	}
     
-    // Methods meant to be called from jython (patches)
+    // ----- Methods meant to be called from jython (patches) -----
 
 	public boolean same(Taxon node1, Taxon node2) {
 		return sameness(node1, node2, true, true);

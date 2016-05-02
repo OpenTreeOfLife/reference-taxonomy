@@ -591,7 +591,8 @@ def patch_gbif(gbif):
         Whether_same('Leptorrhyncho-Hypnum', 'Leptorrhyncho-hypnum', True),
         Whether_same('Trichoderma viride', 'Hypocrea rufa', True,
                      'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86'),  # Type
-        Whether_same('Hypocrea', With_ancestor('Trichoderma', 'Hypocrea rufa'), True,
+        # 2016-04-30 JAR changed With_ancestor and With_descendant because it was obviously a mistake
+        Whether_same('Hypocrea', With_descendant('Trichoderma', 'Hypocrea rufa'), True,
                      'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86'),  # Type
         
         # Doug Soltis 2015-02-17 https://github.com/OpenTreeOfLife/feedback/issues/59 

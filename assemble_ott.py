@@ -6,7 +6,7 @@
 
 import sys
 
-from org.opentreeoflife.taxa import Taxonomy, SourceTaxonomy
+from org.opentreeoflife.taxa import Taxonomy, SourceTaxonomy, TsvEdits
 from org.opentreeoflife.smasher import UnionTaxonomy
 from ncbi_ott_assignments import ncbi_assignments_list
 sys.path.append("feed/misc/")
@@ -929,7 +929,7 @@ def patch_ott(ott):
     ott.taxonThatContains('Rhynchonelloidea', 'Sphenarina').extant() # NCBI
 
     # "Old" patch system
-    ott.edit('feed/ott/edits/')
+    TsvEdits.edit(ott, 'feed/ott/edits/')
 
     # This is a randomly chosen bivalve to force Bivalvia to not be extinct
     ott.taxon('Corculum cardissa', 'Bivalvia').extant()

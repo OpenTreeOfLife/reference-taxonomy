@@ -15,6 +15,7 @@ package org.opentreeoflife.smasher;
 import org.opentreeoflife.taxa.Taxonomy;
 import org.opentreeoflife.taxa.SourceTaxonomy;
 import org.opentreeoflife.taxa.Taxon;
+import org.opentreeoflife.taxa.TsvEdits;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -95,7 +96,7 @@ public class Smasher {
 					else if (argv[i].equals("--edits")) {
 						String dirname = argv[++i];
 						UnionTaxonomy union = promote(tax); tax = union;
-						union.edit(dirname);
+						TsvEdits.edit(union, dirname);
 					}
 
 					//-----

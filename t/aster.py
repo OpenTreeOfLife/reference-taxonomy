@@ -1,6 +1,7 @@
 # Jython script to build the "model village" taxonomy.
 
 from org.opentreeoflife.taxa import Taxonomy
+from org.opentreeoflife.taxa import TsvEdits
 from org.opentreeoflife.smasher import UnionTaxonomy
 from claim import Has_child
 
@@ -28,7 +29,7 @@ gbif.analyzeMajorRankConflicts()
 tax.absorb(gbif)
 
 # "Old" patch system with tab-delimited files
-tax.edit('t/edits/')
+TsvEdits.edit(tax, 't/edits/')
 
 claims = [
     Has_child('Asterales', 'Phellinaceae')

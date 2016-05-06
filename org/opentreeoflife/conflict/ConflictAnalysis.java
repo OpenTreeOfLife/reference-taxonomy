@@ -33,12 +33,10 @@ public class ConflictAnalysis {
     public Map<Taxon, Taxon> map = new HashMap<Taxon, Taxon>(); // input -> ref
     public Map<Taxon, Taxon> comap = new HashMap<Taxon, Taxon>(); // ref -> input
 
-    int conflicting = 0;
-    int opportunities = 0;
+    public int conflicting = 0;
+    public int opportunities = 0;
 
     boolean includeIncertaeSedis;
-
-    List<Conflict> conflicts = new ArrayList<Conflict>();
 
     public ConflictAnalysis(Taxonomy input, Taxonomy ref) {
         
@@ -93,15 +91,8 @@ public class ConflictAnalysis {
             return 1.0d - (((double)countOtus(this.ingroup)) / ((double)this.ingroup.tipCount()));
     }
 
-    public int awfulness() {
-        if (conflicts.size() == 0)
-            return 0;
-        else
-            return conflicts.get(0).badness();
-    }
-
     // Apply to a node in input (e.g. ingroup)
-    int countOtus(Taxon node) {
+    public int countOtus(Taxon node) {
         if (node.children != null) {
             int total = 0;
             for (Taxon child : node.children)
@@ -111,24 +102,6 @@ public class ConflictAnalysis {
             return 1;
         else
             return 0;
-    }
-
-    public void printReport() {
-        if (this.inducedIngroup != null) {
-            System.out.format("%s nodes, %s tips, %s mapped, %s mapped from input to ref, %s from ref to input\n",
-                              input.count(), input.tipCount(), countOtus(this.ingroup),
-                              map.size(), comap.size());
-            System.out.format("%s conflicts out of %s opportunities (%.2f)\n", conflicting, opportunities, conflictivity());
-            int i = 0;
-            for (Conflict c : conflicts) {
-                c.print();
-                if (++i > 10) {
-                    System.out.println("...");
-                    break;
-                }
-            }
-        } else
-            System.out.format("No nodes in common\n");
     }
 
     // Map tips bidirectionally
@@ -400,128 +373,16 @@ public class ConflictAnalysis {
         }
     }
 
-    // ------------------------------------------------------------------
-    // First attempt at conflict analysis
-
-    List<Conflict> findConflicts() {
-        if (inducedIngroup != null) {
-            findConflicts(inducedIngroup);
-            Collections.sort(conflicts, worseThan);
-            return conflicts;
-        } else {
-            System.err.format("** No induced ingroup\n");
-            return null;
+    public List<Articulation> articulations(boolean flipped) {
+        if (this.inducedIngroup == null)
+            return null;   // throw new BadRequest("No mapped OTUs");
+        List<Articulation> arts = new ArrayList<Articulation>();
+        Taxon start = flipped ? this.inducedRoot : this.ingroup;
+        for (Taxon node : start.descendants(true)) {
+            Articulation a = this.articulation(node);
+            if (a != null)
+                arts.add(a);
         }
+        return arts;
     }
-    
-    class Conflict {
-        Taxon outlier, inlier;
-        Taxon node, bounce;
-        Taxon comesFrom;
-        Conflict(Taxon outlier, Taxon inlier, Taxon node, Taxon bounce, Taxon comesFrom) {
-            this.outlier = outlier; this.inlier = inlier;
-            this.node = node; this.bounce = bounce; this.comesFrom = comesFrom;
-        }
-        int badness() {
-            return (distance(this.node, this.bounce) +
-                    distance(this.outlier, this.bounce));
-        }
-        void print() {
-            System.out.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-                              node.name, node.count(),
-                              bounce.name, bounce.count(),
-                              outlier.name + " + " + inlier.name,
-                              distance(node, bounce),
-                              distance(outlier, bounce));
-        }
-    }
-
-    Comparator<Conflict> worseThan = new Comparator<Conflict>() {
-            public int compare(Conflict c1, Conflict c2) {
-                int d1 = c1.badness();
-                int d2 = c2.badness();
-                return d2 - d1;
-            }
-        };
-
-    // 'vertical' distance in tree between a node and one of its ancestors
-    public static int distance(Taxon node, Taxon ancestor) {
-        int dist = 0;
-        for (Taxon n = node; n != ancestor; n = n.parent)
-            ++dist;
-        return dist;
-    }
-
-    // Recursive.
-    // Input: a node in the reference taxonomy
-    // Output: the 'bounce' of that node
-    // Side effect: adds Conflict records to this.conflicts
-    Conflict findConflicts(Taxon node) {
-        Taxon conode = comap.get(node);
-        if (conode != null) {
-            Taxon bounce = map.get(conode);
-            if (bounce != null) {
-                // Preorder traversal.
-                Conflict covered = null;
-                if (node.children != null)
-                    for (Taxon child : node.children) {
-                        Conflict childConflict = findConflicts(child);
-                        if (childConflict != null) {
-                            if (childConflict.bounce == bounce)
-                                covered = childConflict;
-                        }
-                    }
-                // Now deal with this node
-                ++opportunities;
-                if (node.mrca(bounce) != node) { // if bounce doesn't descend from node
-                    ++conflicting;
-                    if (covered == null) {
-                        Conflict conflict = suspect(node, bounce);
-                        if (conflict != null)
-                            conflicts.add(conflict);
-                        return conflict;
-                    } else
-                        return new Conflict(covered.outlier, covered.inlier, node, bounce, covered.node);
-                }
-            }
-        }
-        return null;
-    }
-
-    // Need a way to assign blame for paraphyly.
-    // If the reference has ((a,b),d), and the input has ((a,d),b),
-    // then we want to 'blame' the breakup of (a,b) on d.
-    Conflict suspect(Taxon broken, Taxon bounce) {
-        Taxon conode = comap.get(broken);
-        if (conode == null) return null;
-        return hunt(conode, broken, bounce);
-    }
-
-    // Find a descendant of conode that is disjoint from
-    // broken, but has a sibling that's not.
-    Conflict hunt(Taxon conode, Taxon broken, Taxon brokenbounce) {
-        if (conode.children != null) {
-            Taxon in = null, out = null;
-            Conflict more = null;
-            for (Taxon cochild : conode.children) {
-                Taxon bounce = map.get(cochild);
-                if (bounce != null) {
-                    Taxon m = bounce.mrca(broken);
-                    if (m == broken)
-                        in = bounce;
-                    else if (m != bounce)
-                        out = bounce;
-                    else if (more == null) {
-                        Conflict probe = hunt(cochild, broken, brokenbounce);
-                        if (probe != null) more = probe;
-                    }
-                    if (in != null && out != null)
-                        return new Conflict(out, in, broken, brokenbounce, null);
-                }
-            }
-            return more;
-        }
-        return null;
-    }
-
 }

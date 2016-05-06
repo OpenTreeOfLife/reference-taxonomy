@@ -605,11 +605,19 @@ public abstract class Taxonomy {
     void fixFlags() {
         int flaggers = 0;
         int counter = 0;
+
+        int inferredOnly = (Taxonomy.SIBLING_HIGHER |
+                            Taxonomy.SIBLING_LOWER |
+                            Taxonomy.INFRASPECIFIC |
+                            Taxonomy.BARREN);
+
         for (Taxon node : this.taxa()) {
             if (!node.isRoot()) {
                 int wrongFlags = node.inferredFlags & ~(node.parent.properFlags | node.parent.inferredFlags);
+                wrongFlags &= ~inferredOnly;
                 if (wrongFlags != 0) {
-                    node.addFlag(wrongFlags);
+                    node.addFlag(wrongFlags); // adds to properFlags
+                    node.inferredFlags &= ~wrongFlags;
                     if (flaggers < 10)
                         System.out.format("| Fixed flags %s for %s in %s\n",
                                           Flag.flagsAsString(node),

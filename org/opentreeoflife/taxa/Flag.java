@@ -35,14 +35,14 @@ public enum Flag {
 	HYBRID				 ("hybrid", "hybrid", Taxonomy.HYBRID),   // NCBI
 
     // Annotations
-	SIBLING_HIGHER		 ("sibling_higher", null, Taxonomy.SIBLING_HIGHER), // Australopithecus
-	SIBLING_LOWER		 ("sibling_lower", null, Taxonomy.SIBLING_LOWER), // deprecated
 	HIDDEN				 ("hidden", "hidden_inherited", Taxonomy.HIDDEN),	  // combine using &
 	EDITED				 ("edited", null, Taxonomy.EDITED),	  				  // combine using |
 	FORCED_VISIBLE		 ("forced_visible", null, Taxonomy.FORCED_VISIBLE),   // combine using |
 	EXTINCT			 	 ("extinct", "extinct_inherited", Taxonomy.EXTINCT),  // combine using |
 
 	// Inferred only.
+	SIBLING_HIGHER		 (null, "sibling_higher", Taxonomy.SIBLING_HIGHER), // Australopithecus
+	SIBLING_LOWER		 (null, "sibling_lower", Taxonomy.SIBLING_LOWER), // deprecated
 	INFRASPECIFIC		 (null, "infraspecific", Taxonomy.INFRASPECIFIC),  // Has a species as an ancestor?
 	BARREN			     (null, "barren", Taxonomy.BARREN);  // Contains no species?
 

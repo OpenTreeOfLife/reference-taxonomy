@@ -122,7 +122,10 @@ public abstract class Taxonomy {
             nodes.add(node);
             if (nodes.size() == 75) {
                 // should use eventlogger
-                System.err.format("** %s is the 75th to have the name '%s'\n", node, name);
+                System.err.format("| %s is the 75th in %s to have the name '%s'\n",
+                                  node,
+                                  this.getTag(),
+                                  name);
             }
         }
     }

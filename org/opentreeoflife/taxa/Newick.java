@@ -123,6 +123,7 @@ class Newick {
     }
 
     static Pattern ottidPattern = Pattern.compile("(.*)_ott([0-9]+)");
+    static Pattern ottidPattern2 = Pattern.compile("ott([0-9]+)");
 
 	// Specially hacked to support the Hibbett 2007 spreadsheet & synthesis output
 	static void initNewickNode(Taxon node, String label) {
@@ -135,11 +136,15 @@ class Newick {
         // Look for special synthesis output pattern e.g. Picomonas_judraskeda_ott4738960
         Matcher m = ottidPattern.matcher(label);
         if (m.matches()) {
-            
-            // int i = label.indexOf("_ott"); label.substring(i+4) label.substring(0,i)
             node.rank = Rank.NO_RANK;
             node.setId(m.group(2));
             node.setName(spacify(m.group(1)));
+            return;
+        }
+        Matcher m2 = ottidPattern2.matcher(label);
+        if (m2.matches()) {
+            node.rank = Rank.NO_RANK;
+            node.setId(m2.group(1));
             return;
         }
 

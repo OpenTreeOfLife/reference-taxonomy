@@ -305,7 +305,7 @@ public abstract class Taxonomy {
 			tax.addRoot(root);
         } else if (designator.endsWith(".tre")) {
 			System.out.println("--- Reading " + designator + " ---");
-            return getNewick(designator, null); // calls postLoadActions
+            tax.loadNewick(designator); // calls postLoadActions
         } else {
 			if (!designator.endsWith("/")) {
 				System.err.println("Taxonomy designator should end in / but doesn't: " + designator);
@@ -1253,6 +1253,13 @@ public abstract class Taxonomy {
         root.properFlags = 0;   // not unplaced
         tax.postLoadActions();
 		return tax;
+	}
+
+	public void loadNewick(String filename) throws IOException {
+		BufferedReader br = Taxonomy.fileReader(filename);
+        Taxon root = Newick.newickToNode(new java.io.PushbackReader(br), this);
+		this.addRoot(root);
+        root.properFlags = 0;   // not unplaced
 	}
 
 	// Render this taxonomy as a Newick string.

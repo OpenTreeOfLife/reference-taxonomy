@@ -141,20 +141,23 @@ public class ConflictAnalysis {
         return false;
     }
 
-    void induce() {
+    boolean induce() {
         // Get the two mrca-based maps.  First the input->ref, then
         // (starting at induced root) the ref->input map.
         // Look for cases where mapping A-B-A goes to an ancestor of the start node
         // (descendant is OK, that's sort of like monotypy)
-        if (this.inputRoot == null)
-            System.err.format("** No tree %s\n", input.getTag());
-        else {
+        if (this.inputRoot == null) {
+            // System.err.format("** No tree %s\n", input.getTag());
+            return false;
+        } else {
             this.inducedRoot = induce(this.inputRoot, ref, map);
             //System.out.format("| mapped %s, comapped %s\n", map.size(), comap.size());
             if (this.inducedRoot == null)
-                System.err.format("** Nothing maps\n");
-            else
+                return false; // System.err.format("** Nothing maps\n");
+            else {
                 induce(this.inducedRoot, input, comap);
+                return true;
+            }
         }
     }
 

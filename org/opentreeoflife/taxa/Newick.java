@@ -143,7 +143,7 @@ class Newick {
         }
         Matcher m2 = ottidPattern2.matcher(label);
         if (m2.matches()) {
-            node.rank = Rank.NO_RANK;
+            node.rank = Taxonomy.NO_RANK;
             node.setId(m2.group(1));
             return;
         }

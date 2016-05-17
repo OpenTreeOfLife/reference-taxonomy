@@ -304,6 +304,17 @@ def processSilva(pathdict, indir, outdir):
 
     taxfile.close()
 
+    xref_path = outdir + '/ncbi_to_silva.tsv'
+    with open(xref_path + '.new','w') as xref:
+        for ncbi_id in ncbi_info.keys():
+            info = ncbi_info[ncbi_id]
+            parentid = info.silva_parent
+            if parentid != True:
+                taxid = info.sample_accession    # becomes URL
+                xref.write("%s\t%s\n" % (ncbi_id, taxid))
+    os.rename(xref_path + '.new', xref_path)
+
+
 # Deal with one Genbank accession id.  N.b. we might encounter the same id
 # multiple times.
 

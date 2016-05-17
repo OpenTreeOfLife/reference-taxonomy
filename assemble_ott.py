@@ -992,8 +992,9 @@ def report(ott):
     print '-- Parent/child homonyms'
     ott.parentChildHomonymReport()
 
-    print '-- Inclusion tests'
-    check_inclusions.check(ott)
+    # Requires ../germinator
+    #print '-- Inclusion tests'
+    #check_inclusions.check(ott)
 
 names_of_interest = ['Ciliophora',
                      'Phaeosphaeria',

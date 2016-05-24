@@ -156,35 +156,36 @@ before alignment via a synonym is tried.
 ## Merge
 
 Following alignment, taxa from the source taxonomy are merged into the
-union taxonomy.  This is performed via bottom-up recursive descent
-over the source.  A parameter 'sink' is passed down to recursive
+union taxonomy.  This is performed via bottom-up traversal of
+the source.  A parameter 'sink' is passed down to recursive
 calls, and is simply the most rootward alignment target seen so far on
 the descent.  The following cases arise during processing:
 
- * Tip: if aligned, nothing to do; if unaligned and not blocked for
+ * Tip: if aligned, there is nothing to do; if unaligned and not blocked for
    some reason (e.g. fatal ambiguity), create a corresponding tip in
    the union.
 
  * Aligned internal node: the children have already been processed,
    and correspond to targets in the union.  The targets are either
-   'old' (they were already aligned to nodes in the union) or 'new'
-   (created in union during the merge process).  Attach any new
-   targets to the internal node's alignment target.
+   'old' (they were already in the union before the merge started) or 'new'
+   (created in the union during the merge process).  Attach any new
+   child targets to the parent node's alignment target.
 
  * Graft: all targets are new.  Create a new union node, and attach
-   the new target to it.
+   the new targets to it.
 
- * Inconsistent: if the target nodes do not all have the same parent,
-   attach the new target nodes to the sink.
+ * Inconsistent: if the child target nodes do not all have the same parent,
+   attach the new target nodes to the sink, and annotate them as 'unplaced'.
 
- * Refinement: the source taxonomy refines the union taxonomy at the
-   given node if every child of the sink (which is in the union)
-   corresponds to some source node, i.e. is the target of some prior
-   merge.  Create a new union node corresponding to the source node,
-   and attach both old and new targets to it.
+ * Refinement: the source taxonomy refines the union taxonomy at a
+   given node if every child of the sink (which is in the union) is
+   the alignment target of some source node.  Create a new union node
+   corresponding to the source node, and attach both old and new
+   targets (of children of the source node) to it.
 
- * Merge: some child of the sink is not a merge target.  Attach new
-   targets to the common parent of the old targets.
+ * Merge: similar to refinement, but some child of the sink is _not_
+   an alignment target.  Attach new child targets to the common parent
+   of the old child targets.
 
 The actual logic is more complicated than this due to the need to
 properly handle unplaced (incertae sedis) taxa.  The source taxonomy

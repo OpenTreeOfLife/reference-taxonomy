@@ -60,13 +60,23 @@ E.g. the GBIF taxonomy is downloaded from the GBIF web site, and then
 converted to the Open Tree 'interim taxonomy format' by a python
 script.
 
+Following ingest the following two normalizations are performed:
+
+ 1. "Containers" - nodes in the tree that don't represent taxa - are
+    removed and replaced by flags (node annotations indicating edge 
+    type); the most prominent being the pseudo-taxon "Incertae sedis"
+ 1. Monotypic homonym removal - when taxon with name N has as its
+    only child another taxon with name N, remove one of the two
+
 Before alignment and merge, each source taxonomy gets patched
 individually.  It's always best to treat a problem as early as
 possible, so that its ill effects don't interfere with alignment of
-other taxonomies and with proper synthesis.  A frequent kind of patch
-is to add a synonym or change a name so that a source taxon aligns
-with a taxon from an earlier or later source.  Patches that bring a
-source taxonomy into agreement with the skeleton also happen here.
+other taxonomies and with proper synthesis.  This is separate from the
+general patch phase that takes place at the end of taxonomy
+construction (below). A frequent kind of patch is to add a synonym or
+change a name so that a source taxon aligns with a taxon from an
+earlier or later source.  Patches that bring a source taxonomy into
+agreement with the skeleton also happen here.
 
 ## Separation
 

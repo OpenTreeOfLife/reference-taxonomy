@@ -7,7 +7,7 @@
 * related projects
 
 # Method
-How we build the taxonomy. See `method.md` in this same directory.
+How we build the taxonomy. See [`method.md`](./method.md) in this same directory.
 
 # Results
 General results on the Open Tree taxonomy. Not a review on the taxonomic quality of any particular clade.

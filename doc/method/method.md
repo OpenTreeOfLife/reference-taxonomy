@@ -1,32 +1,36 @@
 
 # How the taxonomy is built
 
-Open Tree of Life is a system for synthesis of phylogenetic supertrees
-from inputs drawn from a corpus of phylogenetic trees.  As an input to
-phylogenetic synthesis, an overall taxonomy of life is required, for
-(at least) two purposes:
+Taxonomy and nomenclature data are critical for almost any biodiversity project that aims to synthesize data based on taxonomic names.
+
+Open Tree of Life is a system for synthesis of phylogenetic supertrees from
+inputs drawn from a corpus of published phylogenetic trees. The process also
+requires an overall taxonomy of life for (at least) two purposes:
 
  1. Aligning tips between phylogenetic inputs: the taxonomy provides
     a source of synonyms, enabling equations between tips with
-    different labels; and a source of homonyms, ensuring that tips 
+    different labels; and a source of homonyms, ensuring that tips
     with the same name but different meanings are not mistakenly equated.
  1. Available phylogenetic trees cover only a small portion of known
     species.  The taxonomy can help fill in the gaps when a
     comprehensive tree is sought.
 
-We discovered early on that no single available taxonomic source would
-satisfy the project's taxonomic needs.  NCBI taxonomy has good
-coverage of taxa occurring in phylogenetic studies, and is curated for
-phylogenetic fidelity, but the coverage is not complete.  Conventional
-taxonomies like GBIF have good overall coverage, but miss many tips
-from studies and are not phylogenetically sound.  And some groups have
-adequate coverage only in their own specialist taxonomies (e.g. Index
-Fungorum for fungi, WoRMS for decapods).
+We discovered early on that no single available taxonomic source
+would satisfy the project's taxonomic needs.  NCBI taxonomy has good coverage of
+taxa occurring in phylogenetic studies, and is curated for phylogenetic
+fidelity, but the coverage is limited to the approximately 400,000 taxa that
+have sequence data in GenBank. Conventional taxonomies like GBIF have better
+overall coverage, but miss many tips from our input trees, and are not
+phylogenetically sound. Some groups have adequate coverage only in their own
+specialist taxonomies (e.g. Index Fungorum for fungi, WoRMS for decapods).
 
-We therefore constructed a taxonomy from multiple taxonomic sources
-for the project's use - or rather we created a system for constructing
-such combined taxonomies.  The taxonomy is called the Open Tree
-Taxonomy (OTT) and the software that creates it is called 'smasher'.
+We therefore constructed a taxonomy from multiple taxonomic sources for use
+within Open Tree of Life - or rather we created a system for constructing such
+combined taxonomies.  The taxonomy is called the Open Tree Taxonomy (OTT) and
+the software that creates it is called 'smasher'. The method allows for
+reproducible synthesis of input taxonomies; for easy update when input
+taxonomies change; and for user-contributed patches to fix specific issues or
+add missing information.
 
 The assembly process works, in outline, as follows:
 
@@ -37,7 +41,7 @@ The assembly process works, in outline, as follows:
         where possible (in a manner explained below)
      1. Unaligned subtrees of S - i.e. subtrees of S whose tips are tips
         of S, and that contain no aligned nodes other than the root - are grafted onto U
-     1. Where S provides a more resolved classification than U, unaligned 
+     1. Where S provides a more resolved classification than U, unaligned
         internal nodes of S are 'inserted' into U
  1. Ad hoc postprocessing steps
  1. Identifiers are assigned to the nodes of U
@@ -63,7 +67,7 @@ script.
 Following ingest the following two normalizations are performed:
 
  1. "Containers" - nodes in the tree that don't represent taxa - are
-    removed and replaced by flags (node annotations indicating edge 
+    removed and replaced by flags (node annotations indicating edge
     type); the most prominent being the pseudo-taxon "Incertae sedis"
  1. Monotypic homonym removal - when taxon with name N has as its
     only child another taxon with name N, remove one of the two
@@ -89,7 +93,7 @@ different taxa.  Since misclassifications at the level of rhodophytes
 vs. plants are much rarer than homonyms, it's better to assume the
 latter.
 
-Drawing a 'homonym barrier' between plants and rhodophytes 
+Drawing a 'homonym barrier' between plants and rhodophytes
 resembles the use of nomenclatural codes to separate homonyms,
 but the codes are not fine grained enough to capture distinctions that
 actually arise.  For example, there are many [how many? dozens?
@@ -210,4 +214,3 @@ The final step is to assign OTT ids to taxa.  This is done by aligning
 the previous version of OTT to the new union taxonomy.  After
 transferring ids of aligned taxa, any remaining union taxa are given
 newly 'minted' identifiers.
-

@@ -76,6 +76,7 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
 		    tax/fung/taxonomy.tsv tax/713/taxonomy.tsv \
 		    $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv \
 		    tax/irmng/taxonomy.tsv \
+		    tax/worms/taxonomy.tsv \
 		    feed/ott/edits/ott_edits.tsv \
 		    tax/prev_ott/taxonomy.tsv \
 		    feed/misc/chromista_spreadsheet.py
@@ -84,17 +85,20 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
 	time bin/jython make-ott.py
 	echo $(WHICH) >tax/ott/version.txt
 
+# Index Fungorum
+
 fung: tax/fung/taxonomy.tsv tax/fung/synonyms.tsv
 
-#tax/fung/taxonomy.tsv: 
-#        @mkdir -p `dirname $@`
-#        wget --output-document=$@ http://files.opentreeoflife.org/ott/if-ott2.8/taxonomy.tsv
-#        @ls -l $@
-#
-#tax/fung/synonyms.tsv:
-#        @mkdir -p `dirname $@`
-#        wget --output-document=$@ http://files.opentreeoflife.org/ott/if-ott2.8/synonyms.tsv
-#        @ls -l $@
+# 12787947 Oct  6  2015 taxonomy.tsv
+FUNG_URL=http://files.opentreeoflife.org/fung/fung-9/fung-9-ot.tgz
+
+tax/fung/taxonomy.tsv: 
+	@mkdir -p tmp
+	wget --output-document=tmp/fung-ot.tgz $@ $(FUNG_URL)
+	(cd tmp; tar xzf fung-ot.tgz)
+	@mkdir -p `dirname $@`
+	mv tmp/fung*/* `dirname $@`/
+	@ls -l $@
 
 tax/fung/about.json:
 	@mkdir -p `dirname $@`
@@ -107,7 +111,7 @@ tax/ott/aux.tsv: $(CLASS) tax/ott/log.tsv
 	$(JAVA) $(SMASH) tax/ott/ --aux $(PREOTTOL)/preottol-20121112.processed
 
 $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
-	python process-preottol.py $< $@
+	python util/process-preottol.py $< $@
 
 tax/prev_ott/taxonomy.tsv:
 	@mkdir -p feed/prev_ott/in 
@@ -125,7 +129,8 @@ tax/prev_ott/taxonomy.tsv:
 # Formerly, where we now have /dev/null, we had
 # ../data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP
 
-NCBI_URL="ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz"
+# NCBI_URL="ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz"
+NCBI_URL="http://files.opentreeoflife.org/ncbi/ncbi-20151006/ncbi-20151006.tgz"
 
 ncbi: $(NCBI)/taxonomy.tsv
 $(NCBI)/taxonomy.tsv: feed/ncbi/in/nodes.dmp feed/ncbi/process_ncbi_taxonomy_taxdump.py 
@@ -166,7 +171,9 @@ feed/gbif/in/taxon.txt: feed/gbif/in/checklist1.zip
 
 # Was http://ecat-dev.gbif.org/repository/export/checklist1.zip
 # Could be http://rs.gbif.org/datasets/backbone/backbone.zip
-GBIF_URL=http://purl.org/opentree/gbif-backbone-2013-07-02.zip
+# 2016-05-17 purl.org is broken, cannot update this link
+# GBIF_URL=http://purl.org/opentree/gbif-backbone-2013-07-02.zip
+GBIF_URL=http://files.opentreeoflife.org/gbif/gbif-20130702/gbif-20130702.zip
 
 feed/gbif/in/checklist1.zip:
 	@mkdir -p feed/gbif/in
@@ -175,7 +182,18 @@ feed/gbif/in/checklist1.zip:
 
 irmng: tax/irmng/taxonomy.tsv
 
-tax/irmng/taxonomy.tsv: feed/irmng/process_irmng.py feed/irmng/in/IRMNG_DWC.csv 
+IRMNG_URL=http://files.opentreeoflife.org/irmng-ot/irmng-ot-20141020/irmng-ot-20141020.tgz
+
+tax/irmng/taxonomy.tsv:
+	@mkdir -p tax/irmng tmp
+	wget --output-document=tmp/irmng-ot.tgz $(IRMNG_URL)
+	(cd tmp; tar xzf irmng-ot.tgz)
+	rm -f tax/irmng/*
+	mv tmp/irmng-ot*/* tax/irmng/
+
+# Build IRMNG from Tony's .csv files - these unfortunately are not public
+
+refresh-irmng: feed/irmng/process_irmng.py feed/irmng/in/IRMNG_DWC.csv 
 	@mkdir -p `dirname $@`
 	python feed/irmng/process_irmng.py \
 	   feed/irmng/in/IRMNG_DWC.csv \
@@ -193,6 +211,15 @@ feed/irmng/in/IRMNG_DWC.zip:
 	@mkdir -p `dirname $@`
 	wget --output-document=$@.tmp "http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip"
 	mv $@.tmp $@
+
+WORMS_URL=http://files.opentreeoflife.org/worms/worms-1/worms-1-ot.tgz
+
+tax/worms/taxonomy.tsv:
+	@mkdir -p tax/worms tmp
+	wget --output-document=tmp/worms-1-ot.tgz $(WORMS_URL)
+	(cd tmp; tar xzf worms-1-ot.tgz)
+	rm -f tax/worms/*
+	mv tmp/worms-1-ot*/* tax/worms/
 
 # Significant tabs !!!
 

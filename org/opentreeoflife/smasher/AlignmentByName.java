@@ -24,9 +24,6 @@ import java.io.IOException;
 
 public class AlignmentByName extends Alignment {
 
-	Taxonomy source;
-    UnionTaxonomy union;
-
     // Return the node that this one maps to under this alignment, or null
     Answer answer(Taxon subject) {
         if (subject.answer != null)
@@ -255,9 +252,7 @@ public class AlignmentByName extends Alignment {
 
 
     AlignmentByName(SourceTaxonomy source, UnionTaxonomy union) {
-
-        this.source = source;
-        this.union = union;
+        super(source, union);
 
         this.reset();          // depths, brackets, comapped
 
@@ -269,7 +264,7 @@ public class AlignmentByName extends Alignment {
 
 			int beforeCount = union.numberOfNames();
 
-			union.markDivisionsUnion(source);
+			this.markDivisions(source);
 
 			Set<String> seen = new HashSet<String>();
 			List<String> todo = new ArrayList<String>();

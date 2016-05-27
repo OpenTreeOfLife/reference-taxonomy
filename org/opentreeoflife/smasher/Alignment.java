@@ -31,6 +31,14 @@ import org.opentreeoflife.taxa.QualifiedId;
 
 public abstract class Alignment {
 
+	SourceTaxonomy source;
+    UnionTaxonomy union;
+
+    Alignment(SourceTaxonomy source, UnionTaxonomy union) {
+        this.source = source;
+        this.union = union;
+    }
+
     abstract Answer answer(Taxon node);
 
     Taxon map(Taxon node) {
@@ -41,6 +49,151 @@ public abstract class Alignment {
     }
 
     abstract void cacheInSourceNodes();
+
+
+    // Align divisions from skeleton taxonomy
+
+	public void markDivisions(SourceTaxonomy source) {
+		if (union.skeleton == null)
+			this.pin(source);	// Obsolete code, for backward compatibility!
+		else
+            markDivisionsFromSkeleton(source, union.skeleton);
+	}
+
+	// Before every alignment pass (folding source taxonomy into
+	// union), all 'division' taxa (from the skeleton) that occur in
+	// either the union or the source taxonomy are identified and the
+	// 'division' field of each one is set to the corresponding
+	// division node from the union taxonomy.  Also the corresponding
+	// division nodes are aligned.
+
+	// This operation is idempotent.
+
+    public void markDivisionsFromSkeleton(Taxonomy source, Taxonomy skel) {
+        for (String name : skel.allNames()) {
+            Taxon skelnode = highest(skel, name);
+            Taxon node = highest(source, name);
+            Taxon unode = highest(union, name);
+            if (node != null)
+                node.setDivision(skelnode);
+            if (unode != null)
+                unode.setDivision(skelnode);
+            if (node != null && unode != null) {
+                if (node.mapped != null) {
+                    if (node.mapped != unode)
+                        System.out.format("** Help!  Conflict over division mapping: %s %s %s\n",
+                                          node, node.mapped, unode);
+                } else
+                    union.alignWith(node, unode, "same/by-division-name");
+            }
+        }
+    }
+
+    /*
+	boolean checkDivisionsFromSkeleton(Taxon div, Taxonomy source) {
+		Taxon unode = highest(union, div.name);
+		if (div.children != null) {
+			Taxon hit = null, miss = null;
+			for (Taxon child : div.children) {
+				if (checkDivisionsFromSkeleton(child, source))
+					hit = child;
+				else
+					miss = child;
+			}
+			if (hit != null && miss != null)
+				System.err.format("** Division %s was found but its sibling %s wasn't\n", hit.name, miss.name);
+		}
+		if (unode != null) {
+			unode.setDivision(unode);
+			Taxon node = highest(source, div.name);
+			if (node != null &&
+				(node.mapped == null || node.mapped == unode)) {   // Cf. notSame
+				node.setDivision(unode);
+				node.alignWith(unode, "same/division-name");
+				return true;
+			}
+		}
+		return false;
+	}
+    */
+
+	// List determined manually and empirically
+	// @deprecated
+	void pin(Taxonomy source) {
+		String[][] pins = {
+			// Stephen's list
+			{"Fungi"},
+			{"Bacteria"},
+			{"Alveolata"},
+			// {"Rhodophyta"},	creates duplicate of Cyanidiales
+			{"Glaucophyta", "Glaucocystophyceae"},
+			{"Haptophyta", "Haptophyceae"},
+			{"Choanoflagellida"},
+			{"Metazoa", "Animalia"},
+			{"Chloroplastida", "Viridiplantae", "Plantae"},
+			// JAR's list
+			{"Mollusca"},
+			{"Arthropoda"},		// Tetrapoda, Theria
+			{"Chordata"},
+			// {"Eukaryota"},		// doesn't occur in gbif, but useful for ncbi/ncbi test merge
+			// {"Archaea"},			// ambiguous in ncbi
+			{"Viruses"},
+		};
+		int count = 0;
+		for (int i = 0; i < pins.length; ++i) {
+			String names[] = pins[i];
+			Taxon n1 = null, div = null;
+			// The division (div) is in the union taxonomy.
+			// For each pinnable name, look for it in both taxonomies
+			// under all possible synonyms
+			for (int j = 0; j < names.length; ++j) {
+				String name = names[j];
+				Taxon m1 = highest(source, name);
+				if (m1 != null) n1 = m1;
+				Taxon m2 = highest(union, name);
+				if (m2 != null) div = m2;
+			}
+			if (div != null) {
+				div.setDivision(div);
+				if (n1 != null)
+					n1.setDivision(div);
+				if (n1 != null && div != null)
+					union.alignWith(n1, div, "same/pinned"); // hmm.  TBD: move this out of here
+				if (n1 != null || div != null)
+					++count;
+			}
+		}
+		if (count > 0)
+			System.out.println("Pinned " + count + " out of " + pins.length);
+	}
+
+	// Most rootward node in this taxonomy having a given name
+	public static Taxon highest(Taxonomy tax, String name) { // See pin()
+		List<Node> l = tax.lookup(name);
+		if (l == null) return null;
+		Taxon best = null, otherbest = null;
+		int depth = 1 << 30;
+		for (Node nodenode : l) {
+            Taxon node = nodenode.taxon();
+			int d = node.measureDepth();
+			if (d < depth) {
+				depth = d;
+				best = node;
+				otherbest = null;
+			} else if (d == depth && node != best)
+				otherbest = node;
+		}
+		if (otherbest != null) {
+			if (otherbest == best)
+				// shouldn't happen
+				System.err.format("** Multiply indexed: %s %s %s\n", best, otherbest, depth);
+			else
+				System.err.format("** Ambiguous division name: %s %s %s\n", best, otherbest, depth);
+            return null;
+		}
+		return best;
+	}
+
 
 	// What was the fate of each of the nodes in this source taxonomy?
 

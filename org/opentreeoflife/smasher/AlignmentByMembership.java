@@ -39,9 +39,6 @@ import java.io.IOException;
 
 public class AlignmentByMembership extends Alignment {
 
-	Taxonomy source;
-    UnionTaxonomy union;
-
     // Map source node to union node that includes its tips
 	Map<Taxon, Taxon> sourceHalfMap = new HashMap<Taxon, Taxon>();
 
@@ -62,14 +59,14 @@ public class AlignmentByMembership extends Alignment {
 
     private static Taxon AMBIGUOUS = new Taxon(null, null);
 
-	AlignmentByMembership(Taxonomy source, UnionTaxonomy union) {
+	AlignmentByMembership(SourceTaxonomy source, UnionTaxonomy union) {
+        super(source, union);
+
         // Invert the name->node map: for each node, store the names by
         // which it is known.
         Map<Taxon, Collection<String>> sourceSynonymIndex;
         Map<Taxon, Collection<String>> unionSynonymIndex;
 
-		this.source = source;
-		this.union = union;
 		sourceSynonymIndex = source.makeSynonymIndex();
         System.out.println("sourceSynonymIndex: " + sourceSynonymIndex.size());
 		unionSynonymIndex = union.makeSynonymIndex();

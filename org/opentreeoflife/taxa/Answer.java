@@ -161,4 +161,9 @@ public class Answer {
 
 			 (this.witness == null ? "" : this.witness) );
 	}
+
+
+    public String toString() {
+        return String.format("(%s %s)", this.value, this.reason);
+    }
 }

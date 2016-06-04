@@ -1,8 +1,9 @@
 # coding=utf-8
 
 from org.opentreeoflife.taxa import Taxonomy
-from claim import Has_child, Whether_same, With_ancestor, With_descendant, \
-                  Whether_extant, make_claim, make_claims
+from claim import *
+#from claim import Has_child, Whether_same, With_ancestor, With_descendant, \
+#                  Whether_extant, make_claim, make_claims
 
 this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/taxonomies.py'
 
@@ -14,6 +15,15 @@ def load_silva():
     silva.taxon('EF690403').rename('Pantoea ananatis B1-9')  # ncbi:1048262
 
     patch_silva(silva)
+
+    # JAR 2014-05-13 scrutinizing pin() and BarrierNodes.  Wikipedia
+    # confirms this synonymy.  Dail L. prefers -phyta to -phyceae
+    # but says -phytina would be more correct per code.
+    # Skeleton taxonomy has -phyta (on Dail's advice).
+    silva.taxon('Rhodophyceae').synonym('Rhodophyta')    # moot now?
+
+    silva.taxon('Florideophycidae', 'Rhodophyceae').synonym('Florideophyceae')
+    silva.taxon('Stramenopiles', 'SAR').synonym('Heterokonta') # needed by WoRMS
 
     return silva
 
@@ -108,7 +118,7 @@ def patch_silva(silva):
 
 
 def load_h2007():
-    h2007 = Taxonomy.getNewick('feed/h2007/tree.tre', 'h2007')
+    h2007 = Taxonomy.getTaxonomy('feed/h2007/tree.tre', 'h2007')
 
     # 2014-04-08 Misspelling
     if h2007.maybeTaxon('Chaetothryriomycetidae') != None:
@@ -340,7 +350,8 @@ def link_to_h2007(tax):
          ('Holtermanniales',['Holtermanniella']),
          ('Lepidostromatales',['Lepidostromataceae']),
          ('Atheliales',['Atheliaceae']),
-         ('Stereopsidales',['Stereopsidaceae']), 
+         # Stereopsidaceae = Stereopsis + Clavulicium
+         ('Stereopsidales',['Stereopsidaceae']),
          ('Septobasidiales',['Septobasidiaceae']),
          ('Symbiotaphrinales',['Symbiotaphrina']),
          ('Caliciales',['Sphaerophoraceae']),
@@ -351,14 +362,13 @@ def link_to_h2007(tax):
          ('Arctomiales',['Arctomiaceae']),
          ('Hymeneliales',['Hymeneliaceae']),
          ('Leprocaulales',['Leprocaulaceae']),
+         ('Loxosporales',['Loxospora']),  #Hodkinson and Lendemer 2011
      ]:
         for family in families:
             some_claims.append(Has_child(order, family, h2007_fam))
-    make_claims(tax, some_claims)
-    # Loxosporales,synonym of Sarrameanales
-    make_claim(tax,
-               Whether_same('Sarrameanales', 'Loxosporales',
-                            True, h2007_fam))
+    if not make_claims(tax, some_claims):
+        print '** one or more claims failed'
+    test_claims(tax, some_claims, windy=True)
 
 def load_713():
     study713 = Taxonomy.getTaxonomy('tax/713/', 'study713')
@@ -374,7 +384,6 @@ def load_ncbi():
     # analyzeOTUs sets flags on questionable taxa ("unclassified",
     #  hybrids, and so on) to allow the option of suppression downstream
     ncbi.analyzeOTUs()
-    ncbi.analyzeContainers()
 
     return ncbi
 
@@ -528,6 +537,8 @@ def load_worms():
     worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
     worms.smush()
 
+    worms.taxon('Viruses').prune("taxonomies.py")
+
     worms.taxon('Biota').rename('life')
     worms.taxon('Animalia').synonym('Metazoa')
 
@@ -591,7 +602,7 @@ def patch_gbif(gbif):
         Whether_same('Leptorrhyncho-Hypnum', 'Leptorrhyncho-hypnum', True),
         Whether_same('Trichoderma viride', 'Hypocrea rufa', True,
                      'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86'),  # Type
-        # 2016-04-30 JAR changed With_ancestor and With_descendant because it was obviously a mistake
+        # 2016-04-30 JAR changed With_ancestor to With_descendant because it was obviously a mistake
         Whether_same('Hypocrea', With_descendant('Trichoderma', 'Hypocrea rufa'), True,
                      'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86'),  # Type
         
@@ -679,7 +690,7 @@ def patch_gbif(gbif):
     # https://github.com/OpenTreeOfLife/feedback/issues/65
     gbif.taxon('Worlandia').extinct()
 
-    tip = gbif.taxon('6101461') # ('Tipuloidea', 'Hemiptera') gbif:6101461 - extinct
+    tip = gbif.maybeTaxon('6101461') # ('Tipuloidea', 'Hemiptera') gbif:6101461 - extinct
     if tip != None:
         tip.prune("about:blank#this-homonym-is-causing-too-much-trouble")
 
@@ -705,6 +716,8 @@ def load_irmng():
     irmng = Taxonomy.getTaxonomy('tax/irmng/', 'irmng')
     irmng.smush()
     irmng.analyzeMajorRankConflicts()
+
+    irmng.taxon('Viruses').prune("taxonomies.py")
 
     fix_basal(irmng)
     irmng.taxon('Animalia').synonym('Metazoa')

@@ -39,7 +39,7 @@ def test():
 def make_claims(tax, claims):
     passed = True
     for claim in claims:
-        passed = passed and make_claim(tax, claim)
+        passed = make_claim(tax, claim) and passed
     return passed
 
 def make_claim(tax, claim):
@@ -152,8 +152,8 @@ class Has_child:                # replaces .take
         return False
 
     def check(self, taxonomy, windy=False):
-        child_taxon = resolve_in(self.child, taxonomy)
-        parent_taxon = resolve_in(self.parent, taxonomy)
+        child_taxon = resolve_in(self.child, taxonomy, windy=windy)
+        parent_taxon = resolve_in(self.parent, taxonomy, windy=windy)
         if child_taxon != None and parent_taxon != None:
             return child_taxon.parent == parent_taxon
         return False
@@ -176,7 +176,7 @@ class Whether_monophyletic:
         return False
 
     def check(self, taxonomy, windy=False):
-        taxon = resolve_in(self.designator, taxonomy)
+        taxon = resolve_in(self.designator, taxonomy, windy=windy)
         if taxon != None:
             return taxon.whetherMonophyletic(self.whether, False)
         else:
@@ -215,7 +215,7 @@ class Children_no_good:
         return False
 
     def check(self, taxonomy, windy=False):
-        taxon = resolve_in(self.designator, taxonomy)
+        taxon = resolve_in(self.designator, taxonomy, windy=windy)
         if taxon != None:
             return taxon.children == None
         return False
@@ -238,7 +238,7 @@ class Whether_visible:
         return False
 
     def check(self, taxonomy, windy=False):
-        taxon = resolve_in(self.designator, taxonomy)
+        taxon = resolve_in(self.designator, taxonomy, windy=windy)
         return taxon.isHidden() == self.whether
 
 # Whether extinct (very similar)
@@ -259,7 +259,7 @@ class Whether_extant:
         return False
 
     def check(self, taxonomy, windy=False):
-        taxon = resolve_in(self.designator, taxonomy)
+        taxon = resolve_in(self.designator, taxonomy, windy=windy)
         return taxon.isExtant() == self.whether
 
     def unapply(self):
@@ -278,7 +278,7 @@ class All_hidden:
         return False
 
     def check(self, taxonomy, windy=False):
-        taxon = resolve_in(self.designator, taxonomy)
+        taxon = resolve_in(self.designator, taxonomy, windy=windy)
         if (taxon != None):
             return taxon.isHidden()
         return False
@@ -296,8 +296,8 @@ class All_hidden_to_rank:
             return taxon.hideDescendantsToRank(rank)
         return False
 
-    def test(self, taxonomy):
-        taxon = resolve_in(self.designator, taxonomy)
+    def check(self, taxonomy, windy=False):
+        taxon = resolve_in(self.designator, taxonomy, windy=windy)
         if taxon != None:
             if taxon.children != None:
                 for child in taxon.children:
@@ -355,7 +355,7 @@ def resolve_in(designator, taxonomy, windy=True):
 
 def get_candidates(designator, taxonomy):
     if isinstance(designator, str):
-        candidates = taxonomy.lookup(designator)
+        candidates = taxonomy.lookup(designator)    # Nodes
         if candidates == None:
             return []
         else:

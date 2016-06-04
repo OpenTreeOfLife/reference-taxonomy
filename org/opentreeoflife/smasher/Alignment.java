@@ -39,6 +39,8 @@ public abstract class Alignment {
         this.union = union;
     }
 
+    abstract void align();
+
     abstract Answer answer(Taxon node);
 
     Taxon map(Taxon node) {
@@ -50,8 +52,109 @@ public abstract class Alignment {
 
     abstract void cacheInSourceNodes();
 
+    // ----- Aligning individual nodes -----
 
-    // Align divisions from skeleton taxonomy
+	// unode is a preexisting node in this taxonomy.
+
+	public void alignWith(Taxon node, Taxon unode, String reason) {
+        try {
+            Answer answer = Answer.yes(node, unode, reason, null);
+            this.alignWith(node, unode, answer);
+            answer.maybeLog();
+        } catch (Exception e) {
+            System.err.format("** Exception in alignWith %s %s\n", node, unode);
+            e.printStackTrace();
+        }
+    }
+
+    // Set the 'mapped' property of this node, carefully
+	public void alignWith(Taxon node, Taxon unode, Answer answer) {
+		if (node.mapped == unode) return; // redundant
+        if (!(unode.taxonomy == this.union)) {
+            System.out.format("** Alignment target %s is not in the union taxonomy\n", node);
+            Taxon.backtrace();
+        } else if (!(node.taxonomy == this.source)) {
+            System.out.format("** Alignment source %s is not in the source taxonomy\n", unode);
+            Taxon.backtrace();
+        } else if (node.noMrca() != unode.noMrca()) {
+            System.out.format("** attempt to unify forest %s with non-forest %s\n",
+                              node, unode);
+            Taxon.backtrace();
+        } else if (node.mapped != null) {
+			// Shouldn't happen - assigning a single source taxon to two
+			//	different union taxa
+			if (node.report("Already assigned to node in union:", unode))
+				Taxon.backtrace();
+		} else {
+            node.mapped = unode;
+            node.answer = answer;
+            if (node.name != null && unode.name != null && !node.name.equals(unode.name))
+                Answer.yes(node, unode, "synonym-match", node.name).maybeLog();
+            if (unode.comapped != null) {
+                // Union node has already been matched to, but synonyms are OK
+                if (unode.comapped != node)
+                    node.markEvent("lumped");
+            } else
+                unode.comapped = node;
+        }
+    }
+
+	public boolean same(Taxon node1, Taxon node2) {
+		return sameness(node1, node2, true, true);
+	}
+
+	public boolean notSame(Taxon node1, Taxon node2) {
+		return sameness(node1, node2, false, true);
+	}
+
+	public boolean sameness(Taxon node, Taxon unode, boolean whether, boolean setp) {
+        if (node == null || unode == null) return false;
+        if (node.taxonomy != source) {
+            System.err.format("** node1 %s not in source taxonomy\n", node);
+            return false;
+        }
+        if (unode.taxonomy != union) {
+            System.err.format("** node2 %s not in source taxonomy\n", unode);
+            return false;
+        }
+        // start logging this name
+        if (node.name != null && union.eventlogger != null)
+            union.eventlogger.namesOfInterest.add(node.name);
+		if (whether) {			// same
+			if (node.mapped != null) {
+				if (node.mapped != unode) {
+					System.err.format("** The taxa have already been determined to be different: %s\n", node);
+                    return false;
+                } else
+                    return true;
+			}
+            if (setp) {
+                this.alignWith(node, unode, "same/ad-hoc");
+                return true;
+            } else return false;
+		} else {				// notSame
+			if (node.mapped != null) {
+				if (node.mapped == unode) {
+					System.err.format("** The taxa have already been determined to be the same: %s\n", node);
+                    return false;
+                } else
+                    return true;
+			}
+            if (setp) {
+                // Give the source node (node) a place to go in the union that is
+                // different from the union node it's different from
+                Taxon evader = new Taxon(unode.taxonomy, unode.name);
+                this.alignWith(node, evader, "not-same/ad-hoc");
+
+                union.addRoot(evader);
+                // Now evader != unode, as desired.
+                return true;
+            } else return false;
+		}
+	}
+
+
+    // ----- Align divisions from skeleton taxonomy -----
 
 	public void markDivisions(SourceTaxonomy source) {
 		if (union.skeleton == null)
@@ -62,9 +165,9 @@ public abstract class Alignment {
 
 	// Before every alignment pass (folding source taxonomy into
 	// union), all 'division' taxa (from the skeleton) that occur in
-	// either the union or the source taxonomy are identified and the
-	// 'division' field of each one is set to the corresponding
-	// division node from the union taxonomy.  Also the corresponding
+	// the source taxonomy are identified and the
+	// 'division' field of each is set to the corresponding
+	// division node from the skeleton taxonomy.  Also the corresponding
 	// division nodes are aligned.
 
 	// This operation is idempotent.
@@ -84,7 +187,7 @@ public abstract class Alignment {
                         System.out.format("** Help!  Conflict over division mapping: %s %s %s\n",
                                           node, node.mapped, unode);
                 } else
-                    union.alignWith(node, unode, "same/by-division-name");
+                    alignWith(node, unode, "same/by-division-name");
             }
         }
     }
@@ -158,7 +261,7 @@ public abstract class Alignment {
 				if (n1 != null)
 					n1.setDivision(div);
 				if (n1 != null && div != null)
-					union.alignWith(n1, div, "same/pinned"); // hmm.  TBD: move this out of here
+					alignWith(n1, div, "same/pinned"); // hmm.  TBD: move this out of here
 				if (n1 != null || div != null)
 					++count;
 			}
@@ -323,12 +426,10 @@ abstract class Criterion {
 				Taxon x0 = scan(x, target.taxonomy);
 				if (x0 == null || y0 == null)
 					return Answer.NOINFO;
-
 				if (x0.name == null)
-					System.err.println("! No name? 1 " + x0 + "..." + y0);
+					return Answer.NOINFO;
 				if (y0.name == null)
-					System.err.println("! No name? 2 " + x0 + "..." + y0);
-
+					return Answer.NOINFO;
 				if (x0.name.equals(y0.name))
 					return Answer.heckYes(x, target, "same/parent+parent", x0.name);
 				else if (online(x0.name, y0))
@@ -350,26 +451,18 @@ abstract class Criterion {
 
 		// Cf. informative() method
 		// Without this we get ambiguities when the taxon is a species
-		while (up != null && up.name != null && node.name.startsWith(up.name))
+		while (up != null && (up.name == null || node.name.startsWith(up.name)))
 			up = up.parent;
 
-		while (up != null && up.name != null && other.lookup(up.name) == null)
+		while (up != null && (up.name == null || other.lookup(up.name) == null))
 			up = up.parent;
 
-		if (up != null && up.name == null) {
-			System.err.println("!? Null name: " + up + " ancestor of " + node);
-			Taxon u = node;
-			while (u != null) {
-				System.err.println(u);
-				u = u.parent;
-			}
-		}
-		return up;
+        return up;
 	}
 
 	static boolean online(String name, Taxon node) {
 		for ( ; node != null; node = node.parent)
-			if (node.name.equals(name)) return !node.noMrca(); // kludge
+			if (node.name != null && node.name.equals(name)) return !node.noMrca(); // kludge
 		return false;
 	}
 

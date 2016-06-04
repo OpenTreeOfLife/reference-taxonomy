@@ -39,7 +39,7 @@ public class EventLogger {
 	// Called on union taxonomy
 	// scrutinize is a set of names of especial interest (e.g. deprecated)
 
-	void dumpLog(String filename, Set<String> scrutinize) throws IOException {
+	public void dumpLog(String filename, Set<String> scrutinize) throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
 
 		// Strongylidae	nem:3600	yes	same-parent/direct	3600	Strongyloidea	false
@@ -60,6 +60,7 @@ public class EventLogger {
 					for (Answer answer : answers)
 						out.println(answer.dump());
 			}
+        System.out.format("| Names to log: %s\n", scrutinize.size());
         for (String name : scrutinize) {
             List<Answer> answers = this.logs.get(name);
             if (answers != null)

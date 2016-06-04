@@ -33,6 +33,7 @@ move	Xylocaryon	genus	Proteaceae	Magnoliophyta	http://www.jstor.org/stable/26662
 move	Limnobiophyllum	genus	Araceae	Magnoliophyta	http://www.sciencedirect.com/science/article/pii/030437709400442O
 
 # Source for the following was "Bryan Drew" but that's not a URI
-prune	Flacourtiaceae	family	Flacourtiaceae	Magnoliophyta	http://bryan-drew.org/
+# Pruning is a bad idea.
+# prune	Flacourtiaceae	family	Flacourtiaceae	Magnoliophyta	http://bryan-drew.org/
 move	Perseoxylon	genus	Lauraceae	Magnoliophyta	http://www.sciencedirect.com/science/article/pii/S0753396905000169
 move	Oryxis	tribe	Phaseoleae	Fabaceae	http://www.bioone.org/doi/pdf/10.1600/0363644041744464

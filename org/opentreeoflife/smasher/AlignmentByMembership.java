@@ -61,7 +61,9 @@ public class AlignmentByMembership extends Alignment {
 
 	AlignmentByMembership(SourceTaxonomy source, UnionTaxonomy union) {
         super(source, union);
+    }
 
+    void align() {
         // Invert the name->node map: for each node, store the names by
         // which it is known.
         Map<Taxon, Collection<String>> sourceSynonymIndex;
@@ -74,7 +76,7 @@ public class AlignmentByMembership extends Alignment {
         System.out.println("a"); System.out.flush();
         halfMap(sourceSynonymIndex, unionSynonymIndex);           // tips and mrcas
         System.out.println("b"); System.out.flush();
-        align();                // mutual-mrca
+        alignify();                // mutual-mrca
 	}
 
     // Return the node that this one maps to under this alignment, or null
@@ -88,7 +90,7 @@ public class AlignmentByMembership extends Alignment {
             node.lub = sourceHalfMap.get(node);
             Answer a = alignmentMap.get(node);
             if (a != null) // && a.isYes()
-                this.union.alignWith(node, node.answer.target, a);
+                this.alignWith(node, node.answer.target, a);
         }
     }
 
@@ -245,7 +247,7 @@ public class AlignmentByMembership extends Alignment {
             return false;
     }
 
-    void align() {
+    void alignify() {
         for (Taxon node : source.roots())
             alignSubtree(node);
     }

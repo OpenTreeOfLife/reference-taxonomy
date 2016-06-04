@@ -158,9 +158,10 @@ if __name__ == "__main__":
 				# blast name   - 247 of them - a kind of common name
 				# in-part (e.g. Bacteria in-part: Monera)
 				# includes (what polarity?)
-				if node_id not in synonyms:
-					synonyms[node_id] = []
-				synonyms[node_id].append(line)
+				if nm_c != "in-part":
+					if node_id not in synonyms:
+						synonyms[node_id] = []
+					synonyms[node_id].append(line)
 			else:
 				lines[node_id] = line
 				nm_storage[node_id] = name

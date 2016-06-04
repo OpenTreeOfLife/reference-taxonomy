@@ -144,7 +144,7 @@ public class Smasher {
 						UnionTaxonomy union = promote(tax);
 						SourceTaxonomy source = Taxonomy.getTaxonomy(argv[i], null);
 						if (source != null)
-							union.mergeIn(source);
+							union.align(source);
 						tax = union;
 					}
 				}
@@ -156,7 +156,7 @@ public class Smasher {
     static UnionTaxonomy promote(Taxonomy tax) {
         if (tax instanceof SourceTaxonomy) {
             UnionTaxonomy union = new UnionTaxonomy(defaultIdspace);
-            union.mergeIn((SourceTaxonomy)tax);
+            union.align((SourceTaxonomy)tax);
             return union;
         } else if (tax instanceof UnionTaxonomy)
             return (UnionTaxonomy)tax;
@@ -179,7 +179,7 @@ public class Smasher {
 	}
 
 	static void test() throws IOException {
-		Taxonomy tax = Taxonomy.getNewick("(a,b,(e,f)c)d", "z");
+		Taxonomy tax = Taxonomy.getTaxonomy("(a,b,(e,f)c)d", "z");
 		for (Taxon node : tax.taxa())
 			System.out.println(node);
 	}

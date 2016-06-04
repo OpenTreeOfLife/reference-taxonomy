@@ -40,7 +40,7 @@ import org.json.simple.parser.ParseException;
 public abstract class Taxonomy {
     private Map<String, List<Node>> nameIndex = new HashMap<String, List<Node>>();
 	public Map<String, Taxon> idIndex = new HashMap<String, Taxon>();
-    public Taxon forest = new Taxon(this, "");
+    public Taxon forest = new Taxon(this, null);
 	public String idspace = null; // "ncbi", "ott", etc.
 	String[] header = null;
 
@@ -111,6 +111,8 @@ public abstract class Taxonomy {
 
     // compare addSynonym
 	void addToNameIndex(Node node, String name) {
+        if (node.taxonomy != this)
+            throw new RuntimeException(String.format("attempt to put node %s in wrong taxonomy %s", node, this));
         if (name == null)
             throw new RuntimeException("bug " + node);
 		List<Node> nodes = this.lookup(name);
@@ -244,19 +246,19 @@ public abstract class Taxonomy {
 		int count = 0;
         for (Node node : this.allNamedNodes()) {
             String name = node.name;
+            if (targetTaxonomy.lookup(name) == null) continue;
             Taxon taxon = node.taxon();
             Taxon other =
                 (mappedp
                  ? taxon.mapped
                  : targetTaxonomy.lookupId(taxon.id));
 
-            // If that taxon maps to a union taxon with a different name....
+            // If the name maps to a union taxon with a different name....
             if (other != null && !other.name.equals(name)) {
                 // then the name is a synonym of the union taxon too
                 if (other.taxonomy != targetTaxonomy)
                     System.err.format("** copySynonyms logic error %s %s\n",
                                       other.taxonomy, targetTaxonomy);
-                // TBD: copy type (and maybe other) information
                 else {
                     String type = "synonym";
                     if (node instanceof Synonym)
@@ -1248,16 +1250,6 @@ public abstract class Taxonomy {
 
 	// ----- NEWICK STUFF -----
 
-	public static SourceTaxonomy getNewick(String filename, String idspace) throws IOException {
-		SourceTaxonomy tax = new SourceTaxonomy(idspace);
-		BufferedReader br = Taxonomy.fileReader(filename);
-        Taxon root = Newick.newickToNode(new java.io.PushbackReader(br), tax);
-		tax.addRoot(root);
-        root.properFlags = 0;   // not unplaced
-        tax.postLoadActions();
-		return tax;
-	}
-
 	public void loadNewick(String filename) throws IOException {
 		BufferedReader br = Taxonomy.fileReader(filename);
         Taxon root = Newick.newickToNode(new java.io.PushbackReader(br), this);
@@ -1657,7 +1649,7 @@ public abstract class Taxonomy {
             Taxon node = nodenode.taxon();
 			// Follow ancestor chain to see whether this node is in the context
 			for (Taxon chain = node; chain != null; chain = chain.parent)
-				if (chain.name.equals(contextName)) {
+				if (chain.name != null && chain.name.equals(contextName)) {
 					fnodes.add(node);
 					break;
 				}
@@ -1681,7 +1673,7 @@ public abstract class Taxonomy {
 			if (!node.name.equals(descendantName)) continue;
 			// Follow ancestor chain to see whether this node is an ancestor
 			for (Taxon chain = node; chain != null; chain = chain.parent)
-				if (chain.name.equals(taxonName)) {
+				if (chain.name != null && chain.name.equals(taxonName)) {
 					fnodes.add(chain);
 					break;
 				}
@@ -1708,6 +1700,77 @@ public abstract class Taxonomy {
 						  this.rootCount(),
 						  this.nameIndex.size());
 	}
+
+    public void check() {
+        Set<Taxon> all = new HashSet<Taxon>();
+        for (Taxon taxon : this.taxa()) {
+            if (taxon.prunedp)
+                System.out.format("** check: Pruned taxon found in hierarchy: %s in %s\n", taxon, taxon.parent);
+            else
+                all.add(taxon);
+        }
+
+        Taxon u = this.unique("Salicaceae");
+        System.out.format("| %s %s\n", u, (u == null ? "" : u.parent.toString()));
+
+        // Ensure every named node is reachable...
+        for (Node node : allNamedNodes()) {
+            Taxon taxon = node.taxon();
+            if (!all.contains(taxon)) {
+                if (node == taxon) {
+                    System.out.format("** check: Named taxon not in hierarchy: %s in %s\n", taxon, taxon.parent);
+                    all.add(taxon);
+                } else if (taxon.prunedp) { // Synonym of pruned
+                    // System.out.format("** check (ok): Pruned taxon has synonym %s in name index: %s in %s\n", node.name, taxon, taxon.parent);
+                    ;
+                } else {
+                    System.out.format("** check: Synonym %s taxon not in hierarchy: %s in %s\n",
+                                      node.name, taxon, taxon.parent);
+                    all.add(taxon);
+                }
+            }
+        }
+
+        // Ensure every identified node is reachable...
+        for (Taxon taxon : idIndex.values()) {
+            if (!all.contains(taxon)) {
+                if (taxon.prunedp)
+                    System.out.format("** check: Pruned taxon is in identifier index: %s\n", taxon);
+                else {
+                    System.out.format("** check: Identified taxon not in hierarchy: %s\n", taxon);
+                    all.add(taxon);
+                }
+            }
+        }
+
+        // Ensure all nodes are indexed ...
+        for (Taxon node : all) {
+            if (node.name != null && !node.prunedp) {
+                Collection<Node> nodes = this.lookup(node.name);
+                if (nodes == null)
+                    System.out.format("** check: Named node not in name index: %s\n", node);
+                else if (!nodes.contains(node))
+                    System.out.format("** check: Named node is not in name index: %s\n", node);
+            }
+            if (node.id != null) {
+                Taxon taxon = lookupId(node.id);
+                if (taxon == null)
+                    System.out.format("** check: Identified node not in id index: %s\n", node);
+                else if (taxon != node)
+                    System.out.format("** check: Identified node collision with id index: %s %s\n", node,  taxon);
+            }
+        }
+
+        // Check parent/child links...
+        for (Taxon node : all) {
+            if (node.parent == null) {
+                if (node != forest && !node.prunedp)
+                    System.out.format("** check: null parent %s\n", node);
+            } else if (!node.parent.children.contains(node))
+                System.out.format("** check: not in parent's children list: %s %s\n",
+                                  node, node.parent);
+        }
+    }
 
 	// ----- Utilities -----
 

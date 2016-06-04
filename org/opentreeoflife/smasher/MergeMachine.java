@@ -112,15 +112,6 @@ class MergeMachine {
             unode.answer = node.answer;
 	}
 
-    public Taxon alignWithNew(Taxon node, Taxonomy target, String reason) {
-        Taxon newnode = target.dupWithoutId(node, reason);
-        node.mapped = newnode;
-        newnode.comapped = node;
-        node.answer = Answer.yes(node, newnode, reason, null);
-        node.answer.maybeLog();
-        return newnode;
-    }
-
     Map<String, Integer> reasonCounts = new HashMap<String, Integer>();
     List<String> reasons = new ArrayList<String>();
 
@@ -147,10 +138,11 @@ class MergeMachine {
         }
     }
 
-	// Method called for every node in the source taxonomy.
-	// Input is node in source taxonomy.  Returns node in union taxonomy, or null.
-    // Result can be detached (meaning caller must attach it) or not
-    // (meaning it's already connected to the union taxonomy).
+	// Method called on every node in the source taxonomy.  If node is
+	// aligned, usually we create a new union node, and align the
+	// source node to it.  The new union node will initially be
+	// detached, and becomes attached to the union taxonomy when its
+	// parent node is processed.
 	void augment(Taxon node, Taxon sink) {
 
 		if (node.children == null) {
@@ -172,7 +164,7 @@ class MergeMachine {
                 takeOn(node, node.mapped, 0);
                 accept(node, "mapped/internal");
             } else {
-                // Examine parents of mapped siblings
+                // Examine mapped parents of the children
                 boolean graftp = true;
                 boolean consistentp = true;
                 Taxon common = null;
@@ -212,6 +204,13 @@ class MergeMachine {
                     reject(node, "merged", common, Taxonomy.MERGED);
                 }
             }
+			for (Taxon child: node.children) {
+                if (child.mapped != null && child.mapped.parent == null)
+                    // Does not happen
+                    System.err.format("** Unattached child %s %s %s\n", child, node, child.mapped);
+            }
+            if (false && node.mapped == null)
+                System.err.format("** Unaligned node %s %s with %s children\n", node, node.answer, node.children.size());
         }
     }
 
@@ -317,6 +316,15 @@ class MergeMachine {
         return newnode;
 	}
 
+    public Taxon alignWithNew(Taxon node, Taxonomy target, String reason) {
+        Taxon newnode = target.dupWithoutId(node, reason);
+        node.mapped = newnode;
+        newnode.comapped = node;
+        node.answer = Answer.yes(node, newnode, reason, null);
+        node.answer.maybeLog();
+        return newnode;
+    }
+
     void checkRejection(Taxon node, String reason) {
         if (union != null && union.importantIds != null) {
             List<Node> probe = union.importantIds.lookup(node.name);
@@ -354,58 +362,56 @@ class MergeMachine {
 
     Taxon takeOn(Taxon source, Taxon target, int flags) {
         for (Taxon child: source.children) {
-            Taxon augChild = child.mapped;
-            if (augChild == null)
-                ;
-            else if (augChild.noMrca())
-                ;
-            else if (augChild.isDetached()) {
+            Taxon uchild = child.mapped;
+            if (uchild == null)
+                ;               // inconsistent, merged, ambiguous, ...
+            else if (uchild.noMrca())
+                ;               // it's a root
+            else if (uchild.isDetached()) {
                 // "new" child
-                Taxon nu = augChild;
-                if (target == nu)
+                if (target == uchild)
                     ;               // Lacrymaria Morganella etc. - shouldn't happen
-                else if (target.descendsFrom(nu)) {
+                else if (target.descendsFrom(uchild)) {
                     System.out.format("** Adoption would create a cycle\n");
-                    System.out.format("%s ?< ", nu);
-                    target.showLineage(nu.parent);
+                    System.out.format("%s ?< ", uchild);
+                    target.showLineage(uchild.parent);
 
                     // Need to do something with it
                     reject(child, "reject/cycle", union.forest, Taxonomy.UNPLACED);
-                    target.taxonomy.addRoot(nu);
+                    target.taxonomy.addRoot(uchild);
                 } else {
                     //if (??child??.isRoot())
                     //    child.markEvent("placed-former-root");
-                    target.addChild(nu); // if unplaced, stay unplaced
-                    nu.addFlag(flags);
+                    target.addChild(uchild); // if unplaced, stay unplaced
+                    uchild.addFlag(flags);
                 }
-            } else if (!augChild.isPlaced()) {
-                // "old" child placed not well placed in union.  consider moving it
-                Taxon p = augChild;
-                // is target a better (more specific) placement for p than p's current parent?
-                if (!target.descendsFrom(p.parent))
+            } else if (!uchild.isPlaced()) {
+                // "old" child maybe not well placed in union.  consider moving it
+                // is target a better (more specific) placement for uchild than uchild's current parent?
+                if (!target.descendsFrom(uchild.parent))
                     child.markEvent("not-placed/does-not-descend");
-                else if (target == p.parent) {
+                else if (target == uchild.parent) {
                     // A placement here could promote an unplaced taxon in union to placed...
                     // sort of dangerous, because later taxonomies (e.g. worms) tend to be unreliable
                     if (flags > 0) {
                         child.markEvent("not-placed/already-unplaced");
                     } else {
-                        // System.out.format("| %s not placed because %s goes to %s\n", p, source, p.parent);
+                        // System.out.format("| %s not placed because %s goes to %s\n", uchild, source, uchild.parent);
                         child.markEvent("not-placed/same-taxon");
                     }
-                } else if (target.descendsFrom(p)) {
+                } else if (target.descendsFrom(uchild)) {
                     if (false)
                         System.out.format("| Moving %s from %s to %s (says %s) would lose information\n",
-                                          p, p.parent, target, source);
+                                          uchild, uchild.parent, target, source);
                     child.markEvent("not-placed/would-lose-information");
-                } else if (p.isRoot() && child.isPlaced()) {
-                    System.out.format("| %s moved from root to %s because %s\n", p, target, source);
+                } else if (uchild.isRoot() && child.isPlaced()) {
+                    System.out.format("| %s moved from root to %s because %s\n", uchild, target, source);
                     Answer.noinfo(child, null, "promoted/from-root", target.name).maybeLog(union);
-                    p.changeParent(target, 0);
+                    uchild.changeParent(target, 0);
                 } else {
-                    //System.out.format("| %s moved to %s because %s, was under %s\n", p, target, source, p.parent);
+                    //System.out.format("| %s moved to %s because %s, was under %s\n", uchild, target, source, uchild.parent);
                     Answer.noinfo(child, null, "promoted/internal", target.name).maybeLog(union);
-                    p.changeParent(target, flags | (child.properFlags & Taxonomy.INCERTAE_SEDIS_ANY));
+                    uchild.changeParent(target, flags | (child.properFlags & Taxonomy.INCERTAE_SEDIS_ANY));
                 }
             }
         }
@@ -437,9 +443,11 @@ class MergeMachine {
             //System.out.format("** Can't find two children %s %s\n", alice, bob);
             union.markEvent("incomplete conflict");
         else {
+            if (alice.taxonomy != bob.taxonomy)
+                System.err.format("** taxonomy mismatch - shouldn't happen %s %s\n", alice, bob);
             union.conflicts.add(new Conflict(node, alice, bob, node.isHidden()));
             if (union.markEvent("reported conflict"))
-                System.out.format("%s %s\n", union.conflicts.size(), node);
+                System.out.format("| conflict %s %s\n", union.conflicts.size(), node);
         }
 	}
 

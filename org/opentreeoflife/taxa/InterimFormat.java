@@ -416,6 +416,18 @@ class InterimFormat {
 								   "synonym");
 					Taxon node = tax.lookupId(id);
 
+				    // Synonym types from NCBI:
+                    // synonym
+				    // equivalent name  - usually misspelling or spelling variant
+				    // misspelling
+				    // authority	 - always extends scientific name
+				    // type material	 - bacterial strain as type for prokaryotic species ??
+				    // common name
+				    // genbank common name
+				    // blast name   - 247 of them - a kind of common name
+				    // in-part (e.g. Bacteria in-part: Monera)
+				    // includes (what polarity?)
+
                     if (type.equals("type material")) // NCBI
                         continue;
                     if (type.equals("authority")) // NCBI
@@ -423,6 +435,8 @@ class InterimFormat {
                     if (type.endsWith("common name")) // NCBI
                         continue;
                     if (type.equals("blast name")) // NCBI
+                        continue;
+                    if (type.equals("in-part")) // NCBI
                         continue;
                     if (type.equals("valid")) // IRMNG - redundant
                         continue;
@@ -458,22 +472,25 @@ class InterimFormat {
             boolean synonymp = false;
 			for (Node node : tax.lookup(name)) {
                 if (node instanceof Synonym) {
-                    synonymp = true;
                     Synonym syn = (Synonym)node;
                     Taxon taxon = syn.taxon;
-                    String uniq = node.uniqueName();
-                    String source = syn.source != null ? syn.source.toString() : "";
                     if (taxon.id == null) {
+                        // E.g. Populus tremuloides
                         if (!taxon.isRoot()) {
-                            System.out.format("** Synonym for node with no id: %s\n", taxon.name);
-                            taxon.show();
+                            System.out.format("** Synonym for node with no id: %s %s %s\n",
+                                              syn.name, taxon, taxon.parent);
+                            //taxon.show();
                         }
-                    } else
+                    } else {
+                        String uniq = node.uniqueName();
+                        String source = syn.source != null ? syn.source.toString() : "";
                         out.println(name + sep +
                                     taxon.id + sep +
                                     syn.type + sep +
                                     uniq + sep +
                                     source + sep);
+                    }
+                    synonymp = true;
                 } else {
                     primaryp = true;
                 }

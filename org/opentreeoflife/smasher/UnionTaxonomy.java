@@ -43,21 +43,17 @@ public class UnionTaxonomy extends Taxonomy {
 	List<SourceTaxonomy> sources = new ArrayList<SourceTaxonomy>();
 	SourceTaxonomy idsource = null;
 	// One log per name-string
-	Map<String, List<Answer>> logs = new HashMap<String, List<Answer>>();
     List<Answer> weakLog = new ArrayList<Answer>();
 
 	static boolean windyp = true;
 
+    // a new Alignment object for each source taxonomy being absorbed
     Alignment currentAlignment = null;
 
 	UnionTaxonomy(String idspace) {
         super(idspace);
 		this.setTag("union");
         this.eventlogger = new EventLogger();
-	}
-
-	public static UnionTaxonomy newTaxonomy() {
-		return new UnionTaxonomy(null);
 	}
 
 	public static UnionTaxonomy newTaxonomy(String idspace) {
@@ -91,28 +87,38 @@ public class UnionTaxonomy extends Taxonomy {
 
     // Absorb a new source taxonomy
 
-	public void absorb(SourceTaxonomy tax) {
+	public void absorb(SourceTaxonomy source) { // called from jython
+        Alignment a = alignment(source);
+        this.absorb(source, a);
+    }
+
+	public Alignment alignment(SourceTaxonomy source) { // called from jython
+        if (source.idspace == null)
+            setIdspace(source);
+        this.addSource(source);
+        return new AlignmentByName(source, this);
+    }
+
+	public void absorb(SourceTaxonomy source, Alignment a) { // called from jython
         try {
-            if (tax.idspace == null)
-                setIdspace(tax);
-            this.mergeIn(tax);
+            this.align(source, a);
+            new MergeMachine(source, this, a).augment();
+            source.copyMappedSynonyms(this); // this = union
+            this.check();
+            UnionTaxonomy.windyp = true; //kludge
         } catch (Exception e) {
             e.printStackTrace();
             throw e;
         }
 	}
 
-	void mergeIn(SourceTaxonomy source) {
-		Alignment a = this.align(source);
-        new MergeMachine(source, this, a).augment();
-		source.copyMappedSynonyms(this); // this = union
-		UnionTaxonomy.windyp = true; //kludge
-	}
-
 	Alignment align(SourceTaxonomy source) {
+        return align(source, this.alignment(source));
+    }
+
+	Alignment align(SourceTaxonomy source, Alignment n) {
+        n.align();
         UnionTaxonomy union = this;
-        union.addSource(source);
-        Alignment n = new AlignmentByName(source, union);
         n.cacheInSourceNodes();
         if (false) {
             // For testing purposes, do both kinds of alignment and compare them
@@ -148,60 +154,12 @@ public class UnionTaxonomy extends Taxonomy {
         return n;
 	}
 
-    // ----- Aligning individual nodes -----
-
-	// unode is a preexisting node in this taxonomy.
-
-	public void alignWith(Taxon node, Taxon unode, String reason) {
-        try {
-            Answer answer = Answer.yes(node, unode, reason, null);
-            this.alignWith(node, unode, answer);
-            answer.maybeLog();
-        } catch (Exception e) {
-            System.err.format("** Exception in alignWith %s %s\n", node, unode);
-            e.printStackTrace();
-        }
-    }
-
-    // Set the 'mapped' property of this node, carefully
-	public void alignWith(Taxon node, Taxon unode, Answer answer) {
-		if (node.mapped == unode) return; // redundant
-        if (!(unode.taxonomy == this)) {
-            System.out.format("** Alignment target %s is not in a union taxonomy\n", node);
-            Taxon.backtrace();
-        } else if (node.taxonomy == this) {
-            System.out.format("** Alignment source %s is not in a source taxonomy\n", unode);
-            Taxon.backtrace();
-        } else if (node.noMrca() != unode.noMrca()) {
-            System.out.format("** attempt to unify forest %s with non-forest %s\n",
-                              node, unode);
-            Taxon.backtrace();
-        } else if (node.mapped != null) {
-			// Shouldn't happen - assigning a single source taxon to two
-			//	different union taxa
-			if (node.report("Already assigned to node in union:", unode))
-				Taxon.backtrace();
-		} else {
-            node.mapped = unode;
-            node.answer = answer;
-            if (node.name != null && unode.name != null && !node.name.equals(unode.name))
-                Answer.yes(node, unode, "synonym-match", node.name).maybeLog();
-            if (unode.comapped != null) {
-                // Union node has already been matched to, but synonyms are OK
-                if (unode.comapped != node)
-                    node.markEvent("lumped");
-            } else
-                unode.comapped = node;
-        }
-    }
-
     // ----- Finish up -----
 
 	// Assign ids, harvested from idsource and new ones as needed, to nodes in union.
 
 	public void assignIds(SourceTaxonomy idsource) {
 		this.idsource = idsource;
-        this.addSource(idsource);
 
         this.prepareMetadata();
 
@@ -623,55 +581,7 @@ public class UnionTaxonomy extends Taxonomy {
 	// scrutinize is a set of names of especial interest (e.g. deprecated)
 
 	void dumpLog(String filename, Set<String> scrutinize) throws IOException {
-		PrintStream out = Taxonomy.openw(filename);
-
-		// Strongylidae	nem:3600	yes	same-parent/direct	3600	Strongyloidea	false
-		out.println("name\t" +
-					"source_qualified_id\t" +
-					"parity\t" +
-					"union_uid\t" +
-					"reason\t" +
-					"witness\t +");
-
-		// this.logs is indexed by taxon name
-		if (false)
-			for (List<Answer> answers : this.logs.values()) {
-				boolean interestingp = false;
-				for (Answer answer : answers)
-					if (answer.isInteresting()) {interestingp = true; break;}
-				if (interestingp)
-					for (Answer answer : answers)
-						out.println(answer.dump());
-			}
-        for (String name : scrutinize) {
-            List<Answer> answers = this.logs.get(name);
-            if (answers != null)
-                for (Answer answer : answers)
-                    out.println(answer.dump());
-            else
-                // usually a silly synonym
-                // System.out.format("No logging info for name %s\n", name);
-                ;
-        }
-
-		if (false) {
-			Set<String> seen = new HashSet<String>();
-			for (Taxon node : this.taxa())	// preorder
-				if (!seen.contains(node.name)) {
-					List<Answer> answers = this.logs.get(node.name);
-					if (answers == null) continue; //shouldn't happen
-					boolean interestingp = false;
-					for (Answer answer : answers)
-						if (answer.isInteresting()) {interestingp = true; break;}
-					if (interestingp)
-						for (Answer answer : answers)
-							out.println(answer.dump());
-					seen.add(node.name);
-				}
-			// might be missing some log entries for synonyms
-		}
-
-		out.close();
+        this.eventlogger.dumpLog(filename, scrutinize);
 	}
 
 	List<Conflict> conflicts = new ArrayList<Conflict>();
@@ -758,64 +668,12 @@ public class UnionTaxonomy extends Taxonomy {
 	}
 
 	public boolean sameness(Taxon node1, Taxon node2, boolean whether, boolean setp) {
-		Taxon unode, snode;
-		if (node1 == null || node2 == null) return false; // Error already reported?
-		if (node1.taxonomy instanceof UnionTaxonomy) {
-			unode = node1;
-			snode = node2;
-		} else if (node2.taxonomy instanceof UnionTaxonomy) {
-			unode = node2;
-			snode = node1;
-		} else if (node1.mapped != null) {
-			unode = node1.mapped;
-			snode = node2;
-		} else if (node2.mapped != null) {
-			unode = node2.mapped;
-			snode = node1;
-		} else if (node1.taxonomy == node2.taxonomy) {
+        if (node1.taxonomy == node2.taxonomy)
             return whetherLumped(node1, node2, whether, setp);
-		} else {
-			System.err.format("** One of the two nodes must be already mapped to the union taxonomy: %s %s\n",
+		else {
+			System.err.format("** Use Alignment.same to align these nodes: %s %s\n",
 							  node1, node2);
 			return false;
-		}
-		if (!(snode.taxonomy instanceof SourceTaxonomy)) {
-			System.err.format("** One of the two nodes must come from a source taxonomy: %s %s\n", unode, snode);
-			return false;
-		}
-        // start logging this name
-        if (snode.name != null && this.eventlogger != null)
-            this.eventlogger.namesOfInterest.add(snode.name);
-		if (whether) {			// same
-			if (snode.mapped != null) {
-				if (snode.mapped != unode) {
-					System.err.format("** The taxa have already been determined to be different: %s\n", snode);
-                    return false;
-                } else
-                    return true;
-			}
-            if (setp) {
-                this.alignWith(snode, unode, "same/ad-hoc");
-                return true;
-            } else return false;
-		} else {				// notSame
-			if (snode.mapped != null) {
-				if (snode.mapped == unode) {
-					System.err.format("** The taxa have already been determined to be the same: %s\n", snode);
-                    return false;
-                } else
-                    return true;
-			}
-            if (setp) {
-                // Give the source node (snode) a place to go in the union that is
-                // different from the union node it's different from
-                Taxon evader = new Taxon(unode.taxonomy, unode.name);
-                this.alignWith(snode, evader, "not-same/ad-hoc");
-
-                unode.taxonomy.addRoot(evader);
-                // Now evader != unode, as desired.
-                return true;
-            } else return false;
 		}
 	}
 

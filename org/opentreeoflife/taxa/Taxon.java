@@ -148,8 +148,8 @@ public class Taxon extends Node {
         } else {
             List<Node> nodes = this.taxonomy.lookup(name);
             if (nodes == null) {
-                Synonym syn = new Synonym(name, type, this);
-                this.taxonomy.addToNameIndex(syn, name);
+                Synonym syn = new Synonym(name, type, this); // does addToNameIndex
+                // this.taxonomy.addToNameIndex(syn, name);
                 return syn;
             } else {
                 // We don't want to create a homonym.
@@ -251,6 +251,10 @@ public class Taxon extends Node {
     // Removes it from the tree - undoes addChild
 
 	public void detach() {
+        if (this.name != null && this.name.equals("Salicaceae")) {
+            System.out.println("** detaching Salicaceae");
+            backtrace();
+        }
 		Taxon p = this.parent;
         if (p == null) return;  // already detached
         this.parent = null;
@@ -362,22 +366,18 @@ public class Taxon extends Node {
 	}
 
 	public void addSource(Taxon source) {
-		if (source.id != null &&
-			!source.taxonomy.getIdspace().equals("skel")) //KLUDGE!!!
+		if (!source.taxonomy.getIdspace().equals("skel")) //KLUDGE!!!
 			addSourceId(source.getQualifiedId());
 		// Accumulate ...
-		if (source.sourceIds != null)
+		if (false && source.sourceIds != null)
 			for (QualifiedId qid : source.sourceIds)
 				addSourceId(qid);
 	}
 
 	public QualifiedId getQualifiedId() {
         String space = this.taxonomy.getIdspace();
-		if (this.id != null)
+		if (this.id != null) {
 			return new QualifiedId(space, this.id);
-        else if (this.name != null) {
-			System.err.format("| [getQualifiedId] Taxon has no id, using name: %s:%s\n", space, this.name);
-			return new QualifiedId(space, this.name);
         } else if (this.noMrca()) {
             // Shouldn't happen
 			System.err.println("| [getQualifiedId] Forest");
@@ -386,6 +386,10 @@ public class Taxon extends Node {
             // Shouldn't happen
 			System.err.println("| [getQualifiedId] Detached");
             return new QualifiedId(space, "<detached>");
+        } else if (this.name != null) {
+            // e.g. h2007
+			// System.err.format("| [getQualifiedId] Taxon has no id, using name: %s:%s\n", space, this.name);
+			return new QualifiedId(space, this.name);
         } else {
 			// What if from a Newick string?
 			System.err.println("| [getQualifiedId] Nondescript");
@@ -415,9 +419,16 @@ public class Taxon extends Node {
                 ids = (this.id == null ? "" : this.id) + "=" + ref;
             else
                 ids = this.getSourceIdsString();
-        } else if (this.taxonomy.getIdspace() != null)
-            ids = this.getQualifiedId().toString();
-        else if (this.id != null)
+        } else if (this.taxonomy.getIdspace() != null) {
+            if (this.id != null)
+                ids = this.getQualifiedId().toString();
+            else if (this.noMrca())
+                ids = this.taxonomy.getIdspace() + ":<forest>";
+            else if (this.parent == null)
+                ids = this.taxonomy.getIdspace() + ":<detached>";
+            else
+                ids = "~";
+        } else if (this.id != null)
             ids = this.id;
         else
             ids = "-";
@@ -430,6 +441,7 @@ public class Taxon extends Node {
 			(this.children == null ? "" : "+" + ((Object)(this.children.size())).toString()) +
 			twinkie +				// tbd: indicate division top with "#" 
             (this.isDirectlyHidden() ? "?" : "") +
+            (this.prunedp ? " pruned" : "") +
 			")";
 	}
 
@@ -658,7 +670,7 @@ public class Taxon extends Node {
     }
  
 	// Compute sibling taxa {a', b'} such that a' includes a and b' includes b.
-    // Returns null if one includes the other.
+    // Returns null if one includes the other, or if in different trees.
     // Could return the 'forest' pseudo-taxon.
     // Except, if no way to get to union from source, return null.
 
@@ -690,8 +702,10 @@ public class Taxon extends Node {
 			a = a.parent;
 			b = b.parent;
 		}
-        if (a.parent == null)
-            throw new RuntimeException(String.format("%s %s in different trees", this, other));
+        if (a.parent == null) {
+            System.err.format("** %s and %s are in different trees\n", this, other);
+            Taxon.backtrace();
+        }
         Taxon[] answer = {a, b};
         return answer;
 	}
@@ -739,8 +753,7 @@ public class Taxon extends Node {
 	public boolean prune(String reason) {
         this.detach();
         this.addFlag(Taxonomy.EDITED);
-        this.setRemoved(reason);
-        return true;
+        return this.setRemoved(reason);
     }
 
     // Recursively set prunedp flag and remove from indexes
@@ -916,7 +929,7 @@ public class Taxon extends Node {
         } else {
             // if (!newchild.isDetached()) newchild.detach();  - not needed given change to newTaxon.
             if (newchild.descendsFrom(this))
-                System.err.format("* Note: now making %s a child of %s; it was already in %s\n",
+                System.err.format("* Note: moving %s from %s to %s\n",
                                   newchild, newchild.parent, this);
             newchild.changeParent(this, 0);
 			this.addFlag(Taxonomy.EDITED);
@@ -1020,7 +1033,7 @@ public class Taxon extends Node {
 		if (other.children != null)
 			for (Taxon child : new ArrayList<Taxon>(other.children))
 				// beware concurrent modification
-				child.changeParent(this.parent);
+				child.changeParent(this);
         // something about extinct flags here - extinct absorbing non-extinct
 		this.taxonomy.addSynonym(other.name, this, "subsumed_by");	// Not sure this is a good idea
 		other.prune("absorb");

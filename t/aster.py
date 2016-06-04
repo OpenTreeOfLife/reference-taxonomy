@@ -8,6 +8,8 @@ from claim import Has_child
 # Create model taxonomy
 tax = UnionTaxonomy.newTaxonomy('ott')
 
+tax.eventlogger.namesOfInterest.add('Pentaphragma ellipticum')
+
 # Establish homonym-resolution skeleton (not really used here)
 # skel = Taxonomy.getTaxonomy('tax/skel/', 'skel')
 # tax.setSkeleton(skel)

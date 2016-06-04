@@ -38,7 +38,7 @@ public class AlignmentByName extends Alignment {
     private int losers, winners, fresh, grafts, outlaws;
 
     void cacheInSourceNodes() {
-        union.alignWith(source.forest, union.forest, "align-forests");
+        this.alignWith(source.forest, union.forest, "align-forests");
 
         // The answers are already stored in .answer of each node
         // Now do the .lubs
@@ -132,8 +132,6 @@ public class AlignmentByName extends Alignment {
 	int nextSequenceNumber = 0;
 
 	public void reset() {
-        System.out.format("start reset %s\n", source);
-
 		this.nextSequenceNumber = 0;
         this.source.reset();    // depths and comapped
         this.union.reset();
@@ -147,8 +145,6 @@ public class AlignmentByName extends Alignment {
         // unnecessary?
         // this.source.inferFlags(); 
         // this.union.inferFlags(); 
-        System.out.format("finished reset %s\n", source);
-
 	}
 
 	// 'Bracketing' logic.  Every node in the union taxonomy is
@@ -245,15 +241,17 @@ public class AlignmentByName extends Alignment {
         SourceTaxonomy t1 = Taxonomy.getTaxonomy("(a,b,c)d", "z1");
         SourceTaxonomy t2 = Taxonomy.getTaxonomy("(a,b,c)d", "z2");
         UnionTaxonomy u = new UnionTaxonomy("u");
-        u.mergeIn(t1);
-        u.mergeIn(t2);
+        u.absorb(t1);
+        u.absorb(t2);
         System.out.println(witness(t1.taxon("d"), u.taxon("d")));
     }
 
 
     AlignmentByName(SourceTaxonomy source, UnionTaxonomy union) {
         super(source, union);
+    }
 
+    void align() {
         this.reset();          // depths, brackets, comapped
 
         Criterion[] criteria = Criterion.criteria;
@@ -313,7 +311,7 @@ public class AlignmentByName extends Alignment {
                         if (false &&
                             (((nodes.size() > 1 || unodes.size() > 1) && (++homcount % 1000 == 0))))
                             System.out.format("| Mapping: %s %s*%s (name #%s)\n", name, nodes.size(), unodes.size(), incommon);
-                        new Matrix(name, nodes, unodes).run(criteria);
+                        new Matrix(name, nodes, unodes, this).run(criteria);
                     }
 				}
 			}
@@ -334,14 +332,16 @@ public class AlignmentByName extends Alignment {
         String name;
         List<Node> nodes;
         List<Node> unodes;
+        Alignment alignment;
         int m;
         int n;
         Answer[][] suppressp;
 
-        Matrix(String name, List<Node> nodes, List<Node> unodes) {
+        Matrix(String name, List<Node> nodes, List<Node> unodes, Alignment alignment) {
             this.name = name;
             this.nodes = nodes;
             this.unodes = unodes;
+            this.alignment = alignment;
             m = nodes.size();
             n = unodes.size();
             if (m*n > 50)
@@ -465,7 +465,7 @@ public class AlignmentByName extends Alignment {
                             x.answer = Answer.no(x, y, "redundant", null);
                             x.answer.maybeLog();
                         } else {
-                            union.alignWith(x, y, a); // sets .mapped, .answer
+                            this.alignment.alignWith(x, y, a); // sets .mapped, .answer
                         }
                         suppressp[i][j] = a;
                     }

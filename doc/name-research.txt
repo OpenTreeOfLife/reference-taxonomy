@@ -575,6 +575,8 @@ In draft12:
 
 much better.
 
+-- wait, this is still wrong.
+
 ### Nitzschia elongata
 
 Most interesting homonym from homonym analysis: Nitzschia elongata
@@ -623,6 +625,48 @@ Uronema GBIF:3237269 is a Ciliophore in Protozoa, from CoL, and also
 has both spellings.
 
 This genus, and 4 of its members, are legitimate homonyms.  OTT 2.10 gets this wrong.
+
+### Calothrix
+
+** Ambiguous taxon name: Calothrix
+**   null Calothrix (in FamilyII (in SubsectionIV))
+**   null Calothrix (in FamilyI (in SubsectionIV))
+**   null Calothrix (genus worms:146624)
+
+grep "Calothrix	" tax/silva/taxonomy.tsv 
+X99213/#6	|	X99213/#5	|	Calothrix	|	no rank	|		|	
+  in current silva: SubsectionIV > FamilyII > Calothrix > Calothrix parietina
+AB074504/#6	|	X59559/#5	|	Calothrix	|	no rank	|		|	
+  in current silva: SubsectionIV > FamilyI > (no Calothrix present!)
+     bottoms out at Calothrix brevissima IAM M-249, but that's not in
+     the hierarchy?
+  so it looks like this one was a mistaken label in silva 115.
+
+grep "Calothrix	" tax/ncbi/taxonomy.tsv 
+1186	|	1185	|	Calothrix	|	genus	|	
+
+grep "Calothrix	" tax/gbif/taxonomy.tsv 
+2523831	|	2885	|	Calothrix	|	genus	|	
+
+Solution: the AB074504/#6 variant seems to be a ghost - there is no
+such genus in modern versions of SILVA.  Rename it arbitrarily for now.
+
+## Trichosporon
+
+I think this is just a genus of fungi but I don't know why there end
+up being three of them.
+
+** Ambiguous taxon name: Trichosporon
+**   null Trichosporon (genus if:10296)
+**   null Trichosporon (genus ncbi:599816)
+**   null Trichosporon (genus worms:178157)
+
+364222	|	4107405	|	Trichosporon	|	genus	|	if:10296,ncbi:5552,worms:178162,gbif:7239015,gbif:7239013,gbif:7239016,gbif:7239018,gbif:7239014,gbif:7239017,gbif:2518163,irmng:1365096	|	Trichosporon (genus in subphylum Agaricomycotina)	|		|	
+834424	|	634628	|	Trichosporon	|	genus	|	ncbi:599816	|	Trichosporon (genus ncbi:599816)	|	incertae_sedis,sibling_higher,hidden	|	
+
+Looks like another ghost.  In current NCBI, there is only one (599816
+redirects to 5552).
+
 
 ## Division problems
 

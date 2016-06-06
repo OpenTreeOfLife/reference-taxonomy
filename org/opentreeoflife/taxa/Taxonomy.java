@@ -1187,7 +1187,7 @@ public abstract class Taxonomy {
             Taxon second = rootsList.get(1);
             int count2 = second.count();
             if (rootsList.size() >= 2 && count1 < count2*500)
-                System.err.format("** Nontrivial forest: biggest is %s, 2nd biggest is %s\n", count1, count2);
+                System.err.format("* Nontrivial forest: biggest is %s, 2nd biggest is %s\n", count1, count2);
         }
         return rootsList;
     }
@@ -1599,7 +1599,7 @@ public abstract class Taxonomy {
 				return candidate;
 			else {
 				System.err.format("** Ancestor %s of %s does not distinguish %s from %s\n",
-								  context, name, candidate.id, otherCandidate.id);
+								  context, name, candidate, otherCandidate);
 				return null;
 			}
 		}

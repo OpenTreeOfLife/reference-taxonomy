@@ -258,7 +258,7 @@ public class AlignmentByName extends Alignment {
 		if (source.rootCount() > 0) {
 
 			union.eventlogger.resetEvents();
-			System.out.println("--- Mapping " + source.getTag() + " into union ---");
+			System.out.println("--- Mapping " + source.getTag() + " to union ---");
 
 			int beforeCount = union.numberOfNames();
 

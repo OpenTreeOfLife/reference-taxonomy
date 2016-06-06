@@ -291,7 +291,7 @@ public class Taxon extends Node {
             && ((this.count() > 50000
                  && flags != Taxonomy.HIDDEN)
                 || (this.name.equals("Blattodea")))) {
-            System.out.format("** Setting flags on %s, size %s\nFlags to add: ", this, this.count());
+            System.out.format("* Setting flags on %s, size %s\nFlags to add: ", this, this.count());
 			Flag.printFlags(flags, 0, System.out);
             System.out.format("\n Preexisting flags: ");
 			Flag.printFlags(this.properFlags, this.inferredFlags, System.out);
@@ -893,7 +893,7 @@ public class Taxon extends Node {
             && (unode.properFlags & Taxonomy.EXTINCT) == 0
             && !this.name.equals(unode.name)) {
             if (this.markEvent("extinct-transfer-prevented"))
-                System.out.format("** Preventing transfer of extinct flag from %s to %s\n", this, unode);
+                System.out.format("| Preventing transfer of extinct flag from %s to %s\n", this, unode);
             flagsToAdd &= ~Taxonomy.EXTINCT;
         }
         return flagsToAdd;

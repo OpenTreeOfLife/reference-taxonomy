@@ -22,7 +22,7 @@ this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/
 invariants = [Has_child('Nucletmycea', 'Fungi'),
               Has_child('Opisthokonta', 'Nucletmycea'),
               Has_child('Rhizobiales', 'Xanthobacteraceae'), # D11342/#4 parent of D11342/#5
-          ]
+]
 
 def check_invariants(ott):
     test_claims(ott, invariants)
@@ -46,14 +46,18 @@ def create_ott():
 
     # SILVA
     silva = taxonomies.load_silva()
+    # Put aside the confusing diatom genus.
+    # This is seriously messing up the division logic.
+    # HQ912611/#7	|	X77702/#6	|	Ctenophora	|	no rank	|		|	
+    # HQ912611	|	HQ912611/#7	|	Ctenophora pulchella	|	samples	|	ncbi:1003039	|	
+    silva.taxonThatContains('Ctenophora', 'Ctenophora pulchella').clobberName('Ctenophora (Synedra)')
     ott.absorb(silva)
     check_invariants(ott)
+
 
     # Hibbett 2007
     h2007 = taxonomies.load_h2007()
     ott.absorb(h2007)
-    # what's going on here?
-    print '***', ott.taxon('Loxosporales')
 
     # Index Fungorum
     (fungi, fungorum_sans_fungi) = split_fungorum(ott)
@@ -73,11 +77,22 @@ def create_ott():
 
     # NCBI
     ncbi = taxonomies.load_ncbi()
+
+    # Link the confusing diatom genus to SILVA.
+    # 1003038	|	33856	|	Ctenophora	|	genus	|	= diatom
+    # 10197 	|	6072	|	Ctenophora	|	phylum	|	= comb jellies
+    # 516519	|	702682	|	Ctenophora	|	genus	|	= cranefly
+    ncbi.taxonThatContains('Ctenophora', 'Ctenophora pulchella').synonym('Ctenophora (Synedra)')
+
     a = align_ncbi(ncbi, ott)
     align_ncbi_to_silva(ncbi, silva, ott, a)
     ott.absorb(ncbi, a)
     check_invariants(ott)
 
+    worms_sans_malacostraca.taxon('Biota').synonym('life')
+    # This is suboptimal, but the names are confusing the division logic
+    worms_sans_malacostraca.taxon('Glaucophyta'). \
+        absorb(worms_sans_malacostraca.taxon('Glaucophyceae'))
     ott.absorb(worms_sans_malacostraca)
 
     ott.absorb(fungorum_sans_fungi)
@@ -115,7 +130,7 @@ def create_ott():
             ('Saccharomycetes', 'Saccharomycotina', '989999'),
             ('Phaeosphaeria', 'Ascomycota', '5486272'),
             ('Synedra acus','Eukaryota','992764'),
-            ('Epiphloea','Halymeniaceae','5342325'),
+            ('Epiphloea','Archaeplastida','5342325'),
             ('Hessea','Archaeplastida','600099'),
             ('Morganella','Arthropoda','6400'),
             ('Rhynchonelloidea','Rhynchonellidae','5316010'),
@@ -123,7 +138,7 @@ def create_ott():
             ('Morganella', 'Fungi', '973932'),
             ('Parmeliaceae', 'Lecanorales', '305904'),
     ]:
-        tax = ott.taxon(inf, sup)
+        tax = ott.maybeTaxon(inf, sup)
         if tax != None:
             tax.setId(id)
 
@@ -153,6 +168,12 @@ def create_ott():
 
     # Assign OTT ids to taxa that don't have them, re-using old ids when possible
     ids = Taxonomy.getTaxonomy('tax/prev_ott/', 'ott')
+
+    # OTT 2.9 has both Glaucophyta and Glaucophyceae... bad news
+    g1 = ids.maybeTaxon('Glaucophyta')
+    g2 = ids.maybeTaxon('Glaucophyceae')
+    if g1 != None and g2 != None and g1 != g2:
+        g1.absorb(g2)
 
     # Assign old ids to nodes in the new version
     ott.assignIds(ids)
@@ -205,23 +226,23 @@ def align_fungi(fungi, ott):
                  #'Phialina',       # in Pezizomycotina   - not in fung
                  #'Frankia',        # in Pezizomycotina / Bacteria - not even in latest fung
                  'Bogoriella',     # in Verrucariaceae < Pezizomycotina < Euk. / Bogoriellaceae < Bacteria  should be ok
-                 ]:
+    ]:
         # ### CHECK: was silva.taxon
         tax1 = fungi.maybeTaxon(name, 'Fungi')
         tax2 = ott.taxon(name)
         if tax1 == None:
             print 'no %s in IF' % name # 'no Acantharia in IF'
-        if tax2 == None:
-            print 'no %s in OTT' % name
-        if tax1 != None and tax2 != None:
-            a.notSame(tax1, tax2)
-    # Trichoderma harzianum, Sclerotinia homoeocarpa, Puccinia
-    # triticina are removed from SILVA early
-                 
+            if tax2 == None:
+                print 'no %s in OTT' % name
+                if tax1 != None and tax2 != None:
+                    a.notSame(tax1, tax2)
+                    # Trichoderma harzianum, Sclerotinia homoeocarpa, Puccinia
+                    # triticina are removed from SILVA early
+                    
     # 2014-04-25 JAR
     # There are three Bostrychias: a rhodophyte, a fungus, and a bird.
     # The fungus name is a synonym for Cytospora.
-        # ### CHECK: was silva.taxon
+    # ### CHECK: was silva.taxon
     if fungi.maybeTaxon('Bostrychia', 'Ascomycota') != None:
         a.notSame(fungi.taxon('Bostrychia', 'Ascomycota'),
                   ott.taxon('Bostrychia', 'Rhodophyceae'))
@@ -249,12 +270,14 @@ def align_fungi(fungi, ott):
     # Just make it incertae sedis and put off dealing with it until someone cares...
 
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/79
-        # ### CHECK: was silva.taxon
-    a.notSame(fungi.taxon('Podocystis', 'Fungi'), ott.taxon('Podocystis', 'Stramenopiles'))
+    # ### CHECK: was silva.taxon
+    # As of 2016-06-05, the fungus has changed its name to Melampsora, so there is no longer a problem.
+    # a.notSame(fungi.taxon('Podocystis', 'Fungi'), ott.taxon('Podocystis', 'Stramenopiles'))
 
     # Create a homonym (the one in Fungi, not the same as the one in Alveolata)
     # so that the IF Ciliophora can map to it
     if ott.maybeTaxon('Ciliophora', 'Fungi') == None:
+        # Ignore warning
         cil = ott.newTaxon('Ciliophora', 'genus', 'if:7660')
         cil.setId('5343665')
         ott.taxon('Fungi').take(cil)
@@ -263,6 +286,7 @@ def align_fungi(fungi, ott):
     # Create a homonym (the one in Fungi, not the same as the one in Rhizaria)
     # so that the IF Phaeosphaeria can map to it
     if ott.maybeTaxon('Phaeosphaeria', 'Fungi') == None:
+        # Ignore warning
         cil = ott.newTaxon('Phaeosphaeria', 'genus', 'if:3951')
         cil.setId('5486272')
         ott.taxon('Fungi').take(cil)
@@ -280,7 +304,7 @@ def align_fungi(fungi, ott):
 
 def align_lamiales(study713, ott):
     a = ott.alignment(study713)
-        # ### CHECK: was silva.taxon
+    # ### CHECK: was silva.taxon
     a.notSame(study713.taxon('Buchnera', 'Orobanchaceae'), ott.taxon('Buchnera', 'Enterobacteriaceae'))
     return a
 
@@ -346,17 +370,17 @@ def align_ncbi(ncbi, ott):
     # a.same(ncbi.taxon('Lamprospora'), ott.taxon('Lamprospora', 'Pyronemataceae'))
 
     # JAR 2014-04-25
-        # ### CHECK: was silva.taxon
+    # ### CHECK: was silva.taxon
     # a.notSame(ncbi.taxon('Bostrychia', 'Aves'), ott.taxon('Bostrychia', 'Rhodophyceae'))
 
     # https://github.com/OpenTreeOfLife/feedback/issues/45
     if False:
         a.notSame(ncbi.maybeTaxon('Choanoflagellida', 'Opisthokonta'),
-                    ott.maybeTaxon('Choanoflagellida', 'Ichthyosporea'))
+                  ott.maybeTaxon('Choanoflagellida', 'Ichthyosporea'))
 
     # Dail 2014-03-31 https://github.com/OpenTreeOfLife/feedback/issues/5
     # updated 2015-06-28 NCBI Katablepharidophyta = SILVA Kathablepharidae.
-        # ### CHECK: was silva.taxon
+    # ### CHECK: was silva.taxon
     a.same(ncbi.taxon('Katablepharidophyta'), ott.taxon('Kathablepharidae'))
     # was: ott.taxon('Katablepharidophyta').hide()
 
@@ -364,43 +388,37 @@ def align_ncbi(ncbi, ott):
     a.same(ncbi.taxon('Ciliophora', 'Alveolata'), ott.taxon('Ciliophora', 'Alveolata'))
 
     a.notSame(ncbi.taxon('Diphylleia', 'Chloroplastida'),
-                ott.taxonThatContains('Diphylleia', 'Diphylleia rotans'))
-
-    # 2015-10-06 JAR noticed while debugging surprisingly large number of newly-hidden ids
-    # n.b. there are three Ctenophoras: comb jellies, diatom, fly
-    a.notSame(ncbi.taxon('Ctenophora', 'Metazoa'),
-              ott.taxon('Ctenophora', 'Stramenopiles')) # diatom from SILVA, WoRMS, GBIF, IRMNG
+              ott.taxonThatContains('Diphylleia', 'Diphylleia rotans'))
 
     return a
 
 def align_ncbi_to_silva(ncbi, silva, ott, a):
-    infile = open('feed/silva/out/ncbi_to_silva.tsv', 'r')
-    reader = csv.reader(infile, delimiter='\t')
-    wins = namings = 0
-    for (ncbi_id, silva_cluster_id) in reader:
-        s = silva.maybeTaxon(silva_cluster_id)
-        if s != None:
-            n = ncbi.maybeTaxon(ncbi_id)
-            if n != None:
-                if False:
-                    so = ott.image(s)
-                    if so != None:
-                        a.same(n, so)
-                        wins += 1
-                    else:
-                        print '** no OTT taxon for cluster', silva_cluster_id
-                elif n.name != s.name:
-                    s.setName(n.name)
-                    namings += 1
+    with open('feed/silva/out/ncbi_to_silva.tsv', 'r') as infile:
+        reader = csv.reader(infile, delimiter='\t')
+        wins = namings = 0
+        for (ncbi_id, silva_cluster_id) in reader:
+            s = silva.maybeTaxon(silva_cluster_id)
+            if s != None:
+                n = ncbi.maybeTaxon(ncbi_id)
+                if n != None:
+                    if False:
+                        so = ott.image(s)
+                        if so != None:
+                            a.same(n, so)
+                            wins += 1
+                        else:
+                            print '** no OTT taxon for cluster', silva_cluster_id
+                    elif n.name != s.name:
+                        s.setName(n.name)
+                        namings += 1
+                else:
+                    # 332 occurrences on 2015-10-12
+                    # print '** no NCBI taxon', ncbi_id, 'for cluster', silva_cluster_id
+                    True
             else:
-                # 332 occurrences on 2015-10-12
-                # print '** no NCBI taxon', ncbi_id, 'for cluster', silva_cluster_id
-                True
-        else:
-            print '| no such cluster', silva_cluster_id
-    print wins, 'NCBI ids mapped to clusters'
-    print namings, 'SILVA names updated from more recent NCBI'
-    infile.close()
+                print '| no such cluster', silva_cluster_id
+        print wins, 'NCBI ids mapped to clusters'
+        print namings, 'SILVA names updated from more recent NCBI'
 
 
 # ----- GBIF (Global Biodiversity Information Facility) taxonomy -----
@@ -460,12 +478,13 @@ def align_gbif(gbif, ott):
     # ### CHECK: was silva.taxon
     # SILVA = GN013951 = Tetrasphaera (bacteria)
 
-    a.notSame(gbif.taxon('Gorkadinium', 'Dinophyta'),
-                ott.taxon('Tetrasphaera', 'Intrasporangiaceae')) # = Tetrasphaera in Protozoa
+    # This one seems to have gone away given changes to GBIF
+    # a.notSame(gbif.taxon('Gorkadinium', 'Dinophyta'),
+    #              ott.taxon('Tetrasphaera', 'Intrasporangiaceae')) # = Tetrasphaera in Protozoa
 
     # Rick Ree 2014-03-28 https://github.com/OpenTreeOfLife/reference-taxonomy/issues/37
     # ### CHECK: was ncbi.taxon
-    a.same(gbif.taxon('Calothrix', 'Rivulariaceae'), ott.taxon('Calothrix', 'Rivulariaceae'))
+    # a.same(gbif.taxon('Calothrix', 'Rivulariaceae'), ott.taxon('Calothrix', 'Rivulariaceae'))
     a.same(gbif.taxon('Chlorella', 'Chlorellaceae'), ott.taxon('Chlorella', 'Chlorellaceae'))
     a.same(gbif.taxon('Myrmecia', 'Microthamniales'), ott.taxon('Myrmecia', 'Microthamniales'))
 
@@ -521,7 +540,9 @@ def align_irmng(irmng, ott):
     # a.same(ott.taxon('Tipuloidea', 'Dicondylia'), irmng.taxon('1170022'))
     # IRMNG has four Tetrasphaeras.
     a.same(irmng.taxon('Tetrasphaera','Intrasporangiaceae'), ott.taxon('Tetrasphaera','Intrasporangiaceae'))
-    a.same(irmng.taxon('Gorkadinium','Dinophyceae'), ott.taxon('Gorkadinium','Dinophyceae'))
+    ottgork = ott.maybeTaxon('Gorkadinium','Dinophyceae')
+    if ottgork != None:
+        a.same(irmng.taxon('Gorkadinium','Dinophyceae'), ottgork)
 
     # JAR 2014-04-18 attempt to resolve ambiguous alignment of
     # Trichosporon in IF and IRMNG based on common parent and member
@@ -649,7 +670,8 @@ def patch_ott(ott):
     tax = ott.maybeTaxon('Chlamydiae/Verrucomicrobia group')
     if tax != None and tax.name != 'Bacteria':
         tax.rename('Verrucomicrobia group')
-    ott.taxon('Heterolobosea','Discicristata').absorb(ott.taxon('Heterolobosea','Percolozoa'))
+    # The following is obviated by algorithm changes
+    # ott.taxon('Heterolobosea','Discicristata').absorb(ott.taxon('Heterolobosea','Percolozoa'))
     ott.taxon('Excavata','Eukaryota').take(ott.taxon('Oxymonadida','Eukaryota'))
 
     # There is no Reptilia in OTT 2.9, so this can probably be deleted
@@ -668,8 +690,9 @@ def patch_ott(ott):
     # https://dx.doi.org/10.1007/s13127-011-0044-4
     # Not in deuterostomes
     ott.taxon('Bilateria').take(ott.taxon('Xenacoelomorpha'))
-    #  8) Stauromedusae should be a class (Staurozoa; Marques and Collins 2004) and should be removed from Scyphozoa
-    ott.taxon('Cnidaria').take(ott.taxon('Stauromedusae'))
+    if ott.maybeTaxon('Staurozoa') == None:
+        #  8) Stauromedusae should be a class (Staurozoa; Marques and Collins 2004) and should be removed from Scyphozoa
+        ott.taxon('Cnidaria').take(ott.taxon('Stauromedusae'))
     ott.taxon('Copepoda').take(ott.taxon('Prionodiaptomus'))
 
     # Bryan Drew patches 2014-01-30 
@@ -1014,7 +1037,6 @@ names_of_interest = ['Ciliophora',
                      'Bostrychia',
                      'Buchnera',
                      'Podocystis', # not found
-                     'Epiphloea',
                      'Crepidula',
                      'Hessea',
                      'Bostrychia',

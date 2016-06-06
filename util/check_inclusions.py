@@ -37,4 +37,4 @@ if __name__ == '__main__':
         taxname = sys.argv[1]
     else:
         print sys.argv
-    check(Taxonomy.getTaxonomy(taxname))
+    check(Taxonomy.getTaxonomy(taxname, 'ott'))

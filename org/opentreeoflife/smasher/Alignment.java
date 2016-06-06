@@ -174,7 +174,7 @@ public abstract class Alignment {
 
     public void markDivisionsFromSkeleton(Taxonomy source, Taxonomy skel) {
         for (String name : skel.allNames()) {
-            Taxon skelnode = highest(skel, name);
+            Taxon skelnode = skel.unique(name);
             Taxon node = highest(source, name);
             Taxon unode = highest(union, name);
             if (node != null)
@@ -192,33 +192,34 @@ public abstract class Alignment {
         }
     }
 
-    /*
-	boolean checkDivisionsFromSkeleton(Taxon div, Taxonomy source) {
-		Taxon unode = highest(union, div.name);
-		if (div.children != null) {
-			Taxon hit = null, miss = null;
-			for (Taxon child : div.children) {
-				if (checkDivisionsFromSkeleton(child, source))
-					hit = child;
-				else
-					miss = child;
-			}
-			if (hit != null && miss != null)
-				System.err.format("** Division %s was found but its sibling %s wasn't\n", hit.name, miss.name);
+	// Most rootward node in this taxonomy having a given name
+	public static Taxon highest(Taxonomy tax, String name) { // See pin()
+		List<Node> l = tax.lookup(name);
+		if (l == null) return null;
+		Taxon best = null, otherbest = null;
+		int depth = 1 << 30;
+		for (Node nodenode : l) {
+            Taxon node = nodenode.taxon();
+            // This is for Ctenophora
+            if (node.rank != Rank.NO_RANK && node.rank.equals("genus")) continue;
+			int d = node.measureDepth();
+			if (d < depth) {
+				depth = d;
+				best = node;
+				otherbest = null;
+			} else if (d == depth && node != best)
+				otherbest = node;
 		}
-		if (unode != null) {
-			unode.setDivision(unode);
-			Taxon node = highest(source, div.name);
-			if (node != null &&
-				(node.mapped == null || node.mapped == unode)) {   // Cf. notSame
-				node.setDivision(unode);
-				node.alignWith(unode, "same/division-name");
-				return true;
-			}
+		if (otherbest != null) {
+			if (otherbest == best)
+				// shouldn't happen
+				System.err.format("** Multiply indexed: %s %s %s\n", best, otherbest, depth);
+			else
+				System.err.format("** Ambiguous division name: %s %s %s\n", best, otherbest, depth);
+            return null;
 		}
-		return false;
+		return best;
 	}
-    */
 
 	// List determined manually and empirically
 	// @deprecated
@@ -268,33 +269,6 @@ public abstract class Alignment {
 		}
 		if (count > 0)
 			System.out.println("Pinned " + count + " out of " + pins.length);
-	}
-
-	// Most rootward node in this taxonomy having a given name
-	public static Taxon highest(Taxonomy tax, String name) { // See pin()
-		List<Node> l = tax.lookup(name);
-		if (l == null) return null;
-		Taxon best = null, otherbest = null;
-		int depth = 1 << 30;
-		for (Node nodenode : l) {
-            Taxon node = nodenode.taxon();
-			int d = node.measureDepth();
-			if (d < depth) {
-				depth = d;
-				best = node;
-				otherbest = null;
-			} else if (d == depth && node != best)
-				otherbest = node;
-		}
-		if (otherbest != null) {
-			if (otherbest == best)
-				// shouldn't happen
-				System.err.format("** Multiply indexed: %s %s %s\n", best, otherbest, depth);
-			else
-				System.err.format("** Ambiguous division name: %s %s %s\n", best, otherbest, depth);
-            return null;
-		}
-		return best;
 	}
 
 

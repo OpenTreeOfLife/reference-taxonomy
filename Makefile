@@ -393,3 +393,6 @@ aster-tarball: t/tax/aster/taxonomy.tsv
 
 check:
 	bash run-tests.sh
+
+inclusion-tests:
+	bin/jython util/check_inclusions.py

@@ -107,15 +107,10 @@ def patch_silva(silva):
     silva.taxon('EU930344').clobberName('Photorhabdus luminescens subsp. caribbeanensis')
     silva.taxon('EU930342').clobberName('Photorhabdus luminescens subsp. hainanensis')
 
-    # 2015-10-12 JAR
-    # It is proving difficult to separate the three Ctenophora homonyms.  
-    # (Ctenophora is a genus of diatoms.)
-    # Maybe it  will help to add the phylum to our SILVA subset.  The 
-    # phylum is in the full SILVA and contains cluster AF293678, which 
-    # has ref seq identified as Pleurobrachia pileus.
-    print '(ignore warning about Ctenophora)'
-    silva.taxon('Metazoa').take(silva.newTaxon('Ctenophora', 'phylum', 'silva:AF293678/#4'))
-
+    # JAR noticed ambiguity in build transcript
+    cal = silva.maybeTaxon('AB074504/#6')
+    if cal != None and cal.name == 'Calothrix':
+        cal.clobberName('Calothrix (homonym)')
 
 def load_h2007():
     h2007 = Taxonomy.getTaxonomy('feed/h2007/tree.tre', 'h2007')
@@ -328,7 +323,7 @@ def link_to_h2007(tax):
          ('Cladochytriales', ['Cladochytriaceae', 'Nowakowskiellaceae', 'Septochytriaceae', 'Endochytriaceae']),
          ('Jaapiales', ['Jaapiaceae']),
          ('Coniocybales', ['Coniocybaceae']),
-         ('Hyaloraphidiales', ['Hyaloraphidiaceae']),
+         ('Hyaloraphidiales', ['Hyaloraphidiaceae']), # no such family
          ('Mytilinidiales', ['Mytilinidiaceae', 'Gloniaceae']),
         ]:
         order = tax.maybeTaxon(order_name)
@@ -337,6 +332,13 @@ def link_to_h2007(tax):
                 order.take(tax.taxon(family))
         else:
             print '*** Missing fungal order', foo[0]
+
+    # Stereopsidaceae = Stereopsis + Clavulicium
+    if tax.maybeTaxon('Stereopsidaceae') == None:
+        s = tax.newTaxon('Stereopsidaceae', 'family', 'https://en.wikipedia.org/wiki/Stereopsidales')
+        s.take(tax.taxon('Stereopsis', 'Agaricomycetes'))
+        s.take(tax.taxon('Clavulicium', 'Agaricomycetes'))
+        # Dangling node at this point, but will be attached below
 
     # 2015-07-13 Romina
     h2007_fam = 'http://figshare.com/articles/Fungal_Classification_2015/1465038'
@@ -350,7 +352,6 @@ def link_to_h2007(tax):
          ('Holtermanniales',['Holtermanniella']),
          ('Lepidostromatales',['Lepidostromataceae']),
          ('Atheliales',['Atheliaceae']),
-         # Stereopsidaceae = Stereopsis + Clavulicium
          ('Stereopsidales',['Stereopsidaceae']),
          ('Septobasidiales',['Septobasidiaceae']),
          ('Symbiotaphrinales',['Symbiotaphrina']),
@@ -533,6 +534,11 @@ def patch_ncbi(ncbi):
     # Marc Jones 2015-10-10 https://groups.google.com/d/msg/opentreeoflife/wCP7ervK8YE/DbbonQtkBQAJ
     ncbi.taxon('Sphenodontia', 'Sauropsida').rename('Rhynchocephalia')
 
+    # Chris Owen patches 2014-01-30
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/88
+    # NCBI puts Chaetognatha in Deuterostomia.
+    ncbi.taxon('Protostomia').take(ncbi.taxon('Chaetognatha','Deuterostomia'))
+
 def load_worms():
     worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
     worms.smush()
@@ -596,7 +602,7 @@ def patch_gbif(gbif):
 
     # 2014-04-13 JAR noticed while grepping
     claims = [
-        Whether_same('Chryso-Hypnum', 'Chryso-hypnum', True),
+        Whether_same('Chryso-hypnum', 'Chryso-Hypnum', True),
         Whether_same('Drepano-Hypnum', 'Drepano-hypnum', True),
         Whether_same('Complanato-Hypnum', 'Complanato-hypnum', True),
         Whether_same('Leptorrhyncho-Hypnum', 'Leptorrhyncho-hypnum', True),
@@ -755,7 +761,7 @@ def load_irmng():
     if tip != None:
         tip.prune("about:blank#this-homonym-is-causing-too-much-trouble")
 
-    oph = irmng.taxon('Ophiurina', 'Ophiurinidae') # irmng:1346026
+    oph = irmng.taxon('1346026') # irmng:1346026 'Ophiurina', 'Ophiurinidae'
     if oph != None:
         oph.prune("about:blank#this-homonym-is-causing-too-much-trouble")
 

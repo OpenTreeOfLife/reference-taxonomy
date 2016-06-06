@@ -24,3 +24,4 @@ service/service.pid
 service/nohup.out
 service/taxonomy
 service/synth
+ws-tests/.out*

@@ -1,5 +1,7 @@
 
-# How the taxonomy is built
+# Open Tree Reference Taxonomy
+
+## Introduction
 
 Taxonomy and nomenclature data are critical for almost any biodiversity project that aims to synthesize data based on taxonomic names.
 
@@ -32,6 +34,41 @@ reproducible synthesis of input taxonomies; for easy update when input
 taxonomies change; and for user-contributed patches to fix specific issues or
 add missing information.
 
+### Related projects
+
+* NCBI taxonomy: The NCBI taxonomy exists to support annotation and 
+  search of sequence data. NCBI has one or
+  more taxonomy curators on staff.  Curators add taxa that are needed to cover sequence
+  deposits, and also update classifications as the need arises.  The NCBI
+  taxonomy adds as many levels to the tree as necessary in order to reflect current
+  phylogenetic knowledge, meaning sibling taxa often have different
+  ranks and many taxa (e.g. 'eudicots') are lacking rank altogether.
+  There is no requirement that nomenclature follow code.
+  (No citation available?)
+* GBIF backbone taxonomy: This taxonomy's purpose is to 
+  facilitate annotation and search of occurrence data hosted on GBIF's web site.
+  GBIF has collected a set of 'checklists' [150
+  last time I looked] that are combined algorithmically, so among 
+  such projects, it is the most similar to Open Tree.
+  The GBIF backbone adheres strictly to the seven-rank system.
+* IRMNG:  IRMNG seems to
+  mainly be the work of one person (Tony Rees) who imports information
+  from outside sources both in detail and in bulk.  
+  IRMNG adheres strictly to the seven-rank system, and retains taxa
+  such as Protista that are known to be non-monophyletic.
+  (No citation available?)
+* Catalog of Life: (research) - focus on nomenclature - hierarchically
+  distributed responsibility.  Not open; licensing business model
+  supports a full-time administrator. CoL is an input to IRMNG and
+  GBIF.
+* WoRMS: (need to research)
+* uBio: (research)
+* EOL: not a taxonomy project, imports taxonomies from other sources without integration.
+
+There are also numerous projects covering particular groups: the Plant List, etc.
+
+## Taxonomy construction
+
 The assembly process works, in outline, as follows:
 
  1. We start with an ordered list of source taxonomies S1, S2, ...
@@ -56,7 +93,7 @@ taxonomies, which are revised constantly.
 
 Details of each step follow.
 
-## Source taxonomy preparation
+### Source taxonomy preparation
 
 Each source taxonomy has its own ingest procedure, usually a file
 transfer followed by application of a format conversion script.
@@ -82,7 +119,7 @@ change a name so that a source taxon aligns with a taxon from an
 earlier or later source.  Patches that bring a source taxonomy into
 agreement with the skeleton also happen here.
 
-## Separation
+### Separation
 
 If taxa A and B belong to taxa C and D (respectively), and C and D are
 disjoint, then A and B are disjoint.  For example, land plants and
@@ -125,7 +162,7 @@ not separate _Brightonia_ the mollusc (from IRMNG) from _Brightonia_
 the echinoderm (from higher priority WoRMS), so the mollusc is
 suppressed.
 
-## Alignment
+### Alignment
 
 Alignment proceeds by iterating over the taxa in the source taxonomy,
 and finding a unique best match in the union taxonomy, if there is
@@ -157,7 +194,7 @@ property holds.
 Alignment to a taxon with the same primary name is always attempted
 before alignment via a synonym is tried.
 
-## Merge
+### Merge
 
 Following alignment, taxa from the source taxonomy are merged into the
 union taxonomy.  This is performed via bottom-up traversal of
@@ -197,7 +234,7 @@ might provide a better position for an unplaced taxon (more resolved,
 or resolved), or not.  Unplaced taxa should not influence the treatment
 of placed taxa, but they shouldn't get lost either.
 
-## Postprocessing
+### Postprocessing
 
 After all source taxonomies are aligned and merged, general patches
 are applied.  Some patches are represented in the 'version 1'
@@ -208,9 +245,21 @@ spreadsheet prepared by the Katz lab.
 There is a special step to locate taxa that come only from PaleoDB
 and mark them extinct.
 
-## Id assignment
+### Id assignment
 
 The final step is to assign OTT ids to taxa.  This is done by aligning
 the previous version of OTT to the new union taxonomy.  After
 transferring ids of aligned taxa, any remaining union taxa are given
 newly 'minted' identifiers.
+
+## Results
+
+(Get metrics for OTT 2.10)
+
+
+## Discussion
+
+Challenges in construction: dirty inputs, homonyms, a gazillion special cases...
+
+Limitations of method: ...
+

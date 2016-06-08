@@ -94,8 +94,9 @@ def patch_silva(silva):
     if up != None: up.prune(this_source)
 
     # https://github.com/OpenTreeOfLife/feedback/issues/45
-    # Not a legit name
-    # bad_name(silva, 'Choanoflagellida', 'Ichthyosporea')
+    # Not Choanoflagellida
+    # Current NCBI name = 'Choanoflagellate-like sp. ribosomal RNA small subunit (16S rRNA-like)'
+    silva.taxon('L29455').prune(this_source)
 
     # JAR noticed failed inclusion test - this is fixed in silva 117
     silva.taxon('Bacteria').take(silva.maybeTaxon('Verrucomicrobia group'))
@@ -235,15 +236,6 @@ def patch_fung(fung):
         else:
             cyph = fung.newTaxon('Cyphellopsis', 'genus', 'if:17439')
         fung.taxon('Niaceae').take(cyph)
-
-    # Romina 2014-04-09
-    # IF has both Hypocrea and Trichoderma.  Hypocrea is the right name.
-    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
-    fung.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
-    fung.taxon('Hypocrea').absorb(fung.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
-
-    # Romina https://github.com/OpenTreeOfLife/reference-taxonomy/issues/42
-    fung.taxon('Trichoderma deliquescens').rename('Hypocrea lutea')
 
     fung.taxon('Asterinales').synonym('Asteriniales')  #backward compatibility
 
@@ -444,12 +436,6 @@ def patch_ncbi(ncbi):
     # RR #57
     ncbi.taxon('Solms-laubachia').synonym('Solms-Laubachia')
 
-    # Romina 2014-04-09
-    # NCBI has both Hypocrea and Trichoderma.
-    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
-    ncbi.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
-    ncbi.taxon('Hypocrea').absorb(ncbi.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
-
     # Mark Holder https://github.com/OpenTreeOfLife/reference-taxonomy/issues/120
     ncbi.taxon('Cetartiodactyla').synonym('Artiodactyla')
 
@@ -537,7 +523,7 @@ def patch_ncbi(ncbi):
     # Chris Owen patches 2014-01-30
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/88
     # NCBI puts Chaetognatha in Deuterostomia.
-    ncbi.taxon('Protostomia').take(ncbi.taxon('Chaetognatha','Deuterostomia'))
+    ncbi.taxon('Protostomia').take(ncbi.taxonThatContains('Chaetognatha','Sagittoidea'))
 
 def load_worms():
     worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
@@ -556,6 +542,9 @@ def load_worms():
 
     # See NCBI
     worms.taxon('Millericrinida').extant()
+
+    # Species fungorum puts this species in Candida
+    worms.taxon('Trichosporon diddensiae').rename('Candida diddensiae')
 
     # Help to match up with IRMNG
     worms.taxon('Ochrophyta').synonym('Heterokontophyta')
@@ -606,11 +595,6 @@ def patch_gbif(gbif):
         Whether_same('Drepano-Hypnum', 'Drepano-hypnum', True),
         Whether_same('Complanato-Hypnum', 'Complanato-hypnum', True),
         Whether_same('Leptorrhyncho-Hypnum', 'Leptorrhyncho-hypnum', True),
-        Whether_same('Trichoderma viride', 'Hypocrea rufa', True,
-                     'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86'),  # Type
-        # 2016-04-30 JAR changed With_ancestor to With_descendant because it was obviously a mistake
-        Whether_same('Hypocrea', With_descendant('Trichoderma', 'Hypocrea rufa'), True,
-                     'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86'),  # Type
         
         # Doug Soltis 2015-02-17 https://github.com/OpenTreeOfLife/feedback/issues/59 
         # http://dx.doi.org/10.1016/0034-6667(95)00105-0
@@ -622,14 +606,6 @@ def patch_gbif(gbif):
     # gbif.taxon('Chryso-hypnum').absorb(gbif.taxon('Chryso-Hypnum'))
     # gbif.taxon('Complanato-Hypnum').rename('Complanato-hypnum')
     # gbif.taxon('Leptorrhyncho-Hypnum').rename('Leptorrhyncho-hypnum')
-
-    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
-    # Romina 2014-04-09
-    # GBIF has both Hypocrea and Trichoderma.  And it has four Trichoderma synonyms...
-    # pick the one that contains bogo-type Hypocrea rufa
-    # See new versions above
-    # gbif.taxon('Trichoderma viride').rename('Hypocrea rufa')  # Type
-    # gbif.taxon('Hypocrea').absorb(gbif.taxonThatContains('Trichoderma', 'Hypocrea rufa'))
 
     # 2014-04-21 RR
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/45
@@ -743,12 +719,6 @@ def load_irmng():
     saxo = irmng.maybeTaxon('1063899')
     if saxo != None:
         saxo.absorb(irmng.taxon('1071613'))
-
-    # Romina 2014-04-09
-    # IRMNG has EIGHT different Trichodermas.  (Four are synonyms of other things.)
-    # 1307461 = Trichoderma Persoon 1794, in Hypocreaceae
-    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
-    irmng.taxon('Hypocrea').absorb(irmng.taxon('1307461'))
 
     # JAR 2015-06-28
     # The synonym Ochrothallus multipetalus -> Niemeyera multipetala

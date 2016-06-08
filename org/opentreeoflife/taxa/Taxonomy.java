@@ -1139,7 +1139,7 @@ public abstract class Taxonomy {
         Taxonomy tax = this;
         tax.placeBiggest();         // End of topology modifications
 		tax.assignDummyIds();
-        tax.reset();                // maybe unnecessary; depths and comapped
+        tax.reset();                // maybe unnecessary; depths
         Taxon biggest = tax.normalizeRoots().get(0);
         System.out.format("| prepare flags for dump\n");
         tax.inferFlags();           // infer BARREN & INFRASPECIFIC, and herit
@@ -1641,44 +1641,46 @@ public abstract class Taxonomy {
 	}
 
 	// Test case: Valsa
-	List<Taxon> filterByAncestor(String taxonName, String contextName) {
-		List<Node> nodes = this.lookup(taxonName);
-		if (nodes == null) return null;
-		List<Taxon> fnodes = new ArrayList<Taxon>(1);
-		for (Node nodenode : nodes) {
-            Taxon node = nodenode.taxon();
-			// Follow ancestor chain to see whether this node is in the context
-			for (Taxon chain = node; chain != null; chain = chain.parent)
-				if (chain.name != null && chain.name.equals(contextName)) {
-					fnodes.add(node);
+	public List<Taxon> filterByAncestor(String taxonName, String ancestorName) {
+		List<Node> smallNodes = this.lookup(taxonName);
+		if (smallNodes == null) return null;
+		List<Node> bigNodes = this.lookup(ancestorName);
+		if (bigNodes == null) return null;
+		List<Taxon> bigTaxa = new ArrayList<Taxon>(bigNodes.size());
+        for (Node node : bigNodes)
+            bigTaxa.add(node.taxon());
+
+		List<Taxon> result = new ArrayList<Taxon>(1);
+		for (Node smallNode : smallNodes) {
+			// Follow ancestor chain to see whether this node is an ancestor
+			for (Taxon chain = smallNode.taxon().parent; chain != null; chain = chain.parent)
+				if (bigTaxa.contains(chain)) {
+					result.add(smallNode.taxon());
 					break;
 				}
 		}
-		if (fnodes.size() == 0) return null;
-		if (fnodes.size() == 1) return fnodes;
-		List<Taxon> gnodes = new ArrayList<Taxon>(1);
-		for (Taxon fnode : fnodes)
-			if (fnode.name.equals(taxonName))
-				gnodes.add(fnode);
-		if (gnodes.size() >= 1) return gnodes;
-		return fnodes;
+		return result.size() == 0 ? null : result;
 	}
 
-	List<Taxon> filterByDescendant(String taxonName, String descendantName) {
-		List<Node> nodes = this.lookup(descendantName);
-		if (nodes == null) return null;
-		List<Taxon> fnodes = new ArrayList<Taxon>(1);
-		for (Node nodenode : nodes) {
-            Taxon node = nodenode.taxon();
-			if (!node.name.equals(descendantName)) continue;
+	public List<Taxon> filterByDescendant(String taxonName, String descendantName) {
+		List<Node> smallNodes = this.lookup(descendantName);
+		if (smallNodes == null) return null;
+		List<Node> bigNodes = this.lookup(taxonName);
+		if (bigNodes == null) return null;
+		List<Taxon> bigTaxa = new ArrayList<Taxon>(bigNodes.size());
+        for (Node node : bigNodes)
+            bigTaxa.add(node.taxon());
+
+		List<Taxon> result = new ArrayList<Taxon>(1);
+		for (Node smallNode : smallNodes) {
 			// Follow ancestor chain to see whether this node is an ancestor
-			for (Taxon chain = node; chain != null; chain = chain.parent)
-				if (chain.name != null && chain.name.equals(taxonName)) {
-					fnodes.add(chain);
+			for (Taxon chain = smallNode.taxon().parent; chain != null; chain = chain.parent)
+				if (bigTaxa.contains(chain)) {
+					result.add(chain);
 					break;
 				}
 		}
-		return fnodes.size() == 0 ? null : fnodes;
+		return result.size() == 0 ? null : result;
 	}
 
     // For use from jython code.  Result is added as a root.
@@ -1823,14 +1825,11 @@ public abstract class Taxonomy {
 		return nameMap;
 	}
 
-    // Called just before alignment.  Clears depth cache and comapped.
+    // Called just before alignment.  Clears depth cache.
+    // Prepare for subsumption checks
 	public void reset() {
-		for (Taxon root: this.roots()) {
-            // Set comapped to null
-			root.resetComapped();
-			// Prepare for subsumption checks
+		for (Taxon root: this.roots())
             root.resetDepths();
-		}
 	}
 
     // Overridden in subclass

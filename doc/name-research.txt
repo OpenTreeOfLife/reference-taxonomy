@@ -577,6 +577,26 @@ much better.
 
 -- wait, this is still wrong.
 
+There are 3 in NCBI:
+    # 1003038	|	33856	|	Ctenophora	|	genus	|	= diatom
+    # 10197 	|	6072	|	Ctenophora	|	phylum	|	= comb jellies
+    # 516519	|	702682	|	Ctenophora	|	genus	|	= cranefly
+
+** The id of Ctenophora in Stramenopiles is 641212 (expected 103964)
+   (There is no taxon with id 103964)
+** The id of Ctenophora in Tipulidae is 5929825 (expected 1043126)
+   (There is no taxon with id 1043126)
+
+What should the OTT ids be?
+In OTT 2.9 they are:
+  diatom:     103964 silva:HQ912611/#7,ncbi:1003038,worms:163921,gbif:3192189,irmng:1279336
+  comb jelly: 641212 silva:AF293678/#4,ncbi:10197,worms:1248,gbif:51,irmng:109
+  cranefly:  1043126 ncbi:516519,gbif:1507726,irmng:1279398
+Similarly in OTT 2.8.
+
+So one test is messed up, and smasher is failing to reassign one of
+the ids.  (bug in assembly script, fixing)
+
 ### Nitzschia elongata
 
 Most interesting homonym from homonym analysis: Nitzschia elongata

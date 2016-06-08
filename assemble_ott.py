@@ -46,14 +46,8 @@ def create_ott():
 
     # SILVA
     silva = taxonomies.load_silva()
-    # Put aside the confusing diatom genus.
-    # This is seriously messing up the division logic.
-    # HQ912611/#7	|	X77702/#6	|	Ctenophora	|	no rank	|		|	
-    # HQ912611	|	HQ912611/#7	|	Ctenophora pulchella	|	samples	|	ncbi:1003039	|	
-    silva.taxonThatContains('Ctenophora', 'Ctenophora pulchella').clobberName('Ctenophora (Synedra)')
     ott.absorb(silva)
     check_invariants(ott)
-
 
     # Hibbett 2007
     h2007 = taxonomies.load_h2007()
@@ -78,28 +72,35 @@ def create_ott():
     # NCBI
     ncbi = taxonomies.load_ncbi()
 
-    # Link the confusing diatom genus to SILVA.
-    # 1003038	|	33856	|	Ctenophora	|	genus	|	= diatom
-    # 10197 	|	6072	|	Ctenophora	|	phylum	|	= comb jellies
-    # 516519	|	702682	|	Ctenophora	|	genus	|	= cranefly
-    ncbi.taxonThatContains('Ctenophora', 'Ctenophora pulchella').synonym('Ctenophora (Synedra)')
+    # Get SILVA cluster / NCBI id correspondence.
+    mappings = ncbi_to_silva(ncbi, silva, ott)
+    # Set taxon names to newer NCBI names, and prevent later 
+    # name-only-based mappings.
+    # N.b. old (SILVA) names remain as synonyms.
+    upgrade_silva_names(mappings)
 
-    a = align_ncbi(ncbi, ott)
-    align_ncbi_to_silva(ncbi, silva, ott, a)
+    a = align_ncbi(ncbi, silva, ott)
     ott.absorb(ncbi, a)
     check_invariants(ott)
 
+    compare_ncbi_to_silva(mappings, ott)
+
+    # WoRMS
     worms_sans_malacostraca.taxon('Biota').synonym('life')
     # This is suboptimal, but the names are confusing the division logic
     worms_sans_malacostraca.taxon('Glaucophyta'). \
         absorb(worms_sans_malacostraca.taxon('Glaucophyceae'))
-    ott.absorb(worms_sans_malacostraca)
+    a = align_worms(worms_sans_malacostraca, ott)
+    ott.absorb(worms_sans_malacostraca, a)
 
+    # The rest of Index Fungorum (maybe not a good idea)
     ott.absorb(fungorum_sans_fungi)
 
+    # GBIF
     gbif = taxonomies.load_gbif()
     ott.absorb(gbif, align_gbif(gbif, ott))
 
+    # IRMNG
     irmng = taxonomies.load_irmng()
     ott.absorb(irmng, align_irmng(irmng, ott))
 
@@ -131,12 +132,16 @@ def create_ott():
             ('Phaeosphaeria', 'Ascomycota', '5486272'),
             ('Synedra acus','Eukaryota','992764'),
             ('Epiphloea','Archaeplastida','5342325'),
+            ('Epiphloea', 'Lichinales', '5342482'),
             ('Hessea','Archaeplastida','600099'),
             ('Morganella','Arthropoda','6400'),
             ('Rhynchonelloidea','Rhynchonellidae','5316010'),
-            ('Epiphloea', 'Lichinales', '5342482'),
             ('Morganella', 'Fungi', '973932'),
             ('Parmeliaceae', 'Lecanorales', '305904'),
+            ('Cordana', 'Ascomycota', '946160'),
+            ('Pseudofusarium', 'Ascomycota', '655794'),
+            ('Gloeosporium', 'Pezizomycotina', '75019'),
+            # ('Dischloridium', 'Trichocomaceae', '895423'),
     ]:
         tax = ott.maybeTaxon(inf, sup)
         if tax != None:
@@ -158,10 +163,10 @@ def create_ott():
     # Cylindrocarpon is now Neonectria
     ott.image(gbif.taxon('2563163')).setId('51754')
 
-    # Foo
-    trich = fungi.maybeTaxon('Trichosporon')
+    # Trichosporon is a mess, because it occurs 3 times in NCBI.
+    trich = ott.taxonThatContains('Trichosporon', 'Trichosporon cutaneum')
     if trich != None:
-        ott.image(trich).setId('364222')
+        trich.setId('364222')
 
     #ott.image(fungi.taxon('11060')).setId('4107132') #Cryptococcus - a total mess
 
@@ -321,9 +326,35 @@ def split_worms(ott):
 
 # ----- NCBI Taxonomy -----
 
-def align_ncbi(ncbi, ott):
+def align_ncbi(ncbi, silva, ott):
 
     a = ott.alignment(ncbi)
+
+    # Don't do this  - screws things up align_ncbi_to_silva(mappings, a)
+
+    # Ctenophora is seriously messing up the division logic.
+    # 1003038	|	33856	|	Ctenophora	|	genus	|	= diatom
+    # 10197 	|	6072	|	Ctenophora	|	phylum	|	= comb jellies
+    # 516519	|	702682	|	Ctenophora	|	genus	|	= cranefly
+
+    # Link the diatom to SILVA
+    # http://westerndiatoms.colorado.edu/taxa/genus/Ctenophora
+    # Basionym of Ctenophora pulchella is Synedra pulchella.  C. p. is also the type species of C.
+    # Genus Ctenophora split off from (the rest of) Synedra in 1986
+    a.same(ncbi.taxon('Ctenophora', 'Stramenopiles'),
+           ott.taxon('Ctenophora', 'Stramenopiles')) # from SILVA
+
+    if ott.maybeTaxon('Ctenophora apicata') == None:
+        ctenophora_jelly = ott.newTaxon('Ctenophora', None, 'ncbi:10197')
+        ott.taxon('Metazoa').take(ctenophora_jelly)    # Will get moved to Bilateria
+        a.same(ncbi.taxon('10197'), ctenophora_jelly)
+        ctenophora_jelly.incertaeSedis()
+
+    if ott.maybeTaxon('Ctenophora', 'Arthropoda') == None:
+        ctenophora_fly = ott.newTaxon('Ctenophora', 'genus', 'ncbi:516519')
+        ott.taxon('Metazoa').take(ctenophora_fly)    # Will get moved into Tipulidae
+        a.same(ncbi.taxon('516519'), ctenophora_fly)
+        ctenophora_fly.incertaeSedis()
 
     # David Hibbett has requested that for Fungi, only Index Fungorum
     # should be seen.  Rather than delete the NCBI fungal taxa, we just
@@ -347,13 +378,13 @@ def align_ncbi(ncbi, ott):
     # now handled in other ways
     # a.notSame(ncbi.taxon('Epiphloea', 'Rhodophyta'), ott.taxon('Epiphloea', 'Ascomycota'))
 
-    # JAR attempt to resolve ambiguous alignment of Trichosporon in IF and
-    # NCBI based on common parent and member.
-    # Type = T. beigelii, which is current, according to Mycobank.
-    # But I'm going to use a different 'type', Trichosporon cutaneum.
-    # #### Check - was fungi.taxon
+    # JAR attempt to resolve ambiguous alignment of Trichosporon in IF to
+    # NCBI based on common member.
+    # T's type = T. beigelii, which is current, according to Mycobank, 
+    # but it's not in our copy of IF.
+    # I'm going to use a different exemplar, Trichosporon cutaneum, which
+    # seems to occur in all of the source taxonomies.
     a.same(ncbi.taxon('5552'),
-           #ncbi.taxonThatContains('Trichosporon', 'Trichosporon cutaneum')
            ott.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
 
     # 2014-04-23 In new version of IF - obvious misalignment
@@ -392,34 +423,77 @@ def align_ncbi(ncbi, ott):
 
     return a
 
-def align_ncbi_to_silva(ncbi, silva, ott, a):
+# Maps taxon in NCBI taxonomy to SILVA-derived OTT taxon
+
+def ncbi_to_silva(ncbi, silva, ott):
+    mappings = {}
+    flush = []
     with open('feed/silva/out/ncbi_to_silva.tsv', 'r') as infile:
         reader = csv.reader(infile, delimiter='\t')
-        wins = namings = 0
         for (ncbi_id, silva_cluster_id) in reader:
-            s = silva.maybeTaxon(silva_cluster_id)
-            if s != None:
-                n = ncbi.maybeTaxon(ncbi_id)
-                if n != None:
-                    if False:
-                        so = ott.image(s)
-                        if so != None:
-                            a.same(n, so)
-                            wins += 1
+            n = ncbi.maybeTaxon(ncbi_id)
+            if n != None:
+                s = silva.maybeTaxon(silva_cluster_id)
+                if s != None:
+                    so = ott.image(s)
+                    if so != None:
+                        if n in mappings:
+                            # 213 of these
+                            # print '** NCBI id maps to multiple SILVA clusters', n
+                            mappings[n] = True
+                            flush.append(n)
                         else:
-                            print '** no OTT taxon for cluster', silva_cluster_id
-                    elif n.name != s.name:
-                        s.setName(n.name)
-                        namings += 1
+                            mappings[n] = so
+                    else:
+                        print '** no OTT taxon for cluster', silva_cluster_id
                 else:
                     # 332 occurrences on 2015-10-12
                     # print '** no NCBI taxon', ncbi_id, 'for cluster', silva_cluster_id
                     True
             else:
                 print '| no such cluster', silva_cluster_id
-        print wins, 'NCBI ids mapped to clusters'
-        print namings, 'SILVA names updated from more recent NCBI'
+    for n in flush:
+        if n in mappings:
+            del mappings[n]
+    return mappings
 
+def upgrade_silva_names(mappings):
+    namings = 0
+    for n in mappings:
+        so = mappings[n]
+        if n.name != so.name and so.taxonomy.lookup(n.name) == None:
+            # Upgrade SILVA names to newer NCBI names
+            so.setName(n.name)
+            namings += 1
+    print '| upgraded %s SILVA names' % namings
+
+def compare_ncbi_to_silva(mappings, ott):
+    problems = 0
+    for taxon in mappings:
+        t1 = mappings[taxon]
+        t2 = ott.image(taxon)
+        if t1 != t2:
+            problems += 1
+            if t2 != None:
+                div = t1.divergence(t2)
+                if div != None:
+                    print '| %s -> (%s, %s) coalescing at (%s, %s)' % \
+                        (taxon, t1, t2, div[0], div[1])
+    print '| %s NCBI taxa map differently by cluster vs. by name' % problems
+
+def align_ncbi_to_silva(mappings, a):
+    changes = 0
+    for taxon in mappings:
+        a.same(taxon, mappings[taxon])
+        changes += 1
+    print changes, '| NCBI taxa mapped to SILVA clusters'
+
+
+def align_worms(worms, ott):
+    a = ott.alignment(worms)
+    a.same(worms.taxonThatContains('Trichosporon', 'Trichosporon lodderae'),
+           ott.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
+    return a
 
 # ----- GBIF (Global Biodiversity Information Facility) taxonomy -----
 
@@ -490,12 +564,8 @@ def align_gbif(gbif, ott):
 
     # JAR 2014-04-18 attempt to resolve ambiguous alignment of
     # Trichosporon in IF and GBIF based on common member
-    # a.same(fungorum.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'),
-    #          gbif.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
-    # doesn't work.  brute force.
-    # was: a.same(fungorum.taxon('10296'), gbif.taxon('2518163')) = ott:364222
-    ##### RECOVER THIS IF NECESSARY
-    # a.same(fungi.taxon('10296'), ott.taxon('364222'))
+    a.same(gbif.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'),
+           ott.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
 
     # Obviously the same genus, can't tell what's going on
     # if:17806 = Hygrocybe = ott:282216
@@ -515,7 +585,10 @@ def align_gbif(gbif, ott):
     # ### CHECK: was ncbi.taxon
     if False:
         a.same(gbif.taxon('Choanoflagellida'),
-                 ott.taxon('Choanoflagellida', 'Opisthokonta'))
+               ott.taxon('Choanoflagellida', 'Opisthokonta'))
+
+    a.same(gbif.taxonThatContains('Ctenophora', 'Ctenophora pulchella'),
+           ott.taxonThatContains('Ctenophora', 'Ctenophora pulchella'))
 
     return a
 
@@ -545,9 +618,11 @@ def align_irmng(irmng, ott):
         a.same(irmng.taxon('Gorkadinium','Dinophyceae'), ottgork)
 
     # JAR 2014-04-18 attempt to resolve ambiguous alignment of
-    # Trichosporon in IF and IRMNG based on common parent and member
-    # Trichosporon in IF = if:10296 genus in Trichosporonaceae
-    a.same(irmng.taxon('Trichosporon'), ott.taxon('Trichosporon', 'Trichosporonaceae'))
+    # Match Trichosporon in IRMNG to one of three in OTT based on common member.
+    # Trichosporon in IF = if:10296 genus in Trichosporonaceae, contains cutaneum
+    a.same(irmng.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'), \
+           ott.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
+
 
     # JAR 2014-04-24 false match
     # tests pass
@@ -585,6 +660,19 @@ def align_irmng(irmng, ott):
 # ----- Final patches -----
 
 def patch_ott(ott):
+
+    # Romina 2014-04-09: Hypocrea = Trichoderma.
+    # IF and all the other taxonomies have both Hypocrea and Trichoderma.  
+    # Need to merge them.
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
+    # Hypocrea rufa is the type species for genus Hypocrea, and it's the same as 
+    # Trichoderma viride.
+    ott.taxon('Hypocrea').absorb(ott.taxonThatContains('Trichoderma', 'Trichoderma viride'))
+    ott.taxon('Hypocrea rufa').absorb(ott.taxon('Trichoderma viride'))
+
+    # Romina https://github.com/OpenTreeOfLife/reference-taxonomy/issues/42
+    # this seems to have fixed itself
+    # ott.taxon('Hypocrea lutea').absorb(ott.taxon('Trichoderma deliquescens'))
 
     # 2014-01-27 Joseph: Quiscalus is incorrectly in
     # Fringillidae instead of Icteridae.  NCBI is wrong, GBIF is correct.
@@ -680,7 +768,7 @@ def patch_ott(ott):
 
     # Chris Owen patches 2014-01-30
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/88
-    ott.taxon('Protostomia').take(ott.taxon('Chaetognatha','Deuterostomia'))
+    ott.taxon('Protostomia').take(ott.taxonThatContains('Chaetognatha','Sagittoidea'))
     ott.taxon('Lophotrochozoa').take(ott.taxon('Platyhelminthes'))
     ott.taxon('Polychaeta','Annelida').take(ott.taxon('Myzostomida'))
     ott.taxon('Lophotrochozoa').take(ott.taxon('Gnathostomulida'))
@@ -1005,12 +1093,14 @@ def report_on_h2007(h2007, ott):
 
 def report(ott):
 
-    print '-- Parent/child homonyms'
-    ott.parentChildHomonymReport()
+    if False:
+        # This one is getting too big.  Should write it to a file.
+        print '-- Parent/child homonyms'
+        ott.parentChildHomonymReport()
 
     # Requires ../germinator
-    #print '-- Inclusion tests'
-    #check_inclusions.check(ott)
+    print '-- Inclusion tests'
+    check_inclusions.check('../germinator/taxa/inclusions.csv', ott)
 
 names_of_interest = ['Ciliophora',
                      'Phaeosphaeria',
@@ -1074,4 +1164,6 @@ names_of_interest = ['Ciliophora',
                      'Streptophytina',
                      'Loxosporales',
                      'Sarrameanales',
+                     'Trichoderma',
+                     'Hypocrea',
                      ]

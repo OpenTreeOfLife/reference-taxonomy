@@ -108,14 +108,6 @@ public class Taxon extends Node {
         else return null;
     }
 
-	// Clear out temporary stuff from union nodes
-	void resetComapped() {
-		this.comapped = null;
-		if (children != null)
-			for (Taxon child : children)
-				child.resetComapped();
-	}
-
 	static Pattern commaPattern = Pattern.compile(",");
 
 	public void setSourceIds(String info) {
@@ -993,12 +985,24 @@ public class Taxon extends Node {
 			System.err.format("| Synonym already present: %s %s\n", this, name);
 	}
 
-	public void rename(String name) {
+	public boolean rename(String name) {
 		String oldname = this.name;
+        Collection<Node> nodes = this.taxonomy.lookup(name);
+        if (nodes != null) {
+            for (Node node : nodes) {
+                Taxon taxon = node.taxon();
+                if (taxon == node && taxon.parent == this.parent) {
+                    System.out.format("** rename: there's already a node with name %s in %s\n",
+                                      name, this.parent);
+                    return false;
+                }
+            }
+        }
 		if (!oldname.equals(name)) {
             this.clobberName(name);
 			this.taxonomy.addSynonym(oldname, this, "synonym");  // awkward, maybe wrong
 		}
+        return true;
 	}
 
     // Nonmonophyletic.

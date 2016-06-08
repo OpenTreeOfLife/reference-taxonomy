@@ -49,8 +49,14 @@ class MergeMachine {
 
         // This was supposed to be taken care of... guess not
         for (Taxon node : source.taxa())
-            if (node.mapped != null)
-                node.mapped.comapped = node;
+            if (node.mapped != null) {
+                if (node.mapped.prunedp) {
+                    System.out.format("** Pruned taxon found as mapping target: %s -> %s\n",
+                                      node, node.mapped);
+                    node.mapped = null;
+                } else
+                    node.mapped.comapped = node;
+            }
 
         for (Taxon root : source.roots()) {
             this.augment(root, union.forest);
@@ -103,7 +109,8 @@ class MergeMachine {
         // has precedence.
 
         unode.addSource(node);
-        if (node.sourceIds != null)
+        // https://github.com/OpenTreeOfLife/reference-taxonomy/issues/36
+        if (false && node.sourceIds != null)
             for (QualifiedId id : node.sourceIds)
                 unode.addSourceId(id);
 
@@ -316,7 +323,7 @@ class MergeMachine {
         return newnode;
 	}
 
-    public Taxon alignWithNew(Taxon node, Taxonomy target, String reason) {
+    Taxon alignWithNew(Taxon node, Taxonomy target, String reason) {
         Taxon newnode = target.dupWithoutId(node, reason);
         node.mapped = newnode;
         newnode.comapped = node;
@@ -445,6 +452,11 @@ class MergeMachine {
         else {
             if (alice.taxonomy != bob.taxonomy)
                 System.err.format("** taxonomy mismatch - shouldn't happen %s %s\n", alice, bob);
+            if (alice.prunedp || bob.prunedp) {
+                System.err.format("** pruned node in reportConflict - shouldn't happen %s %s %s\n",
+                                  node, alice, bob);
+                return;
+            }
             union.conflicts.add(new Conflict(node, alice, bob, node.isHidden()));
             if (union.markEvent("reported conflict"))
                 System.out.format("| conflict %s %s\n", union.conflicts.size(), node);
@@ -481,8 +493,10 @@ class Conflict {
 
 	public String toString() {
 		// cf. Taxon.mrca
-		Taxon[] div = alice.divergence(bob);
         try {
+            Taxon[] div = null;
+            if (!alice.prunedp && !bob.prunedp)
+                div = alice.divergence(bob);
             if (div != null) {
                 Taxon a = div[0];
                 Taxon b = div[1];
@@ -507,7 +521,7 @@ class Conflict {
                                      (isHidden ? 0 : 1));
         } catch (Exception e) {
             e.printStackTrace();
-            System.err.format("*** Conflict info: %s %s %s\n", node, node.lub, div);
+            System.err.format("*** Conflict info: %s %s %s %s\n", node, node.lub, alice, bob);
             return "failed";
         }
 	}

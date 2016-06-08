@@ -132,13 +132,17 @@ public class AlignmentByName extends Alignment {
 	int nextSequenceNumber = 0;
 
 	public void reset() {
-		this.nextSequenceNumber = 0;
-        this.source.reset();    // depths and comapped
+        this.source.reset();    // depths
         this.union.reset();
+
+        // Flush inverse mappings from previous alignment
+		for (Taxon node: this.union.taxa())
+			node.comapped = null;
 
         for (Taxon node : this.source.taxa())
             node.seq = NOT_SET;
 
+		this.nextSequenceNumber = 0;
 		for (Taxon root : this.union.roots())
 			assignBrackets(root);
 
@@ -175,7 +179,7 @@ public class AlignmentByName extends Alignment {
 		if (node.seq == NOT_SET) {
 			Taxon unode = union.unique(node.name);
 			if (unode != null)
-				node.seq = unode.seq; // Else leave seq as NOT_SET
+				node.seq = unode.seq;
             else
                 node.seq = NO_SEQ;
             int start = Integer.MAX_VALUE;

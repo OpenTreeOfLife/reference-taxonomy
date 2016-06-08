@@ -85,6 +85,10 @@ public abstract class Alignment {
 			//	different union taxa
 			if (node.report("Already assigned to node in union:", unode))
 				Taxon.backtrace();
+		} else if (unode.prunedp) {
+            System.out.format("** attempt to map %s to pruned node %s\n",
+                              node, unode);
+            Taxon.backtrace();
 		} else {
             node.mapped = unode;
             node.answer = answer;

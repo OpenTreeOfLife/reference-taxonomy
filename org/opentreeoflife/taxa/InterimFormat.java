@@ -474,6 +474,7 @@ class InterimFormat {
                 if (node instanceof Synonym) {
                     Synonym syn = (Synonym)node;
                     Taxon taxon = syn.taxon;
+                    if (taxon.prunedp) continue;
                     if (taxon.id == null) {
                         // E.g. Populus tremuloides
                         if (!taxon.isRoot()) {
@@ -483,12 +484,12 @@ class InterimFormat {
                         }
                     } else {
                         String uniq = node.uniqueName();
-                        String source = syn.source != null ? syn.source.toString() : "";
+                        String sources = syn.getSourceIdsString();
                         out.println(name + sep +
                                     taxon.id + sep +
                                     syn.type + sep +
                                     uniq + sep +
-                                    source + sep);
+                                    sources + sep);
                     }
                     synonymp = true;
                 } else {

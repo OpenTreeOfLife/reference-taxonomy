@@ -245,32 +245,48 @@ public abstract class Taxonomy {
 	void copySynonyms(Taxonomy targetTaxonomy, boolean mappedp) {
 		int count = 0;
         for (Node node : this.allNamedNodes()) {
-            String name = node.name;
-            if (targetTaxonomy.lookup(name) == null) continue;
-            Taxon taxon = node.taxon();
-            Taxon other =
+            if (node instanceof Taxon) continue;
+            Synonym syn = (Synonym)node;
+
+            // It's a synonym for what in the target?
+            Taxon taxon = syn.taxon();
+            Taxon targetTaxon =
                 (mappedp
                  ? taxon.mapped
                  : targetTaxonomy.lookupId(taxon.id));
+            if (targetTaxon == null) continue;
 
-            // If the name maps to a union taxon with a different name....
-            if (other != null && !other.name.equals(name)) {
-                // then the name is a synonym of the union taxon too
-                if (other.taxonomy != targetTaxonomy)
-                    System.err.format("** copySynonyms logic error %s %s\n",
-                                      other.taxonomy, targetTaxonomy);
-                else {
-                    String type = "synonym";
-                    if (node instanceof Synonym)
-                        type = ((Synonym)node).type;
-                    Synonym novo = other.newSynonym(name, type);
-                    if (novo != null) {
-                        if (mappedp)
-                            novo.source = taxon.getQualifiedId();
-                        ++count;
+            // Find or create synonym in target taxonomy
+            Synonym targetSyn = null;
+
+            String name = syn.name;
+            List<Node> targetNodes = targetTaxonomy.lookup(name);
+            if (targetNodes != null) {
+                // One or more nodes with this name already exist in target
+                for (Node targetNode : targetNodes)
+                    if (targetNode instanceof Synonym) {
+                        if (targetSyn == null)
+                            targetSyn = (Synonym)targetNode;
+                        else {
+                            // more than one synonym - shouldn't happen - they'll cancel out
+                            targetSyn = null;
+                            break;
+                        }
                     }
-                }
+                if (targetSyn == null) continue;
+            } else {
+                targetSyn = targetTaxon.newSynonym(name, syn.type);
             }
+            if (mappedp)
+                targetSyn.addSourceId(taxon.getQualifiedId());
+            else {
+                if (targetSyn.sourceIds == null) {
+                    if (syn.sourceIds != null)
+                        targetSyn.sourceIds = new ArrayList<QualifiedId>(syn.sourceIds);
+                } else
+                    targetSyn.sourceIds.addAll(syn.sourceIds);
+            }
+            ++count;
         }
 		if (count > 0)
 			System.err.println("| Added " + count + " synonyms");
@@ -912,6 +928,14 @@ public abstract class Taxonomy {
         tax2.addRoot(selection);
         this.copySelectedSynonyms(tax2);
         this.copySelectedIds(tax2);
+        // copy flags and sourceids
+        for (Taxon node : tax2.taxa())
+            if (node.id != null) {
+                Taxon probe = selection.taxonomy.lookupId(node.id);
+                if (probe != null) {
+                    node.properFlags = probe.properFlags;
+                }
+            }
         // tax2.inferFlags();
         return tax2;
     }
@@ -1124,8 +1148,8 @@ public abstract class Taxonomy {
         // going to attach this in a pretty similar place
 		newnode.properFlags = node.properFlags;
 
-        if (node.sourceIds != null)
-            // Unusual.  This hack is causing too much trouble and really ought to be disabled.
+        // https://github.com/OpenTreeOfLife/reference-taxonomy/issues/36
+        if (false && node.sourceIds != null)
             newnode.sourceIds = new ArrayList<QualifiedId>(node.sourceIds);
 
         // This might be the place to report on homonym creation
@@ -1711,9 +1735,6 @@ public abstract class Taxonomy {
             else
                 all.add(taxon);
         }
-
-        Taxon u = this.unique("Salicaceae");
-        System.out.format("| %s %s\n", u, (u == null ? "" : u.parent.toString()));
 
         // Ensure every named node is reachable...
         for (Node node : allNamedNodes()) {

@@ -6,7 +6,6 @@ public class Synonym extends Node {
 
     Taxon taxon;
     String type;                 // synonym, authority, common name, etc.
-    QualifiedId source = null;   // idspace: ncbi, gbif, etc. (for union only)
 
     public Synonym(String name, String type, Taxon taxon) {
         super(taxon.taxonomy, name); // does addToNameIndex

@@ -17,6 +17,7 @@ from claim import Has_child, test_claims
 import csv
 
 this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/make-ott.py'
+inclusions_path = '../germinator/taxa/inclusions.csv'
 
 # temporary debugging thing
 invariants = [Has_child('Nucletmycea', 'Fungi'),
@@ -1100,7 +1101,7 @@ def report(ott):
 
     # Requires ../germinator
     print '-- Inclusion tests'
-    check_inclusions.check('../germinator/taxa/inclusions.csv', ott)
+    check_inclusions.check(inclusion_path, ott)
 
 names_of_interest = ['Ciliophora',
                      'Phaeosphaeria',
@@ -1166,4 +1167,6 @@ names_of_interest = ['Ciliophora',
                      'Sarrameanales',
                      'Trichoderma',
                      'Hypocrea',
+                     'Elaphocordyceps subsessilis', # incompatible-use
+                     'Bacillus selenitireducens',   # incompatible-use
                      ]

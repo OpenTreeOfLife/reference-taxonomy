@@ -394,5 +394,5 @@ aster-tarball: t/tax/aster/taxonomy.tsv
 check:
 	bash run-tests.sh
 
-inclusion-tests: ../germinator/taxa/inclusions.csv tax/ott/log.tsv
+inclusion-tests: ../germinator/taxa/inclusions.csv 
 	bin/jython util/check_inclusions.py ../germinator/taxa/inclusions.csv tax/ott/

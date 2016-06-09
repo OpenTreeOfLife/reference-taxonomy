@@ -21,7 +21,6 @@ public class Taxon extends Node {
 	public Taxon parent = null;
 	public String rank = null;
 	public Collection<Taxon> children = null;
-	public List<QualifiedId> sourceIds = null;
 	int count = -1;             // cache of # nodes at or below here
 	int depth = -1;             // cache of distance from root
 	public boolean prunedp = false;    // for lazy removal from nameIndex
@@ -107,18 +106,6 @@ public class Taxon extends Node {
         else if (this.answer.isYes()) return this.answer.target;
         else return null;
     }
-
-	static Pattern commaPattern = Pattern.compile(",");
-
-	public void setSourceIds(String info) {
-		if (info.equals("null")) return;	// glitch in OTT 2.2
-		String[] ids = commaPattern.split(info);
-		if (ids.length > 0) {
-			this.sourceIds = new ArrayList(ids.length);
-			for (String qid : ids)
-				this.addSourceId(new QualifiedId(qid));
-		}
-	}
 
 	public void setName(String name) {
 		if (name == null) {
@@ -335,28 +322,6 @@ public class Taxon extends Node {
 	//out.println("uid\t|\tparent_uid\t|\tname\t|\trank\t|\t" +
 	//			"source\t|\tsourceid\t|\tsourcepid\t|\tuniqname\t|\tpreottol_id\t|\t");
 
-	// Note: There can be multiple sources, separated by commas.
-	// However, the first one in the list is the original source.
-	// The others are merely inferred to be identical.
-
-	public QualifiedId putativeSourceRef() {
-		if (this.sourceIds != null)
-			return this.sourceIds.get(0);
-		else
-			return null;
-	}
-
-	// Add most of the otherwise unmapped nodes to the union taxonomy,
-	// either as new names, fragmented taxa, or (occasionally)
-	// new homonyms, or vertical insertions.
-
-	public void addSourceId(QualifiedId qid) {
-		if (this.sourceIds == null)
-			this.sourceIds = new ArrayList<QualifiedId>(1);
-		if (!this.sourceIds.contains(qid))
-			this.sourceIds.add(qid);
-	}
-
 	public void addSource(Taxon source) {
 		if (!source.taxonomy.getIdspace().equals("skel")) //KLUDGE!!!
 			addSourceId(source.getQualifiedId());
@@ -435,28 +400,6 @@ public class Taxon extends Node {
             (this.isDirectlyHidden() ? "?" : "") +
             (this.prunedp ? " pruned" : "") +
 			")";
-	}
-
-	// Returns a string of the form prefix:id,prefix:id,...
-	// Generally called on a union taxonomy node
-
-	public String getSourceIdsString() {
-		String answer = null;
-		List<QualifiedId> qids = this.sourceIds;
-		if (qids != null) {
-			for (QualifiedId qid : qids) {
-				if (answer == null)
-					answer = qid.toString();
-				else
-					answer = answer + "," + qid.toString();
-			}
-		}
-		// else answer = getQualifiedId().toString() ... ?
-		if (answer != null)
-			return answer;
-		else
-			// callers expect non-null
-			return "";
 	}
 
 	// Events - punt them to union taxonomy

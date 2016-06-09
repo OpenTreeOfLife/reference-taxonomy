@@ -104,9 +104,12 @@ public class TsvEdits {
 			if (existing == null)
 				System.err.println("! (move) No taxon to move: " + name);
 			else {
-				if (existing.parent == parent)
-					System.err.println("! (move) Note: already in the right place: " + name);
-				else {
+				if (existing.parent == parent) {
+                    if (false)
+                        // seems like clutter, but sometimes
+			            // you want to know about these
+                        System.err.println("! (move) Note: already in the right place: " + name);
+				} else {
 					// TBD: CYCLE PREVENTION!
 					existing.changeParent(parent, 0);
 					existing.addFlag(Taxonomy.EDITED);

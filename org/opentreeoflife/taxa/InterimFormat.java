@@ -44,6 +44,7 @@ class InterimFormat {
 		this.loadTaxonomyProper(dirname + "taxonomy.tsv");
 		this.loadSynonyms(dirname + "synonyms.tsv");
         this.loadForwards(dirname + "forwards.tsv");
+        this.loadForwards(dirname + "new-forwards.tsv"); // OTT 2.9 peculiarity
         tax.purgeTemporaryIds();
 	}
 
@@ -55,7 +56,7 @@ class InterimFormat {
 		dumpMetadata(outprefix + "about.json");
 		dumpNodes(tax.roots(), outprefix, sep);
 		dumpSynonyms(outprefix + "synonyms.tsv", sep);
-        dumpForwards(outprefix + "new-forwards.tsv");
+        dumpForwards(outprefix + "forwards.tsv");
 		// tax.dumpHidden(outprefix + "hidden.tsv");
 	}
 

@@ -349,7 +349,6 @@ def align_ncbi(ncbi, silva, ott):
         ctenophora_jelly = ott.newTaxon('Ctenophora', None, 'ncbi:10197')
         ott.taxon('Metazoa').take(ctenophora_jelly)    # Will get moved to Bilateria
         a.same(ncbi.taxon('10197'), ctenophora_jelly)
-        ctenophora_jelly.incertaeSedis()
 
     if ott.maybeTaxon('Ctenophora', 'Arthropoda') == None:
         ctenophora_fly = ott.newTaxon('Ctenophora', 'genus', 'ncbi:516519')
@@ -1101,7 +1100,7 @@ def report(ott):
 
     # Requires ../germinator
     print '-- Inclusion tests'
-    check_inclusions.check(inclusion_path, ott)
+    check_inclusions.check(inclusions_path, ott)
 
 names_of_interest = ['Ciliophora',
                      'Phaeosphaeria',

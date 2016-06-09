@@ -687,6 +687,19 @@ up being three of them.
 Looks like another ghost.  In current NCBI, there is only one (599816
 redirects to 5552).
 
+## Podocystis
+
+    ott.notSame(ott.taxon('Podocystis', 'Stramenopiles'), fungi.taxon('Podocystis', 'Fungi'))
+
+One (OTT 809209) is a fungus, but as of OTT 2.10, it has changed its name to Melampsora.
+
+The other (OTT 357108, SILVA HQ912661/#7) is a diatom.
+
+Here's what 2.9 has:
+
+809209	|	234869	|	Podocystis	|	genus	|	if:16205,ncbi:5260,gbif:2513275,gbif:7239746,gbif:7239749,irmng:1318461	|	Podocystis (genus in phylum Opisthokonta)	|		|	
+357108	|	173959	|	Podocystis	|	genus	|	silva:HQ912661/#7,ncbi:1003093,worms:248089,gbif:3192249,irmng:1363649	|	Podocystis (genus in SAR)	|	sibling_higher	|	
+
 
 ## Division problems
 
@@ -740,7 +753,6 @@ why this would be a cross-division issue.
 
 notSame directives:
 
-    ott.notSame(ott.taxon('Podocystis', 'Stramenopiles'), fungi.taxon('Podocystis', 'Fungi'))
     # ott.notSame(ncbi.taxon('Burkea', 'Viridiplantae'), ott.taxon('Burkea'))
       ** No unique taxon found with this name: Burkea
       -- There are two of these now, looks like it's probably OK

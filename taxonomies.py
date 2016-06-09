@@ -34,10 +34,13 @@ def bad_name(taxonomy, name, anc):
 
 def patch_silva(silva):
 
-    # Sample contamination
+    # Sample contamination 
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/201
     bad_name(silva, 'Trichoderma harzianum', 'life')
     bad_name(silva, 'Sclerotinia homoeocarpa', 'life')
     bad_name(silva, 'Puccinia triticina', 'life')
+    bad_name(silva, 'Daphnia pulex', 'life')
+    bad_name(silva, 'Nematostella vectensis', 'life')
 
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/104
     bad_name(silva, 'Caenorhabditis elegans', 'life')

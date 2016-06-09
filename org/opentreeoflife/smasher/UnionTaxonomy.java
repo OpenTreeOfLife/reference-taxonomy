@@ -185,6 +185,7 @@ public class UnionTaxonomy extends Taxonomy {
 
         Map<Taxon, String> assignments = new HashMap<Taxon, String>();
 
+        int carryOver = 0;
 		for (Taxon node : idsource.taxa()) {
             // Consider using node.id as the id for the union node it maps to
 			Taxon unode = node.mapped;
@@ -193,14 +194,25 @@ public class UnionTaxonomy extends Taxonomy {
                 this.lookupId(node.id) == null) {
 
                 String haveId = assignments.get(unode);
-                if (haveId == null || compareIds(node.id, haveId) < 0)
-                    assignments.put(unode, node.id);
+                if (haveId == null || compareIds(node.id, haveId) < 0) {
+                    unode.setId(node.id);
+                    ++carryOver;
+                }
 			}
 		}
-        for(Taxon unode : assignments.keySet()) {
-            unode.setId(assignments.get(unode));
+        System.out.format("| %s ids transferred\n", carryOver);
+
+        // Carry over forwards from previous OTT.
+        int forwardsCount = 0;
+        for (String id : idsource.idIndex.keySet()) {
+            Taxon node = idsource.idIndex.get(id);
+            Taxon unode = node.mapped;
+            if (unode != null && this.idIndex.get(id) == null) {
+                this.idIndex.put(id, unode);
+                ++forwardsCount;
+            }
         }
-        System.out.format("| %s ids transferred\n", assignments.size());
+        System.out.format("| %s merged ids transferred\n", forwardsCount);
 	}
 
     // Return negative, zero, positive depending on whether id1 is better, same, worse than id2

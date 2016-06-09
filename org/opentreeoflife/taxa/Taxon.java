@@ -230,10 +230,6 @@ public class Taxon extends Node {
     // Removes it from the tree - undoes addChild
 
 	public void detach() {
-        if (this.name != null && this.name.equals("Salicaceae")) {
-            System.out.println("** detaching Salicaceae");
-            backtrace();
-        }
 		Taxon p = this.parent;
         if (p == null) return;  // already detached
         this.parent = null;

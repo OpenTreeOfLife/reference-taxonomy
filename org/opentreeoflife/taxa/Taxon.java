@@ -26,7 +26,7 @@ public class Taxon extends Node {
 	public boolean prunedp = false;    // for lazy removal from nameIndex
 	public int properFlags = 0, inferredFlags = 0;
 	int rankAsInt = 0;
-	Taxon division = null;
+	Taxon division = null;  // foo.  for Alignment
 
 	// State during alignment
 	public Taxon mapped = null;	// source node -> union node
@@ -292,6 +292,10 @@ public class Taxon extends Node {
 		}
 		return this.division;
 	}
+
+    public Taxon getDivisionProper() {
+        return division;
+    }
 
 	public String divisionName() {
 		Taxon d = this.getDivision();

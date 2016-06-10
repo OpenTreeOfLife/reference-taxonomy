@@ -35,19 +35,19 @@ public class AlignmentByName extends Alignment {
             return null;
     }
 
-    private int losers, winners, fresh, grafts, outlaws;
+    private int winners, fresh, grafts, outlaws;
 
     void cacheInSourceNodes() {
         this.alignWith(source.forest, union.forest, "align-forests");
 
         // The answers are already stored in .answer of each node
         // Now do the .lubs
-        losers = winners = fresh = grafts = outlaws = 0;
+        winners = fresh = grafts = outlaws = 0;
         for (Taxon root : source.roots())
             cacheLubs(root);
-        if (losers + winners + fresh + grafts + outlaws > 0)
-            System.out.format("| LUB match: %s mismatch: %s graft: %s differ: %s bad: %s\n",
-                              winners, losers, fresh, grafts, outlaws);
+        if (winners + fresh + grafts + outlaws > 0)
+            System.out.format("| LUB match: %s graft: %s differ: %s bad: %s\n",
+                              winners, fresh, grafts, outlaws);
     }
 
     // An important case is where a union node is incertae sedis and the source node isn't.
@@ -96,36 +96,35 @@ public class AlignmentByName extends Alignment {
 
             node.lub = mrca;
 
-            // Reporting
-            if (node.mapped == null) {
+            if (node.mapped == null)
                 ++fresh;
-                return null;
-            } else {
-                if (mrca == node.mapped)
+            else if (mrca == null)
+                ++grafts;
+            else if (node.mapped == mrca)
+                // Ideal case - mrca of children is the node itself
+                ++winners;
+            else {
+                // Divergence across taxonomies.  MRCA of children can be
+                // ancestor, descendant, or disjoint from target.
+                Taxon[] div = mrca.divergence(node.mapped);
+                if (div == null)
+                    // If div == null, then either mrca descends from node.mapped or the other way around.
                     ++winners;
-                else if (mrca == null)
-                    ++grafts;
+                else if (div[0] == mrca || div[1] == node.mapped || div[1].parent == node.mapped)
+                    // Hmm... allow siblings (and cousins) to merge.  Blumeria graminis
+                    ++winners;
                 else {
-                    // divergence across taxonomies
-                    Taxon[] div = mrca.divergence(node.mapped);
-                    if (div != null && !div[0].isRoot()
-                        // Hmm... allow siblings (and cousins) to merge.  Blumeria graminis
-                        && (div[0] != mrca && div[1] != node.mapped)) {
-                        if (outlaws < 10)
-                            System.out.format("! %s maps by name to %s which is disjoint from mrca %s; they meet at %s\n",
-                                              node, node.mapped, mrca, div[0].parent);
-                        ++outlaws;
-                        // OVERRIDE.
-                        node.answer = Answer.no(node, node.mapped, "not-same/disjoint", null);
-                        node.answer.maybeLog();
-                        node.mapped = null;
-                    } else
-                        ++losers;
+                    if (outlaws < 10 || node.name.equals("Elaphocordyceps subsessilis") || node.name.equals("Bacillus selenitireducens"))
+                        System.out.format("! %s maps by name to %s which is disjoint from children-mrca %s; they meet at %s\n",
+                                          node, node.mapped, mrca, div[0].parent);
+                    ++outlaws;
+                    // OVERRIDE.
+                    node.answer = Answer.no(node, node.mapped, "not-same/disjoint", null);
+                    node.answer.maybeLog();
+                    node.mapped = null;
                 }
-                if (node.mapped != null && !(node.mapped.taxonomy instanceof UnionTaxonomy))
-                    System.out.format("** Mapped to wrong taxonomy: %s -> %s\n", node, node.mapped);
-                return node.mapped;
             }
+            return node.mapped;
         }
     }
 

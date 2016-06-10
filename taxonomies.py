@@ -32,21 +32,27 @@ def bad_name(taxonomy, name, anc):
     if tax != None:
         tax.clobberName('Not ' + name)
 
-def patch_silva(silva):
 
-    # Sample contamination 
-    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/201
-    bad_name(silva, 'Trichoderma harzianum', 'life')
-    bad_name(silva, 'Sclerotinia homoeocarpa', 'life')
-    bad_name(silva, 'Puccinia triticina', 'life')
-    bad_name(silva, 'Daphnia pulex', 'life')
-    bad_name(silva, 'Nematostella vectensis', 'life')
+# Sample contamination ?
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/201
+silva_bad_names = [
+    'Trichoderma harzianum',
+    'Sclerotinia homoeocarpa',
+    'Puccinia triticina',
+    'Daphnia pulex',
+    'Nematostella vectensis',
 
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/104
-    bad_name(silva, 'Caenorhabditis elegans', 'life')
+    'Caenorhabditis elegans',
 
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/100
-    bad_name(silva, 'Solanum lycopersicum', 'life')
+    'Solanum lycopersicum',
+]
+
+def patch_silva(silva):
+
+    for name in silva_bad_names:
+        bad_name(silva, name, 'life')
 
     # - Deal with parent/child homonyms in SILVA -
     # Arbitrary choices here to eliminate ambiguities down the road when NCBI gets merged.

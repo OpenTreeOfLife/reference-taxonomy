@@ -58,6 +58,7 @@ public class Rank {
 		 "form",                // 2016 GBIF
 		 "forma",
 		 "subform",
+         "cluster",
 		 "samples"},
 	};
 

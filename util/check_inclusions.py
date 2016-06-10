@@ -11,28 +11,27 @@ def check(inclusionspath, ott):
         small = row[0]
         big = row[1]
         small_id = row[2]
+        small_id_tax = ott.lookupId(small_id)
 
         small_nodes = ott.filterByAncestor(small, big)
         if small_nodes == None:
             small_nodes = ott.lookup(small)
             if small_nodes == None:
                 print '** There is no taxon named %s' % (small,)
-            elif len(small_nodes) == 1:
-                small_node = small_nodes[0]
-                small_tax = small_node.taxon()
-                if small_tax.id != small_id:
-                    print '** The id of %s (which is not in %s) is %s (expected %s)' % (small, big, small_tax.id, small_id)
-                    show_interloper(small_node, small_id, ott)
-                else:
-                    print '** Taxon %s (%s) is not in %s' % (small, small_id, big)
-                    show_interloper(small_node, small_id, ott)
             else:
-                print '** %s is polysemous, and no choice is in %s' % (small, big)
+                print '** There is no taxon named %s (id %s) in %s' % (small, small_id, big)
+                for small_node in small_nodes:
+                    small_tax = small_node.taxon()
+                    if small_tax != small_id_tax:
+                        print '   There is a %s not in %s; its id is %s' % (small, big, small_tax.id)
+                    else:
+                        print '   There is a %s not in %s; its id happens to be %s' % (small, big, small_id)
+                    show_interloper(small_node, small_id, ott)
             
         elif len(small_nodes) == 1:
             small_node = small_nodes[0]
             small_tax = small_node.taxon()
-            if small_tax.id != small_id:
+            if small_tax != small_id_tax:
                 print '** The id of %s in %s is %s (expected %s)' % (small, big, small_tax.id, small_id)
                 show_interloper(small_node, small_id, ott)
 

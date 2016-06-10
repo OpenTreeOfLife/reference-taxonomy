@@ -178,20 +178,19 @@ public abstract class Alignment {
 
     public void markDivisionsFromSkeleton(Taxonomy source, Taxonomy skel) {
         for (String name : skel.allNames()) {
-            Taxon skelnode = skel.unique(name);
+            Taxon div = skel.unique(name);
             Taxon node = highest(source, name);
-            Taxon unode = highest(union, name);
-            if (node != null)
-                node.setDivision(skelnode);
-            if (unode != null)
-                unode.setDivision(skelnode);
-            if (node != null && unode != null) {
-                if (node.mapped != null) {
-                    if (node.mapped != unode)
-                        System.out.format("** Help!  Conflict over division mapping: %s %s %s\n",
-                                          node, node.mapped, unode);
-                } else
-                    alignWith(node, unode, "same/by-division-name");
+            if (node != null) {
+                if (node.getDivisionProper() == null) {
+                    node.setDivision(div);
+                    Taxon unode = div.mapped;
+                    if (unode == null)
+                        System.out.format("** Skeleton node not mapped to union: %s\n", div);
+                    else
+                        alignWith(node, unode, "same/by-division-name");
+                } else if (node.getDivisionProper() != div)
+                    System.out.format("** Help!  Conflict over division mapping: %s have %s want %s\n",
+                                      node, node.getDivisionProper(), div);
             }
         }
     }

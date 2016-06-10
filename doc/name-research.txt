@@ -458,7 +458,18 @@ The rhodophyte:
 782484	|	5275832	|	Bostrychia	|	genus	|	silva:AF203893/#6,ncbi:103711,worms:143904,gbif:2661216,irmng:1282403	|	Bostrychia (genus in Archaeplastida)	|	sibling_higher	|	
 
 The fungus:
-    - The fungus name is a synonym for Cytospora.
+    - The fungus name is a synonym for Cytospora = IF 7904 = NCBI
+      117544.
+Alleged to be same as ncbi:117544 and OTT 4052386... but NCBI doesn't have
+      the fungus, so this is wrong.
+
+Fungus should be OTT 4052386 (Cytospora) = ncbi:103711.
+
+OTT 2.10 draft has:
+4052386	|	103004	|	Bostrychia	|	genus	|	if:7904,ncbi:117544,ncbi:1281446,worms:147516,worms:204701,gbif:3257985,gbif:2480780,gbif:7256837,gbif:7256832,gbif:7256851,gbif:2566081,gbif:7256833,gbif:7256857,irmng:1336710,irmng:1011403	|	Bostrychia (genus in phylum Opisthokonta)	|		|	
+which is a mess - bird and fungus combined.
+
+This a persistent problem.
 
 The code:
 
@@ -468,7 +479,7 @@ The code:
     ...
     ott.notSame(ott.taxon('Bostrychia', 'Rhodophyceae'), ncbi.taxon('Bostrychia', 'Aves'))
 
-Tests pass.  OK.
+Tests pass.  OK.  Later, after alignment change: tests do not pass.
 
 ### Tetrasphaera
 
@@ -547,55 +558,18 @@ Add a notSame directive.
 
 ### Ctenophora
 
-bash-3.2$ grep "Ctenophora	" tax/prev_ott/taxonomy.tsv  # 2.8
-641212	|	641038	|	Ctenophora	|	phylum	|	ncbi:10197,gbif:51,irmng:109	|	Ctenophora (phylum in Eumetazoa)	|		|	
-1043126	|	183720	|	Ctenophora	|	genus	|	ncbi:516519,gbif:1507726,irmng:1279398	|	Ctenophora (genus in subfamily Ctenophorinae)	|	extinct_inherited	|	
-103964	|	173959	|	Ctenophora	|	genus	|	silva:HQ912611/#7,ncbi:1003038,gbif:3192189,irmng:1279336	|	Ctenophora (genus in order Fragilariales)	|	sibling_higher,sibling_lower	|	
-bash-3.2$ grep "Ctenophora	" tax/ott/taxonomy.tsv   # 2.9draft11
-641212	|	641038	|	Ctenophora	|	phylum	|	silva:HQ912611/#7,ncbi:10197,ncbi:1003038,worms:1248,worms:163921,gbif:51	|	Ctenophora (phylum silva:HQ912611/#7)	|		|	
-1043126	|	183720	|	Ctenophora	|	genus	|	ncbi:516519,gbif:1507726,irmng:1279398	|	Ctenophora (genus in Mandibulata)	|		|	
-103964	|	173960	|	Ctenophora	|	genus	|	gbif:3192189,irmng:1279336	|	Ctenophora (genus in family Fragilariaceae)	|	hidden,barren	|	
-5680147	|	511967	|	Ctenophora	|	genus	|	irmng:1279363	|	Ctenophora (genus in subphylum Chelicerata)	|	major_rank_conflict,barren	|	
+There are four of them:
 
-1. 641212 = The phylum (comb jellies) in Metazoa = NCBI 10197.  It contains e.g. Pleurobrachia bachei.
-  But silva:HQ912611/#7 (in 'Fragillares') is the diatom, not the phylum!
+1. OTT 641212 = comb jellies = ncbi:10197  (could be silva:AF293678/#4)  
+   Contains Pleurobrachia bachei (OTT 742126), known in all taxonomies.
 
-2. 1043126 = ncbi:516519 is a cranefly (Tipulidae).  Verified that gbif:1507726 is
-the same.  Not extinct!
+2. OTT 103964 = diatom in Fragillares = silva:HQ912611/#7 = ncbi:1003038
+   Contains Ctenophora pulchella
 
-3. 103964 = gbif:3192189 is diatom.  'Fragillares' < 'Ochrophyta'.  GBIF says it's worms:163921.
+3. OTT 1043126 = cranefly = ncbi:516519 (not extinct).  Same as gbif:1507726 ?
 
-4. 5680147 = irmng:1279363 has been deleted from IRMNG !
-
-In draft12:
-
-641212	|	641038	|	Ctenophora	|	phylum	|	silva:AF293678/#4,ncbi:10197,worms:1248,gbif:51,irmng:109	|	Ctenophora (phylum silva:AF293678/#4)	|		|	
-1043126	|	183720	|	Ctenophora	|	genus	|	ncbi:516519,gbif:1507726,irmng:1279398	|	Ctenophora (genus in Bilateria)	|		|	
-103964	|	173959	|	Ctenophora	|	genus	|	silva:HQ912611/#7,ncbi:1003038,worms:163921,gbif:3192189,irmng:1279336	|	Ctenophora (genus in SAR)	|	sibling_higher	|	
-
-much better.
-
--- wait, this is still wrong.
-
-There are 3 in NCBI:
-    # 1003038	|	33856	|	Ctenophora	|	genus	|	= diatom
-    # 10197 	|	6072	|	Ctenophora	|	phylum	|	= comb jellies
-    # 516519	|	702682	|	Ctenophora	|	genus	|	= cranefly
-
-** The id of Ctenophora in Stramenopiles is 641212 (expected 103964)
-   (There is no taxon with id 103964)
-** The id of Ctenophora in Tipulidae is 5929825 (expected 1043126)
-   (There is no taxon with id 1043126)
-
-What should the OTT ids be?
-In OTT 2.9 they are:
-  diatom:     103964 silva:HQ912611/#7,ncbi:1003038,worms:163921,gbif:3192189,irmng:1279336
-  comb jelly: 641212 silva:AF293678/#4,ncbi:10197,worms:1248,gbif:51,irmng:109
-  cranefly:  1043126 ncbi:516519,gbif:1507726,irmng:1279398
-Similarly in OTT 2.8.
-
-So one test is messed up, and smasher is failing to reassign one of
-the ids.  (bug in assembly script, fixing)
+4. OTT 5680147 = irmng:1279363 has been deleted from IRMNG, no longer
+in OTT.
 
 ### Nitzschia elongata
 

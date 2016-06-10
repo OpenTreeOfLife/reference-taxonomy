@@ -199,6 +199,10 @@ class MergeMachine {
                     if (node.markEvent("sibling-sink mismatch"))
                         System.out.format("!! Parent of %s's children's images, %s, is not a descendant of %s\n",
                                           node, common, sink);
+                    if (common.name.equals("Metazoa")) {
+                        common.showLineage(null);
+                        sink.showLineage(null);
+                    }
                     inconsistent(node, sink);
                 } else if (refinementp(node, sink)) {
                     Taxon newnode = acceptNew(node, "new/refinement");

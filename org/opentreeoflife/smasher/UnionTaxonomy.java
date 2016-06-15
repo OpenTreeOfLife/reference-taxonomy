@@ -11,16 +11,6 @@
 
 package org.opentreeoflife.smasher;
 
-import org.opentreeoflife.taxa.Node;
-import org.opentreeoflife.taxa.Taxon;
-import org.opentreeoflife.taxa.Taxonomy;
-import org.opentreeoflife.taxa.SourceTaxonomy;
-import org.opentreeoflife.taxa.Answer;
-import org.opentreeoflife.taxa.QualifiedId;
-import org.opentreeoflife.taxa.Flag;
-import org.opentreeoflife.taxa.Rank;
-import org.opentreeoflife.taxa.EventLogger;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -34,8 +24,23 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.Collections;
 import java.util.Collection;
+import java.util.Comparator;
 import java.io.PrintStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.io.File;
+import org.json.simple.JSONObject; 
+
+import org.opentreeoflife.taxa.Node;
+import org.opentreeoflife.taxa.Taxon;
+import org.opentreeoflife.taxa.Taxonomy;
+import org.opentreeoflife.taxa.SourceTaxonomy;
+import org.opentreeoflife.taxa.Answer;
+import org.opentreeoflife.taxa.QualifiedId;
+import org.opentreeoflife.taxa.Flag;
+import org.opentreeoflife.taxa.Rank;
+import org.opentreeoflife.taxa.EventLogger;
+import org.opentreeoflife.taxa.Addition;
 
 
 public class UnionTaxonomy extends Taxonomy {
@@ -105,6 +110,7 @@ public class UnionTaxonomy extends Taxonomy {
 	public void absorb(SourceTaxonomy source, Alignment a) { // called from jython
         try {
             this.align(source, a);
+            this.sources.add(source);
             new MergeMachine(source, this, a).augment();
             source.copyMappedSynonyms(this); // this = union
             this.check();
@@ -152,8 +158,6 @@ public class UnionTaxonomy extends Taxonomy {
             System.out.println(s0); System.out.println(s1); System.out.println(s2); System.out.println(s2a); 
             System.out.println(s3); System.out.println(s4); 
         }
-
-        union.sources.add(source);
         return n;
 	}
 
@@ -175,12 +179,85 @@ public class UnionTaxonomy extends Taxonomy {
 		this.transferIds(idsource, a);
 
 		// Phase 2: give new ids to union nodes that didn't get them above.
-		long sourcemax = idsource.maxid();
-		this.assignNewIds(sourcemax);
+		this.assignNewIds();
 		// remember, this = union, idsource = previous version of ott
 
         // Report event counts
 		this.eventlogger.eventsReport("| ");		// Taxon id clash
+	}
+
+	public void assignNewIds() {
+        if (true) {
+            List<Taxon> nodes = new ArrayList<Taxon>();
+            for (Taxon root: this.roots())
+                findTaxaNeedingIds(root, nodes);
+            // if (nodes.size() == 0) return;
+            System.out.format("| %s taxa need ids\n", nodes.size());
+            // Give each node a tag
+            int tag = 0;
+            Map<Taxon, String> tagAssignments = new HashMap<Taxon, String>();
+            for (Taxon node : nodes)
+                tagAssignments.put(node, "taxon" + Long.toString(++tag));
+            // compose the additions request per 
+            // https://github.com/OpenTreeOfLife/germinator/wiki/Taxonomic-service-for-adding-new-taxa
+            Object json = Addition.generateAdditions(nodes, tagAssignments);
+            try {
+                PrintStream out = Taxonomy.openw("addition-request.json");
+                PrintWriter pw = new PrintWriter(new OutputStreamWriter(out, "UTF-8"));
+                JSONObject.writeJSONString((Map)json, pw);
+                pw.close();
+                out.close();
+            } catch (Exception e) {
+                // IOExceoption, UnsupportedEncodingException
+                e.printStackTrace();
+            }
+        }
+        long sourcemax = maxid(idsource);
+        long maxid = maxid(this);
+        if (sourcemax > maxid) maxid = sourcemax;
+        long start = maxid;
+        for (Taxon node : this.taxa())
+            if (node.id == null) {
+                node.setId(Long.toString(++maxid)); // MINT!
+                node.markEvent("new-id");
+            }
+        if (maxid > start)
+            System.out.format("| Highest id before: %s after: %s\n", start, maxid);
+	}
+
+    public void findTaxaNeedingIds(Taxon node, List<Taxon> nodes) {
+        if (node.id == null)
+            nodes.add(node);
+        if (node.children != null) {
+            // Strive for reproducibility
+            List<Taxon> children = new ArrayList<Taxon>(node.children);
+            children.sort(compareNodesByName);
+            for (Taxon child : children)
+                findTaxaNeedingIds(child, nodes);
+        }
+    }
+
+	static Comparator<Taxon> compareNodesByName = new Comparator<Taxon>() {
+		public int compare(Taxon x, Taxon y) {
+            if (x == y) return 0;
+            if (y.name == null) return -1;
+            if (x.name == null) return 1;
+            return x.name.compareTo(y.name);
+		}
+	};
+
+    // The highest numbered id of any taxon in the taxonomy (including merged ids).
+	public static long maxid(Taxonomy tax) {
+		long maxid = -1;
+		for (String id : tax.idIndex.keySet()) {
+            try {
+                long idAsLong = Long.parseLong(id);
+                if (idAsLong > maxid) maxid = idAsLong;
+            } catch (NumberFormatException e) {
+                ;
+            }
+		}
+		return maxid;
 	}
 
 	public void transferIds(SourceTaxonomy idsource, Alignment a) {

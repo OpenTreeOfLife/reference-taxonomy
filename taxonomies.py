@@ -41,6 +41,7 @@ silva_bad_names = [
     'Puccinia triticina',
     'Daphnia pulex',
     'Nematostella vectensis',
+    'Ictalurus punctatus',
 
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/104
     'Caenorhabditis elegans',
@@ -53,6 +54,10 @@ def patch_silva(silva):
 
     for name in silva_bad_names:
         bad_name(silva, name, 'life')
+
+    loser = silva.maybeTaxon('Crenarchaeota','Crenarchaeota')
+    if loser != None:
+        loser.prune(this_source)
 
     # - Deal with parent/child homonyms in SILVA -
     # Arbitrary choices here to eliminate ambiguities down the road when NCBI gets merged.
@@ -313,6 +318,7 @@ def patch_fung(fung):
         fung.taxon('Ascomycota').take(fung.taxon('Saccharomycotina'))
 
     print "Fungi in Index Fungorum has %s nodes"%fung.taxon('Fungi').count()
+
 
 def link_to_h2007(tax):
     print '-- Putting families in Hibbett 2007 orders --'

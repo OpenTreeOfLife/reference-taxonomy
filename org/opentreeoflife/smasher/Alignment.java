@@ -279,6 +279,14 @@ public abstract class Alignment {
 
 	static void alignmentReport(SourceTaxonomy source, UnionTaxonomy union) {
 
+        List<Node> nodes = source.lookup("Aiptasia pallida");
+        if (nodes != null)
+            for (Node node : nodes) {
+                Taxon taxon = node.taxon();
+                System.out.format("%s division = %s\n", taxon, taxon.getDivision().name);
+                taxon.show();
+            }
+
 		if (UnionTaxonomy.windyp) {
 
 			int total = 0;
@@ -496,19 +504,16 @@ abstract class Criterion {
 				// 1. Mapping x=NCBI to target=union(SILVA): target.sourceIds contains x.id
 				// 2. Mapping x=idsource to target=union: x.sourceIds contains ncbi:123
 				// compare x.id to target.sourcenode.id
-				QualifiedId xid = maybeQualifiedId(x);
-                if (xid == null) return Answer.NOINFO;
-				Collection<QualifiedId> yids = target.sourceIds;
-				if (yids == null)
-					return Answer.NOINFO;
-				for (QualifiedId ysourceid : yids)
-					if (xid.equals(ysourceid))
-						return Answer.yes(x, target, "same/any-source-id-1", null);
-				if (x.sourceIds != null)
-					for (QualifiedId xsourceid : x.sourceIds)
-						for (QualifiedId ysourceid : yids)
-							if (xsourceid.equals(ysourceid))
-								return Answer.yes(x, target, "same/any-source-id-2", null);
+                if (x.sourceIds == null) return Answer.NOINFO;
+                if (target.sourceIds == null) return Answer.NOINFO;
+
+                boolean firstxy = true;
+                for (QualifiedId xsourceid : x.sourceIds)
+                    for (QualifiedId ysourceid : target.sourceIds) {
+                        if (!firstxy && xsourceid.equals(ysourceid))
+                            return Answer.yes(x, target, "same/any-source-id", null);
+                        firstxy = false;
+                    }
 				return Answer.NOINFO;
 			}
 		};

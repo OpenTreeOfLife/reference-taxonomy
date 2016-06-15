@@ -38,7 +38,8 @@ all: ott
 compile: $(CLASS)
 
 $(CLASS): $(JAVASOURCES) \
-	  lib/json-simple-1.1.1.jar lib/jython-standalone-2.7.0.jar \
+	  lib/jython-standalone-2.7.0.jar \
+	  lib/json-simple-1.1.1.jar \
 	  lib/junit-4.12.jar
 	javac -g $(CP) $(JAVASOURCES)
 

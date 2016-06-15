@@ -31,7 +31,7 @@ def check(inclusionspath, ott):
         elif len(small_nodes) == 1:
             small_node = small_nodes[0]
             small_tax = small_node.taxon()
-            if small_tax != small_id_tax:
+            if small_id != '' and small_tax != small_id_tax:
                 print '** The id of %s in %s is %s (expected %s)' % (small, big, small_tax.id, small_id)
                 show_interloper(small_node, small_id, ott)
 

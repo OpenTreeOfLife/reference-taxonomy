@@ -80,8 +80,11 @@ def create_ott():
     mappings = ncbi_to_silva(ncbi, silva, ott)
     # Set taxon names to newer NCBI names, and prevent later 
     # name-only-based mappings.
-    # N.b. old (SILVA) names remain as synonyms.
-    upgrade_silva_names(mappings)
+    if True:
+        # this is a sort of dodgy operation, but the result
+        # seems to be better if it's done rather than not done
+        # (SILVA 115 + NCBI Oct 2015)
+        upgrade_silva_names(mappings)
 
     ott.absorb(ncbi, align_ncbi(ncbi, silva, ott))
     check_invariants(ott)
@@ -176,6 +179,13 @@ def create_ott():
 
     # Assign OTT ids to taxa that don't have them, re-using old ids when possible
     ids = Taxonomy.getTaxonomy('tax/prev_ott/', 'ott')
+
+    # Kludge to undo lossage in OTT 2.9
+    for taxon in ids.taxa():
+        if (len(taxon.sourceIds) >= 2 and
+            taxon.sourceIds[0].prefix == "ncbi" and
+            taxon.sourceIds[1].prefix == "silva"):
+            taxon.sourceIds.remove(taxon.sourceIds[0])
 
     # OTT 2.9 has both Glaucophyta and Glaucophyceae... bad news
     g1 = ids.maybeTaxon('Glaucophyta')
@@ -503,9 +513,11 @@ def upgrade_silva_names(mappings):
     for ncbi_taxon in mappings:
         so = mappings[ncbi_taxon]
         newname = ncbi_taxon.name
-        if (newname != so.name and so.taxonomy.lookup(newname) == None
+        if (newname != so.name
+            and so.taxonomy.lookup(newname) == None
             and not newname in taxonomies.silva_bad_names):
-            so.rename(newname)
+            # so.rename(newname)  - creates upwards of 300 lumpings
+            so.clobberName(newname)
             namings += 1
     print '| upgraded %s SILVA names' % namings
 
@@ -1223,9 +1235,14 @@ names_of_interest = ['Ciliophora',
                      'Sarrameanales',
                      'Trichoderma',
                      'Hypocrea',
-                     'Elaphocordyceps subsessilis', # incompatible-use
+                     'Elaphocordyceps subsessilis', # incompatible-use - ok
                      'Bacillus selenitireducens',   # incompatible-use
                      'Nematostella vectensis',
+                     'Aiptasia pallida',  # Cyanobacteria / cnidarian confusion
+                     'Mahonia',  # merged
+                     'Maddenia', # merged
+                     'Crenarchaeota', # silva duplicate
+                     'Dermabacter',
                      ]
 
 def establish(name, taxonomy, rank=None, descendant=None, parent=None, ancestor=None, division=None, ott_id=None, source=None):

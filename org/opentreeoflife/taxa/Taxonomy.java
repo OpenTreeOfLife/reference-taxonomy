@@ -1225,40 +1225,6 @@ public abstract class Taxonomy {
 
     // ----- Id assignment -----
 
-    // The id of the node in the taxonomy that has highest numbered id.
-
-	public long maxid() {
-		long id = -1;
-		for (Taxon node : this.taxa()) {
-            if (node.id != null) {
-                try {
-                    long idAsLong = Long.parseLong(node.id);
-                    if (idAsLong > id) id = idAsLong;
-                } catch (NumberFormatException e) {
-                    ;
-                }
-            }
-		}
-		return id;
-	}
-
-	public void assignNewIds() {
-        assignNewIds(0);
-    }
-
-	public void assignNewIds(long sourcemax) {
-		long maxid = this.maxid();
-		if (sourcemax > maxid) maxid = sourcemax;
-        long start = maxid;
-		for (Taxon node : this.taxa())
-			if (node.id == null) {
-				node.setId(Long.toString(++maxid)); // MINT!
-				node.markEvent("new-id");
-			}
-        if (maxid > start)
-            System.out.format("| Highest id before: %s after: %s\n", start, maxid);
-	}
-
     void assignDummyIds() {
         long minid = -1L;
 		for (Taxon node : this.taxa())

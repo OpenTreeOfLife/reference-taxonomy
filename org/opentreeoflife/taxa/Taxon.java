@@ -1080,7 +1080,7 @@ public class Taxon extends Node {
         this.showLineage(this.taxonomy.forest);
 		if (this.children != null) {
             List<Taxon> sorted = new ArrayList(this.children);
-			java.util.Collections.sort(sorted, compareNodesBySize);
+			Collections.sort(sorted, compareNodesBySize);
 			int count = 0;
 			for (Taxon child : sorted)
 				if (++count < 10)

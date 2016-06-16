@@ -1,10 +1,29 @@
+# Obtain NCBI ids and strain names for SILVA cluster from Genbank.
+# This script access the .seq files directly, instead of using eutils.
+
 import argparse
 import time
 import os
 import pickle
 
+# These maximum values need to be updated manually from the directory listing 
+# at ftp://ftp.ncbi.nlm.nih.gov/genbank/
+# This should be automated
+
+RANGES = {"gbbct": 159,  # bacteria, now 238
+          "gbinv": 132,  # invertebrates, now 136
+          "gbmam": 9,   # other mammals, now 37
+          "gbpln": 95,  # plants, now 125
+          "gbpri": 48,  # primates, now 53
+          "gbrod": 31,  # rodents
+          "gbvrt": 44   # other vertebrates, now 60
+          # "gbvrl": 33,  # virus
+          # "gbphg": 2,  # phage
+}
+
 FTP_SERVER = 'ftp://ftp.ncbi.nlm.nih.gov/genbank/'
 DEFAULT_PICKLE_FILE = 'Genbank.pickle'
+SILVA_FILE = 'feed/silva/in/silva_no_sequences.fasta'
 
 parser = argparse.ArgumentParser(description='Text genbank flatfile parsing')
 
@@ -15,8 +34,9 @@ def tokenize(line):
             result.append(item)
     return result
 
+# Process one genbank flat file, extracting taxon ids and strain names.
 
-def process_file(flatfilespec, accessions, conflicts):
+def process_file(flatfilespec, accessions, conflicts, interesting_ids):
     with open(flatfilespec) as flatfile:
         locus_id = None
         accession_id = None
@@ -25,6 +45,7 @@ def process_file(flatfilespec, accessions, conflicts):
         taxon_id = None
         strain_id = None
         line = flatfile.readline()
+        i = 0
         while line:
             tokens = tokenize(line)
             if len(tokens) > 0:
@@ -43,8 +64,10 @@ def process_file(flatfilespec, accessions, conflicts):
                                 if new_conflict not in conflicts:
                                     conflicts.add(new_conflict)
                                     print("conflict at %s: s% and %s" % new_conflict)
-                        else:
+                        elif accession_id in interesting_ids:
                             accessions[accession_id] = accession_pair
+                            i += 1
+                            if i % 20000 == 0: print accession_id, taxon_id
                     accession_id = None
                     taxon_id = None
                     strain_id = None
@@ -83,7 +106,7 @@ def process_file(flatfilespec, accessions, conflicts):
                         if new_conflict not in conflicts:
                             conflicts.add(new_conflict)
                             print("conflict at %s: s% and %s" % new_conflict)
-                else:
+                elif accession_id in interesting_ids:
                     accessions[accession_id] = accession_pair
         return (accessions, conflicts)
 
@@ -93,17 +116,17 @@ def extract_feature(line, tag):
     detagged = stripped[len(tag):]
     return detagged.strip('"')
 
-RANGES = {"gbbct": 159,  # bacteria
-          "gbinv": 132,  # invertebrates
-          "gbmam": 9,  # other mammals
-          "gbphg": 2,  # phage
-          "gbpln": 95,  # plants
-          "gbpri": 48,  # primates
-          "gbrod": 31,  # rodents
-          "gbvrl": 33,  # virus
-          "gbvrt": 44   # other vertebrates
-}
-
+# Read the .fasta file (or sequence-stripped .fasta file) to find 
+# out which genbank ids we care about.
+# Has about .5 million rows.
+def read_silva(filename):
+    ids = {}
+    with open(filename, 'r') as infile:
+        for line in infile:
+            stuff = line.lstrip('>').split('.', 1)
+            id = stuff[0]
+            ids[id] = True
+    return ids
 
 def driver():
     for dataset in RANGES.keys():
@@ -112,9 +135,13 @@ def driver():
 
 
 def main(args):
-    with open(DEFAULT_PICKLE_FILE,'r') as picklefile:
-        to_load = pickle.load(picklefile)
-    #to_load = None
+    if os.path.exists(SILVA_FILE):
+        interesting_ids = read_silva(SILVA_FILE)
+    if os.path.exists(DEFAULT_PICKLE_FILE):
+        with open(DEFAULT_PICKLE_FILE,'r') as picklefile:
+            to_load = pickle.load(picklefile)
+    else:
+        to_load = None
     d = driver()
     if to_load:
         accessions, lastfile, conflicts = to_load
@@ -138,7 +165,7 @@ def main(args):
                    local_file)
         print command
         os.system(command)
-        accessions, conflicts = process_file(local_file, accessions, conflicts)
+        accessions, conflicts = process_file(local_file, accessions, conflicts, interesting_ids)
         print "accession count = {0:8d}".format(len(accessions))
         to_save = (accessions, local_file, conflicts)
         with open(DEFAULT_PICKLE_FILE,"w") as picklefile:

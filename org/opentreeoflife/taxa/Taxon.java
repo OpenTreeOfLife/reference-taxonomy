@@ -141,6 +141,7 @@ public class Taxon extends Node {
 		String oldname = this.name;
 		if (!oldname.equals(name)) {
             this.taxonomy.removeFromNameIndex(this, oldname);
+            this.name = null;
 			Taxon existing = this.taxonomy.unique(name);
 			if (existing != null && existing != this)
 				System.err.format("** Warning: creating a homonym: %s\n", name);
@@ -934,10 +935,15 @@ public class Taxon extends Node {
         if (nodes != null) {
             for (Node node : nodes) {
                 Taxon taxon = node.taxon();
-                if (taxon == node && taxon.parent == this.parent) {
-                    System.out.format("** rename: there's already a node with name %s in %s\n",
-                                      name, this.parent);
-                    return false;
+                if (taxon == node) {  // only consider non-synonyms
+                    if (taxon == this)
+                        // Primary name is already name
+                        return true;
+                    if (taxon.parent == this.parent) {
+                        System.out.format("** rename: there's already a node with name %s in %s\n",
+                                          name, this.parent);
+                        return false;
+                    }
                 }
             }
         }

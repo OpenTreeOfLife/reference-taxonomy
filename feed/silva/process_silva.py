@@ -5,18 +5,16 @@ This script takes as input the ssu fasta from Silva (in this case SSURef_NR99_11
 but change as necessary.)  Also 'tax_rank.txt' for the rank file from Silva ftp.
 
 It outputs 
-    the taxonomy in this format:
+  The taxonomy in the Open Tree format:
     <taxid>\t|\t<parentid>\t|\t<taxon>\t|\t<rank>\t|\t<seqid>
-    also two additional files that might not be necessary:
-    homonym_paths.txt for checking taxa called as homonyms
-    silva_taxonly.txt a list of the taxa that are included in the taxonomy.
+  A synonyms file
 
 seqid is the unique identifier from Silva of the SSU reference sequence, 
 e.g. 'A45315.1.1521', and is there for the species only.  Other 
 ranks have 'no seq'
 
 Be aware of a few things - 
-    I have ignored plants, animals and fungi because they have reasonable taxonomies elsewhere.
+    I [Jessica] have ignored plants, animals and fungi because they have reasonable taxonomies elsewhere.
 
     Silva has 'uncultured' as a taxon, between the species and its genus. e.g.:
     
@@ -52,6 +50,8 @@ import sys
 import re
 import string
 import os, time, json, os.path
+import csv
+import argparse
 
 def writeAboutFile(url, nodesfilename, taxdir):
     aboutfilename = taxdir+"/about.json"
@@ -79,47 +79,29 @@ pathdict = {} #given the cluster identifier, return the taxonomy path
 #seqdict = {} #given the taxon name, return (<species id assigned here>,<unique sequence id from SSU ref file>) 
 Seen = {} # to tell whether the taxon name has been seen before - to know if homonym check needs to be done
 
-# It was judged that other taxonomies on balance will be better than Silva
-# for certain groups.
-# Silva classifies ABEG02010941 Caenorhabditis brenneri as a bacterium; this 
-# is clearly an artifact of sample contamination.
+# Input: name of the SILVA fasta file (with sequences removed, or not)
+# Return value: a dict mapping sequence specifier (e.g. 'A45315.1.1521')
+# to lineage
 
-kill = re.compile('|'.join(['ABEG02010941',  # Caenorhabditis brenneri
-                            'ABRM01041397',  # Hydra magnipapillata
-                            'ALWT01111512',  # Myotis davidii
-                            'HP641760',      # Alasmidonta varicosa
-                            'JR876587',      # Embioptera sp. UVienna-2012
-                             ]))
-
-# AB564305 AB564301 AB564299 ... all garbage
-
-# Input: the SILVA fasta file
-# Output: an extract of the SILVA file, with lines of the form
-#   Z98592.1.1394,['Bacteria', 'Spirochaetae', 'Spirochaetes', 'Spirochaetales', 'Leptospiraceae', 'Leptospira', 'Leptospira biflexa']
-
-def makePathDict(infilename, outfilename):
+def makePathDict(infilename):
     infile = open(infilename,'rU')
-    outfile = open(outfilename,'w') # I'm writing this out to have the taxonomy separate from the sequences - not necessary
     inclusive = 0
     exclusive = 0
-    for line in infile:  #removing plants, animals, fungi, chloroplast and mitochondrial clusters - also specifying Oryza because it is problematic in this version the database (SSURef_NR99_115_tax_silva.fasta).
+    for line in infile:
         if line[0] == '>':
             inclusive += 1
-            if not re.search(kill,line):
-                exclusive += 1
-                taxlist = []        
-                uid = line.split()[0].strip() # was going to use the species but there are multiple 'unidentified', for example
-                taxlist_1  = line.strip(uid).strip().split(';')
-                uid = uid.lstrip('>')
-                for taxname in taxlist_1:
-                    # JAR commented out the following... smasher takes care of these
-                    # if not re.search('Incertae Sedis',tax) and tax not in taxlist:            
-                    taxlist.append(taxname)
-                #if 'uncultured' in taxlist:
-                #   taxlist.remove('uncultured') #not sure...
-                pathdict[uid] = taxlist
-                outfile.write(uid + ',' + str(pathdict[uid]) + '\n')
-    outfile.close()     
+            exclusive += 1
+            taxlist = []        
+            uid = line.split()[0].strip() # was going to use the species but there are multiple 'unidentified', for example
+            taxlist_1  = line.strip(uid).strip().split(';')
+            uid = uid.lstrip('>')
+            for taxname in taxlist_1:
+                # JAR commented out the following... smasher takes care of these
+                # if not re.search('Incertae Sedis',tax) and tax not in taxlist:            
+                taxlist.append(taxname)
+            #if 'uncultured' in taxlist:
+            #   taxlist.remove('uncultured') #not sure...
+            pathdict[uid] = taxlist
     print "Clusters: %s  Exclusive of kill list: %s"%(inclusive, exclusive)
     return pathdict 
 
@@ -156,28 +138,31 @@ def readRanks(indir):
                 ranks[rank_key] = rank
     rankfile.close()
 
-accession_to_ncbi = {}
+# Each row is genbank id, ncbi id, strain, taxon name
 
-def readNcbi(indir):
-    ncbifilename = indir + "/accessionid_to_taxonid.tsv"
-    ncbifile = open(ncbifilename, 'r')
-    for line in ncbifile:
-        fields = line.split('\t')
-        ncbi_id = fields[1].strip()
-        if ncbi_id != '*':
-            genbank_id = fields[0].strip()
-            if len(fields) >= 3 and fields[2] != '':
-                strain = fields[2].strip()
-            else:
-                strain = None
-            accession_to_ncbi[genbank_id] = (ncbi_id, strain)
-    ncbifile.close()
+def get_accession_to_taxon(ncbifilename):
+    accession_to_taxon = {}
+    with open(ncbifilename, 'r') as ncbifile:
+        for fields in csv.reader(ncbifile, delimiter='\t'):
+            ncbi_id = fields[1]
+            if ncbi_id != '*':
+                genbank_id = fields[0]
+                if len(fields) >= 3 and fields[2] != '':
+                    strain = fields[2]
+                else:
+                    strain = None
+                    if len(fields) >= 3 and fields[3] != '':
+                        name = fields[3]
+                    else:
+                        name = None
+                accession_to_taxon[genbank_id] = (ncbi_id, name, strain)
+    return accession_to_taxon
 
 synonyms = {}
 
 taxondict = {}  # maps (parentid, name) to taxid
 
-def processSilva(pathdict, indir, outdir):
+def processSilva(pathdict, outdir):
     rank = 'no rank' #for now
     taxfile = open(outdir + '/taxonomy.tsv.new','w')
     taxfile.write('uid\t|\tparent_uid\t|\tname\t|\trank\t|\tsourceinfo\t|\t\n')
@@ -194,7 +179,7 @@ def processSilva(pathdict, indir, outdir):
     # uid is a unique cluster id e.g. A58083.1.1474
     for uid in uids:
         i = i + 1
-        if i % 50000 == 0: print i
+        if i % 100000 == 0: print i
         parentid = "0"
         path = pathdict[uid]
         accession = string.split(uid,".",1)[0]
@@ -229,7 +214,9 @@ def processSilva(pathdict, indir, outdir):
 
             parentid = taxid    #for next iteration
 
-            # Don't descend into groups that need to be suppressed
+            # Removing plants, animals, fungi, chloroplast and mitochondrial 
+            # clusters - also specifying Oryza because it is problematic in 
+            # this version the database (SSURef_NR99_115_tax_silva.fasta).
             if taxname in ['Metazoa',
                            'Fungi',
                            'Chloroplast',
@@ -268,7 +255,7 @@ def processSilva(pathdict, indir, outdir):
     # End of loop over cluster uids
 
     print "Higher taxa: %d"%internal
-    print "Accessions: %d  Mapped to NCBI: %d"%(len(acc_seen), len(accession_to_ncbi))
+    print "Accessions: %d  Mapped to NCBI: %d"%(len(acc_seen), len(accession_to_taxon))
     print "Cluster to NCBI taxon mappings: %d successful, %d blocked or missing"%(acc_success, blocked_or_missing)
 
     print "NCBI taxa: %d"%(len(ncbi_info))
@@ -303,6 +290,7 @@ def processSilva(pathdict, indir, outdir):
     print "Paraphyletic NCBI taxa: %d"%(len(paraphyletic))    #e.g. 1536
 
     taxfile.close()
+    os.rename(outdir + '/taxonomy.tsv.new', outdir + '/taxonomy.tsv')
 
     xref_path = outdir + '/ncbi_to_silva.tsv'
     with open(xref_path + '.new','w') as xref:
@@ -331,11 +319,11 @@ ncbi_info = {}
 
 # Process a single cluster
 
-def process_accession(accession, parentid, parentname):
+def process_accession(accession, parentid, name):
     if not accession in acc_seen:
         acc_seen[accession] = True
-    if accession in accession_to_ncbi:
-        ncbi_id = accession_to_ncbi[accession][0]  #(taxonid, strain)
+    if accession in accession_to_taxon:
+        (ncbi_id, newname, strain) = accession_to_taxon[accession]
         if ncbi_id in ncbi_info:
             info = ncbi_info[ncbi_id]
             if info.silva_parent != parentid:
@@ -345,34 +333,44 @@ def process_accession(accession, parentid, parentname):
             ncbi_info[ncbi_id] = info
             info.silva_parent = parentid
             info.sample_accession = accession
-            info.name = parentname
+            if newname != None and strain != None and not newname.endswith(strain):
+                info.name = newname + ' ' + strain
+                print 'strain:', info.name
+            if newname != None:
+                # 2016-06-15 newname != name happens 4260 times
+                info.name = newname
+            else:
+                info.name = name
         return True
     else:
         return False
 
-def do_synonyms(outdir):
-    outfile = open(outdir + "/synonyms.tsv.new","w")
-    outfile.write('uid\t|\tname\t|\t\n')
-    for name in synonyms.keys():
-        taxid = synonyms[name]
-        outfile.write("%s\t|\t%s\t|\t\n" % (taxid, name))
+def do_synonyms(outpath):
+    newpath = outpath + '.new'
+    with open(newpath, "w") as outfile:
+        outfile.write('uid\t|\tname\t|\t\n')
+        for name in synonyms.keys():
+            taxid = synonyms[name]
+            outfile.write("%s\t|\t%s\t|\t\n" % (taxid, name))
+    os.rename(newpath, outpath)
 
-def main():
-    # was: infile = open('SSURef_NR99_115_tax_silva.fasta','rU')
-    indir = sys.argv[1]
-    outdir = sys.argv[2]
-    url = sys.argv[3]
-    fastafilename = indir + '/silva.fasta'
-    readNcbi(indir)
-    # readRanks(indir) - no longer used
-    pathdict = makePathDict(fastafilename, outdir + '/silva_taxonly.txt')
-    writeAboutFile(url, fastafilename, outdir)
-    processSilva(pathdict, indir, outdir)
-    do_synonyms(outdir)
-    os.rename(outdir + '/taxonomy.tsv.new', outdir + '/taxonomy.tsv')
-    os.rename(outdir + '/synonyms.tsv.new', outdir + '/synonyms.tsv')
-    
-main()
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Process SILVA distribution to make opentree-format taxonomy')
+    parser.add_argument('silva', help='silva.fast file (with or without sequences)')
+    parser.add_argument('mapping', help='genbank id to NCBI taxon id mapping')
+    parser.add_argument('outdir', help='taxonomy directory')
+    parser.add_argument('url', help='URL for the about file')
+    args = parser.parse_args()
+
+    fasta_path = args.silva
+    accessionid_to_taxonid_path = args.mapping
+    outdir = args.outdir
+    url = args.url
+    accession_to_taxon = get_accession_to_taxon(accessionid_to_taxonid_path)
+    pathdict = makePathDict(fasta_path)
+    writeAboutFile(url, fasta_path, outdir)
+    processSilva(pathdict, outdir)
+    do_synonyms(os.path.join(outdir, 'synonyms.tsv'))
 
 #                       if False:
 #                           rank_key = (taxname,par)

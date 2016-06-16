@@ -27,33 +27,55 @@ def load_silva():
 
     return silva
 
-def bad_name(taxonomy, name, anc):
-    tax = taxonomy.maybeTaxon(name, anc)
-    if tax != None:
-        tax.clobberName('Not ' + name)
-
-
 # Sample contamination ?
 # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/201
 silva_bad_names = [
-    'Trichoderma harzianum',
-    'Sclerotinia homoeocarpa',
-    'Puccinia triticina',
-    'Daphnia pulex',
-    'Nematostella vectensis',
-    'Ictalurus punctatus',
+    ('JX888097', 'Trichoderma harzianum'),
+    ('JU096348', 'Sclerotinia homoeocarpa'),
+    ('JU096305', 'Sclerotinia homoeocarpa'),
+    ('HP451821', 'Puccinia triticina'),
+    ('HP459251', 'Puccinia triticina'),
+    ('ACJG01014252', 'Daphnia pulex'),
+    ('ABAV01034229', 'Nematostella vectensis'),  #Excavata should be Opisth.
+    ('JT491765', 'Ictalurus punctatus'),
 
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/104
-    'Caenorhabditis elegans',
+    ('JN975069', 'Caenorhabditis elegans'),
 
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/100
-    'Solanum lycopersicum',
+    ('AEKE02005637', 'Solanum lycopersicum'),    # and 23 others...
+
+    # These were formerly in process_silva.py
+    ('ABEG02010941', 'Caenorhabditis brenneri'),
+    ('ABRM01041397', 'Hydra magnipapillata'),
+    ('ALWT01111512', 'Myotis davidii'),  # bat; SILVA puts this in SAR
+    ('HP641760', 'Alasmidonta varicosa'), # bivalve; SILVA puts it in SAR
+    ('JR876587', 'Embioptera sp. UVienna-2012'),
+
+    # Via compare_ncbi_to_silva
+    ('AEKZ01001951', 'Apis florea'),
+    ('AMGZ01279395', 'Elephantulus edwardii'),
+    ('CACX01001880', 'Strongyloides ratti'),
+    ('EU221512', 'Trachelomonas grandis'),
+    ('ABJB010370606', 'Ixodes scapularis'),
+    ('JU112734', 'Agrostis stolonifera'),
+    ('CU179746', 'Danio rerio'),
+    ('ABKP02007643', 'Anopheles gambiae M'),
+    ('AY833572', 'Bemisia tabaci'),
+    ('ABRR02151433', 'Vicugna pacos'),
+    ('CQ786497', 'Crenarchaeota'),
 ]
 
 def patch_silva(silva):
 
-    for name in silva_bad_names:
-        bad_name(silva, name, 'life')
+    for (anum, name) in silva_bad_names:
+        tax = silva.maybeTaxon(anum)
+        if tax != None:
+            # was 'Not ' + name
+            if tax.name == name:
+                tax.clobberName('cluster ' + anum)
+            else:
+                print '** unexpected name %s for %s, expected %s' % (tax.name, anum, name)
 
     loser = silva.maybeTaxon('Crenarchaeota','Crenarchaeota')
     if loser != None:
@@ -79,11 +101,18 @@ def patch_silva(silva):
     # labeled 'tattered'.
     silva.taxon('Fungi').take(silva.taxon('Rozella'))
 
+    def fix_name(bad, good):
+        b = silva.maybeTaxon(bad)
+        if b != None: b.rename(good)
+        else:
+            g = silva.maybeTaxon(good)
+            if g != None: g.synonym(bad)
+
     # 2014-04-12 Rick Ree #58 and #48 - make them match NCBI
-    silva.taxon('Arthrobacter Sp. PF2M5').rename('Arthrobacter sp. PF2M5')
-    silva.taxon('Halolamina sp. wsy15-h1').rename('Halolamina sp. WSY15-H1')
+    fix_name('Arthrobacter Sp. PF2M5', 'Arthrobacter sp. PF2M5')
+    fix_name('Halolamina sp. wsy15-h1', 'Halolamina sp. WSY15-H1')
     # RR #55 - this is a silva/ncbi homonym
-    silva.taxon('vesicomya').rename('Vesicomya')
+    fix_name('vesicomya', 'Vesicomya')
 
     # From Laura and Dail on 5 Feb 2014
     # https://groups.google.com/forum/#!topic/opentreeoflife/a69fdC-N6pY
@@ -126,6 +155,14 @@ def patch_silva(silva):
     cal = silva.maybeTaxon('AB074504/#6')
     if cal != None and cal.name == 'Calothrix':
         cal.clobberName('Calothrix (homonym)')
+
+    # 2016-06-15 after updating silva taxon names to latest NCBI.
+    # The Ex25 name disappeared form NCBI taxonomy.
+    # Identity with Vibrio antiquarius made on the basis of genbank id.
+    # Taxon is used in a study.
+    silva.taxon('CP001805').synonym('Vibrio sp. Ex25')
+    # similarly
+    silva.taxon('CP002976').synonym('Phaeobacter gallaeciensis DSM 17395 = CIP 105210')
 
 def load_h2007():
     h2007 = Taxonomy.getTaxonomy('feed/h2007/tree.tre', 'h2007')
@@ -353,7 +390,7 @@ def link_to_h2007(tax):
     for (order, families) in \
         [('Talbotiomycetales',['Talbotiomyces calosporus']),
          ('Moniliellales',['Moniliellaceae']),   
-         ('Malasseziales',['Malasseziaceae', 'Malassezia']),
+         ('Malasseziales',['Malasseziaceae']),   # , 'Malassezia' - redundant
          ('Trichotheliales',['Trichotheliaceae', 'Myeloconidiaceae']),
          ('Trichosporonales',['Sporobolomyces ruberrimus']),
          ('Holtermanniales',['Holtermanniella']),

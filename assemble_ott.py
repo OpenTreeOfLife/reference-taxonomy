@@ -24,7 +24,7 @@ do_notSames = False
 # temporary debugging thing
 invariants = [Has_child('Nucletmycea', 'Fungi'),
               Has_child('Opisthokonta', 'Nucletmycea'),
-              Has_child('Rhizobiales', 'Xanthobacteraceae'), # D11342/#4 parent of D11342/#5
+              #Has_child('Rhizobiales', 'Xanthobacteraceae'), # D11342/#4 parent of D11342/#5
 ]
 
 def check_invariants(ott):
@@ -78,13 +78,6 @@ def create_ott():
 
     # Get SILVA cluster / NCBI id correspondence.
     mappings = ncbi_to_silva(ncbi, silva, ott)
-    # Set taxon names to newer NCBI names, and prevent later 
-    # name-only-based mappings.
-    if True:
-        # this is a sort of dodgy operation, but the result
-        # seems to be better if it's done rather than not done
-        # (SILVA 115 + NCBI Oct 2015)
-        upgrade_silva_names(mappings)
 
     ott.absorb(ncbi, align_ncbi(ncbi, silva, ott))
     check_invariants(ott)
@@ -508,19 +501,6 @@ def ncbi_to_silva(ncbi, silva, ott):
             del mappings[n]
     return mappings
 
-def upgrade_silva_names(mappings):
-    namings = 0
-    for ncbi_taxon in mappings:
-        so = mappings[ncbi_taxon]
-        newname = ncbi_taxon.name
-        if (newname != so.name
-            and so.taxonomy.lookup(newname) == None
-            and not newname in taxonomies.silva_bad_names):
-            # so.rename(newname)  - creates upwards of 300 lumpings
-            so.clobberName(newname)
-            namings += 1
-    print '| upgraded %s SILVA names' % namings
-
 def compare_ncbi_to_silva(mappings, ott):
     problems = 0
     for taxon in mappings:
@@ -528,7 +508,7 @@ def compare_ncbi_to_silva(mappings, ott):
         t2 = ott.image(taxon)
         if t1 != t2:
             problems += 1
-            if t2 != None:
+            if t2 != None and t1.name == t2.name:
                 div = t1.divergence(t2)
                 if div != None:
                     print '| %s -> (%s, %s) coalescing at (%s, %s)' % \

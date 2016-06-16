@@ -233,18 +233,20 @@ SILVA_EXPORTS=ftp://ftp.arb-silva.de/release_115/Exports
 SILVA_URL=$(SILVA_EXPORTS)/SSURef_NR99_115_tax_silva.fasta.tgz
 SILVA_RANKS_URL=$(SILVA_EXPORTS)/tax_ranks_ssu_115.csv
 
-silva: $(SILVA)/taxonomy.tsv
-$(SILVA)/taxonomy.tsv: feed/silva/process_silva.py feed/silva/in/silva.fasta feed/silva/in/accessionid_to_taxonid.tsv 
+feed/silva/out/taxonomy.tsv: feed/silva/process_silva.py feed/silva/work/silva_no_sequences.fasta feed/silva/work/accessions.tsv 
 	@mkdir -p feed/silva/out
-	python feed/silva/process_silva.py feed/silva/in feed/silva/out "$(SILVA_URL)"
+	python feed/silva/process_silva.py \
+	       feed/silva/work/silva_no_sequences.fasta \
+	       feed/silva/work/accessions.tsv \
+	       feed/silva/out "$(SILVA_URL)"
+
+silva: $(SILVA)/taxonomy.tsv
+
+$(SILVA)/taxonomy.tsv: feed/silva/out/taxonomy.tsv
 	@mkdir -p $(SILVA)
 	cp -p feed/silva/out/taxonomy.tsv $(SILVA)/
 	cp -p feed/silva/out/synonyms.tsv $(SILVA)/
 	cp -p feed/silva/out/about.json $(SILVA)/
-
-feed/silva/in/accessionid_to_taxonid.tsv: feed/silva/accessionid_to_taxonid.tsv
-	@mkdir -p `dirname $@`
-	(cd `dirname $@` && ln -sf ../accessionid_to_taxonid.tsv ./)
 
 feed/silva/in/silva.fasta:
 	@mkdir -p `dirname $@`
@@ -253,6 +255,20 @@ feed/silva/in/silva.fasta:
 	wget --output-document=feed/silva/in/silva.fasta.tgz "$(SILVA_URL)"
 	@ls -l feed/silva/in/silva.fasta.tgz
 	(cd feed/silva/in && tar xzvf silva.fasta.tgz && mv *silva.fasta silva.fasta)
+
+# work in progress
+feed/silva/work/silva_no_sequences.fasta: feed/silva/in/silva.fasta
+	@mkdir -p feed/silva/work
+	grep ">.*;" $< >$@.new
+	mv $@.new $@
+
+# This file has genbank id, ncbi id, strain, taxon name
+feed/silva/work/accessions.tsv: feed/silva/work/silva_no_sequences.fasta
+	python feed/silva/get_taxon_names.py \
+	       tax/ncbi/taxonomy.tsv \
+	       feed/silva/work/accessionid_to_taxonid.tsv \
+	       $@.new
+	mv $@.new $@
 
 #TARDIR=/raid/www/roots/opentree/ott
 TARDIR?=tarballs

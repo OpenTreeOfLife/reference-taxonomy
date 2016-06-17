@@ -165,7 +165,16 @@ public class UnionTaxonomy extends Taxonomy {
 
 	// Assign ids, harvested from idsource and new ones as needed, to nodes in union.
 
-	public void assignIds(SourceTaxonomy idsource) {
+	public void assignIds(SourceTaxonomy idsource, String additionsPath) {
+        // Phase 1: assign ids from idsource
+        carryOverIds(idsource, additionsPath);
+
+		// Phase 2: give new ids to union nodes that didn't get them above.
+		this.assignNewIds(additionsPath);
+		// remember, this = union, idsource = previous version of ott
+    }
+
+	public void carryOverIds(SourceTaxonomy idsource, String additionsPath) {
 		this.idsource = idsource;
 
         this.prepareMetadata();
@@ -178,51 +187,24 @@ public class UnionTaxonomy extends Taxonomy {
 		// Phase 1: recycle previously assigned ids.
 		this.transferIds(idsource, a);
 
-		// Phase 2: give new ids to union nodes that didn't get them above.
-		this.assignNewIds();
-		// remember, this = union, idsource = previous version of ott
-
         // Report event counts
 		this.eventlogger.eventsReport("| ");		// Taxon id clash
 	}
 
-	public void assignNewIds() {
-        if (true) {
-            List<Taxon> nodes = new ArrayList<Taxon>();
-            for (Taxon root: this.roots())
-                findTaxaNeedingIds(root, nodes);
-            // if (nodes.size() == 0) return;
-            System.out.format("| %s taxa need ids\n", nodes.size());
-            // Give each node a tag
-            int tag = 0;
-            Map<Taxon, String> tagAssignments = new HashMap<Taxon, String>();
-            for (Taxon node : nodes)
-                tagAssignments.put(node, "taxon" + Long.toString(++tag));
-            // compose the additions request per 
-            // https://github.com/OpenTreeOfLife/germinator/wiki/Taxonomic-service-for-adding-new-taxa
-            Object json = Addition.generateAdditions(nodes, tagAssignments);
-            try {
-                PrintStream out = Taxonomy.openw("addition-request.json");
-                PrintWriter pw = new PrintWriter(new OutputStreamWriter(out, "UTF-8"));
-                JSONObject.writeJSONString((Map)json, pw);
-                pw.close();
-                out.close();
-            } catch (Exception e) {
-                // IOExceoption, UnsupportedEncodingException
-                e.printStackTrace();
-            }
-        }
-        long sourcemax = maxid(idsource);
+	public void assignNewIds(String additionsPath) {
+        List<Taxon> nodes = new ArrayList<Taxon>();
+        for (Taxon root: this.roots())
+            findTaxaNeedingIds(root, nodes);
+
+        // cross-check max id with what's stored
         long maxid = maxid(this);
+        long sourcemax = maxid(this.idsource);
         if (sourcemax > maxid) maxid = sourcemax;
-        long start = maxid;
-        for (Taxon node : this.taxa())
-            if (node.id == null) {
-                node.setId(Long.toString(++maxid)); // MINT!
-                node.markEvent("new-id");
-            }
-        if (maxid > start)
-            System.out.format("| Highest id before: %s after: %s\n", start, maxid);
+
+        System.out.format("| %s taxa need ids; greatest id so far is %s\n", nodes.size(), maxid);
+
+        if (nodes.size() > 0)
+            Addition.assignNewIds(nodes, maxid, additionsPath);
 	}
 
     public void findTaxaNeedingIds(Taxon node, List<Taxon> nodes) {

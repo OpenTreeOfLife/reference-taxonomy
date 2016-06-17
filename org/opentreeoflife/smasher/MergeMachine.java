@@ -99,7 +99,7 @@ class MergeMachine {
                 unode.taxonomy.addSynonym(node.name, unode, "synonym");
         }
 
-		if ((unode.rank == Rank.NO_RANK || unode.rank.equals("samples"))
+		if ((unode.rank == Rank.NO_RANK || unode.rank.equals("cluster") || unode.rank.equals("samples"))
             && (node.rank != Rank.NO_RANK))
             unode.rank = node.rank;
 

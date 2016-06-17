@@ -1,7 +1,8 @@
 # Jython script to build the "model village" taxonomy.
 
+import os
 from org.opentreeoflife.taxa import Taxonomy
-from org.opentreeoflife.taxa import TsvEdits
+from org.opentreeoflife.taxa import TsvEdits, Addition
 from org.opentreeoflife.smasher import UnionTaxonomy
 from claim import Has_child
 
@@ -24,6 +25,7 @@ tax.absorb(ncbi)
 
 # Add GBIF subset fo the model taxonomy
 gbif = Taxonomy.getTaxonomy('t/tax/gbif_aster/', 'gbif')
+gbif.smush()
 # analyzeMajorRankConflicts sets the "major_rank_conflict" flag when
 # intermediate ranks are missing (e.g. a family that's a child of a
 # class)
@@ -56,9 +58,20 @@ sp.prune("aster.py")
 
 # tax.loadPreferredIds('ids-that-are-otus.tsv')
 
+additions_path = 't/additions'
+
 # Assign identifiers to the taxa in the model taxonomy.  Identifiers
 # assigned in the previous version are carried over to this version.
-tax.assignIds(Taxonomy.getTaxonomy('t/tax/prev_aster/', 'ott'))
+ids = Taxonomy.getTaxonomy('t/tax/prev_aster/', 'ott')
+tax.carryOverIds(ids, additions_path)
+
+if not os.path.isdir(additions_path):
+    os.mkdir(additions_path)
+for file in Addition.listAdditionDocuments(additions_path):
+    print '| Processing', file.toString()
+    Addition.processAdditionDocument(file, tax)
+
+tax.assignNewIds(additions_path)
 
 # Write the model taxonomy out to a set of files
 tax.dump('t/tax/aster/', '\t|\t')

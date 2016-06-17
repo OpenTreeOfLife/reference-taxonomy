@@ -64,6 +64,12 @@ silva_bad_names = [
     ('AY833572', 'Bemisia tabaci'),
     ('ABRR02151433', 'Vicugna pacos'),
     ('CQ786497', 'Crenarchaeota'),
+    ('ADMH01000290', 'Anopheles darlingi'),
+    ('AAGD02009939', 'Caenorhabditis remanei'),
+    ('JT042258', 'Stegodyphus tentoriicola'),
+    ('JW107284', 'Capsicum annuum'),
+    ('JL594206', 'Ophthalmotilapia ventralis'),
+    ('JV125402', 'Aiptasia pallida'),
 ]
 
 def patch_silva(silva):

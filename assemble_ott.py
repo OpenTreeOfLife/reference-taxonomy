@@ -140,11 +140,14 @@ def create_ott():
             ('Cordana', 'Ascomycota', '946160'),
             ('Pseudofusarium', 'Ascomycota', '655794'),
             ('Gloeosporium', 'Pezizomycotina', '75019'),
+            ('Escherichia coli', 'Enterobacteriaceae', '474506'), # ncbi:562
             # ('Dischloridium', 'Trichocomaceae', '895423'),
     ]:
         tax = ott.maybeTaxon(inf, sup)
         if tax != None:
             tax.setId(id)
+
+    ott.taxon('474506
 
     ott.taxonThatContains('Rhynchonelloidea', 'Sphenarina').setId('795939') # NCBI
 
@@ -169,7 +172,15 @@ def create_ott():
 
     #ott.image(fungi.taxon('11060')).setId('4107132') #Cryptococcus - a total mess
 
+    # OTT 2.9 has both Glaucophyta and Glaucophyceae... bad news
+    # Need to review this
+    g1 = ids.maybeTaxon('Glaucophyta')
+    g2 = ids.maybeTaxon('Glaucophyceae')
+    if g1 != None and g2 != None and g1 != g2:
+        g1.absorb(g2)
 
+
+    # --------------------
     # Assign OTT ids to taxa that don't have them, re-using old ids when possible
     ids = Taxonomy.getTaxonomy('tax/prev_ott/', 'ott')
 
@@ -180,14 +191,8 @@ def create_ott():
             taxon.sourceIds[1].prefix == "silva"):
             taxon.sourceIds.remove(taxon.sourceIds[0])
 
-    # OTT 2.9 has both Glaucophyta and Glaucophyceae... bad news
-    g1 = ids.maybeTaxon('Glaucophyta')
-    g2 = ids.maybeTaxon('Glaucophyceae')
-    if g1 != None and g2 != None and g1 != g2:
-        g1.absorb(g2)
-
     # Assign old ids to nodes in the new version
-    ott.assignIds(ids)
+    ott.assignIds(ids, 'additions')
 
     ott.check()
 
@@ -513,7 +518,7 @@ def compare_ncbi_to_silva(mappings, ott):
                 if div != None:
                     print '| %s -> (%s, %s) coalescing at (%s, %s)' % \
                         (taxon, t1, t2, div[0], div[1])
-    print '| %s NCBI taxa map differently by cluster vs. by name' % problems
+    print '* %s NCBI taxa map differently by cluster vs. by name' % problems
 
 def align_ncbi_to_silva(mappings, a):
     changes = 0

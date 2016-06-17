@@ -79,7 +79,7 @@ public class Smasher {
 						// To smush or not to smush?
 						UnionTaxonomy union = promote(tax); tax = union;
 						SourceTaxonomy idsource = Taxonomy.getTaxonomy(argv[++i], defaultIdspace);
-						union.assignIds(idsource);
+						union.assignIds(idsource, "additions");
 					}
 
 					else if (argv[i].equals("--select2")) {

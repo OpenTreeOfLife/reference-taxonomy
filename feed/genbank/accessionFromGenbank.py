@@ -23,20 +23,12 @@ RANGES = {"gbbct": 159,  # bacteria, now 238
 
 FTP_SERVER = 'ftp://ftp.ncbi.nlm.nih.gov/genbank/'
 DEFAULT_PICKLE_FILE = 'Genbank.pickle'
-SILVA_FILE = 'feed/silva/in/silva_no_sequences.fasta'
-
-parser = argparse.ArgumentParser(description='Text genbank flatfile parsing')
-
-def tokenize(line):
-    result = []
-    for item in line[:-1].split(' '):
-        if item != '':
-            result.append(item)
-    return result
+SILVA_FILE = 'feed/silva/work/silva_no_sequences.fasta'
 
 # Process one genbank flat file, extracting taxon ids and strain names.
 
 def process_file(flatfilespec, accessions, conflicts, interesting_ids):
+    time.sleep(1)    # try to forestall throttling
     with open(flatfilespec) as flatfile:
         locus_id = None
         accession_id = None
@@ -44,59 +36,14 @@ def process_file(flatfilespec, accessions, conflicts, interesting_ids):
         found_source = False
         taxon_id = None
         strain_id = None
-        line = flatfile.readline()
         i = 0
-        while line:
-            tokens = tokenize(line)
-            if len(tokens) > 0:
-                if tokens[0] == 'LOCUS':
-                    if (accession_id and taxon_id):
-                        if strain_id:
-                            accession_pair = (taxon_id, strain_id)
-                        else:
-                            accession_pair = (taxon_id, None)
-                        if accession_id in accessions:
-                            accession_value = accessions[accession_id]
-                            if not accession_pair == accession_value:
-                                new_conflict = (accession_id, 
-                                                accession_value, 
-                                                accession_pair)
-                                if new_conflict not in conflicts:
-                                    conflicts.add(new_conflict)
-                                    print("conflict at %s: s% and %s" % new_conflict)
-                        elif accession_id in interesting_ids:
-                            accessions[accession_id] = accession_pair
-                            i += 1
-                            if i % 20000 == 0: print accession_id, taxon_id
-                    accession_id = None
-                    taxon_id = None
-                    strain_id = None
-                    found_features = False
-                    found_source = False
-                    locus_id = tokens[1]
-                elif tokens[0] == 'ACCESSION' and len(tokens) > 1:
-                    accession_id = tokens[1]
-                elif (tokens[0] == 'FEATURES') and accession_id:
-                    # print('found features')
-                    found_features = True
-                elif (tokens[0] == 'source') and found_features:
-                    # print('found source')
-                    found_features = False
-                    found_source = True
-                elif tokens[0] in ['gene', 'CDS', 'exon', 'intron']:
-                    found_source = False
-                elif found_source and (tokens[0].startswith('/db_xref')):
-                    feature = extract_feature(line, '/db_xref=')
-                    taxon_id = feature[len('taxon:'):]   
-                elif found_source and (tokens[0].startswith('/strain')):
-                    feature = extract_feature(line, '/strain=')
-                    strain_id = feature
-            line = flatfile.readline()
-        if (accession_id and taxon_id):
-            if strain_id:
-                accession_pair = (taxon_id, strain_id)
-            else:
-                accession_pair = (taxon_id, None)
+
+        def finish_accession():
+            if (accession_id and taxon_id):
+                if strain_id:
+                    accession_pair = (taxon_id, strain_id)
+                else:
+                    accession_pair = (taxon_id, None)
                 if accession_id in accessions:
                     accession_value = accessions[accession_id]
                     if not accession_pair == accession_value:
@@ -106,10 +53,60 @@ def process_file(flatfilespec, accessions, conflicts, interesting_ids):
                         if new_conflict not in conflicts:
                             conflicts.add(new_conflict)
                             print("conflict at %s: s% and %s" % new_conflict)
-                elif accession_id in interesting_ids:
-                    accessions[accession_id] = accession_pair
+                else:
+                    i += 1
+                    if i % 20000 == 0: print accession_id, taxon_id
+                    if accession_id in interesting_ids:
+                        accessions[accession_id] = accession_pair
+
+        for line in flatfile:
+            line = line.lstrip()
+            first = first_token(line)
+            if first != None:
+                if first == 'LOCUS':
+                    finish_accession()
+                    accession_id = None
+                    taxon_id = None
+                    strain_id = None
+                    found_features = False
+                    found_source = False
+                    tokens = tokenize(line)
+                    locus_id = tokens[1]
+                elif first == 'ACCESSION':
+                    tokens = tokenize(line)
+                    if len(tokens) > 1:
+                        accession_id = tokens[1]
+                elif (first == 'FEATURES') and accession_id:
+                    # print('found features')
+                    found_features = True
+                elif (first == 'source') and found_features:
+                    # print('found source')
+                    found_features = False
+                    found_source = True
+                elif first in ['gene', 'CDS', 'exon', 'intron']:
+                    found_source = False
+                elif found_source and (first.startswith('/db_xref')):
+                    feature = extract_feature(line, '/db_xref=')
+                    taxon_id = feature[len('taxon:'):]   
+                elif found_source and (first.startswith('/strain')):
+                    feature = extract_feature(line, '/strain=')
+                    strain_id = feature
+        finish_accession()
         return (accessions, conflicts)
 
+def tokenize(line):
+    result = []
+    for item in line[:-1].split(' '):
+        if item != '':
+            result.append(item)
+    return result
+
+def first_token(line):
+    s = line.split(' ', 1)
+    if len(s) >= 1 and s[0] != '':
+        return s[0]
+    else:
+        return None
 
 def extract_feature(line, tag):
     stripped = line.strip()
@@ -120,12 +117,16 @@ def extract_feature(line, tag):
 # out which genbank ids we care about.
 # Has about .5 million rows.
 def read_silva(filename):
+    print 'reading', filename
     ids = {}
     with open(filename, 'r') as infile:
         for line in infile:
             stuff = line.lstrip('>').split('.', 1)
             id = stuff[0]
             ids[id] = True
+    print '  %s accessions' % (len(ids))
+    if not 'A45315' in ids:
+        print '** Lost A45315 from SILVA'
     return ids
 
 def driver():
@@ -168,14 +169,17 @@ def main(args):
         accessions, conflicts = process_file(local_file, accessions, conflicts, interesting_ids)
         print "accession count = {0:8d}".format(len(accessions))
         to_save = (accessions, local_file, conflicts)
-        with open(DEFAULT_PICKLE_FILE,"w") as picklefile:
+        temp = DEFAULT_PICKLE_FILE + '.new'
+        with open(temp, 'w') as picklefile:
             pickle.dump(to_save, picklefile, -1)
-        command = ("rm " + local_file)
-        os.system(command)
+        os.rename(temp, DEFAULT_PICKLE_FILE)
+        os.remove(local_file)
         segment = d.next()
 
 
-
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='Text genbank flatfile parsing')
+
     main(parser.parse_args())
 

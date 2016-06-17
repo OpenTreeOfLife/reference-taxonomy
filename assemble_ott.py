@@ -6,9 +6,9 @@
 
 import sys
 
-from org.opentreeoflife.taxa import Taxonomy, SourceTaxonomy, TsvEdits
+from org.opentreeoflife.taxa import Taxonomy, SourceTaxonomy, TsvEdits, Addition
 from org.opentreeoflife.smasher import UnionTaxonomy
-from ncbi_ott_assignments import ncbi_assignments_list
+import ncbi_ott_assignments
 sys.path.append("feed/misc/")
 from chromista_spreadsheet import fixChromista
 import taxonomies
@@ -147,11 +147,11 @@ def create_ott():
         if tax != None:
             tax.setId(id)
 
-    ott.taxon('474506
+    # ott.taxon('474506') ...
 
     ott.taxonThatContains('Rhynchonelloidea', 'Sphenarina').setId('795939') # NCBI
 
-    for (ncbi_id, ott_id, name) in ncbi_assignments_list:
+    for (ncbi_id, ott_id, name) in ncbi_ott_assignments.ncbi_assignments_list:
         n = ncbi.maybeTaxon(ncbi_id)
         if n != None:
             im = ott.image(n)
@@ -172,14 +172,6 @@ def create_ott():
 
     #ott.image(fungi.taxon('11060')).setId('4107132') #Cryptococcus - a total mess
 
-    # OTT 2.9 has both Glaucophyta and Glaucophyceae... bad news
-    # Need to review this
-    g1 = ids.maybeTaxon('Glaucophyta')
-    g2 = ids.maybeTaxon('Glaucophyceae')
-    if g1 != None and g2 != None and g1 != g2:
-        g1.absorb(g2)
-
-
     # --------------------
     # Assign OTT ids to taxa that don't have them, re-using old ids when possible
     ids = Taxonomy.getTaxonomy('tax/prev_ott/', 'ott')
@@ -191,8 +183,25 @@ def create_ott():
             taxon.sourceIds[1].prefix == "silva"):
             taxon.sourceIds.remove(taxon.sourceIds[0])
 
+    # OTT 2.9 has both Glaucophyta and Glaucophyceae... 
+    # Need to review this
+    g1 = ids.maybeTaxon('Glaucophyta')
+    g2 = ids.maybeTaxon('Glaucophyceae')
+    if g1 != None and g2 != None and g1 != g2:
+        g1.absorb(g2)
+
+
     # Assign old ids to nodes in the new version
-    ott.assignIds(ids, 'additions')
+    additions_path = 'additions'
+    ott.carryOverIds(ids, additions_path)
+
+    # Incorporate curators' addition requests
+    for file in Addition.listAdditionDocuments(additions_path):
+        print '| Processing', file.toString()
+        Addition.processAdditionDocument(file, ott)
+
+    # Get ids for new nodes
+    ott.assignNewIds(additions_path)
 
     ott.check()
 

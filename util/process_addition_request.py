@@ -13,6 +13,8 @@
 import sys, os, json, argparse
 
 def get_ids(count, minid, dir):
+    if not os.path.exists(dir):
+        os.makedirs(dir)
     idpath = os.path.join(dir, 'next_ott_id.json')
     id = 0
     stuff = {}

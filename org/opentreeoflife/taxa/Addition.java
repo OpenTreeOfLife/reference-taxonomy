@@ -41,15 +41,17 @@ public class Addition {
         // https://github.com/OpenTreeOfLife/germinator/wiki/Taxonomic-service-for-adding-new-taxa
         Map<String, Object> request = generateRequest(nodes, taxonToTag, counter);
 
-        try {
-            PrintStream out = Taxonomy.openw(additionsPath + "/request.json.tmp");
-            PrintWriter pw = new PrintWriter(new OutputStreamWriter(out, "UTF-8"));
-            JSONObject.writeJSONString(request, pw);
-            pw.close();
-            out.close();
-        } catch (Exception e) {
-            // IOException, UnsupportedEncodingException
-            e.printStackTrace();
+        if (false) {            // for debugging
+            try {
+                PrintStream out = Taxonomy.openw(additionsPath + "/request.json.tmp");
+                PrintWriter pw = new PrintWriter(new OutputStreamWriter(out, "UTF-8"));
+                JSONObject.writeJSONString(request, pw);
+                pw.close();
+                out.close();
+            } catch (Exception e) {
+                // IOException, UnsupportedEncodingException
+                e.printStackTrace();
+            }
         }
 
         // Fake service - convert request to response.
@@ -206,6 +208,8 @@ public class Addition {
                 }
             };
         File[] files = dir.listFiles(filter);
+        if (files == null)      // directory doesn't exist
+            return new ArrayList<File>();
         List<File> listOfFiles = Arrays.asList(files);
         listOfFiles.sort(compareFiles);
         return listOfFiles;

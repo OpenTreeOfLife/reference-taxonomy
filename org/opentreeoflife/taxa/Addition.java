@@ -233,7 +233,6 @@ public class Addition {
 		BufferedReader fr = Taxonomy.fileReader(file);
 		JSONParser parser = new JSONParser();
         Object obj = parser.parse(fr);
-        JSONObject jsonObject = (JSONObject) obj;
         processAdditionDocument(obj, tax);
     }
 

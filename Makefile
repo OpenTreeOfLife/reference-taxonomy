@@ -321,7 +321,7 @@ old-ids-that-are-otus.tsv:
 
 # This typically won't run since the target is checked in
 ids-that-are-otus.tsv:
-	time python util/ids-that-are-otus.py $@.new
+	time python util/ids_that_are_otus.py $@.new
 	mv $@.new $@
 	wc $@
 

@@ -320,7 +320,7 @@ old-ids-that-are-otus.tsv:
 	rm ids_report.csv
 
 # This typically won't run since the target is checked in
-ids-that-are-otus.tsv:
+ids_that_are_otus.tsv:
 	time python util/ids_that_are_otus.py $@.new
 	mv $@.new $@
 	wc $@

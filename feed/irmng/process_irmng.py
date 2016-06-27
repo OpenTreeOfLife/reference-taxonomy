@@ -13,6 +13,7 @@ synonyms_file_name = sys.argv[4]
 
 taxa = {}
 synonyms = {}
+roots = []
 
 # 0 "TAXONID","SCIENTIFICNAME","SCIENTIFICNAMEAUTHORSHIP","GENUS",
 # 4 "SPECIFICEPITHET","FAMILY","TAXONRANK","TAXONOMICSTATUS",
@@ -33,7 +34,8 @@ with open(irmng_file_name, 'rb') as csvfile:
 		epithet = row[4]
 		family = row[5]
 		rank = row[6]
-		status = row[7]
+		tstatus = row[7]         # TAXONOMICSTATUS e.g. 'valid'
+		nstatus = row[8]         # NOMENCLATURALSTATUS e.g. 'nudum'
 		syn_target_id = row[12]
 		parent = row[-4]
 		if rank == 'species':
@@ -46,19 +48,16 @@ with open(irmng_file_name, 'rb') as csvfile:
 			name = longname[0:len(longname)-len(auth)-1]
 		else:
 			name = longname
-#		if (status != '' and status != 'accepted' and status != 'valid' and 
-#			   status != 'available' and status != 'proParteSynonym'):
-#			continue
 		if syn_target_id != '' and syn_target_id != taxonid:
-			synonyms[taxonid] = (syn_target_id, name, status)
+			synonyms[taxonid] = (syn_target_id, name, tstatus)
 		else:
-			taxa[taxonid] = (parent, name, rank)
+			taxa[taxonid] = (parent, name, rank, tstatus)
 
 # "10704","Decapoda Latreille, 1802","Latreille, 1802",,,,"order",,,,,,,"Malacostraca","1190","cf. Decapoda (Mollusca)","01-01-2012","ICZN"
 
 loser_synonyms = {}
 for taxonid in synonyms:
-	(syn_target_id, name, status) = synonyms[taxonid]
+	(syn_target_id, name, tstatus) = synonyms[taxonid]
 	if syn_target_id in synonyms:
 		loser_synonyms[taxonid] = True
 for taxonid in loser_synonyms:
@@ -66,6 +65,8 @@ for taxonid in loser_synonyms:
 print >>sys.stderr, "Indirect synonyms:", len(loser_synonyms), "out of", len(synonyms)
 
 extinctp = {}
+
+roots = {}
 
 not_extinct = ['1530',	   # Actinopterygii
 			   '1531',	   # Sarcopterygii
@@ -78,7 +79,10 @@ not_extinct = ['1530',	   # Actinopterygii
 			   #'1064058',	# Rhynchonelloidea genus/superfamily
 			   '1021564',  # Cruciplacolithus
 			   #'1114655',	# Tetrasphaera - different from GBIF
+               '118547',    # Aviculariidae
 			   ]
+
+# Read the file that has the extinct annotations
 
 with open(profile_file_name, 'rb') as csvfile:
 	csvreader = csv.reader(csvfile)
@@ -95,7 +99,7 @@ with open(profile_file_name, 'rb') as csvfile:
 
 count = 0
 for taxonid in taxa:
-	(parentid, name, rank) = taxa[taxonid]
+	(parentid, name, rank, tstatus) = taxa[taxonid]
 	if not (taxonid in extinctp):
 		detect = 0
 		while parentid in extinctp:
@@ -111,7 +115,7 @@ for taxonid in taxa:
 			if parentid in synonyms:
 				parentid = synonyms[parentid][0]
 			else:
-				parentid = taxa[parentid][0]	# tuple (parentid, name, rank)
+				parentid = taxa[parentid][0]	# tuple (parentid, name, rank, tstatus)
 
 print >>sys.stderr, 'Non-extinct taxa with extinct parent:', count
 
@@ -120,7 +124,7 @@ with open(taxonomy_file_name, 'w') as taxfile:
 	taxfile.write('%s\t|\t%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n'%('uid', 'parent_uid', 'name', 'rank', 'flags'))
 	taxfile.write('%s\t|\t%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n'%('0', '', 'life', 'no rank', ''))
 	for taxonid in taxa:
-		(parent, name, rank) = taxa[taxonid]
+		(parent, name, rank, tstatus) = taxa[taxonid]
 		if parent in synonyms:
 			parent = synonyms[parent][0]
 		if parent == '':
@@ -135,9 +139,9 @@ with open(synonyms_file_name, 'w') as synfile:
 	synfile.write('uid\t|\tname\t|\ttype\t|\t\n')
 	# These are big distractions!  They create homonyms etc.
 	for synid in synonyms:
-		(targetid, name, status) = synonyms[synid]
+		(targetid, name, tstatus) = synonyms[synid]
 		# TBD: Chase targetid through synonyms?..
 		if targetid in synonyms:
 			continue
 		if not (targetid in extinctp):
-			synfile.write('%s\t|\t%s\t|\t%s\t|\t\n'%(targetid, name, status))
+			synfile.write('%s\t|\t%s\t|\t%s\t|\t\n'%(targetid, name, tstatus))

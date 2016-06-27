@@ -577,8 +577,7 @@ public abstract class Taxonomy {
                         smallest.children != Taxon.NO_CHILDREN)
                         System.out.format("| Smushing %s into %s\n", other, smallest);
                     if (other.isExtant()) // should transfer other flags too?
-                        // there is a bug report about this
-                        smallest.extant();
+                        smallest.properFlags &= ~Taxonomy.EXTINCT;
                     smallest.absorb(other);
                     this.addId(smallest, other.id);
                 }

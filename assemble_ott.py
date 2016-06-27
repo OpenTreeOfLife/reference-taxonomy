@@ -144,9 +144,9 @@ def create_ott():
             ('Parmeliaceae', 'Lecanorales', '305904'),
             ('Cordana', 'Ascomycota', '946160'),
             ('Pseudofusarium', 'Ascomycota', '655794'),
-            ('Gloeosporium', 'Pezizomycotina', '75019'),
+            ('Marssonina', 'Dermateaceae', '372158') # ncbi:324777
+            # ('Gloeosporium', 'Pezizomycotina', '75019'),  # synonym for Marssonina
             ('Escherichia coli', 'Enterobacteriaceae', '474506'), # ncbi:562
-            ('Marssonia', 'Dermateaceae', '372158') # ncbi:324777
             # ('Dischloridium', 'Trichocomaceae', '895423'),
     ]:
         tax = ott.maybeTaxon(inf, sup)

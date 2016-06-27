@@ -80,7 +80,8 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
 		    tax/worms/taxonomy.tsv \
 		    feed/ott/edits/ott_edits.tsv \
 		    tax/prev_ott/taxonomy.tsv \
-		    feed/misc/chromista_spreadsheet.py
+		    feed/misc/chromista_spreadsheet.py \
+		    inclusions.csv
 	@rm -f *py.class
 	@mkdir -p tax/ott
 	time bin/jython make-ott.py
@@ -270,6 +271,10 @@ feed/silva/work/accessions.tsv: feed/silva/work/silva_no_sequences.fasta
 	       $@.new
 	mv $@.new $@
 
+inclusions.csv:
+	wget --output-document=$@ --no-check-certificate \
+	  "https://raw.githubusercontent.com/OpenTreeOfLife/germinator/master/taxa/inclusions.csv"
+
 #TARDIR=/raid/www/roots/opentree/ott
 TARDIR?=tarballs
 
@@ -411,5 +416,5 @@ aster-tarball: t/tax/aster/taxonomy.tsv
 check:
 	bash run-tests.sh
 
-inclusion-tests: ../germinator/taxa/inclusions.csv 
-	bin/jython util/check_inclusions.py ../germinator/taxa/inclusions.csv tax/ott/
+inclusion-tests: inclusions.csv 
+	bin/jython util/check_inclusions.py inclusions.csv tax/ott/

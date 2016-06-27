@@ -5,8 +5,6 @@ import java.util.HashMap;
 
 public class Rank {
 
-	public static String NO_RANK = null;
-
     public String name;
     public int level;
 
@@ -63,7 +61,7 @@ public class Rank {
 	};
 
 	static Map<String, Rank> ranks = new HashMap<String, Rank>();
-	public static Rank SPECIES_RANK; // ranks.get("species");
+	public static Rank NO_RANK;
 
     static {
         for (int i = 0; i < rankStrings.length; ++i)
@@ -71,9 +69,13 @@ public class Rank {
                 String name = rankStrings[i][j];
                 ranks.put(name, new Rank(name, (i+1)*100 + j*10));
             }
-        ranks.put("no rank", new Rank("no rank", -1));
-        SPECIES_RANK = ranks.get("species");
+        NO_RANK = new Rank("no rank", -1);
+        ranks.put("no rank", NO_RANK);
     }
+
+	public static Rank SPECIES_RANK = ranks.get("species");
+	public static Rank CLUSTER_RANK = ranks.get("cluster");
+	public static Rank SAMPLES_RANK = ranks.get("samples");
 
     public static Rank getRank(String rankstring) {
         return ranks.get(rankstring);

@@ -17,7 +17,7 @@ from claim import Has_child, test_claims
 import csv
 
 this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/make-ott.py'
-inclusions_path = '../germinator/taxa/inclusions.csv'
+inclusions_path = 'inclusions.csv'
 
 do_notSames = False
 
@@ -41,7 +41,7 @@ def create_ott():
 
     # When lumping, prefer to use ids that have been used in OTU matching
     # This list could be used for all sorts of purposes...
-    ott.loadPreferredIds('ids-that-are-otus.tsv', False)
+    ott.loadPreferredIds('ids_that_are_otus.tsv', False)
     ott.loadPreferredIds('ids-in-synthesis.tsv', True)
 
     # idspace string 'skel' is magical, see Taxon.addSource
@@ -101,7 +101,12 @@ def create_ott():
 
     # IRMNG
     irmng = taxonomies.load_irmng()
-    ott.absorb(irmng, align_irmng(irmng, ott))
+    a = align_irmng(irmng, ott)
+    a.align()
+    if True:                   # Include taxa from irmng?
+        ott.absorb(irmng, a)
+    else:
+        a.transferProperties(irmng)
 
     taxonomies.link_to_h2007(ott)
 
@@ -141,6 +146,7 @@ def create_ott():
             ('Pseudofusarium', 'Ascomycota', '655794'),
             ('Gloeosporium', 'Pezizomycotina', '75019'),
             ('Escherichia coli', 'Enterobacteriaceae', '474506'), # ncbi:562
+            ('Marssonia', 'Dermateaceae', '372158') # ncbi:324777
             # ('Dischloridium', 'Trichocomaceae', '895423'),
     ]:
         tax = ott.maybeTaxon(inf, sup)
@@ -325,8 +331,6 @@ def align_fungi(fungi, ott):
         if do_notSames:
             a.notSame(fungi.taxon('Bostrychia', 'Ascomycota'),
                       ott.taxon('Bostrychia', 'Rhodophyceae'))
-        else:
-            fungi.removeFromNameIndex(fungi.taxon('Bostrychia', 'Ascomycota'), 'Bostrychia')
 
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/20
     # Problem: Chlamydotomus is an incertae sedis child of Fungi.  Need to
@@ -682,17 +686,6 @@ def align_irmng(irmng, ott):
            ott.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
 
 
-    # JAR 2014-04-24 false match
-    # IRMNG has one in Pteraspidomorphi (basal Chordate) as well as a
-    # protozoan (SAR; ncbi:188977).
-    a.notSame(irmng.taxon('Protaspis', 'Chordata'),
-              ott.taxon('Protaspis', 'Cercozoa'))
-
-    # JAR 2014-04-18 while investigating hidden status of Coscinodiscus radiatus.
-    # tests
-    a.notSame(irmng.taxon('Coscinodiscus', 'Porifera'),
-              ott.taxon('Coscinodiscus', 'Stramenopiles'))
-
     # https://github.com/OpenTreeOfLife/feedback/issues/45
     # IRMNG has Choanoflagellida < Zoomastigophora < Sarcomastigophora < Protozoa
     # might be better to look for something it contains
@@ -708,16 +701,44 @@ def align_irmng(irmng, ott):
     irmng.taxon('Morganella', 'Brachiopoda').prune(this_source)
     #  ... .notSame(ott.taxon('Morganella', 'Arthropoda'))
 
-    # 2015-09-10 Inclusion test failing
-    a.notSame(irmng.taxon('Retaria', 'Brachiopoda'), # irmng:1340611
-                ott.taxon('Retaria', 'Rhizaria'))
+    if do_notSames:
+        # JAR 2014-04-24 false match
+        # IRMNG has one in Pteraspidomorphi (basal Chordate) as well as a
+        # protozoan (SAR; ncbi:188977).
+        a.notSame(irmng.taxon('Protaspis', 'Chordata'),
+                  ott.taxon('Protaspis', 'Cercozoa'))
 
-    # 2015-09-10 Inclusion test failing
-    a.notSame(irmng.taxon('Campanella', 'Cnidaria'), # irmng:1289625
-                ott.taxon('Campanella', 'SAR'))
+        # JAR 2014-04-18 while investigating hidden status of Coscinodiscus radiatus.
+        # tests
+        a.notSame(irmng.taxon('Coscinodiscus', 'Porifera'),
+                  ott.taxon('Coscinodiscus', 'Stramenopiles'))
+
+        # 2015-09-10 Inclusion test failing
+        a.notSame(irmng.taxon('Retaria', 'Brachiopoda'), # irmng:1340611
+                    ott.taxon('Retaria', 'Rhizaria'))
+
+        # 2015-09-10 Inclusion test failing
+        a.notSame(irmng.taxon('Campanella', 'Cnidaria'), # irmng:1289625
+                    ott.taxon('Campanella', 'SAR'))
+    else:
+        # Bad homonyms
+        irmng.taxon('Protaspis', 'Chordata').prune(this_source)
+        irmng.taxon('Coscinodiscus', 'Porifera').prune(this_source)
+        irmng.taxon('Retaria', 'Brachiopoda').prune(this_source)
+        irmng.taxon('Campanella', 'Cnidaria').prune(this_source)
+        irmng.taxon('Neoptera', 'Tachinidae').prune(this_source)
+        h = irmng.maybeTaxon('Hessea', 'Holozoa')
+        if h != None:
+            h.prune(this_source)
+
 
     a.same(irmng.taxonThatContains('Trichoderma', 'Trichoderma koningii'),
            ott.taxonThatContains('Trichoderma', 'Trichoderma koningii'))
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/241
+    # In IRMNG these are siblings (children of Actinopterygii), but in NCBI
+    # Lepisosteiformes is a synonym of Semionotiformes (in Holostei, etc.).
+    irmng.taxon('Semionotiformes').absorb(irmng.taxon('Lepisosteiformes'))
 
     return a
 
@@ -910,25 +931,17 @@ def patch_ott(ott):
     # JAR 2014-02-24.  We are getting extinctness information for genus
     # and above from IRMNG, but not for species.
     # There's a similar problem in Equus.
-    for name in ['Homo sapiens neanderthalensis',
-                 'Homo sapiens ssp. Denisova',
-                 'Homo habilis',
-                 'Homo erectus',
-                 'Homo cepranensis',
-                 'Homo georgicus',
-                 'Homo floresiensis',
-                 'Homo kenyaensis',
-                 'Homo rudolfensis',
-                 'Homo antecessor',
-                 'Homo ergaster',
-                 'Homo okotensis']:
-        tax = ott.maybeTaxon(name)
-        if tax != None:
-            tax.extinct()
+    for child in ott.taxon('Homo', 'Primates').children:
+        if child.name != 'Homo sapiens':
+            child.extinct()
+    for child in ott.taxon('Homo sapiens', 'Primates').children:
+        if child.name != 'Homo sapiens sapiens':
+            child.extinct()
 
     # JAR 2014-03-07 hack to prevent H.s. from being extinct due to all of
     # its subspecies being extinct.
     # I wish I knew what the authority for the H.s.s. name was.
+    # (Linnaeus maybe?)
     hss = ott.newTaxon('Homo sapiens sapiens', 'subspecies', 'https://en.wikipedia.org/wiki/Homo_sapiens_sapiens')
     ott.taxon('Homo sapiens').take(hss)
     hss.hide()
@@ -1088,13 +1101,25 @@ def patch_ott(ott):
 
     ott.taxonThatContains('Rhynchonelloidea', 'Sphenarina').extant() # NCBI
 
-    # "Old" patch system
-    TsvEdits.edit(ott, 'feed/ott/edits/')
+    # https://github.com/OpenTreeOfLife/feedback/issues/133
+    ott.taxon('Pipoidea', 'Amphibia').take(ott.taxon('Cordicephalus', 'Amphibia'))
 
     # This is a randomly chosen bivalve to force Bivalvia to not be extinct
     ott.taxon('Corculum cardissa', 'Bivalvia').extant()
     # Similarly for roaches
     ott.taxon('Periplaneta americana', 'Blattodea').extant()
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/159
+    ott.taxon('Nesophontidae').extinct()
+
+    # "Old" patch system
+    TsvEdits.edit(ott, 'feed/ott/edits/')
+
+# The processed GBIF taxonomy contains a file listing GBIF taxon ids for all 
+# taxa that are listed as coming from PaleoDB.  This is processed after all
+# taxonomies are processed but before patches are applied.  We use it to set
+# extinct flags for taxa originating only from GBIF (i.e. if the taxon also 
+# comes from NCBI, WoRMS, etc. then we do not mark it as extinct).
 
 def get_default_extinct_info_from_gbif(gbif, ott):
     infile = open('tax/gbif/paleo.tsv')
@@ -1107,7 +1132,9 @@ def get_default_extinct_info_from_gbif(gbif, ott):
         if gtaxon != None:
             taxon = ott.image(gtaxon)
             if taxon != None:
-                if len(taxon.sourceIds) == 1:
+                if taxon.sourceIds[0].prefix == 'gbif':
+                    # See https://github.com/OpenTreeOfLife/feedback/issues/43
+                    # It's OK if it's also in IRMNG
                     flagged += 1
                     taxon.extinct()
     infile.close()
@@ -1237,12 +1264,17 @@ names_of_interest = ['Ciliophora',
                      'Maddenia', # merged
                      'Crenarchaeota', # silva duplicate
                      'Dermabacter',
+                     'Orzeliscidae', # should be 'rejected refinement'
+                     'Sogonidae',
+                     'Echinochalina',
+                     'Callyspongia elegans',
+                     'Callyspongia',
                      ]
 
-def establish(name, taxonomy, rank=None, descendant=None, parent=None, ancestor=None, division=None, ott_id=None, source=None):
+# This is very similar to what processAdditionDocument (in Addition.java) has to do.
+
+def establish(name, taxonomy, rank=None, parent=None, ancestor=None, division=None, ott_id=None, source=None):
     taxon = None
-    if descendant != None and taxonomy.lookup(descendant) != None:
-        taxon = taxonomy.taxonThatContains(name, descendant)
     anc = None
     if parent != None:
         if taxonomy.unique(parent) != None: anc = parent

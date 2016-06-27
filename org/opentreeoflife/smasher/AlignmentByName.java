@@ -254,7 +254,7 @@ public class AlignmentByName extends Alignment {
         super(source, union);
     }
 
-    void align() {
+    public void align() {
         this.reset();          // depths, brackets, comapped
 
         Criterion[] criteria = Criterion.criteria;
@@ -328,7 +328,6 @@ public class AlignmentByName extends Alignment {
     }
 
     // For each source node, consider all possible union nodes it might map to
-    // TBD: Exclude nodes that have 'prunedp' flag set
 
     class Matrix {
 

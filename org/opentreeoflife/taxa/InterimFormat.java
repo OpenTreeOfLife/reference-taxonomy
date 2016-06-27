@@ -233,7 +233,7 @@ class InterimFormat {
 
 	// Populate fields of a Taxon object from fields of row of taxonomy file
 	// parts = fields from row of dump file
-	void initTaxon(Taxon node, String id, String name, String rank, String flags, String[] parts) {
+	void initTaxon(Taxon node, String id, String name, String rankname, String flags, String[] parts) {
         if (id.length() == 0)
             System.err.format("!! Null id: %s\n", name);
         else
@@ -244,14 +244,17 @@ class InterimFormat {
         if (flags.length() > 0)
             Flag.parseFlags(flags, node);
 
-        if (rank.length() == 0 || rank.startsWith("no rank") ||
-            rank.equals("terminal") || rank.equals("samples"))
-            rank = Rank.NO_RANK;
-        else if (Rank.getRank(rank) == null) {
-            System.err.println("!! Unrecognized rank: " + rank + " " + node.id);
-            rank = Rank.NO_RANK;
+        if (rankname.length() == 0 || rankname.startsWith("no rank") ||
+            rankname.equals("terminal") || rankname.equals("samples"))
+            node.rank = Rank.NO_RANK;
+        else {
+            Rank rank = Rank.getRank(rankname);
+            if (rank == null) {
+                System.err.println("!! Unrecognized rank: " + rankname + " " + node.id);
+                node.rank = Rank.NO_RANK;
+            } else
+                node.rank = rank;
         }
-        node.rank = rank;
 
 		if (tax.infocolumn != null) {
 			if (parts.length <= tax.infocolumn)
@@ -284,6 +287,8 @@ class InterimFormat {
 		for (Taxon node : nodes)
 			if (!node.prunedp)
 				dumpNode(node, out, true, sep);
+            else
+                System.out.format("** Prunedp taxon in taxonomy: %s\n", node);
 		out.close();
 	}
 
@@ -301,7 +306,7 @@ class InterimFormat {
 				   (node.children == null ?
 					"no rank - terminal" :
 					"no rank") :
-				   node.rank) + sep);
+				   node.rank.name) + sep);
 
 		// 4. source information
 		// comma-separated list of URI-or-CURIE
@@ -350,7 +355,7 @@ class InterimFormat {
                 if (dest != null) {
                     Taxon probe = tax.lookupId(alias);
                     if (probe == null) {
-                        tax.idIndex.put(alias, dest);
+                        tax.addId(dest, alias);
                         ++count;
                     }
                 }
@@ -467,15 +472,19 @@ class InterimFormat {
 
 	public void dumpSynonyms(String filename, String sep) throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
-		out.println("name\t|\tuid\t|\ttype\t|\tuniqname\t|\tsource\t|\t");
+		out.format("name\t|\tuid\t|\ttype\t|\tuniqname\t|\tsource\t|\t\n");
+		String format = "%s\t|\t%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n";
 		for (String name : tax.allNames()) {
             boolean primaryp = false;
             boolean synonymp = false;
 			for (Node node : tax.lookup(name)) {
                 if (node instanceof Synonym) {
                     Synonym syn = (Synonym)node;
-                    Taxon taxon = syn.taxon;
-                    if (taxon.prunedp) continue;
+                    Taxon taxon = syn.taxon();
+                    if (taxon.prunedp) {
+                        System.out.format("** Prunedp taxon for synonym: %s %s\n", syn, taxon);
+                        continue;
+                    }
                     if (taxon.id == null) {
                         // E.g. Populus tremuloides
                         if (!taxon.isRoot()) {
@@ -484,13 +493,12 @@ class InterimFormat {
                             //taxon.show();
                         }
                     } else {
-                        String uniq = node.uniqueName();
-                        String sources = syn.getSourceIdsString();
-                        out.println(name + sep +
-                                    taxon.id + sep +
-                                    syn.type + sep +
-                                    uniq + sep +
-                                    sources + sep);
+                        out.format(format,
+                                   name,
+                                   taxon.id,
+                                   syn.type,
+                                   syn.uniqueName(),
+                                   syn.getSourceIdsString());
                     }
                     synonymp = true;
                 } else {
@@ -507,8 +515,8 @@ class InterimFormat {
 		PrintStream out = Taxonomy.openw(filename);
         out.format("id\treplacement\n");
         int count = 0;
-        for (String id : tax.idIndex.keySet()) {
-            Taxon node = tax.idIndex.get(id);
+        for (String id : tax.allIds()) {
+            Taxon node = tax.lookupId(id);
             if (!node.id.equals(id)) {
                 out.format("%s\t%s\n", id, node.id);
                 ++count;

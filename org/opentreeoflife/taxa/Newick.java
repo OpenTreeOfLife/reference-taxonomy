@@ -52,7 +52,7 @@ class Newick {
 				for (Taxon child : children)
 					if (child.name == null || !child.name.startsWith("null"))
 						node.addChild(child);
-				node.rank = (children.size() > 0) ? Rank.NO_RANK : "species";
+				node.rank = (children.size() > 0) ? Rank.NO_RANK : Rank.SPECIES_RANK;
 				return node;
 			} else
 				return null;
@@ -151,16 +151,16 @@ class Newick {
 		// Ad hoc rank syntax Class=Amphibia
 		int pos = label.indexOf('=');
 		if (pos > 0) {
-            String rank = label.substring(0,pos).toLowerCase();
-            if (Rank.getRank(rank) != null) {
+            String rankname = label.substring(0,pos).toLowerCase();
+            Rank rank = Rank.getRank(rankname);
+            if (rank != null) {
                 node.rank = rank;
-                node.setName(spacify(label.substring(pos+1)));
             } else {
                 System.out.format("** Unrecognized rank: %s\n", label);
                 node.rank = Rank.NO_RANK;
                 node.setName(spacify(label));
             }
-
+            node.setName(spacify(label.substring(pos+1)));
 		} else {
 			node.rank = Rank.NO_RANK;
 			node.setName(spacify(label));

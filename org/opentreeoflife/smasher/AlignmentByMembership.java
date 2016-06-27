@@ -63,7 +63,7 @@ public class AlignmentByMembership extends Alignment {
         super(source, union);
     }
 
-    void align() {
+    public void align() {
         // Invert the name->node map: for each node, store the names by
         // which it is known.
         Map<Taxon, Collection<String>> sourceSynonymIndex;

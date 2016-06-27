@@ -39,7 +39,7 @@ import org.json.simple.parser.ParseException;
 
 public abstract class Taxonomy {
     private Map<String, List<Node>> nameIndex = new HashMap<String, List<Node>>();
-	public Map<String, Taxon> idIndex = new HashMap<String, Taxon>();
+	private Map<String, Taxon> idIndex = new HashMap<String, Taxon>();
     public Taxon forest = new Taxon(this, null);
 	public String idspace = null; // "ncbi", "ott", etc.
 	String[] header = null;
@@ -133,15 +133,43 @@ public abstract class Taxonomy {
     }
 
     // delete a synonym
-    public void removeFromNameIndex(Node node, String name) {
-		List<Node> nodes = node.taxonomy.lookup(name);
+    public void removeFromNameIndex(Node node) {
+		List<Node> nodes = this.lookup(node.name);
         // node.name is name for every node in nodes
         if (nodes != null) {
             nodes.remove(node);
             if (nodes.size() == 0)
-                node.taxonomy.nameIndex.remove(name);
+                this.nameIndex.remove(node.name);
         }
 	}
+
+    // Similar, there is an idspace, but not every node has an id.
+
+    public Iterable<String> allIds() {
+        return this.idIndex.keySet();
+    }
+
+    public void addId(Taxon node, String id) {
+        if (id != null) {
+            Taxon existing = this.lookupId(id);
+            if (existing != null) {
+                if (existing != node)
+                    System.err.format("** Id collision: %s wants id of %s\n", node, existing);
+            } else {
+                if (node.id == null)
+                    node.id = id;
+                this.idIndex.put(id, node);
+            }
+        }
+    }
+
+    public void removeFromIdIndex(Taxon node, String id) {
+        // could check that lookupId(id) == node
+		if (id != null)
+			this.idIndex.remove(id);
+        if (node.id != null && node.id.equals(id))
+            node.id = null;
+    }
 
     // utility
 	public Taxon unique(String name) {
@@ -155,7 +183,14 @@ public abstract class Taxonomy {
     // Every taxonomy has an idspace, even if not every node has an id.
 
 	public Taxon lookupId(String id) {
-        return this.idIndex.get(id);
+        Taxon t = this.idIndex.get(id);
+        if (t == null)
+            return t;
+        if (t.prunedp) {
+            System.out.format("** Prunedp taxon in id index: %s\n", t);
+            return null;
+        }
+        return t;
 	}
 
     // Roots - always Taxons, never Synonyms.
@@ -326,7 +361,7 @@ public abstract class Taxonomy {
 			tax.addRoot(root);
         } else if (designator.endsWith(".tre")) {
 			System.out.println("--- Reading " + designator + " ---");
-            tax.loadNewick(designator); // calls postLoadActions
+            tax.loadNewick(designator);
         } else {
 			if (!designator.endsWith("/")) {
 				System.err.println("Taxonomy designator should end in / but doesn't: " + designator);
@@ -374,7 +409,7 @@ public abstract class Taxonomy {
 		this.elideContainers();
 
         // Foo
-		this.elideRedundantIntermediateTaxa();
+		this.handleParentChildHomonyms();
 
 		if (this.rootCount() == 0)
 			System.err.println("** No root nodes!");
@@ -443,91 +478,127 @@ public abstract class Taxonomy {
 
     // If parent and child have the same name, we elide the child
 
-	void elideRedundantIntermediateTaxa() {
-		Set<Taxon> knuckles = new HashSet<Taxon>();
-		for (Taxon node : this.taxa()) {
+	void handleParentChildHomonyms() {
+		Set<Taxon> losers = new HashSet<Taxon>();
+		for (Taxon node : this.taxa())
 			if (!node.isRoot()
-				&& node.parent.children.size() == 1
-				&& node.children != null)
-				if (!node.isPlaced()
-                    || (node.parent.name != null
-                        && node.parent.name.equals(node.name)))
-					knuckles.add(node);
-		}
-        int i = 0;
-		for (Taxon node: knuckles) {
-            if (++i < 10)
-                System.out.format("| Eliding %s in %s, %s children\n",
-                                  node.name,
-                                  node.parent.name,
-                                  (node.children == null ?
-                                   "no" :
-                                   node.children.size())
-                                  );
-            else if (i == 10)
-                System.out.format("| ...\n");
-			node.elide();
-		}
-        if (i > 0)
-            System.out.format("| Elided %s nodes\n", i);
+                && node.name != null
+                && node.name.equals(node.parent.name))
+                // Parent-child homonym.
+                losers.add(node);
+
+        Rank subgenus = Rank.getRank("subgenus");
+        int elisions = 0, subgenusCount = 0, nohope = 0;
+
+		for (Taxon node : losers) {
+
+            if (!node.name.equals(node.parent.name)) continue;  // race condition
+
+            // If node is the only child, we can get rid of the parent.
+            if (node.parent.children.size() == 1) {
+                if (!node.isPlaced()) { // ???? why this conditiion ?
+                    // could also test for same rank.
+                    if (++elisions < 10)
+                        System.out.format("| Eliding %s in %s, %s children\n",
+                                          node.name,
+                                          node.parent.name,
+                                          (node.children == null ?
+                                           "no" :
+                                           node.children.size())
+                                          );
+                    else if (elisions == 10)
+                        System.out.format("| ...\n");
+
+                    // We can elide either the child or the parent.
+
+                    if (node.rank == Rank.NO_RANK)
+                        node.rank = node.parent.rank;
+                    node.parent.elide();
+                }
+
+            } else if (node.rank == subgenus) {
+
+                String newname = String.format("%s %s %s", node.name, node.rank.name, node.name);
+                Taxon existing = this.unique(newname);
+                if (existing != null && existing.parent == node.parent)
+                    // May want to absorb recursively... cf. smush()
+                    existing.absorb(node);
+                else
+                    node.clobberName(newname);
+                ++subgenusCount;
+            } else
+                ++nohope;
+        }
+        if (elisions + subgenusCount + nohope > 0)
+            System.out.format("| %s: elided %s nodes, fixed %s subgenus names, %s p/c homs not addressed\n",
+                              this.tag, elisions, subgenusCount, nohope);
 	}
 
 	// Fold sibling homonyms together into single taxa.
 	// Optional step.
 
 	public void smush() {
-		List<List<Taxon>> smushlist = new ArrayList<List<Taxon>>();
+        for (Taxon root : this.roots())
+            smush(root);
+    }
 
-        for (String name : this.allNames()) {
-            List<Node> t1 = this.lookup(name);
+    private void smush(Taxon node) {
+        if (node.children == Taxon.NO_CHILDREN) return;
 
-            // First, collate by parent
-            Map<Taxon, List<Taxon>> childrenWithThisName = new HashMap<Taxon, List<Taxon>>();
-            for (Node nodenode : t1) {
-                Taxon node = nodenode.taxon();
-                List<Taxon> c = childrenWithThisName.get(node.parent);
-                if (c == null) {
-                    c = new ArrayList<Taxon>(1);
-                    childrenWithThisName.put(node.parent, c);
+        Map<String, List<Taxon>> childrenByName = new HashMap<String, List<Taxon>>();
+
+        // Collate children by name
+        for (Taxon child : node.children) {
+            List<Node> homs = this.lookup(child.name);
+            if (homs.size() > 1) { // pessimization
+                List<Taxon> l = childrenByName.get(child.name);
+                if (l == null) {
+                    l = new ArrayList<Taxon>();
+                    childrenByName.put(child.name, l);
                 }
-                c.add(node);
+                l.add(child);
             }
-                
-            // Add to smush list if more than one child
-            for (List<Taxon> c : childrenWithThisName.values())
-                if (c.size() > 1)
-                    smushlist.add(c);
         }
 
-        if (smushlist.size() > 0)
-            System.out.format("| Smushing %s node sets\n", smushlist.size());
-
-        for (List<Taxon> nodes : smushlist) {
+        for (String name : childrenByName.keySet()) {
+            List<Taxon> homs = childrenByName.get(name);
+            if (homs.size() <= 1) continue;
 
             // Get smallest... that will become the 'right' one
-            Taxon smallest = nodes.get(0);
-            for (Taxon other : nodes)
+            Taxon smallest = homs.get(0);
+            for (Taxon other : homs)
                 if (compareTaxa(other, smallest) < 0)
                     smallest = other;
 
-            if (smallest.name != null && smallest.name.equals("Oncideres cingulatus"))
-                System.out.format("| Smushing Oncideres cingulatus %s\n", nodes.size());
-
-            for (Taxon other : nodes)
+            // Now absorb all the others into the smallest
+            for (Taxon other : homs)
                 if (other != smallest) {
+                    if (other.children != Taxon.NO_CHILDREN &&
+                        smallest.children != Taxon.NO_CHILDREN)
+                        System.out.format("| Smushing %s into %s\n", other, smallest);
+                    if (other.isExtant()) // should transfer other flags too?
+                        // there is a bug report about this
+                        smallest.extant();
                     smallest.absorb(other);
-                    this.idIndex.put(other.id, smallest);
+                    this.addId(smallest, other.id);
                 }
+
         }
+
+        for (Taxon child : node.children)
+            smush(child);
 	}
 
     // ----- this appears to be unused at present -----
 
     public void cleanRanks() {
+        Rank genus = Rank.getRank("genus");
+        Rank subspecies = Rank.getRank("subspecies");
+        Rank variety = Rank.getRank("variety");
         for (Taxon node : this.taxa())
-            if (node.rank == null && node.name != null) {
+            if (node.rank == Rank.NO_RANK && node.name != null) {
                 if (Taxon.isBinomial(node.name))
-                    if (node.parent != null && node.parent.rank != null && node.parent.rank.equals("genus")) {
+                    if (node.parent != null && node.parent.rank == genus) {
                         System.out.format("| Setting rank of %s to species\n", node);
                         /* Problems:
                            Bhanja serogroup
@@ -538,15 +609,15 @@ public abstract class Taxonomy {
                            Sylvaemus group
                         */
                         if (!node.name.endsWith("group"))
-                            node.rank = "species";
+                            node.rank = Rank.SPECIES_RANK;
                     }
                 else if (node.name.contains(" subsp.") || node.name.contains(" subsp ")) {
                     System.out.format("| Setting rank of %s to subspecies\n", node);
-                    node.rank = "subspecies";
+                    node.rank = subspecies;
                 }
                 else if (node.name.contains(" var.")) {
                     System.out.format("| Setting rank of %s to variety\n", node);
-                    node.rank = "variety";
+                    node.rank = variety;
                 }
             }
     }
@@ -681,7 +752,7 @@ public abstract class Taxonomy {
 
         int bequest = inferredFlags | node.properFlags;		// What the children inherit
 
-		if (node.rank != Rank.NO_RANK && node.rank.equals("species"))
+		if (node.rank == Rank.SPECIES_RANK)
             bequest |= Taxonomy.INFRASPECIFIC;
 
 		if (node.children != null) {
@@ -701,8 +772,8 @@ public abstract class Taxonomy {
         int count = 0;
 		boolean barren = true;      // No species?
 		if (node.rank != null) {
-			Rank rank = Rank.getRank(node.rank);
-			if (rank != null) {
+			Rank rank = node.rank;
+			if (rank != Rank.NO_RANK) {
 				if (rank.level >= Rank.SPECIES_RANK.level)
 					barren = false;
 			}
@@ -781,21 +852,14 @@ public abstract class Taxonomy {
 
 	public static int analyzeRankConflicts(Taxon node, boolean majorp) {
 		Integer m = -1;			// "no rank" = -1
-		if (node.rank != null) {
-			Rank r = Rank.getRank(node.rank);
-			if (r == null) {
-				System.err.println("Unrecognized rank: " + node);
-				m = -1;
-			} else
-                m = r.level;
-		}
+		if (node.rank != Rank.NO_RANK)
+            m = node.rank.level;
 		int myrank = m;
-		node.rankAsInt = myrank;
 
 		if (node.children != null) {
 
-			int highrank = Integer.MAX_VALUE; // highest rank among all children
-			int lowrank = -1;
+			int high = Integer.MAX_VALUE; // highest rank among all children
+			int low = -1;
 			Taxon highchild = null;
 
 			// Preorder traversal
@@ -803,34 +867,33 @@ public abstract class Taxonomy {
 			for (Taxon child : node.children) {
 				int rank = analyzeRankConflicts(child, majorp);
 				if (rank >= 0) {  //  && !child.isHidden()  ??
-					if (rank < highrank) { highrank = rank; highchild = child; }
-					if (rank > lowrank)	 lowrank = rank;
+					if (rank < high) { high = rank; highchild = child; }
+					if (rank > low)	 low = rank;
 				}
 			}
 
-            // e.g. lowrank = 72, highrank = 23   (backwards... kingdom is 'higher' than order)
+            // e.g. low = 72, high = 23   (backwards... kingdom is 'higher' than order)
 
-			if (highrank >= 0) {	// Any non-"no rank" children?
+			if (high >= 0) {	// Any non-"no rank" children?
 
-				// highrank is the highest (lowest-numbered) rank among all the children.
-				// Similarly lowrank.  If they're different we have a 'rank conflict'.
+				// high is the highest (lowest-numbered) rank among all the children.
+				// Similarly low.  If they're different we have a 'rank conflict'.
 				// Some 'rank conflicts' are 'minor', others are 'major'.
-				if (highrank < lowrank) {
+				if (high < low) {
 					// Suppose the parent is a class. We're looking at relative ranks of the children...
 					// Two cases: order/family (minor), order/genus (major)
-					int high = highrank / 100;		  //e.g. order
 					for (Taxon child : node.children) {
-						int chrank = child.rankAsInt;	   //e.g. family or genus
+						int chrank = child.rank.level;	   //e.g. family or genus
 						if (chrank < 0) continue;		   // skip "no rank" children
-						// we know chrank >= highrank
+						// we know chrank >= high
 							//genus->genus, subfamily->genus
-							if (majorp && (chrank / 100) > high) {
+							if (majorp && (chrank / 100) > (high / 100)) {
                                 // e.g. a genus that has a family [in an order] as a sibling
                                 if (child.count() > 20000)
                                     System.out.format("!! %s %s sibling to %s %s\n",
-                                                      child.rank, child, highchild.rank, highchild);
+                                                      child.rank.name, child, highchild.rank.name, highchild);
                                 child.addFlag(MAJOR_RANK_CONFLICT);
-                            } else if (chrank > highrank) {  // if lower rank than some sibling
+                            } else if (chrank > high) {  // if lower rank than some sibling
 								child.addFlag(SIBLING_HIGHER); //e.g. family with superfamily sibling
                             // tbd: should clear the flag when appropriate
 						}
@@ -838,11 +901,11 @@ public abstract class Taxonomy {
 				}
 			}
 			// Extra informational check.  See if ranks are inverted.
-			if (majorp && highrank >= 0 && myrank > highrank)
-				// The myrank == highrank case is weird too; there are about 200 of those.
+			if (majorp && high >= 0 && myrank > high)
+				// The myrank == high case is weird too; there are about 200 of those.
 				System.err.println("** Ranks out of order: " +
-								   node + " " + node.rank + " has child " +
-								   highchild + " " + highchild.rank);
+								   node + " " + node.rank.name + " has child " +
+								   highchild + " " + highchild.rank.name);
 		}
 		return myrank;
 	}
@@ -945,10 +1008,10 @@ public abstract class Taxonomy {
 
     void copySelectedIds(Taxonomy tax2) {
         int count = 0;
-        for (String id : this.idIndex.keySet()) {
-            Taxon node = this.idIndex.get(id);
-            if (!node.id.equals(id) && tax2.idIndex.get(node.id) != null) {
-                tax2.idIndex.put(id, node);
+        for (String id : this.allIds()) {
+            Taxon node = this.lookupId(id);
+            if (!node.id.equals(id) && tax2.lookupId(node.id) != null) {
+                tax2.addId(node, id);
                 ++count;
             }
         }
@@ -1674,12 +1737,12 @@ public abstract class Taxonomy {
 	}
 
     // For use from jython code.  Result is added as a root.
-	public Taxon newTaxon(String name, String rank, String sourceIds) {
+	public Taxon newTaxon(String name, String rankname, String sourceIds) {
 		if (this.lookup(name) != null)
 			System.err.format("** Warning: A taxon by the name of %s already exists\n", name);
 		Taxon t = new Taxon(this, name);
-		if (rank != null && !rank.equals("no rank"))
-			t.rank = rank;
+		if (rankname != null && !rankname.equals("no rank"))
+			t.rank = Rank.getRank(rankname);
         if (sourceIds != null && sourceIds.length() > 0)
             t.setSourceIds(sourceIds);
         t.taxonomy.addRoot(t);
@@ -1706,17 +1769,15 @@ public abstract class Taxonomy {
         for (Node node : allNamedNodes()) {
             Taxon taxon = node.taxon();
             if (!all.contains(taxon)) {
-                if (node == taxon) {
+                if (node == taxon)
                     System.out.format("** check: Named taxon not in hierarchy: %s in %s\n", taxon, taxon.parent);
-                    all.add(taxon);
-                } else if (taxon.prunedp) { // Synonym of pruned
-                    // System.out.format("** check (ok): Pruned taxon has synonym %s in name index: %s in %s\n", node.name, taxon, taxon.parent);
-                    ;
-                } else {
+                else if (taxon.prunedp)
+                    System.out.format("** check: Pruned taxon found in name index: %s = %s in %s\n",
+                                      node.name, taxon, taxon.parent);
+                else
                     System.out.format("** check: Synonym %s taxon not in hierarchy: %s in %s\n",
                                       node.name, taxon, taxon.parent);
-                    all.add(taxon);
-                }
+                all.add(taxon);
             }
         }
 

@@ -675,6 +675,125 @@ Here's what 2.9 has:
 357108	|	173959	|	Podocystis	|	genus	|	silva:HQ912661/#7,ncbi:1003093,worms:248089,gbif:3192249,irmng:1363649	|	Podocystis (genus in SAR)	|	sibling_higher	|	
 
 
+## Acremonium (id problem)
+
+I'm getting:
+  ** The id of Acremonium in Hypocreales is 5262599 (expected 5342243)
+     (There is no taxon with id 5342243)
+
+Romina says:
+Acremonium is under mitosporic Ascomycota and should be under Hypocreales, Hypocreomycetidae, Sordariomycetes, Pezizomycotina, Ascomycota, Fungi
+Location is OK, but test has wrong id.
+
+Test says:
+Acremonium,Hypocreales,5342243,"paraphyletic / five of them https://github.com/OpenTreeOfLife/reference-taxonomy/issues/66"
+
+Test result is:
+** The id of Acremonium in Hypocreales is 5262599 (expected 5342243)
+   (There is no taxon with id 5342243)
+
+ott2.3-ids.csv:5262599,gbif,2560451,20130702
+ott2.8-changes.csv:5262599,cleave,5449503
+
+ott2.5-ids.csv:5342243,ncbi,159075,20140106
+ott2.9-changes.csv:5342243,drop,
+
+2.7 has:
+5262599	|	728371	|	Acremonium	|	genus	|	if:7028,ncbi:81097,gbif:2560451,irmng:1269133	|	Acremonium (genus in order Hypocreales)	|	sibling_higher,edited	|	
+5342243	|	545297	|	Acremonium	|	genus	|	ncbi:159075	|	Acremonium (genus in mitosporic Hypocreales)	|	tattered,tattered_inherited	|	
+
+ahh... so that 5262599 id looks like a much better one.  Fix test.
+
+
+## Marssonia / Marssonina 
+
+** The id of Marssonia (which is not in Dermateaceae) is 5512668 (expected 176780)
+   Id 176780 belongs to (Marssonina 75019=if:8849+814)
+
+Romina said Marssonia should be in Dermateaceae:
+"Marssonia is under mitosporic Ascomycota and should be under Dermateaceae"
+Maybe we need to move it?
+... in 2.9, it's a plant.
+In IF, it's a synonym for 8849 = Marssonina... which is in Dermateaceae.
+There is a synonym, but it is suppressed by Mark's request to avoid
+synonyms that are homonyms.
+Solution: Fix the inclusion test.
+
+tax/fung/taxonomy.tsv:8849	80686	Marssonina	genus	
+tax/fung/synonyms.tsv:8849	|	Marssonia	| synonym  |		|	 (also in irmng)
+
+tax/prev_ott/taxonomy.tsv:176780	|	832035	|	Marssonina	|	genus	|	if:8849,ncbi:509230,ncbi:446931,ncbi:324777,gbif:7246060,gbif:2566561,irmng:1295937	|		|		|	
+tax/prev_ott/taxonomy.tsv:5512668	|	913162	|	Marssonia	|	genus	|	gbif:7268388	|	Marssonia (genus in Archaeplastida)	|	sibling_higher,barren	|	
+
+tax/ott/taxonomy.tsv:5512668	|	913162	|	Marssonia	|	genus	|	gbif:7268388	|	Marssonia (genus in Archaeplastida)	|	sibling_higher,barren	|	
+tax/ott/synonyms.tsv:Marssonia	|	75019	|	synonym	|	Marssonia (synonym for Marssonina)	|	if:8849,irmng:1018626	|	
+
+If we go further back (2.7) we get a different id:
+
+5345901	|	832035	|	Marssonia	|	genus	|	gbif:7246060	|	Marssonia (genus gbif:7246060 in family Dermateaceae)	|	hidden,tattered
+176780	|	260233	|	Marssonia	|	genus	|	ncbi:509230	|	Marssonia (genus in mitosporic Ascomycota)	|	tattered,tattered_inherited
+372158	|	832035	|	Marssonina	|	genus	|	if:8849,ncbi:324777,gbif:2566561,irmng:1295937	|		|	edited	|	
+
+or in OTT 2.0:
+176780	|	260233	|	Marssonia	|	genus	| ncbi:509230,gbif:6606246 = mitosporic Ascomycota
+372158	|	832035	|	Marssonina	|	genus	| ncbi:324777,gbif:2566561 = Dermateaceae
+
+NCBI 509230 = fungus, in mitosporic Ascomycota.
+NCBI 324777 = fungus, in Dermateaceae.
+
+This is confusing... 
+
+In the end: 372158 = Marssonia fungus in Dermateaceae (preserve
+original OTT 2.0 assignment)
+
+## Crepidula
+
+On 9 June:
+** The id of Crepidula (which is not in Nucletmycea) is 24075 (expected 5394882)
+   Id 5394882 belongs to (Crepidulospora 4925833=if:30468+2?)
+
+On 8 June:
+** The id of Crepidula in Nucletmycea is 5867580 (expected 5394882)
+   (There is no taxon with id 5394882)
+
+23 Apr 2014:
+Crepidula naticarum and siblings.  These are snails.
+But there is also a Crepidula in IF, listed as a protozoan.
+
+OTT 2.0:
+24075	|	146150	|	Crepidula	|	genus	|	ncbi:52628,gbif:2301670
+that's a snail, in Calyptraeidae.
+
+OTT 2.4:
+4925819	|	927948	|	Crepidula	|	genus	|	irmng:1331383	|	Crepidula (genus in family Amblyosporidae)	|	hidden,tattered_inherited,barren	|	
+24075	|	146150	|	Crepidula	|	genus	|	ncbi:52628,gbif:2301670,irmng:1331382	|	Crepidula (genus in family Calyptraeidae)	|		|	
+Amblyosporidae is in Microsporidia.
+
+OTT 2.8:
+5394882	|	927948	|	Crepidula	|	genus	|	gbif:3268792,irmng:1331383	|	Crepidula (genus in family Amblyosporidae)	|	hidden	|	
+24075	|	146150	|	Crepidula	|	genus	|	ncbi:52628,gbif:2301670,irmng:1331382	|	Crepidula (genus in family Calyptraeidae)	|	edited	|	
+
+OTT 2.9:
+24075	|	146150	|	Crepidula	|	genus	|	ncbi:52628,worms:137722,gbif:2301670,irmng:1331382,irmng:1251893	|	Crepidula (genus in Holozoa)	|		|	
+Crepidula	|	4925833	|		|	Crepidula (synonym for Crepidulospora)	|	
+4925833	|	927948	|	Crepidulospora	|	genus	|	if:30468,gbif:3387531,gbif:3268792,irmng:1239416,irmng:1331383	|		|	hidden	|	
+
+ok... IF considers 30468 to be a microsporidian.  GBIF 3387531 is 'doubtful'.
+
+## Maddenia
+
+Deprecated:
+4729766	1	Maddenia	gbif:2987846,irmng:1282308	lumped		731578	synthesis	
+
+Draft has:
+Maddenia	|	731578	|	includes	|	Maddenia (synonym for Prunus)	|	ncbi:3754	|	
+
+OTT 2.9 has:
+4729766	|	731578	|	Maddenia	|	genus	|	gbif:2987846,irmng:1282308	|	Maddenia (merged with Prunus)	|	merged,barren	|	
+
+does this mean we're discarding *all* merged placeholders?
+
+
 ## Division problems
 
 ? Poorly divided: (gbif:3326448. Clitocybe paxillus?) in Fungi vs. (=if:134911. Clitocybe paxillus?) in Eukaryota
@@ -800,7 +919,6 @@ notSame directives:
   problem is that IRMNG's Foraminifera isn't in SAR (it's in Rhizaria)
 
 What happens if we just pull the plug on SAR as a division?
-
 
 ## Misc. solved problems
 

@@ -59,7 +59,7 @@ public class TsvEdits {
 	static void applyOneEdit(Taxonomy tax, String[] row) {
 		String command = row[0].trim();
 		String name = row[1].trim();
-		String rank = row[2].trim();
+		String rankname = row[2].trim();
 		String parentName = row[3].trim();
 		String contextName = row[4].trim();
 		String sourceInfo = row[5].trim();
@@ -95,7 +95,7 @@ public class TsvEdits {
                 }
 			} else {
 				Taxon node = new Taxon(tax, name);
-				node.rank = rank;
+				node.rank = Rank.getRank(rankname);
 				node.setSourceIds(sourceInfo);
 				parent.addChild(node, 0); // Not incertae sedis
 				node.addFlag(Taxonomy.EDITED);

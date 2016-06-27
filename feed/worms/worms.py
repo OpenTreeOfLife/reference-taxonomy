@@ -21,14 +21,15 @@ WORMSPROXY = WSDL.Proxy(DEFAULT_PROXY)
 
 VISITED = {}
 
+ROOT_ID = 1
+
 
 def startup(args):
     """ """
     import pickle
-    global VISITED   # maybe doesn't need to be global
     pargs = vars(process_args())
     log_fname = pargs["log_file"]
-    results_fname = pargs["taxonomy_file"]
+    results_fname = pargs["taxonomy_file"]  # pargs.taxonomy_file ?
     synonyms_fname = pargs["synonyms_file"]
 
     logging.basicConfig(filename=log_fname,
@@ -47,7 +48,7 @@ def startup(args):
         checkpointfile.close()
         (taxa, synonyms) = traverse_taxonomy(0, (queue, taxa, synonyms))
     else:
-        (taxa, synonyms) = traverse_taxonomy(1, None)
+        (taxa, synonyms) = traverse_taxonomy(ROOT_ID, None)
     write_taxonomy(results_fname, taxa)
     write_synonyms(synonyms_fname, synonyms)
 
@@ -95,7 +96,7 @@ def get_one_taxon_synonyms(taxon_id):
     offset = 0
     wsdlSyns = WORMSPROXY.getAphiaSynonymsByID(taxon_id)
     if wsdlSyns:
-        result.extend(wsdlSyns)
+        result.extend(wsdlSyns)    # return wsdlSyns ?
     return result
 
 TESTPAUSE = 20
@@ -117,7 +118,7 @@ def traverse_taxonomy(root_id, pickled):
     while ((len(queue) > 0) and (len(taxa) < 500000)):
         print "Taxa count = %d" % len(taxa)
         if (len(taxa) - last_sleep) > TESTPAUSE:
-            print "sleeping 20"
+            print "sleeping", TESTPAUSE
             sleep(20)
             picklefile = open(DEFAULT_CHECKPOINT_NAME, 'wb')
             pickle.dump(queue, picklefile)
@@ -129,7 +130,7 @@ def traverse_taxonomy(root_id, pickled):
         children = get_one_taxon_children(current_parent)
         for child in children:
             if child.AphiaID not in taxa and child.status == 'accepted':
-                if child.AphiaID == 1:
+                if child.AphiaID == ROOT_ID:
                     taxon = make_root_taxon()
                 elif child.rank is not None:
                     taxon = {"id": child.AphiaID,
@@ -156,7 +157,7 @@ def traverse_taxonomy(root_id, pickled):
 
 
 def make_root_taxon():
-    return {"id": 1,
+    return {"id": ROOT_ID,
             "parent": '',
             "name": 'Biota',
             "rank": ''}
@@ -210,7 +211,7 @@ def process_parens(taxon):
             if close > open:
                 name = name[0:open -1]
                 taxon['name'] = name
-    elif taxon['name'].find('(') > -1:
+    elif name.find('(') > -1:
         if name.find('(') > -1:
             open = name.find('(')
             close = name.find(')')

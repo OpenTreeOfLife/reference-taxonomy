@@ -583,6 +583,19 @@ def patch_ncbi(ncbi):
     # NCBI puts Chaetognatha in Deuterostomia.
     ncbi.taxon('Protostomia').take(ncbi.taxonThatContains('Chaetognatha','Sagittoidea'))
 
+    h = ncbi.maybeTaxon('Hylobates alibarbis')
+    if h != None:
+        if ncbi.maybeTaxon('Hylobates albibarbis') != None:
+            ncbi.taxon('Hylobates albibarbis').absorb(h)
+        else:
+            h.rename('Hylobates albibarbis')
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/194
+    ncbi.taxon('Euteleostomi').synonym('Osteichthyes')
+
+    # 2015-09-11 https://github.com/OpenTreeOfLife/feedback/issues/...
+    ncbi.taxon('Galeocerdo cf. cuvier GJPN-2012').prune(this_source)
+
 def load_worms():
     worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
     worms.smush()
@@ -606,6 +619,8 @@ def load_worms():
 
     # Help to match up with IRMNG
     worms.taxon('Ochrophyta').synonym('Heterokontophyta')
+
+    worms.taxon('Actinopterygii').notCalled('Osteichthyes')
 
     worms.smush()  # Gracilimesus gorbunovi, pg_1783
 
@@ -750,6 +765,38 @@ def patch_gbif(gbif):
     # 2015-09-11 https://github.com/OpenTreeOfLife/feedback/issues/82
     gbif.taxon('Tarsius thailandica').extinct()
 
+    # https://github.com/OpenTreeOfLife/feedback/issues/86
+    gbif.taxon('Gillocystis').extinct()
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/186
+    # https://en.wikipedia.org/wiki/Réunion_ibis
+    thres = gbif.taxon('Threskiornis solitarius')
+    thres.absorb(gbif.taxon('Raphus solitarius'))
+    thres.extinct()
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/282
+    gbif.taxon('Chelomophrynus', 'Anura').extinct()
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/283
+    gbif.taxon('Shomronella', 'Anura').extinct()
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/165
+    gbif.taxon('Theretairus', 'Sphenodontidae').extinct()
+    gbif.taxon('Diphydontosaurus', 'Sphenodontidae').extinct()
+    gbif.taxon('Leptosaurus', 'Sphenodontidae').extinct()
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/159
+    gbif.taxon('Nesophontidae', 'Insectivora').extinct()
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/135
+    gbif.taxon('Cryptobranchus matthewi', 'Amphibia').extinct()
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/134
+    gbif.taxon('Hemitrypus', 'Amphibia').extinct()
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/133
+    gbif.taxon('Cordicephalus', 'Amphibia').extinct()
+
     return gbif
 
 def load_irmng():
@@ -785,11 +832,11 @@ def load_irmng():
     # target because no synonym-removal command is available.
     irmng.taxon('Niemeyera multipetala').prune(this_source)
 
-    tip = irmng.taxon('Tipuloidea', 'Hemiptera')  # irmng:1170022
+    tip = irmng.maybeTaxon('Tipuloidea', 'Hemiptera')  # irmng:1170022
     if tip != None:
         tip.prune("about:blank#this-homonym-is-causing-too-much-trouble")
 
-    oph = irmng.taxon('1346026') # irmng:1346026 'Ophiurina', 'Ophiurinidae'
+    oph = irmng.maybeTaxon('1346026') # irmng:1346026 'Ophiurina', 'Ophiurinidae'
     if oph != None:
         oph.prune("about:blank#this-homonym-is-causing-too-much-trouble")
 
@@ -821,6 +868,24 @@ def load_irmng():
     # 2015-10-12 JAR checked IRMNG online and this taxon (Ctenophora in Chelicerata) did not exist
     if irmng.maybeTaxon('1279363') != None:
         irmng.taxon('1279363').prune(this_source)
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/285
+    irmng.taxon('Notochelys', 'Cheloniidae').prune(this_source)
+
+    # Recover missing extinct flags
+    for (name, super) in [
+            ('Tvaerenellidae', 'Ostracoda'),
+            ('Chrysocythere', 'Ostracoda'),
+            ('Mutilus', 'Ostracoda'),
+            ('Aurila', 'Ostracoda'),
+            ('Loxostomum', 'Ostracoda'),
+            ('Loxostomatidae', 'Ostracoda'),
+    ]:
+        if super == None:
+            tax = irmng.maybeTaxon(name)
+        else:
+            tax = irmng.maybeTaxon(name, super)
+        if tax != None: tax.extinct()
 
     return irmng
 

@@ -65,7 +65,7 @@ class MergeMachine {
                 union.addRoot(newroot);
         }
 
-        transferProperties(source);
+        this.alignment.transferProperties(source);
 
         if (UnionTaxonomy.windyp) {
             report(source, startroots, startcount);
@@ -77,46 +77,6 @@ class MergeMachine {
         }
         if (union.numberOfNames() < 10)
             System.out.println(" -> " + union.toNewick());
-	}
-
-    // Called on source taxonomy to transfer flags, rank, etc. to union taxonomy
-    void transferProperties(Taxonomy source) {
-        for (Taxon node : source.taxa()) {
-            Taxon unode = node.mapped;
-            if (unode != null)
-                transferProperties(node, unode);
-        }
-    }
-
-    // This is used when the union node is NOT new
-
-    public void transferProperties(Taxon node, Taxon unode) {
-        if (node.name != null) {
-            if (unode.name == null)
-                unode.setName(node.name);
-            else if (unode.name != node.name)
-                // ???
-                unode.taxonomy.addSynonym(node.name, unode, "synonym");
-        }
-
-		if ((unode.rank == Rank.NO_RANK || unode.rank.equals("cluster") || unode.rank.equals("samples"))
-            && (node.rank != Rank.NO_RANK))
-            unode.rank = node.rank;
-
-		unode.addFlag(node.flagsToAdd(unode));
-
-        // No change to hidden or incertae sedis flags.  Union node
-        // has precedence.
-
-        unode.addSource(node);
-        // https://github.com/OpenTreeOfLife/reference-taxonomy/issues/36
-        if (false && node.sourceIds != null)
-            for (QualifiedId id : node.sourceIds)
-                unode.addSourceId(id);
-
-        // ??? retains pointers to source taxonomy... may want to fix for gc purposes
-        if (unode.answer == null)
-            unode.answer = node.answer;
 	}
 
     Map<String, Integer> reasonCounts = new HashMap<String, Integer>();
@@ -145,11 +105,14 @@ class MergeMachine {
         }
     }
 
-	// Method called on every node in the source taxonomy.  If node is
-	// aligned, usually we create a new union node, and align the
-	// source node to it.  The new union node will initially be
-	// detached, and becomes attached to the union taxonomy when its
-	// parent node is processed.
+	/* Method called on every node in the source taxonomy.  If node is
+       aligned, usually we create a new union node, and align the
+       source node to it.  The new union node will initially be
+       detached, and becomes attached to the union taxonomy when its
+       parent node is processed.
+       Sink is the target of the nearest source taxonomy node ancestor
+       that has one.
+       */
 	void augment(Taxon node, Taxon sink) {
 
 		if (node.children == null) {
@@ -163,46 +126,40 @@ class MergeMachine {
 				acceptNew(node, "new/tip");
 
 		} else {
-            if (node.mapped != null)
-                sink = node.mapped;
-			for (Taxon child: node.children)
-                augment(child, sink);
             if (node.mapped != null) {
+                for (Taxon child: node.children)
+                    augment(child, node.mapped);
                 takeOn(node, node.mapped, 0);
                 accept(node, "mapped/internal");
             } else {
+                for (Taxon child: node.children)
+                    augment(child, sink);
                 // Examine mapped parents of the children
-                boolean graftp = true;
                 boolean consistentp = true;
-                Taxon common = null;
+                Taxon commonParent = null;
+                int count = 0;
                 for (Taxon child : node.children) {
-                    Taxon augChild = child.mapped;
-                    if (augChild != null && !augChild.isDetached() && augChild.isPlaced()) {
-                        graftp = false;
-                        if (common == null)
-                            common = augChild.parent;
-                        else if (augChild.parent != common) {
+                    Taxon childTarget = child.mapped;
+                    if (childTarget != null && !childTarget.isDetached() && childTarget.isPlaced()) {
+                        if (commonParent == null)
+                            commonParent = childTarget.parent;
+                        else if (childTarget.parent != commonParent)
                             consistentp = false;
-                            break;
-                        }
+                        ++count;
                     }
                 }
-                if (graftp) {
+                if (count == 0) {
                     // new & unplaced old children only... copying stuff over to union.
                     Taxon newnode = acceptNew(node, "new/graft");
                     takeOn(node, newnode, 0);
                 } else if (!consistentp) {
                     inconsistent(node, sink);
-                } else if (!common.descendsFrom(sink)) {
+                } else if (!commonParent.descendsFrom(sink)) {
                     // This is the philosophically troublesome case.
                     // Could be either an outlier/mistake, or something serious.
                     if (node.markEvent("sibling-sink mismatch"))
                         System.out.format("!! Parent of %s's children's images, %s, is not a descendant of %s\n",
-                                          node, common, sink);
-                    if (common.name.equals("Metazoa")) {
-                        common.showLineage(null);
-                        sink.showLineage(null);
-                    }
+                                          node, commonParent, sink);
                     inconsistent(node, sink);
                 } else if (refinementp(node, sink)) {
                     Taxon newnode = acceptNew(node, "new/refinement");
@@ -210,9 +167,9 @@ class MergeMachine {
                     takeOn(node, newnode, 0); // augmentation
                 } else {
                     // 'trouble' = paraphyly risk - plain merge.
-                    takeOn(node, common, 0);
+                    takeOn(node, commonParent, 0);
                     // should include a witness for debugging purposes - merged to/from what?
-                    reject(node, "merged", common, Taxonomy.MERGED);
+                    reject(node, "merged", commonParent, Taxonomy.MERGED);
                 }
             }
 			for (Taxon child: node.children) {
@@ -229,53 +186,57 @@ class MergeMachine {
         // Paraphyletic / conflicted.
         // Put the new children unplaced under the mrca of the placed children.
         reportConflict(node);
-        Taxon target = chooseTarget(node.lub, sink);
-        takeOn(node, target, Taxonomy.UNPLACED);
-        reject(node, "reject/inconsistent", target, Taxonomy.INCONSISTENT);
+        // Tighten it if possible... does this always make sense?
+        if (node.lub != null && node.lub.descendsFrom(sink))
+            sink = node.lub;
+        takeOn(node, sink, Taxonomy.UNPLACED);
+        reject(node, "reject/inconsistent", sink, Taxonomy.INCONSISTENT);
     }
     
-    // Refinement: feature necessary for merging Silva into the
-    // skeleton and NCBI into Silva.  This lets an internal "new" node
-    // (in the "new" taxonomy) be inserted in between internal "old"
-    // nodes (in the "old" taxonomy).
+    /* Refinement: feature necessary for merging Silva into the
+       skeleton and NCBI into Silva.  This lets an internal "new" node
+       (in the "new" taxonomy) be inserted in between internal "old"
+       nodes (in the "old" taxonomy).
 
-    // node.lub = the mrca, in the old taxonomy, of all the children
-    // of the new node.
+       node.lub = the mrca, in the old taxonomy, of all the children
+       of the new node.
 
-    // This is called only if the new and old nodes are consistent,
-    // i.e. if every [mapped] child of the new node is [maps to] a
-    // child of node.lub.  Let S be that subset of old nodes.
+       This is called only if the new and old nodes are consistent,
+       i.e. if every [mapped] child of the new node is [maps to] a
+       child of node.lub.  Let S be that subset of old nodes.
 
-	// We can move the members of S to (a copy of) the new node, which
-	// later will get inserted back into the union tree under
-	// node.lub.
+	   We can move the members of S to (a copy of) the new node, which
+	   later will get inserted back into the union tree under
+	   node.lub.
 
-	// This is a cheat because some of the old children's siblings
-	// might be more correctly classified as belonging to the new
-	// taxon, rather than being siblings.  So we might want to
-	// further qualify this.
+	   This is a cheat because some of the old children's siblings
+	   might be more correctly classified as belonging to the new
+	   taxon, rather than being siblings.  So we might want to
+	   further qualify this.
 
-	// Caution: See https://github.com/OpenTreeOfLife/opentree/issues/73 ...
-	// family as child of subfamily is confusing.
-	// ranks.get(node1.rank) <= ranks.get(node2.rank) ....
+	   Caution: See https://github.com/OpenTreeOfLife/opentree/issues/73 ...
+	   family as child of subfamily is confusing.
+	   node1.rank.level <= node2.rank.level ....
+    */
     
-	boolean refinementp(Taxon node, Taxon target) {
+	boolean refinementp(Taxon node, Taxon sink) {
         if (node.isAnnotatedHidden()) {
             // Prevent non-priority inner taxa from entering in Index Fungorum
             node.markEvent("not-refinement/hidden");
             return false;
         }
-        if (target.children != null)
-            for (Taxon child : target.children)
+        if (sink.children != null) {
+            for (Taxon child : sink.children)
                 if (child.isPlaced())
                     if (child.comapped == null) {
                         // If we do decide to allow these, we
                         // ought to flag the siblings somehow.
                         if (node.markEvent("not-refinement/nonsurjective"))
                           if (false)  // too much verbiage
-                            System.out.format("! Trouble with inserting %s into %s is %s\n", node, target, child);
+                            System.out.format("! Trouble with inserting %s into %s is %s\n", node, sink, child);
                         return false;
                     }
+        }
         return true;
 	}
 
@@ -347,25 +308,12 @@ class MergeMachine {
         }
     }
 
-    static boolean USE_LUB = false;
-
-    Taxon chooseTarget(Taxon lub, Taxon sink) {
-        if (USE_LUB)
-            return lub;
-        else if (lub == null)
-            return sink;
-        else if (lub.descendsFrom(sink)) // ??
-            return lub;
-        else
-            return sink;
-    }
-
     // implement a refinement
     void takeOld(Taxon node, Taxon newnode) {
         for (Taxon child: node.children) {
-            Taxon augChild = child.mapped;
-            if (augChild != null && !augChild.isDetached() && augChild.isPlaced())
-                augChild.changeParent(newnode);
+            Taxon childTarget = child.mapped;
+            if (childTarget != null && !childTarget.isDetached() && childTarget.isPlaced())
+                childTarget.changeParent(newnode);
         }
     }
 

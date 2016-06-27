@@ -39,7 +39,7 @@ public abstract class Alignment {
         this.union = union;
     }
 
-    abstract void align();
+    public abstract void align();
 
     abstract Answer answer(Taxon node);
 
@@ -201,10 +201,11 @@ public abstract class Alignment {
 		if (l == null) return null;
 		Taxon best = null, otherbest = null;
 		int depth = 1 << 30;
+        Rank genus = Rank.getRank("genus");
 		for (Node nodenode : l) {
             Taxon node = nodenode.taxon();
             // This is for Ctenophora
-            if (node.rank != Rank.NO_RANK && node.rank.equals("genus")) continue;
+            if (node.rank == genus) continue;
 			int d = node.measureDepth();
 			if (d < depth) {
 				depth = d;
@@ -313,6 +314,45 @@ public abstract class Alignment {
 		}
 	}
 
+    // Called on source taxonomy to transfer flags, rank, etc. to union taxonomy
+    public void transferProperties(Taxonomy source) {
+        for (Taxon node : source.taxa()) {
+            Taxon unode = node.mapped;
+            if (unode != null)
+                transferProperties(node, unode);
+        }
+    }
+
+    // This is used when the union node is NOT new
+
+    public void transferProperties(Taxon node, Taxon unode) {
+        if (node.name != null) {
+            if (unode.name == null)
+                unode.setName(node.name);
+            else if (unode.name != node.name)
+                // ???
+                unode.taxonomy.addSynonym(node.name, unode, "synonym");
+        }
+
+		if (unode.rank == Rank.CLUSTER_RANK || unode.rank == Rank.SAMPLES_RANK)
+            unode.rank = node.rank;
+
+		unode.addFlag(node.flagsToAdd(unode));
+
+        // No change to hidden or incertae sedis flags.  Union node
+        // has precedence.
+
+        unode.addSource(node);
+        // https://github.com/OpenTreeOfLife/reference-taxonomy/issues/36
+        if (false && node.sourceIds != null)
+            for (QualifiedId id : node.sourceIds)
+                unode.addSourceId(id);
+
+        // ??? retains pointers to source taxonomy... may want to fix for gc purposes
+        if (unode.answer == null)
+            unode.answer = node.answer;
+	}
+
 }
 
 // Assess a criterion for judging whether x <= target or not x <= target
@@ -329,9 +369,10 @@ abstract class Criterion {
 		new Criterion() {
 			public String toString() { return "prunedp"; }
 			Answer assess(Taxon x, Taxon target) {
-                if (x.prunedp || target.prunedp)
+                if (x.prunedp || target.prunedp) {
+                    System.out.format("** Prunedp taxon in assessment: %s %s\n", x, target);
                     return Answer.no(x, target, "not-same/prunedp", null);
-                else
+                } else
                     return Answer.NOINFO;
             }
         };
@@ -370,6 +411,8 @@ abstract class Criterion {
 					return Answer.NOINFO;
 				else if (true)
                     // about 17,000 of these... that's too many
+                    // 2016-06-26 down to about 900 now.
+                    // but I bet they're almost all supposed to be matches.
                     return Answer.weakNo(subject, target, "not-same/weak-division", xdiv.name);
                 else
 					return Answer.NOINFO;
@@ -548,10 +591,9 @@ abstract class Criterion {
 			Answer assess(Taxon x, Taxon target) {
 				if ((x == null ?
 					 x == target :
-					 (x.rank != Rank.NO_RANK &&
-					  x.rank.equals(target.rank))))
+					 (x.rank == target.rank)))
 					// Evidence of difference, but not good enough to overturn name evidence
-					return Answer.weakYes(x, target, "same/rank", x.rank);
+					return Answer.weakYes(x, target, "same/rank", x.rank.name);
 				else
 					return Answer.NOINFO;
 			}

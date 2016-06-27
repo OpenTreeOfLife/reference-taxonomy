@@ -231,7 +231,7 @@ public class UnionTaxonomy extends Taxonomy {
     // The highest numbered id of any taxon in the taxonomy (including merged ids).
 	public static long maxid(Taxonomy tax) {
 		long maxid = -1;
-		for (String id : tax.idIndex.keySet()) {
+		for (String id : tax.allIds()) {
             try {
                 long idAsLong = Long.parseLong(id);
                 if (idAsLong > maxid) maxid = idAsLong;
@@ -271,11 +271,11 @@ public class UnionTaxonomy extends Taxonomy {
 
         // Carry over forwards from previous OTT.
         int forwardsCount = 0;
-        for (String id : idsource.idIndex.keySet()) {
-            Taxon idnode = idsource.idIndex.get(id);
+        for (String id : idsource.allIds()) {
+            Taxon idnode = idsource.lookupId(id);
             Taxon unode = idnode.mapped;
-            if (unode != null && this.idIndex.get(id) == null) {
-                this.idIndex.put(id, unode);
+            if (unode != null && this.lookupId(id) == null) {
+                this.addId(unode, id);
                 ++forwardsCount;
             }
         }
@@ -449,7 +449,7 @@ public class UnionTaxonomy extends Taxonomy {
         if (this.idsource == null) return;
 		PrintStream out = Taxonomy.openw(filename);
 		out.format("id\treplacement\n");
-		for (String id : idsource.idIndex.keySet()) {
+		for (String id : idsource.allIds()) {
             Taxon node = idsource.lookupId(id);
             if (node.mapped != null) {
                 Taxon unode = node.mapped;
@@ -492,7 +492,7 @@ public class UnionTaxonomy extends Taxonomy {
         System.out.format("| prepare idsource for dump deprecated\n");
         idsource.inferFlags();  // was done earlier, but why not again
 
-		for (String id : idsource.idIndex.keySet()) {
+		for (String id : idsource.allIds()) {
 
             Taxon node = idsource.lookupId(id);
             if (!id.equals(node.id)) continue;

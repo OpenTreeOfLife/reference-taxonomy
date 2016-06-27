@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
 public abstract class Node {
 	public String name;
 	public Taxonomy taxonomy;			// For subsumption checks etc.
+	public Taxon parent = null;
 	public List<QualifiedId> sourceIds = null;
 
     public Node(Taxonomy tax, String name) {

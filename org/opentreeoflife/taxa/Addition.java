@@ -133,11 +133,13 @@ public class Addition {
                 });
             th.start();
         } else {
+            if (false)
+                JSONObject.writeJSONString((Map)request, new PrintWriter(System.out));
             JSONObject.writeJSONString((Map)request, pw);
             pw.close();
         }
 
-        // debugging
+        // debugging.  set to true if you get an error...
         if (false) {
             byte[] foo = new byte[1000];
             for (int i = 0; i <= 3; ++i) {
@@ -154,6 +156,7 @@ public class Addition {
             }
         }
 
+        // exception is caught by caller
         Object obj = (new JSONParser()).parse(br);
         p.waitFor();
         return obj;
@@ -171,7 +174,7 @@ public class Addition {
             if (node.name != null)
                 description.put("name", node.name);
             if (node.rank != Rank.NO_RANK)
-                description.put("rank", node.rank);
+                description.put("rank", node.rank.name);
             if (node.parent.id != null)
                 description.put("parent", node.parent.id);
             else {
@@ -252,6 +255,10 @@ public class Addition {
                 String name = (String)(description.get("name"));
                 String parentId = toId(description.get("parent"));
                 String parentTag = (String)(description.get("parent_tag"));
+                List sources = (List)(description.get("sources"));
+                String firstSource = ((sources != null && sources.size() > 0) ?
+                                      (String)(((Map)(sources.get(0))).get("source")) :
+                                      "");
 
                 if (tag == null) {
                     System.out.format("** Missing tag\n");
@@ -298,34 +305,45 @@ public class Addition {
                 } else {
                     // Find existing node - one with same name and parent
                     List<Node> nodes = tax.lookup(name);
-                    if (nodes != null)
+                    if (nodes != null) {
+                        boolean others = false;
                         for (Node node : nodes) {
                             if (node.taxon().parent == parent) {
+                                Taxon candidate = node.taxon();
                                 if (target == null)
-                                    target = node.taxon(); // id might be different
-                                else
-                                    // Malformed taxonomy
-                                    System.out.format("** Ambiguous taxon determination in addition: %s %s %s %s\n",
-                                                      name, parent, node.taxon(), target);
+                                    target = candidate;
+                                else if (candidate.sourceIds.get(0).toString().equals(firstSource)) {
+                                    target = candidate;
+                                    others = false;
+                                    break;
+                                } else {
+                                    others = true;
+                                    if (Taxonomy.compareTaxa(candidate, target) < 0)
+                                        target = candidate;
+                                }
                             }
                         }
+                        if (others)
+                            // Sibling homonyms
+                            System.out.format("** Choosing %s over sibling homonym(s) for %s in %s\n",
+                                              target, name, parent);
+                    }
                     if (target != null) {
-                        if (target.id == null)
-                            target.setId(ott_id);
-                        else
-                            target.taxonomy.idIndex.put(ott_id, target);
+                        target.taxonomy.addId(target, ott_id);
                     } else {
                         // if (!originalp) continue;
                         target = new Taxon(tax, name);
                         target.setId(ott_id);
                         parent.addChild(target);
-                        String rank = (String)description.get("rank");
-                        if (rank != null && Rank.getRank(rank) != null)
-                            target.rank = rank; // should complain if not
+                        String rankname = (String)description.get("rank");
+                        if (rankname != null) {
+                            Rank rank = Rank.getRank(rankname);
+                            if (rank != null)
+                                target.rank = rank; // should complain if not valid
+                        }
                         if (additionSource != null)
                             target.addSourceId(new QualifiedId(additionSource, ott_id));
                         else {
-                            List sources = (List)(description.get("sources"));
                             for (Object sourceStuff : sources) {
                                 Map sourceDescription = (Map)sourceStuff;
                                 String source = (String)(sourceDescription.get("source"));

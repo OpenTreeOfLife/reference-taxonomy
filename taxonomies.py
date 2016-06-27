@@ -810,13 +810,16 @@ def load_irmng():
     irmng.taxon('Animalia').synonym('Metazoa')
 
     # JAR 2014-04-26 Flush all 'Unaccepted' taxa
-    irmng.taxon('Unaccepted', 'life').prune(this_source)
+    if irmng.maybeTaxon('Unaccepted', 'life') != None:
+        irmng.taxon('Unaccepted', 'life').prune(this_source)
 
     # Fixes
 
     # Neopithecus (extinct) occurs in two places.  Flush one, mark the other
-    irmng.taxon('1413316').prune(this_source) #Neopithecus in Mammalia
-    irmng.taxon('1413315').extinct() #Neopithecus in Primates (Pongidae)
+    if irmng.maybeTaxon('1413316') != None:
+        irmng.taxon('1413316').prune(this_source) #Neopithecus in Mammalia
+    if irmng.maybeTaxon('1413315') != None:
+        irmng.taxon('1413315').extinct() #Neopithecus in Primates (Pongidae)
 
     # RR #50
     # irmng.taxon('Saxo-Fridericia').rename('Saxofridericia')
@@ -842,35 +845,34 @@ def load_irmng():
 
     # NCBI synonymizes Pelecypoda = Bivalvia
     irmng.taxon('Bivalvia').absorb(irmng.taxon('Pelecypoda')) # bogus order
-    # hmm
-    irmng.taxon('Bivalvia').extant()
 
     # This one was mapping to Blattodea, and making it extinct.
     # Caused me a couple of hours of grief.
     # My guess is it's because its unique child Sinogramma is in Blattodea in GBIF.
     # Wikipedia says it's paraphyletic.
-    irmng.taxon('Blattoptera', 'Insecta').prune('https://en.wikipedia.org/wiki/Blattoptera')
-
-    # 2015-07-25 Found while trying to figure out why Theraphosidae was marked extinct.
-    # NCBI thinks that Theraphosidae and Aviculariidae are the same.
-    irmng.taxon('Aviculariidae').extant()
+    if irmng.maybeTaxon('Blattoptera', 'Insecta') != None:
+        irmng.taxon('Blattoptera', 'Insecta').prune('https://en.wikipedia.org/wiki/Blattoptera')
 
     # 2015-07-25 Extra Dipteras are confusing new division logic.  Barren genus
-    irmng.taxon('1323521').prune(this_source)
+    if irmng.maybeTaxon('1323521') != None:
+        irmng.taxon('1323521').prune(this_source)
 
     # 2015-09-10 This one is unclassified (Diptera) and is leading to confusion with two other Steinias.
-    irmng.taxon('1299622').prune(this_source)
+    if irmng.maybeTaxon('1299622') != None:
+        irmng.taxon('1299622').prune(this_source)
 
     # 2015-09-11 https://github.com/OpenTreeOfLife/feedback/issues/74
     # Lymnea is a snail, not a shark
-    irmng.taxon('1317416').prune(this_source)
+    if irmng.maybeTaxon('1317416') != None:
+        irmng.taxon('1317416').prune(this_source)
 
     # 2015-10-12 JAR checked IRMNG online and this taxon (Ctenophora in Chelicerata) did not exist
     if irmng.maybeTaxon('1279363') != None:
         irmng.taxon('1279363').prune(this_source)
 
     # https://github.com/OpenTreeOfLife/feedback/issues/285
-    irmng.taxon('Notochelys', 'Cheloniidae').prune(this_source)
+    if irmng.maybeTaxon('Notochelys', 'Cheloniidae') != None:
+        irmng.taxon('Notochelys', 'Cheloniidae').prune(this_source)
 
     # Recover missing extinct flags
     for (name, super) in [

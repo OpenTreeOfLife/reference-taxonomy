@@ -144,7 +144,7 @@ def create_ott():
             ('Parmeliaceae', 'Lecanorales', '305904'),
             ('Cordana', 'Ascomycota', '946160'),
             ('Pseudofusarium', 'Ascomycota', '655794'),
-            ('Marssonina', 'Dermateaceae', '372158') # ncbi:324777
+            ('Marssonina', 'Dermateaceae', '372158'), # ncbi:324777
             # ('Gloeosporium', 'Pezizomycotina', '75019'),  # synonym for Marssonina
             ('Escherichia coli', 'Enterobacteriaceae', '474506'), # ncbi:562
             # ('Dischloridium', 'Trichocomaceae', '895423'),
@@ -701,36 +701,32 @@ def align_irmng(irmng, ott):
     irmng.taxon('Morganella', 'Brachiopoda').prune(this_source)
     #  ... .notSame(ott.taxon('Morganella', 'Arthropoda'))
 
-    if do_notSames:
-        # JAR 2014-04-24 false match
-        # IRMNG has one in Pteraspidomorphi (basal Chordate) as well as a
-        # protozoan (SAR; ncbi:188977).
-        a.notSame(irmng.taxon('Protaspis', 'Chordata'),
-                  ott.taxon('Protaspis', 'Cercozoa'))
+    def trouble(name, ancestor, not_ancestor):
+        probe = irmng.maybeTaxon(name, ancestor)
+        if probe == None: return
+        if do_notSames:
+            a.notSame(probe, ott.taxon(name, not_ancestor))
+        else:
+            probe.prune(this_source)
 
-        # JAR 2014-04-18 while investigating hidden status of Coscinodiscus radiatus.
-        # tests
-        a.notSame(irmng.taxon('Coscinodiscus', 'Porifera'),
-                  ott.taxon('Coscinodiscus', 'Stramenopiles'))
+    # JAR 2014-04-24 false match
+    # IRMNG has one in Pteraspidomorphi (basal Chordate) as well as a
+    # protozoan (SAR; ncbi:188977).
+    trouble('Protaspis', 'Chordata', 'Cercozoa')
 
-        # 2015-09-10 Inclusion test failing
-        a.notSame(irmng.taxon('Retaria', 'Brachiopoda'), # irmng:1340611
-                    ott.taxon('Retaria', 'Rhizaria'))
+    # JAR 2014-04-18 while investigating hidden status of Coscinodiscus radiatus.
+    # tests
+    trouble('Coscinodiscus', 'Porifera', 'Stramenopiles')
 
-        # 2015-09-10 Inclusion test failing
-        a.notSame(irmng.taxon('Campanella', 'Cnidaria'), # irmng:1289625
-                    ott.taxon('Campanella', 'SAR'))
-    else:
-        # Bad homonyms
-        irmng.taxon('Protaspis', 'Chordata').prune(this_source)
-        irmng.taxon('Coscinodiscus', 'Porifera').prune(this_source)
-        irmng.taxon('Retaria', 'Brachiopoda').prune(this_source)
-        irmng.taxon('Campanella', 'Cnidaria').prune(this_source)
-        irmng.taxon('Neoptera', 'Tachinidae').prune(this_source)
-        h = irmng.maybeTaxon('Hessea', 'Holozoa')
-        if h != None:
-            h.prune(this_source)
+    # 2015-09-10 Inclusion test failing irmng:1340611
+    trouble('Retaria', 'Brachiopoda', 'Rhizaria')
 
+    # 2015-09-10 Inclusion test failing irmng:1289625
+    trouble('Campanella', 'Cnidaria', 'SAR')
+
+    # Bad homonyms
+    trouble('Neoptera', 'Tachinidae', 'Pterygota')
+    trouble('Hessea', 'Holozoa', 'Fungi')
 
     a.same(irmng.taxonThatContains('Trichoderma', 'Trichoderma koningii'),
            ott.taxonThatContains('Trichoderma', 'Trichoderma koningii'))

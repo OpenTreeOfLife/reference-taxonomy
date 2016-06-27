@@ -448,8 +448,10 @@ public abstract class Taxonomy {
 
 	public static void elideContainers(Taxon node) {
 		// Recursive descent
-		if (node.children != null) {
-			for (Taxon child : new ArrayList<Taxon>(node.children))
+        Collection<Taxon> children = node.getChildren();
+
+        if (children.size() > 0) {
+			for (Taxon child : new ArrayList<Taxon>(children))
 				elideContainers(child);
 
             int flag = 0;
@@ -467,7 +469,7 @@ public abstract class Taxonomy {
                 // Splice the node out of the hierarchy, but leave it as a
                 // residual terminal non-OTU node.
                 if (!node.isRoot()) {
-                    for (Taxon child : new ArrayList<Taxon>(node.children))
+                    for (Taxon child : new ArrayList<Taxon>(node.getChildren()))
                         // changeParent sets properFlags
                         child.changeParent(node.parent, flag);
                     node.addFlag(WAS_CONTAINER);

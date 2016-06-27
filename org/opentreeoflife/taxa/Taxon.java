@@ -20,6 +20,7 @@ public class Taxon extends Node {
 	public String id = null;
 	public Rank rank = Rank.NO_RANK;
     public static Collection<Taxon> NO_CHILDREN = null;
+    public static Collection<Taxon> NO_CHILDREN_REALLY = new ArrayList<Taxon>(0);
 	public Collection<Taxon> children = NO_CHILDREN;
     public static Collection<Synonym> NO_SYNONYMS = new ArrayList<Synonym>(0);
 	private Collection<Synonym> synonyms = NO_SYNONYMS;
@@ -48,6 +49,13 @@ public class Taxon extends Node {
 
     public boolean taxonNameIs(String othername) {
         return this.name.equals(othername);
+    }
+
+    public Collection<Taxon> getChildren() {
+        if (children == null)
+            return NO_CHILDREN_REALLY;
+        else
+            return children;
     }
 
     public Iterable<Taxon> descendants(final boolean includeSelf) {

@@ -175,9 +175,14 @@ public class Addition {
                 description.put("name", node.name);
             if (node.rank != Rank.NO_RANK)
                 description.put("rank", node.rank.name);
-            if (node.parent.id != null)
-                description.put("parent", node.parent.id);
-            else {
+            if (node.parent.id != null) {
+                try {
+                    long pid = Long.parseLong(node.parent.id);
+                    description.put("parent", pid);
+                } catch (NumberFormatException e) {
+                    description.put("parent", node.parent.id);
+                }
+            } else {
                 String parentTag = taxonToTag.get(node.parent);
                 if (parentTag != null)
                     description.put("parent_tag", parentTag);
@@ -306,27 +311,32 @@ public class Addition {
                     // Find existing node - one with same name and parent
                     List<Node> nodes = tax.lookup(name);
                     if (nodes != null) {
-                        boolean others = false;
+                        List<Taxon> candidates = new ArrayList<Taxon>();
                         for (Node node : nodes) {
                             if (node.taxon().parent == parent) {
                                 Taxon candidate = node.taxon();
-                                if (target == null)
+                                if (candidate.sourceIds.get(0).toString().equals(firstSource)) {
                                     target = candidate;
-                                else if (candidate.sourceIds.get(0).toString().equals(firstSource)) {
-                                    target = candidate;
-                                    others = false;
+                                    candidates = null;
                                     break;
-                                } else {
-                                    others = true;
-                                    if (Taxonomy.compareTaxa(candidate, target) < 0)
-                                        target = candidate;
-                                }
+                                } else
+                                    candidates.add(candidate);
                             }
                         }
-                        if (others)
-                            // Sibling homonyms
-                            System.out.format("** Choosing %s over sibling homonym(s) for %s in %s\n",
-                                              target, name, parent);
+                        if (candidates == null)
+                            ;
+                        else if (candidates.size() == 0)
+                            ;
+                        else {
+                            for (Taxon node : candidates)
+                                if (target == null)
+                                    target = node;
+                                else if (Taxonomy.compareTaxa(node, target) < 0)
+                                    target = node;
+                            if (candidates.size() > 1)
+                                System.out.format("** Choosing %s over sibling homonym(s) for %s in %s\n%s\n",
+                                                  target, name, parent, candidates);
+                        }
                     }
                     if (target != null) {
                         target.taxonomy.addId(target, ott_id);

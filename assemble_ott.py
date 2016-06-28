@@ -735,6 +735,7 @@ def align_irmng(irmng, ott):
     # In IRMNG these are siblings (children of Actinopterygii), but in NCBI
     # Lepisosteiformes is a synonym of Semionotiformes (in Holostei, etc.).
     irmng.taxon('Semionotiformes').absorb(irmng.taxon('Lepisosteiformes'))
+    irmng.taxon('Semionotiformes').extant()
 
     return a
 
@@ -1265,6 +1266,8 @@ names_of_interest = ['Ciliophora',
                      'Echinochalina',
                      'Callyspongia elegans',
                      'Callyspongia',
+                     'Pseudostomum',
+                     'Pseudostomidae',
                      ]
 
 # This is very similar to what processAdditionDocument (in Addition.java) has to do.

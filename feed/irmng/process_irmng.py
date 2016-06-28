@@ -42,7 +42,7 @@ not_extinct = ['1531',     # Sarcopterygii
                ]
 
 # These are the taxa with taxonomic status '' that occurred in phylesystem as of
-# June 2016 (when these taxa were deleted from OTT)
+# June 2016 (when these taxa were deleted from OTT).  (from deprecated.tsv)
 
 keep_these = {}
 

@@ -56,6 +56,6 @@ if __name__ == '__main__':
         taxname = sys.argv[2]
     else:
         print 'ignoring supplied args', sys.argv
-        inclusions = '../germinator/taxa/inclusions.csv'
+        inclusions = 'inclusions.csv'
         taxname = 'tax/ott/'
     check(inclusions, Taxonomy.getTaxonomy(taxname, 'ott'))

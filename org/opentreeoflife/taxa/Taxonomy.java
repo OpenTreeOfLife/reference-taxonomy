@@ -469,7 +469,11 @@ public abstract class Taxonomy {
                 // Splice the node out of the hierarchy, but leave it as a
                 // residual terminal non-OTU node.
                 if (!node.isRoot()) {
-                    for (Taxon child : new ArrayList<Taxon>(node.getChildren()))
+                    Collection<Taxon> xchildren = node.getChildren();
+                    // https://github.com/OpenTreeOfLife/reference-taxonomy/issues/210
+                    if (xchildren.size() <= 1)
+                        flag = 0;
+                    for (Taxon child : new ArrayList<Taxon>(xchildren))
                         // changeParent sets properFlags
                         child.changeParent(node.parent, flag);
                     node.addFlag(WAS_CONTAINER);

@@ -58,7 +58,7 @@ sp.prune("aster.py")
 
 # tax.loadPreferredIds('ids-that-are-otus.tsv')
 
-additions_path = 't/additions'
+additions_path = 't/amendments-0'
 
 # Assign identifiers to the taxa in the model taxonomy.  Identifiers
 # assigned in the previous version are carried over to this version.

@@ -37,13 +37,13 @@ public class Addition {
             taxonToTag.put(node, tag);
             tagToTaxon.put(tag, node);
         }
-        // compose the additions request per 
+        // Compose the additions request per 
         // https://github.com/OpenTreeOfLife/germinator/wiki/Taxonomic-service-for-adding-new-taxa
         Map<String, Object> request = generateRequest(nodes, taxonToTag, counter);
 
-        if (false) {            // for debugging
+        if (true) {            // for debugging
             try {
-                PrintStream out = Taxonomy.openw(additionsPath + "/request.json.tmp");
+                PrintStream out = Taxonomy.openw("addition-request.json.tmp");
                 PrintWriter pw = new PrintWriter(new OutputStreamWriter(out, "UTF-8"));
                 JSONObject.writeJSONString(request, pw);
                 pw.close();
@@ -201,21 +201,24 @@ public class Addition {
             descriptions.add(description);
         }
         m.put("taxa", descriptions);
-        m.put("original", Boolean.FALSE);
+        m.put("user_agent", "smasher");
         return m;
     }
+
+    // dir is the root directory of the repository (or fake repository).
 
     public static List<File> listAdditionDocuments(String dir) {
         return listAdditionDocuments(new File(dir));
     }
 
     public static List<File> listAdditionDocuments(File dir) {
+        File subdir = new File(dir, "amendments");
         FilenameFilter filter = new FilenameFilter() {
-                public boolean accept(File dir, String name) {
+                public boolean accept(File subdir, String name) {
                     return name.startsWith("additions-") && name.endsWith(".json");
                 }
             };
-        File[] files = dir.listFiles(filter);
+        File[] files = subdir.listFiles(filter);
         if (files == null)      // directory doesn't exist
             return new ArrayList<File>();
         List<File> listOfFiles = Arrays.asList(files);

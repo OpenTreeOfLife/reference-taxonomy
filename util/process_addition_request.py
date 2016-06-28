@@ -71,7 +71,10 @@ def service_request(blob, count, minid, dir):
     docid = 'additions-%s-%s' % (first_id, last_id)
     blob['id'] = docid
 
-    docpath = os.path.join(dir, '%s.json' % docid)
+    docdir = os.path.join(dir, 'amendments')
+    if not os.path.isdir(docdir):
+        os.makedirs(docdir)
+    docpath = os.path.join(docdir, '%s.json' % docid)
     with open(docpath, 'w') as docfile:
         json.dump(blob, docfile, indent=2)
     sys.stderr.write('Wrote %s\n' % docpath)
@@ -84,8 +87,8 @@ if __name__ == '__main__':
 
     argparser = argparse.ArgumentParser(description='Allocate OTT ids and record an addition request.  Request on stdin, alist on stdout.')
     argparser.add_argument('--dir', dest='dir', help='where to find/put addition docs and ott id counter')
-    argparser.add_argument('--count', dest='count', help='how many ids to allocate')
-    argparser.add_argument('--min', dest='min', help='smallest possible id')
+    argparser.add_argument('--count', dest='count', type=int, help='how many ids to allocate')
+    argparser.add_argument('--min', dest='min', type=int, help='smallest possible id')
     args = argparser.parse_args()
 
     blob = json.load(sys.stdin)

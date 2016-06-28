@@ -4,28 +4,56 @@
 # This is a manual step.
 # Get it from http://files.opentreeoflife.org/ott/
 
-# Modify as appropriate to your own hardware
-JAVAFLAGS=-Xmx14G
-
-# Modify as appropriate
-WHICH=2.10draft2
-PREV_WHICH=2.9
-
 #  $^ = all prerequisites
 #  $< = first prerequisite
 #  $@ = file name of target
 
+# Modify as appropriate to your own hardware - I set it one or two Gbyte
+# below physical memory size
+JAVAFLAGS=-Xmx14G
+
+# Modify as appropriate
+WHICH=2.10draft3
+PREV_WHICH=2.9
+
+# ----- Taxonomy source locations -----
+
+# 12787947 Oct  6  2015 taxonomy.tsv
+FUNG_URL=http://files.opentreeoflife.org/fung/fung-9/fung-9-ot.tgz
+
+WORMS_URL=http://files.opentreeoflife.org/worms/worms-1/worms-1-ot.tgz
+
+NCBI_URL="http://files.opentreeoflife.org/ncbi/ncbi-20151006/ncbi-20151006.tgz"
+
+# Was http://ecat-dev.gbif.org/repository/export/checklist1.zip
+# Could be http://rs.gbif.org/datasets/backbone/backbone.zip
+# 2016-05-17 purl.org is broken, cannot update this link
+# GBIF_URL=http://purl.org/opentree/gbif-backbone-2013-07-02.zip
+GBIF_URL=http://files.opentreeoflife.org/gbif/gbif-20130702/gbif-20130702.zip
+
+IRMNG_URL=http://files.opentreeoflife.org/irmng-ot/irmng-ot-20160628/irmng-ot-20160628.tgz
+
+# Silva 115: 206M uncompresses to 817M
+# issue #62 - verify  (is it a tsv file or csv file?)
+# see also http://www.arb-silva.de/no_cache/download/archive/release_115/ ?
+
+SILVA_EXPORTS=ftp://ftp.arb-silva.de/release_115/Exports
+SILVA_URL=$(SILVA_EXPORTS)/SSURef_NR99_115_tax_silva.fasta.tgz
+
+# This is used as a source of OTT id assignments.
+PREV_OTT_URL=http://files.opentreeoflife.org/ott/ott$(PREV_WHICH)/ott$(PREV_WHICH).tgz
+
+# -----
+
+# Where to put tarballs
+#TARDIR=/raid/www/roots/opentree/ott
+TARDIR?=tarballs
+
 # Scripts and other inputs related to taxonomy
 
 # The tax/ directory is full of taxonomies; mostly (entirely?) derived objects.
-NCBI=tax/ncbi
-GBIF=tax/gbif
 SILVA=tax/silva
 FUNG=tax/fung
-
-# Preottol - for filling in the preottol id column
-#  https://bitbucket.org/mtholder/ottol/src/dc0f89986c6c2a244b366312a76bae8c7be15742/preOTToL_20121112.txt?at=master
-PREOTTOL=../../preottol
 
 CP=-classpath ".:lib/*"
 JAVA=JYTHONPATH=util java $(JAVAFLAGS) $(CP)
@@ -33,21 +61,21 @@ SMASH=org.opentreeoflife.smasher.Smasher
 CLASS=org/opentreeoflife/smasher/Smasher.class
 JAVASOURCES=$(shell find org/opentreeoflife -name "*.java")
 
+# ----- Targets
+
 all: ott
 
+# Shorthand target
 compile: $(CLASS)
 
+# Compile the Java classes
 $(CLASS): $(JAVASOURCES) \
 	  lib/jython-standalone-2.7.0.jar \
 	  lib/json-simple-1.1.1.jar \
 	  lib/junit-4.12.jar
 	javac -g $(CP) $(JAVASOURCES)
 
-lib/jython-standalone-2.7.0.jar:
-	wget -O "$@" --no-check-certificate \
-	 "http://search.maven.org/remotecontent?filepath=org/python/jython-standalone/2.7.0/jython-standalone-2.7.0.jar"
-	@ls -l $@
-
+# Script to start up jython (with OTT classes preloaded)
 bin/jython:
 	mkdir -p bin
 	(echo "#!/bin/bash"; \
@@ -55,7 +83,7 @@ bin/jython:
 	 echo exec java "$(JAVAFLAGS)" -jar $$PWD/lib/jython-standalone-2.7.0.jar '$$*') >$@
 	chmod +x $@
 
-# Daemon
+# Script to start up the background daemon
 bin/smasher:
 	mkdir -p bin
 	(echo "#!/bin/bash"; \
@@ -63,36 +91,31 @@ bin/smasher:
 	 echo ./service '$$*') >$@
 	chmod +x $@
 
-# --------------------------------------------------------------------------
-
-OTT_ARGS=$(SMASH) $(SILVA)/ tax/713/ tax/fung/ $(NCBI)/ $(GBIF)/ \
-      --edits feed/ott/edits/ \
-      --deforest \
-      --ids tax/prev_ott/ \
-      --out tax/ott/
+# The open tree taxonomy
 
 ott: tax/ott/log.tsv
 tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
                     tax/silva/taxonomy.tsv \
 		    tax/fung/taxonomy.tsv tax/713/taxonomy.tsv \
-		    $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv \
+		    tax/ncbi/taxonomy.tsv tax/gbif/taxonomy.tsv \
 		    tax/irmng/taxonomy.tsv \
 		    tax/worms/taxonomy.tsv \
 		    feed/ott/edits/ott_edits.tsv \
 		    tax/prev_ott/taxonomy.tsv \
 		    feed/misc/chromista_spreadsheet.py \
+		    ids_that_are_otus.tsv \
+		    bin/jython \
 		    inclusions.csv
 	@rm -f *py.class
 	@mkdir -p tax/ott
 	time bin/jython make-ott.py
 	echo $(WHICH) >tax/ott/version.txt
 
-# Index Fungorum
+# ----- Taxonomy inputs
+
+# Input: Index Fungorum
 
 fung: tax/fung/taxonomy.tsv tax/fung/synonyms.tsv
-
-# 12787947 Oct  6  2015 taxonomy.tsv
-FUNG_URL=http://files.opentreeoflife.org/fung/fung-9/fung-9-ot.tgz
 
 tax/fung/taxonomy.tsv: 
 	@mkdir -p tmp
@@ -106,42 +129,18 @@ tax/fung/about.json:
 	@mkdir -p `dirname $@`
 	cp -p feed/fung/about.json tax/fung/
 
-# Create the aux (preottol) mapping in a separate step.
-# How does it know where to write to?
-
-tax/ott/aux.tsv: $(CLASS) tax/ott/log.tsv
-	$(JAVA) $(SMASH) tax/ott/ --aux $(PREOTTOL)/preottol-20121112.processed
-
-$(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
-	python util/process-preottol.py $< $@
-
-tax/prev_ott/taxonomy.tsv:
-	@mkdir -p feed/prev_ott/in 
-	wget --output-document=feed/prev_ott/in/ott$(PREV_WHICH).tgz \
-	  http://files.opentreeoflife.org/ott/ott$(PREV_WHICH)/ott$(PREV_WHICH).tgz
-	@ls -l feed/prev_ott/in/ott$(PREV_WHICH).tgz
-	(cd feed/prev_ott/in/ && tar xvf ott$(PREV_WHICH).tgz)
-	rm -rf tax/prev_ott
-	@mkdir -p tax/prev_ott
-	mv feed/prev_ott/in/ott*/* tax/prev_ott/
-	if [ -e tax/prev_ott/taxonomy ]; then mv tax/prev_ott/taxonomy tax/prev_ott/taxonomy.tsv; fi
-	if [ -e tax/prev_ott/synonyms ]; then mv tax/prev_ott/synonyms tax/prev_ott/synonyms.tsv; fi
-	rm -rf feed/prev_ott/in
-
+# Input: NCBI Taxonomy
 # Formerly, where we now have /dev/null, we had
 # ../data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP
 
-# NCBI_URL="ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz"
-NCBI_URL="http://files.opentreeoflife.org/ncbi/ncbi-20151006/ncbi-20151006.tgz"
-
-ncbi: $(NCBI)/taxonomy.tsv
-$(NCBI)/taxonomy.tsv: feed/ncbi/in/nodes.dmp feed/ncbi/process_ncbi_taxonomy_taxdump.py 
-	@mkdir -p $(NCBI).tmp
+ncbi: tax/ncbi/taxonomy.tsv
+tax/ncbi/taxonomy.tsv: feed/ncbi/in/nodes.dmp feed/ncbi/process_ncbi_taxonomy_taxdump.py 
+	@mkdir -p tax/ncbi.tmp
 	@mkdir -p feed/ncbi/in
 	python feed/ncbi/process_ncbi_taxonomy_taxdump.py F feed/ncbi/in \
-            /dev/null $(NCBI).tmp $(NCBI_URL)
-	rm -rf $(NCBI)
-	mv -f $(NCBI).tmp $(NCBI)
+            /dev/null tax/ncbi.tmp $(NCBI_URL)
+	rm -rf tax/ncbi
+	mv -f tax/ncbi.tmp tax/ncbi
 
 feed/ncbi/in/nodes.dmp: feed/ncbi/in/taxdump.tar.gz
 	@mkdir -p `dirname $@`
@@ -150,20 +149,29 @@ feed/ncbi/in/nodes.dmp: feed/ncbi/in/taxdump.tar.gz
 
 feed/ncbi/in/taxdump.tar.gz:
 	@mkdir -p feed/ncbi/in
-	wget --output-document=$@ $(NCBI_URL)
+	wget --output-document=$@.new $(NCBI_URL)
+	mv $@.new $@
+	@ls -l $@
+
+NCBI_ORIGIN_URL=ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz
+
+refresh-ncbi:
+	@mkdir -p feed/ncbi/in
+	wget --output-document=feed/ncbi/in/taxdump.tar.gz.new $(NCBI_ORIGIN_URL)
+	mv $@.new $@
 	@ls -l $@
 
 # Formerly, where it says /dev/null, we had ../data/gbif/ignore.txt
 
-gbif: $(GBIF)/taxonomy.tsv
-$(GBIF)/taxonomy.tsv: feed/gbif/in/taxon.txt feed/gbif/process_gbif_taxonomy.py
-	@mkdir -p $(GBIF).tmp
+gbif: tax/gbif/taxonomy.tsv
+tax/gbif/taxonomy.tsv: feed/gbif/in/taxon.txt feed/gbif/process_gbif_taxonomy.py
+	@mkdir -p tax/gbif.tmp
 	python feed/gbif/process_gbif_taxonomy.py \
 	       feed/gbif/in/taxon.txt \
-	       /dev/null $(GBIF).tmp
-	cp -p feed/gbif/about.json $(GBIF).tmp/
-	rm -rf $(GBIF)
-	mv -f $(GBIF).tmp $(GBIF)
+	       /dev/null tax/gbif.tmp
+	cp -p feed/gbif/about.json tax/gbif.tmp/
+	rm -rf tax/gbif
+	mv -f tax/gbif.tmp tax/gbif
 
 # The '|| true' is because unzip erroneously returns status code 1
 # when there are warnings.
@@ -171,37 +179,55 @@ feed/gbif/in/taxon.txt: feed/gbif/in/checklist1.zip
 	(cd feed/gbif/in && (unzip checklist1.zip || true))
 	touch feed/gbif/in/taxon.txt
 
-# Was http://ecat-dev.gbif.org/repository/export/checklist1.zip
-# Could be http://rs.gbif.org/datasets/backbone/backbone.zip
-# 2016-05-17 purl.org is broken, cannot update this link
-# GBIF_URL=http://purl.org/opentree/gbif-backbone-2013-07-02.zip
-GBIF_URL=http://files.opentreeoflife.org/gbif/gbif-20130702/gbif-20130702.zip
-
 feed/gbif/in/checklist1.zip:
 	@mkdir -p feed/gbif/in
-	wget --output-document=$@ "$(GBIF_URL)"
+	wget --output-document=$@.new "$(GBIF_URL)"
+	mv $@.new $@
 	@ls -l $@
+
+GBIF_SOURCE_URL=http://rs.gbif.org/datasets/backbone/backbone-current.zip
+
+refresh-gbif:
+	@mkdir -p feed/gbif/in
+	wget --output-document=$@.new "$(GBIF_SOURCE_URL)"
+	mv $@.new $@
+	@ls -l $@
+
+# Input: WoRMS
+# This is assembled by feed/worms/process_worms.py which does a web crawl
+
+tax/worms/taxonomy.tsv:
+	@mkdir -p tax/worms tmp
+	wget --output-document=tmp/worms-1-ot.tgz $(WORMS_URL)
+	(cd tmp; tar xzf worms-1-ot.tgz)
+	rm -f tax/worms/*
+	mv tmp/worms-1-ot*/* tax/worms/
+
+# Input: IRMNG
 
 irmng: tax/irmng/taxonomy.tsv
 
-IRMNG_URL=http://files.opentreeoflife.org/irmng-ot/irmng-ot-20141020/irmng-ot-20141020.tgz
-
 tax/irmng/taxonomy.tsv:
-	@mkdir -p tax/irmng tmp
+	@mkdir -p tax/irmng tmp/x
 	wget --output-document=tmp/irmng-ot.tgz $(IRMNG_URL)
-	(cd tmp; tar xzf irmng-ot.tgz)
-	rm -f tax/irmng/*
-	mv tmp/irmng-ot*/* tax/irmng/
+	(cd tmp/x; tar xzf ../irmng-ot.tgz)
+	(x=`cd tmp/x; ls` && \
+	 rm -rf tax/irmng tax/$$x && \
+	 mv -f tmp/x/$$x tax/ && \
+	 cd tax; ln -sf $$x irmng)
 
-# Build IRMNG from Tony's .csv files - these unfortunately are not public
+# Build IRMNG from Tony's .csv files - these files unfortunately are
+# not public
 
 refresh-irmng: feed/irmng/process_irmng.py feed/irmng/in/IRMNG_DWC.csv 
-	@mkdir -p `dirname $@`
+	@mkdir -p feed/irmng/out
 	python feed/irmng/process_irmng.py \
 	   feed/irmng/in/IRMNG_DWC.csv \
 	   feed/irmng/in/IRMNG_DWC_SP_PROFILE.csv \
-	   tax/irmng/taxonomy.tsv \
-	   tax/irmng/synonyms.tsv
+	   feed/irmng/out/taxonomy.tsv \
+	   feed/irmng/out/synonyms.tsv
+	rm -rf tax/irmng
+	mv feed/irmng/out tax/irmng
 
 feed/irmng/in/IRMNG_DWC.csv: feed/irmng/in/IRMNG_DWC.zip
 	(cd feed/irmng/in && \
@@ -211,28 +237,23 @@ feed/irmng/in/IRMNG_DWC.csv: feed/irmng/in/IRMNG_DWC.zip
 
 feed/irmng/in/IRMNG_DWC.zip:
 	@mkdir -p `dirname $@`
-	wget --output-document=$@.tmp "http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip"
-	mv $@.tmp $@
+	wget --output-document=$@.new "http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip"
+	mv $@.new $@
 
-WORMS_URL=http://files.opentreeoflife.org/worms/worms-1/worms-1-ot.tgz
+irmng-tarball:
+	(mkdir -p $(TARDIR) && \
+	 d=`date "+%Y%m%d"` && \
+	 echo Today is $$d && \
+	 cp -prf tax/irmng tax/irmng-ot-$$d && \
+	 tar czvf $(TARDIR)/irmng-ot-$$d.tgz.tmp -C tax irmng-ot-$$d && \
+	 mv $(TARDIR)/irmng-ot-$$d.tgz.tmp $(TARDIR)/irmng-ot-$$d.tgz )
 
-tax/worms/taxonomy.tsv:
-	@mkdir -p tax/worms tmp
-	wget --output-document=tmp/worms-1-ot.tgz $(WORMS_URL)
-	(cd tmp; tar xzf worms-1-ot.tgz)
-	rm -f tax/worms/*
-	mv tmp/worms-1-ot*/* tax/worms/
+publish-irmng:
+	bin/publish-taxonomy irmng-ot
 
+
+# Input: SILVA
 # Significant tabs !!!
-
-# Silva 115: 206M uncompresses to 817M
-# tax_ranks file moved to ftp://ftp.arb-silva.de/release_115/Exports/tax_ranks_ssu_115.csv ?
-# issue #62 - verify  (is it a tsv file or csv file?)
-# see also http://www.arb-silva.de/no_cache/download/archive/release_115/ ?
-
-SILVA_EXPORTS=ftp://ftp.arb-silva.de/release_115/Exports
-SILVA_URL=$(SILVA_EXPORTS)/SSURef_NR99_115_tax_silva.fasta.tgz
-SILVA_RANKS_URL=$(SILVA_EXPORTS)/tax_ranks_ssu_115.csv
 
 feed/silva/out/taxonomy.tsv: feed/silva/process_silva.py feed/silva/work/silva_no_sequences.fasta feed/silva/work/accessions.tsv 
 	@mkdir -p feed/silva/out
@@ -251,13 +272,12 @@ $(SILVA)/taxonomy.tsv: feed/silva/out/taxonomy.tsv
 
 feed/silva/in/silva.fasta:
 	@mkdir -p `dirname $@`
-	wget --output-document=feed/silva/in/tax_ranks.txt $(SILVA_RANKS_URL)
-	@ls -l feed/silva/in/tax_ranks.txt
-	wget --output-document=feed/silva/in/silva.fasta.tgz "$(SILVA_URL)"
-	@ls -l feed/silva/in/silva.fasta.tgz
+	wget --output-document=$@.tgz.new "$(SILVA_URL)"
+	mv $@.new $@
+	@ls -l $@.tgz
 	(cd feed/silva/in && tar xzvf silva.fasta.tgz && mv *silva.fasta silva.fasta)
 
-# work in progress
+# To make loading the information faster, we remove all the sequence data
 feed/silva/work/silva_no_sequences.fasta: feed/silva/in/silva.fasta
 	@mkdir -p feed/silva/work
 	grep ">.*;" $< >$@.new
@@ -271,12 +291,65 @@ feed/silva/work/accessions.tsv: feed/silva/work/silva_no_sequences.fasta
 	       $@.new
 	mv $@.new $@
 
+# No longer used
+
+SILVA_RANKS_URL=$(SILVA_EXPORTS)/tax_ranks_ssu_115.csv
+feed/silva/in/tax_ranks.txt:
+	@mkdir -p `dirname $@`
+	wget --output-document=$@.new $(SILVA_RANKS_URL)
+	mv $@.new $@
+	@ls -l $@
+
+# ----- Katz lab Protista/Chromista parent assignments
+
+z: feed/misc/chromista_spreadsheet.py
+feed/misc/chromista_spreadsheet.py: feed/misc/chromista-spreadsheet.csv feed/misc/process_chromista_spreadsheet.py
+	python feed/misc/process_chromista_spreadsheet.py \
+           feed/misc/chromista-spreadsheet.csv >feed/misc/chromista_spreadsheet.py
+
+
+# ----- Previous version of OTT, for id assignments
+
+tax/prev_ott/taxonomy.tsv:
+	@mkdir -p tmp 
+	wget --output-document=tmp/prev_ott.tgz $(PREV_OTT_URL)
+	@ls -l tmp/prev_ott.tgz
+	(cd tmp/ && tar xvf prev_ott.tgz)
+	rm -rf tax/prev_ott
+	@mkdir -p tax/prev_ott
+	mv tmp/ott*/* tax/prev_ott/
+	if [ -e tax/prev_ott/taxonomy ]; then mv tax/prev_ott/taxonomy tax/prev_ott/taxonomy.tsv; fi
+	if [ -e tax/prev_ott/synonyms ]; then mv tax/prev_ott/synonyms tax/prev_ott/synonyms.tsv; fi
+	rm -rf tmp
+
+# -----Taxon inclusion tests
+
+# OK to override this locally, e.g. with
+# ln -sf ../germinator/taxa/inclusions.tsv inclusions.tsv,
+# so you can edit the file in the other repo.
+
 inclusions.csv:
 	wget --output-document=$@ --no-check-certificate \
 	  "https://raw.githubusercontent.com/OpenTreeOfLife/germinator/master/taxa/inclusions.csv"
 
-#TARDIR=/raid/www/roots/opentree/ott
-TARDIR?=tarballs
+# ----- Preottol - for filling in the preottol id column
+# No longer used
+# PreOTToL is here if you're interested:
+#  https://bitbucket.org/mtholder/ottol/src/dc0f89986c6c2a244b366312a76bae8c7be15742/preOTToL_20121112.txt?at=master
+PREOTTOL=../../preottol
+
+# Create the aux (preottol) mapping in a separate step.
+# How does it know where to write to?
+
+tax/ott/aux.tsv: $(CLASS) tax/ott/log.tsv
+	$(JAVA) $(SMASH) tax/ott/ --aux $(PREOTTOL)/preottol-20121112.processed
+
+$(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
+	python util/process-preottol.py $< $@
+
+# ----- Products
+
+# For publishing OTT drafts or releases.
 
 tarball: tax/ott/log.tsv
 	(mkdir -p $(TARDIR) && \
@@ -289,12 +362,47 @@ tarball: tax/ott/log.tsv
 # scp -p -i ~/.ssh/opentree/opentree.pem tarballs/ott2.9draft3.tgz \
 #   opentree@ot10.opentreeoflife.org:files.opentreeoflife.org/ott/ott2.9/
 
-# This predates use of git on norbert...
-#norbert:
-#	rsync -vaxH --exclude=$(WORK) --exclude="*~" --exclude=backup \
-#           ./ norbert.csail.mit.edu:/raid/jar/NESCent/opentree/smasher
+# This rule typically won't run, since the target is checked in
+ids_that_are_otus.tsv:
+	time python util/ids_that_are_otus.py $@.new
+	mv $@.new $@
+	wc $@
 
-# ERROR: certificate common name `google.com' doesn't match requested host name `code.google.com'.
+# Not currently used since smasher already suppresses non-OTU deprecations
+tax/ott/otu_deprecated.tsv: ids_that_are_otus.tsv tax/ott/deprecated.tsv
+	$(JAVA) $(SMASH) --join ids_that_are_otus.tsv tax/ott/deprecated.tsv >$@.new
+	mv $@.new $@
+	wc $@
+
+# This file is big
+tax/ott/differences.tsv: tax/prev_ott/taxonomy.tsv tax/ott/taxonomy.tsv
+	$(JAVA) $(SMASH) --diff tax/prev_ott/ tax/ott/ $@.new
+	mv $@.new $@
+	wc $@
+
+# OTUs only
+tax/ott/otu_differences.tsv: tax/ott/differences.tsv
+	$(JAVA) $(SMASH) --join ids_that_are_otus.tsv tax/ott/differences.tsv >$@.new
+	mv $@.new $@
+	wc $@
+
+tax/ott/otu_hidden.tsv: tax/ott/hidden.tsv
+	$(JAVA) $(SMASH) --join ids_that_are_otus.tsv tax/ott/hidden.tsv >$@.new
+	mv $@.new $@
+	wc $@
+
+# The works
+works: ott tax/ott/otu_differences.tsv tax/ott/forwards.tsv
+
+tags: $(JAVASOURCES)
+	etags *.py util/*.py $(JAVASOURCES)
+
+# ----- Libraries
+
+lib/jython-standalone-2.7.0.jar:
+	wget -O "$@" --no-check-certificate \
+	 "http://search.maven.org/remotecontent?filepath=org/python/jython-standalone/2.7.0/jython-standalone-2.7.0.jar"
+	@ls -l $@
 
 lib/json-simple-1.1.1.jar:
 	wget --output-document=$@ --no-check-certificate \
@@ -306,65 +414,24 @@ lib/junit-4.12.jar:
 	  "http://search.maven.org/remotecontent?filepath=junit/junit/4.12/junit-4.12.jar"
 	@ls -l $@
 
+# ----- Testing
+
+# Trivial, not very useful any more
 test-smasher: compile
 	$(JAVA) org.opentreeoflife.smasher.Test
-
-z: feed/misc/chromista_spreadsheet.py
-feed/misc/chromista_spreadsheet.py: feed/misc/chromista-spreadsheet.csv feed/misc/process_chromista_spreadsheet.py
-	python feed/misc/process_chromista_spreadsheet.py \
-           feed/misc/chromista-spreadsheet.csv >feed/misc/chromista_spreadsheet.py
 
 # internal tests
 test2: $(CLASS)
 	$(JAVA) $(SMASH) --test
 
+check:
+	bash run-tests.sh
 
-old-ids-that-are-otus.tsv:
-	time wget -O ids_report.csv "http://reelab.net/phylografter/ottol/ottol_names_report.csv/" 
-	tr "," "	" <ids_report.csv >$@
-	rm ids_report.csv
-
-# This typically won't run since the target is checked in
-ids_that_are_otus.tsv:
-	time python util/ids_that_are_otus.py $@.new
-	mv $@.new $@
-	wc $@
-
-tax/ott/otu_deprecated.tsv: ids-that-are-otus.tsv tax/ott/deprecated.tsv
-	$(JAVA) $(SMASH) --join ids-that-are-otus.tsv tax/ott/deprecated.tsv >$@.new
-	mv $@.new $@
-	wc $@
-
-tax/ott/differences.tsv: tax/prev_ott/taxonomy.tsv tax/ott/taxonomy.tsv
-	$(JAVA) $(SMASH) --diff tax/prev_ott/ tax/ott/ $@.new
-	mv $@.new $@
-	wc $@
-
-tax/ott/otu_differences.tsv: tax/ott/differences.tsv
-	$(JAVA) $(SMASH) --join ids-that-are-otus.tsv tax/ott/differences.tsv >$@.new
-	mv $@.new $@
-	wc $@
-
-tax/ott/otu_hidden.tsv: tax/ott/hidden.tsv
-	$(JAVA) $(SMASH) --join ids-that-are-otus.tsv tax/ott/hidden.tsv >$@.new
-	mv $@.new $@
-	wc $@
-
-tax/ott/forwards.tsv: tax/ott/new-forwards.tsv legacy-forwards.tsv util/get_forwards.py
-	cat legacy-forwards.tsv tax/ott/new-forwards.tsv | python util/get_forwards.py $@.new
-	mv $@.new $@
-
-# The works
-works: ott tax/ott/otu_differences.tsv tax/ott/forwards.tsv
-
-clean:
-	rm -rf feed/*/in
-	rm -rf tax/fung tax/ncbi tax/prev_nem tax/silva
-	rm -f $(CLASS)
-#	rm -f feed/ncbi/in/taxdump.tar.gz
+inclusion-tests: inclusions.csv 
+	bin/jython util/check_inclusions.py inclusions.csv tax/ott/
 
 # -----------------------------------------------------------------------------
-# Model village: Asterales
+# Asterales test system ('make test')
 
 TAXON=Asterales
 
@@ -413,8 +480,11 @@ aster-tarball: t/tax/aster/taxonomy.tsv
 	 tar czvf $(TARDIR)/aster.tgz.tmp -C t/tax aster && \
 	 mv $(TARDIR)/aster.tgz.tmp $(TARDIR)/aster.tgz )
 
-check:
-	bash run-tests.sh
+# ----- Clean
 
-inclusion-tests: inclusions.csv 
-	bin/jython util/check_inclusions.py inclusions.csv tax/ott/
+clean:
+	rm -rf feed/*/out
+	rm -rf tax/fung tax/ncbi tax/prev_nem tax/silva
+	rm -f $(CLASS)
+#	rm -f feed/ncbi/in/taxdump.tar.gz
+

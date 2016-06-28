@@ -1,0 +1,33 @@
+#!/bin/bash
+
+#debug=echo
+debug=
+
+# Argument should be ncbi, irmng-ot, worms, ott, etc.
+which=$1
+
+# This assumes you've set up your .ssh/config with a 'files' host
+host=files
+
+# Location of http root on remote host
+repo=files.opentreeoflife.org
+
+# Local directory containins tarballs
+tardir=tarballs
+
+file=`cd $tardir; ls -t $which-*.tgz | head -1`
+if [ "x$file" = x ]; then
+  echo "No such file: $tardir/$which-\*.tgz"
+fi
+if [ ! -r "$tardir/$file" ]; then
+  echo "File not readable: $tardir/$file"
+fi
+
+base=`basename $file .tgz`
+remotedir=$repo/$which/$base
+
+echo Copying $tardir/$file to $host:$remotedir/$file
+
+$debug ssh $host mkdir -p $remotedir
+$debug scp -p $tardir/$file $host:$remotedir/$file
+

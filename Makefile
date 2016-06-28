@@ -273,7 +273,7 @@ $(SILVA)/taxonomy.tsv: feed/silva/out/taxonomy.tsv
 feed/silva/in/silva.fasta:
 	@mkdir -p `dirname $@`
 	wget --output-document=$@.tgz.new "$(SILVA_URL)"
-	mv $@.new $@
+	mv $@.tgz.new $@.tgz
 	@ls -l $@.tgz
 	(cd feed/silva/in && tar xzvf silva.fasta.tgz && mv *silva.fasta silva.fasta)
 
@@ -284,7 +284,9 @@ feed/silva/work/silva_no_sequences.fasta: feed/silva/in/silva.fasta
 	mv $@.new $@
 
 # This file has genbank id, ncbi id, strain, taxon name
-feed/silva/work/accessions.tsv: feed/silva/work/silva_no_sequences.fasta
+feed/silva/work/accessions.tsv: feed/silva/work/silva_no_sequences.fasta \
+				tax/ncbi/taxonomy.tsv \
+				feed/silva/work/accessionid_to_taxonid.tsv
 	python feed/silva/get_taxon_names.py \
 	       tax/ncbi/taxonomy.tsv \
 	       feed/silva/work/accessionid_to_taxonid.tsv \

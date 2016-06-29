@@ -119,7 +119,7 @@ fung: tax/fung/taxonomy.tsv tax/fung/synonyms.tsv
 
 tax/fung/taxonomy.tsv: 
 	@mkdir -p tmp
-	wget --output-document=tmp/fung-ot.tgz $@ $(FUNG_URL)
+	wget --output-document=tmp/fung-ot.tgz $(FUNG_URL)
 	(cd tmp; tar xzf fung-ot.tgz)
 	@mkdir -p `dirname $@`
 	mv tmp/fung*/* `dirname $@`/
@@ -154,12 +154,13 @@ feed/ncbi/in/taxdump.tar.gz:
 	@ls -l $@
 
 NCBI_ORIGIN_URL=ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz
+NCBI_TAXDUMP=feed/ncbi/in/taxdump.tar.gz
 
 refresh-ncbi:
 	@mkdir -p feed/ncbi/in
-	wget --output-document=feed/ncbi/in/taxdump.tar.gz.new $(NCBI_ORIGIN_URL)
-	mv $@.new $@
-	@ls -l $@
+	wget --output-document=$(NCBI_TAXDUMP).new $(NCBI_ORIGIN_URL)
+	mv $(NCBI_TAXDUMP).new $(NCBI_TAXDUMP)
+	@ls -l $(NCBI_TAXDUMP)
 
 # Formerly, where it says /dev/null, we had ../data/gbif/ignore.txt
 

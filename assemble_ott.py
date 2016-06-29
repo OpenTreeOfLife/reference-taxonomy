@@ -198,7 +198,7 @@ def create_ott():
 
 
     # Assign old ids to nodes in the new version
-    additions_path = 'additions'
+    additions_path = 'amendments-0'
     ott.carryOverIds(ids, additions_path)
 
     # Incorporate curators' addition requests
@@ -1268,6 +1268,7 @@ names_of_interest = ['Ciliophora',
                      'Callyspongia',
                      'Pseudostomum',
                      'Pseudostomidae',
+                     'Parvibacter',
                      ]
 
 # This is very similar to what processAdditionDocument (in Addition.java) has to do.

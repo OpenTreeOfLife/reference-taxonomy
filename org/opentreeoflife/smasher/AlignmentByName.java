@@ -396,15 +396,16 @@ public class AlignmentByName extends Alignment {
 
             for (int i = 0; i < m; ++i) { // For each source node...
                 Taxon x = nodes.get(i).taxon();
+                Answer[] suppress_i = suppressp[i];
                 for (int j = 0; j < n; ++j) {  // Find a union node to map it to...
-                    if (suppressp[i][j] != null) continue;
+                    if (suppress_i[j] != null) continue;
                     Taxon y = unodes.get(j).taxon();
                     Answer z = criterion.assess(x, y);
                     if (z.value == Answer.DUNNO)
                         continue;
                     z.log(y.taxonomy);
                     if (z.value < Answer.DUNNO) {
-                        suppressp[i][j] = z;
+                        suppress_i[j] = z;
                         continue;
                     }
                     if (answer[i] == null || z.value > answer[i].value) {
@@ -420,31 +421,18 @@ public class AlignmentByName extends Alignment {
                         uuniq[j] = -2;
                 }
             }
-            for (int i = 0; i < m; ++i) // iterate over source nodes
+            for (int i = 0; i < m; ++i) { // iterate over source nodes
                 // Don't assign a single source node to two union nodes...
+                Answer[] suppress_i = suppressp[i];
                 if (uniq[i] >= 0) {
                     int j = uniq[i];
                     // Avoid assigning two source nodes to the same union node (synonym creation)...
-                    if (uuniq[j] >= 0 && suppressp[i][j] == null) {
+                    if (uuniq[j] >= 0 && suppress_i[j] == null) {
                         Taxon x = nodes.get(i).taxon(); // == uuniq[j]
                         Taxon y = unodes.get(j).taxon();
 
-                        // Block out column, to prevent other source nodes from mapping to the same union node
-                        if (false)
-                        for (int ii = 0; ii < m; ++ii)
-                            if (ii != i && suppressp[ii][j] == null)
-                                suppressp[ii][j] = Answer.no(nodes.get(ii).taxon(),
-                                                             y,
-                                                             "excluded(" + criterion.toString() +")",
-                                                             x.getQualifiedId().toString());
-                        // Block out row, to prevent this source node from mapping to multiple union nodes (!!??)
-                        for (int jj = 0; jj < n; ++jj)
-                            if (jj != j && suppressp[i][jj] == null)
-                                // This case seems to never happen
-                                suppressp[i][jj] = Answer.no(x,
-                                                             unodes.get(jj).taxon(),
-                                                             "coexcluded(" + criterion.toString() + ")",
-                                                             null);
+                        // See versions of this code from before 28 June 2016 for
+                        // interesting logic that I excised
 
                         Answer a = answer[i];
                         if (x.mapped == y)
@@ -469,26 +457,28 @@ public class AlignmentByName extends Alignment {
                         } else {
                             this.alignment.alignWith(x, y, a); // sets .mapped, .answer
                         }
-                        suppressp[i][j] = a;
+                        suppress_i[j] = a;
                     }
                 }
+            }
         }
 
         // in x[i][j] i specifies the row and j specifies the column
 
         // Record reasons for mapping failure - for each unmapped source node, why didn't it map?
         void postmortem() {
+            UnionTaxonomy union = (UnionTaxonomy)unodes.get(0).taxonomy;
             for (int i = 0; i < m; ++i) {
                 Taxon node = nodes.get(i).taxon();
+                Answer[] suppress_i = suppressp[i];
                 // Suppress synonyms
                 if (node.mapped == null) {
                     int alts = 0;	 // how many union nodes might we have gone to?
                     int altj = -1;
                     for (int j = 0; j < n; ++j)
-                        if (suppressp[i][j] == null
+                        if (suppress_i[j] == null
                             // && unodes.get(j).comapped == null
                             ) { ++alts; altj = j; }
-                    UnionTaxonomy union = (UnionTaxonomy)unodes.get(0).taxonomy;
                     Answer explanation; // Always gets set
                     if (alts == 1) {
                         // There must be multiple source nodes i1, i2, ... competing
@@ -503,14 +493,14 @@ public class AlignmentByName extends Alignment {
                                 if (w == null) w = qid.toString();
                                 else w += ("," + qid.toString());
                             }
-                        explanation = Answer.noinfo(node, unodes.get(altj).taxon(), "unresolved/contentious", w);
+                        explanation = Answer.noinfo(node, unodes.get(altj).taxon(), "unresolved/lumping", w);
                     } else if (alts > 1) {
                         // Multiple union nodes to which this source can map... no way to tell
                         // ids have not been assigned yet
                         //	  for (int j = 0; j < n; ++j) others.add(unodes.get(j).taxon().id);
                         String w = null;
                         for (int j = 0; j < n; ++j)
-                            if (suppressp[i][j] == null) {
+                            if (suppress_i[j] == null) {
                                 Taxon candidate = unodes.get(j).taxon();	// in union taxonomy
                                 // if (candidate.comapped == null) continue;  // ???
                                 if (candidate.sourceIds == null)
@@ -527,17 +517,17 @@ public class AlignmentByName extends Alignment {
                         // Iterate through the union nodes for this name that we didn't map to
                         // and collect all the reasons.
                         if (n == 1) {
-                            explanation = suppressp[i][0];
+                            explanation = suppress_i[0];
                             if (explanation.reason.equals("not-same/weak-division"))
                                 union.weakLog.add(explanation);
                         } else {
                             for (int j = 0; j < n; ++j)
-                                if (suppressp[i][j] != null) // how does this happen?
-                                    suppressp[i][j].log(union);
+                                if (suppress_i[j] != null) // how does this happen?
+                                    suppress_i[j].log(union);
                             String kludge = null;
                             int badness = -100;
                             for (int j = 0; j < n; ++j) {
-                                Answer a = suppressp[i][j];
+                                Answer a = suppress_i[j];
                                 if (a == null)
                                     continue;
                                 if (a.value > badness)

@@ -343,12 +343,31 @@ public abstract class Taxonomy {
 		int q1 = (n1.children == null ? 0 : n1.children.size());
 		int q2 = (n2.children == null ? 0 : n2.children.size());
 		if (q1 != q2) return q2 - q1;
-        if (n1.id == null) return (n2.id == null ? 0 : 1);
-        if (n2.id == null) return -1;
-        // id might or might not look like an integer
-        int z = n1.id.length() - n2.id.length();
-        if (z != 0) return z;
-        else return n1.id.compareTo(n2.id);
+
+        if (n1.id != null) {
+            if (n2.id != null) {
+                // id might or might not look like an integer
+                int z = n1.id.length() - n2.id.length();
+                if (z != 0) return z;
+                else return n1.id.compareTo(n2.id);
+            } else
+                // sort nodes with ids before nodes without ids
+                return -1;
+        } else if (n2.id != null)
+            // sort nodes without ids after nodes with ids
+            return 1;
+        // Neither has an id
+        else if (n1.name != null) {
+            if (n2.name != null)
+                // Both have names
+                return n1.name.compareTo(n2.name);
+            else
+                return -1;
+        } else if (n2.name != null)
+            return 1;
+        else
+            // TBD: compare source list
+            return 0;
 	}
 
 	// DWIMmish - does Newick if string starts with paren, otherwise

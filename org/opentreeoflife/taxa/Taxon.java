@@ -205,7 +205,7 @@ public class Taxon extends Node {
             this.showLineage(child.parent);
             System.out.format("%s", child);
             Taxon.backtrace();
-        } else if ((this.properFlags & Taxonomy.FORMER_CONTAINER) != 0) {
+        } else if ((this.properFlags & Taxonomy.FORMER_CONTAINER) != 0 && (this.parent != null)) {
             if (false)
                 // There tens of thousands of these
                 this.report(String.format("Attempt to add %s to ex-container %s - retrying with parent %s",

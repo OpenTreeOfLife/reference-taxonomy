@@ -596,6 +596,16 @@ def patch_ncbi(ncbi):
     # 2015-09-11 https://github.com/OpenTreeOfLife/feedback/issues/...
     ncbi.taxon('Galeocerdo cf. cuvier GJPN-2012').prune(this_source)
 
+    # 2016-06-30 JAR found these while reviewing list of subgenus names
+    if ncbi.maybeTaxon('Festuca subg. Vulpia') != None:
+        ncbi.taxon('Festuca subg. Vulpia').rename('Vulpia')
+    if ncbi.maybeTaxon('Acetobacter subgen. Acetobacter') != None:
+        ncbi.taxon('Acetobacter subgen. Acetobacter').rename('Acetobacter subgenus Acetobacter')
+    if ncbi.maybeTaxon('Ophion (Platophion)') != None:    # gone at NCBI?
+        ncbi.taxon('Ophion (Platophion)').rename('Platophion')
+    # TBD: deal with 'Plasmodium (Haemamoeba)' and siblings
+
+
 def load_worms():
     worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
     worms.smush()

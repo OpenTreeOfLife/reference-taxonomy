@@ -31,7 +31,7 @@ NCBI_URL="http://files.opentreeoflife.org/ncbi/ncbi-20151006/ncbi-20151006.tgz"
 # GBIF_URL=http://purl.org/opentree/gbif-backbone-2013-07-02.zip
 GBIF_URL=http://files.opentreeoflife.org/gbif/gbif-20130702/gbif-20130702.zip
 
-IRMNG_URL=http://files.opentreeoflife.org/irmng-ot/irmng-ot-20160628/irmng-ot-20160628.tgz
+IRMNG_URL=http://files.opentreeoflife.org/irmng-ot/irmng-ot-20160630/irmng-ot-20160630.tgz
 
 # Silva 115: 206M uncompresses to 817M
 # issue #62 - verify  (is it a tsv file or csv file?)
@@ -106,6 +106,7 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
 		    ids_that_are_otus.tsv \
 		    bin/jython \
 		    inclusions.csv
+	@date
 	@rm -f *py.class
 	@mkdir -p tax/ott
 	time bin/jython make-ott.py

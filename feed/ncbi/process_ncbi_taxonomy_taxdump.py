@@ -87,7 +87,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     count = 0
-    pid = {} #key is the child id and the value is the parent
+    parent_ids = {} #key is the child id and the value is the parent
     cid = {} #key is the parent and value is the list of children
     nrank = {} #key is the node id and the value is the rank
     with open(nodesfilename,"r") as nodesf:
@@ -96,7 +96,7 @@ if __name__ == "__main__":
             node_id = spls[0].strip()
             parentid = spls[1].strip()
             rank = spls[2].strip()
-            pid[node_id] = parentid
+            parent_ids[node_id] = parentid
             nrank[node_id] = rank
             if parentid not in cid: 
                 cid[parentid] = []
@@ -127,7 +127,7 @@ if __name__ == "__main__":
             line = line.strip()
             spls = line.split("\t|") #if you do \t|\t then you don't get the name class right because it is "\t|"
             node_id = spls[0].strip()
-            par = pid[node_id]
+            par = parent_ids[node_id]
             # was name = spls[1].strip().replace("[","").replace("]","")
             name = spls[1].strip()
             homonc = spls[2].strip() #can get if it is a series here
@@ -231,21 +231,21 @@ if __name__ == "__main__":
 
     for i in nm_storage:
         if nm_storage[i] != "root":
-            if i in pid:
-                if nm_storage[i] == nm_storage[pid[i]]:
+            if i in parent_ids:
+                if nm_storage[i] == nm_storage[parent_ids[i]]:
                 #do something for the genus 
-                    if nrank[pid[i]] == "genus":
-                        final_nm_storage[i] = nm_storage[pid[i]]+" "+nrank[i]+" "+nm_storage[i]
+                    if nrank[parent_ids[i]] == "genus":
+                        final_nm_storage[i] = nm_storage[parent_ids[i]]+" "+nrank[i]+" "+nm_storage[i]
                     else:
                         idstoch = cid[i]
                         for j in idstoch:
-                            pid[j] = pid[i]
+                            parent_ids[j] = parent_ids[i]
                         if i in synonyms:
                             for j in synonyms[i]:
-                                if pid[i] in synonyms:
-                                    synonyms[pid[i]].append(j)
+                                if parent_ids[i] in synonyms:
+                                    synonyms[parent_ids[i]].append(j)
                                 else:
-                                    synonyms[pid[i]] = [j]
+                                    synonyms[parent_ids[i]] = [j]
                             del synonyms[i]
                         del lines[i]
                 #do something for everything else
@@ -270,8 +270,8 @@ if __name__ == "__main__":
                         continue
                     while tcur != i:
                         tname += nm_storage[tcur] +" "+nrank[tcur]+" "
-                        if tcur in pid:
-                            tcur = pid[tcur]
+                        if tcur in parent_ids:
+                            tcur = parent_ids[tcur]
                         else:
                             break
                     final_nm_storage[cur] = nm_storage[i]+" "+nrank[i]+" "+tname
@@ -284,7 +284,7 @@ if __name__ == "__main__":
     for i in lines:
         spls = lines[i].split("\t|\t")
         node_id = spls[0].strip()
-        prid = pid[spls[0]].strip()
+        prid = parent_ids[spls[0]].strip()
         sname = spls[1].strip()
 
         #changed from sname to nm_storage to fix the dup name issue
@@ -298,7 +298,7 @@ if __name__ == "__main__":
             nametowrite = "life"
             prid = ""
         elif nametowrite == 'environmental samples':
-            nametowrite = nm_storage[pid[i]] + ' ' + nametowrite
+            nametowrite = nm_storage[parent_ids[i]] + ' ' + nametowrite
             if False:
                 if nametowrite not in synonyms:
                     synonyms[i] = []

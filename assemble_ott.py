@@ -18,6 +18,7 @@ import csv
 
 this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/make-ott.py'
 inclusions_path = 'inclusions.csv'
+additions_path = 'amendments-0'
 
 do_notSames = False
 
@@ -182,6 +183,8 @@ def create_ott():
     # Assign OTT ids to taxa that don't have them, re-using old ids when possible
     ids = Taxonomy.getTaxonomy('tax/prev_ott/', 'ott')
 
+    # Edit the id source taxonomy to optimize id coverage
+
     # Kludge to undo lossage in OTT 2.9
     for taxon in ids.taxa():
         if (len(taxon.sourceIds) >= 2 and
@@ -190,23 +193,20 @@ def create_ott():
             taxon.sourceIds.remove(taxon.sourceIds[0])
 
     # OTT 2.9 has both Glaucophyta and Glaucophyceae... 
-    # Need to review this
+    # this creates an ambiguity when aligning.
+    # Need to review this; maybe they *should* be separate taxa.
     g1 = ids.maybeTaxon('Glaucophyta')
     g2 = ids.maybeTaxon('Glaucophyceae')
     if g1 != None and g2 != None and g1 != g2:
         g1.absorb(g2)
 
-
     # Assign old ids to nodes in the new version
-    additions_path = 'amendments-0'
-    ott.carryOverIds(ids, additions_path)
+    ott.carryOverIds(ids) # Align & copy ids
 
-    # Incorporate curators' addition requests
-    for file in Addition.listAdditionDocuments(additions_path):
-        print '| Processing', file.toString()
-        Addition.processAdditionDocument(file, ott)
+    # Apply the additions (which already have ids assigned)
+    Addition.processAdditions(additions_path, ott)
 
-    # Get ids for new nodes
+    # Mint ids for new nodes
     ott.assignNewIds(additions_path)
 
     ott.check()
@@ -732,7 +732,7 @@ def align_irmng(irmng, ott):
            ott.taxonThatContains('Trichoderma', 'Trichoderma koningii'))
 
     # https://github.com/OpenTreeOfLife/feedback/issues/241
-    # In IRMNG these are siblings (children of Actinopterygii), but in NCBI
+    # In IRMNG L. and S. are siblings (children of Actinopterygii), but in NCBI
     # Lepisosteiformes is a synonym of Semionotiformes (in Holostei, etc.).
     irmng.taxon('Semionotiformes').absorb(irmng.taxon('Lepisosteiformes'))
     irmng.taxon('Semionotiformes').extant()

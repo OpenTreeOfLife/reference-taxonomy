@@ -35,99 +35,6 @@ public class AlignmentByName extends Alignment {
             return null;
     }
 
-    private int winners, fresh, grafts, outlaws;
-
-    void cacheInSourceNodes() {
-        this.alignWith(source.forest, union.forest, "align-forests");
-
-        // The answers are already stored in .answer of each node
-        // Now do the .lubs
-        winners = fresh = grafts = outlaws = 0;
-        for (Taxon root : source.roots())
-            cacheLubs(root);
-        if (winners + fresh + grafts + outlaws > 0)
-            System.out.format("| LUB match: %s graft: %s differ: %s bad: %s\n",
-                              winners, fresh, grafts, outlaws);
-    }
-
-    // An important case is where a union node is incertae sedis and the source node isn't.
-
-    // Input is in source taxonomy, return value is in union taxonomy
-
-    Taxon cacheLubs(Taxon node) {
-        if (node.children == null)
-            return node.lub = node.mapped();
-        else {
-            Taxon mrca = null;  // in union
-            for (Taxon child : node.children) {
-                if (!(child.taxonomy instanceof SourceTaxonomy))
-                    System.out.format("** Child in wrong taxonomy: %s\n", child);
-                Taxon a = cacheLubs(child); // in union
-                if (a != null && !(a.taxonomy instanceof UnionTaxonomy))
-                    System.out.format("** Lub in wrong taxonomy: %s\n", a);
-                if (child.isPlaced()) {
-                    if (a != null) {
-                        if (a.noMrca()) continue;
-                        a = a.parent; // in union
-                        if (!(a.taxonomy instanceof UnionTaxonomy))
-                            System.out.format("** Lub in wrong taxonomy: %s\n", a);
-                        if (a.noMrca()) continue;
-                        if (mrca == null)
-                            mrca = a; // in union
-                        else {
-                            Taxon m = mrca.mrca(a);
-                            if (!(m.taxonomy instanceof UnionTaxonomy))
-                                System.out.format("** Mrca in wrong taxonomy: %s\n", m);
-
-                            if (m.noMrca()) continue;
-                            if (false) {
-                                Taxon div1 = mrca.getDivision();
-                                Taxon div2 = a.getDivision();
-                                if (div1 != div2 && div1.divergence(div2) != null)
-                                    // 2015-07-23 this happens about 300 times
-                                    System.out.format("! Children of %s are in disjoint divisions (%s in %s + %s in %s)\n",
-                                                      node, mrca, div1, a, div2);
-                            }
-                            mrca = m;
-                        }
-                    }
-                }
-            }
-
-            node.lub = mrca;
-
-            if (node.mapped == null)
-                ++fresh;
-            else if (mrca == null)
-                ++grafts;
-            else if (node.mapped == mrca)
-                // Ideal case - mrca of children is the node itself
-                ++winners;
-            else {
-                // Divergence across taxonomies.  MRCA of children can be
-                // ancestor, descendant, or disjoint from target.
-                Taxon[] div = mrca.divergence(node.mapped);
-                if (div == null)
-                    // If div == null, then either mrca descends from node.mapped or the other way around.
-                    ++winners;
-                else if (div[0] == mrca || div[1] == node.mapped || div[1].parent == node.mapped)
-                    // Hmm... allow siblings (and cousins) to merge.  Blumeria graminis
-                    ++winners;
-                else {
-                    if (outlaws < 10 || node.name.equals("Elaphocordyceps subsessilis") || node.name.equals("Bacillus selenitireducens"))
-                        System.out.format("! %s maps by name to %s which is disjoint from children-mrca %s; they meet at %s\n",
-                                          node, node.mapped, mrca, div[0].parent);
-                    ++outlaws;
-                    // OVERRIDE.
-                    node.answer = Answer.no(node, node.mapped, "not-same/disjoint", null);
-                    node.answer.maybeLog();
-                    node.mapped = null;
-                }
-            }
-            return node.mapped;
-        }
-    }
-
 	int nextSequenceNumber = 0;
 
 	public void reset() {
@@ -256,6 +163,8 @@ public class AlignmentByName extends Alignment {
 
     public void align() {
         this.reset();          // depths, brackets, comapped
+
+        this.alignWith(source.forest, union.forest, "align-forests");
 
         Criterion[] criteria = Criterion.criteria;
 		if (source.rootCount() > 0) {

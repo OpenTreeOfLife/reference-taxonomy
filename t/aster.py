@@ -9,7 +9,11 @@ from claim import Has_child
 # Create model taxonomy
 tax = UnionTaxonomy.newTaxonomy('ott')
 
-tax.eventlogger.namesOfInterest.add('Pentaphragma ellipticum')
+for name in ['Pentaphragma ellipticum',
+             'Lachnophyllum',
+             'Sipolisia',
+             'Cicerbita bourgaei']:
+    tax.eventlogger.namesOfInterest.add(name)
 
 # Establish homonym-resolution skeleton (not really used here)
 # skel = Taxonomy.getTaxonomy('tax/skel/', 'skel')
@@ -63,14 +67,9 @@ additions_path = 't/amendments-0'
 # Assign identifiers to the taxa in the model taxonomy.  Identifiers
 # assigned in the previous version are carried over to this version.
 ids = Taxonomy.getTaxonomy('t/tax/prev_aster/', 'ott')
-tax.carryOverIds(ids, additions_path)
 
-if not os.path.isdir(additions_path):
-    os.mkdir(additions_path)
-for file in Addition.listAdditionDocuments(additions_path):
-    print '| Processing', file.toString()
-    Addition.processAdditionDocument(file, tax)
-
+tax.carryOverIds(ids)    # performs alignment
+Addition.processAdditions(additions_path, tax)
 tax.assignNewIds(additions_path)
 
 # Write the model taxonomy out to a set of files

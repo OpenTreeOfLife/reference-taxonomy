@@ -24,6 +24,8 @@ import org.opentreeoflife.taxa.QualifiedId;
 
 public class Addition {
 
+    static String userAgent = "smasher";
+
     // Mint an id for each taxon in the taxon list.
     // Parents must occur before their children in the taxon list.
 
@@ -201,7 +203,7 @@ public class Addition {
             descriptions.add(description);
         }
         m.put("taxa", descriptions);
-        m.put("user_agent", "smasher");
+        m.put("user_agent", userAgent);
         return m;
     }
 
@@ -236,6 +238,18 @@ public class Addition {
 		}
 	};
 
+    // for invocation from python
+
+    public static void processAdditions(String repo, Taxonomy tax) throws IOException, ParseException {
+        File dir = new File(repo);
+        if (!dir.isDirectory())
+            dir.mkdirs();
+        for (File doc : Addition.listAdditionDocuments(dir)) {
+            System.out.format("| Processing %s\n", doc);
+            processAdditionDocument(doc, tax);
+        }
+    }
+
     // Deal with one additions document.  Get ids for existing nodes, or (if
     // the taxa are "original" with this document) create 
     // new nodes as needed.
@@ -250,8 +264,8 @@ public class Addition {
     public static void processAdditionDocument(Object json, Taxonomy tax) throws ParseException {
         if (json instanceof Map) {
             Map top = (Map)json;
-            Object originalObj = top.get("original");
-            boolean originalp = (originalObj == null || (Boolean)(originalObj));
+            Object agent = top.get("user_agent");
+            boolean originalp = (agent != null && ((String)agent).equals(userAgent));
             String additionSource = (String)top.get("id");
             Object taxaObj = top.get("taxa");
             List taxa = (List)taxaObj;

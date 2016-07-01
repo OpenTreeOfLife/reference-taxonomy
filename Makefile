@@ -52,7 +52,6 @@ TARDIR?=tarballs
 # Scripts and other inputs related to taxonomy
 
 # The tax/ directory is full of taxonomies; mostly (entirely?) derived objects.
-SILVA=tax/silva
 FUNG=tax/fung
 
 CP=-classpath ".:lib/*"
@@ -264,13 +263,11 @@ feed/silva/out/taxonomy.tsv: feed/silva/process_silva.py feed/silva/work/silva_n
 	       feed/silva/work/accessions.tsv \
 	       feed/silva/out "$(SILVA_URL)"
 
-silva: $(SILVA)/taxonomy.tsv
+silva: tax/silva/taxonomy.tsv
 
-$(SILVA)/taxonomy.tsv: feed/silva/out/taxonomy.tsv
-	@mkdir -p $(SILVA)
-	cp -p feed/silva/out/taxonomy.tsv $(SILVA)/
-	cp -p feed/silva/out/synonyms.tsv $(SILVA)/
-	cp -p feed/silva/out/about.json $(SILVA)/
+tax/silva/taxonomy.tsv: feed/silva/out/taxonomy.tsv
+	@mkdir -p tax/silva
+	cp -p feed/silva/out/* tax/silva/
 
 feed/silva/in/silva.fasta:
 	@mkdir -p `dirname $@`

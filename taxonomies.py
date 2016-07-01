@@ -1,6 +1,7 @@
 # coding=utf-8
 
 from org.opentreeoflife.taxa import Taxonomy
+from org.opentreeoflife.taxa import Rank
 from claim import *
 #from claim import Has_child, Whether_same, With_ancestor, With_descendant, \
 #                  Whether_extant, make_claim, make_claims
@@ -11,8 +12,11 @@ def load_silva():
     silva = Taxonomy.getTaxonomy('tax/silva/', 'silva')
 
     # Used in studies pg_2448,pg_2783,pg_2753, seen deprecated on 2015-07-20
-    silva.taxon('AF364847').rename('Pantoea ananatis LMG 20103')    # ncbi:706191
-    silva.taxon('EF690403').rename('Pantoea ananatis B1-9')  # ncbi:1048262
+    # These are probably now obviated by improvements in the way silva is merged
+    if silva.maybeTaxon('AF364847') != None:
+        silva.taxon('AF364847').rename('Pantoea ananatis LMG 20103')    # ncbi:706191
+    if silva.maybeTaxon('EF690403') != None:
+        silva.taxon('EF690403').rename('Pantoea ananatis B1-9')  # ncbi:1048262
 
     patch_silva(silva)
 
@@ -25,6 +29,14 @@ def load_silva():
     silva.taxon('Florideophycidae', 'Rhodophyceae').synonym('Florideophyceae')
     silva.taxon('Stramenopiles', 'SAR').synonym('Heterokonta') # needed by WoRMS
 
+    for name in ['Metazoa',
+                 'Fungi',
+                 'Chloroplast',
+                 'mitochondria',
+                 'Herdmania',
+                 'Oryza',
+                 'Chloroplastida']:
+        silva.taxon(name).trim()
     return silva
 
 # Sample contamination ?
@@ -605,6 +617,9 @@ def patch_ncbi(ncbi):
         ncbi.taxon('Ophion (Platophion)').rename('Platophion')
     # TBD: deal with 'Plasmodium (Haemamoeba)' and siblings
 
+    # 2016-07-01 JAR while studying rank inversions
+    if ncbi.taxon('Vezdaeaceae').rank.name == 'genus':
+        ncbi.taxon('Vezdaeaceae').rank = Rank.getRank('family')
 
 def load_worms():
     worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
@@ -675,9 +690,10 @@ def patch_gbif(gbif):
     # 2014-04-13 JAR noticed while grepping
     claims = [
         Whether_same('Chryso-hypnum', 'Chryso-Hypnum', True),
-        Whether_same('Drepano-Hypnum', 'Drepano-hypnum', True),
-        Whether_same('Complanato-Hypnum', 'Complanato-hypnum', True),
-        Whether_same('Leptorrhyncho-Hypnum', 'Leptorrhyncho-hypnum', True),
+        # these three went away after change to gbif processing after 2.9
+        # Whether_same('Drepano-Hypnum', 'Drepano-hypnum', True),
+        # Whether_same('Complanato-Hypnum', 'Complanato-hypnum', True),
+        # Whether_same('Leptorrhyncho-Hypnum', 'Leptorrhyncho-hypnum', True),
         
         # Doug Soltis 2015-02-17 https://github.com/OpenTreeOfLife/feedback/issues/59 
         # http://dx.doi.org/10.1016/0034-6667(95)00105-0
@@ -807,6 +823,13 @@ def patch_gbif(gbif):
     # https://github.com/OpenTreeOfLife/feedback/issues/133
     gbif.taxon('Cordicephalus', 'Amphibia').extinct()
 
+    # JAR 2016-07-01 while studying rank inversions.
+    # Ophidiasteridae the genus was an error and has been deleted from GBIF.
+    # Similarly Paracalanidae, Cornirostridae, Scaliolidae, Asterinidae
+    for badid in ['6103275', '6128386', '7348034', '6141880', '6135675']:
+        if gbif.maybeTaxon(badid) != None:
+            gbif.taxon(badid).elide()
+
     return gbif
 
 def load_irmng():
@@ -854,7 +877,8 @@ def load_irmng():
         oph.prune("about:blank#this-homonym-is-causing-too-much-trouble")
 
     # NCBI synonymizes Pelecypoda = Bivalvia
-    irmng.taxon('Bivalvia').absorb(irmng.taxon('Pelecypoda')) # bogus order
+    if irmng.maybeTaxon('Pelecypoda') != None:
+        irmng.taxon('Bivalvia').absorb(irmng.taxon('Pelecypoda')) # bogus order
 
     # This one was mapping to Blattodea, and making it extinct.
     # Caused me a couple of hours of grief.

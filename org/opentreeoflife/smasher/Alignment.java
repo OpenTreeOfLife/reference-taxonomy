@@ -305,45 +305,6 @@ public abstract class Alignment {
 		}
 	}
 
-    // Called on source taxonomy to transfer flags, rank, etc. to union taxonomy
-    public void transferProperties(Taxonomy source) {
-        for (Taxon node : source.taxa()) {
-            Taxon unode = node.mapped;
-            if (unode != null)
-                transferProperties(node, unode);
-        }
-    }
-
-    // This is used when the union node is NOT new
-
-    public void transferProperties(Taxon node, Taxon unode) {
-        if (node.name != null) {
-            if (unode.name == null)
-                unode.setName(node.name);
-            else if (unode.name != node.name)
-                // ???
-                unode.taxonomy.addSynonym(node.name, unode, "synonym");
-        }
-
-		if (unode.rank == Rank.CLUSTER_RANK || unode.rank == Rank.SAMPLES_RANK)
-            unode.rank = node.rank;
-
-		unode.addFlag(node.flagsToAdd(unode));
-
-        // No change to hidden or incertae sedis flags.  Union node
-        // has precedence.
-
-        unode.addSource(node);
-        // https://github.com/OpenTreeOfLife/reference-taxonomy/issues/36
-        if (false && node.sourceIds != null)
-            for (QualifiedId id : node.sourceIds)
-                unode.addSourceId(id);
-
-        // ??? retains pointers to source taxonomy... may want to fix for gc purposes
-        if (unode.answer == null)
-            unode.answer = node.answer;
-	}
-
     // Compute LUBs (MRCAs) and cache them in Taxon objects
 
     void cacheLubs() {
@@ -449,20 +410,6 @@ abstract class Criterion {
 
 	abstract Answer assess(Taxon x, Taxon target);
 
-    // Horrible kludge to avoid having to rebuild or maintain the name index
-
-	static Criterion prunedp =
-		new Criterion() {
-			public String toString() { return "prunedp"; }
-			Answer assess(Taxon x, Taxon target) {
-                if (x.prunedp || target.prunedp) {
-                    System.out.format("** Prunedp taxon in assessment: %s %s\n", x, target);
-                    return Answer.no(x, target, "not-same/prunedp", null);
-                } else
-                    return Answer.NOINFO;
-            }
-        };
-
     static boolean HALF_DIVISION_EXCLUSION = true;
 
     static int kludge = 0;
@@ -492,18 +439,36 @@ abstract class Criterion {
 				Taxon xdiv = subject.getDivision();
 				Taxon ydiv = target.getDivision();
 				if (xdiv == ydiv)
-					return Answer.weakYes(subject, target, "same/division", xdiv.name);
+					return Answer.NOINFO;
 				else if (xdiv.noMrca() || ydiv.noMrca())
 					return Answer.NOINFO;
-				else if (true)
+				else
                     // about 17,000 of these... that's too many
                     // 2016-06-26 down to about 900 now.
                     // but I bet they're almost all supposed to be matches.
                     return Answer.weakNo(subject, target, "not-same/weak-division", xdiv.name);
-                else
-					return Answer.NOINFO;
 			}
 		};
+
+    static final int family = Rank.getRank("family").level;
+    static final int genus = Rank.getRank("genus").level;
+
+    static Criterion ranks =
+        new Criterion() {
+            public String toString() { return "ranks"; }
+            Answer assess(Taxon subject, Taxon target) {
+                if (subject.rank != Rank.NO_RANK &&
+                    target.rank != Rank.NO_RANK &&
+                    ((subject.rank.level >= genus) && (target.rank.level <= family) ||
+                     (subject.rank.level <= family) && (target.rank.level >= genus))) {
+                    System.out.format("| Separation by rank: %s %s | %s %s\n",
+                                      subject, subject.rank.name, target, target.rank.name);
+                    return Answer.weakNo(subject, target, "not-same/ranks",
+                                         String.format("%s|%s", subject.rank.name, target.rank.name));
+                }
+                return Answer.NOINFO;
+            }
+        };
 
 	static Criterion eschewTattered =
 		new Criterion() {
@@ -707,15 +672,14 @@ abstract class Criterion {
 		};
 
 	static Criterion[] criteria = {
-        prunedp,
 		division,
-		// eschewTattered,
-		lineage, subsumption,
+		lineage,
+        subsumption,
 		sameSourceId,
 		anySourceId,
-		// knowDivision,
         weakDivision,
 		byRank,
+        ranks,
         byPrimaryName,
         elimination,
     };

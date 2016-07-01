@@ -65,7 +65,7 @@ class MergeMachine {
                 union.addRoot(newroot);
         }
 
-        this.alignment.transferProperties(source);
+        transferProperties(source);
 
         if (UnionTaxonomy.windyp) {
             report(source, startroots, startcount);
@@ -158,7 +158,7 @@ class MergeMachine {
                     // This is the philosophically troublesome case.
                     // Could be either an outlier/mistake, or something serious.
                     if (node.markEvent("sibling-sink mismatch"))
-                        System.out.format("!! Parent of %s's children's images, %s, is not a descendant of %s\n",
+                        System.out.format("* Parent of %s's children's images, %s, is not a descendant of %s\n",
                                           node, commonParent, sink);
                     inconsistent(node, sink);
                 } else if (refinementp(node, sink)) {
@@ -341,8 +341,8 @@ class MergeMachine {
                 } else {
                     //if (??child??.isRoot())
                     //    child.markEvent("placed-former-root");
-                    target.addChild(uchild); // if unplaced, stay unplaced
                     uchild.addFlag(flags);
+                    target.addChild(uchild); // if unplaced, stay unplaced
                 }
             } else if (!uchild.isPlaced()) {
                 // "old" child maybe not well placed in union.  consider moving it
@@ -376,6 +376,45 @@ class MergeMachine {
         }
         return target;
     }
+
+    // Called on source taxonomy to transfer flags, rank, etc. to union taxonomy
+    public void transferProperties(Taxonomy source) {
+        for (Taxon node : source.taxa()) {
+            Taxon unode = node.mapped;
+            if (unode != null)
+                transferProperties(node, unode);
+        }
+    }
+
+    // This is used when the union node is NOT new
+
+    public void transferProperties(Taxon node, Taxon unode) {
+        if (node.name != null) {
+            if (unode.name == null)
+                unode.setName(node.name);
+            else if (unode.name != node.name)
+                // ???
+                unode.taxonomy.addSynonym(node.name, unode, "synonym");
+        }
+
+		if (unode.rank == Rank.NO_RANK || unode.rank == Rank.CLUSTER_RANK)
+            unode.rank = node.rank;
+
+		unode.addFlag(node.flagsToAdd(unode));
+
+        // No change to hidden or incertae sedis flags.  Union node
+        // has precedence.
+
+        unode.addSource(node);
+        // https://github.com/OpenTreeOfLife/reference-taxonomy/issues/36
+        if (false && node.sourceIds != null)
+            for (QualifiedId id : node.sourceIds)
+                unode.addSourceId(id);
+
+        // ??? retains pointers to source taxonomy... may want to fix for gc purposes
+        if (unode.answer == null)
+            unode.answer = node.answer;
+	}
 
 	// 3799 conflicts as of 2014-04-12
 	void reportConflict(Taxon node) {

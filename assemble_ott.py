@@ -513,7 +513,9 @@ def ncbi_to_silva(ncbi, silva, ott):
                     else:
                         print '** no OTT taxon for cluster', silva_cluster_id
                 else:
-                    print '| no such cluster', silva_cluster_id
+                    # Too many of these now, and not sure what to do about them.
+                    # print '| no cluster %s for %s' % (silva_cluster_id, n)
+                    True
     for n in flush:
         if n in mappings:
             del mappings[n]
@@ -832,6 +834,11 @@ def patch_ott(ott):
     # as Chromista or Protozoa
     print '-- Chromista/Protozoa spreadsheet from Katz lab --'
     fixChromista(ott)
+    # 2016-06-30 deleted from spreadsheet because ambiguous:
+    #   Enigma,Protozoa,Polychaeta ,,,,, - 
+    #   Acantharia,Protozoa,Radiozoa,,,,,
+    #   Lituolina,Chromista,Lituolida ,WORMS,,,,
+
 
     print '-- more patches --'
 
@@ -1112,6 +1119,11 @@ def patch_ott(ott):
     # "Old" patch system
     TsvEdits.edit(ott, 'feed/ott/edits/')
 
+    # JAR 2016-06-30 Fixing a warning from 'report_on_h2007'
+    # There really ought to be a family (Hyaloraphidiaceae, homonym) in 
+    # between, but it's not really necessary, so I won't bother
+    ott.taxon('Hyaloraphidiales', 'Fungi').take(ott.taxon('Hyaloraphidium', 'Fungi'))
+
 # The processed GBIF taxonomy contains a file listing GBIF taxon ids for all 
 # taxa that are listed as coming from PaleoDB.  This is processed after all
 # taxonomies are processed but before patches are applied.  We use it to set
@@ -1189,6 +1201,15 @@ def report(ott):
     # Requires ../germinator
     print '-- Inclusion tests'
     check_inclusions.check(inclusions_path, ott)
+    # tests deleted because taxon no longer present:
+    #  Progenitohyus,Cetartiodactyla,3615889,"https://github.com/OpenTreeOfLife/feedback/issues/58"
+    #  Protaspis,Opisthokonta,5345086,"not found"
+    #  Coscinodiscus,Porifera,5344432,""
+    #  Retaria,Opisthokonta,5297815,""
+    #  Campanella,Holozoa,5343447,""
+    #  Hessea,Holozoa,5295839,""
+    #  Neoptera,Tachinidae,5340261,"test of genus"
+
 
 names_of_interest = ['Ciliophora',
                      'Phaeosphaeria',

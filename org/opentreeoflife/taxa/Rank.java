@@ -56,8 +56,7 @@ public class Rank {
 		 "form",                // 2016 GBIF
 		 "forma",
 		 "subform",
-         "cluster",
-		 "samples"},
+         "cluster"},
 	};
 
 	static Map<String, Rank> ranks = new HashMap<String, Rank>();
@@ -75,7 +74,6 @@ public class Rank {
 
 	public static Rank SPECIES_RANK = ranks.get("species");
 	public static Rank CLUSTER_RANK = ranks.get("cluster");
-	public static Rank SAMPLES_RANK = ranks.get("samples");
 
     public static Rank getRank(String rankstring) {
         return ranks.get(rankstring);

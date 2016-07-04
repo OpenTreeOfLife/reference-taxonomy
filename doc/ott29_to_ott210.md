@@ -1,4 +1,4 @@
-# Changes to OTT (taxonomy and smasher) going from OTT 2.9 (13 October 2015) through 1 July 2016
+b# Changes to OTT (taxonomy and smasher) going from OTT 2.9 (13 October 2015) through 1 July 2016
 
 * Changes to address open issues
 * Changes to address errors and warnings during assembly
@@ -643,7 +643,7 @@ why.
 
 ### SILVA processing overhaul
 
-I don't think this affected the taxonomy, or if it did, it did so no
+I don't think this affected the taxonomy, or if it did, it did so
 in very minor ways.
 
  * The overhaul relates to Laura Katz's old request to expose microbial
@@ -912,21 +912,21 @@ update around 20 June.
 
 Others...
 
-* Created a Makefile target 'refresh-ncbi' for refreshing the local
-  copy of NCBI Taxonomy from the NCBI ftp site.
+ * Created a Makefile target 'refresh-ncbi' for refreshing the local
+   copy of NCBI Taxonomy from the NCBI ftp site.
 
-* Created a Makefile rule for reprocessing IRMNG from the csv files that
-  I got from Tony Rees.
+ * Created a Makefile rule for reprocessing IRMNG from the csv files that
+   I got from Tony Rees.
 
-* Added a script for 'publishing' locally retrieved tarballs
-  (e.g. OTT, IRMNG) to files.opentreeoflife.org (see above).  This is
-  to be used when we release an OTT version, to snapshot the source
-  taxonomy versions that were used in assembly.
+ * Added a script for 'publishing' locally retrieved tarballs
+   (e.g. OTT, IRMNG) to files.opentreeoflife.org (see above).  This is
+   to be used when we release an OTT version, to snapshot the source
+   taxonomy versions that were used in assembly.
 
-* Put the Makefile rules in a more logical order.
+ * Put the Makefile rules in a more logical order.
 
-* New Makefile target 'tags' to support emacs tags-search and related
-  commands.
+ * New Makefile target 'tags' to support emacs tags-search and related
+   commands.
 
  * There is now a flag that controls whether to add taxa that are
    IRMNG-only to the taxonomy; this allows the possibility of an
@@ -956,8 +956,8 @@ I won't dwell on the conflict analysis service, which is new and
 doesn't affect assembly, but a few enhancements to the rest of the
 system to support it might be interesting:
 
-For the conflict service, I wrote a Nexson loader.  It's a bit awkward
-- e.g. it might benefit from having some wrapper classes, but
+For the conflict service, I wrote a Nexson loader.  It's a bit awkward,
+e.g. it might benefit from having some wrapper classes, but
 currently just passed around JSON blobs directly.
 
 The Nexson parser has to pay attention to the forwarding pointers from
@@ -992,7 +992,8 @@ Created a simple python script util/select_from_taxonomy.py that just
 invokes Java to extract a subtree.  (need to make sure it still works)
 
 Yan Wong provided code to harvest wikidata ids from wikidata.  I put
-this in the repository but have not done anything with it yet (#161).
+this in the repository but have not done anything with it yet.
+https://github.com/OpenTreeOfLife/reference-taxonomy/issues/161
 
 Tweaked worms.py (the script that fetches WoRMS from the WoRMS web
 site using its API) to filter out invalid taxon copies.  This logic is

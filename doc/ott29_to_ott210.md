@@ -1,5 +1,4 @@
-# Changes to OTT (taxonomy and smasher) going from OTT 2.9 (13 October
-2015) to the present (1 July 2016)
+# Changes to OTT (taxonomy and smasher) going from OTT 2.9 (13 October 2015) through 1 July 2016
 
 * Changes to address open issues
 * Changes to address errors and warnings during assembly
@@ -92,21 +91,17 @@ https://github.com/OpenTreeOfLife/feedback/issues/86
 Theretairus, Diphydontosaurus, and Leptosaurus (in Sphenodontia) are extinct.
 https://github.com/OpenTreeOfLife/feedback/issues/165
 
-    # https://github.com/OpenTreeOfLife/feedback/issues/159
-    gbif.taxon('Nesophontidae', 'Insectivora').extinct()
+Nesophontidae in Insectivora is extinct
+https://github.com/OpenTreeOfLife/feedback/issues/159
 
-    # https://github.com/OpenTreeOfLife/feedback/issues/135
-    gbif.taxon('Cryptobranchus matthewi', 'Amphibia').extinct()
+Cryptobranchus matthewi in Amphibia is extinct
+https://github.com/OpenTreeOfLife/feedback/issues/135
 
-    # https://github.com/OpenTreeOfLife/feedback/issues/134
-    gbif.taxon('Hemitrypus', 'Amphibia').extinct()
+Hemitrypus in Amphibia is extinct
+https://github.com/OpenTreeOfLife/feedback/issues/134
 
-    # https://github.com/OpenTreeOfLife/feedback/issues/133
-    gbif.taxon('Cordicephalus', 'Amphibia').extinct()
- 
-    # https://github.com/OpenTreeOfLife/feedback/issues/159
-    ott.taxon('Nesophontidae').extinct()
-
+Cordicephalus in Amphibia is extinct
+https://github.com/OpenTreeOfLife/feedback/issues/133
 
 Put Cordicephalus in Pipoidea.
 https://github.com/OpenTreeOfLife/feedback/issues/133
@@ -134,6 +129,10 @@ https://github.com/OpenTreeOfLife/reference-taxonomy/issues/198
 Similarly, Nanoarchaeum is no longer incertae sedis, but I don't know
 specifically how it got fixed.
 https://github.com/OpenTreeOfLife/reference-taxonomy/issues/199
+
+Crenarchaeota pruned from SILVA.  (my notes only say "What's going on
+with Crenarchaeota?" from June 2014.)
+https://github.com/OpenTreeOfLife/feedback/issues/189
 
 
 ### Extinctness from PaleoDB
@@ -188,6 +187,11 @@ errors were, look at the 2.9 assembly transcript (https://github.com/OpenTreeOfL
 Errors are indicated in the transcript with two asterisks.  I demoted
 certain kinds of error to warnings, and this of course helped a lot.
 
+Perhaps in the future I should create issues for things like this; but
+generally I notice something and fix it right away, and/or nobody
+else would care, so it hardly seems worthwhile.
+
+
 ### Fungal taxonomy
 
 Many of the orders from the Hibbett fungal orders taxonomy were empty,
@@ -237,9 +241,17 @@ the assertion of a parent/child relationship creates an inversion.
 
 ### Miscellaneous
 
-Perhaps in the future I should create issues for thing like this; but
-generally I notice something and fix it right away, and it hardly
-seems worthwhile.
+(more detail?) I researched Acremonium and a few other names (and
+their ids), because of inclusion test failures (id mismatches between
+the test and the taxonomy).  I fixed some or all of these by explicit
+alignment directives.  From the 2.9 assembly log:
+
+    ** Acremonium is 5262599, not 5342243
+    ** Crepidula is 24075, not 5394882
+    ** Epiphloea=5342482 not under Lichinales
+    ** Dischloridium is 946379, not 895423
+    ** Leucocryptos=111139 not under Katablepharidophyta
+    ** Gloeosporium is 176780, not 75019
 
 I removed some rows from the Katz lab Chromista/Protista spreadsheet
 that were leading to errors, and made a spelling correction
@@ -320,20 +332,11 @@ patches were no longer needed?.  (assemble_ott.py)
 
 I don't know if the following relate to the NCBI update, or the IRMNG revision:
 * 24c2f7e deal with numerous troublesome taxa, e.g. Protaspis
-
-I researched Acremonium and a few other names, because of inclusion
-test failures (id mismatches between the test and the taxonomy): (more detail?)
-
-    ** Acremonium is 5262599, not 5342243
-    ** Crepidula is 24075, not 5394882
-    ** Epiphloea=5342482 not under Lichinales
-    ** Dischloridium is 946379, not 895423
-    ** Leucocryptos=111139 not under Katablepharidophyta
-    ** Gloeosporium is 176780, not 75019
-
-
 * I had to clean up some confusion over Marssonia vs. Marssonina; I
-  forget how this came to my attention.
+  forget how this came to my attention.  Marssonia = Gloeosporium.
+
+Had to make the Chaetognatha patch more robust; it was fixed in OTT a long time ago, but I think has now been fixed in NCBI Taxonomy.
+https://github.com/OpenTreeOfLife/reference-taxonomy/issues/88
 
 ### NCBI-to-SILVA mapping
 
@@ -448,14 +451,19 @@ fact they should.
 
 The reason for this has to do with the way that true homonyms are
 normally separated, e.g. a plant and animal with the same name.  To do
-this there is a small set (about 20) of 'barrier nodes' that are
+this there is a small set (about 20) of 'barrier nodes,' and these are
 located each source taxonomy and in the union taxonomy
-(OTT-in-progress).  If taxon A is under barrier node B in the union,
-and A' with the same name is not under B in the source, then A and A'
-are considered distinct taxa and are not matched.  This arrangement
-will result in the erroneous behavior described above.
+(OTT-in-progress) prior to all other alignments.  If taxon A is under
+barrier node B in the union, and taxon A' with the same name is not
+under B in the source, then A and A' are considered distinct taxa and
+are not matched.  (Similarly vice versa.)  This arrangement will
+result in the erroneous behavior described above.
 
-To fix this, the separation rule (in B vs. not in B) is modified a
+This affects not just incertae sedis taxa, but also situations where
+the classifications are very different, as e.g. NCBI and GBIF, or
+where taxa are just in the wrong place in the tree.
+
+To fix this, the separation rule (in B vs. not in B) is relaxed a
 bit.  The barrier nodes are arranged hierarchically into a 'skeleton
 taxonomy', and the separation rule is modified so that A and A' are
 considered distinct only if their nearest enclosing barrier nodes B
@@ -468,14 +476,20 @@ handful of these, which I had to fix manually.  They were detected
 using inclusion tests that I had set up a while back, i.e. I knew
 these were challenging homonyms before.
 
-The most difficult to deal with was Ctenophora.  There are three taxa
-named Ctenophora (formerly four, before I changed the IRMNG processing
-script for other reasons): comb jellies, a genus of diatoms, and a
-genus of craneflies.  Diatoms have nearest barrier node Eukaryota;
-comb jellies, Metazoa, which is in Eukaryota; and craneflies, Diptera,
-which is in Metazoa.  To keep these separate requires 'override'
-mappings of these taxa in their source taxonomies - but the taxa to
-which they must map don't exist yet at the point in processing.
+The most difficult false positives to deal with were for the name
+'Ctenophora'.  There are three taxa named Ctenophora (formerly four,
+before I changed the IRMNG processing script for other reasons): comb
+jellies, a genus of diatoms, and a genus of craneflies.  Diatoms have
+nearest barrier node Eukaryota; comb jellies, Metazoa, which is in
+Eukaryota; and craneflies, Diptera, which is in Metazoa.  To keep
+these homonymous taxa separate requires override mappings of these
+taxa in their source taxonomies - but the taxa to which they must map
+don't exist yet at the point in processing.
+
+(I feel like pointing out that changes to the alignment logic to make
+it more heavily reliant on taxon membership and less heavily reliant
+on names probably would have solved this problem without manual
+intervention.)
 
 I think Trichosporon was similar; I had straightened this out for 2.9
 but it broke again after this change.
@@ -497,16 +511,19 @@ better to (re-)create these homonyms, but for the most part these are
 obscure or dubious taxa and I couldn't justify spending much time on
 them.
 
-Heterolobosea - false homonym now united (I think due to barrier logic change, see below)
+'Heterolobosea' is a case of false homonyms that are now united.
 
-These patch-related warnings came up at some point and got fixed...
+These homonym-patch-related 2.9 warnings got fixed somehow (details TBD)
 
-** No unique taxon found with name Epiphloea in context Halymeniaceae
-** No unique taxon found with name Epiphloea in context Lichinales
-** No unique taxon found with name Rhynchonelloidea in context Rhynchonellidae
+    ** No unique taxon found with name Epiphloea in context Halymeniaceae
+    ** No unique taxon found with name Epiphloea in context Lichinales
+    ** No unique taxon found with name Rhynchonelloidea in context Rhynchonellidae
 
 
 ## Other changes to the taxonomy
+
+This section gives minor changes that are not responses to issues;
+things I just noticed and fixed.
 
 Asterinales and Asteriniales are synonymized (don't remember how detected).
 This is a fungal order in the Hibbett 2007 taxonomy.
@@ -517,62 +534,48 @@ homonyms; the species in these genera are also duplicated.  To
 compensate for this there is now logic to detect this situation and
 merge the genera.
 
-
-### Subgenera
-
 I scanned the list of all taxa with rank 'subgenus' and fixed a few
 names, e.g. 'Acetobacter subgen. Acetobacter' => 'Acetobacter subgenus
 Acetobacter', 'Festuca subg. Vulpia' => 'Vulpia', 'Ophion
 (Platophion)' => 'Platophion'.  There is more to be done, e.g. fixing
 some subgenus names of the form 'Plasmodium (X)'.
 
-### Rank from name-string
-
 Added a cleanup pass applied for source taxonomies to set the rank as
 appropriate if the name contains "subsp." or "var".
 
-### more 'other changes' ...
+Merged Florideophycidae with Florideophyceae (in Rhodophyceae').
+Found while debugging the homony Epiphloea.
 
-+    silva.taxon('Florideophycidae', 'Rhodophyceae').synonym('Florideophyceae')
-I forget what led to this... maybe an issue? or an inclusion test? or something else?
+Made Heterokonta (from WoRMS) be a synonym for Stramenopiles.  Noticed at some
+point as an assembly warning "No Stramenopiles".
 
-+    silva.taxon('Stramenopiles', 'SAR').synonym('Heterokonta') # needed by WoRMS
-don't remember why I did this... need to research
-
-Crenarchaeota pruned from SILVA - what was that about? possibly due to division separation rule change.
-
-There's something about fixing unicode characters in Newick
-strings... I forget
-
-Chaetognatha reftax 88, I thought this was fixed a long time ago.
-
-Pruned Viruses from WoRMS and IRMNG.  I'd actually like to get rid of it
+Pruned Viruses from WoRMS and IRMNG.  I'd actually like to get rid of them
 altogether.
 
-+    # Species fungorum puts this species in Candida
-+    worms.taxon('Trichosporon diddensiae').rename('Candida diddensiae')
-
-The problem with this one was that some interaction was making
-Blattodea (cockroaches) extinct, but I don't remember how I discovered
-this - perhaps I did a synthetic tree search for cockroaches.
--    irmng.taxon('Blattoptera', 'Insecta').prune('https://en.wikipedia.org/wiki/Blattoptera')
+Some interaction between Blattoptera (from IRMNG) and Blattodea was
+making Blattodea (cockroaches) extinct, but I don't remember how I
+discovered this - perhaps I did a synthetic tree search for
+cockroaches.  Blattoptera is extinct only, so I just pruned it.
 
 I undid some OTT 2.9 logic for removing extinct flags from NCBI taxa,
 overriding settings from IRMNG - basically, if a taxon is in NCBI, it
 is assumed to be extant, under the assumption that IRMNG is enough
-improved that it's no longer needed.  Hmm, I need to review this,
-maybe we still need it.
+improved that the extinct flags from IRMNG are no longer needed.  I
+think.  Hmm, I need to review this, maybe we still need it.
 
-Hmm, what are these about?
+Hmm, what are these id assignments about?
 
-    +            ('Cordana', 'Ascomycota', '946160'),
-    +            ('Pseudofusarium', 'Ascomycota', '655794'),
-    +            ('Marssonina', 'Dermateaceae', '372158'), # ncbi:324777
-    +            # ('Gloeosporium', 'Pezizomycotina', '75019'),  # synonym for Marssonina
-    +            ('Escherichia coli', 'Enterobacteriaceae', '474506'), # ncbi:562
-    +            # ('Dischloridium', 'Trichocomaceae', '895423'),
+    ('Cordana', 'Ascomycota', '946160'),
+    ('Pseudofusarium', 'Ascomycota', '655794'),
+    ('Marssonina', 'Dermateaceae', '372158'), # ncbi:324777
+    ('Escherichia coli', 'Enterobacteriaceae', '474506'), # ncbi:562
 
-Trichosporon / Hypochrea is a quagmire; I changed the way it is fixed and hope it's better.
+Trichosporon / Hypochrea is a quagmire; I changed the way it is fixed
+and hope it's better now.
+
+Species fungorum puts WoRMS Trichosporon diddensiae in Candida.  At
+some point in untangling Trichosporon I found that it was in WoRMS (a
+fungus in WoRMS??), and found this error.
 
 
 
@@ -580,10 +583,10 @@ Trichosporon / Hypochrea is a quagmire; I changed the way it is fixed and hope i
 ## Changes to smasher that don't affect the taxonomy
 
 These changes help preserve our investment in curation effort (OTU
-mapping) by improving the alignment between successive OTT releases.
-Taxa in a new release get their ids through alignment with the old
-release, so any alignment failure means an id unnecessarily 'splits'
-and opportunities to match OTUs between studies are lost.
+mapping) by improving the way alignment is done (across successive OTT
+releases).  Taxa in a new release get their ids through alignment with
+the old release, so any alignment failure means an id unnecessarily
+'splits' and opportunities to match OTUs between studies are lost.
 
 ### Record-keeping for taxon merges
 
@@ -631,6 +634,7 @@ The Taxon rename method now checks for a taxon of the same name among
 the taxon's siblings, and generates a warning if one's already there.
 
 
+
 ## Changes that don't have a direct effect on taxonomy
 
 Looks like I fixed a bug in one of the mrca methods; don't remember
@@ -642,28 +646,28 @@ why.
 I don't think this affected the taxonomy, or if it did, it did so no
 in very minor ways.
 
-    * This relates to Laura Katz's old request to expose microbial
-      biodiversity (opentree#27), which I think about frequently.
-      In the end this overhaul had very little effect, but the SILVA 
-      processing code is
-      cleaner now, and more flexible in case we want to start
-      adding some or all of the clusters to the taxonomy.  The basic
-      idea is that there is a choice as to whether to include all
-      SILVA cluster, none, or some, and similarly whether to include
-      all NCBI taxa that include clusters, or just some.
-    * As a consequence of revising the SILVA script, the former
-      approach of filtering out multicellular organisms early in SILVA
-      processing led to some problem that I can't remember, so I
-      changed the script so that all of SILVA is included in the
-      taxonomy that ends up in tax/silva/.  They are then pruned out
-      in taxonomies.py.  This approach gives us more flexibility,
-      e.g. we might try to make use of those other SILVA taxa somehow.
-    * Revised some of the SILVA patches to be more robust in case taxa
-      disappear.  (There is an annoyance in the "version 2" patch
-      system where you say taxon('x').rename('y') and that gets an
-      exception if there is no taxon 'x'.  This is one of the things I
-      want to fix in the next version of the patch system - the patch
-      will fail gracefully and you'll just get a warning.)
+ * The overhaul relates to Laura Katz's old request to expose microbial
+   biodiversity (opentree#27), which I think about frequently.
+   In the end this overhaul had very little effect, but the SILVA 
+   processing code is
+   cleaner now, and more flexible in case we want to start
+   adding some or all of the clusters to the taxonomy.  The basic
+   idea is that there is a choice as to whether to include all
+   SILVA cluster, none, or some, and similarly whether to include
+   all NCBI taxa that include clusters, or just some.
+ * As a consequence of revising the SILVA script, the former
+   approach of filtering out multicellular organisms early in SILVA
+   processing led to some problem that I can't remember, so I
+   changed the script so that all of SILVA is included in the
+   taxonomy that ends up in tax/silva/.  They are then pruned out
+   in taxonomies.py.  This approach gives us more flexibility,
+   e.g. we might try to make use of those other SILVA taxa somehow.
+ * Revised some of the SILVA patches to be more robust in case taxa
+   disappear.  (There is an annoyance in the "version 2" patch
+   system where you say taxon('x').rename('y') and that gets an
+   exception if there is no taxon 'x'.  This is one of the things I
+   want to fix in the next version of the patch system - the patch
+   will fail gracefully and you'll just get a warning.)
 
 
 
@@ -683,10 +687,13 @@ Part of this change is to be able to read source and type information
 from a file, store them in a Synonym, and write them out to a file.
 
 Also addressed in the process of doing this change:
-synonym types.  https://github.com/OpenTreeOfLife/reference-taxonomy/issues/113
+types of synonym.  https://github.com/OpenTreeOfLife/reference-taxonomy/issues/113
 
 
 ### Changes to code structure
+
+Many code changes for OTT 2.10 are directed at making the code more
+readable and more maintainable.
 
 As a cleanup requested during a group hangout ("please don't make
 conflict analysis be a part of smasher") I split up the classes and
@@ -696,25 +703,26 @@ do with synthesis is in the org.opentreeoflife.smasher package.
 Conflict analysis uses functionality from the taxa package but not
 smasher.
 
-As part of this process I created an "eventLogger" class for managing
-events that occur during synthesis.  Splitting this out makes the
-Taxonomy and UnionTaxonomy classes smaller.
+New classes created by extracting existing code from other classes:
 
-I moved some SKOS-related methods written by Dan Leehr to its own
-file, to get it out of the way.  It's not used.
+ * The 'merge' phase of assembly is now its own class
+   (MergeMachine).  Along with this change I reworked alignments, trying to put
+   everything that has to do with alignment (e.g. the 'skeleton') in
+   Alignment.java.
 
-As a cleanup (knowing people are going to start reading this code) I
-moved everything having to do with the "interim taxonomy file format"
-to its own class.  This change does not affect behavior, but makes the
-Taxonomy class less cluttered.
+ * An "EventLogger" class for managing
+   events that occur during synthesis.  Splitting this out makes the
+   Taxonomy and UnionTaxonomy classes smaller.
 
-Similarly, anything to do with processing the old TSV-formatted patch
-files is now in its own class.
+ * I moved everything having to do with the "interim taxonomy file
+   format" to its own class.  This change does not affect behavior, but
+   makes the Taxonomy class less cluttered.
 
-Similarly, the 'merge' phase of assembly is now its own class
-(MergeMachine).  Along with this I reworked alignments, trying to put
-everything that has to do with alignment (e.g. the 'skeleton') in
-Alignment.java.
+ * Similarly, anything to do with processing the old TSV-formatted patch
+   files is now in its own class.
+
+ * I moved some SKOS-related methods written by Dan Leehr to its own
+   file, to get it out of the way.  It's not used.
 
 Moved comments describing flags (from the design meeting with Cody) to
 Flag.java, to make them easier to find...
@@ -851,30 +859,16 @@ inconsistent right now.
 
 The most delicate and difficult part of smasher is the Matrix code in
 AlignmentByName.  I don't really want to break the taxonomy, which
-might happen if I make major changes, but I would like to start making
-small changes that might make it clearer and perhaps better.  I've
-made a few changes just to get started on this.
+might happen if I make major changes to this class, but I would like
+to start making small changes that might make it clearer and perhaps
+better.  I've made a few changes just to get started on this.
 
 Removed the 'samples' rank as it is no longer used.  I used this word
 before I understood that the tips of the SILVA tree represent clusters
 with reference sequences, not just sequences.
 
 
-
-### Maintenance, administration, documentation
-
-Improvements to the README.md ...
-
-I upgraded jython from 2.5.3 to 2.7.0 because I wanted to use some
-newer features, such as "import *".  This required changes to the
-Makefile.
-
-I created a shell script 'bin/jython' that invokes Java with both
-jython and smasher active.  It is invoked the same way as the 'python'
-shell command.  The script is made by a Makefile rule from a template.
-
-I removed jscheme, which we weren't using.  (Maintainer deceased,
-sadly.)
+### Archiving and reproducibility
 
 I collected and organized all versions of all source taxonomies used
 to assemble past OTT versions starting with OTT 1.0.  I have put them
@@ -893,15 +887,30 @@ to refresh sources from the web, and publish newly captured versions
 to files.opentreeoflife.org, which should be done whenever a there's a
 new OTT release.
 
+Moved all archive URLs for the source taxonomies at the top of the Makefile.
+
+
+
+### Maintenance, administration, documentation
+
+I upgraded jython from 2.5.3 to 2.7.0 because I wanted to use some
+newer features, such as "import *".  This required changes to the
+Makefile.
+
+I created a shell script 'bin/jython' that invokes Java with both
+jython and smasher active.  It is invoked the same way as the 'python'
+shell command.  The script is made by a Makefile rule from a template.
+
+I removed jscheme, which we weren't using.  (Maintainer deceased,
+sadly.)
+
 Smasher can compute a list of OTT ids that are OTU mapping targets in
 phylesystem, which it uses for various purposes.  Because it takes a while to
 generate this, it is checked into the repository and only updated on
 request.  It doesn't matter a whole lot if it's accurate.  I did an
 update around 20 June.
 
-I improved the contributors list in various ways, and added Peter Midford.
-
-* Moved all archive URLs for the source taxonomies at the top of the Makefile.
+Others...
 
 * Created a Makefile target 'refresh-ncbi' for refreshing the local
   copy of NCBI Taxonomy from the NCBI ftp site.
@@ -919,16 +928,27 @@ I improved the contributors list in various ways, and added Peter Midford.
 * New Makefile target 'tags' to support emacs tags-search and related
   commands.
 
-There is now a flag that controls whether to add taxa that are
-IRMNG-only to the taxonomy; this allows the possibility of an
-IRMNG-free build.  I tested this and made it work.
+ * There is now a flag that controls whether to add taxa that are
+   IRMNG-only to the taxonomy; this allows the possibility of an
+   IRMNG-free build.  I tested this and made it work.
 
-    * I moved the NCBI to SILVA mapping table to tax/silva/ so that
-      all outputs are found in the same placed.  (It was in
-      feed/silva/out.)  I still need to change the OTT script so
-      that it looks for the file in the new location.
+ * I moved the NCBI to SILVA mapping table to tax/silva/ so that
+   all outputs are found in the same placed.  (It was in
+   feed/silva/out.)  I still need to change the OTT script so
+   that it looks for the file in the new location.
+
+ * I improved the contributors list a bit, and added Peter Midford.
+
+
 
 ## Side projects
+
+### Taxon counts
+
+Count of binomial names in the taxonomies - something David Hibbett
+requested.  The script I wrote for him is in
+util/fungal-order-counts.py. It creates a table showing number of
+binomials per taxon for every fungal order.  This does not affect OTT.
 
 ### Conflict service
 
@@ -939,6 +959,9 @@ system to support it might be interesting:
 For the conflict service, I wrote a Nexson loader.  It's a bit awkward
 - e.g. it might benefit from having some wrapper classes, but
 currently just passed around JSON blobs directly.
+
+The Nexson parser has to pay attention to the forwarding pointers from
+forwards.tsv ...
 
 To better support reading and writing Newick, in addition to names
 being optional, ids are also optional.  This presents a problem when
@@ -952,12 +975,8 @@ purposes and removed on input.
 Small changes were needed in the Newick parser to accommodate
 supertree Newick files generated by the propinquity pipeline.
 
-### Taxon counts
-
-Count of binomial names in the taxonomy - something David Hibbett
-requested.  The script I wrote for him is in
-util/fungal-order-counts.py. It creates a table showing number of
-binomials per taxon for every fungal order.  This does not affect OTT.
+There's something about fixing unicode characters in Newick
+strings... I forget
 
 ### Misc
 
@@ -968,9 +987,6 @@ represented internally as Taxonomy objects).
 
 Added finer control of the name_id feature in Newick string
 generation (controlled by a flag).
-
-The Nexson parser has to pay attention to the forwarding pointers from
-forwards.tsv ...
 
 Created a simple python script util/select_from_taxonomy.py that just
 invokes Java to extract a subtree.  (need to make sure it still works)

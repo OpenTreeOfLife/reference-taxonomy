@@ -867,7 +867,7 @@ def patch_ott(ott):
     # https://dx.doi.org/10.1007/s13127-011-0044-4
     # Not in deuterostomes
     ott.taxon('Bilateria').take(ott.taxon('Xenacoelomorpha'))
-    if ott.maybeTaxon('Staurozoa') == None:
+    if ott.maybeTaxon('Staurozoa') != None:
         #  8) Stauromedusae should be a class (Staurozoa; Marques and Collins 2004) and should be removed from Scyphozoa
         ott.taxon('Cnidaria').take(ott.taxon('Stauromedusae'))
     ott.taxon('Copepoda').take(ott.taxon('Prionodiaptomus'))

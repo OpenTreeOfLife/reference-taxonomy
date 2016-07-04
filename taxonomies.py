@@ -55,7 +55,8 @@ silva_bad_names = [
     ('JN975069', 'Caenorhabditis elegans'),
 
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/100
-    ('AEKE02005637', 'Solanum lycopersicum'),    # and 23 others...
+    ('AEKE02005637', 'Solanum lycopersicum'),
+    ('BABP01087923', 'Solanum lycopersicum'),    # and 22 others...
 
     # These were formerly in process_silva.py
     ('ABEG02010941', 'Caenorhabditis brenneri'),
@@ -645,6 +646,7 @@ def load_worms():
     # Help to match up with IRMNG
     worms.taxon('Ochrophyta').synonym('Heterokontophyta')
 
+    # https://github.com/OpenTreeOfLife/feedback/issues/194 I think
     worms.taxon('Actinopterygii').notCalled('Osteichthyes')
 
     worms.smush()  # Gracilimesus gorbunovi, pg_1783
@@ -908,7 +910,9 @@ def load_irmng():
     if irmng.maybeTaxon('Notochelys', 'Cheloniidae') != None:
         irmng.taxon('Notochelys', 'Cheloniidae').prune(this_source)
 
-    # Recover missing extinct flags
+    # Recover missing extinct flags.  I think these are problems in
+    # the dump that I have, but have been fixed in the current IRMNG
+    # (July 2016).
     for (name, super) in [
             ('Tvaerenellidae', 'Ostracoda'),
             ('Chrysocythere', 'Ostracoda'),

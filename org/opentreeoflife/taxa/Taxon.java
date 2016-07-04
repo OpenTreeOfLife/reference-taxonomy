@@ -1046,6 +1046,23 @@ public class Taxon extends Node {
         return (((this.properFlags | this.inferredFlags) & Taxonomy.EXTINCT) == 0);
     }
 
+    public boolean setRank(String rankstring) {
+        if (rankstring == null) {
+            this.rank = Rank.NO_RANK;
+            return true;
+        }
+        Rank r = Rank.getRank(rankstring);
+        if (r != null) {
+            this.rank = r;
+            return true;
+        } else
+            return false;
+    }
+
+    public String getRank() {
+        return this.rank.name;
+    }
+
     public boolean whetherMonophyletic(boolean whether, boolean setp) {
         if (whether) {
             System.out.format("** Checking and setting monophyly are not yet implemented\n", this);

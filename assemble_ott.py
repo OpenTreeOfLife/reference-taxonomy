@@ -1124,6 +1124,9 @@ def patch_ott(ott):
     # between, but it's not really necessary, so I won't bother
     ott.taxon('Hyaloraphidiales', 'Fungi').take(ott.taxon('Hyaloraphidium', 'Fungi'))
 
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/195
+    ott.taxon('Opisthokonta').setRank('no rank')
+
 # The processed GBIF taxonomy contains a file listing GBIF taxon ids for all 
 # taxa that are listed as coming from PaleoDB.  This is processed after all
 # taxonomies are processed but before patches are applied.  We use it to set

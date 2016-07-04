@@ -1,7 +1,6 @@
 # coding=utf-8
 
 from org.opentreeoflife.taxa import Taxonomy
-from org.opentreeoflife.taxa import Rank
 from claim import *
 #from claim import Has_child, Whether_same, With_ancestor, With_descendant, \
 #                  Whether_extant, make_claim, make_claims
@@ -337,7 +336,7 @@ def patch_fung(fung):
     if cetes != None:
         cetes.extinct()
         cetes.prune("if:21291")
-        #cetes.rank = None
+        #cetes.setRank(None)
         #tina = fung.taxon('Saccharomycetaceae', 'Fungi')
         #if tina != None:
         #    tina.take(fung.taxon('Saccharomycetes', 'Fungi'))
@@ -364,7 +363,7 @@ def patch_fung(fung):
     # 2015-10-06 JAR noticed while debugging deprecated taxa list:
     # This should cover Basidiomycota, Zygomycota, Glomeromycota, and Ascomycota
     for taxon in fung.taxa():
-        if taxon.rank == 'phylum' and taxon.isRoot():
+        if taxon.getRank() == 'phylum' and taxon.isRoot():
             fung.taxon('Fungi').take(taxon)
 
     # 2015-10-06 https://en.wikipedia.org/wiki/Taphrinomycotina
@@ -619,8 +618,8 @@ def patch_ncbi(ncbi):
     # TBD: deal with 'Plasmodium (Haemamoeba)' and siblings
 
     # 2016-07-01 JAR while studying rank inversions
-    if ncbi.taxon('Vezdaeaceae').rank.name == 'genus':
-        ncbi.taxon('Vezdaeaceae').rank = Rank.getRank('family')
+    if ncbi.taxon('Vezdaeaceae').getRank() == 'genus':
+        ncbi.taxon('Vezdaeaceae').setRank('family')
 
 def load_worms():
     worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')

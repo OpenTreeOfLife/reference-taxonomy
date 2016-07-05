@@ -57,6 +57,7 @@ import csv
 import re
 import resource
 import fileinput
+import codecs
 
 def warn(*objs):
     print(*objs, file=sys.stderr)
@@ -83,7 +84,8 @@ silva_sub = r'ncbi_silva:\1'  #can chop off the silva ID since it is not used in
 OTTids['ncbi_silva'] = {}
 
 try:
-    OTT = open(sys.argv[1])
+    OTT = codecs.open(sys.argv[1], "r", "utf-8")
+    # was: OTT = open(sys.argv[1])   but OTT 2.10 has unicode in it
     WDF = fileinput.input(sys.argv[2],openhook=fileinput.hook_compressed)
 except IndexError:
     sys.exit('Provide the name of an OTT taxonomy.tsv file as the first argument and the name of a wikidata dump file (could be gzipped) as the second argument')

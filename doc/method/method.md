@@ -1,41 +1,10 @@
 
-# How the taxonomy is built
-
-Taxonomy and nomenclature data are critical for almost any biodiversity project that aims to synthesize data based on taxonomic names.
-
-Open Tree of Life is a system for synthesis of phylogenetic supertrees from
-inputs drawn from a corpus of published phylogenetic trees. The process also
-requires an overall taxonomy of life for (at least) two purposes:
-
- 1. Aligning tips between phylogenetic inputs: the taxonomy provides
-    a source of synonyms, enabling equations between tips with
-    different labels; and a source of homonyms, ensuring that tips
-    with the same name but different meanings are not mistakenly equated.
- 1. Available phylogenetic trees cover only a small portion of known
-    species.  The taxonomy can help fill in the gaps when a
-    comprehensive tree is sought.
-
-We discovered early on that no single available taxonomic source
-would satisfy the project's taxonomic needs.  NCBI taxonomy has good coverage of
-taxa occurring in phylogenetic studies, and is curated for phylogenetic
-fidelity, but the coverage is limited to the approximately 400,000 taxa that
-have sequence data in GenBank. Conventional taxonomies like GBIF have better
-overall coverage, but miss many tips from our input trees, and are not
-phylogenetically sound. Some groups have adequate coverage only in their own
-specialist taxonomies (e.g. Index Fungorum for fungi, WoRMS for decapods).
-
-We therefore constructed a taxonomy from multiple taxonomic sources for use
-within Open Tree of Life - or rather we created a system for constructing such
-combined taxonomies.  The taxonomy is called the Open Tree Taxonomy (OTT) and
-the software that creates it is called 'smasher'. The method allows for
-reproducible synthesis of input taxonomies; for easy update when input
-taxonomies change; and for user-contributed patches to fix specific issues or
-add missing information.
+# Taxonomy assembly
 
 The assembly process works, in outline, as follows:
 
- 1. We start with an ordered list of source taxonomies S1, S2, ...
- 1. The 'union' taxonomy U is initialized to be empty
+ 1. Start with an ordered list of source taxonomies S1, S2, ...
+ 1. Initialize the 'union' taxonomy U to be empty
  1. For each source S:
      1. The nodes of S are aligned with, or separated from, nodes of U
         where possible (in a manner explained below)
@@ -44,15 +13,15 @@ The assembly process works, in outline, as follows:
      1. Where S provides a more resolved classification than U, unaligned
         internal nodes of S are 'inserted' into U
  1. Ad hoc postprocessing steps
- 1. Identifiers are assigned to the nodes of U
+ 1. Assign identifiers to the nodes of U
 
 The hierarchical relationships are therefore determined by priority:
 ancestor/descendant relationships in an earlier source S may be
 subdivided by a later source S', but are never overridden.
 
 For each new version of OTT, construction begins de novo, so that we
-always get the freshest taxonomic information from the source
-taxonomies, which are revised constantly.
+always get the latest version of the source
+taxonomies.
 
 Details of each step follow.
 

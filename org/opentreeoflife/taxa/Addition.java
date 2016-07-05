@@ -363,12 +363,10 @@ public class Addition {
                     }
                     if (target != null) {
                         target.taxonomy.addId(target, ott_id);
+                    } else if (!originalp) {
+                        System.out.format("* Skipping name %s id %s from a previous smasher run\n",
+                                          name, ott_id);
                     } else {
-                        if (!originalp) {
-                            System.out.format("* Skipping name %s id %s from a previous smasher run\n",
-                                              name, ott_id);
-                            continue;
-                        }
                         target = new Taxon(tax, name);
                         target.setId(ott_id);
                         parent.addChild(target);
@@ -378,7 +376,7 @@ public class Addition {
                             if (rank != null)
                                 target.rank = rank; // should complain if not valid
                         }
-                        if (additionSource != null)
+                        if (originalp && additionSource != null)
                             target.addSourceId(new QualifiedId(additionSource, ott_id));
                         else {
                             for (Object sourceStuff : sources) {

@@ -935,6 +935,14 @@ def load_irmng():
             tax = irmng.maybeTaxon(name, super)
         if tax != None: tax.extinct()
 
+    # JAR 2016-07-04 Duplicates of leps in Diptera, noticed when reviewing 
+    # homonym report
+    for (id, name) in [('10888189', 'Aricia brunnescens'),
+                       ('10095324', 'Aricia deleta'),
+                       ('10094174', 'Aricia striata')]:
+        tax = irmng.maybeTaxon(id)
+        if tax != None: tax.prune(this_source)
+
     return irmng
 
 # Common code for the 'old fashioned' taxonomies IF, GBIF, IRMNG,

@@ -1,4 +1,4 @@
-b# Changes to OTT (taxonomy and smasher) going from OTT 2.9 (13 October 2015) through 1 July 2016
+# Changes to OTT (taxonomy and smasher) going from OTT 2.9 (13 October 2015) through 1 July 2016
 
 * Changes to address open issues
 * Changes to address errors and warnings during assembly
@@ -432,6 +432,12 @@ gone away.
 As part of this change I removed the IRMNG pseudo-taxon 'Unaccepted' -
 I figured nothing good could come out of such a grouping.
 
+See https://github.com/OpenTreeOfLife/feedback/issues/187 for an issue
+that was fixed by this change.
+
+See e.g. https://github.com/OpenTreeOfLife/feedback/issues/288 (which
+isn't fixed yet because I don't transfer this information over to
+GBIF!)
 
 
 ## Change to alignment rules

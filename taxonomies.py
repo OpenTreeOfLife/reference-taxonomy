@@ -808,9 +808,14 @@ def patch_gbif(gbif):
     gbif.taxon('Shomronella', 'Anura').extinct()
 
     # https://github.com/OpenTreeOfLife/feedback/issues/165
-    gbif.taxon('Theretairus', 'Sphenodontidae').extinct()
-    gbif.taxon('Diphydontosaurus', 'Sphenodontidae').extinct()
-    gbif.taxon('Leptosaurus', 'Sphenodontidae').extinct()
+    sphe = False
+    for child in gbif.taxon('Sphenodontidae').children:
+        if child.name != 'Sphenodon':
+            child.extinct()
+        else:
+            sphe = True
+    if not sphe:
+        print '** No extant member of Sphenodontidae'
 
     # https://github.com/OpenTreeOfLife/feedback/issues/159
     gbif.taxon('Nesophontidae', 'Insectivora').extinct()
@@ -832,6 +837,10 @@ def patch_gbif(gbif):
             gbif.taxon(badid).elide()
 
     return gbif
+
+    # JAR 2016-07-04 observed while scanning rank inversion messages.
+    # Corrected rank from https://en.wikipedia.org/wiki/Protochonetes
+    gbif.taxon('Chonetoidea').setRank("superfamily")
 
 def load_irmng():
     irmng = Taxonomy.getTaxonomy('tax/irmng/', 'irmng')

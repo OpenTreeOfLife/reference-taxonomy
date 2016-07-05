@@ -1015,9 +1015,12 @@ public class Taxon extends Node {
 			for (Taxon child : new ArrayList<Taxon>(other.children))
 				// beware concurrent modification
 				child.changeParent(this);
-        // something about extinct flags here - extinct absorbing non-extinct
-		this.taxonomy.addSynonym(other.name, this, "subsumed_by");	// Not sure this is a good idea
+        // something about extinct flags here - extinct absorbing non-extinct means ... ?
+        // Not sure about the order of the following two, but if the
+        // synonym comes before the prune, then it might be suppressed
+        // by the presence in the name index of the deprecated taxon
 		other.prune("absorb");
+		this.taxonomy.addSynonym(other.name, this, "subsumed_by");	// Not sure this is a good idea
         return true;
 	}
 

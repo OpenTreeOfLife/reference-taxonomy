@@ -18,6 +18,7 @@ import csv
 
 this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/make-ott.py'
 inclusions_path = 'inclusions.csv'
+additions_path = 'amendments-0'
 
 do_notSames = False
 
@@ -182,6 +183,8 @@ def create_ott():
     # Assign OTT ids to taxa that don't have them, re-using old ids when possible
     ids = Taxonomy.getTaxonomy('tax/prev_ott/', 'ott')
 
+    # Edit the id source taxonomy to optimize id coverage
+
     # Kludge to undo lossage in OTT 2.9
     for taxon in ids.taxa():
         if (len(taxon.sourceIds) >= 2 and
@@ -190,23 +193,20 @@ def create_ott():
             taxon.sourceIds.remove(taxon.sourceIds[0])
 
     # OTT 2.9 has both Glaucophyta and Glaucophyceae... 
-    # Need to review this
+    # this creates an ambiguity when aligning.
+    # Need to review this; maybe they *should* be separate taxa.
     g1 = ids.maybeTaxon('Glaucophyta')
     g2 = ids.maybeTaxon('Glaucophyceae')
     if g1 != None and g2 != None and g1 != g2:
         g1.absorb(g2)
 
-
     # Assign old ids to nodes in the new version
-    additions_path = 'amendments-0'
-    ott.carryOverIds(ids, additions_path)
+    ott.carryOverIds(ids) # Align & copy ids
 
-    # Incorporate curators' addition requests
-    for file in Addition.listAdditionDocuments(additions_path):
-        print '| Processing', file.toString()
-        Addition.processAdditionDocument(file, ott)
+    # Apply the additions (which already have ids assigned)
+    Addition.processAdditions(additions_path, ott)
 
-    # Get ids for new nodes
+    # Mint ids for new nodes
     ott.assignNewIds(additions_path)
 
     ott.check()
@@ -513,7 +513,9 @@ def ncbi_to_silva(ncbi, silva, ott):
                     else:
                         print '** no OTT taxon for cluster', silva_cluster_id
                 else:
-                    print '| no such cluster', silva_cluster_id
+                    # Too many of these now, and not sure what to do about them.
+                    # print '| no cluster %s for %s' % (silva_cluster_id, n)
+                    True
     for n in flush:
         if n in mappings:
             del mappings[n]
@@ -732,7 +734,7 @@ def align_irmng(irmng, ott):
            ott.taxonThatContains('Trichoderma', 'Trichoderma koningii'))
 
     # https://github.com/OpenTreeOfLife/feedback/issues/241
-    # In IRMNG these are siblings (children of Actinopterygii), but in NCBI
+    # In IRMNG L. and S. are siblings (children of Actinopterygii), but in NCBI
     # Lepisosteiformes is a synonym of Semionotiformes (in Holostei, etc.).
     irmng.taxon('Semionotiformes').absorb(irmng.taxon('Lepisosteiformes'))
     irmng.taxon('Semionotiformes').extant()
@@ -832,6 +834,11 @@ def patch_ott(ott):
     # as Chromista or Protozoa
     print '-- Chromista/Protozoa spreadsheet from Katz lab --'
     fixChromista(ott)
+    # 2016-06-30 deleted from spreadsheet because ambiguous:
+    #   Enigma,Protozoa,Polychaeta ,,,,, - 
+    #   Acantharia,Protozoa,Radiozoa,,,,,
+    #   Lituolina,Chromista,Lituolida ,WORMS,,,,
+
 
     print '-- more patches --'
 
@@ -860,7 +867,7 @@ def patch_ott(ott):
     # https://dx.doi.org/10.1007/s13127-011-0044-4
     # Not in deuterostomes
     ott.taxon('Bilateria').take(ott.taxon('Xenacoelomorpha'))
-    if ott.maybeTaxon('Staurozoa') == None:
+    if ott.maybeTaxon('Staurozoa') != None:
         #  8) Stauromedusae should be a class (Staurozoa; Marques and Collins 2004) and should be removed from Scyphozoa
         ott.taxon('Cnidaria').take(ott.taxon('Stauromedusae'))
     ott.taxon('Copepoda').take(ott.taxon('Prionodiaptomus'))
@@ -1112,6 +1119,14 @@ def patch_ott(ott):
     # "Old" patch system
     TsvEdits.edit(ott, 'feed/ott/edits/')
 
+    # JAR 2016-06-30 Fixing a warning from 'report_on_h2007'
+    # There really ought to be a family (Hyaloraphidiaceae, homonym) in 
+    # between, but it's not really necessary, so I won't bother
+    ott.taxon('Hyaloraphidiales', 'Fungi').take(ott.taxon('Hyaloraphidium', 'Fungi'))
+
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/195
+    ott.taxon('Opisthokonta').setRank('no rank')
+
 # The processed GBIF taxonomy contains a file listing GBIF taxon ids for all 
 # taxa that are listed as coming from PaleoDB.  This is processed after all
 # taxonomies are processed but before patches are applied.  We use it to set
@@ -1189,6 +1204,15 @@ def report(ott):
     # Requires ../germinator
     print '-- Inclusion tests'
     check_inclusions.check(inclusions_path, ott)
+    # tests deleted because taxon no longer present:
+    #  Progenitohyus,Cetartiodactyla,3615889,"https://github.com/OpenTreeOfLife/feedback/issues/58"
+    #  Protaspis,Opisthokonta,5345086,"not found"
+    #  Coscinodiscus,Porifera,5344432,""
+    #  Retaria,Opisthokonta,5297815,""
+    #  Campanella,Holozoa,5343447,""
+    #  Hessea,Holozoa,5295839,""
+    #  Neoptera,Tachinidae,5340261,"test of genus"
+
 
 names_of_interest = ['Ciliophora',
                      'Phaeosphaeria',

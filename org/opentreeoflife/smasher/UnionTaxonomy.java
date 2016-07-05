@@ -128,7 +128,7 @@ public class UnionTaxonomy extends Taxonomy {
 	Alignment align(SourceTaxonomy source, Alignment n) {
         n.align();
         UnionTaxonomy union = this;
-        n.cacheInSourceNodes();
+        n.cacheLubs();
         if (false) {
             // For testing purposes, do both kinds of alignment and compare them
             // Code disabled for now - membership based alignment is still experimental
@@ -167,29 +167,81 @@ public class UnionTaxonomy extends Taxonomy {
 
 	public void assignIds(SourceTaxonomy idsource, String amendmentsPath) {
         // Phase 1: assign ids from idsource
-        carryOverIds(idsource, amendmentsPath);
+        carryOverIds(idsource);
 
-		// Phase 2: give new ids to union nodes that didn't get them above.
+        // Phase 2: apply additions (which contain ids)
+        try {
+            Addition.processAdditions(amendmentsPath, this);
+        } catch (Exception e) {
+            // doesn't seem worth the effort to process this in good taste. just march on.
+            System.err.format("** Exceptions are annoying (processAdditions): %s\n", e);
+        }
+		// Phase 3: give new ids to union nodes that didn't get them above.
 		this.assignNewIds(amendmentsPath);
 		// remember, this = union, idsource = previous version of ott
     }
 
-	public void carryOverIds(SourceTaxonomy idsource, String amendmentsPath) {
+	public void carryOverIds(SourceTaxonomy idsource) {
 		this.idsource = idsource;
 
         this.prepareMetadata();
 
+        // Align the taxonomies; generates report
 		Alignment a = this.align(idsource);
 
-        // Reset event counters
+        // Reset event counters (because report was generated)
 		this.eventlogger.resetEvents();
 
-		// Phase 1: recycle previously assigned ids.
+        // Last ditch effort - attempt to match by qid
+        alignByQid(idsource, a);
+
+		// Copy ids using alignment
 		this.transferIds(idsource, a);
 
         // Report event counts
 		this.eventlogger.eventsReport("| ");		// Taxon id clash
 	}
+
+    public void alignByQid(SourceTaxonomy idsource, Alignment a) {
+        Map<QualifiedId, Taxon> qidIndex = new HashMap<QualifiedId, Taxon>();
+        Set<QualifiedId> ambiguous = new HashSet<QualifiedId>();
+        for (Taxon taxon : this.taxa())
+            if (taxon.sourceIds != null)
+                for (QualifiedId qid : taxon.sourceIds) {
+                    if (qidIndex.get(qid) != null)
+                        ambiguous.add(qid);
+                    else
+                        qidIndex.put(qid, taxon);
+                }
+        int already = 0;
+        int sameName = 0;
+        int differentName = 0;
+        int blocked = 0;
+        for (Taxon taxon : idsource.taxa()) {
+            if (taxon.sourceIds != null)
+                for (QualifiedId qid : taxon.sourceIds) {
+                    Taxon utaxon = qidIndex.get(qid);
+                    if (utaxon != null) {
+                        if (ambiguous.contains(qid))
+                            // could use event logger here instead.
+                            ++blocked;
+                        else if (taxon.mapped == null) {
+                            if (taxon.name != null && taxon.name.equals(utaxon.name)) {
+                                a.alignWith(taxon, utaxon, "qid-match-same-name");
+                                ++sameName;
+                            } else {
+                                a.alignWith(taxon, utaxon, "qid-match-different-name");
+                                ++differentName;
+                            }
+                        } else
+                            ++already;
+                        break;
+                    }
+                }
+        }
+        System.out.format("| %s new qid+name matches, %s qid-only, %s prior, %s ambiguous\n",
+                          sameName, differentName, already, blocked);
+    }
 
 	public void assignNewIds(String amendmentsPath) {
         List<Taxon> nodes = new ArrayList<Taxon>();

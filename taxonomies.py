@@ -11,8 +11,11 @@ def load_silva():
     silva = Taxonomy.getTaxonomy('tax/silva/', 'silva')
 
     # Used in studies pg_2448,pg_2783,pg_2753, seen deprecated on 2015-07-20
-    silva.taxon('AF364847').rename('Pantoea ananatis LMG 20103')    # ncbi:706191
-    silva.taxon('EF690403').rename('Pantoea ananatis B1-9')  # ncbi:1048262
+    # These are probably now obviated by improvements in the way silva is merged
+    if silva.maybeTaxon('AF364847') != None:
+        silva.taxon('AF364847').rename('Pantoea ananatis LMG 20103')    # ncbi:706191
+    if silva.maybeTaxon('EF690403') != None:
+        silva.taxon('EF690403').rename('Pantoea ananatis B1-9')  # ncbi:1048262
 
     patch_silva(silva)
 
@@ -25,6 +28,14 @@ def load_silva():
     silva.taxon('Florideophycidae', 'Rhodophyceae').synonym('Florideophyceae')
     silva.taxon('Stramenopiles', 'SAR').synonym('Heterokonta') # needed by WoRMS
 
+    for name in ['Metazoa',
+                 'Fungi',
+                 'Chloroplast',
+                 'mitochondria',
+                 'Herdmania',
+                 'Oryza',
+                 'Chloroplastida']:
+        silva.taxon(name).trim()
     return silva
 
 # Sample contamination ?
@@ -43,7 +54,8 @@ silva_bad_names = [
     ('JN975069', 'Caenorhabditis elegans'),
 
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/100
-    ('AEKE02005637', 'Solanum lycopersicum'),    # and 23 others...
+    ('AEKE02005637', 'Solanum lycopersicum'),
+    ('BABP01087923', 'Solanum lycopersicum'),    # and 22 others...
 
     # These were formerly in process_silva.py
     ('ABEG02010941', 'Caenorhabditis brenneri'),
@@ -324,7 +336,7 @@ def patch_fung(fung):
     if cetes != None:
         cetes.extinct()
         cetes.prune("if:21291")
-        #cetes.rank = None
+        #cetes.setRank(None)
         #tina = fung.taxon('Saccharomycetaceae', 'Fungi')
         #if tina != None:
         #    tina.take(fung.taxon('Saccharomycetes', 'Fungi'))
@@ -351,7 +363,7 @@ def patch_fung(fung):
     # 2015-10-06 JAR noticed while debugging deprecated taxa list:
     # This should cover Basidiomycota, Zygomycota, Glomeromycota, and Ascomycota
     for taxon in fung.taxa():
-        if taxon.rank == 'phylum' and taxon.isRoot():
+        if taxon.getRank() == 'phylum' and taxon.isRoot():
             fung.taxon('Fungi').take(taxon)
 
     # 2015-10-06 https://en.wikipedia.org/wiki/Taphrinomycotina
@@ -596,6 +608,19 @@ def patch_ncbi(ncbi):
     # 2015-09-11 https://github.com/OpenTreeOfLife/feedback/issues/...
     ncbi.taxon('Galeocerdo cf. cuvier GJPN-2012').prune(this_source)
 
+    # 2016-06-30 JAR found these while reviewing list of subgenus names
+    if ncbi.maybeTaxon('Festuca subg. Vulpia') != None:
+        ncbi.taxon('Festuca subg. Vulpia').rename('Vulpia')
+    if ncbi.maybeTaxon('Acetobacter subgen. Acetobacter') != None:
+        ncbi.taxon('Acetobacter subgen. Acetobacter').rename('Acetobacter subgenus Acetobacter')
+    if ncbi.maybeTaxon('Ophion (Platophion)') != None:    # gone at NCBI?
+        ncbi.taxon('Ophion (Platophion)').rename('Platophion')
+    # TBD: deal with 'Plasmodium (Haemamoeba)' and siblings
+
+    # 2016-07-01 JAR while studying rank inversions
+    if ncbi.taxon('Vezdaeaceae').getRank() == 'genus':
+        ncbi.taxon('Vezdaeaceae').setRank('family')
+
 def load_worms():
     worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
     worms.smush()
@@ -620,6 +645,7 @@ def load_worms():
     # Help to match up with IRMNG
     worms.taxon('Ochrophyta').synonym('Heterokontophyta')
 
+    # https://github.com/OpenTreeOfLife/feedback/issues/194 I think
     worms.taxon('Actinopterygii').notCalled('Osteichthyes')
 
     worms.smush()  # Gracilimesus gorbunovi, pg_1783
@@ -665,9 +691,10 @@ def patch_gbif(gbif):
     # 2014-04-13 JAR noticed while grepping
     claims = [
         Whether_same('Chryso-hypnum', 'Chryso-Hypnum', True),
-        Whether_same('Drepano-Hypnum', 'Drepano-hypnum', True),
-        Whether_same('Complanato-Hypnum', 'Complanato-hypnum', True),
-        Whether_same('Leptorrhyncho-Hypnum', 'Leptorrhyncho-hypnum', True),
+        # these three went away after change to gbif processing after 2.9
+        # Whether_same('Drepano-Hypnum', 'Drepano-hypnum', True),
+        # Whether_same('Complanato-Hypnum', 'Complanato-hypnum', True),
+        # Whether_same('Leptorrhyncho-Hypnum', 'Leptorrhyncho-hypnum', True),
         
         # Doug Soltis 2015-02-17 https://github.com/OpenTreeOfLife/feedback/issues/59 
         # http://dx.doi.org/10.1016/0034-6667(95)00105-0
@@ -781,9 +808,14 @@ def patch_gbif(gbif):
     gbif.taxon('Shomronella', 'Anura').extinct()
 
     # https://github.com/OpenTreeOfLife/feedback/issues/165
-    gbif.taxon('Theretairus', 'Sphenodontidae').extinct()
-    gbif.taxon('Diphydontosaurus', 'Sphenodontidae').extinct()
-    gbif.taxon('Leptosaurus', 'Sphenodontidae').extinct()
+    sphe = False
+    for child in gbif.taxon('Sphenodontidae').children:
+        if child.name != 'Sphenodon':
+            child.extinct()
+        else:
+            sphe = True
+    if not sphe:
+        print '** No extant member of Sphenodontidae'
 
     # https://github.com/OpenTreeOfLife/feedback/issues/159
     gbif.taxon('Nesophontidae', 'Insectivora').extinct()
@@ -797,7 +829,18 @@ def patch_gbif(gbif):
     # https://github.com/OpenTreeOfLife/feedback/issues/133
     gbif.taxon('Cordicephalus', 'Amphibia').extinct()
 
+    # JAR 2016-07-01 while studying rank inversions.
+    # Ophidiasteridae the genus was an error and has been deleted from GBIF.
+    # Similarly Paracalanidae, Cornirostridae, Scaliolidae, Asterinidae
+    for badid in ['6103275', '6128386', '7348034', '6141880', '6135675']:
+        if gbif.maybeTaxon(badid) != None:
+            gbif.taxon(badid).elide()
+
     return gbif
+
+    # JAR 2016-07-04 observed while scanning rank inversion messages.
+    # Corrected rank from https://en.wikipedia.org/wiki/Protochonetes
+    gbif.taxon('Chonetoidea').setRank("superfamily")
 
 def load_irmng():
     irmng = Taxonomy.getTaxonomy('tax/irmng/', 'irmng')
@@ -844,7 +887,8 @@ def load_irmng():
         oph.prune("about:blank#this-homonym-is-causing-too-much-trouble")
 
     # NCBI synonymizes Pelecypoda = Bivalvia
-    irmng.taxon('Bivalvia').absorb(irmng.taxon('Pelecypoda')) # bogus order
+    if irmng.maybeTaxon('Pelecypoda') != None:
+        irmng.taxon('Bivalvia').absorb(irmng.taxon('Pelecypoda')) # bogus order
 
     # This one was mapping to Blattodea, and making it extinct.
     # Caused me a couple of hours of grief.
@@ -874,7 +918,9 @@ def load_irmng():
     if irmng.maybeTaxon('Notochelys', 'Cheloniidae') != None:
         irmng.taxon('Notochelys', 'Cheloniidae').prune(this_source)
 
-    # Recover missing extinct flags
+    # Recover missing extinct flags.  I think these are problems in
+    # the dump that I have, but have been fixed in the current IRMNG
+    # (July 2016).
     for (name, super) in [
             ('Tvaerenellidae', 'Ostracoda'),
             ('Chrysocythere', 'Ostracoda'),

@@ -41,16 +41,16 @@ public abstract class Alignment {
 
     public abstract void align();
 
+    // not used?
     abstract Answer answer(Taxon node);
 
+    // not used?
     Taxon map(Taxon node) {
         Answer a = this.answer(node);
         if (a == null) return null;
         else if (a.isYes()) return a.target;
         else return null;
     }
-
-    abstract void cacheInSourceNodes();
 
     // ----- Aligning individual nodes -----
 
@@ -279,15 +279,6 @@ public abstract class Alignment {
 	// What was the fate of each of the nodes in this source taxonomy?
 
 	static void alignmentReport(SourceTaxonomy source, UnionTaxonomy union) {
-
-        List<Node> nodes = source.lookup("Aiptasia pallida");
-        if (nodes != null)
-            for (Node node : nodes) {
-                Taxon taxon = node.taxon();
-                System.out.format("%s division = %s\n", taxon, taxon.getDivision().name);
-                taxon.show();
-            }
-
 		if (UnionTaxonomy.windyp) {
 
 			int total = 0;
@@ -314,44 +305,100 @@ public abstract class Alignment {
 		}
 	}
 
-    // Called on source taxonomy to transfer flags, rank, etc. to union taxonomy
-    public void transferProperties(Taxonomy source) {
-        for (Taxon node : source.taxa()) {
-            Taxon unode = node.mapped;
-            if (unode != null)
-                transferProperties(node, unode);
+    // Compute LUBs (MRCAs) and cache them in Taxon objects
+
+    void cacheLubs() {
+
+        // The answers are already stored in .answer of each node
+        // Now do the .lubs
+        winners = fresh = grafts = outlaws = 0;
+        for (Taxon root : source.roots())
+            cacheLubs(root);
+        if (winners + fresh + grafts + outlaws > 0)
+            System.out.format("| LUB match: %s graft: %s differ: %s bad: %s\n",
+                              winners, fresh, grafts, outlaws);
+    }
+
+    private int winners, fresh, grafts, outlaws;
+
+    // An important case is where a union node is incertae sedis and the source node isn't.
+
+    // Input is in source taxonomy, return value is in union taxonomy
+
+    Taxon cacheLubs(Taxon node) {
+        if (node.children == null)
+            return node.lub = node.mapped();
+        else {
+            Taxon mrca = null;  // in union
+            for (Taxon child : node.children) {
+                if (!(child.taxonomy instanceof SourceTaxonomy))
+                    System.out.format("** Child in wrong taxonomy: %s\n", child);
+                Taxon a = cacheLubs(child); // in union
+                if (a != null && !(a.taxonomy instanceof UnionTaxonomy))
+                    System.out.format("** Lub in wrong taxonomy: %s\n", a);
+                if (child.isPlaced()) {
+                    if (a != null) {
+                        if (a.noMrca()) continue;
+                        a = a.parent; // in union
+                        if (!(a.taxonomy instanceof UnionTaxonomy))
+                            System.out.format("** Lub in wrong taxonomy: %s\n", a);
+                        if (a.noMrca()) continue;
+                        if (mrca == null)
+                            mrca = a; // in union
+                        else {
+                            Taxon m = mrca.mrca(a);
+                            if (!(m.taxonomy instanceof UnionTaxonomy))
+                                System.out.format("** Mrca in wrong taxonomy: %s\n", m);
+
+                            if (m.noMrca()) continue;
+                            if (false) {
+                                Taxon div1 = mrca.getDivision();
+                                Taxon div2 = a.getDivision();
+                                if (div1 != div2 && div1.divergence(div2) != null)
+                                    // 2015-07-23 this happens about 300 times
+                                    System.out.format("! Children of %s are in disjoint divisions (%s in %s + %s in %s)\n",
+                                                      node, mrca, div1, a, div2);
+                            }
+                            mrca = m;
+                        }
+                    }
+                }
+            }
+
+            node.lub = mrca;
+
+            if (node.mapped == null)
+                ++fresh;
+            else if (mrca == null)
+                ++grafts;
+            else if (node.mapped == mrca)
+                // Ideal case - mrca of children is the node itself
+                ++winners;
+            else {
+                // Divergence across taxonomies.  MRCA of children can be
+                // ancestor, descendant, or disjoint from target.
+                Taxon[] div = mrca.divergence(node.mapped);
+                if (div == null)
+                    // If div == null, then either mrca descends from node.mapped or the other way around.
+                    ++winners;
+                else if (div[0] == mrca || div[1] == node.mapped || div[1].parent == node.mapped)
+                    // Hmm... allow siblings (and cousins) to merge.  Blumeria graminis
+                    ++winners;
+                else {
+                    if (outlaws < 10 || node.name.equals("Elaphocordyceps subsessilis") || node.name.equals("Bacillus selenitireducens"))
+                        System.out.format("! %s maps by name to %s which is disjoint from children-mrca %s; they meet at %s\n",
+                                          node, node.mapped, mrca, div[0].parent);
+                    ++outlaws;
+                    // OVERRIDE.
+                    node.answer = Answer.no(node, node.mapped, "not-same/disjoint", null);
+                    node.answer.maybeLog();
+                    node.mapped = null;
+                }
+            }
+            return node.mapped;
         }
     }
 
-    // This is used when the union node is NOT new
-
-    public void transferProperties(Taxon node, Taxon unode) {
-        if (node.name != null) {
-            if (unode.name == null)
-                unode.setName(node.name);
-            else if (unode.name != node.name)
-                // ???
-                unode.taxonomy.addSynonym(node.name, unode, "synonym");
-        }
-
-		if (unode.rank == Rank.CLUSTER_RANK || unode.rank == Rank.SAMPLES_RANK)
-            unode.rank = node.rank;
-
-		unode.addFlag(node.flagsToAdd(unode));
-
-        // No change to hidden or incertae sedis flags.  Union node
-        // has precedence.
-
-        unode.addSource(node);
-        // https://github.com/OpenTreeOfLife/reference-taxonomy/issues/36
-        if (false && node.sourceIds != null)
-            for (QualifiedId id : node.sourceIds)
-                unode.addSourceId(id);
-
-        // ??? retains pointers to source taxonomy... may want to fix for gc purposes
-        if (unode.answer == null)
-            unode.answer = node.answer;
-	}
 
 }
 
@@ -362,20 +409,6 @@ public abstract class Alignment {
 abstract class Criterion {
 
 	abstract Answer assess(Taxon x, Taxon target);
-
-    // Horrible kludge to avoid having to rebuild or maintain the name index
-
-	static Criterion prunedp =
-		new Criterion() {
-			public String toString() { return "prunedp"; }
-			Answer assess(Taxon x, Taxon target) {
-                if (x.prunedp || target.prunedp) {
-                    System.out.format("** Prunedp taxon in assessment: %s %s\n", x, target);
-                    return Answer.no(x, target, "not-same/prunedp", null);
-                } else
-                    return Answer.NOINFO;
-            }
-        };
 
     static boolean HALF_DIVISION_EXCLUSION = true;
 
@@ -406,18 +439,36 @@ abstract class Criterion {
 				Taxon xdiv = subject.getDivision();
 				Taxon ydiv = target.getDivision();
 				if (xdiv == ydiv)
-					return Answer.weakYes(subject, target, "same/division", xdiv.name);
+					return Answer.NOINFO;
 				else if (xdiv.noMrca() || ydiv.noMrca())
 					return Answer.NOINFO;
-				else if (true)
+				else
                     // about 17,000 of these... that's too many
                     // 2016-06-26 down to about 900 now.
                     // but I bet they're almost all supposed to be matches.
                     return Answer.weakNo(subject, target, "not-same/weak-division", xdiv.name);
-                else
-					return Answer.NOINFO;
 			}
 		};
+
+    static final int family = Rank.getRank("family").level;
+    static final int genus = Rank.getRank("genus").level;
+
+    static Criterion ranks =
+        new Criterion() {
+            public String toString() { return "ranks"; }
+            Answer assess(Taxon subject, Taxon target) {
+                if (subject.rank != Rank.NO_RANK &&
+                    target.rank != Rank.NO_RANK &&
+                    ((subject.rank.level >= genus) && (target.rank.level <= family) ||
+                     (subject.rank.level <= family) && (target.rank.level >= genus))) {
+                    System.out.format("| Separation by rank: %s %s | %s %s\n",
+                                      subject, subject.rank.name, target, target.rank.name);
+                    return Answer.weakNo(subject, target, "not-same/ranks",
+                                         String.format("%s|%s", subject.rank.name, target.rank.name));
+                }
+                return Answer.NOINFO;
+            }
+        };
 
 	static Criterion eschewTattered =
 		new Criterion() {
@@ -621,15 +672,14 @@ abstract class Criterion {
 		};
 
 	static Criterion[] criteria = {
-        prunedp,
 		division,
-		// eschewTattered,
-		lineage, subsumption,
+		lineage,
+        subsumption,
 		sameSourceId,
 		anySourceId,
-		// knowDivision,
         weakDivision,
 		byRank,
+        ranks,
         byPrimaryName,
         elimination,
     };

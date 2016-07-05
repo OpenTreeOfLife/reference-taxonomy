@@ -44,45 +44,48 @@ not_extinct = ['1531',     # Sarcopterygii
 # These are the taxa with taxonomic status '' that occurred in phylesystem as of
 # June 2016 (when these taxa were deleted from OTT).  (from deprecated.tsv)
 
-keep_these = {}
+grandfathered = {}
 
-for (id, name) in [
-    ('10180190', 'Opulaster opulifolius'),
-    ('11899420', 'Palaemonetes granulosus'),
-    ('11704707', 'Olivioxantho denticulatus'),
-    ('10527330', 'Chamaeleolis chameleontides'),
-    ('11399158', 'Phyrignathus lesuerii'),
-    ('10527966', 'Cylicia magna'),
-    ('11444963', 'Epicrates anguilifer'),
-    ('11078615', 'Egernia whitei'),
-    ('10522666', 'Trogon aurantiventris'),
-    ('10692084', 'Tauraco livingstoni'),
-    ('10525002', 'Piculus leucolalemus'),
-    ('10520170', 'Archaeopteryx lithographica'),
-    ('11444785', 'Mesopropithecus pithecoides'),
-    ('11167068', 'Zalambdalestes lechei'),
-    ('10531957', 'Protungulatum donnae'),
-    ('11024850', 'Megaladapis madagascariensis'),
-    ('11078603', 'Megaladapis grandidieri'),
-    ('11458858', 'Anthropornis nordenskjoeldi'),
-    ('11081142', 'Gobipteryx minuta'),
-    ('11390044', 'Pagophilus groenlandica'),
-    ('10793056', 'Ommatophoca rossi'),
-    ('10525092', 'Sivatherium giganteum'),
-    ('10692824', 'Mesohippus bairdi'),
-    ('10689467', 'Penaeus semisculcatus'),
-    ('10543655', 'Palaemonetes atribunes'),
-    ('10530648', 'Albunea occulatus'),
-    ('102843', 'Hypsidoridae'),
-    ('10697026', 'Badumna longinquus'),
-    ('10184114', 'Cylactis pubescens'),
-    ('11256401', 'Melanobatus leucodermis'),
-    ('11083597', 'Squilla mikado'),
-    ('11102182', 'Basilosaurus cetoides'),
-    ('11103647', 'Pseudastacus pustulosa'),
-    ('10532033', 'Hyopsodus paulus'),
-]:
-    keep_these[id] = name
+def init_grandfathered(grandfathered):
+    for (id, name) in [
+        ('10180190', 'Opulaster opulifolius'),
+        ('11899420', 'Palaemonetes granulosus'),
+        ('11704707', 'Olivioxantho denticulatus'),
+        ('10527330', 'Chamaeleolis chameleontides'),
+        ('11399158', 'Phyrignathus lesuerii'),
+        ('10527966', 'Cylicia magna'),
+        ('11444963', 'Epicrates anguilifer'),
+        ('11078615', 'Egernia whitei'),
+        ('10522666', 'Trogon aurantiventris'),
+        ('10692084', 'Tauraco livingstoni'),
+        ('10525002', 'Piculus leucolalemus'),
+        ('10520170', 'Archaeopteryx lithographica'),
+        ('11444785', 'Mesopropithecus pithecoides'),
+        ('11167068', 'Zalambdalestes lechei'),
+        ('10531957', 'Protungulatum donnae'),
+        ('11024850', 'Megaladapis madagascariensis'),
+        ('11078603', 'Megaladapis grandidieri'),
+        ('11458858', 'Anthropornis nordenskjoeldi'),
+        ('11081142', 'Gobipteryx minuta'),
+        ('11390044', 'Pagophilus groenlandica'),
+        ('10793056', 'Ommatophoca rossi'),
+        ('10525092', 'Sivatherium giganteum'),
+        ('10692824', 'Mesohippus bairdi'),
+        ('10689467', 'Penaeus semisculcatus'),
+        ('10543655', 'Palaemonetes atribunes'),
+        ('10530648', 'Albunea occulatus'),
+        ('102843', 'Hypsidoridae'),
+        ('10697026', 'Badumna longinquus'),
+        ('10184114', 'Cylactis pubescens'),
+        ('11256401', 'Melanobatus leucodermis'),
+        ('11083597', 'Squilla mikado'),
+        ('11102182', 'Basilosaurus cetoides'),
+        ('11103647', 'Pseudastacus pustulosa'),
+        ('10532033', 'Hyopsodus paulus'),
+    ]:
+        grandfathered[id] = name
+
+init_grandfathered(grandfathered)
 
 irmng_file_name = sys.argv[1]
 profile_file_name = sys.argv[2]
@@ -184,34 +187,29 @@ def fix_irmng():
     # Decide which taxa to keep
 
     keep_count = 0
-    no_status = 0
     missing_parent_count = 0
     for taxon in taxa.itervalues():
-        if taxon.keep: continue
-        if not taxon.tstatus in keep_these:
-            if taxon.tstatus == 'synonym': continue
-            if taxon.tstatus == '':
+        if taxon.keep:
+            True    # already seen
+        elif (taxon.id in grandfathered or
+              ((taxon.tstatus == 'accepted' or taxon.tstatus == 'valid') and
                 # reduces number of kept taxa from 1685133 to 1351145
-                no_status += 1
-                if no_status <= 20:
-                    print >>sys.stderr, 'No status: %s(%s)' % (taxon.id, taxon.name)
-                continue
-            if not taxon.nstatus in status_for_keeps: continue
-        scan = taxon
-        while not scan.keep:
-            scan.keep = True
-            keep_count += 1
-            if scan.parentid == '':
-                break
-            parent = taxa.get(scan.parentid)
-            if parent == None:
-                missing_parent_count += 1
-                break
-            scan = parent
+               taxon.nstatus in status_for_keeps)):
+            scan = taxon
+            while not scan.keep:
+                scan.keep = True
+                if scan.id in grandfathered: print >>sys.stderr, 'Grandfathering', taxon.name
+                keep_count += 1
+                if scan.parentid == '':
+                    break
+                parent = taxa.get(scan.parentid)
+                if parent == None:
+                    missing_parent_count += 1
+                    break
+                scan = parent
 
     print >>sys.stderr, "Keeping %s taxa" % keep_count
     print >>sys.stderr, "%s missing parents" % missing_parent_count
-    print >>sys.stderr, "%s status is ''" % no_status
 
     # Read the file that has the extinct annotations
 

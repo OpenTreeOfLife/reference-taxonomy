@@ -76,6 +76,7 @@ public class AlignmentByMembership extends Alignment {
         System.out.println("a"); System.out.flush();
         halfMap(sourceSynonymIndex, unionSynonymIndex);           // tips and mrcas
         System.out.println("b"); System.out.flush();
+        this.alignWith(source.forest, union.forest, "align-forests");
         alignify();                // mutual-mrca
 	}
 
@@ -83,15 +84,6 @@ public class AlignmentByMembership extends Alignment {
 
     Answer answer(Taxon node) {
         return alignmentMap.get(node);
-    }
-
-    void cacheInSourceNodes() {
-        for (Taxon node : sourceHalfMap.keySet()) {
-            node.lub = sourceHalfMap.get(node);
-            Answer a = alignmentMap.get(node);
-            if (a != null) // && a.isYes()
-                this.alignWith(node, node.answer.target, a);
-        }
     }
 
     // Is it important to distinguish the two cases of 

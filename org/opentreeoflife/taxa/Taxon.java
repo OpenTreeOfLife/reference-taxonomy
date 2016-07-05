@@ -205,7 +205,7 @@ public class Taxon extends Node {
             this.showLineage(child.parent);
             System.out.format("%s", child);
             Taxon.backtrace();
-        } else if ((this.properFlags & Taxonomy.FORMER_CONTAINER) != 0) {
+        } else if ((this.properFlags & Taxonomy.FORMER_CONTAINER) != 0 && (this.parent != null)) {
             if (false)
                 // There tens of thousands of these
                 this.report(String.format("Attempt to add %s to ex-container %s - retrying with parent %s",
@@ -220,6 +220,13 @@ public class Taxon extends Node {
                 // all the other types want some kind of unplaced, cheat a bit
                 child.addFlag(Taxonomy.UNPLACED);
         } else {
+            if (child.rank != Rank.NO_RANK && this.rank != Rank.NO_RANK &&
+                child.rank.level < this.rank.level &&
+                child.isPlaced()) {
+                System.out.format("* Rank inversion: %s %s < %s %s\n",
+                                  child, child.rank.name, this, this.rank.name);
+				//Taxon.backtrace();
+            }
 			child.parent = this;
 			if (this.children == NO_CHILDREN)
 				this.children = new ArrayList<Taxon>();
@@ -350,15 +357,15 @@ public class Taxon extends Node {
 			return new QualifiedId(space, "<forest>");
         } else if (this.parent == null) {
             // Shouldn't happen
-			System.err.format("| [getQualifiedId] %s is detached\n", this);
+			System.err.format("* [getQualifiedId] %s is detached\n", this);
             return new QualifiedId(space, "<detached>");
         } else if (this.name != null) {
             // e.g. h2007
-			// System.err.format("| [getQualifiedId] Taxon has no id, using name: %s:%s\n", space, this.name);
+			// System.err.format("* [getQualifiedId] Taxon has no id, using name: %s:%s\n", space, this.name);
 			return new QualifiedId(space, this.name);
         } else {
 			// What if from a Newick string?
-			System.err.println("| [getQualifiedId] Nondescript");
+			System.err.println("* [getQualifiedId] Nondescript");
             return new QualifiedId(space, "<nondescript>");
         }
 	}
@@ -893,7 +900,7 @@ public class Taxon extends Node {
         } else {
             // if (!newchild.isDetached()) newchild.detach();  - not needed given change to newTaxon.
             if (newchild.descendsFrom(this))
-                System.err.format("* Note: moving %s from %s to %s\n",
+                System.err.format("* Note: moving %s from %s out to %s\n",
                                   newchild, newchild.parent, this);
             newchild.changeParent(this, 0);
 			this.addFlag(Taxonomy.EDITED);
@@ -1008,9 +1015,12 @@ public class Taxon extends Node {
 			for (Taxon child : new ArrayList<Taxon>(other.children))
 				// beware concurrent modification
 				child.changeParent(this);
-        // something about extinct flags here - extinct absorbing non-extinct
-		this.taxonomy.addSynonym(other.name, this, "subsumed_by");	// Not sure this is a good idea
+        // something about extinct flags here - extinct absorbing non-extinct means ... ?
+        // Not sure about the order of the following two, but if the
+        // synonym comes before the prune, then it might be suppressed
+        // by the presence in the name index of the deprecated taxon
 		other.prune("absorb");
+		this.taxonomy.addSynonym(other.name, this, "subsumed_by");	// Not sure this is a good idea
         return true;
 	}
 
@@ -1037,6 +1047,23 @@ public class Taxon extends Node {
 
     public boolean isExtant() {
         return (((this.properFlags | this.inferredFlags) & Taxonomy.EXTINCT) == 0);
+    }
+
+    public boolean setRank(String rankstring) {
+        if (rankstring == null) {
+            this.rank = Rank.NO_RANK;
+            return true;
+        }
+        Rank r = Rank.getRank(rankstring);
+        if (r != null) {
+            this.rank = r;
+            return true;
+        } else
+            return false;
+    }
+
+    public String getRank() {
+        return this.rank.name;
     }
 
     public boolean whetherMonophyletic(boolean whether, boolean setp) {

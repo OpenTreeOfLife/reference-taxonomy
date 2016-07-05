@@ -342,11 +342,11 @@ def resolve_in(designator, taxonomy, windy=True):
         return candidates[0]
     elif len(candidates) == 0:
         if windy:
-            print '| no taxon %s in %s (%s)' % (stringify(designator), taxonomy.getTag(), windy)
+            print '* no taxon %s in %s (%s)' % (stringify(designator), taxonomy.getTag(), windy)
         return None
     else:
         if windy:
-            print '| %s is ambiguous' % stringify(designator)
+            print '* %s is ambiguous' % stringify(designator)
             for candidate in candidates:
                 print ' ', candidate
         return None

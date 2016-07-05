@@ -927,9 +927,10 @@ public abstract class Taxonomy {
 			// Extra informational check.  See if ranks are inverted.
 			if (majorp && high >= 0 && myrank > high)
 				// The myrank == high case is weird too; there are about 200 of those.
-				System.err.println("** Ranks out of order: " +
-								   node + " " + node.rank.name + " has child " +
-								   highchild + " " + highchild.rank.name);
+				System.out.format("* Rank inversion: %s %s < %s %s",
+								   highchild, highchild.rank.name,
+								   node, node.rank.name);
+
 		}
 		return myrank;
 	}
@@ -1763,7 +1764,7 @@ public abstract class Taxonomy {
     // For use from jython code.  Result is added as a root.
 	public Taxon newTaxon(String name, String rankname, String sourceIds) {
 		if (this.lookup(name) != null)
-			System.err.format("** Warning: A taxon by the name of %s already exists\n", name);
+			System.err.format("* Warning: A taxon by the name of %s already exists\n", name);
 		Taxon t = new Taxon(this, name);
 		if (rankname != null && !rankname.equals("no rank"))
 			t.rank = Rank.getRank(rankname);

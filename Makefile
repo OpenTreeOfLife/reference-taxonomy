@@ -31,7 +31,7 @@ NCBI_URL="http://files.opentreeoflife.org/ncbi/ncbi-20151006/ncbi-20151006.tgz"
 # GBIF_URL=http://purl.org/opentree/gbif-backbone-2013-07-02.zip
 GBIF_URL=http://files.opentreeoflife.org/gbif/gbif-20130702/gbif-20130702.zip
 
-IRMNG_URL=http://files.opentreeoflife.org/irmng-ot/irmng-ot-20160628/irmng-ot-20160628.tgz
+IRMNG_URL=http://files.opentreeoflife.org/irmng-ot/irmng-ot-20160630/irmng-ot-20160630.tgz
 
 # Silva 115: 206M uncompresses to 817M
 # issue #62 - verify  (is it a tsv file or csv file?)
@@ -52,7 +52,6 @@ TARDIR?=tarballs
 # Scripts and other inputs related to taxonomy
 
 # The tax/ directory is full of taxonomies; mostly (entirely?) derived objects.
-SILVA=tax/silva
 FUNG=tax/fung
 
 CP=-classpath ".:lib/*"
@@ -106,6 +105,7 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
 		    ids_that_are_otus.tsv \
 		    bin/jython \
 		    inclusions.csv
+	@date
 	@rm -f *py.class
 	@mkdir -p tax/ott
 	time bin/jython make-ott.py
@@ -119,7 +119,7 @@ fung: tax/fung/taxonomy.tsv tax/fung/synonyms.tsv
 
 tax/fung/taxonomy.tsv: 
 	@mkdir -p tmp
-	wget --output-document=tmp/fung-ot.tgz $@ $(FUNG_URL)
+	wget --output-document=tmp/fung-ot.tgz $(FUNG_URL)
 	(cd tmp; tar xzf fung-ot.tgz)
 	@mkdir -p `dirname $@`
 	mv tmp/fung*/* `dirname $@`/
@@ -154,12 +154,13 @@ feed/ncbi/in/taxdump.tar.gz:
 	@ls -l $@
 
 NCBI_ORIGIN_URL=ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz
+NCBI_TAXDUMP=feed/ncbi/in/taxdump.tar.gz
 
 refresh-ncbi:
 	@mkdir -p feed/ncbi/in
-	wget --output-document=feed/ncbi/in/taxdump.tar.gz.new $(NCBI_ORIGIN_URL)
-	mv $@.new $@
-	@ls -l $@
+	wget --output-document=$(NCBI_TAXDUMP).new $(NCBI_ORIGIN_URL)
+	mv $(NCBI_TAXDUMP).new $(NCBI_TAXDUMP)
+	@ls -l $(NCBI_TAXDUMP)
 
 # Formerly, where it says /dev/null, we had ../data/gbif/ignore.txt
 
@@ -262,13 +263,11 @@ feed/silva/out/taxonomy.tsv: feed/silva/process_silva.py feed/silva/work/silva_n
 	       feed/silva/work/accessions.tsv \
 	       feed/silva/out "$(SILVA_URL)"
 
-silva: $(SILVA)/taxonomy.tsv
+silva: tax/silva/taxonomy.tsv
 
-$(SILVA)/taxonomy.tsv: feed/silva/out/taxonomy.tsv
-	@mkdir -p $(SILVA)
-	cp -p feed/silva/out/taxonomy.tsv $(SILVA)/
-	cp -p feed/silva/out/synonyms.tsv $(SILVA)/
-	cp -p feed/silva/out/about.json $(SILVA)/
+tax/silva/taxonomy.tsv: feed/silva/out/taxonomy.tsv
+	@mkdir -p tax/silva
+	cp -p feed/silva/out/* tax/silva/
 
 feed/silva/in/silva.fasta:
 	@mkdir -p `dirname $@`

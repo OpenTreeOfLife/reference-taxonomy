@@ -24,6 +24,8 @@ import org.opentreeoflife.taxa.QualifiedId;
 
 public class Addition {
 
+    static String userAgent = "smasher";
+
     // Mint an id for each taxon in the taxon list.
     // Parents must occur before their children in the taxon list.
 
@@ -201,7 +203,7 @@ public class Addition {
             descriptions.add(description);
         }
         m.put("taxa", descriptions);
-        m.put("user_agent", "smasher");
+        m.put("user_agent", userAgent);
         return m;
     }
 
@@ -236,6 +238,18 @@ public class Addition {
 		}
 	};
 
+    // for invocation from python
+
+    public static void processAdditions(String repo, Taxonomy tax) throws IOException, ParseException {
+        File dir = new File(repo);
+        if (!dir.isDirectory())
+            dir.mkdirs();
+        for (File doc : Addition.listAdditionDocuments(dir)) {
+            System.out.format("| Processing %s\n", doc);
+            processAdditionDocument(doc, tax);
+        }
+    }
+
     // Deal with one additions document.  Get ids for existing nodes, or (if
     // the taxa are "original" with this document) create 
     // new nodes as needed.
@@ -250,8 +264,8 @@ public class Addition {
     public static void processAdditionDocument(Object json, Taxonomy tax) throws ParseException {
         if (json instanceof Map) {
             Map top = (Map)json;
-            Object originalObj = top.get("original");
-            boolean originalp = (originalObj == null || (Boolean)(originalObj));
+            Object agent = top.get("user_agent");
+            boolean originalp = (agent != null && ((String)agent).equals(userAgent));
             String additionSource = (String)top.get("id");
             Object taxaObj = top.get("taxa");
             List taxa = (List)taxaObj;
@@ -311,13 +325,19 @@ public class Addition {
                         System.out.format("** Requested parent %s not same as prior parent %s for %s %s\n",
                                           parentId, target.parent.id, name, ott_id);
                 } else {
-                    // Find existing node - one with same name and parent
+                    // Find existing node - one with same name and
+                    // division.  We would really prefer a taxon with
+                    // same parent, but sometimes they move around.
                     List<Node> nodes = tax.lookup(name);
                     if (nodes != null) {
                         List<Taxon> candidates = new ArrayList<Taxon>();
+                        Taxon wantDivision = parent.getDivision();
+                        if (wantDivision == null)
+                            System.out.format("* No division for parent? %s\n", parent);
                         for (Node node : nodes) {
-                            if (node.taxon().parent == parent) {
-                                Taxon candidate = node.taxon();
+                            Taxon candidate = node.taxon();
+                            if (candidate.parent == parent ||
+                                candidate.getDivision() == wantDivision) {
                                 if (candidate.sourceIds.get(0).toString().equals(firstSource)) {
                                     target = candidate;
                                     candidates = null;
@@ -337,14 +357,18 @@ public class Addition {
                                 else if (Taxonomy.compareTaxa(node, target) < 0)
                                     target = node;
                             if (candidates.size() > 1)
-                                System.out.format("** Choosing %s over sibling homonym(s) for %s in %s\n%s\n",
+                                System.out.format("** Ambiguous; choosing %s over homonym(s) for %s in %s\n%s\n",
                                                   target, name, parent, candidates);
                         }
                     }
                     if (target != null) {
                         target.taxonomy.addId(target, ott_id);
                     } else {
-                        // if (!originalp) continue;
+                        if (!originalp) {
+                            System.out.format("* Skipping name %s id %s from a previous smasher run\n",
+                                              name, ott_id);
+                            continue;
+                        }
                         target = new Taxon(tax, name);
                         target.setId(ott_id);
                         parent.addChild(target);

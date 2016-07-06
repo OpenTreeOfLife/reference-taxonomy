@@ -145,11 +145,7 @@ public class TsvEdits {
 				existing.addFlag(Taxonomy.INCERTAE_SEDIS);
 
 		} else if (command.equals("synonym")) {
-			// TBD: error checking
-			if (existing != null)
-				System.err.println("Synonym already known: " + name);
-			else
-				tax.addSynonym(name, parent, "synonym");
+            tax.addSynonym(name, parent, "synonym");
 
 		} else
 			System.err.println("Unrecognized edit command: " + command);

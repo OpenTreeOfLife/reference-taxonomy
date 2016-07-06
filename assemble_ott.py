@@ -13,7 +13,8 @@ sys.path.append("feed/misc/")
 from chromista_spreadsheet import fixChromista
 import taxonomies
 import check_inclusions
-from claim import Has_child, test_claims
+from establish import establish
+from claim import *
 import csv
 
 this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/make-ott.py'
@@ -204,6 +205,7 @@ def create_ott():
     ott.carryOverIds(ids) # Align & copy ids
 
     # Apply the additions (which already have ids assigned)
+    print '-- Processing additions --'
     Addition.processAdditions(additions_path, ott)
 
     # Mint ids for new nodes
@@ -249,6 +251,9 @@ def deal_with_ctenophora(ott):
     establish('Podocystis', ott, division='Fungi', ott_id='809209')
     establish('Podocystis', ott, parent='Bacillariophyta', ott_id='357108')
 
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/198
+    establish('Euxinia', ott, division='Metazoa', source='ncbi:100781', ott_id='476941') #flatworm
+    establish('Euxinia', ott, division='Metazoa', source='ncbi:225958', ott_id='329188') #amphipod
 
 # ----- SILVA -----
 
@@ -486,6 +491,10 @@ def align_ncbi(ncbi, silva, ott):
 
     a.same(ncbi.taxon('Podocystis', 'Bacillariophyta'),
            ott.taxon('Podocystis', 'Bacillariophyta'))
+
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/198 see above
+    a.same(ncbi.taxon('Euxinia', 'Pseudostomidae'), ott.taxon('476941'))
+    a.same(ncbi.taxon('Euxinia', 'Crustacea'), ott.taxon('329188'))
 
     return a
 
@@ -1293,56 +1302,6 @@ names_of_interest = ['Ciliophora',
                      'Pseudostomum',
                      'Pseudostomidae',
                      'Parvibacter',
+                     'Euxinia',
+                     'Xiphonectes',
                      ]
-
-# This is very similar to what processAdditionDocument (in Addition.java) has to do.
-
-def establish(name, taxonomy, rank=None, parent=None, ancestor=None, division=None, ott_id=None, source=None):
-    taxon = None
-    anc = None
-    if parent != None:
-        if taxonomy.unique(parent) != None: anc = parent
-        taxon2 = taxonomy.maybeTaxon(name, parent)
-        if taxon2 != None:
-            if taxon != None and taxon2 != taxon:
-                print '** conflicting taxon determination (parent)', taxon, taxon2, parent
-            else:
-                taxon = taxon2
-    if ancestor != None:
-        if anc == None and taxonomy.unique(ancestor) != None: anc = ancestor
-        taxon2 = taxonomy.maybeTaxon(name, ancestor)
-        if taxon2 != None:
-            if taxon != None and taxon2 != taxon:
-                print '** conflicting taxon determination (ancestor)', taxon, taxon2, ancestor
-            else:
-                taxon = taxon2
-    if division != None:
-        if anc == None and taxonomy.unique(division) != None: anc = division
-        taxon2 = taxonomy.maybeTaxon(name, division)
-        if taxon2 != None:
-            if taxon != None and taxon2 != taxon:
-                print '** conflicting taxon determination (division)', taxon, taxon2, division
-            else:
-                taxon = taxon2
-    if ott_id != None:
-        ott_id = str(ott_id)
-        taxon2 = taxonomy.maybeTaxon(ott_id)
-        if taxon2 != None:
-            if taxon != None and taxon2 != taxon:
-                print '** conflicting taxon determination (id)', taxon, taxon2, ott_id
-            else:
-                taxon = taxon2
-        elif taxon != None and taxon.id == None:
-            print '** could set if of %s to %s', taxon, ott_id
-    if taxon == None:
-        taxon = taxonomy.newTaxon(name, rank, source)
-        if anc != None:
-            taxonomy.taxon(anc).take(taxon)
-        else:
-            print '** no ancestor to attach new node to', name
-        if ott_id != None:
-            taxon.setId(ott_id)
-        if anc != parent:
-            taxon.incertaeSedis()
-    return taxon
-

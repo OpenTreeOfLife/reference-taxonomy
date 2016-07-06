@@ -136,7 +136,7 @@ class MergeMachine {
                     augment(child, sink);
                 // Examine mapped parents of the children
                 boolean consistentp = true;
-                Taxon commonParent = null;
+                Taxon commonParent = null;    // should end up being node.lub
                 int count = 0;
                 for (Taxon child : node.children) {
                     Taxon childTarget = child.mapped;
@@ -420,7 +420,15 @@ class MergeMachine {
 	void reportConflict(Taxon node) {
         // node.lub is mrca of the children's map targets and/or lubs ...
         Taxon alice = null, bob = null, mrca = null;
-        for (Taxon child: node.children)
+        boolean foundit = false;
+        for (Taxon child: node.children) {
+
+            // This was a particulary hard-to-debug problem... the solution ended up
+            // breaking a false merge for Euxinia (a sibling of the offender) #198
+            // Keeping the code in case it needs to be used again.
+            if (child.name != null && child.name.equals("Pseudostomum"))
+                foundit = true;
+
             if (child.mapped != null && !child.mapped.isDetached() && child.mapped.isPlaced()) {
                 // This method of finding fighting children is
                 // heuristic... cf. AlignmentByName
@@ -437,6 +445,18 @@ class MergeMachine {
                         break;
                 }
             }
+        }
+
+        if (foundit) {
+            System.out.format("** Pseudostomum is in inconsistent taxon %s, moving to %s\n",
+                              node, node.lub);
+            for (Taxon child : node.children) {
+                System.out.format("   Child: %s\n", child);
+                if (child.mapped != null && !child.mapped.isDetached())
+                    child.mapped.show();
+            }
+        }
+
         if (alice == null || bob == null || alice == bob)
             //System.out.format("** Can't find two children %s %s\n", alice, bob);
             union.markEvent("incomplete conflict");

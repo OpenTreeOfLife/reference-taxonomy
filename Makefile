@@ -13,7 +13,7 @@
 JAVAFLAGS=-Xmx14G
 
 # Modify as appropriate
-WHICH=2.10draft3
+WHICH=2.10draft4
 PREV_WHICH=2.9
 
 # ----- Taxonomy source locations -----
@@ -484,8 +484,17 @@ aster-tarball: t/tax/aster/taxonomy.tsv
 # ----- Clean
 
 clean:
-	rm -rf feed/*/out
+	rm -rf tax/ott
+	rm -rf feed/*/out *.tmp
+#	rm -rf feed/*/work ?
+	rm -rf amendments t/amendments bin/jython
 	rm -rf tax/fung tax/ncbi tax/prev_nem tax/silva
-	rm -f $(CLASS)
+	rm -f `find . -name *.class`
+	rm -f feed/misc/chromista_spreadsheet.py
 #	rm -f feed/ncbi/in/taxdump.tar.gz
 
+squeakyclean:
+	rm -rf feed/*/in
+	rm -f lib/*
+	rm -rf tax/fung tax/gbif tax/irmng tax/ncbi tax/silva tax/worms 
+	rm -rf tax/prev_ott

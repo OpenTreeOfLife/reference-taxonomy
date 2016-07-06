@@ -139,9 +139,13 @@ public class Taxon extends Node {
                     return syn;
 
             // Don't let this synonym create a homonym.
-            List<Node> nodes = this.taxonomy.lookup(name);
-            if (nodes != null)
-                return null;
+            // -- this introduces nasty nondeterminism.
+            // need to do it some other way, e.g. on output.
+            if (false) {
+                List<Node> nodes = this.taxonomy.lookup(name);
+                if (nodes != null)
+                    return null;
+            }
 
             Synonym syn = new Synonym(name, type, this); // does addToNameIndex
             // n.b. new Synonym() does addToNameIndex(syn, name);
@@ -226,6 +230,11 @@ public class Taxon extends Node {
                 System.out.format("* Rank inversion: %s %s < %s %s\n",
                                   child, child.rank.name, this, this.rank.name);
 				//Taxon.backtrace();
+            }
+            if (false && child.name != null && child.name.equals("Pseudostomum")) {
+                System.err.format("** Changing Pseudostomum parent to %s\n",
+                                  this);
+				Taxon.backtrace();
             }
 			child.parent = this;
 			if (this.children == NO_CHILDREN)
@@ -889,13 +898,13 @@ public class Taxon extends Node {
 			System.err.format("** %s and %s aren't in the same taxonomy\n", newchild, this);
 			return false;
 		} else if (this.children != NO_CHILDREN && this.children.contains(newchild)) {
-			System.err.format("| %s is already a child of %s\n", newchild, this);
+			// System.err.format("| %s is already a child of %s\n", newchild, this);
 			return true;
         } else if (newchild == this) {
 			System.err.format("** A taxon cannot be its own parent: %s %s\n", newchild, this);
 			return false;
         } else if (newchild.parent == this) {
-            System.err.format("* Note: %s is already a child of %s\n", newchild, this);
+            // System.err.format("* Note: %s is already a child of %s\n", newchild, this);
             return true;
         } else {
             // if (!newchild.isDetached()) newchild.detach();  - not needed given change to newTaxon.
@@ -1153,10 +1162,12 @@ public class Taxon extends Node {
 			Flag.printFlags(this.properFlags, this.inferredFlags, System.out);
 			System.out.println();
 		}
-		// Very inefficient, but this is not in an inner loop
-		for (String name : this.taxonomy.allNames())
-			if (this.hasName(name) && !name.equals(this.name))
-				System.out.format("Synonym: %s\n", name);
+        for (Synonym syn : this.synonyms)
+            System.out.format("Synonym: %s %s %s\n", syn.name, syn.type, syn.getSourceIdsString());
+        if (this.comapped != null)
+            System.out.format("Node %s maps to this node\n", this.comapped);
+        if (this.mapped != null)
+            System.out.format("This node maps to %s\n", this.mapped);
 	}
 
     // Used to explain why a cycle would be created

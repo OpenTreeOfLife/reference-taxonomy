@@ -262,138 +262,153 @@ public class Addition {
     }
 
     public static void processAdditionDocument(Object json, Taxonomy tax) throws ParseException {
-        if (json instanceof Map) {
-            Map top = (Map)json;
-            Object agent = top.get("user_agent");
-            boolean originalp = (agent != null && ((String)agent).equals(userAgent));
-            String additionSource = (String)top.get("id");
-            Object taxaObj = top.get("taxa");
-            List taxa = (List)taxaObj;
-            Map<String, Taxon> tagToTaxon = new HashMap<String, Taxon>();
-            for (Object descriptionObj : taxa) {
-                Map description = (Map)descriptionObj;
-                String ott_id = toId(description.get("ott_id"));
-                String tag = (String)(description.get("tag"));
-                String name = (String)(description.get("name"));
-                String parentId = toId(description.get("parent"));
-                String parentTag = (String)(description.get("parent_tag"));
-                List sources = (List)(description.get("sources"));
-                String firstSource = ((sources != null && sources.size() > 0) ?
-                                      (String)(((Map)(sources.get(0))).get("source")) :
-                                      "");
-
-                if (tag == null) {
-                    System.out.format("** Missing tag\n");
-                    continue;
-                }
-                if (name == null) {
-                    System.out.format("** Missing name for %s\n", tag);
-                    continue;
-                }
-                if (ott_id == null) {
-                    System.out.format("** Missing OTT id for %s\n", name);
-                    continue;
-                }
-
-                // Get parent taxon
-                Taxon parent;
-                if (parentId != null) {
-                    parent = tax.lookupId(parentId);
-                    if (parent == null) {
-                        System.out.format("** Parent %s not found for added taxon %s\n", parentId, name);
-                        continue;
-                    }
-                } else if (parentTag != null) {
-                    parent = tagToTaxon.get(parentTag);
-                    if (parent == null) {
-                        System.out.format("** Parent %s not found for added taxon %s\n", parentTag, name);
-                        continue;
-                    }
-                } else {
-                    System.out.format("** No parent specified for %s\n", name);
-                    continue;
-                }
-
-                // Get target taxon
-                Taxon target = tax.lookupId(ott_id);
-                if (target != null) {
-                    // Seems to be already there!  See if when we found matches what we expect.
-                    if (!name.equals(target.name))
-                        System.out.format("** Requested name %s not same as prior name %s for %s\n",
-                                          name, target.name, ott_id);
-                    if (!parentId.equals(target.parent.id))
-                        System.out.format("** Requested parent %s not same as prior parent %s for %s %s\n",
-                                          parentId, target.parent.id, name, ott_id);
-                } else {
-                    // Find existing node - one with same name and
-                    // division.  We would really prefer a taxon with
-                    // same parent, but sometimes they move around.
-                    List<Node> nodes = tax.lookup(name);
-                    if (nodes != null) {
-                        List<Taxon> candidates = new ArrayList<Taxon>();
-                        Taxon wantDivision = parent.getDivision();
-                        if (wantDivision == null)
-                            System.out.format("* No division for parent? %s\n", parent);
-                        for (Node node : nodes) {
-                            Taxon candidate = node.taxon();
-                            if (candidate.parent == parent ||
-                                candidate.getDivision() == wantDivision) {
-                                if (candidate.sourceIds.get(0).toString().equals(firstSource)) {
-                                    target = candidate;
-                                    candidates = null;
-                                    break;
-                                } else
-                                    candidates.add(candidate);
-                            }
-                        }
-                        if (candidates == null)
-                            ;
-                        else if (candidates.size() == 0)
-                            ;
-                        else {
-                            for (Taxon node : candidates)
-                                if (target == null)
-                                    target = node;
-                                else if (Taxonomy.compareTaxa(node, target) < 0)
-                                    target = node;
-                            if (candidates.size() > 1)
-                                System.out.format("** Ambiguous; choosing %s over homonym(s) for %s in %s\n%s\n",
-                                                  target, name, parent, candidates);
-                        }
-                    }
-                    if (target != null) {
-                        target.taxonomy.addId(target, ott_id);
-                    } else if (!originalp) {
-                        System.out.format("* Skipping name %s id %s from a previous smasher run\n",
-                                          name, ott_id);
-                    } else {
-                        target = new Taxon(tax, name);
-                        target.setId(ott_id);
-                        parent.addChild(target);
-                        String rankname = (String)description.get("rank");
-                        if (rankname != null) {
-                            Rank rank = Rank.getRank(rankname);
-                            if (rank != null)
-                                target.rank = rank; // should complain if not valid
-                        }
-                        if (originalp && additionSource != null)
-                            target.addSourceId(new QualifiedId(additionSource, ott_id));
-                        else {
-                            for (Object sourceStuff : sources) {
-                                Map sourceDescription = (Map)sourceStuff;
-                                String source = (String)(sourceDescription.get("source"));
-                                target.addSourceId(new QualifiedId(source));
-                            }
-                        }
-                        if (name.equals("Albizia"))
-                            System.out.format("| debug %s\n", target);
-                    }
-                }
-                // For backward references
-                tagToTaxon.put(tag, target);
-            }
-        } else
+        if (!(json instanceof Map))
             throw new RuntimeException("bad json for addition");
+        Map top = (Map)json;
+        Object agent = top.get("user_agent");
+        boolean originalp = (agent != null && ((String)agent).equals(userAgent));
+        String additionSource = (String)top.get("id");
+        Object taxaObj = top.get("taxa");
+        List taxa = (List)taxaObj;
+        Map<String, Taxon> tagToTaxon = new HashMap<String, Taxon>();
+        int matched = 0;
+        for (Object descriptionObj : taxa) {
+            Map description = (Map)descriptionObj;
+            String ott_id = toId(description.get("ott_id"));
+            String tag = (String)(description.get("tag"));
+            String name = (String)(description.get("name"));
+            String parentId = toId(description.get("parent"));
+            String parentTag = (String)(description.get("parent_tag"));
+            List sources = (List)(description.get("sources"));
+            String firstSource = ((sources != null && sources.size() > 0) ?
+                                  (String)(((Map)(sources.get(0))).get("source")) :
+                                  "");
+
+            if (tag == null) {
+                System.out.format("** Missing tag\n");
+                continue;
+            }
+            if (name == null) {
+                System.out.format("** Missing name for %s\n", tag);
+                continue;
+            }
+            if (ott_id == null) {
+                System.out.format("** Missing OTT id for %s\n", name);
+                continue;
+            }
+
+            // Get parent taxon
+            Taxon parent;
+            if (parentId != null) {
+                parent = tax.lookupId(parentId);
+                if (parent == null) {
+                    System.out.format("** Parent %s not found for added taxon %s\n", parentId, name);
+                    continue;
+                }
+            } else if (parentTag != null) {
+                parent = tagToTaxon.get(parentTag);
+                if (parent == null) {
+                    System.out.format("** Parent %s not found for added taxon %s\n", parentTag, name);
+                    continue;
+                }
+            } else {
+                System.out.format("** No parent specified for %s\n", name);
+                continue;
+            }
+
+            // Get target taxon
+            Taxon target = getTarget(name, parent, firstSource, ott_id, tax);
+            if (target != null) {
+                ++matched;
+                target.taxonomy.addId(target, ott_id);
+            } else if (originalp) {
+                System.out.format("* Ignoring name %s id %s - deprecated\n",
+                                  name, ott_id);
+            } else {
+                target = new Taxon(tax, name);
+                target.setId(ott_id);
+                parent.addChild(target);
+                String rankname = (String)description.get("rank");
+                if (rankname != null) {
+                    Rank rank = Rank.getRank(rankname);
+                    if (rank != null)
+                        target.rank = rank; // should complain if not valid
+                }
+                if (originalp && additionSource != null)
+                    target.addSourceId(new QualifiedId(additionSource, ott_id));
+                else {
+                    for (Object sourceStuff : sources) {
+                        Map sourceDescription = (Map)sourceStuff;
+                        String source = (String)(sourceDescription.get("source"));
+                        target.addSourceId(new QualifiedId(source));
+                    }
+                }
+            }
+            // For backward references
+            tagToTaxon.put(tag, target);
+        }
+        int unmatched = taxa.size() - matched;
+        System.out.format("| %s matched, %s %s\n",
+                          matched,
+                          unmatched,
+                          (originalp ? "deprecated" : "added"));
+    }
+
+    static Taxon getTarget(String name, Taxon parent, String firstSource, String ott_id, Taxonomy tax) {
+        Taxon target = tax.lookupId(ott_id);
+        if (target != null) {
+            // Seems to be already there!  See if when we found matches what we expect.
+            if (!name.equals(target.name))
+                System.out.format("** Requested name %s not same as prior name %s for %s\n",
+                                  name, target.name, ott_id);
+            if (!parent.id.equals(target.parent.id))
+                System.out.format("** Requested parent %s not same as prior parent %s for %s %s\n",
+                                  parent.id, target.parent.id, name, ott_id);
+        } else {
+            // Find existing node - one with same name and
+            // division.  We would really prefer a taxon with
+            // same parent, but sometimes they move around.
+            List<Node> nodes = tax.lookup(name);
+            if (nodes != null) {
+                List<Taxon> candidates = new ArrayList<Taxon>();
+                Taxon wantDivision = parent.getDivision();
+                if (wantDivision == null)
+                    System.out.format("* No division for parent? %s\n", parent);
+                List<String> reasons = new ArrayList<String>();
+                for (Node node : nodes) {
+                    Taxon candidate = node.taxon();
+                    if (candidate.getDivision() != wantDivision) {
+                        reasons.add("division");
+                        continue;
+                    }
+                    if (candidate.id != null && !candidate.id.equals(ott_id)) {
+                        reasons.add("id mismatch");
+                        continue;
+                    }
+                    if (candidate.sourceIds.get(0).toString().equals(firstSource)) {
+                        target = candidate;
+                        break;
+                    }
+                    candidates.add(candidate);
+                }
+                if (target != null)
+                    ;
+                else if (candidates.size() == 0)
+                    System.out.format("* All candidate(s) for %s id %s ruled out because %s\n",
+                                      name, ott_id, reasons);
+                else {
+                    for (Taxon node : candidates)
+                        if (target == null)
+                            target = node;
+                        else if (Taxonomy.compareTaxa(node, target) < 0)
+                            target = node;
+                    if (candidates.size() > 1)
+                        System.out.format("** Ambiguous; choosing %s over homonym(s) for %s in %s\n%s\n",
+                                          target, name, parent, candidates);
+                }
+            }
+        }
+        return target;
     }
     
     static String toId(Object ottIdObj) {

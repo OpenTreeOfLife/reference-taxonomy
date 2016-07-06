@@ -836,11 +836,12 @@ def patch_gbif(gbif):
         if gbif.maybeTaxon(badid) != None:
             gbif.taxon(badid).elide()
 
-    return gbif
-
     # JAR 2016-07-04 observed while scanning rank inversion messages.
     # Corrected rank from https://en.wikipedia.org/wiki/Protochonetes
-    gbif.taxon('Chonetoidea').setRank("superfamily")
+    if not gbif.taxon('Chonetoidea').setRank('superfamily'):
+        print '** setRank failed for Chonetoidea'
+
+    return gbif
 
 def load_irmng():
     irmng = Taxonomy.getTaxonomy('tax/irmng/', 'irmng')

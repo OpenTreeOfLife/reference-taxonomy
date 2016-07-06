@@ -331,34 +331,17 @@ public abstract class Alignment {
         else {
             Taxon mrca = null;  // in union
             for (Taxon child : node.children) {
-                if (!(child.taxonomy instanceof SourceTaxonomy))
-                    System.out.format("** Child in wrong taxonomy: %s\n", child);
                 Taxon a = cacheLubs(child); // in union
-                if (a != null && !(a.taxonomy instanceof UnionTaxonomy))
-                    System.out.format("** Lub in wrong taxonomy: %s\n", a);
                 if (child.isPlaced()) {
                     if (a != null) {
                         if (a.noMrca()) continue;
                         a = a.parent; // in union
-                        if (!(a.taxonomy instanceof UnionTaxonomy))
-                            System.out.format("** Lub in wrong taxonomy: %s\n", a);
                         if (a.noMrca()) continue;
                         if (mrca == null)
                             mrca = a; // in union
                         else {
                             Taxon m = mrca.mrca(a);
-                            if (!(m.taxonomy instanceof UnionTaxonomy))
-                                System.out.format("** Mrca in wrong taxonomy: %s\n", m);
-
                             if (m.noMrca()) continue;
-                            if (false) {
-                                Taxon div1 = mrca.getDivision();
-                                Taxon div2 = a.getDivision();
-                                if (div1 != div2 && div1.divergence(div2) != null)
-                                    // 2015-07-23 this happens about 300 times
-                                    System.out.format("! Children of %s are in disjoint divisions (%s in %s + %s in %s)\n",
-                                                      node, mrca, div1, a, div2);
-                            }
                             mrca = m;
                         }
                     }
@@ -398,6 +381,17 @@ public abstract class Alignment {
             return node.mapped;
         }
     }
+
+    /*
+                            if (false) {
+                                Taxon div1 = mrca.getDivision();
+                                Taxon div2 = a.getDivision();
+                                if (div1 != div2 && div1.divergence(div2) != null)
+                                    // 2015-07-23 this happens about 300 times
+                                    System.out.format("! Children of %s are in disjoint divisions (%s in %s + %s in %s)\n",
+                                                      node, mrca, div1, a, div2);
+                            }
+    */
 
 
 }

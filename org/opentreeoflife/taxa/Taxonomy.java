@@ -927,7 +927,7 @@ public abstract class Taxonomy {
 			// Extra informational check.  See if ranks are inverted.
 			if (majorp && high >= 0 && myrank > high)
 				// The myrank == high case is weird too; there are about 200 of those.
-				System.out.format("* Rank inversion: %s %s < %s %s",
+				System.out.format("* Rank inversion : %s %s < %s %s\n",
 								   highchild, highchild.rank.name,
 								   node, node.rank.name);
 
@@ -1630,7 +1630,7 @@ public abstract class Taxonomy {
 		} else {
             Taxon probe = this.lookupId(name);
             if (windy && probe == null)
-                System.err.format("** No taxon found with this name: %s\n", name);
+                System.err.format("** No taxon found with this name or id: %s\n", name);
             return probe;
         }
 	}

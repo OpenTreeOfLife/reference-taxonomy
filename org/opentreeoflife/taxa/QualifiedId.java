@@ -36,7 +36,9 @@ public class QualifiedId {
             return prefix + ":" + id;
 	}
 	public boolean equals(Object o) {
-		if (o instanceof QualifiedId) {
+        if (this == o)
+            return true;
+		else if (o instanceof QualifiedId) {
 			QualifiedId qid = (QualifiedId)o;
             if (!qid.prefix.equals(this.prefix)) return false;
             if (qid.id == null)

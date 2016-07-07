@@ -58,6 +58,10 @@ public class Taxon extends Node {
             return children;
     }
 
+    public Collection<Synonym> getSynonyms() {
+        return synonyms;
+    }
+
     public Iterable<Taxon> descendants(final boolean includeSelf) {
         final Taxon node = this;
         return new Iterable<Taxon>() {
@@ -148,7 +152,6 @@ public class Taxon extends Node {
             }
 
             Synonym syn = new Synonym(name, type, this); // does addToNameIndex
-            // n.b. new Synonym() does addToNameIndex(syn, name);
             if (this.synonyms == NO_SYNONYMS)
                 this.synonyms = new ArrayList<Synonym>();
             this.synonyms.add(syn);

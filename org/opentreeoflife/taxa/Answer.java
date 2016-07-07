@@ -105,6 +105,7 @@ public class Answer {
 	static final int HECK_NO = -3;
 
     public boolean isYes() { return value > DUNNO; }
+    public boolean isNo() { return value < DUNNO; }
 
 	public static Answer heckYes(Taxon subject, Taxon target, String reason, String witness) { // Uninteresting
 		return new Answer(subject, target, HECK_YES, reason, witness);

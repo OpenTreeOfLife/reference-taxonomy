@@ -12,7 +12,11 @@ tax = UnionTaxonomy.newTaxonomy('ott')
 for name in ['Pentaphragma ellipticum',
              'Lachnophyllum',
              'Sipolisia',
-             'Cicerbita bourgaei']:
+             'Cicerbita bourgaei',
+             'Adenophora triphylla',
+             'Artemisia vulgaris',
+             'Carlina libanotica',
+]:
     tax.eventlogger.namesOfInterest.add(name)
 
 # Establish homonym-resolution skeleton (not really used here)
@@ -46,14 +50,16 @@ claims = [
 for claim in claims:
     print claim.check(tax)
 
-# Example of referring to a taxon
-fam = tax.taxon("Phellinaceae")
-
-# Example of how you might add a genus to the taxonomy
 gen = tax.newTaxon("Opentreeia", "genus", "data:testing")
-fam.take(gen)
 gen.take(tax.newTaxon("Opentreeia sp. A", "species", "data:testing"))
 gen.take(tax.newTaxon("Opentreeia sp. B", "species", "data:testing"))
+
+# Example of referring to a taxon
+fam = tax.maybeTaxon("Phellinaceae")
+
+if fam != None:
+    # Example of how you might add a genus to the taxonomy
+    fam.take(gen)
 
 # Test deletion feature
 sp = tax.newTaxon("Opentreeia sp. C", "species", "data:testing")

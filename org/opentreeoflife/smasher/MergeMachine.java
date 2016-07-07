@@ -288,6 +288,8 @@ class MergeMachine {
         return newnode;
 	}
 
+    // target is the union taxonomy
+
     Taxon alignWithNew(Taxon node, Taxonomy target, String reason) {
         Taxon newnode = target.dupWithoutId(node, reason);
         node.mapped = newnode;

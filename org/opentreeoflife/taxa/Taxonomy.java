@@ -56,6 +56,9 @@ public abstract class Taxonomy {
 
     public EventLogger eventlogger = null;
 
+    Map<QualifiedId, Node> qidIndex = null;
+    Set<QualifiedId> qidAmbiguous = null;
+
 	public Taxonomy() {
     }
 
@@ -261,6 +264,45 @@ public abstract class Taxonomy {
         return this.idspace;
 	}
 
+    public void startQidIndex() {
+        this.qidIndex = new HashMap<QualifiedId, Node>();
+        this.qidAmbiguous = new HashSet<QualifiedId>();
+    }
+
+    public Node lookupQid(QualifiedId qid) {
+        Node node = this.qidIndex.get(qid);
+        if (node != null && this.qidAmbiguous.contains(qid))
+            return null;
+        return node;
+    }
+
+    // index a single node by one qid
+    void indexByQid(Node node, QualifiedId qid) {
+        if (this.qidIndex != null) {
+            Node other = this.qidIndex.get(qid);
+            if (other != null) {
+                if (other != node)
+                    this.qidAmbiguous.add(qid);
+            } else
+                this.qidIndex.put(qid, node);
+        }
+    }
+
+    // index all nodes by all their qids
+    public void indexByQid() {
+        this.startQidIndex();
+        for (Taxon taxon : this.taxa()) {
+            if (taxon.sourceIds != null)
+                for (QualifiedId qid : taxon.sourceIds)
+                    indexByQid(taxon, qid);
+            for (Synonym syn : taxon.getSynonyms())
+                if (syn.sourceIds != null)
+                    for (QualifiedId qid : syn.sourceIds)
+                        indexByQid(syn, qid);
+        }
+    }
+
+
     // Ensure that the taxon has the indicated name, either as synonym or as primary
 
 	public boolean addSynonym(String name, Taxon taxon, String type) {
@@ -279,49 +321,33 @@ public abstract class Taxonomy {
 	//	and vice versa.
 	void copySynonyms(Taxonomy targetTaxonomy, boolean mappedp) {
 		int count = 0;
-        for (Node node : this.allNamedNodes()) {
-            if (node instanceof Taxon) continue;
-            Synonym syn = (Synonym)node;
+        for (Taxon taxon : this.taxa()) {
 
-            // It's a synonym for what in the target?
-            Taxon taxon = syn.taxon();
             Taxon targetTaxon =
                 (mappedp
                  ? taxon.mapped
                  : targetTaxonomy.lookupId(taxon.id));
             if (targetTaxon == null) continue;
 
-            // Find or create synonym in target taxonomy
-            Synonym targetSyn = null;
-
-            String name = syn.name;
-            List<Node> targetNodes = targetTaxonomy.lookup(name);
-            if (targetNodes != null) {
-                // One or more nodes with this name already exist in target
-                for (Node targetNode : targetNodes)
-                    if (targetNode instanceof Synonym) {
-                        if (targetSyn == null)
-                            targetSyn = (Synonym)targetNode;
-                        else {
-                            // more than one synonym - shouldn't happen - they'll cancel out
-                            targetSyn = null;
-                            break;
-                        }
+            for (Synonym syn : taxon.getSynonyms()) {
+                // quadratic... sorry...
+                Synonym targetSyn = null;
+                for (Synonym targetSyn1 : targetTaxon.getSynonyms()) {
+                    if (syn.name.equals(targetSyn1.name)) {
+                        targetSyn = targetSyn1;
+                        break;
                     }
-                if (targetSyn == null) continue;
-            } else {
-                targetSyn = targetTaxon.newSynonym(name, syn.type);
-            }
-            if (mappedp)
-                targetSyn.addSourceId(taxon.getQualifiedId());
-            else {
-                if (targetSyn.sourceIds == null) {
-                    if (syn.sourceIds != null)
-                        targetSyn.sourceIds = new ArrayList<QualifiedId>(syn.sourceIds);
+                }
+                if (targetSyn == null) {
+                    targetSyn = targetTaxon.newSynonym(syn.name, syn.type);
+                    ++count;
                 } else
-                    targetSyn.sourceIds.addAll(syn.sourceIds);
+                    // how to combine the types of the two synonyms ??
+                    ;
+                if (syn.sourceIds != null)
+                    for (QualifiedId qid : syn.sourceIds)
+                        targetSyn.addSourceId(qid);
             }
-            ++count;
         }
 		if (count > 0)
 			System.err.println("| Added " + count + " synonyms");

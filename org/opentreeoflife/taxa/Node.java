@@ -30,8 +30,10 @@ public abstract class Node {
 	public void addSourceId(QualifiedId qid) {
 		if (this.sourceIds == null)
 			this.sourceIds = new ArrayList<QualifiedId>(1);
-		if (!this.sourceIds.contains(qid))
+		if (!this.sourceIds.contains(qid)) {
 			this.sourceIds.add(qid);
+            this.taxonomy.indexByQid(this, qid);
+        }
 	}
 
 	// Note: There can be multiple sources, separated by commas.

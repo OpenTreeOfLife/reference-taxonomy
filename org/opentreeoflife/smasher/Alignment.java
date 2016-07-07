@@ -19,6 +19,8 @@
 package org.opentreeoflife.smasher;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Collection;
 
 import org.opentreeoflife.taxa.Node;
@@ -50,6 +52,29 @@ public abstract class Alignment {
         if (a == null) return null;
         else if (a.isYes()) return a.target;
         else return null;
+    }
+
+    Map<Taxon, Answer> capture() {
+        Map<Taxon, Answer> table = new HashMap<Taxon, Answer>();
+        for (Taxon node : source.taxa()) {
+            if (node.mapped != null) {
+                if (node.answer.target != node.mapped)
+                    System.err.format("** Target in answer %s clashes with %s (for taxon %s)\n",
+                                      node.answer.target, node.mapped, node);
+                table.put(node, node.answer);
+                node.mapped = null;
+            }
+            node.answer = null;
+        }
+        return table;
+    }
+
+    void release(Map<Taxon, Answer> table) {
+        for (Taxon node : table.keySet()) {
+            Answer a = table.get(node);
+            node.answer = a;
+            node.mapped = a.target;
+        }
     }
 
     // ----- Aligning individual nodes -----
@@ -160,11 +185,11 @@ public abstract class Alignment {
 
     // ----- Align divisions from skeleton taxonomy -----
 
-	public void markDivisions(SourceTaxonomy source) {
+	public void markDivisions(Taxonomy tax) {
 		if (union.skeleton == null)
-			this.pin(source);	// Obsolete code, for backward compatibility!
+			this.pin(tax);	// Obsolete code, for backward compatibility!
 		else
-            markDivisionsFromSkeleton(source, union.skeleton);
+            markDivisionsFromSkeleton(tax, union.skeleton);
 	}
 
 	// Before every alignment pass (folding source taxonomy into
@@ -176,10 +201,10 @@ public abstract class Alignment {
 
 	// This operation is idempotent.
 
-    public void markDivisionsFromSkeleton(Taxonomy source, Taxonomy skel) {
+    public void markDivisionsFromSkeleton(Taxonomy tax, Taxonomy skel) {
         for (String name : skel.allNames()) {
             Taxon div = skel.unique(name);
-            Taxon node = highest(source, name);
+            Taxon node = highest(tax, name);
             if (node != null) {
                 if (node.getDivisionProper() == null) {
                     node.setDivision(div);
@@ -227,7 +252,7 @@ public abstract class Alignment {
 
 	// List determined manually and empirically
 	// @deprecated
-	void pin(Taxonomy source) {
+	void pin(Taxonomy tax) {
 		String[][] pins = {
 			// Stephen's list
 			{"Fungi"},
@@ -256,7 +281,7 @@ public abstract class Alignment {
 			// under all possible synonyms
 			for (int j = 0; j < names.length; ++j) {
 				String name = names[j];
-				Taxon m1 = highest(source, name);
+				Taxon m1 = highest(tax, name);
 				if (m1 != null) n1 = m1;
 				Taxon m2 = highest(union, name);
 				if (m2 != null) div = m2;
@@ -543,8 +568,8 @@ abstract class Criterion {
 		new Criterion() {
 			public String toString() { return "overlaps"; }
 			Answer assess(Taxon x, Taxon target) {
-				Taxon a = AlignmentByName.antiwitness(x, target);
-				Taxon b = AlignmentByName.witness(x, target);
+				Taxon a = AlignmentByName.antiwitness(x, target);// in x but not target
+				Taxon b = AlignmentByName.witness(x, target);    // in both
 				if (b != null) { // good
 					if (a == null)	// good
 						// 2859
@@ -565,6 +590,20 @@ abstract class Criterion {
 			}
 		};
 
+	static Criterion disjoint =
+		new Criterion() {
+			public String toString() { return "overlaps"; }
+			Answer assess(Taxon x, Taxon target) {
+                if (x.children != Taxon.NO_CHILDREN &&
+                    target.children != Taxon.NO_CHILDREN &&
+                    AlignmentByName.witness(x, target) == null &&
+                    AlignmentByName.antiwitness(x, target) != null)
+                    return Answer.no(x, target, "not-same/no-overlap", null);
+                else
+                    return Answer.NOINFO;
+			}
+		};
+
 	static Criterion sameSourceId =
 		new Criterion() {
 			public String toString() { return "same-source-id"; }
@@ -579,6 +618,14 @@ abstract class Criterion {
 			}
 		};
 
+
+    static QualifiedId maybeQualifiedId(Taxon node) {
+        QualifiedId qid = node.putativeSourceRef();
+        if (qid != null) return qid;
+        if (node.id != null && node.taxonomy.getIdspace() != null)
+            return node.getQualifiedId();
+        else return null;
+    }
 
 	// Match NCBI or GBIF identifiers
 	// This kicks in when we try to map the previous OTT to assign ids, after we've mapped GBIF.
@@ -606,29 +653,6 @@ abstract class Criterion {
 			}
 		};
 
-    static QualifiedId maybeQualifiedId(Taxon node) {
-        QualifiedId qid = node.putativeSourceRef();
-        if (qid != null) return qid;
-        if (node.id != null && node.taxonomy.getIdspace() != null)
-            return node.getQualifiedId();
-        else return null;
-    }
-
-	// Buchnera in Silva and 713
-	static Criterion knowDivision =
-		new Criterion() {
-			public String toString() { return "same-division-knowledge"; }
-			Answer assess(Taxon x, Taxon target) {
-				Taxon xdiv = x.getDivision();
-				Taxon ydiv = target.getDivision();
-				if (xdiv != ydiv) // One might be null
-					// Evidence of difference, good enough to prevent name-only matches
-					return Answer.heckNo(x, target, "not-same/division-knowledge", x.divisionName());
-				else
-					return Answer.NOINFO;
-			}
-		};
-
 	// E.g. Steganina, Tripylina in NCBI - they're distinguishable by their ranks
 	static Criterion byRank =
 		new Criterion() {
@@ -649,7 +673,7 @@ abstract class Criterion {
 			public String toString() { return "same-primary-name"; }
 			Answer assess(Taxon x, Taxon target) {
 				if (x.name.equals(target.name))
-					return Answer.weakYes(x, target, "same/primary-name", x.name);
+					return Answer.heckYes(x, target, "same/primary-name", x.name);
 				else
 					return Answer.NOINFO;
 			}
@@ -659,21 +683,32 @@ abstract class Criterion {
 	// E.g. Steganina in NCBI - distinguishable by their ranks
 	static Criterion elimination =
 		new Criterion() {
-			public String toString() { return "name-in-common"; }
+			public String toString() { return "only-candidate"; }
 			Answer assess(Taxon x, Taxon target) {
-				return Answer.weakYes(x, target, "same/name-in-common", null);
+				return Answer.weakYes(x, target, "same/only-candidate", null);
 			}
 		};
 
 	static Criterion[] criteria = {
 		division,
+        ranks,                  // separate by rank
 		lineage,
         subsumption,
+        byPrimaryName,
 		sameSourceId,
 		anySourceId,
         weakDivision,
+    };
+
+	static Criterion[] oldCriteria = {
+		division,
+		// eschewTattered,
+		lineage, subsumption,
+		sameSourceId,
+		anySourceId,
+		// knowDivision,
+        weakDivision,
 		byRank,
-        ranks,
         byPrimaryName,
         elimination,
     };

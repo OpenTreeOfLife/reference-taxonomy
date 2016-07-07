@@ -1,12 +1,5 @@
 package org.opentreeoflife.smasher;
 
-import org.opentreeoflife.taxa.Node;
-import org.opentreeoflife.taxa.Taxon;
-import org.opentreeoflife.taxa.Taxonomy;
-import org.opentreeoflife.taxa.SourceTaxonomy;
-import org.opentreeoflife.taxa.Answer;
-import org.opentreeoflife.taxa.QualifiedId;
-
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +12,14 @@ import java.util.Set;
 import java.util.HashSet;
 import java.io.PrintStream;
 import java.io.IOException;
+
+import org.opentreeoflife.taxa.Node;
+import org.opentreeoflife.taxa.Taxon;
+import org.opentreeoflife.taxa.Synonym;
+import org.opentreeoflife.taxa.Taxonomy;
+import org.opentreeoflife.taxa.SourceTaxonomy;
+import org.opentreeoflife.taxa.Answer;
+import org.opentreeoflife.taxa.QualifiedId;
 
 // At the end of this, every source node should have its .answer field set.
 
@@ -162,19 +163,185 @@ public class AlignmentByName extends Alignment {
     }
 
     public void align() {
+        Map<Taxon, Answer> basis = this.capture();
+        System.out.format("| Basis: %s mappings\n", basis.size());
+
+        oldAlign();
+        Map<Taxon, Answer> table = this.capture();
+
+        this.release(basis);
+        oldAlign();
+        System.out.format("| (comparing old to old)\n");
+        compareMappings(table);
+        table = this.capture();
+
+        this.release(basis);
+        newalign();
+        System.out.format("| (comparing old to new)\n");
+        compareMappings(table);
+        table = this.capture();
+
+        this.release(basis);
+        newalign();
+        System.out.format("| (comparing new to new)\n");
+        compareMappings(table);
+
+    }
+
+    void compareMappings(Map<Taxon, Answer> table) {
+
+        // Compare newalign mapping (in .answer / .mapped) to oldalign mapping (in table)
+        int count = 0, gained = 0, lost = 0, changed = 0;
+        for (Taxon node : source.taxa()) {
+            Answer ol = table.get(node); // old
+            Answer nu = node.answer;     // new
+            if (ol == null) ol = Answer.no(node, null, "no-old", null);
+            if (nu == null) nu = Answer.no(node, null, "no-new", null); // shouldn't happen
+
+            if (nu.isYes()) {
+                ++count;        // total number of taxa in new mapping
+                if (!ol.isYes())
+                    ++gained;
+                else if (ol.target == nu.target)
+                    continue;
+                else
+                    ++changed;
+            } else {
+                if (ol.isYes())
+                    ++lost;
+            } else {
+                continue;
+            }
+            // A case that's interesting enough to report.
+            if (!nu.reason.equals("same/primary-name")) //too many
+                System.out.format("+ %s new-%s> %s %s, old-%s> %s %s\n",
+                                  node,
+                                  (nu.isYes() ? "" : "/"), nu.target, nu.reason,
+                                  (ol.isYes() ? "" : "/"), ol.target, ol.reason);
+        }
+        System.out.format("| Old-stye alignment: %s mappings\n", table.size());
+        System.out.format("| New-style alignment: %s mappings\n", count);
+        System.out.format("| Gained %s, lost %s, changed %s\n", gained, lost, changed);
+    }
+
+    public void newalign() {
+        union.eventlogger.resetEvents();
         this.reset();          // depths, brackets, comapped
-
         this.alignWith(source.forest, union.forest, "align-forests");
+        this.markDivisions(source);
 
-        Criterion[] criteria = Criterion.criteria;
+        for (Taxon node : source.taxa()) {
+            Answer a = newalign(node);
+            if (a.isYes())
+                alignWith(node, a.target, a);
+            else
+                node.answer = a;
+        }
+        union.eventlogger.eventsReport("| ");
+
+        // Report on how well the merge went.
+        Alignment.alignmentReport(source, union);
+    }
+
+    // Alignment - new method
+
+    public Answer newalign(Taxon node) {
+        Set<Taxon> candidates = getCandidates(node);
+
+        if (candidates.size() == 0)
+            return Answer.heckNo(node, null, "no-candidates", null);
+
+        int max;
+        Answer anyAnswer = null;
+        Taxon anyCandidate = null;
+        String deciding = "no-choice";
+        for (Criterion criterion : Criterion.criteria) {
+            Set<Taxon> winners = new HashSet<Taxon>();
+            max = -100;
+            for (Taxon unode : candidates) {
+                Answer a = criterion.assess(node, unode);
+                if (a.value >= max) {
+                    if (a.value > max) {
+                        max = a.value;
+                        winners = new HashSet<Taxon>();
+                    }
+                    winners.add(unode);
+                    anyCandidate = unode;
+                    anyAnswer = a;
+                }
+            }
+            // Accept a yes answer
+            if (max > Answer.DUNNO && winners.size() == 1)
+                return anyAnswer;
+
+            // Accept a no answer
+            if (max < Answer.DUNNO) {
+                if (winners.size() == 1)
+                    return anyAnswer;
+                else
+                    return Answer.no(node, null, "all-candidates-rejected", null);
+            }
+
+            // NOINFO
+            if (winners.size() == 1 && candidates.size() > 1)
+                deciding = criterion.toString();
+
+            candidates = winners;
+        }
+        // No yeses, no nos
+        if (candidates.size() == 1)
+            return Answer.yes(node, anyCandidate, deciding, null);
+        else
+            // avoid creating yet another homonym
+            return Answer.no(node, null, "ambiguous", null);
+    }
+
+    private static boolean allowSynonymSynonymMatches = false;
+
+    // Given a source taxonomy return, return a set of target (union)
+    // taxonomy nodes that it might plausibly match
+
+    Set<Taxon> getCandidates(Taxon node) {
+        Set<Taxon> candidates = new HashSet<Taxon>();
+        // Add any union taxon that either has our primary name-string or has a matching synonym
+        {
+            Collection<Node> unodes = union.lookup(node.name);
+            if (unodes != null)
+                for (Node unode : unodes)
+                    candidates.add(unode.taxon());
+        }
+        // Add any union taxon that has our name or the name of one of our synonyms
+        for (Synonym syn : node.getSynonyms()) {
+            Collection<Node> unodes = union.lookup(syn.name);
+            if (unodes != null)
+                for (Node unode : unodes)
+                    if (allowSynonymSynonymMatches || unode instanceof Taxon)
+                        candidates.add(unode.taxon());
+        }
+        // Add nodes that share a qid with this one (for idsource alignment)
+        if (node.sourceIds != null)
+            for (QualifiedId qid : node.sourceIds) {
+                Node unode = union.lookupQid(qid);
+                if (unode != null && !unode.prunedp)
+                    candidates.add(unode.taxon());
+            }
+        return candidates;
+    }
+
+    // Alignment by name - old method
+
+    public void oldAlign() {
+        this.reset();          // depths, brackets, comapped
+        this.alignWith(source.forest, union.forest, "align-forests");
+        this.markDivisions(source);
+        union.eventlogger.resetEvents();
+
 		if (source.rootCount() > 0) {
 
-			union.eventlogger.resetEvents();
+            Criterion[] criteria = Criterion.oldCriteria;
 			System.out.println("--- Mapping " + source.getTag() + " to union ---");
 
 			int beforeCount = union.numberOfNames();
-
-			this.markDivisions(source);
 
 			Set<String> seen = new HashSet<String>();
 			List<String> todo = new ArrayList<String>();
@@ -229,7 +396,7 @@ public class AlignmentByName extends Alignment {
 			}
 			System.out.println("| Names in common: " + incommon);
 
-			union.eventlogger.eventsReport("| ");
+			union.eventlogger.eventsReport("|? ");
 
 			// Report on how well the merge went.
 			Alignment.alignmentReport(source, union);

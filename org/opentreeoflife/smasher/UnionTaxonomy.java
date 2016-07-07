@@ -59,6 +59,7 @@ public class UnionTaxonomy extends Taxonomy {
         super(idspace);
 		this.setTag("union");
         this.eventlogger = new EventLogger();
+        this.startQidIndex();
 	}
 
 	public static UnionTaxonomy newTaxonomy(String idspace) {
@@ -202,17 +203,8 @@ public class UnionTaxonomy extends Taxonomy {
 		this.eventlogger.eventsReport("| ");		// Taxon id clash
 	}
 
+    // This should be moot given new logic in AlignmentByName
     public void alignByQid(SourceTaxonomy idsource, Alignment a) {
-        Map<QualifiedId, Taxon> qidIndex = new HashMap<QualifiedId, Taxon>();
-        Set<QualifiedId> ambiguous = new HashSet<QualifiedId>();
-        for (Taxon taxon : this.taxa())
-            if (taxon.sourceIds != null)
-                for (QualifiedId qid : taxon.sourceIds) {
-                    if (qidIndex.get(qid) != null)
-                        ambiguous.add(qid);
-                    else
-                        qidIndex.put(qid, taxon);
-                }
         int already = 0;
         int sameName = 0;
         int differentName = 0;
@@ -220,12 +212,10 @@ public class UnionTaxonomy extends Taxonomy {
         for (Taxon taxon : idsource.taxa()) {
             if (taxon.sourceIds != null)
                 for (QualifiedId qid : taxon.sourceIds) {
-                    Taxon utaxon = qidIndex.get(qid);
-                    if (utaxon != null) {
-                        if (ambiguous.contains(qid))
-                            // could use event logger here instead.
-                            ++blocked;
-                        else if (taxon.mapped == null) {
+                    Node unode = this.lookupQid(qid);
+                    if (unode != null) {
+                        Taxon utaxon = unode.taxon();
+                        if (taxon.mapped == null) {
                             if (taxon.name != null && taxon.name.equals(utaxon.name)) {
                                 a.alignWith(taxon, utaxon, "qid-match-same-name");
                                 ++sameName;

@@ -66,12 +66,12 @@ public class TsvEdits {
 
 		List<Taxon> parents = tax.filterByAncestor(parentName, contextName);
 		if (parents == null) {
-			System.err.format("! Parent name %s missing in context %s (for %s)\n",
+			System.err.format("** Parent name %s missing in context %s (for %s)\n",
                               parentName, contextName, name);
 			return;
 		}
 		if (parents.size() > 1)
-			System.err.format("? Ambiguous parent name %s for %s\n", parentName, name);
+			System.err.format("** Ambiguous parent name %s for %s\n", parentName, name);
 		Taxon parent = parents.get(0);	  //tax.taxon(parentName, contextName)
 
 		if (!parent.name.equals(parentName))
@@ -81,7 +81,7 @@ public class TsvEdits {
 		Taxon existing = null;
 		if (existings != null) {
 			if (existings.size() > 1)
-				System.err.println("? Ambiguous taxon name: " + name);
+				System.err.println("** Ambiguous taxon name: " + name);
 			existing = existings.get(0);
 		}
 

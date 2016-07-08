@@ -194,7 +194,7 @@ public class UnionTaxonomy extends Taxonomy {
 		this.eventlogger.resetEvents();
 
         // Last ditch effort - attempt to match by qid
-        alignByQid(idsource, a);
+        // alignByQid(idsource, a);
 
 		// Copy ids using alignment
 		this.transferIds(idsource, a);
@@ -210,12 +210,12 @@ public class UnionTaxonomy extends Taxonomy {
         int differentName = 0;
         int blocked = 0;
         for (Taxon taxon : idsource.taxa()) {
-            if (taxon.sourceIds != null)
+            if (taxon.mapped == null && taxon.sourceIds != null)
                 for (QualifiedId qid : taxon.sourceIds) {
                     Node unode = this.lookupQid(qid);
                     if (unode != null) {
                         Taxon utaxon = unode.taxon();
-                        if (taxon.mapped == null) {
+                        if (!utaxon.prunedp) {
                             if (taxon.name != null && taxon.name.equals(utaxon.name)) {
                                 a.alignWith(taxon, utaxon, "qid-match-same-name");
                                 ++sameName;

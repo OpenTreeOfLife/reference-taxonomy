@@ -352,7 +352,7 @@ public abstract class Alignment {
 
     Taxon cacheLubs(Taxon node) {
         if (node.children == null)
-            return node.lub = node.mapped();
+            return node.lub = node.mapped;
         else {
             Taxon mrca = null;  // in union
             for (Taxon child : node.children) {

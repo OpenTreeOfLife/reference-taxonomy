@@ -28,16 +28,21 @@ def check(inclusionspath, ott):
                         print '   There is a %s not in %s; its id happens to be %s' % (small, big, small_id)
                     show_interloper(small_node, small_id, ott)
             
-        elif len(small_nodes) == 1:
-            small_node = small_nodes[0]
-            small_tax = small_node.taxon()
-            if small_id != '' and small_tax != small_id_tax:
-                print '** The id of %s in %s is %s (expected %s)' % (small, big, small_tax.id, small_id)
-                show_interloper(small_node, small_id, ott)
-
         else:
-            print '** More than one taxon named %s is in %s' % (small, big)
-            print '  ', small_nodes
+            smaller_nodes = [x for x in small_nodes if x.name == small]
+            if len(smaller_nodes) == 1:
+                small_nodes = smaller_nodes
+
+            if len(small_nodes) == 1:
+                small_node = small_nodes[0]
+                small_tax = small_node.taxon()
+                if small_id != '' and small_tax != small_id_tax:
+                    print '** The id of %s in %s is %s (expected %s)' % (small, big, small_tax.id, small_id)
+                    show_interloper(small_node, small_id, ott)
+
+            else:
+                print '** More than one taxon named %s is in %s' % (small, big)
+                print '  ', small_nodes
 
     infile.close()
 

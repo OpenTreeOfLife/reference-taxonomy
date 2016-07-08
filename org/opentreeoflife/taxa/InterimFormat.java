@@ -252,6 +252,13 @@ class InterimFormat {
             if (rank == null) {
                 System.err.println("!! Unrecognized rank: " + rankname + " " + node.id);
                 node.rank = Rank.NO_RANK;
+            } else if (rank == Rank.GENUS_RANK && name.endsWith("ae")) {
+                System.out.format("* Does not look like a %s: %s\n", rankname, name);
+                // do not set rank.  E.g. NCBI Dichelesthiidae, Pontosphaeraceae,
+                // GBIF Calycanthaceae, Chimaeridae, Tettigoniidae, Astropectinidae
+            } else if (rank == Rank.FAMILY_RANK && !name.endsWith("ae")) {
+                System.out.format("* Does not look like a %s: %s\n", rankname, name);
+                // NCBI Labyrithula, Sporonauta, GBIF Leptodactyla, etc.
             } else
                 node.rank = rank;
         }

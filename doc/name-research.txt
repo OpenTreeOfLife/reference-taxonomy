@@ -328,7 +328,7 @@ Fungus.
 
 ### Campanella
 
-In SAR:
+In SAR > Alveolata > Ciliophora:
 
   136738	|	557360	|	Campanella	|	genus	|	silva:AF401524/#9,ncbi:168241,gbif:3204425,irmng:1289747	|	Campanella (genus in SAR)	|		|	
   136738	|	557360	|	Campanella	|	genus	|	silva:AF401524/#9,ncbi:168241,gbif:3204425,irmng:1289747	|	Campanella (genus in class Oligohymenophorea)	|	sibling_lower	|	

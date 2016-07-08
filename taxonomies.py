@@ -385,7 +385,7 @@ def link_to_h2007(tax):
          ('Cladochytriales', ['Cladochytriaceae', 'Nowakowskiellaceae', 'Septochytriaceae', 'Endochytriaceae']),
          ('Jaapiales', ['Jaapiaceae']),
          ('Coniocybales', ['Coniocybaceae']),
-         ('Hyaloraphidiales', ['Hyaloraphidiaceae']), # no such family
+         ('Hyaloraphidiales', ['Hyaloraphidium']), # Hyaloraphidiaceae - no such family
          ('Mytilinidiales', ['Mytilinidiaceae', 'Gloniaceae']),
         ]:
         order = tax.maybeTaxon(order_name)
@@ -818,7 +818,11 @@ def patch_gbif(gbif):
         print '** No extant member of Sphenodontidae'
 
     # https://github.com/OpenTreeOfLife/feedback/issues/159
-    gbif.taxon('Nesophontidae', 'Insectivora').extinct()
+    # GBIF sez: 'The order Soricomorpha ("shrew-form") is a taxon within the 
+    # class of mammals. In previous years it formed a significant group 
+    # within the former order Insectivora. However, that order was shown 
+    # to be polyphyletic ...'
+    gbif.taxon('Nesophontidae', 'Soricomorpha').extinct()
 
     # https://github.com/OpenTreeOfLife/feedback/issues/135
     gbif.taxon('Cryptobranchus matthewi', 'Amphibia').extinct()

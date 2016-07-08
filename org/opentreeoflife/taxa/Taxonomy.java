@@ -1624,15 +1624,17 @@ public abstract class Taxonomy {
 	// ----- METHODS FOR USE IN JYTHON SCRIPTS -----
 
 	public Taxon taxon(String name) {
-		return maybeTaxon(name, true);
+		return taxon(name, null, null, true);
 	}
 
 	// Look up a taxon by name or unique id.  Name must be unique in the taxonomy.
 	public Taxon maybeTaxon(String name) {
-        return maybeTaxon(name, false);
+        return taxon(name, null, null, false);
     }
 
-	public Taxon maybeTaxon(String name, boolean windy) {
+    // WORK IN PROGRESS - I plan to move all the ancestor/descendant
+    // filtering logic here
+	public Taxon taxon(String name, String ancestor, String descendant, boolean windy) {
 		List<Node> nodes = this.lookup(name);
 		if (nodes != null) {
 			if (nodes.size() == 1)
@@ -1678,7 +1680,7 @@ public abstract class Taxonomy {
 			if (this.lookup(context) == null) {
 				Taxon probe = this.maybeTaxon(name);
 				if (probe != null)
-					System.err.format("| Found %s but there is no context %s\n", name, context);
+					System.err.format("** Found %s but there is no context %s\n", name, context);
 				return probe;
 			} else
 				return null;

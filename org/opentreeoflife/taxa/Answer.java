@@ -57,6 +57,7 @@ public class Answer {
     }
     
     boolean maybeLog(EventLogger eventlogger) {
+        if (subject == null) return false; // DUNNO
         boolean infirstfew = eventlogger.markEvent(this.reason);
         // markEvent even if name is null
         if (subject.name != null) {
@@ -87,7 +88,7 @@ public class Answer {
             this.log();
     }
 
-    Answer() {
+    private Answer() {
         this.subject = null;
         this.target = null;
         this.value = DUNNO;

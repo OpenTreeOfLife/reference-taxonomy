@@ -113,13 +113,6 @@ public class Taxon extends Node {
         return (this.properFlags & Taxonomy.INCERTAE_SEDIS_ANY) == 0;
     }
 
-    public Taxon mapped() {
-        if (this.mapped != null) return this.mapped;  // New nodes, etc.
-        if (this.answer == null) return null;
-        else if (this.answer.isYes()) return this.answer.target;
-        else return null;
-    }
-
 	public void setName(String name) {
 		if (name == null) {
             if (this.name != null)
@@ -496,12 +489,7 @@ public class Taxon extends Node {
     }
 
 	String elaboratedString(Taxonomy tax) {
-		if (this.mapped != null)
-			return this.toString();
-		else {
-			boolean h = (tax.unique(this.name) != null);
-			return this.toString() +  (h ? "?" : "");
-		}
+        return this.toString();
 	}
 
 	// Number of child-less nodes at and below this node.
@@ -1049,7 +1037,7 @@ public class Taxon extends Node {
 		for (Taxon node = this; node != null; node = node.parent) {
 			if ((node.properFlags & Taxonomy.EXTINCT) != 0) {
 				if (node != this)
-					System.err.format("** Changing ancestor %s of %s from extinct to extant\n", node, this);
+					System.err.format("* Changing ancestor %s of %s from extinct to extant\n", node, this);
 			}
             this.properFlags &= ~Taxonomy.EXTINCT;
             this.inferredFlags &= ~Taxonomy.EXTINCT; // voodoo
@@ -1084,7 +1072,6 @@ public class Taxon extends Node {
             return whether;
         } else
             if (setp)
-                // Alternatively, set this.mapped = Answer.no(...)
                 return this.elide();
             else
                 return false;

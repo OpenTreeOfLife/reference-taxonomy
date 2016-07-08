@@ -177,7 +177,9 @@ public class Addition {
                 description.put("name", node.name);
             if (node.rank != Rank.NO_RANK)
                 description.put("rank", node.rank.name);
-            if (node.parent.id != null) {
+            if (node.isRoot())
+                description.put("parent", "root");
+            else if (node.parent.id != null) {
                 try {
                     long pid = Long.parseLong(node.parent.id);
                     description.put("parent", pid);
@@ -189,7 +191,8 @@ public class Addition {
                 if (parentTag != null)
                     description.put("parent_tag", parentTag);
                 else
-                    System.out.format("** Parent %s has neither id nor tag\n", node.parent);
+                    System.out.format("** Parent %s of %s has neither id nor tag\n",
+                                      node.parent, node);
             }
             if (node.sourceIds != null) {
                 List<Object> sources = new ArrayList<Object>();

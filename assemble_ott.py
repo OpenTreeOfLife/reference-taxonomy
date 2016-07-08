@@ -255,6 +255,15 @@ def deal_with_ctenophora(ott):
     establish('Euxinia', ott, division='Metazoa', source='ncbi:100781', ott_id='476941') #flatworm
     establish('Euxinia', ott, division='Metazoa', source='ncbi:225958', ott_id='329188') #amphipod
 
+    # Discovered via failed inclusion test
+    establish('Campanella', ott, division='Eukaryota', source='ncbi:168241', ott_id='136738') #alveolata
+    establish('Campanella', ott, division='Fungi', source='ncbi:71870', ott_id='5342392')    #basidiomycete
+
+    # Discovered via failed inclusion test
+    establish('Diphylleia', ott, division='Eukaryota',      source='ncbi:177250', ott_id='4738987') #apusozoan
+    establish('Diphylleia', ott, division='Chloroplastida', source='ncbi:63346' , ott_id='570408') #eudicot
+
+
 # ----- SILVA -----
 
 def align_silva(silva, ott):
@@ -377,6 +386,8 @@ def align_fungi(fungi, ott):
     a.same(fungi.taxon('Phaeosphaeria', 'Fungi'), ott.taxon('Phaeosphaeria', 'Fungi'))
 
     # https://github.com/OpenTreeOfLife/feedback/issues/45
+    # Unfortunately Choanoflagellida is currently showing up as
+    # inconsistent.
     if False:
         a.same(fungorum.maybeTaxon('Choanoflagellida'),
                ott.maybeTaxon('Choanoflagellida', 'Opisthokonta'))
@@ -388,7 +399,11 @@ def align_fungi(fungi, ott):
 
 def align_lamiales(study713, ott):
     a = ott.alignment(study713)
-    # ### CHECK: was silva.taxon
+    # Without the explicit alignment of Chloroplastida, alignment thinks that 
+    # the study713 Chloroplastida cannot be the same as the OTT Chloroplastida, 
+    # because of something something something Buchnera (which is a 
+    # bacteria/plant polysemy).
+    a.same(study713.taxon('Chloroplastida'), ott.taxon('Chloroplastida'))
     if do_notSames:
         a.notSame(study713.taxon('Buchnera', 'Orobanchaceae'), ott.taxon('Buchnera', 'Enterobacteriaceae'))
     return a

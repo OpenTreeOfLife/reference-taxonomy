@@ -6,18 +6,16 @@ import java.util.regex.Pattern;
 
 public abstract class Node {
 	public String name;
-	public Taxonomy taxonomy;			// For subsumption checks etc.
 	public Taxon parent = null;
 	public List<QualifiedId> sourceIds = null;
 
-    public Node(Taxonomy tax, String name) {
-        this.taxonomy = tax;
+    public Node(String name) {
         this.name = name;
-        if (name != null)
-            this.taxonomy.addToNameIndex(this, name);
     }
 
     public abstract Taxon taxon();
+
+    public abstract Taxonomy getTaxonomy();
 
     public abstract boolean taxonNameIs(String othername);
 
@@ -32,7 +30,7 @@ public abstract class Node {
 			this.sourceIds = new ArrayList<QualifiedId>(1);
 		if (!this.sourceIds.contains(qid)) {
 			this.sourceIds.add(qid);
-            this.taxonomy.indexByQid(this, qid);
+            this.getTaxonomy().indexByQid(this, qid);
         }
 	}
 

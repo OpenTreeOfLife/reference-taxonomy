@@ -122,11 +122,13 @@ class MergeMachine {
                 accept(node, "mapped/tip");
 			else {
                 Answer a = alignment.getAnswer(node);
-                if (a == null || a.value <= Answer.HECK_NO)
+                if (a == null)
+                    acceptNew(node, "new/tip");
+                else if (a.value <= Answer.HECK_NO)
                     // Don't create homonym if it's too close a match
                     // (weak no) or ambiguous (noinfo)
                     // YES > NOINFO > NO > HECK_NO  (sorry)
-                    acceptNew(node, "new/tip");
+                    acceptNew(node, "new/polysemy");
                 }
 		} else {
             if (unode != null) {
@@ -233,9 +235,7 @@ class MergeMachine {
                     if (child.comapped == null) {
                         // If we do decide to allow these, we
                         // ought to flag the siblings somehow.
-                        if (node.markEvent("not-refinement/nonsurjective"))
-                          if (false)  // too much verbiage
-                            System.out.format("! Trouble with inserting %s into %s is %s\n", node, sink, child);
+                        Answer.no(node, sink, "not-refinement/nonsurjective", child.name);
                         return false;
                     }
         }

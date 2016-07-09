@@ -30,6 +30,7 @@ public class Taxon extends Node {
 	public int properFlags = 0, inferredFlags = 0;
 	Taxon division = null;  // foo.  for Alignment
     public boolean inSynthesis = false; // used only for final annotation
+	public Taxonomy taxonomy;			// For subsumption checks etc.
 
 	// State during alignment
 	public Taxon comapped = null;		// union node -> example source node
@@ -40,10 +41,15 @@ public class Taxon extends Node {
 	public int end = 0;		// Next taxon *not* included
 
     public Taxon(Taxonomy tax, String name) {
-        super(tax, name);       // does addToNameIndex
+        super(name);       // does addToNameIndex
+        this.taxonomy = tax;
+        if (name != null)
+            tax.addToNameIndex(this, name);
     }
 
     public Taxon taxon() { return this; }
+
+    public Taxonomy getTaxonomy() { return this.taxonomy; }
 
     public boolean taxonNameIs(String othername) {
         return this.name.equals(othername);
@@ -233,15 +239,8 @@ public class Taxon extends Node {
             System.out.format("%s", child);
             Taxon.backtrace();
         } else if ((this.properFlags & Taxonomy.FORMER_CONTAINER) != 0 && (this.parent != null)) {
-            if (false)
-                // There tens of thousands of these
-                this.report(String.format("Attempt to add %s to ex-container %s - retrying with parent %s",
-                                          child.name, this.name, this.parent.name),
-                            child);
-            else
-                this.markEvent("move to parent of former container, instead of to container");
-            Taxon target = this.lub;
-            if (target == null) target = this.parent;
+            this.markEvent("move to parent of former container, instead of to container");
+            Taxon target = this.parent;
             target.addChild(child);
             if ((this.properFlags & Taxonomy.MERGED) == 0)
                 // all the other types want some kind of unplaced, cheat a bit
@@ -449,10 +448,7 @@ public class Taxon extends Node {
 	// Events - punt them to union taxonomy
 
 	public boolean markEvent(String note) {
-        if (this.taxonomy instanceof SourceTaxonomy)
-            return this.taxonomy.markEvent(note, this);
-        else
-            return false;
+        return this.taxonomy.markEvent(note, this);
 	}
     
 	public boolean report(String note, Taxon othernode) {

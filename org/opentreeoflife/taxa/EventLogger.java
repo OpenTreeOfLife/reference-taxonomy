@@ -13,15 +13,50 @@ import java.io.PrintStream;
 
 public class EventLogger {
 
-	Map<String, List<Answer>> logs = new HashMap<String, List<Answer>>();
+	private Map<String, List<Answer>> logs = new HashMap<String, List<Answer>>();
 
     // this gets filled in by jython code ...
     public Set<String> namesOfInterest = new HashSet<String>();
 
-	// See Answer.maybeLog().
-    // markEvent has already been called.
+    // Log if interesting.
 
-	void log(Answer answer) {
+    public boolean maybeLog(Answer answer) {
+        boolean infirstfew = this.markEvent(answer.reason);
+        boolean skiptarget = false;
+
+        if (answer.subject != null) {
+            maybeLog(answer, answer.subject, infirstfew);
+
+            // Don't log the target if it has the same name
+            if (answer.target == null ||
+                answer.target.name == null ||
+                answer.target.name.equals(answer.subject.name))
+                return infirstfew;
+        }
+
+        if (answer.target != null)
+            maybeLog(answer, answer.target, infirstfew);
+
+        return infirstfew;
+    }
+    
+    void maybeLog(Answer answer, Taxon abject, boolean infirstfew) {
+        if (abject != null && abject.name != null) {
+            if (infirstfew)
+                this.namesOfInterest.add(abject.name); // watch it play out
+            if (this.namesOfInterest.contains(abject.name) ||
+                infirstfew ||
+                abject.count() > 20000 ||
+                answer.isInteresting()) {
+                // Log it for printing after we get ids
+                this.log(answer);
+            }
+        }
+    }
+
+    // markEvent has already been called at this point.
+
+	private void log(Answer answer) {
 		String name = null;
 		if (answer.target != null) name = answer.target.name;
 		if (name == null) name = answer.subject.name;	 //could be synonym
@@ -43,10 +78,11 @@ public class EventLogger {
 		PrintStream out = Taxonomy.openw(filename);
 
 		// Strongylidae	nem:3600	yes	same-parent/direct	3600	Strongyloidea	false
-		out.println("name\t" +
+		out.println("target_name\t" +
+                    "source_name\t" +
 					"source_qualified_id\t" +
 					"parity\t" +
-					"union_uid\t" +
+					"target_uid\t" +
 					"reason\t" +
 					"witness\t");
 
@@ -97,25 +133,29 @@ public class EventLogger {
 	}
 
     boolean markEvent(String tag, Taxon node) {
-        return Answer.noinfo(node, null, tag, null).maybeLog(this);
+        if (node.taxonomy instanceof SourceTaxonomy)
+            return maybeLog(Answer.noinfo(node, null, tag, null));
+        else
+            return maybeLog(Answer.noinfo(null, node, tag, null));
     }
 
     boolean markEvent(String tag, Taxon node, Taxon unode) {
         // sort of a kludge
-        return Answer.noinfo(node, unode, tag, null).maybeLog(this);
+        return maybeLog(Answer.noinfo(node, unode, tag, null));
     }
 
-    // Final report
+    // Final summary report
 	public void eventsReport(String prefix) {        // was printStats
         Collections.sort(this.eventStatNames);
 		for (String tag : this.eventStatNames) {
 			System.out.println(prefix + tag + ": " + this.eventStats.get(tag));
 		}
+		this.eventStats = new HashMap<String, Long>();
+		this.eventStatNames = new ArrayList();
 	}
 
 	public void resetEvents() {         // was resetStats
-		this.eventStats = new HashMap<String, Long>();
-		this.eventStatNames = new ArrayList();
+        eventsReport(". ");
 	}
 
 }

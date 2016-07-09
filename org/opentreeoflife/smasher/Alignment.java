@@ -41,6 +41,7 @@ public class Alignment {
     Alignment(SourceTaxonomy source, UnionTaxonomy union) {
         this.source = source;
         this.union = union;
+        this.alignWith(source.forest, union.forest, "align-forests");
     }
 
     // clone
@@ -48,6 +49,7 @@ public class Alignment {
         this.source = a.source;
         this.union = a.union;
         this.mappings = a.copyMappings();
+        this.alignWith(source.forest, union.forest, "align-forests");
     }
 
     public Answer getAnswer(Taxon node) {
@@ -426,34 +428,36 @@ public class Alignment {
         for (Taxon node : source.taxa()) {
             Answer ol = other.getAnswer(node); // old
             Answer nu = this.getAnswer(node);     // new
-            if (ol == null) ol = Answer.no(node, null, "no-old", null);
-            if (nu == null) nu = Answer.no(node, null, "no-new", null); // shouldn't happen
+            if (ol != null || nu != null) {
+                if (ol == null) ol = Answer.no(node, null, "compare/no-old", null);
+                if (nu == null) nu = Answer.no(node, null, "compare/no-new", null); // shouldn't happen
 
-            if (ol.isYes()) {
-                if (nu.isYes()) {
-                    ++count;
-                    if (ol.target == nu.target)
+                if (ol.isYes()) {
+                    if (nu.isYes()) {
+                        ++count;
+                        if (ol.target == nu.target)
+                            continue;
+                        else
+                            ++changed;
+                    } else
+                        ++lost;
+                } else {
+                    if (nu.isYes()) {
+                        // New but no old
+                        ++count;
+                        ++gained;
                         continue;
-                    else
-                        ++changed;
-                } else
-                    ++lost;
-            } else {
-                if (nu.isYes()) {
-                    // New but no old
-                    ++count;
-                    ++gained;
-                    continue;
-                } else
-                    // Neither new nor old
-                    continue;
+                    } else
+                        // Neither new nor old
+                        continue;
+                }
+                // A case that's interesting enough to report.
+                if (!nu.reason.equals("same/primary-name")) //too many
+                    System.out.format("+ %s new-%s> %s %s, old-%s> %s %s\n",
+                                      node,
+                                      (nu.isYes() ? "" : "/"), nu.target, nu.reason,
+                                      (ol.isYes() ? "" : "/"), ol.target, ol.reason);
             }
-            // A case that's interesting enough to report.
-            if (!nu.reason.equals("same/primary-name")) //too many
-                System.out.format("+ %s new-%s> %s %s, old-%s> %s %s\n",
-                                  node,
-                                  (nu.isYes() ? "" : "/"), nu.target, nu.reason,
-                                  (ol.isYes() ? "" : "/"), ol.target, ol.reason);
         }
         System.out.format("| Before %s, gained %s, lost %s, changed %s, after %s\n",
                           other.count(), gained, lost, changed, count);

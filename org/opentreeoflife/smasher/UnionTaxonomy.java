@@ -58,7 +58,6 @@ public class UnionTaxonomy extends Taxonomy {
 	UnionTaxonomy(String idspace) {
         super(idspace);
 		this.setTag("union");
-        this.eventlogger = new EventLogger();
         this.startQidIndex();
 	}
 
@@ -129,7 +128,6 @@ public class UnionTaxonomy extends Taxonomy {
 
 	Alignment align(SourceTaxonomy source, Alignment n) {
         n.align();
-        UnionTaxonomy union = this;
         n.cacheLubs();
         return n;
 	}
@@ -174,9 +172,6 @@ public class UnionTaxonomy extends Taxonomy {
         // Align the taxonomies; generates report
 		Alignment a = this.align(idsource);
 		this.idsourceAlignment = a;
-
-        // Reset event counters (because report was generated)
-		this.eventlogger.resetEvents();
 
         // Last ditch effort - attempt to match by qid
         // alignByQid(idsource, a);
@@ -478,7 +473,6 @@ public class UnionTaxonomy extends Taxonomy {
 		out.println("id\tsize\tname\tsourceinfo\treason\twitness\treplacement" +
                     "\tstatus");
 
-        this.eventlogger.resetEvents();
         System.out.format("| prepare union for dump deprecated\n");
         this.inferFlags();  // was done earlier, but why not again - for hidden
         System.out.format("| prepare idsource for dump deprecated\n");

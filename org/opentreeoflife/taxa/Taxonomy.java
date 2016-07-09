@@ -54,7 +54,7 @@ public abstract class Taxonomy {
 	private String tag = null;     // unique marker
 	private int taxid = -1234;	   // kludge
 
-    public EventLogger eventlogger = null;
+    public EventLogger eventlogger = new EventLogger();
 
     Map<QualifiedId, Node> qidIndex = null;
     Set<QualifiedId> qidAmbiguous = null;
@@ -71,6 +71,7 @@ public abstract class Taxonomy {
 	}
 
     public void setEventLogger(EventLogger eventlogger) {
+        eventlogger.resetEvents();    // usually no output
         this.eventlogger = eventlogger;
     }
 
@@ -114,7 +115,7 @@ public abstract class Taxonomy {
 
     // compare addSynonym
 	void addToNameIndex(Node node, String name) {
-        if (node.taxonomy != this)
+        if (node.getTaxonomy() != this)
             throw new RuntimeException(String.format("attempt to put node %s in wrong taxonomy %s", node, this));
         if (name == null)
             throw new RuntimeException("bug " + node);
@@ -177,9 +178,12 @@ public abstract class Taxonomy {
     // utility
 	public Taxon unique(String name) {
 		List<Node> probe = this.lookup(name);
-		if (probe != null && probe.size() == 1)
-			return probe.get(0).taxon();
-		else 
+		if (probe != null) {
+            if (probe.size() == 1)
+                return probe.get(0).taxon();
+            else
+                return null;
+		} else 
 			return this.lookupId(name);
 	}
 
@@ -1303,7 +1307,6 @@ public abstract class Taxonomy {
                     id = Long.toString(minid--);
                 } while (lookupId(id) != null);
 				node.setId(id);
-				node.markEvent("no-id");
 			}
     }
 

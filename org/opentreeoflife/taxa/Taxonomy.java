@@ -316,51 +316,6 @@ public abstract class Taxonomy {
         }
 	}
 
-	// Propogate synonyms from source taxonomy (= this) to union or selection.
-	// Some names that are synonyms in the source might be primary names in the union,
-	//	and vice versa.
-	void copySynonyms(Taxonomy targetTaxonomy, boolean mappedp) {
-		int count = 0;
-        for (Taxon taxon : this.taxa()) {
-
-            Taxon targetTaxon =
-                (mappedp
-                 ? taxon.mapped
-                 : targetTaxonomy.lookupId(taxon.id));
-            if (targetTaxon == null) continue;
-
-            for (Synonym syn : taxon.getSynonyms()) {
-                // quadratic... sorry...
-                Synonym targetSyn = null;
-                for (Synonym targetSyn1 : targetTaxon.getSynonyms()) {
-                    if (syn.name.equals(targetSyn1.name)) {
-                        targetSyn = targetSyn1;
-                        break;
-                    }
-                }
-                if (targetSyn == null) {
-                    targetSyn = targetTaxon.newSynonym(syn.name, syn.type);
-                    ++count;
-                } else
-                    // how to combine the types of the two synonyms ??
-                    ;
-                if (syn.sourceIds != null)
-                    for (QualifiedId qid : syn.sourceIds)
-                        targetSyn.addSourceId(qid);
-            }
-        }
-		if (count > 0)
-			System.err.println("| Added " + count + " synonyms");
-	}
-
-	void copySelectedSynonyms(Taxonomy target) {
-		copySynonyms(target, false);
-	}
-
-	public void copyMappedSynonyms(Taxonomy target) {
-		copySynonyms(target, true);
-	}
-
     /* Nodes with more children come before nodes with fewer children.
        Nodes with shorter ids come before nodes with longer ids.
        */
@@ -1040,7 +995,6 @@ public abstract class Taxonomy {
     Taxonomy finishSelection(Taxonomy tax2, Taxon selection) {
         System.out.println("| Selection has " + selection.count() + " taxa");
         tax2.addRoot(selection);
-        this.copySelectedSynonyms(tax2);
         this.copySelectedIds(tax2);
         // copy flags and sourceids
         for (Taxon node : tax2.taxa())
@@ -1246,6 +1200,7 @@ public abstract class Taxonomy {
         Taxon newnode = dupWithoutId(node, reason);
         if (node.id != null)
             newnode.setId(node.id);
+        node.copySynonymsTo(newnode);
         return newnode;
     }
 

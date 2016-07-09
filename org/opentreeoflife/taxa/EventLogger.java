@@ -97,13 +97,7 @@ public class EventLogger {
 	}
 
     boolean markEvent(String tag, Taxon node) {
-        // sort of a kludge
-        if (node.mapped != null)
-            return Answer.noinfo(node, node.mapped, tag, null).maybeLog(this);
-        else if (node.lub != null)
-            return Answer.noinfo(node, node.lub, tag, null).maybeLog(this);
-        else
-            return Answer.noinfo(node, null, tag, null).maybeLog(this);
+        return Answer.noinfo(node, null, tag, null).maybeLog(this);
     }
 
     boolean markEvent(String tag, Taxon node, Taxon unode) {

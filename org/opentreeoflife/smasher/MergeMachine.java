@@ -48,19 +48,20 @@ class MergeMachine {
         int startcount = union.count();
 
         // This was supposed to be taken care of... guess not
-        for (Taxon node : source.taxa())
-            if (node.mapped != null) {
-                if (node.mapped.prunedp) {
+        for (Taxon node : source.taxa()) {
+            Taxon unode = alignment.getTaxon(node);
+            if (unode != null) {
+                if (unode.prunedp) {
                     System.out.format("** Pruned taxon found as mapping target: %s -> %s\n",
-                                      node, node.mapped);
-                    node.mapped = null;
+                                      node, unode);
                 } else
-                    node.mapped.comapped = node;
+                    unode.comapped = node;
             }
+        }
 
         for (Taxon root : source.roots()) {
             this.augment(root, union.forest);
-            Taxon newroot = root.mapped;
+            Taxon newroot = alignment.getTaxon(root);
             if (newroot != null && newroot.isDetached() && !newroot.noMrca())
                 union.addRoot(newroot);
         }
@@ -90,7 +91,7 @@ class MergeMachine {
                           source.count());
         for (Taxon node : source.taxa()) {
             String reason;
-            Answer answer = node.answer;
+            Answer answer = alignment.getAnswer(node);
             if (answer == null) reason = "** no answer";
             else {
                 reason = answer.reason;
@@ -114,22 +115,24 @@ class MergeMachine {
        that has one.
        */
 	void augment(Taxon node, Taxon sink) {
+        Taxon unode = alignment.getTaxon(node);
 
 		if (node.children == null) {
-            if (node.mapped != null)
+            if (unode != null)
                 accept(node, "mapped/tip");
-			else if (node.answer == null ||
-                     node.answer.value <= Answer.HECK_NO)
-                // Don't create homonym if it's too close a match
-                // (weak no) or ambiguous (noinfo)
-                // YES > NOINFO > NO > HECK_NO  (sorry)
-				acceptNew(node, "new/tip");
-
+			else {
+                Answer a = alignment.getAnswer(node);
+                if (a == null || a.value <= Answer.HECK_NO)
+                    // Don't create homonym if it's too close a match
+                    // (weak no) or ambiguous (noinfo)
+                    // YES > NOINFO > NO > HECK_NO  (sorry)
+                    acceptNew(node, "new/tip");
+                }
 		} else {
-            if (node.mapped != null) {
+            if (unode != null) {
                 for (Taxon child: node.children)
-                    augment(child, node.mapped);
-                takeOn(node, node.mapped, 0);
+                    augment(child, unode);
+                takeOn(node, unode, 0);
                 accept(node, "mapped/internal");
             } else {
                 for (Taxon child: node.children)
@@ -139,7 +142,7 @@ class MergeMachine {
                 Taxon commonParent = null;    // should end up being node.lub
                 int count = 0;
                 for (Taxon child : node.children) {
-                    Taxon childTarget = child.mapped;
+                    Taxon childTarget = alignment.getTaxon(child);
                     if (childTarget != null && !childTarget.isDetached() && childTarget.isPlaced()) {
                         if (commonParent == null)
                             commonParent = childTarget.parent;
@@ -173,12 +176,11 @@ class MergeMachine {
                 }
             }
 			for (Taxon child: node.children) {
-                if (child.mapped != null && child.mapped.parent == null)
+                Taxon uchild = alignment.getTaxon(child);
+                if (uchild != null && uchild.parent == null)
                     // Does not happen
-                    System.err.format("** Unattached child %s %s %s\n", child, node, child.mapped);
+                    System.err.format("** Unattached child %s %s %s\n", child, node, uchild);
             }
-            if (false && node.mapped == null)
-                System.err.format("** Unaligned node %s %s with %s children\n", node, node.answer, node.children.size());
         }
     }
 
@@ -252,10 +254,10 @@ class MergeMachine {
         if (replacement.taxonomy.lookup(node.name) == null) {
             Taxon newnode = acceptNew(node, reason);
             newnode.addFlag(flag);
-            node.answer = Answer.noinfo(node, newnode, reason, replacement.name);
+            alignment.setAnswer(node, Answer.noinfo(node, newnode, reason, replacement.name));
             replacement.addChild(newnode);
         } else {
-            node.answer = Answer.noinfo(node, null, reason, null);
+            alignment.setAnswer(node, Answer.noinfo(node, null, reason, null));
         }
     }
 
@@ -265,17 +267,19 @@ class MergeMachine {
         if (node == null) {
             System.err.format("Shouldn't happen\n"); return null;
         }
-        if (node.mapped == null) {
+        Taxon unode = alignment.getTaxon(node);
+        if (unode == null) {
             System.err.format("Also shouldn't happen: %s\n", node); return null;
         }
-        if (node.answer == null) {
+        Answer a = alignment.getAnswer(node);
+        if (a == null) {
             System.err.format("Also also shouldn't happen: %s\n", node);
-            node.answer = Answer.yes(node, node.mapped, reason, null);
-        } else if (!node.answer.isYes()) {
-            System.err.format("Also also also shouldn't happen: %s %s\n", node, node.answer.reason);
-            node.answer = Answer.yes(node, node.mapped, reason, null);
+            alignment.setAnswer(node, Answer.yes(node, unode, reason, null));
+        } else if (!a.isYes()) {
+            System.err.format("Also also also shouldn't happen: %s %s\n", node, a.reason);
+            alignment.setAnswer(node, Answer.yes(node, unode, reason, null));
         }
-        return node.mapped;
+        return unode;
     }
 
     // Node is not mapped; copy it over
@@ -292,10 +296,10 @@ class MergeMachine {
 
     Taxon alignWithNew(Taxon node, Taxonomy target, String reason) {
         Taxon newnode = target.dupWithoutId(node, reason);
-        node.mapped = newnode;
+        Answer answer = Answer.yes(node, newnode, reason, null);
+        alignment.setAnswer(node, answer);
         newnode.comapped = node;
-        node.answer = Answer.yes(node, newnode, reason, null);
-        node.answer.maybeLog();
+        answer.maybeLog();
         return newnode;
     }
 
@@ -313,7 +317,7 @@ class MergeMachine {
     // implement a refinement
     void takeOld(Taxon node, Taxon newnode) {
         for (Taxon child: node.children) {
-            Taxon childTarget = child.mapped;
+            Taxon childTarget = alignment.getTaxon(child);
             if (childTarget != null && !childTarget.isDetached() && childTarget.isPlaced())
                 childTarget.changeParent(newnode);
         }
@@ -323,7 +327,7 @@ class MergeMachine {
 
     Taxon takeOn(Taxon source, Taxon target, int flags) {
         for (Taxon child: source.children) {
-            Taxon uchild = child.mapped;
+            Taxon uchild = alignment.getTaxon(child);
             if (uchild == null)
                 ;               // inconsistent, merged, ambiguous, ...
             else if (uchild.noMrca())
@@ -382,7 +386,7 @@ class MergeMachine {
     // Called on source taxonomy to transfer flags, rank, etc. to union taxonomy
     public void transferProperties(Taxonomy source) {
         for (Taxon node : source.taxa()) {
-            Taxon unode = node.mapped;
+            Taxon unode = alignment.getTaxon(node);
             if (unode != null)
                 transferProperties(node, unode);
         }
@@ -412,10 +416,6 @@ class MergeMachine {
         if (false && node.sourceIds != null)
             for (QualifiedId id : node.sourceIds)
                 unode.addSourceId(id);
-
-        // ??? retains pointers to source taxonomy... may want to fix for gc purposes
-        if (unode.answer == null)
-            unode.answer = node.answer;
 	}
 
 	// 3799 conflicts as of 2014-04-12
@@ -431,13 +431,14 @@ class MergeMachine {
             if (child.name != null && child.name.equals("Pseudostomum"))
                 foundit = true;
 
-            if (child.mapped != null && !child.mapped.isDetached() && child.mapped.isPlaced()) {
+            Taxon uchild = alignment.getTaxon(child);
+            if (uchild != null && !uchild.isDetached() && uchild.isPlaced()) {
                 // This method of finding fighting children is
                 // heuristic... cf. AlignmentByName
                 if (alice == null)
-                    alice = mrca = child.mapped;
+                    alice = mrca = uchild;
                 else {
-                    bob = child.mapped;
+                    bob = uchild;
                     // We're called deep inside of augment(), so tree may have been edited.
                     // ergo, .carefulMrca instead of .mrca
                     Taxon newmrca = mrca.carefulMrca(bob);
@@ -454,8 +455,9 @@ class MergeMachine {
                               node, node.lub);
             for (Taxon child : node.children) {
                 System.out.format("   Child: %s\n", child);
-                if (child.mapped != null && !child.mapped.isDetached())
-                    child.mapped.show();
+                Taxon uchild = alignment.getTaxon(child);
+                if (uchild != null && !uchild.isDetached())
+                    uchild.show();
             }
         }
 

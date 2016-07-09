@@ -21,118 +21,42 @@ import org.opentreeoflife.taxa.SourceTaxonomy;
 import org.opentreeoflife.taxa.Answer;
 import org.opentreeoflife.taxa.QualifiedId;
 
-// At the end of this, every source node should have its .answer field set.
-
 public class AlignmentByName extends Alignment {
-
-    // Return the node that this one maps to under this alignment, or null
-    Answer answer(Taxon subject) {
-        if (subject.answer != null)
-            return subject.answer;
-        else if (subject.mapped != null)
-            // shouldn't happen
-            return Answer.yes(subject, subject.mapped, "mapped-should-not-happen", null);
-        else
-            return null;
-    }
-
-	int nextSequenceNumber = 0;
-
-	public void reset() {
-        this.source.reset();    // depths
-        this.union.reset();
-
-        // Flush inverse mappings from previous alignment
-		for (Taxon node: this.union.taxa())
-			node.comapped = null;
-
-        for (Taxon node : this.source.taxa())
-            node.seq = NOT_SET;
-
-		this.nextSequenceNumber = 0;
-		for (Taxon root : this.union.roots())
-			assignBrackets(root);
-
-        // unnecessary?
-        // this.source.inferFlags(); 
-        // this.union.inferFlags(); 
-	}
 
     AlignmentByName(SourceTaxonomy source, UnionTaxonomy union) {
         super(source, union);
     }
 
-    private boolean debugp = false;
-
-    public void align() {
-        Map<Taxon, Answer> basis = this.capture();
-        System.out.format("| Basis: %s mappings\n", basis.size());
-
-        oldAlign();
-        Map<Taxon, Answer> table = this.capture();
-
-        if (debugp) {
-            this.release(basis);
-            oldAlign();
-            System.out.format("| (comparing old to old)\n");
-            compareMappings(table);
-            table = this.capture();
-        }
-
-        this.release(basis);
-        newAlign();
-        System.out.format("| (comparing old to new)\n");
-        compareMappings(table);
-
-        if (debugp) {
-            table = this.capture();
-            this.release(basis);
-            newAlign();
-            System.out.format("| (comparing new to new)\n");
-            compareMappings(table);
-        }
-
+    AlignmentByName(Alignment a) {
+        super(a);
     }
 
-    void compareMappings(Map<Taxon, Answer> table) {
+    private boolean debugp = false;
 
-        // Compare newalign mapping (in .answer / .mapped) to oldalign mapping (in table)
-        int count = 0, gained = 0, lost = 0, changed = 0;
-        for (Taxon node : source.taxa()) {
-            Answer ol = table.get(node); // old
-            Answer nu = node.answer;     // new
-            if (ol == null) ol = Answer.no(node, null, "no-old", null);
-            if (nu == null) nu = Answer.no(node, null, "no-new", null); // shouldn't happen
+    // this is pretty gross. needs to be moved & rewritten.
 
-            if (ol.isYes()) {
-                if (nu.isYes()) {
-                    ++count;
-                    if (ol.target == nu.target)
-                        continue;
-                    else
-                        ++changed;
-                } else
-                    ++lost;
-            } else {
-                if (nu.isYes()) {
-                    // New but no old
-                    ++count;
-                    ++gained;
-                    continue;
-                } else
-                    // Neither new nor old
-                    continue;
-            }
-            // A case that's interesting enough to report.
-            if (!nu.reason.equals("same/primary-name")) //too many
-                System.out.format("+ %s new-%s> %s %s, old-%s> %s %s\n",
-                                  node,
-                                  (nu.isYes() ? "" : "/"), nu.target, nu.reason,
-                                  (ol.isYes() ? "" : "/"), ol.target, ol.reason);
+    public void align() {
+        Alignment basis = new Alignment(this);
+        System.out.format("| Basis: %s mappings\n", basis.size());
+
+        AlignmentByName old = new AlignmentByName(basis);
+        old.oldAlign();
+
+        AlignmentByName neu2 = null;
+        if (debugp) {
+            AlignmentByName old2 = new AlignmentByName(basis);
+            old2.oldAlign();
+            old2.compareAlignments(old, "comparing old to old");
+            neu2 = new AlignmentByName(basis);
         }
-        System.out.format("| Old-stye alignment: %s mappings\n", table.size());
-        System.out.format("| New-style alignment: %s mappings\n", count);
-        System.out.format("| Gained %s, lost %s, changed %s\n", gained, lost, changed);
+
+        this.newAlign();
+        this.compareAlignments(old, "comparing old to new");
+
+        if (debugp) {
+            neu2.newAlign();
+            neu2.compareAlignments(this, "comparing new to new");
+        }
     }
 
     public void newAlign() {
@@ -142,18 +66,18 @@ public class AlignmentByName extends Alignment {
         this.markDivisions(source);
 
         for (Taxon node : source.taxa()) {
-            if (node.mapped == null) {
+            if (getTaxon(node) == null) {
                 Answer a = newAlign(node);
                 if (a.isYes())
                     alignWith(node, a.target, a);
                 else
-                    node.answer = a;
+                    this.setAnswer(node, a);
             }
         }
         union.eventlogger.eventsReport("| ");
 
         // Report on how well the merge went.
-        Alignment.alignmentReport(source, union);
+        this.alignmentReport();
     }
 
     // Alignment - new method
@@ -349,7 +273,7 @@ public class AlignmentByName extends Alignment {
 			union.eventlogger.eventsReport("|? ");
 
 			// Report on how well the merge went.
-			Alignment.alignmentReport(source, union);
+			this.alignmentReport();
 		}
     }
 
@@ -461,27 +385,27 @@ public class AlignmentByName extends Alignment {
                         // interesting logic that I excised
 
                         Answer a = answer[i];
-                        if (x.mapped == y)
+                        Taxon ux = alignment.getTaxon(x);
+                        if (ux == y)
                             ;   // multiple criteria met uniquely
-                        else if (x.mapped != null) {
+                        else if (ux != null) {
                             // This case doesn't happen
                             a = Answer.no(x, y, "lost-race-to-source(" + criterion.toString() + ")",
                                           (y.getSourceIdsString() + " lost to " +
-                                           x.mapped.getSourceIdsString()));
-                        } else if (x.mapped == y) {
-                            ;
-                        } else if (x.answer != null) {
-                            Answer.no(x, y, "blocked-because-" + x.answer.reason, null).maybeLog();
+                                           ux.getSourceIdsString()));
+                        } else if (alignment.getAnswer(x) != null) {
+                            Answer.no(x, y, "blocked-because-" + alignment.getAnswer(x).reason, null).maybeLog();
                             // System.out.format("| Blocked from mapping %s to %s because %s\n", x, y, x.answer.reason);
                         } else if (false && y.comapped != null && x.children == null) {
                             // There was already a mapping because of a higher-quality criterion.
                             // Keeping this mapping could cause
                             // trouble, like introduction of
                             // extraneous 'extinct' flags...
-                            x.answer = Answer.no(x, y, "redundant", null);
-                            x.answer.maybeLog();
+                            Answer no = Answer.no(x, y, "redundant", null);
+                            alignment.setAnswer(x, no);
+                            no.maybeLog();
                         } else {
-                            this.alignment.alignWith(x, y, a); // sets .mapped, .answer
+                            this.alignment.alignWith(x, y, a);
                         }
                         suppress_i[j] = a;
                     }
@@ -498,7 +422,7 @@ public class AlignmentByName extends Alignment {
                 Taxon node = nodes.get(i).taxon();
                 Answer[] suppress_i = suppressp[i];
                 // Suppress synonyms
-                if (node.mapped == null) {
+                if (alignment.getTaxon(node) == null) {
                     int alts = 0;	 // how many union nodes might we have gone to?
                     int altj = -1;
                     for (int j = 0; j < n; ++j)
@@ -514,7 +438,6 @@ public class AlignmentByName extends Alignment {
                             if (suppressp[ii][altj] == null) {
                                 Taxon rival = nodes.get(ii).taxon();	// in source taxonomy or idsource
                                 if (rival == node) continue;
-                                // if (rival.mapped == null) continue;	// ???
                                 QualifiedId qid = rival.getQualifiedId();
                                 if (w == null) w = qid.toString();
                                 else w += ("," + qid.toString());
@@ -542,11 +465,14 @@ public class AlignmentByName extends Alignment {
                         // Important case, mapping blocked, maybe a brand new taxon.  Give gory details.
                         // Iterate through the union nodes for this name that we didn't map to
                         // and collect all the reasons.
+                        /*
                         if (n == 1) {
                             explanation = suppress_i[0];
                             if (explanation.reason.equals("not-same/weak-division"))
                                 union.weakLog.add(explanation);
-                        } else {
+                        } else
+                        */
+                            {
                             for (int j = 0; j < n; ++j)
                                 if (suppress_i[j] != null) // how does this happen?
                                     suppress_i[j].log(union);
@@ -574,11 +500,32 @@ public class AlignmentByName extends Alignment {
                     }
                     explanation.maybeLog(union);
                     // remember, source could be either gbif or idsource
-                    node.answer = explanation;  
+                    alignment.setAnswer(node, explanation);  
                 }
             }
         }
     }
+	int nextSequenceNumber = 0;
+
+	public void reset() {
+        this.source.reset();    // depths
+        this.union.reset();
+
+        // Flush inverse mappings from previous alignment
+		for (Taxon node: this.union.taxa())
+			node.comapped = null;
+
+        for (Taxon node : this.source.taxa())
+            node.seq = NOT_SET;
+
+		this.nextSequenceNumber = 0;
+		for (Taxon root : this.union.roots())
+			assignBrackets(root);
+
+        // unnecessary?
+        // this.source.inferFlags(); 
+        // this.union.inferFlags(); 
+	}
 
 	// 'Bracketing' logic.  Every node in the union taxonomy is
 	// assigned a unique integer, ordered sequentially by a preorder
@@ -675,4 +622,3 @@ public class AlignmentByName extends Alignment {
 
 
 }
-

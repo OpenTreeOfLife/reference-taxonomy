@@ -45,9 +45,6 @@ public class AlignmentByMembership extends Alignment {
     // Map union node to source node that includes it
 	Map<Taxon, Taxon> unionHalfMap = new HashMap<Taxon, Taxon>();
 
-    // Final source-to-union alignment
-	Map<Taxon, Answer> alignmentMap = new HashMap<Taxon, Answer>();
-
 	// Need to know which union taxa are targets of mrcas (range of
 	// scaffold or mapping)
 	// Need to compute and store # of union tips under each mrca
@@ -80,12 +77,6 @@ public class AlignmentByMembership extends Alignment {
         alignify();                // mutual-mrca
 	}
 
-    // Return the node that this one maps to under this alignment, or null
-
-    Answer answer(Taxon node) {
-        return alignmentMap.get(node);
-    }
-
     // Is it important to distinguish the two cases of 
     // merge-compatibility and refinement?
     // I.e. is it really necessary to do reciprocal-mrca?
@@ -106,14 +97,15 @@ public class AlignmentByMembership extends Alignment {
     }
 
     // Map tips by name, internal nodes by membership
-    static Taxon halfMapSubtree(Taxon node,
-                                Taxonomy dest,
-                                Map<Taxon, Collection<String>> nameMap,
-                                Map<Taxon,Taxon> halfMap) {
+    Taxon halfMapSubtree(Taxon node,
+                         Taxonomy dest,
+                         Map<Taxon, Collection<String>> nameMap,
+                         Map<Taxon,Taxon> halfMap) {
+        Taxon unode = getTaxon(node); // THIS SEEMS WRONG.
         // Alignment forced by manual intervention
-        if (node.mapped != null) {
-            halfMap.put(node, node.mapped);
-            return node.mapped;
+        if (unode != null) {
+            halfMap.put(node, unode);
+            return unode;
         }
         if (node.children != null) {
             Taxon mrca = null;
@@ -131,7 +123,7 @@ public class AlignmentByMembership extends Alignment {
             }
             /* fall through - node is a 'virtual tip' */
         }
-        Taxon unode = mapByName(node, nameMap, dest); //could be ambiguous
+        unode = mapByName(node, nameMap, dest); //could be ambiguous
         if (unode != null) {
             halfMap.put(node, unode);
             return unode;
@@ -249,7 +241,7 @@ public class AlignmentByMembership extends Alignment {
         if (unode == null)
             return;
         if (unode == AMBIGUOUS) {
-            alignmentMap.put(node, Answer.no(node, null, "ambiguous", null));
+            this.setAnswer(node, Answer.no(node, null, "ambiguous", null));
             return;
         }
         if (node.children != null) {
@@ -272,12 +264,12 @@ public class AlignmentByMembership extends Alignment {
             }
             Taxon match = tryCandidates(node, candidates);
             if (match == AMBIGUOUS)
-                alignmentMap.put(node, Answer.no(node, null, "ambiguous-internal", null));
-            if (match != null)
-                alignmentMap.put(node, Answer.yes(node, match, "matched", null));
+                this.setAnswer(node, Answer.no(node, null, "ambiguous-internal", null));
+            else if (match != null)
+                this.setAnswer(node, Answer.yes(node, match, "matched", null));
             else
                 // Ambiguous.  Map to 'largest' compatible ancestor node
-                alignmentMap.put(node, Answer.yes(node, biggest, "slop", null));
+                this.setAnswer(node, Answer.yes(node, biggest, "slop", null));
         }
     }
 

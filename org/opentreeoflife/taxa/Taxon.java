@@ -29,17 +29,15 @@ public class Taxon extends Node {
 	public boolean prunedp = false;    // for lazy removal from nameIndex
 	public int properFlags = 0, inferredFlags = 0;
 	Taxon division = null;  // foo.  for Alignment
+    public boolean inSynthesis = false; // used only for final annotation
 
 	// State during alignment
-	public Taxon mapped = null;	// source node -> union node
 	public Taxon comapped = null;		// union node -> example source node
-	public Answer answer = null;  // source nodes only
     public Taxon lub = null;                 // union node that is the lub of node's children
 	// Cf. AlignmentByName.assignBrackets
 	public int seq = 0;		// Self
 	public int start = 0;	// First taxon included not including self
 	public int end = 0;		// Next taxon *not* included
-    public boolean inSynthesis = false; // used only for final annotation
 
     public Taxon(Taxonomy tax, String name) {
         super(tax, name);       // does addToNameIndex
@@ -151,6 +149,35 @@ public class Taxon extends Node {
             return syn;
         }
 	}
+
+    // This is not good.  The type and sourceids could be different
+    // from one run to the next.
+
+    public int copySynonymsTo(Taxon targetTaxon) {
+        Taxon taxon = this;
+        int count = 0;
+        for (Synonym syn : taxon.getSynonyms()) {
+            // quadratic... sorry...
+            Synonym targetSyn = null;
+            for (Synonym targetSyn1 : targetTaxon.getSynonyms()) {
+                if (syn.name.equals(targetSyn1.name)) {
+                    // NONDETERMINISM SOURCE.  FIX.
+                    targetSyn = targetSyn1;
+                    break;
+                }
+            }
+            if (targetSyn == null) {
+                targetSyn = targetTaxon.newSynonym(syn.name, syn.type);
+                ++count;
+            } else
+                // how to combine the types of the two synonyms ??
+                ;
+            if (syn.sourceIds != null)
+                for (QualifiedId qid : syn.sourceIds)
+                    targetSyn.addSourceId(qid);
+        }
+        return count;
+    }
 
 	public void clobberName(String name) {
 		String oldname = this.name;
@@ -303,9 +330,7 @@ public class Taxon extends Node {
 	public Taxon getDivision() {
 		if (this.division == null) {
             Taxon div;
-			if (this.mapped != null)
-				div = this.mapped.getDivision();
-			else if (this.parent != null)
+			if (this.parent != null)
 				div = this.parent.getDivision();
             else
                 div = this;     // forest
@@ -383,9 +408,7 @@ public class Taxon extends Node {
 
 	public String toString(Taxon other) {
 		String twinkie = "";
-		if (this.mapped != null || this.comapped != null)
-			twinkie = "*";
-		else if (other != null &&
+		if (other != null &&
 				 other.taxonomy != this.taxonomy &&
 				 other.taxonomy.lookup(this.name) != null)
 			twinkie = "+";		// Name in common
@@ -472,11 +495,8 @@ public class Taxon extends Node {
 		int i = 0;
 		boolean seenmapped = false;
 		for (Taxon n = this; n != null; n = n.parent) {
-			if (++i < 4 || (!seenmapped && (n.mapped != null || n.comapped != null))) {
-				if (n.mapped != null || n.comapped != null)
-					seenmapped = true;
+			if (++i < 4)
 				output += " " + n.toString(other);
-			}
 			else if (i == 4)
 				output += " ...";
 		}
@@ -628,11 +648,8 @@ public class Taxon extends Node {
 	public Taxon[] divergence(Taxon other) {
         Taxon a = this, b = other;
         if (a.taxonomy != b.taxonomy) {
-            Taxon new_a = a.bridge();
-            if (new_a == a)
-                b = other.bridge();
-            else
-                a = new_a;
+            System.err.format("** Not in the same taxonomy: %s %s\n", a, b);
+            return null;
         }
         if (a == null || b == null) return null;
 		if (a.taxonomy != b.taxonomy)
@@ -657,22 +674,9 @@ public class Taxon extends Node {
             System.err.format("** %s and %s are in different trees\n", this, other);
             Taxon.backtrace();
         }
-        Taxon[] answer = {a, b};
-        return answer;
+        Taxon[] result = {a, b};
+        return result;
 	}
-
-    // Map source taxon to nearest available union taxon
-    public Taxon bridge() {
-        Taxon a = this;
-        while (a.mapped == null) {
-            if (a.parent == null)
-                // No bridge!  Shouldn't happen
-                // see uniqueName (of e.g. Trachelius) for example
-                return this;
-            a = a.parent;
-        }
-        return a.mapped;
-    }
 
 	// For cycle detection, etc.
 	public boolean descendsFrom(Taxon b) {
@@ -710,11 +714,6 @@ public class Taxon extends Node {
     // Recursively set prunedp flag and remove from indexes
 	public boolean setRemoved(String reason) {
 		this.prunedp = true;
-        this.mapped = null;
-        if (this.answer == null && (this.taxonomy instanceof SourceTaxonomy)) {
-            this.answer = Answer.no(this, null, reason, null);
-            this.answer.maybeLog();
-        }
 		if (this.children != NO_CHILDREN)
 			for (Taxon child : new ArrayList<Taxon>(children))
 				child.setRemoved(reason);
@@ -1156,8 +1155,6 @@ public class Taxon extends Node {
             System.out.format("Synonym: %s %s %s\n", syn.name, syn.type, syn.getSourceIdsString());
         if (this.comapped != null)
             System.out.format("Node %s maps to this node\n", this.comapped);
-        if (this.mapped != null)
-            System.out.format("This node maps to %s\n", this.mapped);
 	}
 
     // Used to explain why a cycle would be created

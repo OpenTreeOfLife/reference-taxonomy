@@ -54,12 +54,13 @@ def create_ott():
 
     # SILVA
     silva = taxonomies.load_silva()
-    ott.absorb(silva, align_silva(silva, ott))
+    silva_to_ott = align_silva(silva, ott)
+    ott.absorb(silva, silva_to_ott)
     check_invariants(ott)
 
     # Hibbett 2007
     h2007 = taxonomies.load_h2007()
-    ott.absorb(h2007)
+    h2007_to_ott = ott.absorb(h2007)
 
     # Index Fungorum
     (fungi, fungorum_sans_fungi) = split_fungorum(ott)
@@ -78,13 +79,28 @@ def create_ott():
     # NCBI
     ncbi = taxonomies.load_ncbi()
 
-    # Get SILVA cluster / NCBI id correspondence.
-    mappings = ncbi_to_silva(ncbi, silva, ott)
+    # Get mapping from NCBI to OTT, derived via SILVA and Genbank.
+    # ... need to pass silva alignment, not OTT here
+    mappings = load_ncbi_to_silva(ncbi, silva, silva_to_ott)
 
-    ott.absorb(ncbi, align_ncbi(ncbi, silva, ott))
+    ncbi_to_ott = align_ncbi(ncbi, silva, ott)
+    ott.absorb(ncbi, ncbi_to_ott)
+
+    # ... need to pass silva alignment, not OTT here
+    compare_ncbi_to_silva(mappings, silva_to_ott)
+
     check_invariants(ott)
 
-    compare_ncbi_to_silva(mappings, ott)
+    for (ncbi_id, ott_id, name) in ncbi_ott_assignments.ncbi_assignments_list:
+        n = ncbi.maybeTaxon(ncbi_id)
+        if n != None:
+            im = ncbi_to_ott.image(n)
+            if im != None:
+                im.setId(ott_id)
+            else:
+                print '** NCBI %s not mapped - %s' % (ncbi_id, name)
+        else:
+            print '** No NCBI taxon %s - %s' % (ncbi_id, name)
 
     # WoRMS
     worms_sans_malacostraca.taxon('Biota').synonym('life')
@@ -99,7 +115,13 @@ def create_ott():
 
     # GBIF
     gbif = taxonomies.load_gbif()
-    ott.absorb(gbif, align_gbif(gbif, ott))
+    gbif_to_ott = align_gbif(gbif, ott)
+    ott.absorb(gbif, gbif_to_ott)
+
+    # Cylindrocarpon is now Neonectria
+    cyl = gbif_to_ott.image(gbif.taxon('Cylindrocarpon', 'Ascomycota'))
+    if cyl != None:
+        cyl.setId('51754')
 
     # IRMNG
     irmng = taxonomies.load_irmng()
@@ -112,7 +134,7 @@ def create_ott():
 
     taxonomies.link_to_h2007(ott)
 
-    get_default_extinct_info_from_gbif(gbif, ott)
+    get_default_extinct_info_from_gbif(gbif, gbif_to_ott)
 
     check_invariants(ott)
     # consider try: ... except: print '**** Exception in patch_ott'
@@ -159,20 +181,6 @@ def create_ott():
 
     ott.taxonThatContains('Rhynchonelloidea', 'Sphenarina').setId('795939') # NCBI
 
-    for (ncbi_id, ott_id, name) in ncbi_ott_assignments.ncbi_assignments_list:
-        n = ncbi.maybeTaxon(ncbi_id)
-        if n != None:
-            im = ott.image(n)
-            if im != None:
-                im.setId(ott_id)
-            else:
-                print '** NCBI %s not mapped - %s' % (ncbi_id, name)
-        else:
-            print '** No NCBI taxon %s - %s' % (ncbi_id, name)
-
-    # Cylindrocarpon is now Neonectria
-    ott.image(gbif.taxon('2563163')).setId('51754')
-
     # Trichosporon is a mess, because it occurs 3 times in NCBI.
     trich = ott.taxonThatContains('Trichosporon', 'Trichosporon cutaneum')
     if trich != None:
@@ -213,7 +221,7 @@ def create_ott():
 
     ott.check()
 
-    report_on_h2007(h2007, ott)
+    report_on_h2007(h2007, h2007_to_ott)
 
     return ott
 
@@ -515,7 +523,7 @@ def align_ncbi(ncbi, silva, ott):
 
 # Maps taxon in NCBI taxonomy to SILVA-derived OTT taxon
 
-def ncbi_to_silva(ncbi, silva, ott):
+def load_ncbi_to_silva(ncbi, silva, silva_to_ott):
     mappings = {}
     flush = []
     with open('feed/silva/out/ncbi_to_silva.tsv', 'r') as infile:
@@ -525,7 +533,7 @@ def ncbi_to_silva(ncbi, silva, ott):
             if n != None:
                 s = silva.maybeTaxon(silva_cluster_id)
                 if s != None:
-                    so = ott.image(s)
+                    so = silva_to_ott.image(s)
                     if so != None:
                         if n in mappings:
                             # 213 of these
@@ -545,11 +553,13 @@ def ncbi_to_silva(ncbi, silva, ott):
             del mappings[n]
     return mappings
 
-def compare_ncbi_to_silva(mappings, ott):
+# Report on differences between how NCBI and OTT map to SILVA
+
+def compare_ncbi_to_silva(mappings, silva_to_ott):
     problems = 0
     for taxon in mappings:
         t1 = mappings[taxon]
-        t2 = ott.image(taxon)
+        t2 = silva_to_ott.image(taxon)
         if t1 != t2:
             problems += 1
             if t2 != None and t1.name == t2.name:
@@ -1157,7 +1167,7 @@ def patch_ott(ott):
 # extinct flags for taxa originating only from GBIF (i.e. if the taxon also 
 # comes from NCBI, WoRMS, etc. then we do not mark it as extinct).
 
-def get_default_extinct_info_from_gbif(gbif, ott):
+def get_default_extinct_info_from_gbif(gbif, gbif_to_ott):
     infile = open('tax/gbif/paleo.tsv')
     paleos = 0
     flagged = 0
@@ -1166,7 +1176,7 @@ def get_default_extinct_info_from_gbif(gbif, ott):
         id = row.strip()
         gtaxon = gbif.lookupId(id)
         if gtaxon != None:
-            taxon = ott.image(gtaxon)
+            taxon = gbif_to_ott.image(gtaxon)
             if taxon != None:
                 if taxon.sourceIds[0].prefix == 'gbif':
                     # See https://github.com/OpenTreeOfLife/feedback/issues/43
@@ -1176,13 +1186,13 @@ def get_default_extinct_info_from_gbif(gbif, ott):
     infile.close()
     print '| Flagged %s of %s taxa from paleodb\n' % (flagged, paleos)
 
-def unextinct_ncbi(ncbi, ott):
+def unextinct_ncbi(ncbi, ncbi_to_ott):
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/68
     # 'Extinct' would really mean 'extinct and no sequence' with this change
     print 'Non-extincting NCBI'
 
     def recur(node):
-        unode = ott.image(node)
+        unode = ncbi_to_ott.image(node)
         if node.children == None:
             if unode == None:
                 return True
@@ -1195,7 +1205,7 @@ def unextinct_ncbi(ncbi, ott):
             if not inct:
                 if unode != None and unode.isAnnotatedExtinct():
                     # Contains a possibly extant descendant...
-                    print 'Changing from extinct to extant', unode.name, unode.id
+                    print '* Changing from extinct to extant because in NCBI', unode.name, unode.id
                     unode.extant()
                 return False
             else:
@@ -1207,11 +1217,11 @@ def unextinct_ncbi(ncbi, ott):
 
 # Reports
 
-def report_on_h2007(h2007, ott):
+def report_on_h2007(h2007, h2007_to_ott):
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/40
     print '-- Checking realization of h2007'
     for taxon in h2007.taxa():
-        im = ott.image(taxon)
+        im = h2007_to_ott.image(taxon)
         if im != None:
             if im.children == None:
                 print '** Barren taxon from h2007', taxon.name
@@ -1319,4 +1329,5 @@ names_of_interest = ['Ciliophora',
                      'Parvibacter',
                      'Euxinia',
                      'Xiphonectes',
+                     'Cylindrocarpon',
                      ]

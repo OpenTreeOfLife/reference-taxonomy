@@ -126,10 +126,10 @@ def create_ott():
     # IRMNG
     irmng = taxonomies.load_irmng()
     a = align_irmng(irmng, ott)
-    a.align()
     if True:                   # Include taxa from irmng?
         ott.absorb(irmng, a)
     else:
+        ott.align(a)
         a.transferProperties(irmng)
 
     taxonomies.link_to_h2007(ott)

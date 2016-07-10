@@ -295,7 +295,7 @@ class InterimFormat {
 			if (!node.prunedp)
 				dumpNode(node, out, true, sep);
             else
-                System.out.format("** Prunedp taxon in taxonomy: %s\n", node);
+                System.err.format("** Prunedp taxon in taxonomy: %s\n", node);
 		out.close();
 	}
 
@@ -499,13 +499,13 @@ class InterimFormat {
                     Synonym syn = (Synonym)node;
                     Taxon taxon = syn.taxon();
                     if (taxon.prunedp) {
-                        System.out.format("** Prunedp taxon for synonym: %s %s\n", syn, taxon);
+                        System.err.format("** Prunedp taxon for synonym: %s %s\n", syn, taxon);
                         continue;
                     }
                     if (taxon.id == null) {
                         // E.g. Populus tremuloides
                         if (!taxon.isRoot()) {
-                            System.out.format("** Synonym for node with no id: %s %s %s\n",
+                            System.err.format("** Synonym for node with no id: %s %s %s\n",
                                               syn.name, taxon, taxon.parent);
                             //taxon.show();
                         }

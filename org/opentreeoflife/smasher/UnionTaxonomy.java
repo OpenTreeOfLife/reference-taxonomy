@@ -65,10 +65,6 @@ public class UnionTaxonomy extends Taxonomy {
 		return new UnionTaxonomy(idspace);
 	}
 
-    public void addSource(SourceTaxonomy source) {
-        source.setEventLogger(this.eventlogger);
-    }
-
 	// ----- INITIALIZATION FOR EACH SOURCE -----
 
 	// The 'division' field of a Taxon is always either null or a
@@ -93,28 +89,31 @@ public class UnionTaxonomy extends Taxonomy {
 
 	// -----
 
-    // Absorb a new source taxonomy
-
-	public Alignment absorb(SourceTaxonomy source) { // called from jython
-        Alignment a = alignment(source);
-        this.absorb(source, a);
-        return a;
-    }
+    /*
+      Absorb a new source taxonomy.
+      The steps (from python) would normally be:
+      1. create an alignment with a = .alignment(source)
+      2. add ad-hoc node alignments to it with a.same(...)
+      3. either:
+         3a. merge with .absorb(source, a)
+         3b. do alignment only with .align(a)  (if not merging)
+      If 2. is empty, then 1. and 3a. can be combined as .absorb(source)
+      */
 
 	public Alignment alignment(SourceTaxonomy source) { // called from jython
         if (source.idspace == null)
             setIdspace(source);
-        this.addSource(source);
+        source.setEventLogger(this.eventlogger);
         return new AlignmentByName(source, this);
     }
 
 	public void absorb(SourceTaxonomy source, Alignment a) { // called from jython
         try {
-            this.align(source, a);
-            this.sources.add(source);
+            this.align(a);
             new MergeMachine(source, this, a).augment();
             copyMappedSynonymsFrom(this, a); // this = union
             this.check();
+            this.sources.add(source);
             UnionTaxonomy.windyp = true; //kludge
         } catch (Exception e) {
             e.printStackTrace();
@@ -122,15 +121,18 @@ public class UnionTaxonomy extends Taxonomy {
         }
 	}
 
-	Alignment align(SourceTaxonomy source) {
-        return align(source, this.alignment(source));
+    public void align(Alignment a) {
+        this.markDivisions(a);
+        a.align();
     }
 
-	Alignment align(SourceTaxonomy source, Alignment n) {
-        n.align();
-        n.cacheLubs();
-        return n;
-	}
+    // Abbreviation for u.alignment(source) + u.absorb(source, a)
+    // for when there are no ad-hoc alignments.
+	public Alignment absorb(SourceTaxonomy source) { // called from jython
+        Alignment a = this.alignment(source);
+        this.absorb(source, a);
+        return a;
+    }
 
 	// Propogate synonyms from source taxonomy (= this) to union or selection.
 	// Some names that are synonyms in the source might be primary names in the union,
@@ -146,6 +148,127 @@ public class UnionTaxonomy extends Taxonomy {
 		if (count > 0)
 			System.err.println("| Added " + count + " synonyms");
 	}
+
+
+    // ----- Align divisions from skeleton taxonomy -----
+
+	public void markDivisions(Alignment a) {
+		if (this.skeletonAlignment == null)
+			this.pin(a);	// Obsolete code, for backward compatibility!
+		else
+            markDivisionsFromSkeleton(a, this.skeletonAlignment);
+	}
+
+	// Before every alignment pass (folding source taxonomy into
+	// union), all 'division' taxa (from the skeleton) that occur in
+	// the source taxonomy are identified and the
+	// 'division' field of each is set to the corresponding
+	// division node from the skeleton taxonomy.  Also the corresponding
+	// division nodes are aligned.
+
+	// This operation is idempotent.
+
+    private void markDivisionsFromSkeleton(Alignment a, Alignment skeletonAlignment) {
+        SourceTaxonomy source = a.source;
+        SourceTaxonomy skel = skeletonAlignment.source;
+        for (String name : skel.allNames()) {
+            Taxon div = skel.unique(name);
+            Taxon node = highest(source, name);
+            if (node != null) {
+                if (node.getDivisionProper() == null) {
+                    node.setDivision(div);
+                    Taxon unode = skeletonAlignment.getTaxon(div);
+                    if (unode == null)
+                        System.err.format("** Skeleton node %s not mapped to target\n");
+                    else
+                        a.alignWith(node, unode, "same/by-division-name");
+                } else if (node.getDivisionProper() != div)
+                    System.err.format("** Help!  Conflict over division mapping: %s have %s want %s\n",
+                                      node, node.getDivisionProper(), div);
+            }
+        }
+    }
+
+	// List determined manually and empirically
+	// @deprecated
+	private void pin(Alignment a) {
+        Taxonomy source = a.source;
+		String[][] pins = {
+			// Stephen's list
+			{"Fungi"},
+			{"Bacteria"},
+			{"Alveolata"},
+			// {"Rhodophyta"},	creates duplicate of Cyanidiales
+			{"Glaucophyta", "Glaucocystophyceae"},
+			{"Haptophyta", "Haptophyceae"},
+			{"Choanoflagellida"},
+			{"Metazoa", "Animalia"},
+			{"Chloroplastida", "Viridiplantae", "Plantae"},
+			// JAR's list
+			{"Mollusca"},
+			{"Arthropoda"},		// Tetrapoda, Theria
+			{"Chordata"},
+			// {"Eukaryota"},		// doesn't occur in gbif, but useful for ncbi/ncbi test merge
+			// {"Archaea"},			// ambiguous in ncbi
+			{"Viruses"},
+		};
+		int count = 0;
+		for (int i = 0; i < pins.length; ++i) {
+			String names[] = pins[i];
+			Taxon n1 = null, div = null;
+			// The division (div) is in the union taxonomy.
+			// For each pinnable name, look for it in both taxonomies
+			// under all possible synonyms
+			for (int j = 0; j < names.length; ++j) {
+				String name = names[j];
+				Taxon m1 = highest(source, name);
+				if (m1 != null) n1 = m1;
+				Taxon m2 = highest(this, name);
+				if (m2 != null) div = m2;
+			}
+			if (div != null) {
+				div.setDivision(div);
+				if (n1 != null)
+					n1.setDivision(div);
+				if (n1 != null && div != null)
+					a.alignWith(n1, div, "same/pinned"); // hmm.  TBD: move this out of here
+				if (n1 != null || div != null)
+					++count;
+			}
+		}
+		if (count > 0)
+			System.out.println("Pinned " + count + " out of " + pins.length);
+	}
+
+	// Most rootward node in this taxonomy having a given name
+	private static Taxon highest(Taxonomy source, String name) { // See pin()
+		List<Node> l = source.lookup(name);
+		if (l == null) return null;
+		Taxon best = null, otherbest = null;
+		int depth = 1 << 30;
+		for (Node nodenode : l) {
+            Taxon node = nodenode.taxon();
+            // This is for Ctenophora
+            if (node.rank == Rank.GENUS_RANK) continue;
+			int d = node.measureDepth();
+			if (d < depth) {
+				depth = d;
+				best = node;
+				otherbest = null;
+			} else if (d == depth && node != best)
+				otherbest = node;
+		}
+		if (otherbest != null) {
+			if (otherbest == best)
+				// shouldn't happen
+				System.err.format("** Multiply indexed: %s %s %s\n", best, otherbest, depth);
+			else
+				System.err.format("** Ambiguous division name: %s %s %s\n", best, otherbest, depth);
+            return null;
+		}
+		return best;
+	}
+
 
 
     // ----- Finish up -----
@@ -170,7 +293,8 @@ public class UnionTaxonomy extends Taxonomy {
 
 	public void carryOverIds(SourceTaxonomy idsource) {
         // Align the taxonomies; generates report
-		Alignment a = this.align(idsource);
+		Alignment a = this.alignment(idsource);
+        a.align();
 		this.idsourceAlignment = a;
 
         // Last ditch effort - attempt to match by qid

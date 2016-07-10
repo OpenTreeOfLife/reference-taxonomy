@@ -117,19 +117,34 @@ public class Taxon extends Node {
         return (this.properFlags & Taxonomy.INCERTAE_SEDIS_ANY) == 0;
     }
 
+	public void addName(String name, String type) {
+        if (name == null)
+            ;
+        else if (this.name == null) {
+            this.name = name;
+            this.taxonomy.addToNameIndex(this, name);
+        } else if (this.name.equals(name))
+            ;
+        else
+            addSynonym(name, type);
+    }
+
+    // Phase out in favor of addName
 	public void setName(String name) {
 		if (name == null) {
             if (this.name != null)
-                System.err.println("! Setting name to null not allowed: " + this);
-            return;
+                System.err.println("** Setting name to null not allowed: " + this);
+        } else if (name.equals(this.name))
+            ;
+        else if (this.name != null)
+            System.err.format("** Changing name not allowed here: %s %s\n", this, name);
+        else {
+            this.name = name;
+            this.taxonomy.addToNameIndex(this, name);
         }
-        if (name.equals(this.name))
-            return;
-        // Remove from index under old name !?
-		this.name = name;
-        this.taxonomy.addToNameIndex(this, name);
 	}
 
+    // Phase out in favor of addName
 	public Synonym addSynonym(String name, String type) {
         if (this.name == null || name == null)
             return null;        // No synonyms for anonymous nodes
@@ -618,7 +633,7 @@ public class Taxon extends Node {
         }
         while (a != b) {
             if (a == null || b == null) {
-                System.out.format("** shouldn't happen: %s %s?=%s / %s %s?=%s\n",
+                System.err.format("** shouldn't happen: %s %s?=%s / %s %s?=%s\n",
                                   this, this.getDepth(), this.measureDepth(), other, other.getDepth(), other.measureDepth());
                 // seen twice during augment of worms.  ugh.
                 // measure the depths and loop around...
@@ -734,7 +749,7 @@ public class Taxon extends Node {
 
 		List<Node> nodes = this.taxonomy.lookup(this.name);
 		if (nodes == null) {
-            System.out.format("** Not in name index: %s\n", this);
+            System.err.format("** Not in name index: %s\n", this);
             return "(this shouldn't happen)";
         }
                 
@@ -851,7 +866,7 @@ public class Taxon extends Node {
         if (this.name.equals(name)) {
             // Could take name from one of the synonyms?
             // Or set it to null?
-            System.out.format("** What to call it instead? %s\n", name);
+            System.err.format("** What to call it instead? %s\n", name);
         } else {
             Synonym syn = null;
             // Find the synonym with this name...
@@ -911,7 +926,7 @@ public class Taxon extends Node {
             if (t.isDirectlyHidden()) {
                 t.properFlags &= ~Taxonomy.HIDDEN;
                 if (t.isDirectlyHidden()) {
-                    System.out.format("** %s will remain hidden until problems with %s are fixed\n", t, this);
+                    System.err.format("** %s will remain hidden until problems with %s are fixed\n", t, this);
                     success = false;
                 }
             }
@@ -969,7 +984,7 @@ public class Taxon extends Node {
                         // Primary name is already name
                         return true;
                     if (taxon.parent == this.parent) {
-                        System.out.format("** rename: there's already a node with name %s in %s\n",
+                        System.err.format("** rename: there's already a node with name %s in %s\n",
                                           name, this.parent);
                         return false;
                     }
@@ -1000,7 +1015,7 @@ public class Taxon extends Node {
 			return false;
 		}
         if (this.rank != Rank.SPECIES_RANK && other.rank == Rank.SPECIES_RANK)
-            System.out.format("** Losing species %s in absorb (to %s)\n", other, this);
+            System.err.format("** Losing species %s in absorb (to %s)\n", other, this);
 		if (other.children != NO_CHILDREN)
 			for (Taxon child : new ArrayList<Taxon>(other.children))
 				// beware concurrent modification
@@ -1011,6 +1026,7 @@ public class Taxon extends Node {
         // by the presence in the name index of the deprecated taxon
 		other.prune("absorb");
 		this.addSynonym(other.name, "subsumed_by");	// Not sure this is a good idea
+        // copy sources from other to syn?
         return true;
 	}
 
@@ -1058,7 +1074,7 @@ public class Taxon extends Node {
 
     public boolean whetherMonophyletic(boolean whether, boolean setp) {
         if (whether) {
-            System.out.format("** Checking and setting monophyly are not yet implemented\n", this);
+            System.err.format("** Checking and setting monophyly are not yet implemented\n", this);
             return whether;
         } else
             if (setp)

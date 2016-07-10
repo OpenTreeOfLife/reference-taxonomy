@@ -156,7 +156,7 @@ class Newick {
             if (rank != null) {
                 node.rank = rank;
             } else {
-                System.out.format("** Unrecognized rank: %s\n", label);
+                System.err.format("** Unrecognized rank: %s\n", label);
                 node.rank = Rank.NO_RANK;
                 node.setName(spacify(label));
             }

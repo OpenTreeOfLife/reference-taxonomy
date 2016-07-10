@@ -144,7 +144,7 @@ public class Smasher {
 						UnionTaxonomy union = promote(tax);
 						SourceTaxonomy source = Taxonomy.getTaxonomy(argv[i], null);
 						if (source != null)
-							union.align(source);
+							union.absorb(source);
 						tax = union;
 					}
 				}
@@ -156,7 +156,7 @@ public class Smasher {
     static UnionTaxonomy promote(Taxonomy tax) {
         if (tax instanceof SourceTaxonomy) {
             UnionTaxonomy union = new UnionTaxonomy(defaultIdspace);
-            union.align((SourceTaxonomy)tax);
+            union.absorb((SourceTaxonomy)tax);
             return union;
         } else if (tax instanceof UnionTaxonomy)
             return (UnionTaxonomy)tax;

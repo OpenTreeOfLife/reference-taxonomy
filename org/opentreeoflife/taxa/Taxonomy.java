@@ -194,7 +194,7 @@ public abstract class Taxonomy {
         if (t == null)
             return t;
         if (t.prunedp) {
-            System.out.format("** Prunedp taxon in id index: %s\n", t);
+            System.err.format("** Prunedp taxon in id index: %s\n", t);
             return null;
         }
         return t;
@@ -1758,7 +1758,7 @@ public abstract class Taxonomy {
         Set<Taxon> all = new HashSet<Taxon>();
         for (Taxon taxon : this.taxa()) {
             if (taxon.prunedp)
-                System.out.format("** check: Pruned taxon found in hierarchy: %s in %s\n", taxon, taxon.parent);
+                System.err.format("** check: Pruned taxon found in hierarchy: %s in %s\n", taxon, taxon.parent);
             else
                 all.add(taxon);
         }
@@ -1768,12 +1768,12 @@ public abstract class Taxonomy {
             Taxon taxon = node.taxon();
             if (!all.contains(taxon)) {
                 if (node == taxon)
-                    System.out.format("** check: Named taxon not in hierarchy: %s in %s\n", taxon, taxon.parent);
+                    System.err.format("** check: Named taxon not in hierarchy: %s in %s\n", taxon, taxon.parent);
                 else if (taxon.prunedp)
-                    System.out.format("** check: Pruned taxon found in name index: %s = %s in %s\n",
+                    System.err.format("** check: Pruned taxon found in name index: %s = %s in %s\n",
                                       node.name, taxon, taxon.parent);
                 else
-                    System.out.format("** check: Synonym %s taxon not in hierarchy: %s in %s\n",
+                    System.err.format("** check: Synonym %s taxon not in hierarchy: %s in %s\n",
                                       node.name, taxon, taxon.parent);
                 all.add(taxon);
             }
@@ -1783,9 +1783,9 @@ public abstract class Taxonomy {
         for (Taxon taxon : idIndex.values()) {
             if (!all.contains(taxon)) {
                 if (taxon.prunedp)
-                    System.out.format("** check: Pruned taxon is in identifier index: %s\n", taxon);
+                    System.err.format("** check: Pruned taxon is in identifier index: %s\n", taxon);
                 else {
-                    System.out.format("** check: Identified taxon not in hierarchy: %s\n", taxon);
+                    System.err.format("** check: Identified taxon not in hierarchy: %s\n", taxon);
                     all.add(taxon);
                 }
             }
@@ -1796,16 +1796,16 @@ public abstract class Taxonomy {
             if (node.name != null && !node.prunedp) {
                 Collection<Node> nodes = this.lookup(node.name);
                 if (nodes == null)
-                    System.out.format("** check: Named node not in name index: %s\n", node);
+                    System.err.format("** check: Named node not in name index: %s\n", node);
                 else if (!nodes.contains(node))
-                    System.out.format("** check: Named node is not in name index: %s\n", node);
+                    System.err.format("** check: Named node is not in name index: %s\n", node);
             }
             if (node.id != null) {
                 Taxon taxon = lookupId(node.id);
                 if (taxon == null)
-                    System.out.format("** check: Identified node not in id index: %s\n", node);
+                    System.err.format("** check: Identified node not in id index: %s\n", node);
                 else if (taxon != node)
-                    System.out.format("** check: Identified node collision with id index: %s %s\n", node,  taxon);
+                    System.err.format("** check: Identified node collision with id index: %s %s\n", node,  taxon);
             }
         }
 
@@ -1813,9 +1813,9 @@ public abstract class Taxonomy {
         for (Taxon node : all) {
             if (node.parent == null) {
                 if (node != forest && !node.prunedp)
-                    System.out.format("** check: null parent %s\n", node);
+                    System.err.format("** check: null parent %s\n", node);
             } else if (!node.parent.children.contains(node))
-                System.out.format("** check: not in parent's children list: %s %s\n",
+                System.err.format("** check: not in parent's children list: %s %s\n",
                                   node, node.parent);
         }
     }
@@ -1902,7 +1902,7 @@ public abstract class Taxonomy {
             if (node1 != node2)
                 return true;
             if (setp) {
-                System.out.format("** Cannot un-lump %s\n", node1);
+                System.err.format("** Cannot un-lump %s\n", node1);
                 return false;
             }
             else

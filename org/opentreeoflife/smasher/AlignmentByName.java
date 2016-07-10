@@ -23,8 +23,8 @@ import org.opentreeoflife.taxa.QualifiedId;
 
 public class AlignmentByName extends Alignment {
 
-    AlignmentByName(SourceTaxonomy source, UnionTaxonomy union) {
-        super(source, union);
+    AlignmentByName(SourceTaxonomy source, Taxonomy target) {
+        super(source, target);
     }
 
     AlignmentByName(Alignment a) {
@@ -36,7 +36,7 @@ public class AlignmentByName extends Alignment {
     // this is pretty gross. needs to be moved & rewritten.
     // method is invoked from python.
 
-    public void align() {
+    public void reallyAlign() {
 
         Alignment old = null;
         AlignmentByName neu2 = null;
@@ -66,10 +66,6 @@ public class AlignmentByName extends Alignment {
     }
 
     public void newAlign() {
-        union.eventlogger.resetEvents();
-        this.reset();          // depths, brackets, comapped
-        this.markDivisions(source);
-
         for (Taxon node : source.taxa()) {
             if (getTaxon(node) == null) {
                 Answer a = newAlign(node);
@@ -81,10 +77,6 @@ public class AlignmentByName extends Alignment {
                 }
             }
         }
-        union.eventlogger.eventsReport("| ");
-
-        // Report on how well the merge went.
-        this.alignmentReport();
     }
 
     // Alignment - new method
@@ -96,7 +88,7 @@ public class AlignmentByName extends Alignment {
         if (candidates.size() == 0)
             return null;
         if (candidates.size() > 1)
-            union.eventlogger.namesOfInterest.add(node.name);
+            target.eventlogger.namesOfInterest.add(node.name);
         for (Taxon candidate : candidates)
             Answer.noinfo(node, candidate, "candidate", candidateMap.get(candidate));
 
@@ -109,7 +101,7 @@ public class AlignmentByName extends Alignment {
             max = -100;
             for (Taxon unode : candidates) {
                 Answer a = criterion.assess(node, unode);
-                a.maybeLog(union);
+                a.maybeLog(target);
                 if (a.value >= max) {
                     if (a.value > max) {
                         max = a.value;
@@ -130,7 +122,7 @@ public class AlignmentByName extends Alignment {
                     return anyAnswer;
                 else {
                     Answer no = new Answer(node, null, max, "all-candidates-rejected", null);
-                    no.maybeLog(union);
+                    no.maybeLog(target);
                     return no;
                 }
             }
@@ -144,26 +136,26 @@ public class AlignmentByName extends Alignment {
         // No yeses, no nos
         if (candidates.size() == 1) {
             Answer yes = Answer.yes(node, anyCandidate, deciding, null);
-            yes.maybeLog(union);
+            yes.maybeLog(target);
             return yes;
         } else {
 
             // Dump candidates & mode info
             System.out.format("? %s -> ", node);
             for (Taxon c : candidates)
-                System.out.format(" %s[%s]", c, candidateMap.get(c));
+                System.err.format("** %s[%s]", c, candidateMap.get(c));
             System.out.println();
 
             // avoid creating yet another homonym
             Answer no = Answer.no(node, null, "ambiguous", null);
-            no.maybeLog(union);
+            no.maybeLog(target);
             return no;
         }
     }
 
     private static boolean allowSynonymSynonymMatches = false;
 
-    // Given a source taxonomy return, return a set of target (union)
+    // Given a source taxonomy return, return a set of target
     // taxonomy nodes that it might plausibly match
 
     Map<Taxon, String> getCandidates(Taxon node) {
@@ -176,7 +168,7 @@ public class AlignmentByName extends Alignment {
 
     Map<Taxon, String> getCandidatesViaName(Node node, String mode, Map<Taxon, String> candidateMap) {
         if (node.name != null) {
-            Collection<Node> unodes = union.lookup(node.name);
+            Collection<Node> unodes = target.lookup(node.name);
             if (unodes != null)
                 for (Node unode : unodes)
                     addCandidate(candidateMap, unode, mode);
@@ -185,7 +177,7 @@ public class AlignmentByName extends Alignment {
         if (node.sourceIds != null) {
             String mode2 = mode + "I";
             for (QualifiedId qid : node.sourceIds) {
-                Node unode = union.lookupQid(qid);
+                Node unode = target.lookupQid(qid);
                 if (unode != null) {
                     Taxon utaxon = unode.taxon();
                     if (!utaxon.prunedp) {
@@ -212,121 +204,5 @@ public class AlignmentByName extends Alignment {
             modes = modes + " " + mode;
         candidateMap.put(utaxon, modes);
     }
-
-	int nextSequenceNumber = 0;
-
-	public void reset() {
-        this.source.reset();    // depths
-        this.union.reset();
-
-        // Flush inverse mappings from previous alignment
-		for (Taxon node: this.union.taxa())
-			node.comapped = null;
-
-        for (Taxon node : this.source.taxa())
-            node.seq = NOT_SET;
-
-		this.nextSequenceNumber = 0;
-		for (Taxon root : this.union.roots())
-			assignBrackets(root);
-
-        // unnecessary?
-        // this.source.inferFlags(); 
-        // this.union.inferFlags(); 
-	}
-
-	// 'Bracketing' logic.  Every node in the union taxonomy is
-	// assigned a unique integer, ordered sequentially by a preorder
-	// traversal.  Taxon inclusion across taxonomies can be determined
-	// (approximately) by looking at shared names and doing a range check.
-    // This heuristic can fail in the presence of names that are homonyms
-    // across taxonomies.
-
-	static final int NOT_SET = -7; // for source nodes
-	static final int NO_SEQ = -8;  // for source nodes
-
-	// Applied to a union node.  Sets seq, start, end recursively.
-	void assignBrackets(Taxon node) {
-		// Only consider names in common ???
-		node.seq = nextSequenceNumber++;
-		node.start = nextSequenceNumber;
-		if (node.children != null)
-			for (Taxon child : node.children)
-				assignBrackets(child);
-		node.end = nextSequenceNumber;
-	}
-
-	// Applied to a source node.  Sets start = smallest sequence number among all descendants,
-    // end = 1 + largest sequence number among all descendants.
-    // Sets seq = sequence number of corresponding union node (if any).
-	static void getBracket(Taxon node, Taxonomy union) {
-		if (node.seq == NOT_SET) {
-			Taxon unode = union.unique(node.name);
-			if (unode != null)
-				node.seq = unode.seq;
-            else
-                node.seq = NO_SEQ;
-            int start = Integer.MAX_VALUE;
-            int end = -1;
-			if (node.children != null) {
-				for (Taxon child : node.children) {
-					getBracket(child, union);
-					if (child.start < start) start = child.start;
-					if (child.end > end) end = child.end;
-					if (child.seq != NO_SEQ) {
-						if (child.seq < start) start = child.seq;
-						if (child.seq > end) end = child.seq;
-					}
-				}
-			}
-            node.start = start;
-            node.end = end+1;
-		}
-	}
-
-	// Look for a member of the source taxon that's also a member of the union taxon.
-	static Taxon witness(Taxon node, Taxon unode) { // assumes is subsumed by unode
-		getBracket(node, unode.taxonomy);
-		if (node.start >= unode.end || node.end <= unode.start) // Nonoverlapping => lose
-			return null;
-		else if (node.children != null) { // it *will* be nonnull actually
-			for (Taxon child : node.children)
-				if (child.seq != NO_SEQ && (child.seq >= unode.start && child.seq < unode.end))
-					return child;
-				else {
-					Taxon a = witness(child, unode);
-					if (a != null) return a;
-				}
-		}
-		return null;			// Shouldn't happen
-	}
-
-	// Look for a member of the source taxon that's not a member of the union taxon,
-	// but is a member of some other union taxon.
-	static Taxon antiwitness(Taxon node, Taxon unode) {
-		getBracket(node, unode.taxonomy);
-		if (node.start >= unode.start && node.end <= unode.end)
-			return null;
-		else if (node.children != null) { // it *will* be nonnull actually
-			for (Taxon child : node.children)
-				if (child.seq != NO_SEQ && (child.seq < unode.start || child.seq >= unode.end))
-					return child;
-				else {
-					Taxon a = antiwitness(child, unode);
-					if (a != null) return a;
-				}
-		}
-		return null;			// Shouldn't happen
-	}
-
-    public static void testWitness() throws Exception {
-        SourceTaxonomy t1 = Taxonomy.getTaxonomy("(a,b,c)d", "z1");
-        SourceTaxonomy t2 = Taxonomy.getTaxonomy("(a,b,c)d", "z2");
-        UnionTaxonomy u = new UnionTaxonomy("u");
-        u.absorb(t1);
-        u.absorb(t2);
-        System.out.println(witness(t1.taxon("d"), u.taxon("d")));
-    }
-
 
 }

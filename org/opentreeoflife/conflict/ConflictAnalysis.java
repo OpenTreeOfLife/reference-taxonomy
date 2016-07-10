@@ -67,12 +67,12 @@ public class ConflictAnalysis {
         Taxon root = null;
         for (Taxon r : tax.roots()) {
             if (root != null)
-                System.out.format("** Cannot deal with multiple roots: %s %s %s\n", r, root, tax.getTag());
+                System.err.format("** Cannot deal with multiple roots: %s %s %s\n", r, root, tax.getTag());
             else
                 root = r;
         }
         if (root == null)
-            System.out.format("** No root for %s\n", tax.getTag());
+            System.err.format("** No root for %s\n", tax.getTag());
         return root;
     }
 
@@ -314,7 +314,7 @@ public class ConflictAnalysis {
             return null; // shouldn't happen
         }
         if (conode.children == null) {
-            System.out.format("** shouldn't happen\n");
+            System.err.format("** Articulation: shouldn't happen\n");
             return null;
         }
 

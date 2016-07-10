@@ -52,7 +52,7 @@ class MergeMachine {
             Taxon unode = alignment.getTaxon(node);
             if (unode != null) {
                 if (unode.prunedp) {
-                    System.out.format("** Pruned taxon found as mapping target: %s -> %s\n",
+                    System.err.format("** Pruned taxon found as mapping target: %s -> %s\n",
                                       node, unode);
                 } else
                     unode.comapped = node;
@@ -337,7 +337,7 @@ class MergeMachine {
                 if (target == uchild)
                     ;               // Lacrymaria Morganella etc. - shouldn't happen
                 else if (target.descendsFrom(uchild)) {
-                    System.out.format("** Adoption would create a cycle\n");
+                    System.err.format("** Adoption would create a cycle\n");
                     System.out.format("%s ?< ", uchild);
                     target.showLineage(uchild.parent);
 
@@ -398,7 +398,7 @@ class MergeMachine {
         if (node.name != null) {
             if (unode.name == null)
                 unode.setName(node.name);
-            else if (unode.name != node.name)
+            else if (!unode.name.equals(node.name))
                 // ???
                 unode.addSynonym(node.name, "synonym");
         }
@@ -451,10 +451,10 @@ class MergeMachine {
         }
 
         if (foundit) {
-            System.out.format("** Pseudostomum is in inconsistent taxon %s, moving to %s\n",
+            System.err.format("** Pseudostomum is in inconsistent taxon %s, moving to %s\n",
                               node, node.lub);
             for (Taxon child : node.children) {
-                System.out.format("   Child: %s\n", child);
+                System.err.format("**   Child: %s\n", child);
                 Taxon uchild = alignment.getTaxon(child);
                 if (uchild != null && !uchild.isDetached())
                     uchild.show();
@@ -462,7 +462,7 @@ class MergeMachine {
         }
 
         if (alice == null || bob == null || alice == bob)
-            //System.out.format("** Can't find two children %s %s\n", alice, bob);
+            //System.err.format("** Can't find two children %s %s\n", alice, bob);
             union.markEvent("incomplete conflict");
         else {
             if (alice.taxonomy != bob.taxonomy)

@@ -66,7 +66,7 @@ public class Addition {
             Map responseMap = (Map)response; // maps tag to OTT id
             Object err = responseMap.get("error");
             if (err != null)
-                System.out.format("** Error from service: %s\n", err);
+                System.err.format("** Error from service: %s\n", err);
             else {
                 idAssignments = new HashMap<String, String>();
                 for (Object tag : responseMap.keySet())
@@ -92,7 +92,7 @@ public class Addition {
             for (String tag : idAssignments.keySet()) {
                 Taxon node = tagToTaxon.get(tag);
                 if (node == null) {
-                    System.out.format("** No node with tag %s\n", tag);
+                    System.err.format("** No node with tag %s\n", tag);
                     continue;
                 }
                 String id = idAssignments.get(tag);
@@ -191,7 +191,7 @@ public class Addition {
                 if (parentTag != null)
                     description.put("parent_tag", parentTag);
                 else
-                    System.out.format("** Parent %s of %s has neither id nor tag\n",
+                    System.err.format("** Parent %s of %s has neither id nor tag\n",
                                       node.parent, node);
             }
             if (node.sourceIds != null) {
@@ -288,15 +288,15 @@ public class Addition {
                                   "");
 
             if (tag == null) {
-                System.out.format("** Missing tag\n");
+                System.err.format("** Missing tag\n");
                 continue;
             }
             if (name == null) {
-                System.out.format("** Missing name for %s\n", tag);
+                System.err.format("** Missing name for %s\n", tag);
                 continue;
             }
             if (ott_id == null) {
-                System.out.format("** Missing OTT id for %s\n", name);
+                System.err.format("** Missing OTT id for %s\n", name);
                 continue;
             }
 
@@ -305,17 +305,17 @@ public class Addition {
             if (parentId != null) {
                 parent = tax.lookupId(parentId);
                 if (parent == null) {
-                    System.out.format("** Parent %s not found for added taxon %s\n", parentId, name);
+                    System.err.format("** Parent %s not found for added taxon %s\n", parentId, name);
                     continue;
                 }
             } else if (parentTag != null) {
                 parent = tagToTaxon.get(parentTag);
                 if (parent == null) {
-                    System.out.format("** Parent %s not found for added taxon %s\n", parentTag, name);
+                    System.err.format("** Parent %s not found for added taxon %s\n", parentTag, name);
                     continue;
                 }
             } else {
-                System.out.format("** No parent specified for %s\n", name);
+                System.err.format("** No parent specified for %s\n", name);
                 continue;
             }
 
@@ -362,10 +362,10 @@ public class Addition {
         if (target != null) {
             // Seems to be already there!  See if when we found matches what we expect.
             if (!name.equals(target.name))
-                System.out.format("** Requested name %s not same as prior name %s for %s\n",
+                System.err.format("** Requested name %s not same as prior name %s for %s\n",
                                   name, target.name, ott_id);
             if (!parent.id.equals(target.parent.id))
-                System.out.format("** Requested parent %s not same as prior parent %s for %s %s\n",
+                System.err.format("** Requested parent %s not same as prior parent %s for %s %s\n",
                                   parent.id, target.parent.id, name, ott_id);
         } else {
             // Find existing node - one with same name and
@@ -406,7 +406,7 @@ public class Addition {
                         else if (Taxonomy.compareTaxa(node, target) < 0)
                             target = node;
                     if (candidates.size() > 1)
-                        System.out.format("** Ambiguous; choosing %s over homonym(s) for %s in %s\n%s\n",
+                        System.err.format("** Ambiguous; choosing %s over homonym(s) for %s in %s\n%s\n",
                                           target, name, parent, candidates);
                 }
             }

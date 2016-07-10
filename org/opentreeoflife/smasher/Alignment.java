@@ -236,11 +236,10 @@ public class Alignment {
 		if (l == null) return null;
 		Taxon best = null, otherbest = null;
 		int depth = 1 << 30;
-        Rank genus = Rank.getRank("genus");
 		for (Node nodenode : l) {
             Taxon node = nodenode.taxon();
             // This is for Ctenophora
-            if (node.rank == genus) continue;
+            if (node.rank == Rank.GENUS_RANK) continue;
 			int d = node.measureDepth();
 			if (d < depth) {
 				depth = d;
@@ -537,17 +536,14 @@ abstract class Criterion {
 			}
 		};
 
-    static final int family = Rank.getRank("family").level;
-    static final int genus = Rank.getRank("genus").level;
-
     static Criterion ranks =
         new Criterion() {
             public String toString() { return "ranks"; }
             Answer assess(Taxon subject, Taxon target) {
                 if (subject.rank != Rank.NO_RANK &&
                     target.rank != Rank.NO_RANK &&
-                    ((subject.rank.level >= genus) && (target.rank.level <= family) ||
-                     (subject.rank.level <= family) && (target.rank.level >= genus))) {
+                    ((subject.rank.level >= Rank.GENUS_RANK.level) && (target.rank.level <= Rank.FAMILY_RANK.level) ||
+                     (subject.rank.level <= Rank.FAMILY_RANK.level) && (target.rank.level >= Rank.GENUS_RANK.level))) {
                     System.out.format("| Separation by rank: %s %s | %s %s\n",
                                       subject, subject.rank.name, target, target.rank.name);
                     return Answer.weakNo(subject, target, "not-same/ranks",
@@ -556,31 +552,6 @@ abstract class Criterion {
                 return Answer.NOINFO;
             }
         };
-
-	static Criterion eschewTattered =
-		new Criterion() {
-			public String toString() { return "eschew-tattered"; }
-			Answer assess(Taxon x, Taxon target) {
-				if (!target.isPlaced() //from a previous merge
-					&& isHomonym(target))  
-					return Answer.weakNo(x, target, "not-same/unplaced", null);
-				else
-					return Answer.NOINFO;
-			}
-		};
-
-	// Homonym discounting synonyms
-	static boolean isHomonym(Taxon taxon) {
-		List<Node> alts = taxon.taxonomy.lookup(taxon.name);
-		if (alts == null) {
-			System.err.println("Name not indexed !? " + taxon.name);
-			return false;
-		}
-		for (Node alt : alts)
-			if (alt != taxon && alt.taxonNameIs(taxon.name))
-				return true;
-		return false;
-	}
 
 	// x is source node, target is union node
 
@@ -770,7 +741,6 @@ abstract class Criterion {
 
 	static Criterion[] oldCriteria = {
 		division,
-		// eschewTattered,
 		lineage, subsumption,
 		sameSourceId,
 		anySourceId,

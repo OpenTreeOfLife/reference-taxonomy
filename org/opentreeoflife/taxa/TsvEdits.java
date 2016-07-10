@@ -128,7 +128,7 @@ public class TsvEdits {
 				if (existing.children != null)
 					for (Taxon child: existing.children)
 						child.changeParent(parent, 0);
-				tax.addSynonym(name, parent, "subsumed_by"); //  ????
+				parent.addSynonym(name, "subsumed_by"); //  ????
 				existing.prune("edit/fold");
 			}
 
@@ -145,7 +145,7 @@ public class TsvEdits {
 				existing.addFlag(Taxonomy.INCERTAE_SEDIS);
 
 		} else if (command.equals("synonym")) {
-            tax.addSynonym(name, parent, "synonym");
+            parent.addSynonym(name, "synonym");
 
 		} else
 			System.err.println("Unrecognized edit command: " + command);

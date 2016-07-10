@@ -307,19 +307,6 @@ public abstract class Taxonomy {
     }
 
 
-    // Ensure that the taxon has the indicated name, either as synonym or as primary
-
-	public boolean addSynonym(String name, Taxon taxon, String type) {
-		if (taxon.hasName(name)) {
-            // System.out.format("| Skipping self-synonym %s\n", name);
-            // No need for a new synonym - the taxon already has the name in question
-            //   (although maybe we should care about the type ...)
-            return true;
-        } else {
-            return taxon.newSynonym(name, type) != null;
-        }
-	}
-
     /* Nodes with more children come before nodes with fewer children.
        Nodes with shorter ids come before nodes with longer ids.
        */

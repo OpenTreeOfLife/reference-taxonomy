@@ -400,7 +400,7 @@ class MergeMachine {
                 unode.setName(node.name);
             else if (unode.name != node.name)
                 // ???
-                unode.taxonomy.addSynonym(node.name, unode, "synonym");
+                unode.addSynonym(node.name, "synonym");
         }
 
 		if (unode.rank == Rank.NO_RANK || unode.rank == Rank.CLUSTER_RANK)

@@ -31,31 +31,37 @@ public class AlignmentByName extends Alignment {
         super(a);
     }
 
-    private boolean debugp = false;
+    private int debug = 0;
 
     // this is pretty gross. needs to be moved & rewritten.
+    // method is invoked from python.
 
     public void align() {
-        Alignment basis = new Alignment(this);    // copy
-        System.out.format("| Basis: %s mappings\n", basis.size());
 
-        Alignment old = new ComplicatedAlignment(basis);
-        old.align();
-
+        Alignment old = null;
         AlignmentByName neu2 = null;
-        if (debugp) {
-            Alignment old2 = new ComplicatedAlignment(basis);
-            old2.align();
-            old2.compareAlignments(old, "comparing old to old");
-            neu2 = new AlignmentByName(basis);
+
+        if (debug >= 1) {
+            Alignment basis = new Alignment(this);    // copy ad-hoc mappings
+            System.out.format("| Basis: %s mappings\n", basis.size());
+            old = new ComplicatedAlignment(basis);
+            old.align();
+            if (debug >= 2) {
+                Alignment old2 = new ComplicatedAlignment(basis);
+                old2.align();
+                old2.compareAlignments(old, "comparing old to old");
+                neu2 = new AlignmentByName(basis);
+            }
         }
 
         this.newAlign();
-        this.compareAlignments(old, "comparing old to new");
 
-        if (debugp) {
-            neu2.newAlign();
-            neu2.compareAlignments(this, "comparing new to new");
+        if (debug >= 1) {
+            this.compareAlignments(old, "comparing old to new");
+            if (debug >= 2) {
+                neu2.newAlign();
+                neu2.compareAlignments(this, "comparing new to new");
+            }
         }
     }
 
@@ -89,6 +95,10 @@ public class AlignmentByName extends Alignment {
 
         if (candidates.size() == 0)
             return null;
+        if (candidates.size() > 1)
+            union.eventlogger.namesOfInterest.add(node.name);
+        for (Taxon candidate : candidates)
+            Answer.noinfo(node, candidate, "candidate", candidateMap.get(candidate));
 
         int max;
         Answer anyAnswer = null;
@@ -119,7 +129,7 @@ public class AlignmentByName extends Alignment {
                 if (winners.size() == 1)
                     return anyAnswer;
                 else {
-                    Answer no = Answer.no(node, null, "all-candidates-rejected", null);
+                    Answer no = new Answer(node, null, max, "all-candidates-rejected", null);
                     no.maybeLog(union);
                     return no;
                 }

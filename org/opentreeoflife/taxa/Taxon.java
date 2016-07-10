@@ -125,29 +125,24 @@ public class Taxon extends Node {
         }
         if (name.equals(this.name))
             return;
+        // Remove from index under old name !?
 		this.name = name;
         this.taxonomy.addToNameIndex(this, name);
 	}
 
-	public Synonym newSynonym(String name, String type) {
+	public Synonym addSynonym(String name, String type) {
         if (this.name == null || name == null)
             return null;        // No synonyms for anonymous nodes
 		if (this.name.equals(name)) {
             return null;        // No self-synonyms
         } else {
             for (Synonym syn : this.synonyms)
-                if (syn.name.equals(name))
+                if (syn.name.equals(name)) {
+                    // Needs to be commutative.
+                    if (!syn.type.equals(type))
+                        syn.type = "";
                     return syn;
-
-            // Don't let this synonym create a homonym.
-            // -- this introduces nasty nondeterminism.
-            // need to do it some other way, e.g. on output.
-            if (false) {
-                List<Node> nodes = this.taxonomy.lookup(name);
-                if (nodes != null)
-                    return null;
-            }
-
+                }
             Synonym syn = new Synonym(name, type, this); // does addToNameIndex
             if (this.synonyms == NO_SYNONYMS)
                 this.synonyms = new ArrayList<Synonym>();
@@ -173,7 +168,7 @@ public class Taxon extends Node {
                 }
             }
             if (targetSyn == null) {
-                targetSyn = targetTaxon.newSynonym(syn.name, syn.type);
+                targetSyn = targetTaxon.addSynonym(syn.name, syn.type);
                 ++count;
             } else
                 // how to combine the types of the two synonyms ??
@@ -959,7 +954,7 @@ public class Taxon extends Node {
     }
 
 	public void synonym(String name) {
-		if (!this.taxonomy.addSynonym(name, this, "synonym"))
+		if (this.addSynonym(name, "synonym") == null)
 			System.err.format("| Synonym already present: %s %s\n", this, name);
 	}
 
@@ -983,7 +978,7 @@ public class Taxon extends Node {
         }
 		if (!oldname.equals(name)) {
             this.clobberName(name);
-			this.taxonomy.addSynonym(oldname, this, "synonym");  // awkward, maybe wrong
+			this.addSynonym(oldname, "synonym");  // awkward, maybe wrong
 		}
         return true;
 	}
@@ -1015,7 +1010,7 @@ public class Taxon extends Node {
         // synonym comes before the prune, then it might be suppressed
         // by the presence in the name index of the deprecated taxon
 		other.prune("absorb");
-		this.taxonomy.addSynonym(other.name, this, "subsumed_by");	// Not sure this is a good idea
+		this.addSynonym(other.name, "subsumed_by");	// Not sure this is a good idea
         return true;
 	}
 
@@ -1086,7 +1081,7 @@ public class Taxon extends Node {
             } else if (this.hasName(name)) {
                 return true;
             } else if (setp) {
-                this.taxonomy.addSynonym(name, this, "synonym");
+                this.addSynonym(name, "synonym");
                 return true;
             } else
                 return false;

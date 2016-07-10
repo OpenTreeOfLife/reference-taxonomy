@@ -170,7 +170,7 @@ class InterimFormat {
                               (tax.flagscolumn != null ? parts[tax.flagscolumn] : ""),
                               parts);
                     if (name != null && !name.equals(rawname)) {
-                        tax.addSynonym(rawname, node, "equivalent_name");
+                        node.addSynonym(rawname, "equivalent_name");
                         ++normalizations;
                     }
 
@@ -387,9 +387,10 @@ class InterimFormat {
 			int count = 0;
 			int zcount = 0;
 			String str;
-			int syn_column = 1;
 			int id_column = 0;
+			int name_column = 1;
 			int type_column = Integer.MAX_VALUE;
+			int info_column = Integer.MAX_VALUE;
 			int row = 0;
 			int losers = 0;
             Pattern pat = null;
@@ -404,7 +405,7 @@ class InterimFormat {
 				}
 
 				String[] parts = pat.split(str);
-				// uid | name | type | ? |
+				// uid | name | type | source |
 				// 36602	|	Sorbus alnifolia	|	synonym	|	|	
 				if (parts.length >= 2) {
 					if (row++ == 0) {
@@ -416,18 +417,30 @@ class InterimFormat {
 						if (o2 != null) {
 							id_column = o2;
 							Integer o1 = headerx.get("name");
-							if (o1 != null) syn_column = o1;
+							if (o1 != null) name_column = o1;
 							Integer o3 = headerx.get("type");
 							if (o3 != null) type_column = o3;
+							Integer o4 = headerx.get("sourceinfo");
+							if (o4 != null) info_column = o4;
 							continue;
 						}
 					}
 					String id = parts[id_column];
-					String syn = parts[syn_column];
+					String name = parts[name_column];
 					String type = (type_column < parts.length ?
 								   parts[type_column] :
 								   "synonym");
+                    String sourceinfo = (info_column < parts.length ?
+                                         parts[info_column] :
+                                         "");
 					Taxon node = tax.lookupId(id);
+					if (node == null) {
+						if (false && ++losers < 10)
+							System.err.println("Identifier " + id + " unrecognized for synonym " + name);
+						else if (losers == 10)
+							System.err.println("...");
+						continue;
+					}
 
 				    // Synonym types from NCBI:
                     // synonym
@@ -451,23 +464,20 @@ class InterimFormat {
                         continue;
                     if (type.equals("in-part")) // NCBI
                         continue;
-                    if (type.equals("valid")) // IRMNG - redundant
+                    if (type.equals("valid")) // IRMNG - redundant - ?
                         continue;
                     if (type.equals(""))
                         type = "synonym";
-					if (node == null) {
-						if (false && ++losers < 10)
-							System.err.println("Identifier " + id + " unrecognized for synonym " + syn);
-						else if (losers == 10)
-							System.err.println("...");
-						continue;
-					}
+
                     if (node.name == null) {
-                        node.setName(syn);
+                        node.setName(name);
 						++zcount;
-					} else if (!node.name.equals(syn)) {
-						if (tax.addSynonym(syn, node, type))
+					} else if (!node.name.equals(name)) {
+                        Synonym syn = node.addSynonym(name, type);
+                        if (syn != null) {
+                            syn.setSourceIds(sourceinfo);
                             ++count;
+                        }
 					}
 				}
 			}
@@ -479,7 +489,7 @@ class InterimFormat {
 
 	public void dumpSynonyms(String filename, String sep) throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
-		out.format("name\t|\tuid\t|\ttype\t|\tuniqname\t|\tsource\t|\t\n");
+		out.format("name\t|\tuid\t|\ttype\t|\tuniqname\t|\tsourceinfo\t|\t\n");
 		String format = "%s\t|\t%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n";
 		for (String name : tax.allNames()) {
             boolean primaryp = false;

@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.Collections;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.io.PrintStream;
 import java.io.IOException;
 
@@ -17,13 +18,12 @@ import org.opentreeoflife.taxa.Node;
 import org.opentreeoflife.taxa.Taxon;
 import org.opentreeoflife.taxa.Synonym;
 import org.opentreeoflife.taxa.Taxonomy;
-import org.opentreeoflife.taxa.SourceTaxonomy;
 import org.opentreeoflife.taxa.Answer;
 import org.opentreeoflife.taxa.QualifiedId;
 
 public class AlignmentByName extends Alignment {
 
-    AlignmentByName(SourceTaxonomy source, Taxonomy target) {
+    AlignmentByName(Taxonomy source, Taxonomy target) {
         super(source, target);
     }
 
@@ -54,103 +54,179 @@ public class AlignmentByName extends Alignment {
             }
         }
 
-        this.newAlign();
+        this.alignByName();
 
         if (debug >= 1) {
             this.compareAlignments(old, "comparing old to new");
             if (debug >= 2) {
-                neu2.newAlign();
+                neu2.alignByName();
                 neu2.compareAlignments(this, "comparing new to new");
             }
         }
     }
 
-    public void newAlign() {
-        for (Taxon node : source.taxa()) {
-            if (getTaxon(node) == null) {
-                Answer a = newAlign(node);
-                if (a != null) {
-                    if (a.isYes())
-                        alignWith(node, a.target, a);
-                    else
-                        this.setAnswer(node, a);
-                }
-            }
+    boolean experimentalp = false;
+
+    // Treat all taxa equally - tips same as internal - random order
+
+    public void alignByName() {
+        if (experimentalp) { this.tryThisOut(); return; }
+        assignBrackets();
+        for (Taxon node : source.taxa())
+            alignNode(node);
+    }
+
+    // Map unambiguous tips first, then retry ambiguous(?), then internal nodes
+
+    void tryThisOut() {
+        assignBrackets();
+        Set<Taxon> tips = new HashSet<Taxon>();
+        for (Taxon root : source.roots())
+            mapTipsOnly(root, tips);
+        System.out.format("| %s quasi-tips\n", tips.size());
+        for (Taxon root : source.roots())
+            mapInternal(root, tips);
+    }
+
+    // return true iff any quasi-tip under node
+    boolean mapTipsOnly(Taxon node, Set<Taxon> tips) {
+        boolean anyMapped = false;
+        for (Taxon child : node.getChildren()) {
+            if (mapTipsOnly(child, tips))
+                anyMapped = true;
+        }
+        if (anyMapped)
+            return true;
+        // Potential quasi-tip
+        Answer answer = alignNode(node);
+        if (answer != null && answer.isYes()) {
+            tips.add(answer.target);
+            return true;
+        }
+        return false;
+    }
+
+    // align internal nodes (above quasi-tips)
+    void mapInternal(Taxon node, Set<Taxon> tips) {
+        if (tips.contains(node))
+            ;
+        else {
+            for (Taxon child : node.getChildren())
+                mapInternal(child, tips);
+            alignNode(node);
         }
     }
 
+    // Find answer for a single node, and put it in table
+    Answer alignNode(Taxon node) {
+        if (getTaxon(node) == null) {
+            Answer a = findAlignment(node);
+            if (a != null) {
+                if (a.isYes())
+                    alignWith(node, a.target, a);
+                else
+                    this.setAnswer(node, a);
+            }
+            return a;
+        } else
+            return null;
+    }
+
+    int cutoff = Answer.HECK_NO;
+
     // Alignment - new method
 
-    public Answer newAlign(Taxon node) {
+    public Answer findAlignment(Taxon node) {
+        List<Answer> lg = new ArrayList<Answer>();
+
         Map<Taxon, String> candidateMap = getCandidates(node);
-        Set<Taxon> candidates = new HashSet<Taxon>(candidateMap.keySet());
+        Set<Taxon> initialCandidates = new HashSet<Taxon>(candidateMap.keySet());
+        Set<Taxon> candidates = initialCandidates;
 
         if (candidates.size() == 0)
             return null;
         if (candidates.size() > 1)
-            target.eventlogger.namesOfInterest.add(node.name);
-        for (Taxon candidate : candidates)
-            Answer.noinfo(node, candidate, "candidate", candidateMap.get(candidate));
+            target.eventLogger.namesOfInterest.add(node.name);
+        for (Taxon candidate : candidates) {
+                if (candidate == null)
+                    System.err.format("** No taxon !? %s\n", node);
 
-        int max;
+            Answer start = Answer.noinfo(node, candidate, "candidate", candidateMap.get(candidate));
+            lg.add(start);
+        }
+
+        int max = -100;                // maximum "value" among Answers
         Answer anyAnswer = null;
         Taxon anyCandidate = null;
-        String deciding = "no-choice";
-        for (Criterion criterion : Criterion.criteria) {
-            Set<Taxon> winners = new HashSet<Taxon>();
+        for (Criterion criterion : criteria) {
+            List<Answer> answers = new ArrayList<Answer>(candidates.size());
             max = -100;
+            int count = 0;
             for (Taxon unode : candidates) {
+                if (unode == null)
+                    System.err.format("** No taxon 2 !? %s\n", node);
+
                 Answer a = criterion.assess(node, unode);
-                a.maybeLog(target);
-                if (a.value >= max) {
-                    if (a.value > max) {
-                        max = a.value;
-                        winners = new HashSet<Taxon>();
-                    }
-                    winners.add(unode);
-                    anyCandidate = unode;
+                answers.add(a);
+                if (a.value > max) {
+                    max = a.value;
+                    count = 1;
                     anyAnswer = a;
-                }
+                    anyCandidate = unode;
+                } else if (a.value == max)
+                    count++;
             }
-            // Accept a yes answer
-            if (max > Answer.DUNNO && winners.size() == 1)
-                return anyAnswer;
+            if (count < candidates.size()) {
+                // Informative
+                for (Answer a : answers)
+                    if (a.subject != null)
+                        lg.add(a);
 
-            // Accept a no answer
-            if (max < Answer.DUNNO) {
-                if (winners.size() == 1)
-                    return anyAnswer;
-                else {
-                    Answer no = new Answer(node, null, max, "all-candidates-rejected", null);
-                    no.maybeLog(target);
-                    return no;
+                if (max <= cutoff)
+                    break;
+
+                Set<Taxon> winners = new HashSet<Taxon>();
+                Iterator<Answer> aiter = answers.iterator();
+                for (Taxon unode : candidates) {
+                    Answer a = aiter.next();
+                    if (a.value == max) {
+                        winners.add(unode);
+                    }
                 }
+                candidates = winners;
             }
-
-            // NOINFO
-            if (winners.size() == 1 && candidates.size() > 1)
-                deciding = criterion.toString();
-
-            candidates = winners;
         }
-        // No yeses, no nos
-        if (candidates.size() == 1) {
-            Answer yes = Answer.yes(node, anyCandidate, deciding, null);
-            yes.maybeLog(target);
-            return yes;
-        } else {
 
-            // Dump candidates & mode info
-            System.out.format("? %s -> ", node);
-            for (Taxon c : candidates)
-                System.err.format("** %s[%s]", c, candidateMap.get(c));
-            System.out.println();
-
-            // avoid creating yet another homonym
-            Answer no = Answer.no(node, null, "ambiguous", null);
-            no.maybeLog(target);
-            return no;
+        // Deal with a no answer
+        if (max <= cutoff) {
+            anyAnswer = new Answer(node, null, max, "all-candidates-rejected", null);
+            lg.add(anyAnswer);
         }
+
+        // Accept a unique yes or noinfo answer
+        else {
+            if (candidates.size() > 1) {
+                if (false) {
+                    // Dump candidates & mode info
+                    System.out.format("? %s ->", node);
+                    for (Taxon c : candidates)
+                        System.err.format(" %s[%s]", c, candidateMap.get(c));
+                    System.out.println();
+                }
+
+                // avoid creating yet another homonym
+                anyAnswer = Answer.noinfo(node, null, "ambiguous", null);
+                lg.add(anyAnswer);
+            } else if (max <= Answer.DUNNO) {
+                // By process of elimination
+                anyAnswer = Answer.yes(node, anyCandidate, "elimination", null);
+                lg.add(anyAnswer);
+            }
+        }
+        // Decide after the fact whether it was interesting enough to log
+        if (initialCandidates.size() > 1 || candidates.size() != 1 || anyAnswer.isNo())
+            target.eventLogger.log(lg);
+        return anyAnswer;
     }
 
     private static boolean allowSynonymSynonymMatches = false;
@@ -195,6 +271,7 @@ public class AlignmentByName extends Alignment {
 
     void addCandidate(Map<Taxon, String> candidateMap, Node unode, String mode) {
         Taxon utaxon = unode.taxon();
+
         mode = mode + (unode instanceof Taxon ? "C" : "S");
 
         String modes = candidateMap.get(utaxon);
@@ -204,5 +281,16 @@ public class AlignmentByName extends Alignment {
             modes = modes + " " + mode;
         candidateMap.put(utaxon, modes);
     }
+
+	static Criterion[] criteria = {
+		Criterion.division,
+        Criterion.ranks,                  // separate by rank
+		Criterion.lineage,
+        Criterion.subsumption,
+        Criterion.byPrimaryName,
+		Criterion.sameSourceId,
+		Criterion.anySourceId,
+        Criterion.weakDivision,
+    };
 
 }

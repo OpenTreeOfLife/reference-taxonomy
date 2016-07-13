@@ -52,8 +52,8 @@ add	Periglandula turbinae	species	Periglandula	Fungi	if:561041
 add	Phyllosticta cavendishii	species	Phyllosticta	Fungi	if:564747
 add	Phyllosticta hostae	species	Phyllosticta	Fungi	if:564904
 add	Phyllosticta schimae	species	Phyllosticta	Fungi	if:564905
-add	Plectosphaerella delsorboi	species	Plectosphaerella	Hypocreomycetidae	if:564576
-add	Plectosphaerella oratosquillae	species	Plectosphaerella	Hypocreomycetidae	if:564577
+add	Plectosphaerella delsorboi	species	Plectosphaerella	Sordariomycetes	if:564576
+add	Plectosphaerella oratosquillae	species	Plectosphaerella	Sordariomycetes	if:564577
 #add	Pluteus brunneosquamulosus	species	Pluteus	Fungi	if:563402
 add	Pluteus stenotrichus	species	Pluteus	Fungi	if:563470
 add	Pluteus sublaevigatus	species	Pluteus	Fungi	if:513081

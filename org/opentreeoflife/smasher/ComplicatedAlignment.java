@@ -17,13 +17,12 @@ import org.opentreeoflife.taxa.Node;
 import org.opentreeoflife.taxa.Taxon;
 import org.opentreeoflife.taxa.Synonym;
 import org.opentreeoflife.taxa.Taxonomy;
-import org.opentreeoflife.taxa.SourceTaxonomy;
 import org.opentreeoflife.taxa.Answer;
 import org.opentreeoflife.taxa.QualifiedId;
 
 public class ComplicatedAlignment extends Alignment {
 
-    ComplicatedAlignment(SourceTaxonomy source, Taxonomy target) {
+    ComplicatedAlignment(Taxonomy source, Taxonomy target) {
         super(source, target);
     }
 
@@ -34,9 +33,10 @@ public class ComplicatedAlignment extends Alignment {
     // Alignment by name - old method
 
     void reallyAlign() {
+        assignBrackets();
 		if (source.rootCount() > 0) {
 
-            Criterion[] criteria = Criterion.oldCriteria;
+            Criterion[] criteria = oldCriteria;
 
 			int beforeCount = target.numberOfNames();
 
@@ -105,7 +105,7 @@ public class ComplicatedAlignment extends Alignment {
         Alignment alignment;
         int m;
         int n;
-        Answer[][] suppressp;
+        Answer[][] suppressp;   // A record of 'no' and unique 'yes' answers
 
         Matrix(String name, List<Node> nodes, List<Node> unodes, Alignment alignment) {
             this.name = name;
@@ -128,17 +128,6 @@ public class ComplicatedAlignment extends Alignment {
         void run(Criterion[] criteria) {
 
             clear();
-
-            // Log the fact that there are synonyms involved in these comparisons
-            if (false)
-                for (Node nodenode : nodes) {
-                    Taxon node = nodenode.taxon();
-                    if (!node.name.equals(name)) {
-                        Taxon unode = unodes.get(0).taxon();
-                        Answer.noinfo(node, unode, "synonym(s)", node.name).maybeLog();
-                        break;
-                    }
-                }
 
             for (Criterion criterion : criteria)
                 run(criterion);
@@ -168,64 +157,69 @@ public class ComplicatedAlignment extends Alignment {
                     if (suppress_i[j] != null) continue;
                     Taxon y = unodes.get(j).taxon();
                     Answer z = criterion.assess(x, y);
-                    if (z.value == Answer.DUNNO)
-                        continue;
+
+                    if (z.source == null) continue; // dunno
                     z.maybeLog();
+                    if (z.value == Answer.DUNNO) continue;
+
+                    // suppress all nos
                     if (z.value < Answer.DUNNO) {
                         suppress_i[j] = z;
                         continue;
                     }
-                    if (answer[i] == null || z.value > answer[i].value) {
-                        uniq[i] = j;
-                        answer[i] = z;
-                    } else if (z.value == answer[i].value)
-                        uniq[i] = -2;
 
+                    // find best target for this candidate
                     if (uanswer[j] == null || z.value > uanswer[j].value) {
                         uuniq[j] = i;
                         uanswer[j] = z;
                     } else if (z.value == uanswer[j].value)
                         uuniq[j] = -2;
+
+                    // find best candidate for this target
+                    if (answer[i] == null || z.value > answer[i].value) {
+                        uniq[i] = j;
+                        answer[i] = z;
+                    } else if (z.value == answer[i].value)
+                        uniq[i] = -2; // Ambiguous.  This case is not dealt with properly.
+
                 }
             }
             for (int i = 0; i < m; ++i) { // iterate over source nodes
-                // Don't assign a single source node to two target nodes...
-                Answer[] suppress_i = suppressp[i];
-                if (uniq[i] >= 0) {
-                    int j = uniq[i];
-                    // Avoid assigning two source nodes to the same target node (synonym creation)...
-                    if (uuniq[j] >= 0 && suppress_i[j] == null) {
-                        Taxon x = nodes.get(i).taxon(); // == uuniq[j]
-                        Taxon y = unodes.get(j).taxon();
+                int j = uniq[i];
+                if (j >= 0) {             // Is there a unique best candidate for this source?
+                    Answer[] suppress_i = suppressp[i];
 
-                        // See versions of this code from before 28 June 2016 for
-                        // interesting logic that I excised
+                    Taxon x = nodes.get(i).taxon();   // source node
+                    Taxon y = unodes.get(j).taxon();  // candidate that's being elected
+                    Answer a = answer[i]; // best/first yes-ish answer so far
 
-                        Answer a = answer[i];
-                        Taxon ux = alignment.getTaxon(x);
-                        if (ux == y)
-                            ;   // multiple criteria met uniquely
-                        else if (ux != null) {
-                            // This case doesn't happen
+                    // Does any other source taxon map to this
+                    // candidate?  If so, back off, we don't want
+                    // collisions.  (?)
+                    if (uuniq[j] < 0 || suppress_i[j] != null) {
+                        x.markEvent("contends");
+                        continue;
+                    }
+
+                    // See versions of this code from before 28 June 2016 for
+                    // interesting logic that I excised
+
+                    Answer prior = alignment.getAnswer(x);
+                    if (prior == null)
+                        this.alignment.alignWith(x, y, a);
+                    // Probably an ad hoc mapping. This case doesn't happen, but could.
+                    else if (prior.isYes())
+                        if (prior.target == y) {
                             a = Answer.no(x, y, "lost-race-to-source(" + criterion.toString() + ")",
                                           (y.getSourceIdsString() + " lost to " +
-                                           ux.getSourceIdsString()));
-                        } else if (alignment.getAnswer(x) != null) {
-                            Answer.no(x, y, "blocked-because-" + alignment.getAnswer(x).reason, null).maybeLog();
-                            // System.out.format("| Blocked from mapping %s to %s because %s\n", x, y, x.answer.reason);
-                        } else if (false && y.comapped != null && x.children == null) {
-                            // There was already a mapping because of a higher-quality criterion.
-                            // Keeping this mapping could cause
-                            // trouble, like introduction of
-                            // extraneous 'extinct' flags...
-                            Answer no = Answer.no(x, y, "redundant", null);
-                            alignment.setAnswer(x, no);
-                            no.maybeLog();
-                        } else {
-                            this.alignment.alignWith(x, y, a);
-                        }
-                        suppress_i[j] = a;
+                                           prior.target.getSourceIdsString()));
+                            a.maybeLog();
+                    } else if (prior.target == y && prior.value < Answer.DUNNO) {
+                        // Previous answer is a 'no'
+                        a = prior; // ????
+                        x.markEvent("new assignment prevented by previous negative assignment");
                     }
+                    suppress_i[j] = a;
                 }
             }
         }
@@ -237,9 +231,9 @@ public class ComplicatedAlignment extends Alignment {
             Taxonomy target = unodes.get(0).getTaxonomy();
             for (int i = 0; i < m; ++i) {
                 Taxon node = nodes.get(i).taxon();
-                Answer[] suppress_i = suppressp[i];
                 // Suppress synonyms
                 if (alignment.getTaxon(node) == null) {
+                    Answer[] suppress_i = suppressp[i];
                     int alts = 0;	 // how many target nodes might we have gone to?
                     int altj = -1;
                     for (int j = 0; j < n; ++j)
@@ -322,110 +316,19 @@ public class ComplicatedAlignment extends Alignment {
             }
         }
     }
-	int nextSequenceNumber = 0;
 
-	public void reset() {
-        this.source.reset();    // depths
-        this.target.reset();
+	static Criterion[] oldCriteria = {
+		Criterion.division,
+		Criterion.lineage,
+        Criterion.subsumption,
+		Criterion.sameSourceId,
+		Criterion.anySourceId,
+		// knowDivision,
+        Criterion.weakDivision,
+		Criterion.byRank,
+        Criterion.byPrimaryName,
+        Criterion.elimination,
+    };
 
-        // Flush inverse mappings from previous alignment
-		for (Taxon node: this.target.taxa())
-			node.comapped = null;
-
-        for (Taxon node : this.source.taxa())
-            node.seq = NOT_SET;
-
-		this.nextSequenceNumber = 0;
-		for (Taxon root : this.target.roots())
-			assignBrackets(root);
-
-        // unnecessary?
-        // this.source.inferFlags(); 
-        // this.target.inferFlags(); 
-	}
-
-	// 'Bracketing' logic.  Every node in the target taxonomy is
-	// assigned a unique integer, ordered sequentially by a preorder
-	// traversal.  Taxon inclusion across taxonomies can be determined
-	// (approximately) by looking at shared names and doing a range check.
-    // This heuristic can fail in the presence of names that are homonyms
-    // across taxonomies.
-
-	static final int NOT_SET = -7; // for source nodes
-	static final int NO_SEQ = -8;  // for source nodes
-
-	// Applied to a target node.  Sets seq, start, end recursively.
-	void assignBrackets(Taxon node) {
-		// Only consider names in common ???
-		node.seq = nextSequenceNumber++;
-		node.start = nextSequenceNumber;
-		if (node.children != null)
-			for (Taxon child : node.children)
-				assignBrackets(child);
-		node.end = nextSequenceNumber;
-	}
-
-	// Applied to a source node.  Sets start = smallest sequence number among all descendants,
-    // end = 1 + largest sequence number among all descendants.
-    // Sets seq = sequence number of corresponding target node (if any).
-	static void getBracket(Taxon node, Taxonomy target) {
-		if (node.seq == NOT_SET) {
-			Taxon unode = target.unique(node.name);
-			if (unode != null)
-				node.seq = unode.seq;
-            else
-                node.seq = NO_SEQ;
-            int start = Integer.MAX_VALUE;
-            int end = -1;
-			if (node.children != null) {
-				for (Taxon child : node.children) {
-					getBracket(child, target);
-					if (child.start < start) start = child.start;
-					if (child.end > end) end = child.end;
-					if (child.seq != NO_SEQ) {
-						if (child.seq < start) start = child.seq;
-						if (child.seq > end) end = child.seq;
-					}
-				}
-			}
-            node.start = start;
-            node.end = end+1;
-		}
-	}
-
-	// Look for a member of the source taxon that's also a member of the target taxon.
-	static Taxon witness(Taxon node, Taxon unode) { // assumes is subsumed by unode
-		getBracket(node, unode.taxonomy);
-		if (node.start >= unode.end || node.end <= unode.start) // Nonoverlapping => lose
-			return null;
-		else if (node.children != null) { // it *will* be nonnull actually
-			for (Taxon child : node.children)
-				if (child.seq != NO_SEQ && (child.seq >= unode.start && child.seq < unode.end))
-					return child;
-				else {
-					Taxon a = witness(child, unode);
-					if (a != null) return a;
-				}
-		}
-		return null;			// Shouldn't happen
-	}
-
-	// Look for a member of the source taxon that's not a member of the target taxon,
-	// but is a member of some other target taxon.
-	static Taxon antiwitness(Taxon node, Taxon unode) {
-		getBracket(node, unode.taxonomy);
-		if (node.start >= unode.start && node.end <= unode.end)
-			return null;
-		else if (node.children != null) { // it *will* be nonnull actually
-			for (Taxon child : node.children)
-				if (child.seq != NO_SEQ && (child.seq < unode.start || child.seq >= unode.end))
-					return child;
-				else {
-					Taxon a = antiwitness(child, unode);
-					if (a != null) return a;
-				}
-		}
-		return null;			// Shouldn't happen
-	}
 
 }

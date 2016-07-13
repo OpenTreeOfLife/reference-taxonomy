@@ -15,6 +15,8 @@ public class Synonym extends Node {
 
     public Taxon taxon() { return parent; }
 
+    public String getType() { return type; }
+
     public Taxonomy getTaxonomy() { return parent.taxonomy; }
 
     public boolean taxonNameIs(String othername) {
@@ -25,6 +27,10 @@ public class Synonym extends Node {
         String uniq = parent.uniqueName();
         if (uniq.length() == 0) uniq = parent.name;
         return String.format("%s (synonym for %s)", this.name, uniq);
+    }
+
+    public String toString() {
+        return String.format("(%s %s %s)", type, name, taxon());
     }
 
 }

@@ -54,7 +54,7 @@ public abstract class Taxonomy {
 	private String tag = null;     // unique marker
 	private int taxid = -1234;	   // kludge
 
-    public EventLogger eventlogger = new EventLogger();
+    public EventLogger eventLogger = new EventLogger();
 
     Map<QualifiedId, Node> qidIndex = null;
     Set<QualifiedId> qidAmbiguous = null;
@@ -70,9 +70,9 @@ public abstract class Taxonomy {
 		return "(taxonomy " + this.getTag() + ")";
 	}
 
-    public void setEventLogger(EventLogger eventlogger) {
-        eventlogger.resetEvents();    // usually no output
-        this.eventlogger = eventlogger;
+    public void setEventLogger(EventLogger eventLogger) {
+        eventLogger.resetEvents();    // usually no output
+        this.eventLogger = eventLogger;
     }
 
     // Every taxonomy defines a namespace, although not every node has a name.
@@ -127,7 +127,7 @@ public abstract class Taxonomy {
 		} else if (!nodes.contains(node)) {
             nodes.add(node);
             if (nodes.size() == 75) {
-                // should use eventlogger
+                // should use eventLogger
                 System.err.format("| %s is the 75th in %s to have the name '%s'\n",
                                   node,
                                   this.getTag(),
@@ -145,6 +145,7 @@ public abstract class Taxonomy {
             if (nodes.size() == 0)
                 this.nameIndex.remove(node.name);
         }
+        node.name = null;       // maintain invariant.
 	}
 
     // Similar, there is an idspace, but not every node has an id.
@@ -410,7 +411,6 @@ public abstract class Taxonomy {
 
         // Some statistics & reports
 		this.investigateHomonyms();
-        System.out.format("| y\n");
         int nroots = this.rootCount();
         int ntips = this.tipCount();
         int nnodes = this.count();
@@ -425,6 +425,12 @@ public abstract class Taxonomy {
             if (node instanceof Synonym)
                 ++i;
         return i;
+    }
+
+    public void clearDivisions() {
+        for (Taxon node : this.taxa())
+            node.division = null;
+        this.forest.division = null;
     }
 
     // ----- Standard topology manipulations! -----
@@ -1175,7 +1181,7 @@ public abstract class Taxonomy {
 		int c = node.count();
 		Taxon newnode = tax.dup(node, "sample");
 		if (m < c && c <= n) {
-			newnode.setName(newnode.name + " (" + node.count() + ")");
+			newnode.clobberName(newnode.name + " (" + node.count() + ")");
 			chopped.add(node);
 		} else if (node.children != null)
 			for (Taxon child : node.children) {
@@ -1593,11 +1599,16 @@ public abstract class Taxonomy {
             if (nonsynonyms.size() == 1)
                 return nonsynonyms.get(0).taxon();
 
-            System.err.format("** Ambiguous taxon name: %s\n", name);
-            for (Node node : nodes) {
-                String uniq = node.uniqueName();
-                if (uniq.equals("")) uniq = name;
-                System.err.format("**   %s %s\n", node.taxon().id, uniq);
+            if (true || windy) {
+                System.err.format("** Ambiguous taxon name: %s\n", name);
+                for (Node node : nodes) {
+                    String uniq = node.uniqueName();
+                    if (uniq.equals("")) uniq = name;
+                    System.err.format("**   %s %s %s\n",
+                                      uniq,
+                                      node,
+                                      node.taxon().getDivision().name);
+                }
             }
             return null;
 		} else {
@@ -1913,21 +1924,14 @@ public abstract class Taxonomy {
     // Event logging
 
 	public boolean markEvent(String tag) { // formerly startReport
-        if (this.eventlogger != null)
-            return this.eventlogger.markEvent(tag);
+        if (this.eventLogger != null)
+            return this.eventLogger.markEvent(tag);
         else return false;
 	}
 
     public boolean markEvent(String tag, Taxon node) {
-        if (this.eventlogger != null)
-            return this.eventlogger.markEvent(tag, node);
-        else return false;
-    }
-
-    public boolean markEvent(String tag, Taxon node, Taxon unode) {
-        // sort of a kludge
-        if (this.eventlogger != null)
-            return this.eventlogger.markEvent(tag, node, unode);
+        if (this.eventLogger != null)
+            return this.eventLogger.markEvent(tag, node);
         else return false;
     }
 

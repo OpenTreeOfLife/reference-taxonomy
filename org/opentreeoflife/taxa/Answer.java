@@ -18,7 +18,7 @@ public class Answer {
 	public String witness = null;
 	//gate c14
 
-    private static final boolean alwaysLog = true;
+    private static final boolean alwaysLog = false;
 
 	public Answer(Taxon subject, Taxon target, int value, String reason, String witness) {
         if (subject != null &&
@@ -35,7 +35,7 @@ public class Answer {
 		this.reason = reason;
 		this.witness = witness;
         if (alwaysLog)
-            this.maybeLog(this.getEventlogger());
+            this.maybeLog(this.getEventLogger());
 	}
 
     // Tally this answer, and if it's interesting enough, log it
@@ -43,34 +43,34 @@ public class Answer {
         if (alwaysLog)
             // has already been logged, don't repeat
             return false;
-        return maybeLog(this.getEventlogger());
+        return maybeLog(this.getEventLogger());
     }
 
     // Used usually when tax is a union taxonomy
     public boolean maybeLog(Taxonomy tax) {
         if (alwaysLog)
             // has already been logged, probably
-            if (this.getEventlogger() != null)
+            if (this.getEventLogger() != null)
                 // except when it hasn't
                 return false;
-        return maybeLog(tax.eventlogger);
+        return maybeLog(tax.eventLogger);
     }
     
-    private boolean maybeLog(EventLogger eventlogger) {
-        if (eventlogger == null)
+    private boolean maybeLog(EventLogger eventLogger) {
+        if (eventLogger == null)
             return false;
         else
-            return eventlogger.maybeLog(this);
+            return eventLogger.maybeLog(this);
     }
 
     // Find the appropriate event logger
-    private EventLogger getEventlogger() {
+    private EventLogger getEventLogger() {
         if (this.target != null
-            && this.target.taxonomy.eventlogger != null)
-            return this.target.taxonomy.eventlogger;
+            && this.target.taxonomy.eventLogger != null)
+            return this.target.taxonomy.eventLogger;
         else if (this.subject != null
-                 && this.subject.taxonomy.eventlogger != null)
-            return this.subject.taxonomy.eventlogger;
+                 && this.subject.taxonomy.eventLogger != null)
+            return this.subject.taxonomy.eventLogger;
         else
             return null;
     }
@@ -134,7 +134,6 @@ public class Answer {
 	// Cf. smasher dumpLog()
 	public String dump() {
 		return String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s",
-                             (this.target != null ? this.target.name : ""),
                              (this.subject != null ? this.subject.name : ""),
                              (this.subject != null ? 
                               this.subject.getQualifiedId().toString() :
@@ -142,6 +141,7 @@ public class Answer {
                              (this.value > DUNNO ?
                               "=>" :
                               (this.value < DUNNO ? "not=>" : "-")),
+                             (this.target != null ? this.target.name : ""),
                              (this.target == null ? "-" : this.target.id),
                              this.reason,
                              (this.witness == null ? "" : this.witness) );

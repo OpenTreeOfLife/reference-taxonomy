@@ -17,7 +17,7 @@ for name in ['Pentaphragma ellipticum',
              'Artemisia vulgaris',
              'Carlina libanotica',
 ]:
-    tax.eventlogger.namesOfInterest.add(name)
+    tax.watch(name)
 
 # Establish homonym-resolution skeleton (not really used here)
 # skel = Taxonomy.getTaxonomy('tax/skel/', 'skel')

@@ -27,18 +27,17 @@ import org.opentreeoflife.taxa.Node;
 import org.opentreeoflife.taxa.Taxon;
 import org.opentreeoflife.taxa.Rank;
 import org.opentreeoflife.taxa.Taxonomy;
-import org.opentreeoflife.taxa.SourceTaxonomy;
 import org.opentreeoflife.taxa.Answer;
 import org.opentreeoflife.taxa.QualifiedId;
 
 public class Alignment {
 
-	SourceTaxonomy source;
+	Taxonomy source;
     Taxonomy target;
 
     private Map<Taxon, Answer> mappings;
 
-    Alignment(SourceTaxonomy source, Taxonomy target) {
+    Alignment(Taxonomy source, Taxonomy target) {
         this.source = source;
         this.target = target;
         this.mappings = new HashMap<Taxon, Answer>();
@@ -54,7 +53,7 @@ public class Alignment {
     }
 
     private void start() {
-        target.eventlogger.resetEvents();
+        target.eventLogger.resetEvents();
         this.reset();          // depths, brackets, comapped
         this.alignWith(source.forest, target.forest, "align-forests");
     }
@@ -67,8 +66,14 @@ public class Alignment {
         if (answer.target != null && answer.target.prunedp)
             System.err.format("** Pruned taxon found as mapping target: %s -> %s\n",
                               node, answer.target);
-        else
-            mappings.put(node, answer);
+        else {
+            Taxon have = getTaxon(node);
+            if (have != null && have != answer.target)
+                System.err.format("** Node %s is already aligned to %s, can't align it to %s\n",
+                                  node, have, answer.target);
+            else
+                mappings.put(node, answer);
+        }
     }
 
     Taxon getTaxon(Taxon node) {
@@ -78,12 +83,12 @@ public class Alignment {
         else return null;
     }
 
-    public void align() {
+    public final void align() {
         System.out.println("--- Mapping " + source.getTag() + " to target ---");
         this.reallyAlign();
 
         this.computeLubs();
-        target.eventlogger.eventsReport("| ");
+        target.eventLogger.eventsReport("| ");
 
         // Report on how well the merge went.
         this.alignmentReport();
@@ -174,8 +179,8 @@ public class Alignment {
             return false;
         }
         // start logging this name
-        if (node.name != null && target.eventlogger != null)
-            target.eventlogger.namesOfInterest.add(node.name);
+        if (node.name != null && target.eventLogger != null)
+            target.eventLogger.namesOfInterest.add(node.name);
 		if (whether) {			// same
 			if (getTaxon(node) != null) {
 				if (getTaxon(node) != unode) {
@@ -387,9 +392,7 @@ public class Alignment {
     // Trying to phase out the following - we shouldn't be caching information
     // in Taxons
 
-	int nextSequenceNumber = 0;
-
-	public void reset() {
+	void reset() {
         this.source.reset();    // depths
         this.target.reset();
 
@@ -397,37 +400,38 @@ public class Alignment {
 		for (Taxon node: this.target.taxa())
 			node.comapped = null;
 
-        for (Taxon node : this.source.taxa())
-            node.seq = NOT_SET;
-
-		this.nextSequenceNumber = 0;
-		for (Taxon root : this.target.roots())
-			assignBrackets(root);
-
         // unnecessary?
         // this.source.inferFlags(); 
         // this.target.inferFlags(); 
-	}
+    }
 
 	// 'Bracketing' logic.  Every node in the target taxonomy is
 	// assigned a unique integer, ordered sequentially by a preorder
 	// traversal.  Taxon inclusion across taxonomies can be determined
-	// (approximately) by looking at shared names and doing a range check.
-    // This heuristic can fail in the presence of names that are homonyms
-    // across taxonomies.
+	// (approximately) by looking at shared names and doing a range
+	// check.  This heuristic can fail in the presence of names that
+	// are homonyms *across* taxonomies (e.g. a bacteria Buchnera in
+	// taxonomy A and a plant Buchnera in taxonomy B).
+
+    void assignBrackets() {
+        int seq = 0;
+		for (Taxon root : this.target.roots())
+			seq = assignBrackets(root, seq);
+	}
 
 	static final int NOT_SET = -7; // for source nodes
 	static final int NO_SEQ = -8;  // for source nodes
 
 	// Applied to a target node.  Sets seq, start, end recursively.
-	void assignBrackets(Taxon node) {
+	int assignBrackets(Taxon unode, int seq) {
 		// Only consider names in common ???
-		node.seq = nextSequenceNumber++;
-		node.start = nextSequenceNumber;
-		if (node.children != null)
-			for (Taxon child : node.children)
-				assignBrackets(child);
-		node.end = nextSequenceNumber;
+		unode.seq = seq++;
+		unode.start = seq;
+		if (unode.children != null)
+			for (Taxon uchild : unode.children)
+				seq = assignBrackets(uchild, seq);
+		unode.end = seq;
+        return seq;
 	}
 
 	// Applied to a source node.  Sets start = smallest sequence number among all descendants,
@@ -435,6 +439,7 @@ public class Alignment {
     // Sets seq = sequence number of corresponding target node (if any).
 	static void getBracket(Taxon node, Taxonomy target) {
 		if (node.seq == NOT_SET) {
+            // would like to do this.getTaxon(node) ...
 			Taxon unode = target.unique(node.name);
 			if (unode != null)
 				node.seq = unode.seq;
@@ -503,8 +508,6 @@ abstract class Criterion {
 
 	abstract Answer assess(Taxon x, Taxon target);
 
-    static boolean HALF_DIVISION_EXCLUSION = true;
-
     static int kludge = 0;
     static int kludgeLimit = 100;
 
@@ -514,14 +517,26 @@ abstract class Criterion {
 			Answer assess(Taxon subject, Taxon target) {
 				Taxon xdiv = subject.getDivision();
 				Taxon ydiv = target.getDivision();
-				if (xdiv == ydiv || xdiv.noMrca() || ydiv.noMrca())
+
+                // Debugging
+                if (subject.name != null &&
+                    (subject.name.equals("Tricellulortus peponiformis") ||
+                     subject.name.equals("Marssonina")))
+                    System.out.format("## %s %s | %s %s\n",
+                                      subject, xdiv, ydiv, target);
+                    
+				if (xdiv == ydiv)
 					return Answer.NOINFO;
-				else if (xdiv.descendsFrom(ydiv))
-                    return Answer.NOINFO;
-				else if (ydiv.descendsFrom(xdiv))
-                    return Answer.NOINFO;
+				if (xdiv == null)
+                    return Answer.noinfo(subject, target, "note/weak-null-source-division", null);
+				if (ydiv == null)
+                    return Answer.noinfo(subject, target, "note/weak-null-target-division", xdiv.name);
+				if (xdiv.descendsFrom(ydiv) || ydiv.descendsFrom(xdiv))
+                    return Answer.noinfo(subject, target, "note/weak-division",
+                                         String.format("%s|%s", xdiv.name, ydiv.name));
                 else
-                    return Answer.heckNo(subject, target, "not-same/division", xdiv.name);
+                    return Answer.heckNo(subject, target, "not-same/division",
+                                         String.format("%s|%s", xdiv.name, ydiv.name));
 			}
 		};
 
@@ -533,13 +548,18 @@ abstract class Criterion {
 				Taxon ydiv = target.getDivision();
 				if (xdiv == ydiv)
 					return Answer.NOINFO;
+                else if (xdiv == null)
+                    return Answer.noinfo(subject, target, "note/null-source-division", null);
+				else if (ydiv == null)
+                    return Answer.noinfo(subject, target, "note/null-target-division", xdiv.name);
 				else if (xdiv.noMrca() || ydiv.noMrca())
 					return Answer.NOINFO;
 				else
                     // about 17,000 of these... that's too many
                     // 2016-06-26 down to about 900 now.
                     // but I bet they're almost all supposed to be matches.
-                    return Answer.weakNo(subject, target, "not-same/weak-division", xdiv.name);
+                    return Answer.weakNo(subject, target, "not-same/weak-division",
+                                         String.format("%s|%s", xdiv.name, ydiv.name));
 			}
 		};
 
@@ -551,9 +571,9 @@ abstract class Criterion {
                     target.rank != Rank.NO_RANK &&
                     ((subject.rank.level >= Rank.GENUS_RANK.level) && (target.rank.level <= Rank.FAMILY_RANK.level) ||
                      (subject.rank.level <= Rank.FAMILY_RANK.level) && (target.rank.level >= Rank.GENUS_RANK.level))) {
-                    System.out.format("| Separation by rank: %s %s | %s %s\n",
-                                      subject, subject.rank.name, target, target.rank.name);
-                    return Answer.weakNo(subject, target, "not-same/ranks",
+                    //System.out.format("| Separation by rank: %s %s | %s %s\n",
+                    //                  subject, subject.rank.name, target, target.rank.name);
+                    return Answer.heckNo(subject, target, "not-same/ranks",
                                          String.format("%s|%s", subject.rank.name, target.rank.name));
                 }
                 return Answer.NOINFO;
@@ -636,6 +656,7 @@ abstract class Criterion {
 			}
 		};
 
+    // work in progress
 	static Criterion disjoint =
 		new Criterion() {
 			public String toString() { return "overlaps"; }
@@ -718,7 +739,13 @@ abstract class Criterion {
 		new Criterion() {
 			public String toString() { return "same-primary-name"; }
 			Answer assess(Taxon x, Taxon target) {
-				if (x.name.equals(target.name))
+				if (x.name == null) {
+                    System.out.format("** No name! %s\n", x);
+					return Answer.NOINFO;
+				} else if (target == null) {
+                    System.out.format("** No target! %s\n", x);
+					return Answer.NOINFO;
+				} else if (x.name.equals(target.name))
 					return Answer.heckYes(x, target, "same/primary-name", x.name);
 				else
 					return Answer.NOINFO;
@@ -734,29 +761,6 @@ abstract class Criterion {
 				return Answer.weakYes(x, target, "same/only-candidate", null);
 			}
 		};
-
-	static Criterion[] criteria = {
-		division,
-        ranks,                  // separate by rank
-		lineage,
-        subsumption,
-        byPrimaryName,
-		sameSourceId,
-		anySourceId,
-        weakDivision,
-    };
-
-	static Criterion[] oldCriteria = {
-		division,
-		lineage, subsumption,
-		sameSourceId,
-		anySourceId,
-		// knowDivision,
-        weakDivision,
-		byRank,
-        byPrimaryName,
-        elimination,
-    };
 
     boolean metBy(Taxon node, Taxon unode) {
         return this.assess(node, unode).isYes();

@@ -23,7 +23,6 @@ package org.opentreeoflife.smasher;
 import org.opentreeoflife.taxa.Node;
 import org.opentreeoflife.taxa.Taxon;
 import org.opentreeoflife.taxa.Taxonomy;
-import org.opentreeoflife.taxa.SourceTaxonomy;
 import org.opentreeoflife.taxa.Answer;
 
 import java.util.Map;
@@ -56,7 +55,7 @@ public class AlignmentByMembership extends Alignment {
 
     private static Taxon AMBIGUOUS = new Taxon(null, null);
 
-	AlignmentByMembership(SourceTaxonomy source, Taxonomy target) {
+	AlignmentByMembership(Taxonomy source, Taxonomy target) {
         super(source, target);
     }
 

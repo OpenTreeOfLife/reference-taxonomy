@@ -388,10 +388,10 @@ def link_to_h2007(tax):
          ('Hyaloraphidiales', ['Hyaloraphidium']), # Hyaloraphidiaceae - no such family
          ('Mytilinidiales', ['Mytilinidiaceae', 'Gloniaceae']),
         ]:
-        order = tax.maybeTaxon(order_name)
+        order = tax.maybeTaxon(order_name, 'Fungi')
         if order != None:
             for family in family_names:
-                order.take(tax.taxon(family))
+                order.take(tax.taxon(family, 'Fungi'))
         else:
             print '*** Missing fungal order', foo[0]
 

@@ -33,7 +33,7 @@ class MergeMachine {
 	void augment() {
 
         union.reset();
-        union.eventlogger.resetEvents();
+        union.eventLogger.resetEvents();
 
         // No need to inferFlags() at this point since merge doesn't
         // pay attention to inferred flags at any point (just the
@@ -68,11 +68,11 @@ class MergeMachine {
 
         transferProperties(source);
 
-        if (UnionTaxonomy.windyp) {
+        if (windyp) {
             report(source, startroots, startcount);
             if (union.count() == 0)
                 source.forest.show();
-            union.eventlogger.eventsReport("|   ");
+            union.eventLogger.eventsReport("|   ");
             System.out.format("| Ended with: %s roots, %s taxa\n",
                               union.rootCount(), union.count());
         }
@@ -395,12 +395,8 @@ class MergeMachine {
     // This is used when the union node is NOT new
 
     public void transferProperties(Taxon node, Taxon unode) {
-        if (node.name != null) {
-            if (unode.name == null)
-                unode.setName(node.name);
-            else if (!unode.name.equals(node.name))
-                // ???
-                unode.addSynonym(node.name, "synonym");
+        if (unode.name == null && node.name != null) {
+            unode.setName(node.name);
         }
 
 		if (unode.rank == Rank.NO_RANK || unode.rank == Rank.CLUSTER_RANK)

@@ -39,7 +39,7 @@ def create_ott():
     # There ought to be tests for all of these...
 
     for name in names_of_interest:
-        ott.eventlogger.namesOfInterest.add(name)
+        ott.eventLogger.namesOfInterest.add(name)
 
     # When lumping, prefer to use ids that have been used in OTU matching
     # This list could be used for all sorts of purposes...
@@ -242,16 +242,19 @@ def deal_with_ctenophora(ott):
     # a place to put it.  This will be rederived from SILVA soon enough.
     establish('Bacillariophyta', ott, division='Eukaryota', ott_id='5342311')
 
+    # Diatom.  Contains e.g. Ctenophora pulchella.
     ctenophora_diatom = establish('Ctenophora', ott,
                                   ancestor='Bacillariophyta',
                                   ott_id='103964')
 
     # The comb jelly should already be in skeleton, but include the code for symmetry.
+    # Contains e.g. Leucothea multicornis
     ctenophora_jelly = establish('Ctenophora', ott,
                                  parent='Metazoa',
                                  ott_id='641212')
 
     # The fly will be added by NCBI; provide a node to map it to.
+    # Contains e.g. Ctenophora dorsalis
     ctenophora_fly = establish('Ctenophora', ott,
                                division='Arthropoda',
                                ott_id='1043126')
@@ -1020,7 +1023,9 @@ def patch_ott(ott):
 
     # Dail 2014-03-31 https://github.com/OpenTreeOfLife/feedback/issues/4
     # no evidence given
-    ott.taxonThatContains('Bacteria', 'Lentisphaerae').take(ott.taxon('Lentisphaerae'))
+    lent = ott.taxonThatContains('Bacteria', 'Lentisphaerae')
+    if lent != None:
+        lent.take(ott.taxon('Lentisphaerae'))
 
     # David Hibbett 2014-04-02 misspelling in h2007 file
     # (Dacrymecetales is 'no rank', Dacrymycetes is a class)
@@ -1335,4 +1340,9 @@ names_of_interest = ['Ciliophora',
                      'Dischloridium',
                      'Gloeosporium',
                      'Exaiptasia pallida',
+                     'Cladochytriaceae',
+                     'Hyaloraphidium',
+                     'Marssonina',
+                     'Marssonia',
+                     'Platypus',
                      ]

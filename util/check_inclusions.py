@@ -22,10 +22,13 @@ def check(inclusionspath, ott):
                 print '** There is no taxon named %s (id %s) in %s' % (small, small_id, big)
                 for small_node in small_nodes:
                     small_tax = small_node.taxon()
+                    div = small_tax.getDivision().name
                     if small_tax != small_id_tax:
-                        print '   There is a %s not in %s; its id is %s' % (small, big, small_tax.id)
+                        print ('   There is a %s (division %s) not in %s; its id is %s'
+                               % (small, div, big, small_tax.id))
                     else:
-                        print '   There is a %s not in %s; its id happens to be %s' % (small, big, small_id)
+                        print ('   There is a %s (division %s) not in %s; its id happens to be %s' 
+                               % (small, div, big, small_id))
                     show_interloper(small_node, small_id, ott)
             
         else:

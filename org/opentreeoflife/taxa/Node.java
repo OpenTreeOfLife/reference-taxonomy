@@ -15,6 +15,8 @@ public abstract class Node {
 
     public abstract Taxon taxon();
 
+    public abstract String getType();
+
     public abstract Taxonomy getTaxonomy();
 
     public abstract boolean taxonNameIs(String othername);

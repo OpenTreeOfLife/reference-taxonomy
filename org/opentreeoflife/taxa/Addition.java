@@ -97,7 +97,7 @@ public class Addition {
                 }
                 String id = idAssignments.get(tag);
                 node.setId(id);
-                node.markEvent("new-id");
+                node.markEvent("addition");
                 long lid = Long.parseLong(id);
                 if (lid < least) least = lid;
                 if (lid > greatest) greatest = lid;

@@ -1345,4 +1345,6 @@ names_of_interest = ['Ciliophora',
                      'Marssonina',
                      'Marssonia',
                      'Platypus',
+                     'Dendrosporium',
+                     'Diphylleia',
                      ]

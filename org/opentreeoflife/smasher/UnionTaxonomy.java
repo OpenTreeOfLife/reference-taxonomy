@@ -209,6 +209,7 @@ public class UnionTaxonomy extends Taxonomy {
                         a.alignWith(node, unode, "same/by-division-name");
                         // %% this is setting a nonnull div node with a null name
                         node.setDivision(div);
+                        System.out.format("## Division of %s is %s\n", node, div);
                     }
                 } else if (node.getDivisionProper() != div)
                     System.err.format("** Help!  Conflict over division mapping: %s have %s want %s\n",
@@ -322,8 +323,7 @@ public class UnionTaxonomy extends Taxonomy {
 	public void carryOverIds(SourceTaxonomy idsource) {
         // Align the taxonomies; generates report
 		Alignment a = this.alignment(idsource);
-        markDivisions(a);
-        a.align();
+        this.align(a);
 		this.idsourceAlignment = a;
 
         // Last ditch effort - attempt to match by qid

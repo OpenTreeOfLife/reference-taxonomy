@@ -299,7 +299,7 @@ class MergeMachine {
         Answer answer = Answer.yes(node, newnode, reason, null);
         alignment.setAnswer(node, answer);
         newnode.comapped = node;
-        answer.maybeLog();
+        answer.maybeLog(target);
         return newnode;
     }
 

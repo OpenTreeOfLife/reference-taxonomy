@@ -96,7 +96,7 @@ public class Addition {
                     continue;
                 }
                 String id = idAssignments.get(tag);
-                node.setId(id);
+                node.addId(id);
                 node.markEvent("addition");
                 long lid = Long.parseLong(id);
                 if (lid < least) least = lid;
@@ -384,9 +384,15 @@ public class Addition {
                         reasons.add("division");
                         continue;
                     }
-                    if (candidate.id != null && !candidate.id.equals(ott_id)) {
-                        reasons.add("id mismatch");
-                        continue;
+                    Taxonomy probe = tax.lookupId(ott_id);
+                    if (probe != null) {
+                        if (probe == candidate) {
+                            target = candidate;
+                            break;
+                        } else {
+                            reasons.add("id mismatch");
+                            continue;
+                        }
                     }
                     if (candidate.sourceIds.get(0).toString().equals(firstSource)) {
                         target = candidate;

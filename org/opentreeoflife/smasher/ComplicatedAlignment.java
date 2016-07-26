@@ -158,7 +158,7 @@ public class ComplicatedAlignment extends Alignment {
                     Taxon y = unodes.get(j).taxon();
                     Answer z = criterion.assess(x, y);
 
-                    if (z.source == null) continue; // dunno
+                    if (z.subject == null) continue; // dunno
                     z.maybeLog();
                     if (z.value == Answer.DUNNO) continue;
 

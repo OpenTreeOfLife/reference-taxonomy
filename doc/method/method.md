@@ -47,74 +47,120 @@ are performed:
     This is done to avoid an ambiguity when later on a node with name
     N needs to be aligned.
 
-## Patching
+## Source patching
 
-After loading and before alignment and merge, each source taxonomy
-gets patched individually.  It's always best to treat a problem as
-early as possible, so that its ill effects don't interfere with
-alignment of other taxonomies and with proper synthesis.  This is
-separate from the general patch phase that takes place at the end of
-taxonomy construction (below). A frequent kind of patch is to add a
-synonym or change a name so that a source taxon aligns with an
-existing union taxon.  Patches that bring a source taxonomy into
-agreement with the skeleton (see below) also happen here.
+Most source taxonomies have ad hoc patches that are applied at this
+point.  Capitalizations andmisspellings can be fixed at this point,
+and synonyms added (e.g. 'Stramenopiles' for 'Heterokonta'), to
+improve matches between taxonomies.  Other patches such as extinct or
+extant annotations or topology changes can be applied at this point.
+Generally it's best to handle taxonomic problems by correcting source
+taxonomies at this point, but if it is difficult or inconvenient to
+localize the problem to one or more sources, repair can be left until
+the final patch phase after all source taxonomies have been loaded and
+merged.
+
+Editing the source taxonomy presents a provenance tracking problem
+that has yet to be addressed.
 
 ## Alignment
 
-It is very important that source taxa be matched with union taxa, when
+It is very important that source taxa be matched with union taxa when
 and only when this is appropriate.  A mistaken identity between a
-source taxon and a union taxon can be disastrous, leading to
-downstream curation errors (e.g. putting a snail in flatworms).  A
-mistaken non-identity (separation) also be a problem, since taxon
-duplication leads to incomplete annotation (information about one copy
-not propagating to the other) and to loss of unification opportunities
-in phylogeny synthesis
+source taxon and a union taxon can be disastrous, leading not just to
+an incorrect tree but to downstream curation errors in OTU matching
+(e.g. putting a snail in flatworms).  A mistaken non-identity
+(separation) can also be a problem, since taxon duplication leads to
+incomplete annotation (information about one copy not propagating to
+the other) and to loss of unification opportunities in phylogeny
+synthesis.
 
-The process of matching source taxa with union taxa is called
-"alignment" in following.
+The process of matching source nodes with union nodes, or equivalently
+determining the identity of the corresponding taxa, is called
+"alignment" in the following.
 
-Ultimately there is no test to determine whether alignment has been
-done correctly.  The process is necessarily heuristic.  Difficult
-cases must be investigated manually and either repaired manually
-(patched) or repaired by an improvement to the heuristic set.
+Ultimately there is no automatable test to determine whether alignment
+has been done correctly.  The process is necessarily heuristic.
+Difficult cases must be investigated manually and either repaired
+manually (patched) or repaired by improvements to the heuristics.
 
-Alignment proceeds one source node at a time, as follows:
+Alignment proceeds one name at a time.  First, a list of candidate
+union matches is made for the source nodes having that name.  Then, a
+set of heuristics is applied to find a unique best union node match,
+if any, for each source node having the given name.
 
- 1. A list of candidate matches is made.
- 2. Matches that should not be made are removed from the list, using a
-    set of heuristics (separation).
- 3. Among those that remain, the best candidate is chosen, using a
-    set of heuristics (preference).
+[Going one name at a time is not really correct since it does not
+handle synonyms very well.  There is a kludge for dealing with
+synonyms, but it is not very satisfactory.  An experimental version of
+the code deals with one source node at a time, with the potential for
+a different candidate set for each node having a given name, based on
+its synonyms.]
 
-If there is no single best candidate, an unresolvable ambiguity is
-declared and the source taxon is dropped - which is OK because it
-probably corresponds to one of the candidates and therefore would make
-no contribution to the union taxonomy.
+Heuristics are of two kinds:
 
+ 1. Separation heuristics identify union nodes that mustn't be match
+    targets for the source node.
+ 2. Preference heuristics attempt to separate the set of candidate
+    targets into two groups, those that are more appropriate vs. less
+    appropriate as match targets for the given source node.
+
+A heuristic is essentially a two-place predicate, applied to a source
+node and a union node, that either succeeds (the two could match
+according to this heuristic) or fails (they do not match according to
+this heuristic).  The method for applying the heuristics is as
+follows:
+
+ 1. Start with a source node and a set C of union nodes (candidates)
+ 2. For each heuristic H:
+      1. Let C' = those members of C for which H succeeds
+      2. If C' is singleton, we are done; the source node matches the member of C'
+      3. If H is a separation heuristic, replace C with C'.  If C is now empty, we're done.
+      4. If H is a preference heuristic, and C' is nonempty, replace C with C'.
+ 3. If C is empty, no union node matches the source node, and a polysemy may be created in the merge phase
+ 4. If C is singleton, its member is taken to be the correct match.
+ 5. Otherwise, the source node is ambiguous.
+
+If the process ends with multiple candidates, an unresolvable
+ambiguity is declared.  If the ambiguous source node has no children,
+it is dropped - which is OK because it probably corresponds to one of
+the existing candidates and therefore would make no new contribution
+to the union taxonomy.  If the ambiguous source node has children, it
+is treated as a potentially new node, possibly turning an N-way
+polysemy into an N+1-way polysemy, which is almost certainly wrong.
+Usually, subsequent analysis determines that the taxon is inconsistent
+with the union taxonomy and it is dropped.  If it is not dropped, then
+this is a rare and troublesome situation that requires manual
+intervention.
 
 ### Candidate identification
+
+The analysis loop begins by identifying candidate nodes.
 
 Potentially, any source node might match any union node, because we do
 not have complete information about synonymies, and we have no
 information that can be used to definitively rule out any particular
 match.  Of course considering all options is not practical, so we
-assume that we need *some* reason to think nodes might be matched
-before evaluating them.  The criterion used is that they must have a
-name in common.  The common case is having the same primary
-name-string, but other paths between the two are possible via
-synonyms.
+limit the search to union nodes that have a name (primary or synonym)
+in common with the source node.
+
+In some cases it would be possible to identify further candidates by
+looking at identifiers; for example, it often happens that when NCBI
+is revised, a taxon keeps its NCBI identifier, but changes its name.
+This is not currently handled.
 
 ### Separation heuristic: Skeleton taxonomy
 
+The heuristics are described in the order in which they are applied.
+
 If taxa A and B belong to taxa C and D (respectively), and C and D are
-disjoint, then A and B are disjoint.  For example, land plants and
-rhodophytes are disjoint, so if NCBI says its _Pteridium_ is a land
-plant, and WoRMS says its _Pteridium_ is a rhodophyte, then either
-there's been a gross misclassification in one of the sources, or NCBI
-_Pteridium_ and WoRMS _Pteridium_ are different taxa.  Since
-misclassifications at the level of rhodophytes vs. plants are much
-rarer than name-strings that are polysemous across major groups, it's
-better to assume we have a polysemy.
+known to be disjoint, then A and B can be considered distinct.  For
+example, land plants and rhodophytes are disjoint, so if NCBI says its
+_Pteridium_ is a land plant, and WoRMS says its _Pteridium_ is a
+rhodophyte, then either there's been a gross misclassification in one
+of the sources, or NCBI _Pteridium_ and WoRMS _Pteridium_ are
+different taxa.  Since misclassifications at the level of rhodophytes
+vs. plants are much rarer than name-strings that are polysemous across
+major groups, it's better to assume we have a polysemy.
 
 Drawing a 'polysemy barrier' between plants and rhodophytes
 resembles the use of nomenclatural codes to separate polysemies,
@@ -123,65 +169,96 @@ actually arise.  For example, there are many [how many? dozens?
 hundreds?] of fungus/plant polysemies, even though the two groups are
 covered by the same nomenclatural code.
 
-Of course some cases like this are actual differences of opinion
-concerning classification, and different placement of a name between
-two source taxonomies does not mean that we are talking about
-different taxa.
+Some cases like this one are actual differences of opinion concerning
+classification, and different placement of a name between two source
+taxonomies does not mean that we are talking about different taxa.
 
-The particular solution adopted is as follows.  We establish a
+The separation heuristic used here works as follows.  We establish a
 "skeleton" taxonomy, containing about 25 higher taxa (Bacteria,
-Metazoa, etc.) by fiat.  Every source taxonomy is aligned - manually,
-if necessary - to the skeleton taxonomy.  (Usually this initial
+Metazoa, etc.).  Every source taxonomy is aligned - manually, if
+necessary - to the skeleton taxonomy.  (Usually this initial
 mini-alignment is by simply by name, although there are a few
 troublesome cases, such as Bacteria, where higher taxon names are
-polyesmies.)  If taxa A and B with the same name N belong to C and D in
-the skeleton taxonomy, and C and D are disjoint in the skeleton, then
-A and B are taken to be disjoint as well, i.e. polyesmies.
+polysemies.)  For any node/taxon A, the smallest skeleton taxon
+containing A is called its _division_.  If taxa A and B with the same
+name N have divisions C and D, and C and D are disjoint in the
+skeleton, then A and B are taken to be distinct.
 
-There are many cases (about 4,000) where A's nearest enclosing
-skeleton taxon C is contained in B's nearest skeleton taxon D or vice
-versa.  It is not clear what to do in these cases.  In OTT 2.9, A and
-B are treated as weak polysemies, and A is suppressed due to the
-uncertainty, but the number is so high that a better bet might be to
-assume they're all true polysemies.  Example: the skeleton taxonomy does
-not separate _Brightonia_ the mollusc (from IRMNG) from _Brightonia_
-the echinoderm (from higher priority WoRMS), so the mollusc is
-suppressed.
+There are many cases (about 4,000) where A's division (say, C) is
+properly contained in B's nearest division (say, D) or vice versa.  A
+and B are therefore not separated.  It is not clear what to do in
+these cases.  In many situations the taxon in question is unplaced in
+the source (e.g. in Eukaryota but not in Metazoa) and ought to be
+matched with a placed taxon in the union (in both Eukaryota and
+Metazoa).  In OTT 2.9, [?? figure out what happens - not sure], but
+the number of affected names is quite high, so many false polysemies
+are created.  Example: the skeleton taxonomy does not separate
+_Brightonia_ the mollusc (from IRMNG) from _Brightonia_ the echinoderm
+(from higher priority WoRMS), because there is no division for
+echinoderms, so [whatever happens].  [need example going the other
+way.]
 
-### Separation heuristic: incompatible membership
+### Preference heuristic: Lineage
 
-(Hmm... this will take a long time to explain... we take a proxy for
-taxon membership and check for disjointness of source taxon with union
-taxon; nodes with disjoint taxa are kept separate.  The proxy is based
-on sets of names.  If S is the set of names that are (a) unambiguous
-in both taxonomies and (b) present in both taxonomies, we look at the
-subsets of S for nodes under the source node and the union node.  If
-the subsets are nonempty and disjoint, we take the nodes to be
-separate, even if they have the same name.)
+Taxa with a common lineage are preferred to those that don't.  The
+rule here is: If A's 'quasiparent name' is the name of an ancestor of
+B, or vice versa, then B is a preferred match for A.  The 'quasiparent
+name' of A (or B) is the name of the nearest ancestor of A (or B)
+whose name is not a prefix of A's name.  E.g. if A is a species then
+the genus name is skipped (because it is uninformative) and A's
+quasiparent name is that of the containing family (or subfamily, etc.)
+name.
 
-### Preference heuristics
+### Separation heuristic: Incompatible membership
 
-A sequence of preference heuristics is applied in order in order to
-eliminate candidates so that (it is hoped) only one remains at the
-end.
+For each source or union node A, we define its 'membership proxy' as
+follows.  Let S be the set of names that are (a) present in both
+taxonomies and (b) unambiguous in each taxonomy.  Then the membership
+proxy of A is the set of names of tips under A that are also in S.
 
-A preference heuristic is essentially a two-place predicate, applied
-to a source node and a union node, that either succeeds (the two seem
-to match according to this heuristic) or fails (they do not match
-according to this heuristic, but might match according to another).  The
-method for applying the heuristics is as follows:
+If A and B both have nonempty membership proxies, and the proxies are
+disjoint, then we consider A and B to be incompatible, and prevent a
+match between them.
 
- 1. Start with a source node and a set C of union nodes (candidates)
- 2. For each preference heuristic P:
-      1. Let C' = those members of C for which P succeeds
-      2. If C' is singleton, we are done; the source node matches the member of C'
-      3. If C' is nonempty, replace C with C'; if C' is empty leave C alone
- 3. If we have run out of heuristics P, the source node is ambiguous 
-    and is not used in taxonomy synthesis.
+The incompatibility calculation relies an a bit of implementation
+cleverness for speed, so that it is not necessary to create data
+structures for every proxy.  Most of the time the calculation is a
+simple range check.
 
-[OK, this isn't really accurate.  In fact the separation and
-preference heuristics are interleaved.  I don't like it that way and
-I don't think interleaving confers any advantage.]
+This heuristic has both false negatives (taxa that should be combined
+but aren't) and false positives (cases where merging taxa does not
+lead to the best results).
+
+### Preference heuristic: Overlapping membership
+
+We prefer a union node if its membership proxy (see above) overlaps
+with the source node's.
+
+
+### Preference heuristics: Same/any source identifier
+
+Same source id: B is preferred if A's primary source id
+(e.g. NCBI:1234) is the same as B's.  This heuristic applies mainly
+during the final id assignment phase, since before this point no
+identifiers are shared between the source and union taxonomies.
+
+Any source id: B is preferred if any of A's source ids matches any of
+B's.
+ 
+### Separation heuristic: By 'weak division'
+
+B and A are considered distinct at this point if they are in different
+divisions.  E.g. [looking in log files for examples. need better
+instrumentation.]
+
+### Preference heuristic: By rank
+
+B is preferred if A and B both have designated ranks, and the ranks are the same.
+
+### Preference heuristic: Synonym avoidance
+
+B is preferred if its primary name is the same as A's.
+
 
 
 ### Collisions
@@ -189,17 +266,22 @@ I don't think interleaving confers any advantage.]
 There are often false polysemies within a source taxonomy - that is, a
 name appears on more than one node in the source taxonomy, when on
 inspection it is clear that this is a mistake in the source, and there
-is only one taxon in question.  [Example: Aricidea rubra - explain.]
+is really only one taxon in question.  Example: _Aricidea rubra_
+occurs twice in WoRMS, but the two nodes are very close in the
+taxonomy and one of them appears to be a duplication.
 
 If the union taxonomy has an appropriate node with that name, then
-multiple source taxonomy nodes can match it.  However, if the union
+multiple source taxonomy nodes can match it, the collision will be
+allowed, and the polysemy will go away.  However, if the union
 taxonomy has no such node, both source nodes will end up being copied
 into the union.  This is an error in the method which needs to be
 fixed.
 
 [The above is a bit of a lie.  In fact some amount of collision
-avoidance logic remains in the code (class `Matrix`).  I don't really understand how it
-works any more.]
+prevention logic remains in the code (class `Matrix`), so we do not
+always remove false polysemies in a source, even when there is a union
+node to map them to.  I don't really understand how the code works or
+whether it's doing the right thing; need to review.]
 
 
 ## Merge
@@ -207,7 +289,7 @@ works any more.]
 Following alignment, taxa from the source taxonomy are merged into the
 union taxonomy.  This is performed via bottom-up traversal of the
 source.  A parameter 'sink' is passed down to recursive calls, and is
-simply the most rootward alignment target seen so far on the descent.
+simply the nearest (most tipward) alignment target seen so far on the descent.
 It is called 'sink' because it's the node to which orphan nodes will
 be attached when a source taxon is dropped due to inconsistency with
 the union.
@@ -222,10 +304,11 @@ The following cases arise during the merge process:
 
  * Source taxonomy internal node: the children have already been
    processed (recursively), and are all matched to targets in the
-   union (or, rarely, blocked).  The targets are either 'old' (they
-   were already in the union before the merge started) or 'new'
-   (created in the union during the merge process).  One of the
-   following cases then holds:
+   union (or, rarely, blocked, see above).  The targets are either
+   'old' (they were already in the union before the merge started) or
+   'new' (created in the union during the merge process).  One of the
+   following rules then applies (assuming in each case that none of
+   the previous rules apply):
 
      * Matched internal node: Attach any new targets to the internal
        node's alignment target.
@@ -246,20 +329,21 @@ The following cases arise during the merge process:
        targets, discarding the source internal node.
 
 The actual logic is more complicated than this due to the need to
-properly handle unplaced (incertae sedis) taxa.  Generally speaking
+properly handle unplaced (incertae sedis) taxa.  Generally speaking,
 unplaced taxa are ignored in the calculations of inconsistency and
 refinement.  The source taxonomy might provide a better position for
 an unplaced taxon (more resolved, or resolved), or not.  Unplaced taxa
-should not influence the treatment of placed taxa, but they shouldn't
-get lost either.
+should not inhibit the application of any rule, but they shouldn't get
+lost during merge, either.
 
 ## Postprocessing
 
-After all source taxonomies are aligned and merged, general patches
-are applied to the union taxonomy.  Some patches are represented in
-the 'version 1' (TSV-based) form, and others in the 'version 2'
-(python-based) form.  A further set of patches for microbial
-Eukaryotes comes from a spreadsheet prepared by the Katz lab.
+After all source taxonomies are aligned and merged, general ad hoc
+patches are applied to the union taxonomy.  Some patches are
+represented in the 'version 1' (TSV-based) form, and others in the
+'version 2' (python-based) form.  A further set of patches for
+microbial Eukaryotes comes from a spreadsheet prepared by the Katz
+lab.
 
 There is a special step to locate taxa that come only from PaleoDB
 and mark them extinct.

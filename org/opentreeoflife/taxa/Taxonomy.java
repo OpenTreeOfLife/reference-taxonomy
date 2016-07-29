@@ -128,7 +128,7 @@ public abstract class Taxonomy {
             nodes.add(node);
             if (nodes.size() == 75) {
                 // should use eventLogger
-                System.err.format("| %s is the 75th in %s to have the name '%s'\n",
+                System.out.format("| %s is the 75th in %s to have the name '%s'\n",
                                   node,
                                   this.getTag(),
                                   name);
@@ -356,7 +356,7 @@ public abstract class Taxonomy {
             tax.loadNewick(designator);
         } else {
 			if (!designator.endsWith("/")) {
-				System.err.println("Taxonomy designator should end in / but doesn't: " + designator);
+				System.out.println("* Taxonomy designator should end in / but doesn't: " + designator);
 				designator = designator + "/";
 			}
 			System.out.println("--- Reading " + designator + " ---");
@@ -1088,7 +1088,7 @@ public abstract class Taxonomy {
 			// TBD: synonyms ?
 			return tax2;
 		} else {
-			System.err.println("Missing or ambiguous name: " + designator);
+			System.err.println("** Missing or ambiguous name: " + designator);
 			return null;
 		}
 	}
@@ -1159,7 +1159,7 @@ public abstract class Taxonomy {
 		for (Taxon r : this.roots()) root = r;	//bad kludge. uniroot assumed
 		Taxon newroot = chop(root, m, n, cuttings, tax);
 		tax.addRoot(newroot);
-		System.err.format("Cuttings: %s Residue: %s\n", cuttings.size(), newroot.count());
+		System.out.format("| Cuttings: %s Residue: %s\n", cuttings.size(), newroot.count());
 
 		// Temp kludge ... ought to be able to specify the file name
 		String outprefix = "chop/";
@@ -1277,7 +1277,7 @@ public abstract class Taxonomy {
             Taxon second = rootsList.get(1);
             int count2 = second.count();
             if (rootsList.size() >= 2 && count1 < count2*500)
-                System.err.format("* Nontrivial forest: biggest is %s, 2nd biggest is %s\n", count1, count2);
+                System.out.format("* Nontrivial forest: biggest is %s, 2nd biggest is %s\n", count1, count2);
         }
         return rootsList;
     }
@@ -1748,7 +1748,7 @@ public abstract class Taxonomy {
     // For use from jython code.  Result is added as a root.
 	public Taxon newTaxon(String name, String rankname, String sourceIds) {
 		if (this.lookup(name) != null)
-			System.err.format("* Warning: A taxon by the name of %s already exists\n", name);
+			System.out.format("* Warning: A taxon by the name of %s already exists\n", name);
 		Taxon t = new Taxon(this, name);
 		if (rankname != null && !rankname.equals("no rank"))
 			t.rank = Rank.getRank(rankname);
@@ -1851,7 +1851,7 @@ public abstract class Taxonomy {
 		PrintStream out;
 		if (filename.equals("-")) {
 			out = System.out;
-			System.err.println("Writing to standard output");
+			System.out.println("Writing to standard output");
 		} else {
 			out = new java.io.PrintStream(new java.io.BufferedOutputStream(new java.io.FileOutputStream(filename)),
 										  false,
@@ -1861,7 +1861,7 @@ public abstract class Taxonomy {
 
 			// PrintStream(new OutputStream(new FileOutputStream(filename, "UTF-8")))
 
-			System.err.println("Writing " + filename);
+			System.out.println("Writing " + filename);
 		}
 		return out;
 	}

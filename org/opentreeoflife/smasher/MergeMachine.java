@@ -265,18 +265,18 @@ class MergeMachine {
 
     Taxon accept(Taxon node, String reason) {
         if (node == null) {
-            System.err.format("Shouldn't happen\n"); return null;
+            System.err.format("** Shouldn't happen\n"); return null;
         }
         Taxon unode = alignment.getTaxon(node);
         if (unode == null) {
-            System.err.format("Also shouldn't happen: %s\n", node); return null;
+            System.err.format("** Also shouldn't happen: %s\n", node); return null;
         }
         Answer a = alignment.getAnswer(node);
         if (a == null) {
-            System.err.format("Also also shouldn't happen: %s\n", node);
+            System.err.format("** Also also shouldn't happen: %s\n", node);
             alignment.setAnswer(node, Answer.yes(node, unode, reason, null));
         } else if (!a.isYes()) {
-            System.err.format("Also also also shouldn't happen: %s %s\n", node, a.reason);
+            System.err.format("** Also also also shouldn't happen: %s %s\n", node, a.reason);
             alignment.setAnswer(node, Answer.yes(node, unode, reason, null));
         }
         return unode;

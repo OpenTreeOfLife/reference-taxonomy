@@ -393,7 +393,7 @@ def link_to_h2007(tax):
             for family in family_names:
                 order.take(tax.taxon(family, 'Fungi'))
         else:
-            print '*** Missing fungal order', foo[0]
+            print '*** Missing fungal order', order_name
 
     # Stereopsidaceae = Stereopsis + Clavulicium
     if tax.maybeTaxon('Stereopsidaceae') == None:
@@ -947,6 +947,12 @@ def load_irmng():
                        ('10094174', 'Aricia striata')]:
         tax = irmng.maybeTaxon(id)
         if tax != None: tax.prune(this_source)
+
+    # 2016-07-28 JAR
+    # Discovered by ambiguity in an inclusion test.  The IRMNG genus appears to be
+    # disjoint with the NCBI genus of the same name, but they're
+    # actually the same due to species synonymy (from wikispecies).
+    irmng.taxon('Aulacomonas submarina').synonym('Diphylleia rotans')
 
     return irmng
 

@@ -96,7 +96,7 @@ public class Addition {
                     continue;
                 }
                 String id = idAssignments.get(tag);
-                node.addId(id);
+                node.taxonomy.addId(node, id);
                 node.markEvent("addition");
                 long lid = Long.parseLong(id);
                 if (lid < least) least = lid;
@@ -303,10 +303,14 @@ public class Addition {
             // Get parent taxon
             Taxon parent;
             if (parentId != null) {
-                parent = tax.lookupId(parentId);
-                if (parent == null) {
-                    System.err.format("** Parent %s not found for added taxon %s\n", parentId, name);
-                    continue;
+                if (parentId.equals("root"))
+                    parent = tax.forest;
+                else {
+                    parent = tax.lookupId(parentId);
+                    if (parent == null) {
+                        System.err.format("** Parent %s not found for added taxon %s\n", parentId, name);
+                        continue;
+                    }
                 }
             } else if (parentTag != null) {
                 parent = tagToTaxon.get(parentTag);
@@ -384,7 +388,7 @@ public class Addition {
                         reasons.add("division");
                         continue;
                     }
-                    Taxonomy probe = tax.lookupId(ott_id);
+                    Taxon probe = tax.lookupId(ott_id);
                     if (probe != null) {
                         if (probe == candidate) {
                             target = candidate;

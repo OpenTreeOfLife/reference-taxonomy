@@ -78,7 +78,7 @@ class InterimFormat {
 			Object obj = parser.parse(fr);
 			JSONObject jsonObject = (JSONObject) obj;
 			if (jsonObject == null)
-				System.err.println("!! Opened file " + filename + " but no contents?");
+				System.err.println("** Opened file " + filename + " but no contents?");
 			else {
 				tax.properties = jsonObject;
 
@@ -151,7 +151,7 @@ class InterimFormat {
 				// itself
 				if (lastone.endsWith("!") && (parts.length < 4 ||
 											  lastone.length() > 1))
-					System.err.println("I don't get it: [" + lastone + "]");
+					System.err.println("** I don't get it: [" + lastone + "]");
 
 				String id = parts[0];
 				Taxon oldnode = tax.lookupId(id);
@@ -235,7 +235,7 @@ class InterimFormat {
 	// parts = fields from row of dump file
 	void initTaxon(Taxon node, String id, String name, String rankname, String flags, String[] parts) {
         if (id.length() == 0)
-            System.err.format("!! Null id: %s\n", name);
+            System.err.format("** Null id: %s\n", name);
         else
             node.setId(id);
         if (name != null)
@@ -250,7 +250,7 @@ class InterimFormat {
         else {
             Rank rank = Rank.getRank(rankname);
             if (rank == null) {
-                System.err.println("!! Unrecognized rank: " + rankname + " " + node.id);
+                System.err.println("** Unrecognized rank: " + rankname + " " + node.id);
                 node.rank = Rank.NO_RANK;
             } else if (rank == Rank.GENUS_RANK && name.endsWith("ae")) {
                 node.markEvent("rank=genus, but name does not look like a genus");
@@ -267,7 +267,7 @@ class InterimFormat {
 
 		if (tax.infocolumn != null) {
 			if (parts.length <= tax.infocolumn)
-				System.err.println("Missing sourceinfo column: " + node.id);
+				System.err.println("** Missing sourceinfo column: " + node.id);
 			else {
 				String info = parts[tax.infocolumn];
 				if (info != null && info.length() > 0)
@@ -337,7 +337,7 @@ class InterimFormat {
 		if (node.children != null)
 			for (Taxon child : node.children) {
 				if (child == null)
-					System.err.println("null in children list!? " + node);
+					System.err.println("** null in children list!? " + node);
 				else
 					dumpNode(child, out, false, sep);
 			}
@@ -438,7 +438,7 @@ class InterimFormat {
 					Taxon node = tax.lookupId(id);
 					if (node == null) {
 						if (false && ++losers < 10)
-							System.err.println("Identifier " + id + " unrecognized for synonym " + name);
+							System.err.println("** Identifier " + id + " unrecognized for synonym " + name);
 						else if (losers == 10)
 							System.err.println("...");
 						continue;

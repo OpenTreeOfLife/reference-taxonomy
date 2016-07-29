@@ -108,7 +108,7 @@ public class UnionTaxonomy extends Taxonomy {
             setIdspace(source);
         source.setEventLogger(this.eventLogger);
         Alignment a;
-        if (false)
+        if (true)
             a = new AlignmentByName(source, this);
         else
             a = new ComplicatedAlignment(source, this);
@@ -163,7 +163,7 @@ public class UnionTaxonomy extends Taxonomy {
             count += taxon.copySynonymsTo(targetTaxon);
         }
 		if (count > 0)
-			System.err.println("| Added " + count + " synonyms");
+			System.out.println("| Added " + count + " synonyms");
 	}
 
 

@@ -132,7 +132,7 @@ public class AlignmentByName extends Alignment {
             return null;
     }
 
-    int cutoff = Answer.HECK_NO;
+    int cutoff = Answer.DUNNO;
 
     // Alignment - new method
 
@@ -143,90 +143,88 @@ public class AlignmentByName extends Alignment {
         Set<Taxon> initialCandidates = new HashSet<Taxon>(candidateMap.keySet());
         Set<Taxon> candidates = initialCandidates;
 
-        if (candidates.size() == 0)
+        if (candidates.size() == 0) {
+            node.markEvent("no candidates");
             return null;
-        if (candidates.size() > 1)
+        } else if (candidates.size() > 1)
             target.eventLogger.namesOfInterest.add(node.name);
         for (Taxon candidate : candidates) {
-                if (candidate == null)
-                    System.err.format("** No taxon !? %s\n", node);
+            if (candidate == null)
+                System.err.format("** No taxon !? %s\n", node);
 
             Answer start = Answer.noinfo(node, candidate, "candidate", candidateMap.get(candidate));
             lg.add(start);
         }
 
-        int max = -100;                // maximum "value" among Answers
-        Answer anyAnswer = null;
-        Taxon anyCandidate = null;
+        Answer result = null;
         for (Criterion criterion : criteria) {
             List<Answer> answers = new ArrayList<Answer>(candidates.size());
-            max = -100;
+            int max = -100;
             int count = 0;
-            for (Taxon unode : candidates) {
-                if (unode == null)
-                    System.err.format("** No taxon 2 !? %s\n", node);
-
-                Answer a = criterion.assess(node, unode);
-                answers.add(a);
-                if (a.value > max) {
-                    max = a.value;
-                    count = 1;
-                    anyAnswer = a;
-                    anyCandidate = unode;
-                } else if (a.value == max)
-                    count++;
+            Answer anyAnswer = null;
+            Taxon anyCandidate = null;
+            for (Taxon cand : candidates) {
+                Answer a = criterion.assess(node, cand);
+                if (a.subject != null) lg.add(a);
+                answers.add(a); // in parallel with candidates
+                if (a.value >= cutoff) {
+                    if (a.value > max) {
+                        max = a.value;
+                        count = 1;
+                        anyAnswer = a;
+                        anyCandidate = cand;
+                    } else if (a.value == max)
+                        count++;
+                }
             }
+            // If all bad, give up.
+            if (count == 0) {
+                result = new Answer(node, null, max, "all-candidates-rejected", null);
+                lg.add(result);
+                break;
+            }
+
+            // If unique, sieze it.
+            if (count == 1) {
+                if (anyAnswer.target == null) {
+                    result = Answer.yes(node, anyCandidate, "elimination", null);
+                    lg.add(result);
+                } else
+                    result = anyAnswer;
+                break;
+            }
+
+            // If still ambiguous, winnow and try the next criterion.
             if (count < candidates.size()) {
-                // Informative
-                for (Answer a : answers)
-                    if (a.subject != null)
-                        lg.add(a);
+                // This criterion eliminated some candidates.
 
-                if (max <= cutoff)
-                    break;
-
+                // Iterate over candidates and answers in parallel.
                 Set<Taxon> winners = new HashSet<Taxon>();
                 Iterator<Answer> aiter = answers.iterator();
-                for (Taxon unode : candidates) {
+                for (Taxon cand : candidates) {
                     Answer a = aiter.next();
                     if (a.value == max) {
-                        winners.add(unode);
+                        winners.add(cand);
                     }
                 }
                 candidates = winners;
             }
         }
 
-        // Deal with a no answer
-        if (max <= cutoff) {
-            anyAnswer = new Answer(node, null, max, "all-candidates-rejected", null);
-            lg.add(anyAnswer);
-        }
-
-        // Accept a unique yes or noinfo answer
-        else {
-            if (candidates.size() > 1) {
-                if (false) {
-                    // Dump candidates & mode info
-                    System.out.format("? %s ->", node);
-                    for (Taxon c : candidates)
-                        System.err.format(" %s[%s]", c, candidateMap.get(c));
-                    System.out.println();
-                }
-
-                // avoid creating yet another homonym
-                anyAnswer = Answer.noinfo(node, null, "ambiguous", null);
-                lg.add(anyAnswer);
-            } else if (max <= Answer.DUNNO) {
-                // By process of elimination
-                anyAnswer = Answer.yes(node, anyCandidate, "elimination", null);
-                lg.add(anyAnswer);
+        if (result == null) {
+            // Ambiguity (not none or singleton)
+            if (node.getChildren().size() == 0) {
+                // Avoid creating yet another homonym.  
+                result = Answer.noinfo(node, null, "ambiguous", null);
+                lg.add(result);
+            } else {
+                System.out.format("** Abominable ambiguity: %s %s\n", node, candidates);
             }
         }
-        // Decide after the fact whether it was interesting enough to log
-        if (initialCandidates.size() > 1 || candidates.size() != 1 || anyAnswer.isNo())
+        // Decide after the fact whether the dance was interesting enough to log
+        if (initialCandidates.size() > 1 || result.isNo())
             target.eventLogger.log(lg);
-        return anyAnswer;
+        return result;
     }
 
     private static boolean allowSynonymSynonymMatches = false;

@@ -168,19 +168,19 @@ public class ComplicatedAlignment extends Alignment {
                         continue;
                     }
 
-                    // find best target for this candidate
-                    if (uanswer[j] == null || z.value > uanswer[j].value) {
-                        uuniq[j] = i;
-                        uanswer[j] = z;
-                    } else if (z.value == uanswer[j].value)
-                        uuniq[j] = -2;
-
-                    // find best candidate for this target
+                    // update best union target (j) for this source node (i)
                     if (answer[i] == null || z.value > answer[i].value) {
                         uniq[i] = j;
                         answer[i] = z;
                     } else if (z.value == answer[i].value)
                         uniq[i] = -2; // Ambiguous.  This case is not dealt with properly.
+
+                    // update best source node (i) for this union target (j)
+                    if (uanswer[j] == null || z.value > uanswer[j].value) {
+                        uuniq[j] = i;
+                        uanswer[j] = z;
+                    } else if (z.value == uanswer[j].value)
+                        uuniq[j] = -2;
 
                 }
             }

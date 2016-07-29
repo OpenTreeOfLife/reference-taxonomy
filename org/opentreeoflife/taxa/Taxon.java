@@ -315,7 +315,7 @@ public class Taxon extends Node {
         if (flags == 0
             && !this.isPlaced()
             && ((this.name.hashCode() % 100) == 17))
-            System.err.format("| Placing previously unplaced %s in %s\n", this, newparent);
+            System.out.format("| Placing previously unplaced %s in %s\n", this, newparent);
         changeParent(newparent);
         this.properFlags &= ~Taxonomy.INCERTAE_SEDIS_ANY; // ??? think about this
         this.addFlag(flags);
@@ -401,19 +401,19 @@ public class Taxon extends Node {
 			return new QualifiedId(space, this.id);
         } else if (this.noMrca()) {
             // Shouldn't happen
-			System.err.println("| [getQualifiedId] Forest");
+			System.out.println("* [getQualifiedId] Forest");
 			return new QualifiedId(space, "<forest>");
         } else if (this.parent == null) {
             // Shouldn't happen
-			System.err.format("* [getQualifiedId] %s is detached\n", this);
+			System.out.format("* [getQualifiedId] %s is detached\n", this);
             return new QualifiedId(space, "<detached>");
         } else if (this.name != null) {
             // e.g. h2007
-			// System.err.format("* [getQualifiedId] Taxon has no id, using name: %s:%s\n", space, this.name);
+			// System.out.format("* [getQualifiedId] Taxon has no id, using name: %s:%s\n", space, this.name);
 			return new QualifiedId(space, this.name);
         } else {
 			// What if from a Newick string?
-			System.err.println("* [getQualifiedId] Nondescript");
+			System.out.println("* [getQualifiedId] Nondescript");
             return new QualifiedId(space, "<nondescript>");
         }
 	}
@@ -889,7 +889,7 @@ public class Taxon extends Node {
         } else {
             // if (!newchild.isDetached()) newchild.detach();  - not needed given change to newTaxon.
             if (newchild.descendsFrom(this))
-                System.err.format("* Note: moving %s from %s out to %s\n",
+                System.out.format("* Note: moving %s from %s out to %s\n",
                                   newchild, newchild.parent, this);
             newchild.changeParent(this, 0);
 			this.addFlag(Taxonomy.EDITED);
@@ -954,7 +954,7 @@ public class Taxon extends Node {
 
 	public void synonym(String name) {
 		if (this.addSynonym(name, "synonym") == null)
-			System.err.format("| Synonym already present: %s %s\n", this, name);
+			System.out.format("| Synonym already present: %s %s\n", this, name);
 	}
 
 	public boolean rename(String name) {
@@ -1027,7 +1027,7 @@ public class Taxon extends Node {
 		for (Taxon node = this; node != null; node = node.parent) {
 			if ((node.properFlags & Taxonomy.EXTINCT) != 0) {
 				if (node != this)
-					System.err.format("* Changing ancestor %s of %s from extinct to extant\n", node, this);
+					System.out.format("* Changing ancestor %s of %s from extinct to extant\n", node, this);
 			}
             this.properFlags &= ~Taxonomy.EXTINCT;
             this.inferredFlags &= ~Taxonomy.EXTINCT; // voodoo

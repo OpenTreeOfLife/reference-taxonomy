@@ -707,6 +707,17 @@ ahh... so that 5262599 id looks like a much better one.  Fix test.
 
 ## Marssonia / Marssonina 
 
+There are two Marssonias:
+1. a fungus (synonym for Marssonina / if:8849 / ncbi:509230, in Dermateaceae in Ascomycota)
+2. a plant (gbif:7268388, in Lamiales).
+
+What should their OTT ids be?
+1. fungus 372158 (because Marssonina in OTT 2.0 - 2.7) 
+       or 176780 (Marssonia in OTT 2.8-2.9)
+2. plant 5512668 (because OTT 2.8) not in OTT 2.7
+
+I think the synonym is new.
+
 ** The id of Marssonia (which is not in Dermateaceae) is 5512668 (expected 176780)
    Id 176780 belongs to (Marssonina 75019=if:8849+814)
 

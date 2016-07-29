@@ -85,7 +85,7 @@ public class Alignment {
 
     public final void align() {
         System.out.println("--- Mapping " + source.getTag() + " to target ---");
-        this.reallyAlign();
+        this.reallyAlign();     // calls this.assignBrackets();
 
         this.computeLubs();
         target.eventLogger.eventsReport("| ");
@@ -154,7 +154,7 @@ public class Alignment {
             if (unode.comapped != null) {
                 // Target node has already been matched to, but synonyms are OK
                 if (unode.comapped != node)
-                    target.markEvent("lumped", node);
+                    Answer.yes(node, unode, "lumped", null).maybeLog();
             } else
                 unode.comapped = node;
         }
@@ -417,6 +417,8 @@ public class Alignment {
         int seq = 0;
 		for (Taxon root : this.target.roots())
 			seq = assignBrackets(root, seq);
+		for (Taxon taxon : this.source.taxa())
+			taxon.seq = NOT_SET;
 	}
 
 	static final int NOT_SET = -7; // for source nodes
@@ -521,7 +523,8 @@ abstract class Criterion {
                 // Debugging
                 if (subject.name != null &&
                     (subject.name.equals("Tricellulortus peponiformis") ||
-                     subject.name.equals("Marssonina")))
+                     subject.name.equals("Marssonina") ||
+                     subject.name.equals("Marssonia")))
                     System.out.format("## %s %s | %s %s\n",
                                       subject, xdiv, ydiv, target);
                     

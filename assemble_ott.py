@@ -169,9 +169,11 @@ def create_ott():
             ('Cordana', 'Ascomycota', '946160'),
             ('Pseudofusarium', 'Ascomycota', '655794'),
             ('Marssonina', 'Dermateaceae', '372158'), # ncbi:324777
+            ('Marssonia', 'Lamiales', '5512668'), # gbif:7268388
             # ('Gloeosporium', 'Pezizomycotina', '75019'),  # synonym for Marssonina
             ('Escherichia coli', 'Enterobacteriaceae', '474506'), # ncbi:562
             # ('Dischloridium', 'Trichocomaceae', '895423'),
+            ('Exaiptasia pallida', 'Cnidaria', '135923'),
     ]:
         tax = ott.maybeTaxon(inf, sup)
         if tax != None:
@@ -811,7 +813,7 @@ def patch_ott(ott):
     ott.taxon('Blattodea').take(ott.taxon('Phyllodromiidae'))
 
     # See above (occurs in both IF and GBIF).  Also see issue #67
-    ott.taxon('Chlamydotomus').incertaeSedis()
+    ott.taxonThatContains('Chlamydotomus', 'Chlamydotomus beigelii').incertaeSedis()
 
     # Joseph Brown 2014-01-27
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/87

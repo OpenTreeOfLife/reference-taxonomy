@@ -588,6 +588,11 @@ def align_worms(worms, ott):
            ott.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
     a.same(worms.taxonThatContains('Trichoderma', 'Trichoderma koningii'),
            ott.taxonThatContains('Trichoderma', 'Trichoderma koningii'))
+    # 2016-07-28 Noticed this in deprecated.tsv:
+    # NCBI puts Myzostomida outside of Annelida.  To ensure matches, we have
+    # to do so here as well, because Annelida is a barrier node and somewhat 
+    # difficult to cross.
+    worms.taxon('Animalia').take(worms.taxon('Myzostomida'))
     return a
 
 # ----- GBIF (Global Biodiversity Information Facility) taxonomy -----
@@ -1283,6 +1288,7 @@ names_of_interest = ['Ciliophora',
                      'Crepidula',
                      'Hessea',
                      'Choanoflagellida',
+                     'Choanozoa',
                      'Retaria',
                      'Labyrinthomorpha',
                      'Ophiurina',
@@ -1349,4 +1355,5 @@ names_of_interest = ['Ciliophora',
                      'Platypus',
                      'Dendrosporium',
                      'Diphylleia',
+                     'Myzostomida',
                      ]

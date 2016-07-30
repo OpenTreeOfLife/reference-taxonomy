@@ -472,11 +472,13 @@ class InterimFormat {
                         type = "synonym";
 
                     Node syn = node.addSynonym(name, type);
-                    syn.setSourceIds(sourceinfo);
-                    if (syn != node) {
-                        ++count;
-                    } else
-						++zcount;
+                    if (syn != null) {
+                        syn.setSourceIds(sourceinfo);
+                        if (syn != node) {
+                            ++count;
+                        } else
+                            ++zcount;
+                    }
 				}
 			}
 			br.close();

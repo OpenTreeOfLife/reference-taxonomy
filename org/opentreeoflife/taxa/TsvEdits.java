@@ -77,13 +77,8 @@ public class TsvEdits {
 		if (!parent.name.equals(parentName))
 			System.err.println("! Warning: parent taxon name is a synonym: " + parentName);
 
-		List<Taxon> existings = tax.filterByAncestor(name, contextName);
-		Taxon existing = null;
-		if (existings != null) {
-			if (existings.size() > 1)
-				System.err.println("** Ambiguous taxon name: " + name);
-			existing = existings.get(0);
-		}
+
+		Taxon existing = tax.taxon(name, contextName, null, true);
 
 		if (command.equals("add")) {
 			if (existing != null) {

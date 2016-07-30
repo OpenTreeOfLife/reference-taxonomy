@@ -68,6 +68,8 @@ class MergeMachine {
 
         transferProperties(source);
 
+        copyMappedSynonyms(); // this = union
+
         if (windyp) {
             report(source, startroots, startcount);
             if (union.count() == 0)
@@ -79,6 +81,21 @@ class MergeMachine {
         if (union.numberOfNames() < 10)
             System.out.println(" -> " + union.toNewick());
 	}
+
+	// Propogate synonyms from source taxonomy to union or selection.
+	// Some names that are synonyms in the source might be primary names in the union,
+	//	and vice versa.
+	public void copyMappedSynonyms() {
+		int count = 0;
+        for (Taxon taxon : source.taxa()) {
+            Taxon targetTaxon = alignment.getTaxon(taxon);
+            if (targetTaxon == null) continue;
+            count += taxon.copySynonymsTo(targetTaxon);
+        }
+		if (count > 0)
+			System.out.println("| Added " + count + " synonyms");
+	}
+
 
     Map<String, Integer> reasonCounts = new HashMap<String, Integer>();
     List<String> reasons = new ArrayList<String>();
@@ -390,6 +407,22 @@ class MergeMachine {
             if (unode != null)
                 transferProperties(node, unode);
         }
+
+        // Special hack for dealing with NCBI taxon merges
+        int count = 0;
+        for (String id: source.allIds()) {
+            Taxon node = source.lookupId(id);
+            if (node != null && !node.id.equals(id)) {
+                Taxon unode = alignment.getTaxon(node);
+                if (unode != null) {
+                    union.indexByQid(unode,
+                                     new QualifiedId(source.getIdspace(), id));
+                    ++count;
+                }
+            }
+        }
+        if (count > 0)
+            System.out.format("| Transferred %s id aliases\n", count);
     }
 
     // This is used when the union node is NOT new

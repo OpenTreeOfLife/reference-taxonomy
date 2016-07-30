@@ -174,6 +174,7 @@ def create_ott():
             ('Escherichia coli', 'Enterobacteriaceae', '474506'), # ncbi:562
             # ('Dischloridium', 'Trichocomaceae', '895423'),
             ('Exaiptasia pallida', 'Cnidaria', '135923'),
+            ('Choanoflagellida', 'Holozoa', '202765'),
     ]:
         tax = ott.maybeTaxon(inf, sup)
         if tax != None:
@@ -493,13 +494,6 @@ def align_ncbi(ncbi, silva, ott):
     # ### CHECK: was silva.taxon
     # a.notSame(ncbi.taxon('Bostrychia', 'Aves'), ott.taxon('Bostrychia', 'Rhodophyceae'))
 
-    # https://github.com/OpenTreeOfLife/feedback/issues/45
-    # This shouldn't be needed any more now that the Ichthyosporea one
-    # is pruned.
-    if do_notSames:
-        a.notSame(ncbi.maybeTaxon('Choanoflagellida', 'Opisthokonta'),
-                  ott.maybeTaxon('Choanoflagellida', 'Ichthyosporea'))
-
     # Dail 2014-03-31 https://github.com/OpenTreeOfLife/feedback/issues/5
     # updated 2015-06-28 NCBI Katablepharidophyta = SILVA Kathablepharidae.
     # ### CHECK: was silva.taxon
@@ -607,8 +601,8 @@ def align_gbif(gbif, ott):
     gbif.taxon('Fungi').hideDescendantsToRank('species')
 
     # Suppressed at Laura Katz's request
-    gbif.taxon('Bacteria','life').hideDescendants()
-    gbif.taxon('Archaea','life').hideDescendants()
+    gbif.taxonThatContains('Bacteria','Bacillus').hideDescendants()
+    gbif.taxonThatContains('Archaea','Halobacteria').hideDescendants()
 
     # - Alignment -
 
@@ -713,7 +707,8 @@ def align_irmng(irmng, ott):
 
     # Microbes suppressed at Laura Katz's request
     irmng.taxon('Bacteria','life').hideDescendants()
-    irmng.taxon('Archaea','life').hideDescendants()
+    irmng.taxonThatContains('Archaea','Halobacteria').hideDescendants()
+
 
     a.same(irmng.taxon('1381293'), ott.taxon('Veronica', 'Plantaginaceae'))  # ott:648853
     # genus Tipuloidea (not superfamily) ott:5708808 = gbif:6101461

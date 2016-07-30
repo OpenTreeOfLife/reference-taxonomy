@@ -28,6 +28,11 @@ def load_silva():
     silva.taxon('Florideophycidae', 'Rhodophyceae').synonym('Florideophyceae')
     silva.taxon('Stramenopiles', 'SAR').synonym('Heterokonta') # needed by WoRMS
 
+    # JAR 2016-07-29 I could find no argument supporting the name 'Choanomonada'
+    # as a replacement for 'Choanoflagellida'.
+    silva.taxon('Choanomonada', 'Opisthokonta').rename('Choanoflagellida')
+    silva.taxon('Choanomonada', 'Opisthokonta').synonym('Choanoflagellatea') #wikipedia
+
     for name in ['Metazoa',
                  'Fungi',
                  'Chloroplast',
@@ -107,10 +112,13 @@ def patch_silva(silva):
     # Note order dependence between the following two
     silva.taxon('Intramacronucleata','Intramacronucleata').clobberName('Intramacronucleata inf.')
     silva.taxon('Spirotrichea','Intramacronucleata inf.').clobberName('Spirotrichea inf.')
-    silva.taxon('Cyanobacteria','Bacteria').clobberName('Cyanobacteria sup.')
-    silva.taxon('Actinobacteria','Bacteria').clobberName('Actinobacteria sup.')
-    silva.taxon('Acidobacteria','Bacteria').clobberName('Acidobacteria sup.')
-    silva.taxon('Ochromonas','Ochromonadales').clobberName('Ochromonas sup.')
+    silva.taxonThatContains('Cyanobacteria','Chloroplast').clobberName('Cyanobacteria/Melainabacteria group')
+    # this one is funny, NCBI really wants it to be a parent/child homonym
+    silva.taxonThatContains('Actinobacteria','Acidimicrobiia').clobberName('Actinobacteraeota')
+    # Change the inferior Acidobacteria to -iia.  Designation is fragile!
+    silva.taxon('D26171/#3').clobberName('Acidobacteriia')
+    # This is fixed in a later version of SILVA
+    silva.taxonThatContains('Ochromonas','Dinobryon').clobberName('Ochromonas sup.')
     silva.taxon('Tetrasphaera','Tetrasphaera').clobberName('Tetrasphaera inf.')
 
     # SILVA's placement of Rozella as a sibling of Fungi is contradicted
@@ -385,7 +393,7 @@ def link_to_h2007(tax):
          ('Cladochytriales', ['Cladochytriaceae', 'Nowakowskiellaceae', 'Septochytriaceae', 'Endochytriaceae']),
          ('Jaapiales', ['Jaapiaceae']),
          ('Coniocybales', ['Coniocybaceae']),
-         ('Hyaloraphidiales', ['Hyaloraphidium']), # Hyaloraphidiaceae - no such family
+         ('Hyaloraphidiales', ['Hyaloraphidium']), # was Hyaloraphidiaceae, no such family
          ('Mytilinidiales', ['Mytilinidiaceae', 'Gloniaceae']),
         ]:
         order = tax.maybeTaxon(order_name, 'Fungi')
@@ -620,6 +628,10 @@ def patch_ncbi(ncbi):
     # 2016-07-01 JAR while studying rank inversions
     if ncbi.taxon('Vezdaeaceae').getRank() == 'genus':
         ncbi.taxon('Vezdaeaceae').setRank('family')
+
+    # JAR 2016-07-29 Researched Choano* taxa a bit.  NCBI has a bogus synonymy with
+    # paraphyletic Choanozoa.  SILVA calls this taxon Choanomonada (see above).
+    ncbi.taxon('Choanoflagellida', 'Opisthokonta').notCalled('Choanozoa')
 
 def load_worms():
     worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')

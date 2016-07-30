@@ -384,6 +384,8 @@ public class Addition {
                 List<String> reasons = new ArrayList<String>();
                 for (Node node : nodes) {
                     Taxon candidate = node.taxon();
+                    if (candidates.contains(candidate)) // co-synonyms?
+                        continue;
                     if (candidate.getDivision() != wantDivision) {
                         reasons.add("division");
                         continue;

@@ -144,6 +144,8 @@ public class Taxon extends Node {
             System.err.format("** Null is not a valid name-string: %s\n", this);
             backtrace();
             return null;
+        } else if (name.equals(this.name)) {
+            return null;
         } else {
             for (Synonym syn : this.synonyms)
                 if (syn.name.equals(name) && syn.type.equals(type))
@@ -155,6 +157,32 @@ public class Taxon extends Node {
             return syn;
         }
 	}
+
+    // this is union node, node is source node, syn is also in union
+    Synonym addSynonym(Node node, String type) {
+        Synonym syn = this.addSynonym(node.name, type);
+        if (syn != null) {
+            Taxon source = node.taxon();
+            if (!source.taxonomy.getIdspace().equals("skel")) //KLUDGE!!!
+                syn.addSourceId(source.getQualifiedId());
+        }
+        return syn;
+    }
+
+    // Ensure that every name (synonym or not) is a name of the target
+    // taxon (either synonym or not).
+    // Returns number of synonyms created.
+
+    public int copySynonymsTo(Taxon targetTaxon) {
+        Taxon taxon = this;
+        int count = 0;
+        if (targetTaxon.addSynonym(this, "synonym") != null)
+            ++count;
+        for (Synonym syn : taxon.getSynonyms())
+            if (targetTaxon.addSynonym(syn, syn.type) != null)
+                ++count;
+        return count;
+    }
 
     // Remove name as any kind of name of this node
     public boolean notCalled(String name) {
@@ -194,35 +222,6 @@ public class Taxon extends Node {
 	public Taxon getParent() {
 		return parent;
 	}
-
-    // This is not good.  The type and sourceids could be different
-    // from one run to the next.
-
-    public int copySynonymsTo(Taxon targetTaxon) {
-        Taxon taxon = this;
-        int count = 0;
-        for (Synonym syn : taxon.getSynonyms()) {
-            // quadratic... sorry...
-            Synonym targetSyn = null;
-            for (Synonym targetSyn1 : targetTaxon.getSynonyms()) {
-                if (syn.name.equals(targetSyn1.name)) {
-                    // NONDETERMINISM SOURCE.  FIX.
-                    targetSyn = targetSyn1;
-                    break;
-                }
-            }
-            if (targetSyn == null) {
-                targetSyn = targetTaxon.addSynonym(syn.name, syn.type);
-                ++count;
-            } else
-                // how to combine the types of the two synonyms ??
-                ;
-            if (syn.sourceIds != null)
-                for (QualifiedId qid : syn.sourceIds)
-                    targetSyn.addSourceId(qid);
-        }
-        return count;
-    }
 
 	public static void backtrace() {
 		try {
@@ -388,11 +387,7 @@ public class Taxon extends Node {
 
 	public void addSource(Taxon source) {
 		if (!source.taxonomy.getIdspace().equals("skel")) //KLUDGE!!!
-			addSourceId(source.getQualifiedId());
-		// Accumulate ...
-		if (false && source.sourceIds != null)
-			for (QualifiedId qid : source.sourceIds)
-				addSourceId(qid);
+			this.addSourceId(source.getQualifiedId());
 	}
 
 	public QualifiedId getQualifiedId() {

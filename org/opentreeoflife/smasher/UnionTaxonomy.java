@@ -134,7 +134,6 @@ public class UnionTaxonomy extends Taxonomy {
 	public void merge(SourceTaxonomy source, Alignment a) { // called from jython
         try {
             new MergeMachine(source, this, a).augment();
-            copyMappedSynonymsFrom(this, a); // this = union
             this.check();
             this.sources.add(source);
         } catch (Exception e) {
@@ -150,22 +149,6 @@ public class UnionTaxonomy extends Taxonomy {
         this.absorb(source, a);
         return a;
     }
-
-	// Propogate synonyms from source taxonomy (= this) to union or selection.
-	// Some names that are synonyms in the source might be primary names in the union,
-	//	and vice versa.
-	public void copyMappedSynonymsFrom(Taxonomy source, Alignment a) {
-        Taxonomy targetTaxonomy = this;
-		int count = 0;
-        for (Taxon taxon : source.taxa()) {
-            Taxon targetTaxon = a.getTaxon(taxon);
-            if (targetTaxon == null) continue;
-            count += taxon.copySynonymsTo(targetTaxon);
-        }
-		if (count > 0)
-			System.out.println("| Added " + count + " synonyms");
-	}
-
 
     // ----- Align divisions from skeleton taxonomy -----
 

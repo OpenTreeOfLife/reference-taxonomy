@@ -195,7 +195,8 @@ public abstract class Taxonomy {
         if (t == null)
             return t;
         if (t.prunedp) {
-            System.err.format("** Prunedp taxon in id index: %s\n", t);
+            // System.err.format("** Pruned taxon found in id index: %s\n", t);
+            // this.idIndex.remove(id);
             return null;
         }
         return t;
@@ -282,7 +283,7 @@ public abstract class Taxonomy {
     }
 
     // index a single node by one qid
-    void indexByQid(Node node, QualifiedId qid) {
+    public void indexByQid(Node node, QualifiedId qid) {
         if (this.qidIndex != null) {
             Node other = this.qidIndex.get(qid);
             if (other != null) {
@@ -1583,31 +1584,67 @@ public abstract class Taxonomy {
         return taxon(name, null, null, false);
     }
 
+    List<Taxon> nodesToTaxa(List<Node> nodes) {
+        List<Taxon> taxa = new ArrayList<Taxon>();
+        for (Node node : nodes)
+            if (!taxa.contains(node.taxon()))
+                taxa.add(node.taxon());
+        return taxa;
+    }
+
     // WORK IN PROGRESS - I plan to move all the ancestor/descendant
     // filtering logic here
 	public Taxon taxon(String name, String ancestor, String descendant, boolean windy) {
 		List<Node> nodes = this.lookup(name);
-		if (nodes != null) {
-			if (nodes.size() == 1)
-				return nodes.get(0).taxon();
-
-            // Filter out synonyms (if there are any...)
-            List<Node> nonsynonyms = new ArrayList<Node>();
+        if (nodes != null) {
+            List<Taxon> candidates = nodesToTaxa(nodes);
             for (Node node : nodes)
-                if (!(node instanceof Synonym))
-                    nonsynonyms.add(node);
-            if (nonsynonyms.size() == 1)
-                return nonsynonyms.get(0).taxon();
+                if (!candidates.contains(node.taxon()))
+                    candidates.add(node.taxon());
 
-            if (true || windy) {
+            // TBD: Filter by ancestor
+            // TBD: Filter by descendant
+
+            if (ancestor != null)
+                candidates = filterByAncestor(candidates, ancestor);
+            if (descendant != null)
+                candidates = filterByDescendant(candidates, descendant);
+
+			if (candidates.size() == 0) {
+                if (windy) {
+                    if (ancestor != null)
+                        System.err.format("** No such taxon: %s in %s\n", name, ancestor);
+                    else if (descendant != null)
+                        System.err.format("** No such taxon: %s containing %s\n", name, descendant);
+                    else
+                        System.err.format("** No such taxon: %s\n", name);
+                }
+                return null;
+            }
+
+			if (candidates.size() == 1)
+				return candidates.get(0);
+
+            // Try filtering out synonyms
+            List<Taxon> candidates2 = new ArrayList<Taxon>();
+            for (Taxon cand : candidates)
+                if (cand.name.equals(name))
+                    candidates2.add(cand);
+			if (candidates2.size() == 1)
+				return candidates2.get(0);
+
+            // That didn't work.
+            if (windy) {
                 System.err.format("** Ambiguous taxon name: %s\n", name);
-                for (Node node : nodes) {
-                    String uniq = node.uniqueName();
-                    if (uniq.equals("")) uniq = name;
-                    System.err.format("**   %s %s %s\n",
+                for (Taxon taxon : candidates) {
+                    String uniq = taxon.uniqueName();
+                    if (uniq.equals("")) uniq = taxon.name;
+                    System.err.format("**   %s = %s in %s\n",
                                       uniq,
-                                      node,
-                                      node.taxon().getDivision().name);
+                                      taxon,
+                                      (taxon.getDivision() == null ?
+                                       "-" :
+                                       taxon.getDivision().name));
                 }
             }
             return null;
@@ -1620,118 +1657,52 @@ public abstract class Taxonomy {
 	}
 
 	public Taxon taxon(String name, String context) {
-		Taxon probe = maybeTaxon(name, context);
-		if (probe == null) {
-			System.err.format("** No taxon found with name %s in context %s\n", name, context);
-            probe = maybeTaxon(name);
-            if (probe != null)
-                System.err.format("    but note %s\n", probe);
-        }
-		return probe;
+        return taxon(name, context, null, true);
 	}
 
 	public Taxon maybeTaxon(String name, String context) {
-		List<Taxon> nodes = filterByAncestor(name, context);
-		if (nodes == null) {
-			if (this.lookup(context) == null) {
-				Taxon probe = this.maybeTaxon(name);
-				if (probe != null)
-					System.err.format("** Found %s but there is no context %s\n", name, context);
-				return probe;
-			} else
-				return null;
-		} else if (nodes.size() == 1)
-			return nodes.get(0);
-		else {
-			// Still ambiguous even in context.
-			Taxon candidate = null;
-			Taxon otherCandidate = null;
-			// Chaetognatha
-			for (Taxon node : nodes)
-				if (!node.isRoot()
-                    && node.parent.name != null
-                    && node.parent.name.equals(context))
-					if (candidate == null)
-						candidate = node;
-					else {
-						otherCandidate = node;
-						break;
-					}
-			if (otherCandidate == null)
-				return candidate;
-			else {
-				System.err.format("** Ancestor %s of %s does not distinguish %s from %s\n",
-								  context, name, candidate, otherCandidate);
-				return null;
-			}
-		}
+        return taxon(name, context, null, false);
 	}
 
 	public Taxon taxonThatContains(String name, String descendant) {
-		List<Taxon> nodes = filterByDescendant(name, descendant);
-		if (nodes == null) {
-			System.err.format("** Taxon %s doesn't contain anything named %s\n", name, descendant);
-            Taxon probe = maybeTaxon(name);
-            if (probe != null)
-                System.err.format("   but note %s\n", probe);
-			return null;
-		} else if (nodes.size() == 1)
-			return nodes.get(0);
-		else {
-			Taxon candidate = null;
-			Taxon otherCandidate = null;
-			// Chaetognatha
-			for (Taxon node : nodes)
-				if (!node.isRoot()
-                    && node.parent.name != null
-                    && node.parent.name.equals(name))
-					if (candidate == null)
-						candidate = node.parent;
-					else {
-						otherCandidate = node.parent;
-						break;
-					}
-			if (otherCandidate == null)
-				return candidate;
-			else {
-				System.err.format("** Descendant %s of %s does not disambiguate between %s and %s\n",
-								  descendant, name, candidate.id, otherCandidate.id);
-				return null;
-			}
-		}
-
-	}
+        return taxon(name, null, descendant, true);
+    }
 
 	// Test case: Valsa
 	public List<Taxon> filterByAncestor(String taxonName, String ancestorName) {
 		List<Node> smallNodes = this.lookup(taxonName);
 		if (smallNodes == null) return null;
+        List<Taxon> result = filterByAncestor(nodesToTaxa(smallNodes), ancestorName);
+        return result.size() == 0 ? null : result;
+    }
+
+	List<Taxon> filterByAncestor(List<Taxon> smallTaxa, String ancestorName) {
 		List<Node> bigNodes = this.lookup(ancestorName);
 		if (bigNodes == null) return null;
-		List<Taxon> bigTaxa = new ArrayList<Taxon>(bigNodes.size());
-        for (Node node : bigNodes)
-            bigTaxa.add(node.taxon());
+		List<Taxon> bigTaxa = nodesToTaxa(bigNodes);
 
 		List<Taxon> result = new ArrayList<Taxon>(1);
-		for (Node smallNode : smallNodes) {
+		for (Taxon smallTaxon : smallTaxa) {
 			// Follow ancestor chain to see whether this node is an ancestor
-			for (Taxon chain = smallNode.taxon().parent; chain != null; chain = chain.parent)
+			for (Taxon chain = smallTaxon.parent; chain != null; chain = chain.parent)
 				if (bigTaxa.contains(chain)) {
-					result.add(smallNode.taxon());
+					result.add(smallTaxon);
 					break;
 				}
 		}
-		return result.size() == 0 ? null : result;
+		return result;
 	}
 
 	public List<Taxon> filterByDescendant(String taxonName, String descendantName) {
-		List<Node> smallNodes = this.lookup(descendantName);
-		if (smallNodes == null) return null;
 		List<Node> bigNodes = this.lookup(taxonName);
 		if (bigNodes == null) return null;
-		List<Taxon> bigTaxa = new ArrayList<Taxon>(bigNodes.size());
-        for (Node node : bigNodes)
-            bigTaxa.add(node.taxon());
+        List<Taxon> result = filterByDescendant(nodesToTaxa(bigNodes), descendantName);
+		return result.size() == 0 ? null : result;
+    }
+
+	List<Taxon> filterByDescendant(List<Taxon> bigTaxa, String descendantName) {
+		List<Node> smallNodes = this.lookup(descendantName);
+		if (smallNodes == null) return null;
 
 		List<Taxon> result = new ArrayList<Taxon>(1);
 		for (Node smallNode : smallNodes) {

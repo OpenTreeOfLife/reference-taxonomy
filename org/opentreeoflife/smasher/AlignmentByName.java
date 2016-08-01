@@ -186,7 +186,7 @@ public class AlignmentByName extends Alignment {
 
             // If unique, sieze it.
             if (count == 1) {
-                if (anyAnswer.target == null) {
+                if (!anyAnswer.isYes()) {
                     result = Answer.yes(node, anyCandidate, "elimination", null);
                     lg.add(result);
                 } else
@@ -218,11 +218,13 @@ public class AlignmentByName extends Alignment {
                 result = Answer.noinfo(node, null, "ambiguous", null);
                 lg.add(result);
             } else {
-                System.out.format("** Abominable ambiguity: %s %s\n", node, candidates);
+                System.out.format("* Ambiguity: %s %s\n", node, candidates);
             }
         }
         // Decide after the fact whether the dance was interesting enough to log
-        if (initialCandidates.size() > 1 || result.isNo())
+        if (initialCandidates.size() > 1 ||
+            result.isNo() ||
+            target.eventLogger.namesOfInterest.contains(node.name))
             target.eventLogger.log(lg);
         return result;
     }
@@ -288,7 +290,7 @@ public class AlignmentByName extends Alignment {
         Criterion.byPrimaryName,
 		Criterion.sameSourceId,
 		Criterion.anySourceId,
-        Criterion.weakDivision,
+        Criterion.sameDivisionPreferred,
     };
 
 }

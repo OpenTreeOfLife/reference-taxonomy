@@ -329,27 +329,9 @@ def align_fungi(fungi, ott):
     ]:
         tax1 = fungi.maybeTaxon(name, f)
         if tax1 == None:
-            print 'no %s in IF' % name # 'no Acantharia in IF'
-        elif True:
-            a.same(tax1, establish(name, ott, ancestor=f))
+            print '** no %s in IF' % name # 'no Acantharia in IF'
         else:
-            # ### CHECK: was silva.taxon
-            tax2 = ott.taxon(name, o)
-            # disable all notSames
-            if tax1 == None:
-                print 'no %s in IF' % name # 'no Acantharia in IF'
-                if tax1 != None and tax2 != None and tax == None:
-                    # Import tax1 into ott under Fungi.  Similar to
-                    # Ctenophora case.
-                    # tax = ott.newTaxon(name, tax1.rank, tax1.getQualifiedId())
-                    # ott.taxon(f).take(tax)
-                    # tax.incertaeSedis()
-                    # ott.same(tax1, tax)
-                    a.notSame(tax1, tax2)
-                    # Trichoderma harzianum, Sclerotinia homoeocarpa, Puccinia
-                    # triticina are removed from SILVA early
-                elif tax2 == None:
-                    print 'no %s in OTT' % name
+            a.same(tax1, establish(name, ott, ancestor=f))
                     
     # 2014-04-25 JAR
     # There are three Bostrychias: a rhodophyte, a fungus, and a bird.
@@ -517,6 +499,10 @@ def align_ncbi(ncbi, silva, ott):
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/198 see above
     a.same(ncbi.taxon('Euxinia', 'Pseudostomidae'), ott.taxon('476941'))
     a.same(ncbi.taxon('Euxinia', 'Crustacea'), ott.taxon('329188'))
+
+    # NCBI has Leotiales as a synonym for Helotiales, but h2007 and IF
+    # have them as separate orders.  This shouldn't cause a problem, but does.
+    ncbi.taxon('Helotiales').notCalled('Leotiales')
 
     return a
 
@@ -1351,4 +1337,8 @@ names_of_interest = ['Ciliophora',
                      'Dendrosporium',
                      'Diphylleia',
                      'Myzostomida',
+                     'Endomyzostoma tenuispinum',
+                     'Myzostoma cirriferum',
+                     'Helotiales',
+                     'Leotiales',
                      ]

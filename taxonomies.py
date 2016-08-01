@@ -229,13 +229,7 @@ def load_fung():
     # smush folds sibling taxa that have the same name.
     # fung.smush()
 
-    if True:
-        patch_fung(fung)
-    else:
-        try:
-            patch_fung(fung)
-        except:
-            print '**** Exception in patch_fung'
+    patch_fung(fung)
 
     fung.smush()
 
@@ -353,20 +347,15 @@ def patch_fung(fung):
     # JAR 2015-07-20 - largest unattached subtree was Microeccrina, which is dubious.
     fung.taxon('Microeccrina').prune('http://www.nhm.ku.edu/~fungi/Monograph/Text/chapter12.htm')
 
-    # JAR 2015-07-20 - homonym, Nom. illegit.
-    fung.taxon('Acantharia').prune('http://www.indexfungorum.org/Names/NamesRecord.asp?RecordID=8')
-
     # JAR 2015-09-10 on perusing a long list of equivocal homonyms
     # (weaklog.csv).  Hibbett 2007 and NCBI put Microsporidia in Fungi.
     fung.taxon('Fungi').take(fung.taxon('Microsporidia'))
 
-    # This is helpful if SAR is a division
-    # fung.taxon('SAR').take(fung.taxon('Oomycota'))
-
     # 2015-09-15 Pezizomycotina has no parent pointer; without Fungi as a barrier,
     # the placement of genus Onychophora is screwed up.
     # Found while investigating https://github.com/OpenTreeOfLife/feedback/issues/88
-    fung.taxon('Ascomycota').take(fung.taxon('Pezizomycotina'))
+    if fung.taxon('Pezizomycotina').isRoot():
+        fung.taxon('Ascomycota').take(fung.taxon('Pezizomycotina'))
 
     # 2015-10-06 JAR noticed while debugging deprecated taxa list:
     # This should cover Basidiomycota, Zygomycota, Glomeromycota, and Ascomycota

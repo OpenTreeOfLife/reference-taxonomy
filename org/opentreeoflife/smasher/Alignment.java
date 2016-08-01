@@ -566,6 +566,20 @@ abstract class Criterion {
 			}
 		};
 
+	static Criterion sameDivisionPreferred =
+		new Criterion() {
+			public String toString() { return "same-division-preferred"; }
+			Answer assess(Taxon subject, Taxon target) {
+				Taxon xdiv = subject.getDivision();
+				Taxon ydiv = target.getDivision();
+				if (xdiv == ydiv)
+					return Answer.yes(subject, target, "same/division", xdiv.name);
+				else
+					return Answer.NOINFO;
+			}
+		};
+
+
     static Criterion ranks =
         new Criterion() {
             public String toString() { return "ranks"; }
@@ -637,25 +651,18 @@ abstract class Criterion {
 		new Criterion() {
 			public String toString() { return "overlaps"; }
 			Answer assess(Taxon x, Taxon target) {
-				Taxon a = AlignmentByName.antiwitness(x, target);// in x but not target
+                if (x.children == null || target.children == null)
+                    return Answer.NOINFO;                         // possible attachment point
 				Taxon b = AlignmentByName.witness(x, target);    // in both
-				if (b != null) { // good
-					if (a == null)	// good
-						// 2859
-						return Answer.heckYes(x, target, "same/is-subsumed-by", b.name);
-					else
-						// 94
-						return Answer.yes(x, target, "same/overlaps", b.name);
-				} else {
-					if (a == null)
-						// ?
-						return Answer.NOINFO;
-					else if (target.children != null)		// bad
-						// 13 ?
-						return Answer.no(x, target, "not-same/incompatible", a.name);
-                    else
-						return Answer.NOINFO;
-				}
+				if (b == null)   // no overlap
+                    return Answer.NOINFO;
+				Taxon a = AlignmentByName.antiwitness(x, target);// in x but not target
+                if (a == null)	// good
+                    // 2859
+                    return Answer.heckYes(x, target, "same/is-subsumed-by", b.name);
+                else
+                    // 94
+                    return Answer.yes(x, target, "same/overlaps", b.name);
 			}
 		};
 

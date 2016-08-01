@@ -408,7 +408,7 @@ class MergeMachine {
                 transferProperties(node, unode);
         }
 
-        // Special hack for dealing with NCBI taxon merges
+        // Hack for dealing with NCBI taxon merges
         int count = 0;
         for (String id: source.allIds()) {
             Taxon node = source.lookupId(id);
@@ -428,9 +428,8 @@ class MergeMachine {
     // This is used when the union node is NOT new
 
     public void transferProperties(Taxon node, Taxon unode) {
-        if (unode.name == null && node.name != null) {
+        if (unode.name == null && node.name != null)
             unode.setName(node.name);
-        }
 
 		if (unode.rank == Rank.NO_RANK || unode.rank == Rank.CLUSTER_RANK)
             unode.rank = node.rank;
@@ -441,10 +440,7 @@ class MergeMachine {
         // has precedence.
 
         unode.addSource(node);
-        // https://github.com/OpenTreeOfLife/reference-taxonomy/issues/36
-        if (false && node.sourceIds != null)
-            for (QualifiedId id : node.sourceIds)
-                unode.addSourceId(id);
+        // see https://github.com/OpenTreeOfLife/reference-taxonomy/issues/36
 	}
 
 	// 3799 conflicts as of 2014-04-12

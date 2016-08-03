@@ -954,6 +954,9 @@ public class Taxon extends Node {
 
 	public boolean rename(String name) {
 		String oldname = this.name;
+		if (name.equals(oldname)) return true;
+
+        // Check for a sibling node with the target name
         Collection<Node> nodes = this.taxonomy.lookup(name);
         if (nodes != null) {
             for (Node node : nodes) {
@@ -970,10 +973,16 @@ public class Taxon extends Node {
                 }
             }
         }
-		if (!oldname.equals(name)) {
-            this.clobberName(name);
-			this.addSynonym(oldname, "synonym");  // awkward, maybe wrong
-		}
+
+        // Remove old name from index (and remove synonym, if it was a synonym)
+        this.notCalled(oldname);
+
+        // Change primary name
+        this.clobberName(name);
+
+        // Add old name as a synonym
+        this.addSynonym(oldname, "synonym");  // awkward, maybe wrong
+
         return true;
 	}
 

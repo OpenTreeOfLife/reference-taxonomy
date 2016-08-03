@@ -592,6 +592,7 @@ def patch_ncbi(ncbi):
     # NCBI puts Chaetognatha in Deuterostomia.
     ncbi.taxon('Protostomia').take(ncbi.taxonThatContains('Chaetognatha','Sagittoidea'))
 
+    # https://github.com/OpenTreeOfLife/feedback/issues/184
     h = ncbi.maybeTaxon('Hylobates alibarbis')
     if h != None:
         if ncbi.maybeTaxon('Hylobates albibarbis') != None:
@@ -621,6 +622,26 @@ def patch_ncbi(ncbi):
     # JAR 2016-07-29 Researched Choano* taxa a bit.  NCBI has a bogus synonymy with
     # paraphyletic Choanozoa.  SILVA calls this taxon Choanomonada (see above).
     ncbi.taxon('Choanoflagellida', 'Opisthokonta').notCalled('Choanozoa')
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/281
+    ncbi.taxon('Equisetopsida', 'Moniliformopses').take(ncbi.taxon('Equisetidae', 'Moniliformopses'))
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/278
+    # NCBI Pinidae = Coniferales = Wikipedia Pinophyta = Coniferophyta
+    ncbi.taxon('Pinidae', 'Acrogymnospermae').absorb(ncbi.taxon('Coniferopsida', 'Coniferophyta'))
+    ncbi.taxon('Pinidae', 'Acrogymnospermae').absorb(ncbi.taxon('Coniferophyta', 'Acrogymnospermae'))
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/248
+    ncbi.taxon('Acomys cahirinus').notCalled('Acomys airensis')
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/152
+    ncbi.taxon('Selachii').synonym('Selachimorpha')
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/142
+    ncbi.taxon('Aotus azarai').rename('Aotus azarae')
+    ncbi.taxon('Aotus azarai azarai').rename('Aotus azarae azarae')
+    ncbi.taxon('Aotus azarai infulatus').rename('Aotus azarae infulatus')
+    ncbi.taxon('Aotus azarai boliviensis').rename('Aotus azarae boliviensis')
 
 def load_worms():
     worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
@@ -846,6 +867,12 @@ def patch_gbif(gbif):
     if not gbif.taxon('Chonetoidea').setRank('superfamily'):
         print '** setRank failed for Chonetoidea'
 
+    # https://github.com/OpenTreeOfLife/feedback/issues/144
+    gbif.taxon('Lepilemur tymerlachsonorum').rename('Lepilemur tymerlachsoni')
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/123
+    gbif.taxon('Gryphodobatis', 'Orectolobidae').extinct()
+
     return gbif
 
 def load_irmng():
@@ -954,6 +981,9 @@ def load_irmng():
     # disjoint with the NCBI genus of the same name, but they're
     # actually the same due to species synonymy (from wikispecies).
     irmng.taxon('Aulacomonas submarina').synonym('Diphylleia rotans')
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/167
+    irmng.taxon('Plectophanes altus').absorb(irmng.taxon('Plectophanes alta'))
 
     return irmng
 

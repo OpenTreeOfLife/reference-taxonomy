@@ -1610,7 +1610,7 @@ public abstract class Taxonomy {
             if (descendant != null)
                 candidates = filterByDescendant(candidates, descendant);
 
-			if (candidates.size() == 0) {
+			if (candidates == null || candidates.size() == 0) {
                 if (windy) {
                     if (ancestor != null)
                         System.err.format("** No such taxon: %s in %s\n", name, ancestor);
@@ -1677,6 +1677,7 @@ public abstract class Taxonomy {
     }
 
 	List<Taxon> filterByAncestor(List<Taxon> smallTaxa, String ancestorName) {
+        if (smallTaxa == null) return null;
 		List<Node> bigNodes = this.lookup(ancestorName);
 		if (bigNodes == null) return null;
 		List<Taxon> bigTaxa = nodesToTaxa(bigNodes);
@@ -1701,6 +1702,7 @@ public abstract class Taxonomy {
     }
 
 	List<Taxon> filterByDescendant(List<Taxon> bigTaxa, String descendantName) {
+        if (bigTaxa == null) return null;
 		List<Node> smallNodes = this.lookup(descendantName);
 		if (smallNodes == null) return null;
 
@@ -1713,7 +1715,7 @@ public abstract class Taxonomy {
 					break;
 				}
 		}
-		return result.size() == 0 ? null : result;
+		return result;
 	}
 
     // For use from jython code.  Result is added as a root.

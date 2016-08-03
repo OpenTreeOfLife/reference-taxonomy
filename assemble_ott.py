@@ -1154,6 +1154,13 @@ def patch_ott(ott):
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/195
     ott.taxon('Opisthokonta').setRank('no rank')
 
+    # https://github.com/OpenTreeOfLife/feedback/issues/177
+    ott.taxon('Amia fasciata').prune('https://github.com/OpenTreeOfLife/feedback/issues/177')
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/127
+    # single species, name not accepted
+    ott.taxon('Cestracion', 'Sphyrnidae').prune('https://github.com/OpenTreeOfLife/feedback/issues/127')
+
 # The processed GBIF taxonomy contains a file listing GBIF taxon ids for all 
 # taxa that are listed as coming from PaleoDB.  This is processed after all
 # taxonomies are processed but before patches are applied.  We use it to set

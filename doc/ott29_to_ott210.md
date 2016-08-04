@@ -54,7 +54,9 @@ taxonomies to the two, the wrong choice got made.  The problem has
 been fixed in NCBI, and propagated to SILVA by the NCBI-to-SILVA
 mapping feature described below.  The offending taxon's new name is
 'Choanoflagellate-like sp. ribosomal RNA small subunit (16S
-rRNA-like)'.
+rRNA-like)'.  I also renamed SILVA Choanomonada to the more traditional 
+Choanoflagellida that all the other sources use, and deleted the 
+bogus NCBI synonymy for Choanozoa.
 https://github.com/OpenTreeOfLife/feedback/issues/45
 
 Semionotiformes was erroenously marked extinct; it should be extant
@@ -134,6 +136,41 @@ Crenarchaeota pruned from SILVA.  (my notes only say "What's going on
 with Crenarchaeota?" from June 2014.)
 https://github.com/OpenTreeOfLife/feedback/issues/189
 
+Opisthokonta has no rank
+https://github.com/OpenTreeOfLife/reference-taxonomy/issues/195
+
+Cestracion is redundant
+https://github.com/OpenTreeOfLife/feedback/issues/127
+
+Hylobates albibarbis is a misspelling
+https://github.com/OpenTreeOfLife/feedback/issues/184
+
+Attempt at straightening out the Equisetopsida situation (NCBI error)
+https://github.com/OpenTreeOfLife/feedback/issues/281
+
+Attempt to deal with Coniferales / Pinidae situation (NCBI error)
+https://github.com/OpenTreeOfLife/feedback/issues/278
+
+Removed bogus Acomys cahirinus / Acomys airensis synonymy
+https://github.com/OpenTreeOfLife/feedback/issues/248
+
+Added Selachimorpha as synonym for sharks
+https://github.com/OpenTreeOfLife/feedback/issues/152
+
+Deal with spelling problem in Aotus
+https://github.com/OpenTreeOfLife/feedback/issues/142
+
+Most Sphenodontids are extinct (sadly)
+https://github.com/OpenTreeOfLife/feedback/issues/165
+
+Name of Lepilemur tymerlachsonorum
+https://github.com/OpenTreeOfLife/feedback/issues/144
+
+Gryphodobatis is extinct
+https://github.com/OpenTreeOfLife/feedback/issues/123
+
+Plectophanes altus = Plectophanes alta
+https://github.com/OpenTreeOfLife/feedback/issues/167
 
 ### Extinctness from PaleoDB
 
@@ -517,6 +554,11 @@ better to (re-)create these homonyms, but for the most part these are
 obscure or dubious taxa and I couldn't justify spending much time on
 them.
 
+Some others: Euxinia (flatworm + amphipod), Campanella (alveolata +
+fungus), Diphylleia ('apusozoan' + eudicot).  I have recently learned
+of the Hemihomonym Database and it would be interesting to compare the
+set of hemihomonyms in OTT with those in the database.
+
 'Heterolobosea' is a case of false homonyms that are now united.
 
 These homonym-patch-related 2.9 warnings got fixed somehow (details TBD)
@@ -583,8 +625,19 @@ Species fungorum puts WoRMS Trichosporon diddensiae in Candida.  At
 some point in untangling Trichosporon I found that it was in WoRMS (a
 fungus in WoRMS??), and found this error.
 
+NCBI provides a file of NCBI taxon identifier merges, and this is now
+used during alignment.  This new feature has the effect of 'resuing'
+about 100 OTT ids occurring in phylesystem that otherwise would have
+been deprecated due to a failure to recognize that NCBI had folded a
+taxon into one that already had an OTT id.
 
+Improved treatment of some SILVA parent/child homonyms:
+* Changed name "Cyanobacteria sup." to "Cyanobacteria/Melainabacteria group"
+* Changed name "Actinobacteria sup." to "Actinobacteraeota"
+* Changed name "Acidobacteria sup." to "Acidobacteriia"
 
+Restored the Index Fungorum genus "Acantharia" from IF because it
+turns out to be needed (occurs in other taxonomies)
 
 ## Changes to smasher that don't affect the taxonomy
 
@@ -873,6 +926,15 @@ Removed the 'samples' rank as it is no longer used.  I used this word
 before I understood that the tips of the SILVA tree represent clusters
 with reference sequences, not just sequences.
 
+Made use of System.out vs. System.err more consistent (the former for
+notes and warnings, the latter for errors requiring attention), and
+made use of message prefixes more consistent (`|` for notes, `*` for
+warnings, `**` for errors).
+
+Alignments are now between arbitrary taxonomies; removed the
+requirement that one of them be a union taxonomy.  Eliminated the
+`.mapped` field in favor of a hash table in the Alignment object.
+
 
 ### Archiving and reproducibility
 
@@ -945,6 +1007,7 @@ Others...
 
  * I improved the contributors list a bit, and added Peter Midford.
 
+ * Removed the long-obsolete t/tax/prev_nem files
 
 
 ## Side projects

@@ -175,6 +175,7 @@ def create_ott():
             # ('Dischloridium', 'Trichocomaceae', '895423'),
             ('Exaiptasia pallida', 'Cnidaria', '135923'),
             ('Choanoflagellida', 'Holozoa', '202765'),
+            ('Billardiera', 'Lamiales', '798963'),
     ]:
         tax = ott.maybeTaxon(inf, sup)
         if tax != None:

@@ -6,9 +6,10 @@ uid	parent_uid	name	rank
 996421	93302	Archaea	domain
 304358	93302	Eukaryota	domain
 151014	304358	Haptophyta	no rank
-878953	304358	Rhodophyta	no rank
-664970	304358	Glaucophyta	no rank
-361838	304358	Chloroplastida	no rank
+5268475	304358	Archaeplastida	no rank
+878953	5268475	Rhodophyta	no rank
+664970	5268475	Glaucophyta	no rank
+361838	5268475	Chloroplastida	no rank
 352914	304358	Fungi	no rank
 691846	304358	Metazoa	no rank
 641212	691846	Ctenophora	phylum

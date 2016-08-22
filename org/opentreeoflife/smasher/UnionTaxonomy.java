@@ -487,7 +487,7 @@ public class UnionTaxonomy extends Taxonomy {
 
 	private static Pattern tabPattern = Pattern.compile("\t");
 
-    SourceTaxonomy importantIds = null;
+    public SourceTaxonomy importantIds = null;
 
     // e.g. "ids-that-are-otus.tsv", False
     // e.g. "ids-in-synthesis.tsv", True

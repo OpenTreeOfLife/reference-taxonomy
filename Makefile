@@ -13,7 +13,7 @@
 JAVAFLAGS=-Xmx14G
 
 # Modify as appropriate
-WHICH=2.10draft4
+WHICH=2.10draft5
 PREV_WHICH=2.9
 
 # ----- Taxonomy source locations -----
@@ -42,6 +42,9 @@ SILVA_URL=$(SILVA_EXPORTS)/SSURef_NR99_115_tax_silva.fasta.tgz
 
 # This is used as a source of OTT id assignments.
 PREV_OTT_URL=http://files.opentreeoflife.org/ott/ott$(PREV_WHICH)/ott$(PREV_WHICH).tgz
+
+# 20 Aug 2016, Nico Franz
+AMENDMENTS_REFSPEC=8c76e691b28cecc6029f8a852aea3ad2a4f374ac
 
 # -----
 
@@ -104,7 +107,8 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
 		    feed/misc/chromista_spreadsheet.py \
 		    ids_that_are_otus.tsv \
 		    bin/jython \
-		    inclusions.csv
+		    inclusions.csv \
+		    feed/amendments/amendments-1/next_ott_id.json
 	@date
 	@rm -f *py.class
 	@mkdir -p tax/ott
@@ -308,6 +312,14 @@ feed/misc/chromista_spreadsheet.py: feed/misc/chromista-spreadsheet.csv feed/mis
 	python feed/misc/process_chromista_spreadsheet.py \
            feed/misc/chromista-spreadsheet.csv >feed/misc/chromista_spreadsheet.py
 
+# ----- Amendments
+
+fetch_amendments: feed/amendments/amendments-1/next_ott_id.json
+
+feed/amendments/amendments-1/next_ott_id.json:
+	@mkdir -p feed/amendments
+	(cd feed/amendments; git clone https://github.com/OpenTreeOfLife/amendments-1.git)
+	(cd feed/amendments/amendments-1; git checkout $(AMENDMENTS_REFSPEC))
 
 # ----- Previous version of OTT, for id assignments
 
@@ -487,7 +499,7 @@ clean:
 	rm -rf tax/ott
 	rm -rf feed/*/out *.tmp
 #	rm -rf feed/*/work ?
-	rm -rf amendments t/amendments bin/jython
+	rm -rf feed/amendments t/amendments bin/jython
 	rm -rf tax/fung tax/ncbi tax/prev_nem tax/silva
 	rm -f `find . -name *.class`
 	rm -f feed/misc/chromista_spreadsheet.py

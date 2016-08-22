@@ -6,26 +6,29 @@ The assembly process works, in outline, as follows:
  1. Start with an ordered list of source taxonomies S1, S2, ...
  1. Initialize the 'union' taxonomy U to be empty
  1. For each source S:
-     1. The nodes of S are aligned with nodes of U
-        where possible (in a manner explained below)
-     1. Unaligned subtrees of S - i.e. subtrees of S that contain
-        no aligned nodes other than their root - are grafted onto U
-     1. Where S provides a more resolved classification than U, unaligned
-        internal nodes of S are 'inserted' into U
- 1. Perform ad hoc postprocessing steps
- 1. Assign OTT identifiers to the nodes of U
+     1. Load, normalize, and patch S
+     1. Align S to U, i.e. match the nodes of S to nodes of U, where possible
+     1. Merge S into U
+         1. Unaligned subtrees of S (subtrees of S that contain
+            no matched nodes other than their root) are grafted onto U
+         1. Where S provides a more resolved classification than U, 
+            'insert' unmatched nodes of S into U
+ 1. Apply patches and perform ad hoc postprocessing steps
+ 1. Assign OTT identifiers to the nodes of U, by aligning the previous 
+    version of OTT to U
 
 The hierarchical relationships are therefore determined by priority:
 ancestor/descendant relationships in an earlier source S may be
-subdivided by a later source S', but are never overridden.
+refined by a later source S', but are never overridden.
 
 For each new version of OTT, construction begins de novo, so that we
-always get the latest version of the source
-taxonomies.
+always get the latest version of the source taxonomies.  The only
+state that persists from one version of OTT to the next is OTT
+identifier assignment.
 
 Details of each step follow.
 
-## Source taxonomy preparation
+## Source taxonomy import and normalization
 
 Each source taxonomy has its own import procedure, usually a file
 transfer followed by application of a format conversion script.
@@ -34,18 +37,25 @@ converted to the Open Tree 'interim taxonomy format' by a python
 script.  Given the ITF files, the taxonomy can be 'loaded' by the
 assembly procedure.
 
+In two cases an imported source taxonomy is split into parts before
+processing continues, so that the parts can be positioned in different
+places in the align/merge order: Index Fungorum is split into high
+priority Fungi and lower priority everything-except-Fungi, and WoRMS
+is split into Malacostraca and everything-except-Malacostraca.
+
 After each source taxonomy is loaded, the following two normalizations
 are performed:
 
  1. Child taxa of "containers" in the source taxonomy are made to be
-    children of the parent container's parent.
-    "Containers" are grouping nodes in the tree that don't represent 
-    taxa, for example "incertae sedis" nodes.  The fact that the child
-    had been in a container is recorded as a flag on the child node.
+    children of the parent container's parent.  "Containers" are
+    grouping nodes in the tree that don't represent taxa, for example
+    "incertae sedis" or "environmental samples" nodes.  The fact that
+    the child had been in a container is recorded as a flag on the
+    child node.
  1. Monotypic homonym removal - when taxon with name N has as its
     only child another taxon with name N, the parent is removed.
     This is done to avoid an ambiguity when later on a node with name
-    N needs to be aligned.
+    N needs to be matched.
 
 ## Source patching
 
@@ -63,9 +73,9 @@ merged.
 Editing the source taxonomy presents a provenance tracking problem
 that has yet to be addressed.
 
-## Alignment
+## Align source to union
 
-It is very important that source taxa be matched with union taxa when
+It is important that source taxa be matched with union taxa when
 and only when this is appropriate.  A mistaken identity between a
 source taxon and a union taxon can be disastrous, leading not just to
 an incorrect tree but to downstream curation errors in OTU matching
@@ -91,7 +101,7 @@ if any, for each source node having the given name.
 
 [Going one name at a time is not really correct since it does not
 handle synonyms very well.  There is a kludge for dealing with
-synonyms, but it is not very satisfactory.  An experimental version of
+synonyms, but it is not satisfactory.  An experimental version of
 the code deals with one source node at a time, with the potential for
 a different candidate set for each node having a given name, based on
 its synonyms.]
@@ -110,13 +120,15 @@ according to this heuristic) or fails (they do not match according to
 this heuristic).  The method for applying the heuristics is as
 follows:
 
- 1. Start with a source node and a set C of union nodes (candidates)
+ 1. Start with a source node and a set C of union nodes (candidates).
  2. For each heuristic H:
-      1. Let C' = those members of C for which H succeeds
-      2. If C' is singleton, we are done; the source node matches the member of C'
+      1. Let C' = those members of C for which H succeeds.
+      2. If C' is singleton, we are done; the source node matches the member of C'.
       3. If H is a separation heuristic, replace C with C'.  If C is now empty, we're done.
-      4. If H is a preference heuristic, and C' is nonempty, replace C with C'.
- 3. If C is empty, no union node matches the source node, and a polysemy may be created in the merge phase
+      4. If H is a preference heuristic, and C' is nonempty, replace C
+      with C'.  (If C' is empty or C' = C, it gave us no information,
+      and we ignore it.)
+ 3. If C is empty, no union node matches the source node.  (A polysemy may be created in the merge phase.)
  4. If C is singleton, its member is taken to be the correct match.
  5. Otherwise, the source node is ambiguous.
 
@@ -229,43 +241,35 @@ This heuristic has both false negatives (taxa that should be combined
 but aren't) and false positives (cases where merging taxa does not
 lead to the best results).
 
-### Preference heuristic: Overlapping membership
+### Other heuristics
 
-We prefer a union node if its membership proxy (see above) overlaps
-with the source node's.
-
-
-### Preference heuristics: Same/any source identifier
-
-Same source id: B is preferred if A's primary source id
-(e.g. NCBI:1234) is the same as B's.  This heuristic applies mainly
-during the final id assignment phase, since before this point no
-identifiers are shared between the source and union taxonomies.
-
-Any source id: B is preferred if any of A's source ids matches any of
-B's.
- 
-### Separation heuristic: By 'weak division'
-
-B and A are considered distinct at this point if they are in different
-divisions.  E.g. [looking in log files for examples. need better
-instrumentation.]
-
-### Preference heuristic: By rank
-
-B is preferred if A and B both have designated ranks, and the ranks are the same.
-
-### Preference heuristic: Synonym avoidance
-
-B is preferred if its primary name is the same as A's.
-
+1. Overlapping membership:
+   We prefer a candidate node if its membership proxy (see above) overlaps
+   with the source node's.
+1. Same source id: candidate B is preferred if A's primary source id
+   (e.g. NCBI:1234) is the same as B's.  This heuristic applies mainly
+   during the final id assignment phase, since before this point no
+   identifiers are shared between the source and union taxonomies.
+1. Any source id: candidate B is preferred if any of A's source ids matches any of
+   B's.
+1. 'Weak division' separation:
+   B and A are considered distinct at this point if they are in different
+   divisions.  E.g. [looking in log files for examples. need better
+   instrumentation.]  For example,
+   _Brightonia_ in division Mollusca is distinguished from 
+   _Brightonia_ in division Metazoa (which includes Mollusca), which turns out to be correct because
+   the second _Brightonia_ is an echinoderm, not a mollusc.
+1. Rank:
+   B is preferred if A and B both have designated ranks, and the ranks are the same.
+1. Synonym avoidance:
+   B is preferred if its primary name is the same as A's.
 
 
 ### Collisions
 
 There are often false polysemies within a source taxonomy - that is, a
-name appears on more than one node in the source taxonomy, when on
-inspection it is clear that this is a mistake in the source, and there
+name belongs to more than one node in the source taxonomy, when on
+inspection it is clear that this is a mistake in the source taxonomy, and there
 is really only one taxon in question.  Example: _Aricidea rubra_
 occurs twice in WoRMS, but the two nodes are very close in the
 taxonomy and one of them appears to be a duplication.
@@ -284,7 +288,7 @@ node to map them to.  I don't really understand how the code works or
 whether it's doing the right thing; need to review.]
 
 
-## Merge
+## Merge source into union
 
 Following alignment, taxa from the source taxonomy are merged into the
 union taxonomy.  This is performed via bottom-up traversal of the
@@ -296,13 +300,13 @@ the union.
 
 The following cases arise during the merge process:
 
- * Source taxonomy tip: if it's matched to a union node, there is
-   nothing to do.  If unmatched and not blocked for some reason
-   (e.g. ambiguity), create a corresponding tip node in the union, to
-   be attached later on.  The source tip is then matched to the new
-   union tip.
+ * Source taxonomy tip: if the source node is matched to a union node,
+   there is nothing to do.  If it's unmatched and not blocked for some
+   reason (e.g. ambiguity), then create a corresponding tip node in
+   the union, to be attached later on.  The source tip is then matched
+   to the new union tip.
 
- * Source taxonomy internal node: the children have already been
+ * Source taxonomy internal node: the source node's children have already been
    processed (recursively), and are all matched to targets in the
    union (or, rarely, blocked, see above).  The targets are either
    'old' (they were already in the union before the merge started) or

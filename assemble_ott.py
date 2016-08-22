@@ -19,7 +19,8 @@ import csv
 
 this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/make-ott.py'
 inclusions_path = 'inclusions.csv'
-additions_path = 'amendments-0'
+additions_clone_path = 'feed/amendments/amendments-1'
+additions_temp_path = 'additions_temp'
 
 do_notSames = False
 
@@ -44,7 +45,7 @@ def create_ott():
     # When lumping, prefer to use ids that have been used in OTU matching
     # This list could be used for all sorts of purposes...
     ott.loadPreferredIds('ids_that_are_otus.tsv', False)
-    ott.loadPreferredIds('ids-in-synthesis.tsv', True)
+    ott.loadPreferredIds('ids_in_synthesis.tsv', True)
 
     # idspace string 'skel' is magical, see Taxon.addSource
     ott.setSkeleton(Taxonomy.getTaxonomy('tax/skel/', 'skel'))
@@ -125,6 +126,9 @@ def create_ott():
 
     # IRMNG
     irmng = taxonomies.load_irmng()
+
+    hide_irmng(irmng)
+
     a = align_irmng(irmng, ott)
     if True:                   # Include taxa from irmng?
         ott.absorb(irmng, a)
@@ -218,16 +222,28 @@ def create_ott():
 
     # Apply the additions (which already have ids assigned)
     print '-- Processing additions --'
-    Addition.processAdditions(additions_path, ott)
+    Addition.processAdditions(additions_clone_path, ott)
 
     # Mint ids for new nodes
-    ott.assignNewIds(additions_path)
+    ott.assignNewIds(additions_temp_path)
 
     ott.check()
 
     report_on_h2007(h2007, h2007_to_ott)
 
     return ott
+
+def hide_irmng(irmng):
+    # Sigh...
+    # https://github.com/OpenTreeOfLife/feedback/issues/302
+    for root in irmng.roots():
+        root.hide()
+    with open('irmng_only_otus.csv', 'r') as infile:
+        reader = csv.reader(infile)
+        reader.next()           # header row
+        for row in reader:
+            irmng.lookupId(row[0]).unhide()
+
 
 # ----- Ctenophora polysemy -----
 
@@ -422,6 +438,8 @@ def align_ncbi(ncbi, silva, ott):
 
     a = ott.alignment(ncbi)
 
+    a.same(ncbi.taxon('Viridiplantae'), ott.taxon('Chloroplastida'))
+
     a.same(ncbi.taxonThatContains('Ctenophora', 'Ctenophora pulchella'),
            ott.taxonThatContains('Ctenophora', 'Ctenophora pulchella')) # should be 103964
     a.same(ncbi.taxonThatContains('Ctenophora', 'Pleurobrachia bachei'),
@@ -565,6 +583,8 @@ def align_ncbi_to_silva(mappings, a):
 
 def align_worms(worms, ott):
     a = ott.alignment(worms)
+    a.same(worms.taxon('Plantae'), ott.taxon('Archaeplastida'))
+
     a.same(worms.taxonThatContains('Trichosporon', 'Trichosporon lodderae'),
            ott.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
     a.same(worms.taxonThatContains('Trichoderma', 'Trichoderma koningii'),
@@ -581,6 +601,8 @@ def align_worms(worms, ott):
 def align_gbif(gbif, ott):
 
     a = ott.alignment(gbif)
+
+    a.same(gbif.taxon('Plantae'), ott.taxon('Archaeplastida'))
 
     gbif.taxon('Viruses').hide()
 
@@ -679,6 +701,11 @@ def align_gbif(gbif, ott):
     a.same(gbif.taxonThatContains('Trichoderma', 'Trichoderma koningii'),
            ott.taxonThatContains('Trichoderma', 'Trichoderma koningii'))
 
+    # Polysemy with an order in Chaetognatha (genus is a brachiopod)
+    # https://github.com/OpenTreeOfLife/feedback/issues/306
+    establish('Phragmophora', ott, ancestor='Rhynchonellata', rank='genus', source='gbif:5430295')
+    a.same(gbif.taxon('5430295'), ott.taxon('Phragmophora', 'Rhynchonellata'))
+
     return a
 
 # ----- Interim Register of Marine and Nonmarine Genera (IRMNG) -----
@@ -686,6 +713,8 @@ def align_gbif(gbif, ott):
 def align_irmng(irmng, ott):
 
     a = ott.alignment(irmng)
+
+    a.same(irmng.taxon('Plantae'), ott.taxon('Archaeplastida'))
 
     # irmng.taxon('Viruses').hide()  see taxonomies.py
 

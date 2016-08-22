@@ -190,6 +190,11 @@ def patch_silva(silva):
     # similarly
     silva.taxon('CP002976').synonym('Phaeobacter gallaeciensis DSM 17395 = CIP 105210')
 
+    # Nonspecific Pseudomonas, from a patent
+    # https://github.com/OpenTreeOfLife/feedback/issues/309
+    silva.taxon('HC510467').clobberName('cluster HC510467')
+    silva.taxon('HC510467').hide()
+
 def load_h2007():
     h2007 = Taxonomy.getTaxonomy('feed/h2007/tree.tre', 'h2007')
 
@@ -438,7 +443,6 @@ def load_ncbi():
     ncbi = Taxonomy.getTaxonomy('tax/ncbi/', 'ncbi')
     fix_SAR(ncbi)
 
-    ncbi.taxon('Viridiplantae').rename('Chloroplastida')
     patch_ncbi(ncbi)
 
     # analyzeOTUs sets flags on questionable taxa ("unclassified",
@@ -985,6 +989,12 @@ def load_irmng():
     # https://github.com/OpenTreeOfLife/feedback/issues/167
     irmng.taxon('Plectophanes altus').absorb(irmng.taxon('Plectophanes alta'))
 
+    # https://github.com/OpenTreeOfLife/feedback/issues/304
+    irmng.taxon('Notobalanus', 'Maxillopoda').extant()
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/303
+    irmng.taxon('Neolepas', 'Maxillopoda').extant()
+
     return irmng
 
 # Common code for the 'old fashioned' taxonomies IF, GBIF, IRMNG,
@@ -994,7 +1004,6 @@ def load_irmng():
 def fix_basal(tax):
     fix_protists(tax)
     fix_SAR(tax)
-    fix_plants(tax)
 
 # Common code for GBIF, IRMNG, Index Fungorum
 def fix_protists(tax):
@@ -1009,7 +1018,7 @@ def fix_protists(tax):
         else:
             print('* No parent "life" for Eukaryota, probably OK')
 
-    for name in ['Animalia', 'Fungi', 'Plantae']:
+    for name in ['Animalia', 'Fungi', 'Plantae', 'Haptophyta', 'Metazoa']:
         node = tax.maybeTaxon(name)
         if node != None:
             euk.take(node)
@@ -1022,8 +1031,6 @@ def fix_protists(tax):
             for child in bad.children:
                 child.incertaeSedis()
             bad.elide()
-
-    fix_SAR(tax)
 
 # Add SAR and populate it
 
@@ -1045,30 +1052,6 @@ def fix_SAR(tax):
             else: print '** No Alveolata'
             if r != None: sar.take(r)
             else: print '** No Rhizaria'
-
-# 'Fix' plants to match SILVA and NCBI...
-def fix_plants(tax):
-    euk = tax.taxon('Eukaryota')
-
-    # 1. co-opt GBIF taxon for a slightly different purpose
-    plants = tax.maybeTaxon('Plantae')
-    if plants != None:
-        plants.rename('Chloroplastida')
-        # euk.take(plants)  ???
-
-    if euk != None:
-        # JAR 2014-04-25 GBIF puts rhodophytes under Plantae, but it's not
-        # in Chloroplastida.
-        # Need to fix this before alignment because of division calculations.
-        # Plantae is a child of 'life' in GBIF, and Rhodophyta is one of many
-        # phyla below that.  Move up to be a sibling of Plantae.
-        # This redefines GBIF Plantae, sort of, which is not nice.
-        # Discovered while looking at Bostrychia alignment problem.
-        # JAR 2014-05-13 similarly
-        # Glaucophyta - there's a GBIF/IRMNG false homonym, should be merged
-        # This needs to match the skeleton!
-        for name in ['Rhodophyta', 'Glaucophyta', 'Haptophyta', 'Fungi', 'Metazoa', 'Chloroplastida']:
-            # should check to see if this is an improvement in specificity?
-            rho = tax.maybeTaxon(name)
-            if rho != None:
-                euk.take(rho)
+    bac = tax.maybeTaxon('Bacillariophyta', 'Plantae')
+    if bac != None and s != None:
+        s.take(bac)

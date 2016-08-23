@@ -1,4 +1,3 @@
-
 # Taxonomy assembly
 
 Taxonomies are ordinarily managed as databases that grow by the
@@ -16,7 +15,9 @@ taxonomies.  The advantage of federation is that it tracks all source
 taxonomies faithfully. Every piece of information in the federation is
 justified by the latest versions of the sources.
 
-## Assembly procedure
+...
+
+## Taxonomy construction
 
 The assembly process works, in outline, as follows:
 
@@ -414,7 +415,7 @@ an unplaced taxon (more resolved, or resolved), or not.  Unplaced taxa
 should not inhibit the application of any rule, but they shouldn't get
 lost during merge, either.
 
-## Postprocessing
+### Postprocessing
 
 After all source taxonomies are aligned and merged, general ad hoc
 patches are applied to the union taxonomy, in a manner similar to that
@@ -429,9 +430,21 @@ heuristic, as PaleoDB can (rarely) contain extant taxa, but the
 alternative is failing to recognize a much larger number of taxa as
 extinct.
 
-## Id assignment
+### Id assignment
 
 The final step is to assign OTT ids to taxa.  This is done by aligning
 the previous version of OTT to the new union taxonomy.  After
 transferring ids of aligned taxa, any remaining union taxa are given
 newly 'minted' identifiers.
+
+## Results
+
+(Get metrics for OTT 2.10)
+
+
+## Discussion
+
+Challenges in construction: dirty inputs, homonyms, a gazillion special cases...
+
+Limitations of method: ...
+

@@ -1,21 +1,27 @@
 # Taxonomy assembly
 
-Taxonomies are ordinarily managed as databases that grow by the
-addition of individual records and occasional localized
-rearrangements, as when a genus is "lumped" or "split".  Taxonomic
-information can be incorporated from other sources, but this may
-require a manual merge, in order to adjudicate conflicts.  For
-example, if a species in the taxonomy is missing from the new source,
-it must be determined whether the species should be removed (e.g. the
-name is invalid), or kept (the new source is incomplete).
+Large-scale taxonomy projects are managed either as databases or as
+federations of databases.  A taxonomic database grows by discrete
+modifications to a current database state: the addition of individual
+records and groups of records, localized rearrangements, "lumping" and
+"splitting", and so on.  With difficulty, information can be copied
+wholesale from other taxonomic sources, but this may require a manual
+merge, so that the inevitable conflicts can be mediated.  For example,
+if a species in the taxonomy is missing from the new source, it must
+be determined whether the species should be removed (e.g. the name is
+not current), or kept (the new source is incomplete).
 
-An alternative to record-level taxonomy management is federation.  A
-federated taxonomy algorithmically combines a number of source
-taxonomies.  The advantage of federation is that it tracks all source
-taxonomies faithfully. Every piece of information in the federation is
-justified by the latest versions of the sources.
+Federated management is geared toward repeated harvest of information
+from multiple sources.  A federated does not have its own information,
+but instead it algorithmically combines information from a number of
+source taxonomies.  The advantage of federation is that it tracks all
+source taxonomies faithfully. Every piece of information in the
+federation is justified by the latest versions of the sources.
 
-...
+NCBI Taxonomy, IRMNG, uBio(?), ... are managed as databases.  Catalog of Life,
+the GBIF backbone, and the Open Tree Taxonomy are federations.
+
+
 
 ## Taxonomy construction
 

@@ -1,13 +1,30 @@
 
 # Taxonomy assembly
 
+Taxonomies are ordinarily managed as databases that grow by the
+addition of individual records and occasional localized
+rearrangements, as when a genus is "lumped" or "split".  Taxonomic
+information can be incorporated from other sources, but this may
+require a manual merge, in order to adjudicate conflicts.  For
+example, if a species in the taxonomy is missing from the new source,
+it must be determined whether the species should be removed (e.g. the
+name is invalid), or kept (the new source is incomplete).
+
+An alternative to record-level taxonomy management is federation.  A
+federated taxonomy algorithmically combines a number of source
+taxonomies.  The advantage of federation is that it tracks all source
+taxonomies faithfully. Every piece of information in the federation is
+justified by the latest versions of the sources.
+
+## Assembly procedure
+
 The assembly process works, in outline, as follows:
 
  1. Start with an ordered list of source taxonomies S1, S2, ...
  1. Initialize the 'union' taxonomy U to be empty
  1. For each source S:
      1. Load, normalize, and patch S
-     1. Align S to U, i.e. match the nodes of S to nodes of U, where possible
+     1. Align S to U, i.e. match nodes of S to nodes of U, where possible
      1. Merge S into U
          1. Unaligned subtrees of S (subtrees of S that contain
             no matched nodes other than their root) are grafted onto U
@@ -27,6 +44,33 @@ state that persists from one version of OTT to the next is OTT
 identifier assignment.
 
 Details of each step follow.
+
+## Source taxonomy selection
+
+The Open Tree of Life project adopts an "open science" policy: inputs
+and products (trees, taxonomies) must be reuseable in other scientific
+work, such as reproducing what we've done, or excerpting in follow-on
+work.  Unfortunately this policy rules out the use of information
+sources (such as Catalogue of Life and the IUCN Red List) that have
+restrictive terms of use.  Fortunately a number of sources are not so
+restricted.
+
+* NCBI Taxonomy: NCBI maintains a taxonomy primarily as an aid to
+  genetic sequence search, for example, "find sequences from bony
+  fishes similar to this one".  Only taxa that have at least one
+  associated sequence are present in the taxonomy.  NCBI Taxonomy is
+  an excellent source of taxa for Open Tree because most sequences
+  used in sequence-based phylogenetic studies are deposited in NCBI
+  Taxonomy. A large number of taxa [how many?] in the NCBI Taxonomy
+  are lacking valid names according to the nomenclatural codes.
+  (article in NAR http://dx.doi.org/10.1093/nar/gkr1178)
+* GBIF backbone taxonomy:
+* SILVA
+* Index Fungorum
+* IRMNG
+* WoRMS
+
+Quentin Wheeler, The New Taxonomy (book, 2008)
 
 ## Source taxonomy import and normalization
 
@@ -69,9 +113,12 @@ are performed:
 
  1. Child taxa of "containers" in the source taxonomy are made to be
     children of the parent container's parent.  "Containers" are
-    grouping nodes in the tree that don't represent taxa, for example
-    "incertae sedis" or "environmental samples" nodes.  The fact that
-    the child had been in a container is recorded as a flag on the
+    groupings in the tree that don't represent taxa, for example
+    "incertae sedis" or "environmental samples" nodes.  The members of
+    a container aren't more closely related to one another than they
+    are to the container's siblings; the container is only present as
+    a way to say something about the members.  The fact that a taxon
+    had originally been in a container is recorded as a flag on the
     child node.
  1. Monotypic homonym removal - when taxon with name N has as its
     only child another taxon with name N, the parent is removed.

@@ -41,9 +41,15 @@ General results on the Open Tree taxonomy. Not a review on the taxonomic quality
 
 * number tips, synonyms, homonyms
 * number patches
-* conflict
+* number of inter-source conflicts? (about 1000)
+
+* compare OTT's coverage of phylesystem with coverage by NCBI, GBIF
+  (i.e. how well does OTT do what it's supposed to do, compared to
+  ready-made taxonomies?)
 
 # Discussion
 
 * challenges in construction
 * limitations of method
+* OTU curation challenges?  additions feature?
+

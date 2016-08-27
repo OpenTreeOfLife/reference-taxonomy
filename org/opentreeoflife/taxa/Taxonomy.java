@@ -469,8 +469,11 @@ public abstract class Taxonomy {
                 if (!node.isRoot()) {
                     Collection<Taxon> xchildren = node.getChildren();
                     // https://github.com/OpenTreeOfLife/reference-taxonomy/issues/210
-                    if (xchildren.size() <= 1)
+                    // "If 'incertae sedis' is the only child, elide it"
+                    if (node.parent.children.size() <= 1) {
+                        System.out.format("* Only child of %s is container %s\n", node.parent, node);
                         flag = 0;
+                    }
                     for (Taxon child : new ArrayList<Taxon>(xchildren))
                         // changeParent sets properFlags
                         child.changeParent(node.parent, flag);

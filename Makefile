@@ -13,7 +13,7 @@
 JAVAFLAGS=-Xmx14G
 
 # Modify as appropriate
-WHICH=2.10draft5
+WHICH=2.10draft6
 PREV_WHICH=2.9
 
 # ----- Taxonomy source locations -----
@@ -335,15 +335,13 @@ tax/prev_ott/taxonomy.tsv:
 	if [ -e tax/prev_ott/synonyms ]; then mv tax/prev_ott/synonyms tax/prev_ott/synonyms.tsv; fi
 	rm -rf tmp
 
-# -----Taxon inclusion tests
+# ----- Phylesystem OTU list
 
-# OK to override this locally, e.g. with
-# ln -sf ../germinator/taxa/inclusions.tsv inclusions.tsv,
-# so you can edit the file in the other repo.
-
-inclusions.csv:
-	wget --output-document=$@ --no-check-certificate \
-	  "https://raw.githubusercontent.com/OpenTreeOfLife/germinator/master/taxa/inclusions.csv"
+# This rule typically won't run, since the target is checked in
+ids_that_are_otus.tsv:
+	time python util/ids_that_are_otus.py $@.new
+	mv $@.new $@
+	wc $@
 
 # ----- Preottol - for filling in the preottol id column
 # No longer used
@@ -374,12 +372,6 @@ tarball: tax/ott/log.tsv
 # Then, something like
 # scp -p -i ~/.ssh/opentree/opentree.pem tarballs/ott2.9draft3.tgz \
 #   opentree@ot10.opentreeoflife.org:files.opentreeoflife.org/ott/ott2.9/
-
-# This rule typically won't run, since the target is checked in
-ids_that_are_otus.tsv:
-	time python util/ids_that_are_otus.py $@.new
-	mv $@.new $@
-	wc $@
 
 # Not currently used since smasher already suppresses non-OTU deprecations
 tax/ott/otu_deprecated.tsv: ids_that_are_otus.tsv tax/ott/deprecated.tsv
@@ -426,6 +418,16 @@ lib/junit-4.12.jar:
 	wget --output-document=$@ --no-check-certificate \
 	  "http://search.maven.org/remotecontent?filepath=junit/junit/4.12/junit-4.12.jar"
 	@ls -l $@
+
+# -----Taxon inclusion tests
+
+# OK to override this locally, e.g. with
+# ln -sf ../germinator/taxa/inclusions.tsv inclusions.tsv,
+# so you can edit the file in the other repo.
+
+inclusions.csv:
+	wget --output-document=$@ --no-check-certificate \
+	  "https://raw.githubusercontent.com/OpenTreeOfLife/germinator/master/taxa/inclusions.csv"
 
 # ----- Testing
 

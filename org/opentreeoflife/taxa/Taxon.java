@@ -30,6 +30,7 @@ public class Taxon extends Node {
 	public int properFlags = 0, inferredFlags = 0;
 	Taxon division = null;  // foo.  for Alignment
     public boolean inSynthesis = false; // used only for final annotation
+    public boolean unsourced = false;
 	public Taxonomy taxonomy;			// For subsumption checks etc.
 
 	// State during alignment
@@ -357,7 +358,8 @@ public class Taxon extends Node {
 
 	public String divisionName() {
 		Taxon d = this.getDivision();
-		return (d.noMrca() ? "(no division)" : d.name);
+        if (d == null) return "";
+		return (d.noMrca() ? "" : d.name);
 	}
 
     // public because smasher
@@ -386,7 +388,7 @@ public class Taxon extends Node {
 	//			"source\t|\tsourceid\t|\tsourcepid\t|\tuniqname\t|\tpreottol_id\t|\t");
 
 	public void addSource(Taxon source) {
-		if (!source.taxonomy.getIdspace().equals("skel")) //KLUDGE!!!
+        if (!source.unsourced)
 			this.addSourceId(source.getQualifiedId());
 	}
 
@@ -1020,6 +1022,10 @@ public class Taxon extends Node {
 
 	public void incertaeSedis() {
 		this.addFlag(Taxonomy.INCERTAE_SEDIS);
+	}
+
+	public void unplaced() {
+		this.addFlag(Taxonomy.UNPLACED);
 	}
 
 	public boolean extinct() {

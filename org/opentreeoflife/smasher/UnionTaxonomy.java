@@ -2,11 +2,6 @@
 
   Open Tree Reference Taxonomy (OTT) taxonomy combiner.
 
-  Some people think having multiple classes in one file is terrible
-  programming style...	I'll split this into multiple files when I'm
-  ready to do so; currently it's much easier to work with in this
-  form.
-
 */
 
 package org.opentreeoflife.smasher;
@@ -79,6 +74,8 @@ public class UnionTaxonomy extends Taxonomy {
 		Alignment a = new AlignmentByName(skel, this);
         this.forest.setDivision(skel.forest);
         this.skeletonAlignment = a;
+		for (Taxon div : skel.taxa())
+            div.unsourced = true;
         this.merge(skel, a);
 		for (Taxon div : skel.taxa()) {
             if (div.name == null)

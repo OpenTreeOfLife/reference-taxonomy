@@ -439,6 +439,11 @@ def align_ncbi(ncbi, silva, ott):
     a = ott.alignment(ncbi)
 
     a.same(ncbi.taxon('Viridiplantae'), ott.taxon('Chloroplastida'))
+    arch = establish('Archaeplastida', ncbi, division='Eukaryota') # No id
+    arch.take(ncbi.taxon('Viridiplantae'))
+    arch.take(ncbi.taxon('Rhodophyta'))
+    arch.take(ncbi.taxon('Glaucocystophyceae'))
+    arch.unsourced = True
 
     a.same(ncbi.taxonThatContains('Ctenophora', 'Ctenophora pulchella'),
            ott.taxonThatContains('Ctenophora', 'Ctenophora pulchella')) # should be 103964
@@ -1191,6 +1196,13 @@ def patch_ott(ott):
     # single species, name not accepted
     ott.taxon('Cestracion', 'Sphyrnidae').prune('https://github.com/OpenTreeOfLife/feedback/issues/127')
 
+    # Related to https://github.com/OpenTreeOfLife/feedback/issues/307
+    pter = ott.maybeTaxon('Pteridophyta')
+    if pter != None and pter.parent == ott.taxon('Archaeplastida'):
+        for child in pter.children:
+            child.unplaced()
+        ott.taxon('Tracheophyta').absorb(pter)
+
 # The processed GBIF taxonomy contains a file listing GBIF taxon ids for all 
 # taxa that are listed as coming from PaleoDB.  This is processed after all
 # taxonomies are processed but before patches are applied.  We use it to set
@@ -1378,4 +1390,5 @@ names_of_interest = ['Ciliophora',
                      'Myzostoma cirriferum',
                      'Helotiales',
                      'Leotiales',
+                     'Desertella',
                      ]

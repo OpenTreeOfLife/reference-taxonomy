@@ -877,6 +877,11 @@ def patch_gbif(gbif):
     # https://github.com/OpenTreeOfLife/feedback/issues/123
     gbif.taxon('Gryphodobatis', 'Orectolobidae').extinct()
 
+    # Related to https://github.com/OpenTreeOfLife/feedback/issues/307
+    # This problem is remedied by the 2016 GBIF update.
+    gbif.taxon('Naviculae mesoleiae').rename('Navicula mesoleiae')
+    gbif.taxon('Navicula').absorb(gbif.taxon('Naviculae'))
+
     return gbif
 
 def load_irmng():

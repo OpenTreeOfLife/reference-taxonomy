@@ -1,26 +1,42 @@
+# scp -p files:"files.opentreeoflife.org/synthesis/current/output/phylo_snapshot/*@*.json" synth-nexson-tmp/
+# time bin/jython util/ids_in_synthesis.py --dir synth-nexson-tmp --outfile ids_in_synthesis.tsv
+
+# was:
 # time python util/ids_in_synthesis.py --dir ../files.opentreeoflife.org/preprocessed/v3.0/trees --outfile ids-in-synthesis.tsv
 
 import re, argparse, os, csv
 
+from org.opentreeoflife.taxa import Nexson
+
 # preprocessed/v3.0/trees
 
 def doit(trees_dir_name, out_file_name):
-    regex = re.compile('^(.*)_([0-9]+)\\.tre$')
+    tre_regex = re.compile('^(.*)_([0-9]+)\\.tre$')
+    nexson_regex = re.compile('^(.+)@(.+)\\.json$')
     count = 0
-    acount = 0
     with open(out_file_name, 'w') as outfile:
         writer = csv.writer(outfile, delimiter='\t')
         for name in os.listdir(trees_dir_name):
-            m = regex.match(name)
+            m = tre_regex.match(name)
             if m != None:
                 study = m.group(1)
                 tree = m.group(2)
                 answer = ott_ids_in(os.path.join(trees_dir_name, name))
                 for (id, name) in answer:
                     writer.writerow((id, study, name))
-    print count, acount
-
-# This is useless for now, since it covers the whole taxonomy
+                    count += 1
+            else:
+                m = nexson_regex.match(name)
+                if m != None:
+                    study = m.group(1)
+                    tree = m.group(2)
+                    nexson = Nexson.load(os.path.join(trees_dir_name, name))
+                    for otu in Nexson.getOtus(nexson).values():
+                        id = otu.get('^ot:ottId')
+                        if id != None:
+                            writer.writerow((id, study))
+                            count += 1
+    print count
 
 def ott_ids_in(tree_file_name):
     splitx = re.compile('[),]')

@@ -154,19 +154,19 @@ public class Nexson {
                     // Specified root is not the represented root
                     Taxon spec = tax.lookupId(specid);
                     if (spec != null) {
-                        System.out.format("** Specified root %s not= represented root %s - rerooting NYI (%s)\n",
+                        System.err.format("** Specified root %s not= represented root %s - rerooting NYI (%s)\n",
                                           specid, rootid, tag);
                         Taxon ingroup = tax.ingroupId == null ? null : tax.lookupId(tax.ingroupId);
                         if (ingroup != null && !ingroup.descendsFrom(spec))
-                            System.out.format("** BAD: Ingroup %s does not descend from specified root %s (%s)\n",
+                            System.err.format("** BAD: Ingroup %s does not descend from specified root %s (%s)\n",
                                               tax.ingroupId, specid, tag);
                     }
                 }
                 tax.addRoot(node);
             } else
-                System.out.format("** Root node %s not found in %s\n", rootid, tag);
+                System.err.format("** Root node %s not found in %s\n", rootid, tag);
         } else
-            System.out.format("** No root node found for %s\n", tag);
+            System.err.format("** No root node found for %s\n", tag);
 
         // Store tip labels as Taxon names, OTT ids as sources
         for (Taxon taxon : tax.taxa()) {
@@ -184,7 +184,7 @@ public class Nexson {
                     JSONObject otu = ((JSONObject)otus.get(otuId));
                     Object label = otu.get("^ot:originalLabel");
                     if (label == null)
-                        System.out.format("** No label for terminal node %s, otu = %s (%s)\n", taxon.id, otu, tag);
+                        System.err.format("** No label for terminal node %s, otu = %s (%s)\n", taxon.id, otu, tag);
                     taxon.setName((String)label);
 
                     Object isExemplar = node.get("^ot:isTaxonExemplar");
@@ -194,7 +194,7 @@ public class Nexson {
                             taxon.addSourceId(new QualifiedId("ott", ottidObj.toString()));
                     }
                 } else {
-                    System.out.format("** No @otu for terminal node %s in %s\n",
+                    System.err.format("** No @otu for terminal node %s in %s\n",
                                       taxon.id,
                                       tag);
                 }

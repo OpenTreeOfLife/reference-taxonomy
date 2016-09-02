@@ -13,7 +13,7 @@
 JAVAFLAGS=-Xmx14G
 
 # Modify as appropriate
-WHICH=2.10draft4
+WHICH=2.10draft9
 PREV_WHICH=2.9
 
 # ----- Taxonomy source locations -----
@@ -42,6 +42,9 @@ SILVA_URL=$(SILVA_EXPORTS)/SSURef_NR99_115_tax_silva.fasta.tgz
 
 # This is used as a source of OTT id assignments.
 PREV_OTT_URL=http://files.opentreeoflife.org/ott/ott$(PREV_WHICH)/ott$(PREV_WHICH).tgz
+
+# 20 Aug 2016, Nico Franz
+AMENDMENTS_REFSPEC=8c76e691b28cecc6029f8a852aea3ad2a4f374ac
 
 # -----
 
@@ -92,7 +95,7 @@ bin/smasher:
 
 # The open tree taxonomy
 
-ott: tax/ott/log.tsv
+ott: tax/ott/log.tsv tax/ott/version.txt
 tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
                     tax/silva/taxonomy.tsv \
 		    tax/fung/taxonomy.tsv tax/713/taxonomy.tsv \
@@ -104,11 +107,16 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
 		    feed/misc/chromista_spreadsheet.py \
 		    ids_that_are_otus.tsv \
 		    bin/jython \
-		    inclusions.csv
+		    inclusions.csv \
+		    feed/amendments/amendments-1/next_ott_id.json \
+		    tax/skel/taxonomy.tsv
 	@date
 	@rm -f *py.class
 	@mkdir -p tax/ott
-	time bin/jython make-ott.py
+	@echo Writing transcript to tax/ott/transcript.out
+	time bin/jython make-ott.py 2>&1 | tee tax/ott/transcript.out
+
+tax/ott/version.txt:
 	echo $(WHICH) >tax/ott/version.txt
 
 # ----- Taxonomy inputs
@@ -308,6 +316,22 @@ feed/misc/chromista_spreadsheet.py: feed/misc/chromista-spreadsheet.csv feed/mis
 	python feed/misc/process_chromista_spreadsheet.py \
            feed/misc/chromista-spreadsheet.csv >feed/misc/chromista_spreadsheet.py
 
+# ----- Amendments
+
+fetch_amendments: feed/amendments/amendments-1/next_ott_id.json
+
+feed/amendments/amendments-1/next_ott_id.json:
+	$(MAKE) refresh-amendments
+
+refresh-amendments: feed/amendments/amendments-1
+	(cd feed/amendments/amendments-1; git checkout master)
+	(cd feed/amendments/amendments-1; git pull)
+	(cd feed/amendments/amendments-1; git log | head -1)
+	(cd feed/amendments/amendments-1; git checkout -q $(AMENDMENTS_REFSPEC))
+
+feed/amendments/amendments-1:
+	@mkdir -p feed/amendments
+	(cd feed/amendments; git clone https://github.com/OpenTreeOfLife/amendments-1.git)
 
 # ----- Previous version of OTT, for id assignments
 
@@ -323,15 +347,13 @@ tax/prev_ott/taxonomy.tsv:
 	if [ -e tax/prev_ott/synonyms ]; then mv tax/prev_ott/synonyms tax/prev_ott/synonyms.tsv; fi
 	rm -rf tmp
 
-# -----Taxon inclusion tests
+# ----- Phylesystem OTU list
 
-# OK to override this locally, e.g. with
-# ln -sf ../germinator/taxa/inclusions.tsv inclusions.tsv,
-# so you can edit the file in the other repo.
-
-inclusions.csv:
-	wget --output-document=$@ --no-check-certificate \
-	  "https://raw.githubusercontent.com/OpenTreeOfLife/germinator/master/taxa/inclusions.csv"
+# This rule typically won't run, since the target is checked in
+ids_that_are_otus.tsv:
+	time python util/ids_that_are_otus.py $@.new
+	mv $@.new $@
+	wc $@
 
 # ----- Preottol - for filling in the preottol id column
 # No longer used
@@ -351,23 +373,18 @@ $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 # ----- Products
 
 # For publishing OTT drafts or releases.
-
+# File names beginning with # are emacs lock links.
+ 
 tarball: tax/ott/log.tsv
 	(mkdir -p $(TARDIR) && \
 	 tar czvf $(TARDIR)/ott$(WHICH).tgz.tmp -C tax ott \
-	   --exclude differences.tsv && \
+	   --exclude differences.tsv --exclude "#*" && \
 	 mv $(TARDIR)/ott$(WHICH).tgz.tmp $(TARDIR)/ott$(WHICH).tgz )
 	@echo "Don't forget to bump the version number"
 
 # Then, something like
 # scp -p -i ~/.ssh/opentree/opentree.pem tarballs/ott2.9draft3.tgz \
 #   opentree@ot10.opentreeoflife.org:files.opentreeoflife.org/ott/ott2.9/
-
-# This rule typically won't run, since the target is checked in
-ids_that_are_otus.tsv:
-	time python util/ids_that_are_otus.py $@.new
-	mv $@.new $@
-	wc $@
 
 # Not currently used since smasher already suppresses non-OTU deprecations
 tax/ott/otu_deprecated.tsv: ids_that_are_otus.tsv tax/ott/deprecated.tsv
@@ -414,6 +431,16 @@ lib/junit-4.12.jar:
 	wget --output-document=$@ --no-check-certificate \
 	  "http://search.maven.org/remotecontent?filepath=junit/junit/4.12/junit-4.12.jar"
 	@ls -l $@
+
+# -----Taxon inclusion tests
+
+# OK to override this locally, e.g. with
+# ln -sf ../germinator/taxa/inclusions.tsv inclusions.tsv,
+# so you can edit the file in the other repo.
+
+inclusions.csv:
+	wget --output-document=$@ --no-check-certificate \
+	  "https://raw.githubusercontent.com/OpenTreeOfLife/germinator/master/taxa/inclusions.csv"
 
 # ----- Testing
 
@@ -487,7 +514,7 @@ clean:
 	rm -rf tax/ott
 	rm -rf feed/*/out *.tmp
 #	rm -rf feed/*/work ?
-	rm -rf amendments t/amendments bin/jython
+	rm -rf feed/amendments t/amendments bin/jython
 	rm -rf tax/fung tax/ncbi tax/prev_nem tax/silva
 	rm -f `find . -name *.class`
 	rm -f feed/misc/chromista_spreadsheet.py

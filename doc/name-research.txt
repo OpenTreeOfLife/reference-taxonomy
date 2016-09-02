@@ -328,7 +328,7 @@ Fungus.
 
 ### Campanella
 
-In SAR:
+In SAR > Alveolata > Ciliophora:
 
   136738	|	557360	|	Campanella	|	genus	|	silva:AF401524/#9,ncbi:168241,gbif:3204425,irmng:1289747	|	Campanella (genus in SAR)	|		|	
   136738	|	557360	|	Campanella	|	genus	|	silva:AF401524/#9,ncbi:168241,gbif:3204425,irmng:1289747	|	Campanella (genus in class Oligohymenophorea)	|	sibling_lower	|	
@@ -566,7 +566,7 @@ There are four of them:
 2. OTT 103964 = diatom in Fragillares = silva:HQ912611/#7 = ncbi:1003038
    Contains Ctenophora pulchella
 
-3. OTT 1043126 = cranefly = ncbi:516519 (not extinct).  Same as gbif:1507726 ?
+3. OTT 1043126 = cranefly = ncbi:516519 (not extinct).  Same as gbif:1507726.
 
 4. OTT 5680147 = irmng:1279363 has been deleted from IRMNG, no longer
 in OTT.
@@ -707,6 +707,17 @@ ahh... so that 5262599 id looks like a much better one.  Fix test.
 
 ## Marssonia / Marssonina 
 
+There are two Marssonias:
+1. a fungus (synonym for Marssonina / if:8849 / ncbi:509230, in Dermateaceae in Ascomycota)
+2. a plant (gbif:7268388, in Lamiales).
+
+What should their OTT ids be?
+1. fungus 372158 (because Marssonina in OTT 2.0 - 2.7) 
+       or 176780 (Marssonia in OTT 2.8-2.9)
+2. plant 5512668 (because OTT 2.8) not in OTT 2.7
+
+I think the synonym is new.
+
 ** The id of Marssonia (which is not in Dermateaceae) is 5512668 (expected 176780)
    Id 176780 belongs to (Marssonina 75019=if:8849+814)
 
@@ -793,6 +804,29 @@ OTT 2.9 has:
 
 does this mean we're discarding *all* merged placeholders?
 
+
+## Cyclophora
+
+Diatom genus:
+  ott:678569
+  (SILVA something)
+  ncbi:216819
+  worms:450716
+  gbif:2630051
+  irmng:1301066
+
+Butterfly genus:  (contains Cyclophora nanaria)
+  ott:1030079 in OTT 2.9
+  ncbi:190338
+  gbif:3260327
+  irmng:1301089
+
+Why didn't these get separated as a result of adding Bacillariophyta
+as a skeleton node?  Then the diatom and the butterfly would have been
+separated (in disjoint divisions).
+
+Anyhow why is the taxon id for Bacillariophyta so high (5342311)?
+Id should be 150991.
 
 ## Division problems
 

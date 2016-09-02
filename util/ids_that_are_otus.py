@@ -50,7 +50,7 @@ def doit():
         i = i + 1
         #if i > 8: continue
         studyid = clod[u'ot:studyId']
-        print studyid
+        if i % 10 == 0: print studyid
 
         s = requests.get('https://api.opentreeoflife.org/v3/study/%s/otus'%(studyid))
 

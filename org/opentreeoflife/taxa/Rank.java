@@ -1,3 +1,7 @@
+/*
+  Smaller number means higher (more rootward) rank
+*/
+
 package org.opentreeoflife.taxa;
 
 import java.util.Map;
@@ -73,6 +77,8 @@ public class Rank {
     }
 
 	public static Rank SPECIES_RANK = ranks.get("species");
+	public static Rank GENUS_RANK = ranks.get("genus");
+	public static Rank FAMILY_RANK = ranks.get("family");
 	public static Rank CLUSTER_RANK = ranks.get("cluster");
 
     public static Rank getRank(String rankstring) {

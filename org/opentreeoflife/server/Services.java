@@ -289,7 +289,7 @@ public class Services {
                     throw new BadRequest(String.format("JSON parse error for study %s (see log)", studyId));
                 }
             } else
-                throw new BadRequest(String.format("** GET %s yielded %s\n", url, conn.getResponseCode()));
+                throw new BadRequest(String.format("GET %s yielded %s\n", url, conn.getResponseCode()));
         }
     }
 

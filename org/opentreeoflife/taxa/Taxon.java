@@ -20,7 +20,7 @@ public class Taxon extends Node {
 	public String id = null;
 	public Rank rank = Rank.NO_RANK;
     public static Collection<Taxon> NO_CHILDREN = null;
-    public static Collection<Taxon> NO_CHILDREN_REALLY = new ArrayList<Taxon>(0);
+    private static Collection<Taxon> NO_CHILDREN_LIST = new ArrayList<Taxon>(0);
 	public Collection<Taxon> children = NO_CHILDREN;
     public static Collection<Synonym> NO_SYNONYMS = new ArrayList<Synonym>(0);
 	private Collection<Synonym> synonyms = NO_SYNONYMS;
@@ -29,33 +29,48 @@ public class Taxon extends Node {
 	public boolean prunedp = false;    // for lazy removal from nameIndex
 	public int properFlags = 0, inferredFlags = 0;
 	Taxon division = null;  // foo.  for Alignment
+    public boolean inSynthesis = false; // used only for final annotation
+    public boolean unsourced = false;
+	public Taxonomy taxonomy;			// For subsumption checks etc.
 
 	// State during alignment
-	public Taxon mapped = null;	// source node -> union node
 	public Taxon comapped = null;		// union node -> example source node
-	public Answer answer = null;  // source nodes only
     public Taxon lub = null;                 // union node that is the lub of node's children
 	// Cf. AlignmentByName.assignBrackets
 	public int seq = 0;		// Self
 	public int start = 0;	// First taxon included not including self
 	public int end = 0;		// Next taxon *not* included
-    public boolean inSynthesis = false; // used only for final annotation
 
     public Taxon(Taxonomy tax, String name) {
-        super(tax, name);       // does addToNameIndex
+        super(name);
+        this.taxonomy = tax;
+        if (name != null)
+            tax.addToNameIndex(this, name);
     }
 
     public Taxon taxon() { return this; }
+
+    public String getType() { return null; }
+
+    public Taxonomy getTaxonomy() { return this.taxonomy; }
 
     public boolean taxonNameIs(String othername) {
         return this.name.equals(othername);
     }
 
     public Collection<Taxon> getChildren() {
-        if (children == null)
-            return NO_CHILDREN_REALLY;
+        if (children == NO_CHILDREN)
+            return NO_CHILDREN_LIST;
         else
             return children;
+    }
+
+    public boolean hasChildren() {
+        return children != NO_CHILDREN;
+    }
+
+    public Collection<Synonym> getSynonyms() {
+        return synonyms;
     }
 
     public Iterable<Taxon> descendants(final boolean includeSelf) {
@@ -109,46 +124,38 @@ public class Taxon extends Node {
         return (this.properFlags & Taxonomy.INCERTAE_SEDIS_ANY) == 0;
     }
 
-    public Taxon mapped() {
-        if (this.mapped != null) return this.mapped;  // New nodes, etc.
-        if (this.answer == null) return null;
-        else if (this.answer.isYes()) return this.answer.target;
-        else return null;
+	public Node setName(String name) {
+        if (name == null) {
+            System.err.format("** Null is not a valid name-string: %s\n", this);
+            backtrace();
+            return null;
+        } else if (this.name == null) {
+            this.name = name;
+            this.taxonomy.addToNameIndex(this, name);
+            return this;
+        } else if (this.name.equals(name))
+            return this;
+        else {
+            System.err.format("** This taxon already has a canonical name: %s %s\n",
+                              this, name);
+            backtrace();
+            return null;
+        }
     }
 
-	public void setName(String name) {
-		if (name == null) {
-            if (this.name != null)
-                System.err.println("! Setting name to null not allowed: " + this);
-            return;
-        }
-        if (name.equals(this.name))
-            return;
-		this.name = name;
-        this.taxonomy.addToNameIndex(this, name);
-	}
-
-	public Synonym newSynonym(String name, String type) {
-        if (this.name == null || name == null)
-            return null;        // No synonyms for anonymous nodes
-		if (this.name.equals(name)) {
-            return null;        // No self-synonyms
+    // type must be nonnull
+	public Synonym addSynonym(String name, String type) {
+        if (name == null) {
+            System.err.format("** Null is not a valid name-string: %s\n", this);
+            backtrace();
+            return null;
+        } else if (name.equals(this.name)) {
+            return null;
         } else {
             for (Synonym syn : this.synonyms)
-                if (syn.name.equals(name))
+                if (syn.name.equals(name) && syn.type.equals(type))
                     return syn;
-
-            // Don't let this synonym create a homonym.
-            // -- this introduces nasty nondeterminism.
-            // need to do it some other way, e.g. on output.
-            if (false) {
-                List<Node> nodes = this.taxonomy.lookup(name);
-                if (nodes != null)
-                    return null;
-            }
-
             Synonym syn = new Synonym(name, type, this); // does addToNameIndex
-            // n.b. new Synonym() does addToNameIndex(syn, name);
             if (this.synonyms == NO_SYNONYMS)
                 this.synonyms = new ArrayList<Synonym>();
             this.synonyms.add(syn);
@@ -156,16 +163,58 @@ public class Taxon extends Node {
         }
 	}
 
-	public void clobberName(String name) {
-		String oldname = this.name;
-		if (!oldname.equals(name)) {
+    // this is union node, node is source node, syn is also in union
+    Synonym addSynonym(Node node, String type) {
+        Synonym syn = this.addSynonym(node.name, type);
+        if (syn != null) {
+            Taxon source = node.taxon();
+            if (!source.taxonomy.getIdspace().equals("skel")) //KLUDGE!!!
+                syn.addSourceId(source.getQualifiedId());
+        }
+        return syn;
+    }
+
+    // Ensure that every name (synonym or not) is a name of the target
+    // taxon (either synonym or not).
+    // Returns number of synonyms created.
+
+    public int copySynonymsTo(Taxon targetTaxon) {
+        Taxon taxon = this;
+        int count = 0;
+        if (targetTaxon.addSynonym(this, "synonym") != null)
+            ++count;
+        for (Synonym syn : taxon.getSynonyms())
+            if (targetTaxon.addSynonym(syn, syn.type) != null)
+                ++count;
+        return count;
+    }
+
+    // Remove name as any kind of name of this node
+    public boolean notCalled(String name) {
+        if (this.name.equals(name))
             this.taxonomy.removeFromNameIndex(this);
-            this.name = null;
-			Taxon existing = this.taxonomy.unique(name);
-			if (existing != null && existing != this)
-				System.err.format("** Warning: creating a homonym: %s\n", name);
-			this.setName(name); // adds to index
-		}
+        List<Synonym> losers = new ArrayList<Synonym>();
+        for (Synonym syn : this.synonyms) {
+            if (syn.name.equals(name))
+                losers.add(syn);
+        }
+        for (Synonym syn : losers) {
+            this.taxonomy.removeFromNameIndex(syn);
+            this.synonyms.remove(syn);
+            if (this.synonyms.size() == 0)
+                this.synonyms = NO_SYNONYMS;
+        }
+        return true;
+    }
+
+	public void clobberName(String newname) {
+		String oldname = this.name;
+        if (oldname != null)
+            this.notCalled(oldname);
+        Taxon existing = this.taxonomy.unique(newname);
+        if (existing != null)
+            System.out.format("* Warning in clobberName: creating a polysemy: %s\n", newname);
+        this.setName(newname);
 	}
 
 	public void setId(String id) {
@@ -210,15 +259,8 @@ public class Taxon extends Node {
             System.out.format("%s", child);
             Taxon.backtrace();
         } else if ((this.properFlags & Taxonomy.FORMER_CONTAINER) != 0 && (this.parent != null)) {
-            if (false)
-                // There tens of thousands of these
-                this.report(String.format("Attempt to add %s to ex-container %s - retrying with parent %s",
-                                          child.name, this.name, this.parent.name),
-                            child);
-            else
-                this.markEvent("move to parent of former container, instead of to container");
-            Taxon target = this.lub;
-            if (target == null) target = this.parent;
+            child.markEvent("move to parent of former container, instead of to container");
+            Taxon target = this.parent;
             target.addChild(child);
             if ((this.properFlags & Taxonomy.MERGED) == 0)
                 // all the other types want some kind of unplaced, cheat a bit
@@ -227,14 +269,8 @@ public class Taxon extends Node {
             if (child.rank != Rank.NO_RANK && this.rank != Rank.NO_RANK &&
                 child.rank.level < this.rank.level &&
                 child.isPlaced()) {
-                System.out.format("* Rank inversion: %s %s < %s %s\n",
-                                  child, child.rank.name, this, this.rank.name);
+                child.markEvent("rank inversion");
 				//Taxon.backtrace();
-            }
-            if (false && child.name != null && child.name.equals("Pseudostomum")) {
-                System.err.format("** Changing Pseudostomum parent to %s\n",
-                                  this);
-				Taxon.backtrace();
             }
 			child.parent = this;
 			if (this.children == NO_CHILDREN)
@@ -278,7 +314,7 @@ public class Taxon extends Node {
         if (flags == 0
             && !this.isPlaced()
             && ((this.name.hashCode() % 100) == 17))
-            System.err.format("| Placing previously unplaced %s in %s\n", this, newparent);
+            System.out.format("| Placing previously unplaced %s in %s\n", this, newparent);
         changeParent(newparent);
         this.properFlags &= ~Taxonomy.INCERTAE_SEDIS_ANY; // ??? think about this
         this.addFlag(flags);
@@ -303,17 +339,14 @@ public class Taxon extends Node {
     }
 
 	// Go upwards and cache on the way back down
-    // NOTE: now returns forest instead of null
 	public Taxon getDivision() {
 		if (this.division == null) {
-            Taxon div;
-			if (this.mapped != null)
-				div = this.mapped.getDivision();
-			else if (this.parent != null)
-				div = this.parent.getDivision();
-            else
-                div = this;     // forest
-            this.division = div; // cache it
+			if (this.parent != null)
+				this.division = this.parent.getDivision();
+            else {
+                // System.out.format("## No barrier taxonomy / %s\n", this);
+                return null;     // forest
+            }
 		}
 		return this.division;
 	}
@@ -324,15 +357,21 @@ public class Taxon extends Node {
 
 	public String divisionName() {
 		Taxon d = this.getDivision();
-		return (d.noMrca() ? "(no division)" : d.name);
+        if (d == null) return "";
+		return (d.noMrca() ? "" : d.name);
 	}
 
     // public because smasher
 	public void setDivision(Taxon division) {
-		if (this.division != null && this.division != division)
-            // Could do a tree walk setting division to null...
-			this.report("!? changing divisions doesn't work");
-		this.division = division;
+        if (division.name == null && (division.parent != null || this.parent != null))
+            System.err.format("## Anonymous division !? %s in %s\n",
+                              division, division.parent);
+        else {
+            if (this.division != null && this.division != division)
+                // Could do a tree walk setting division to null...
+                this.report("!? changing divisions doesn't work");
+            this.division = division;
+        }
 	}
 
 	// Nearest ancestor having a name that's not a prefix of ours... and isn't also a homonym
@@ -348,12 +387,8 @@ public class Taxon extends Node {
 	//			"source\t|\tsourceid\t|\tsourcepid\t|\tuniqname\t|\tpreottol_id\t|\t");
 
 	public void addSource(Taxon source) {
-		if (!source.taxonomy.getIdspace().equals("skel")) //KLUDGE!!!
-			addSourceId(source.getQualifiedId());
-		// Accumulate ...
-		if (false && source.sourceIds != null)
-			for (QualifiedId qid : source.sourceIds)
-				addSourceId(qid);
+        if (!source.unsourced)
+			this.addSourceId(source.getQualifiedId());
 	}
 
 	public QualifiedId getQualifiedId() {
@@ -362,19 +397,19 @@ public class Taxon extends Node {
 			return new QualifiedId(space, this.id);
         } else if (this.noMrca()) {
             // Shouldn't happen
-			System.err.println("| [getQualifiedId] Forest");
+			System.out.println("* [getQualifiedId] Forest");
 			return new QualifiedId(space, "<forest>");
         } else if (this.parent == null) {
             // Shouldn't happen
-			System.err.format("* [getQualifiedId] %s is detached\n", this);
+			System.out.format("* [getQualifiedId] %s is detached\n", this);
             return new QualifiedId(space, "<detached>");
         } else if (this.name != null) {
             // e.g. h2007
-			// System.err.format("* [getQualifiedId] Taxon has no id, using name: %s:%s\n", space, this.name);
+			// System.out.format("* [getQualifiedId] Taxon has no id, using name: %s:%s\n", space, this.name);
 			return new QualifiedId(space, this.name);
         } else {
 			// What if from a Newick string?
-			System.err.println("* [getQualifiedId] Nondescript");
+			System.out.println("* [getQualifiedId] Nondescript");
             return new QualifiedId(space, "<nondescript>");
         }
 	}
@@ -387,9 +422,7 @@ public class Taxon extends Node {
 
 	public String toString(Taxon other) {
 		String twinkie = "";
-		if (this.mapped != null || this.comapped != null)
-			twinkie = "*";
-		else if (other != null &&
+		if (other != null &&
 				 other.taxonomy != this.taxonomy &&
 				 other.taxonomy.lookup(this.name) != null)
 			twinkie = "+";		// Name in common
@@ -430,10 +463,7 @@ public class Taxon extends Node {
 	// Events - punt them to union taxonomy
 
 	public boolean markEvent(String note) {
-        if (this.taxonomy instanceof SourceTaxonomy)
-            return this.taxonomy.markEvent(note, this);
-        else
-            return false;
+        return this.taxonomy.markEvent(note, this);
 	}
     
 	public boolean report(String note, Taxon othernode) {
@@ -476,11 +506,8 @@ public class Taxon extends Node {
 		int i = 0;
 		boolean seenmapped = false;
 		for (Taxon n = this; n != null; n = n.parent) {
-			if (++i < 4 || (!seenmapped && (n.mapped != null || n.comapped != null))) {
-				if (n.mapped != null || n.comapped != null)
-					seenmapped = true;
+			if (++i < 4)
 				output += " " + n.toString(other);
-			}
 			else if (i == 4)
 				output += " ...";
 		}
@@ -493,12 +520,7 @@ public class Taxon extends Node {
     }
 
 	String elaboratedString(Taxonomy tax) {
-		if (this.mapped != null)
-			return this.toString();
-		else {
-			boolean h = (tax.unique(this.name) != null);
-			return this.toString() +  (h ? "?" : "");
-		}
+        return this.toString();
 	}
 
 	// Number of child-less nodes at and below this node.
@@ -616,7 +638,7 @@ public class Taxon extends Node {
         }
         while (a != b) {
             if (a == null || b == null) {
-                System.out.format("** shouldn't happen: %s %s?=%s / %s %s?=%s\n",
+                System.err.format("** shouldn't happen: %s %s?=%s / %s %s?=%s\n",
                                   this, this.getDepth(), this.measureDepth(), other, other.getDepth(), other.measureDepth());
                 // seen twice during augment of worms.  ugh.
                 // measure the depths and loop around...
@@ -637,11 +659,8 @@ public class Taxon extends Node {
 	public Taxon[] divergence(Taxon other) {
         Taxon a = this, b = other;
         if (a.taxonomy != b.taxonomy) {
-            Taxon new_a = a.bridge();
-            if (new_a == a)
-                b = other.bridge();
-            else
-                a = new_a;
+            System.err.format("** Not in the same taxonomy: %s %s\n", a, b);
+            return null;
         }
         if (a == null || b == null) return null;
 		if (a.taxonomy != b.taxonomy)
@@ -666,22 +685,9 @@ public class Taxon extends Node {
             System.err.format("** %s and %s are in different trees\n", this, other);
             Taxon.backtrace();
         }
-        Taxon[] answer = {a, b};
-        return answer;
+        Taxon[] result = {a, b};
+        return result;
 	}
-
-    // Map source taxon to nearest available union taxon
-    public Taxon bridge() {
-        Taxon a = this;
-        while (a.mapped == null) {
-            if (a.parent == null)
-                // No bridge!  Shouldn't happen
-                // see uniqueName (of e.g. Trachelius) for example
-                return this;
-            a = a.parent;
-        }
-        return a.mapped;
-    }
 
 	// For cycle detection, etc.
 	public boolean descendsFrom(Taxon b) {
@@ -719,11 +725,6 @@ public class Taxon extends Node {
     // Recursively set prunedp flag and remove from indexes
 	public boolean setRemoved(String reason) {
 		this.prunedp = true;
-        this.mapped = null;
-        if (this.answer == null && (this.taxonomy instanceof SourceTaxonomy)) {
-            this.answer = Answer.no(this, null, reason, null);
-            this.answer.maybeLog();
-        }
 		if (this.children != NO_CHILDREN)
 			for (Taxon child : new ArrayList<Taxon>(children))
 				child.setRemoved(reason);
@@ -753,25 +754,28 @@ public class Taxon extends Node {
 
 		List<Node> nodes = this.taxonomy.lookup(this.name);
 		if (nodes == null) {
-            System.out.format("** Not in name index: %s\n", this);
+            System.err.format("** Not in name index: %s\n", this);
             return "(this shouldn't happen)";
         }
                 
+        if (nodes.size() == 1)
+            return this.name;
+
 		boolean homonymp = false;
 
 		// Ancestor that distinguishes this taxon from all others with same name
-		Taxon unique = null;
+		Taxon ancestor = null;
 		for (Node othernode : nodes) {
-            Taxon other = othernode.taxon();
-			if (other != this) {  //  && other.name.equals(this.name)
+			if (othernode instanceof Taxon && othernode != this) {  //  && other.name.equals(this.name)
+                Taxon other = othernode.taxon();
 				homonymp = true;
-				if (unique != this) {
+				if (ancestor != this) {
 					Taxon[] div = this.divergence(other);
 					if (div != null) {
-						if (unique == null)
-							unique = div[0];
-						else if (div[0].descendsFrom(unique))
-							unique = div[0];
+						if (ancestor == null)
+							ancestor = div[0];
+						else if (div[0].descendsFrom(ancestor))
+							ancestor = div[0];
 					}
 				}
 			}
@@ -779,7 +783,7 @@ public class Taxon extends Node {
         String result;
 		if (homonymp) {
 			String thisrank = ((this.rank == Rank.NO_RANK) ? "" : (this.rank.name + " "));
-			if (unique == null || unique == this) {
+			if (ancestor == null || ancestor == this) {
 				if (this.sourceIds != null)
 					result = this.name + " (" + thisrank + this.sourceIds.get(0) + ")";
 				else if (this.id != null)
@@ -788,8 +792,8 @@ public class Taxon extends Node {
 					/* No unique name, just leave it alone and pray */
 					result = this.name;
 			} else {
-				String qrank = ((unique.rank == Rank.NO_RANK) ? "" : (unique.rank.name + " "));
-				String qname = unique.longUniqueName();
+				String qrank = ((ancestor.rank == Rank.NO_RANK) ? "" : (ancestor.rank.name + " "));
+				String qname = ancestor.longUniqueName();
 				result = this.name + " (" + thisrank + "in " + qrank + qname + ")";
 			}
 		} else
@@ -866,31 +870,6 @@ public class Taxon extends Node {
 
 	// ----- Methods intended for use in jython scripts -----
 
-    public boolean notCalled(String name) {
-        if (this.name.equals(name)) {
-            // Could take name from one of the synonyms?
-            // Or set it to null?
-            System.out.format("** What to call it instead? %s\n", name);
-        } else {
-            Synonym syn = null;
-            // Find the synonym with this name...
-            for (Synonym s : this.synonyms) {
-                if (s.name.equals(name)) {
-                    syn = s;
-                    break;
-                }
-            }
-            if (syn != null) {
-                this.taxonomy.removeFromNameIndex(syn);
-                this.synonyms.remove(syn);
-                if (this.synonyms.size() == 0)
-                    this.synonyms = NO_SYNONYMS;
-                // should log this ...
-            }
-        }
-        return true;
-    }
-
 	public boolean take(Taxon newchild) {
 		if (newchild == null)
 			return false;				// Error already reported.
@@ -909,7 +888,7 @@ public class Taxon extends Node {
         } else {
             // if (!newchild.isDetached()) newchild.detach();  - not needed given change to newTaxon.
             if (newchild.descendsFrom(this))
-                System.err.format("* Note: moving %s from %s out to %s\n",
+                System.out.format("* Note: moving %s from %s out to %s\n",
                                   newchild, newchild.parent, this);
             newchild.changeParent(this, 0);
 			this.addFlag(Taxonomy.EDITED);
@@ -930,7 +909,7 @@ public class Taxon extends Node {
             if (t.isDirectlyHidden()) {
                 t.properFlags &= ~Taxonomy.HIDDEN;
                 if (t.isDirectlyHidden()) {
-                    System.out.format("** %s will remain hidden until problems with %s are fixed\n", t, this);
+                    System.err.format("** %s will remain hidden until problems with %s are fixed\n", t, this);
                     success = false;
                 }
             }
@@ -973,12 +952,15 @@ public class Taxon extends Node {
     }
 
 	public void synonym(String name) {
-		if (!this.taxonomy.addSynonym(name, this, "synonym"))
-			System.err.format("| Synonym already present: %s %s\n", this, name);
+		if (this.addSynonym(name, "synonym") == null)
+			System.out.format("| Synonym already present: %s %s\n", this, name);
 	}
 
 	public boolean rename(String name) {
 		String oldname = this.name;
+		if (name.equals(oldname)) return true;
+
+        // Check for a sibling node with the target name
         Collection<Node> nodes = this.taxonomy.lookup(name);
         if (nodes != null) {
             for (Node node : nodes) {
@@ -988,17 +970,23 @@ public class Taxon extends Node {
                         // Primary name is already name
                         return true;
                     if (taxon.parent == this.parent) {
-                        System.out.format("** rename: there's already a node with name %s in %s\n",
+                        System.err.format("** rename: there's already a node with name %s in %s\n",
                                           name, this.parent);
                         return false;
                     }
                 }
             }
         }
-		if (!oldname.equals(name)) {
-            this.clobberName(name);
-			this.taxonomy.addSynonym(oldname, this, "synonym");  // awkward, maybe wrong
-		}
+
+        // Remove old name from index (and remove synonym, if it was a synonym)
+        this.notCalled(oldname);
+
+        // Change primary name
+        this.clobberName(name);
+
+        // Add old name as a synonym
+        this.addSynonym(oldname, "synonym");  // awkward, maybe wrong
+
         return true;
 	}
 
@@ -1019,7 +1007,7 @@ public class Taxon extends Node {
 			return false;
 		}
         if (this.rank != Rank.SPECIES_RANK && other.rank == Rank.SPECIES_RANK)
-            System.out.format("** Losing species %s in absorb (to %s)\n", other, this);
+            System.err.format("** Losing species %s in absorb (to %s)\n", other, this);
 		if (other.children != NO_CHILDREN)
 			for (Taxon child : new ArrayList<Taxon>(other.children))
 				// beware concurrent modification
@@ -1028,13 +1016,18 @@ public class Taxon extends Node {
         // Not sure about the order of the following two, but if the
         // synonym comes before the prune, then it might be suppressed
         // by the presence in the name index of the deprecated taxon
+		this.addSynonym(other.name, "subsumed_by");	// Not sure this is a good idea
 		other.prune("absorb");
-		this.taxonomy.addSynonym(other.name, this, "subsumed_by");	// Not sure this is a good idea
+        // copy sources from other to syn?
         return true;
 	}
 
 	public void incertaeSedis() {
 		this.addFlag(Taxonomy.INCERTAE_SEDIS);
+	}
+
+	public void unplaced() {
+		this.addFlag(Taxonomy.UNPLACED);
 	}
 
 	public boolean extinct() {
@@ -1046,7 +1039,7 @@ public class Taxon extends Node {
 		for (Taxon node = this; node != null; node = node.parent) {
 			if ((node.properFlags & Taxonomy.EXTINCT) != 0) {
 				if (node != this)
-					System.err.format("** Changing ancestor %s of %s from extinct to extant\n", node, this);
+					System.out.format("* Changing ancestor %s of %s from extinct to extant\n", node, this);
 			}
             this.properFlags &= ~Taxonomy.EXTINCT;
             this.inferredFlags &= ~Taxonomy.EXTINCT; // voodoo
@@ -1077,11 +1070,10 @@ public class Taxon extends Node {
 
     public boolean whetherMonophyletic(boolean whether, boolean setp) {
         if (whether) {
-            System.out.format("** Checking and setting monophyly are not yet implemented\n", this);
+            System.err.format("** Checking and setting monophyly are not yet implemented\n", this);
             return whether;
         } else
             if (setp)
-                // Alternatively, set this.mapped = Answer.no(...)
                 return this.elide();
             else
                 return false;
@@ -1101,7 +1093,7 @@ public class Taxon extends Node {
             } else if (this.hasName(name)) {
                 return true;
             } else if (setp) {
-                this.taxonomy.addSynonym(name, this, "synonym");
+                this.addSynonym(name, "synonym");
                 return true;
             } else
                 return false;
@@ -1166,8 +1158,6 @@ public class Taxon extends Node {
             System.out.format("Synonym: %s %s %s\n", syn.name, syn.type, syn.getSourceIdsString());
         if (this.comapped != null)
             System.out.format("Node %s maps to this node\n", this.comapped);
-        if (this.mapped != null)
-            System.out.format("This node maps to %s\n", this.mapped);
 	}
 
     // Used to explain why a cycle would be created

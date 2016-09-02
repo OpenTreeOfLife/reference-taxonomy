@@ -153,13 +153,11 @@ class Newick {
 		if (pos > 0) {
             String rankname = label.substring(0,pos).toLowerCase();
             Rank rank = Rank.getRank(rankname);
-            if (rank != null) {
-                node.rank = rank;
-            } else {
-                System.out.format("** Unrecognized rank: %s\n", label);
-                node.rank = Rank.NO_RANK;
-                node.setName(spacify(label));
+            if (rank == null) {
+                System.err.format("** Unrecognized rank: %s\n", label);
+                rank = Rank.NO_RANK;
             }
+            node.rank = rank;
             node.setName(spacify(label.substring(pos+1)));
 		} else {
 			node.rank = Rank.NO_RANK;

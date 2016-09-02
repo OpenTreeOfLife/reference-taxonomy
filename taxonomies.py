@@ -690,6 +690,9 @@ def load_worms():
     # According to NCBI and IF, this is not in Fungi
     worms.taxon('Fungi').parent.take(worms.taxon('Eccrinales'))
 
+    # 2016-09-02 on gitter: Pisces vs. Mososauridae confusion
+    worms.taxon('Tylosurus').notCalled('Tylosaurus')
+
     return worms
 
 def load_gbif():
@@ -911,8 +914,12 @@ def patch_gbif(gbif):
 
     # 2016-09-01 This is not a plant.  Checked W. van Hoven 1987, found
     # in pubmed via web search, which says these things are ciliates, 
-    # and puts them in Cycloposthiidae.
+    # and puts them in Cycloposthiidae.  http://dx.doi.org/10.1111/j.1550-7408.1987.tb03186.x
     # gbif.taxon('Cycloposthiidae').take(gbif.taxon('Monoposthium'))
+
+    # 2016-09-02 Confusion with Tylosurus
+    ty = gbif.taxon('Tylosaurus', 'Belonidae')
+    if ty != None: ty.prune(this_source)
 
     return gbif
 
@@ -1047,6 +1054,9 @@ def load_irmng():
 
     # See above for GBIF
     #irmng.taxon('Cycloposthiidae').take(irmng.taxon('Monoposthium'))
+
+    # 2016-09-02 on gitter: Pisces vs. Mososauridae confusion
+    irmng.taxon('Tylosurus').notCalled('Tylosaurus')
 
     return irmng
 

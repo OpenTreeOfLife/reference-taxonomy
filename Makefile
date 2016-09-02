@@ -13,7 +13,7 @@
 JAVAFLAGS=-Xmx14G
 
 # Modify as appropriate
-WHICH=2.10draft9
+WHICH=2.10draft10
 PREV_WHICH=2.9
 
 # ----- Taxonomy source locations -----
@@ -115,6 +115,7 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
 	@mkdir -p tax/ott
 	@echo Writing transcript to tax/ott/transcript.out
 	time bin/jython make-ott.py 2>&1 | tee tax/ott/transcript.out
+	echo $(WHICH) >tax/ott/version.txt
 
 tax/ott/version.txt:
 	echo $(WHICH) >tax/ott/version.txt
@@ -375,7 +376,7 @@ $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 # For publishing OTT drafts or releases.
 # File names beginning with # are emacs lock links.
  
-tarball: tax/ott/log.tsv
+tarball: tax/ott/log.tsv tax/ott/version.txt
 	(mkdir -p $(TARDIR) && \
 	 tar czvf $(TARDIR)/ott$(WHICH).tgz.tmp -C tax ott \
 	   --exclude differences.tsv --exclude "#*" && \

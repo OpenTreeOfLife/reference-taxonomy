@@ -6,7 +6,7 @@
 
 import sys
 
-from org.opentreeoflife.taxa import Taxonomy, SourceTaxonomy, TsvEdits, Addition
+from org.opentreeoflife.taxa import Taxonomy, SourceTaxonomy, TsvEdits, Addition, Rank
 from org.opentreeoflife.smasher import UnionTaxonomy
 import ncbi_ott_assignments
 sys.path.append("feed/misc/")
@@ -87,6 +87,8 @@ def create_ott():
     ncbi_to_ott = align_ncbi(ncbi, silva, ott)
     ott.absorb(ncbi, ncbi_to_ott)
 
+    debug_divisions('Reticularia splendens', ncbi, ott)
+
     # ... need to pass silva alignment, not OTT here
     compare_ncbi_to_silva(mappings, silva_to_ott)
 
@@ -112,12 +114,13 @@ def create_ott():
     ott.absorb(worms_sans_malacostraca, a)
 
     # The rest of Index Fungorum (maybe not a good idea)
-    ott.absorb(fungorum_sans_fungi)
+    ott.absorb(fungorum_sans_fungi, align_fungorum_sans_fungi(fungorum_sans_fungi, ott))
 
     # GBIF
     gbif = taxonomies.load_gbif()
     gbif_to_ott = align_gbif(gbif, ott)
     ott.absorb(gbif, gbif_to_ott)
+    debug_divisions('Enterobryus cingaloboli', gbif, ott)
 
     # Cylindrocarpon is now Neonectria
     cyl = gbif_to_ott.image(gbif.taxon('Cylindrocarpon', 'Ascomycota'))
@@ -180,6 +183,9 @@ def create_ott():
             ('Exaiptasia pallida', 'Cnidaria', '135923'),
             ('Choanoflagellida', 'Holozoa', '202765'),
             ('Billardiera', 'Lamiales', '798963'),
+            ('Pohlia', 'Foraminifera', '5325989'),
+            ('Trachelomonas grandis', 'Bacteria', '58035'), # study ot_91 Tr46259
+            ('Hypomyzostoma', 'Myzostomida', '552744'),   # was incorrectly in Annelida
     ]:
         tax = ott.maybeTaxon(inf, sup)
         if tax != None:
@@ -244,6 +250,16 @@ def hide_irmng(irmng):
         for row in reader:
             irmng.lookupId(row[0]).unhide()
 
+def debug_divisions(name, ncbi, ott):
+    print '##'
+    ncbi.taxon(name).show()
+    ott.taxon(name).show()
+    foo = ott.taxon(name)
+    while foo != None:
+        print foo, foo.getDivision()
+        foo = foo.parent
+    print '##'
+
 
 # ----- Ctenophora polysemy -----
 
@@ -276,7 +292,7 @@ def deal_with_ctenophora(ott):
     # The fly will be added by NCBI; provide a node to map it to.
     # Contains e.g. Ctenophora dorsalis
     ctenophora_fly = establish('Ctenophora', ott,
-                               division='Arthropoda',
+                               division='Diptera',
                                ott_id='1043126')
 
     establish('Podocystis', ott, division='Fungi', ott_id='809209')
@@ -301,6 +317,8 @@ def align_silva(silva, ott):
     a = ott.alignment(silva)
     a.same(silva.taxonThatContains('Ctenophora', 'Ctenophora pulchella'),
            ott.taxon('103964'))
+    #a.same(silva.taxonThatContains('Ctenophora', 'Beroe ovata'),
+    #       ott.taxon('641212'))
     return a
 
 # ----- Index Fungorum -----
@@ -407,6 +425,12 @@ def align_fungi(fungi, ott):
 
     return a
 
+def align_fungorum_sans_fungi(sans, ott):
+    a = ott.alignment(sans)
+    a.same(sans.taxon('Byssus'), ott.taxon('Trentepohlia', 'Chlorophyta'))
+    a.same(sans.taxon('Achlya'), ott.taxon('Achlya', 'Stramenopiles'))
+    return a
+
 # ----- Lamiales taxonomy from study 713 -----
 # http://dx.doi.org/10.1186/1471-2148-10-352
 
@@ -440,6 +464,7 @@ def align_ncbi(ncbi, silva, ott):
 
     a.same(ncbi.taxon('Viridiplantae'), ott.taxon('Chloroplastida'))
     arch = establish('Archaeplastida', ncbi, division='Eukaryota') # No id
+    ncbi.taxon('Eukaryota').take(arch)
     arch.take(ncbi.taxon('Viridiplantae'))
     arch.take(ncbi.taxon('Rhodophyta'))
     arch.take(ncbi.taxon('Glaucocystophyceae'))
@@ -599,6 +624,13 @@ def align_worms(worms, ott):
     # to do so here as well, because Annelida is a barrier node and somewhat 
     # difficult to cross.
     worms.taxon('Animalia').take(worms.taxon('Myzostomida'))
+
+    # extinct foram, polyseym risk with extant bryophyte
+    # worms.taxon('Pohlia', 'Rhizaria').prune(this_source)
+
+    # Annelida is a barrier, need to put Sipuncula inside it
+    worms.taxon('Annelida').take(worms.taxon('Sipuncula'))
+
     return a
 
 # ----- GBIF (Global Biodiversity Information Facility) taxonomy -----
@@ -607,7 +639,13 @@ def align_gbif(gbif, ott):
 
     a = ott.alignment(gbif)
 
-    a.same(gbif.taxon('Plantae'), ott.taxon('Archaeplastida'))
+    plants = fix_plants(gbif)
+    a.same(plants, ott.taxon('Archaeplastida'))
+
+    # GBIF puts this one directly in Animalia, but Annelida is a barrier node
+    gbif.taxon('Annelida').take(gbif.taxon('Echiura'))
+    # similarly
+    gbif.taxon('Cnidaria').take(gbif.taxon('Myxozoa'))
 
     gbif.taxon('Viruses').hide()
 
@@ -711,7 +749,70 @@ def align_gbif(gbif, ott):
     establish('Phragmophora', ott, ancestor='Rhynchonellata', rank='genus', source='gbif:5430295')
     a.same(gbif.taxon('5430295'), ott.taxon('Phragmophora', 'Rhynchonellata'))
 
+    # 2016 GBIF seems to have Fragillariophyceae in a class Bacillariophyceae.
+    # In NCBI (and everywhere else) the taxon called 'Bacillariophyceae'
+    # is a sibling of Fragillariophyceae in Bacillariophyta.
+    bac = gbif.maybeTaxon('Bacillariophyceae')
+    if bac != None:
+        a.same(bac, ott.taxon('Bacillariophyta', 'SAR'))
+
+    # Annelida is a barrier, need to put Sipuncula inside it
+    gbif.taxon('Annelida').take(gbif.taxon('Sipuncula'))
+
+    # IRMNG has better placement for these things
+    target = gbif.taxon('Plantae').parent
+    for name in ['Pithonella',
+                 'Vavosphaeridium',
+                 'Sphaenomonas',
+                 'Orthopithonella',
+                 'Euodiella',
+                 'Medlinia',
+                 'Quadrodiscus',
+                 'Obliquipithonella',
+                 'Damassadinium',
+                 'Conion',
+                 'Gaillionella']:
+        taxon = gbif.maybeTaxon(name, 'Plantae')
+        if taxon != None:
+            target.take(taxon)
+            taxon.incertaeSedis()
+
+    # Noticed while scanning species polysemies
+    gbif.taxon('Euglenales').take(gbif.taxon('Heteronema', 'Rhodophyta'))
+
+    # WoRMS says it's not a fungus
+    gbif.taxonThatContains('Minchinia', 'Minchinia cadomensis').prune(this_source)
+
     return a
+
+def fix_plants(taxonomy):
+
+    plants = taxonomy.taxon('Plantae')
+
+    chlor = establish('Chloroplastida', taxonomy, parent='Plantae') # No id
+    chlor.unsourced = True
+    plants.take(chlor)
+
+    # Dispose of all the children of Plantae
+    bac = taxonomy.maybeTaxon('Bacillariophyta', 'Plantae')
+    if bac != None:
+        plants.parent.take(bac)
+    to_move = []
+    for plant in plants.children:
+        if (plant.name != 'Rhodophyta' and plant.name != 'Glaucophyta'
+            and plant.rank.level <= Rank.FAMILY_RANK.level):
+            to_move.append(plant)
+    for plant in to_move:
+        un = not plant.isPlaced()
+        chlor.take(plant)
+        if un: plant.unplaced()
+
+    # straighten out Byssus division
+    ulv = taxonomy.maybeTaxon('Ulvophyceae')
+    if ulv.parent == chlor.parent:
+        chlor.take(ulv)
+
+    return plants
 
 # ----- Interim Register of Marine and Nonmarine Genera (IRMNG) -----
 
@@ -719,7 +820,8 @@ def align_irmng(irmng, ott):
 
     a = ott.alignment(irmng)
 
-    a.same(irmng.taxon('Plantae'), ott.taxon('Archaeplastida'))
+    plants = fix_plants(irmng)
+    a.same(plants, ott.taxon('Archaeplastida'))
 
     # irmng.taxon('Viruses').hide()  see taxonomies.py
 
@@ -730,6 +832,10 @@ def align_irmng(irmng, ott):
     irmng.taxon('Bacteria','life').hideDescendants()
     irmng.taxonThatContains('Archaea','Halobacteria').hideDescendants()
 
+    # Cnidaria is a barrier node
+    irmng.taxon('Cnidaria').take(irmng.taxon('Myxozoa'))
+    # Annelida is a barrier, need to put Sipuncula inside it
+    irmng.taxon('Annelida').take(irmng.taxon('Sipuncula'))
 
     a.same(irmng.taxon('1381293'), ott.taxon('Veronica', 'Plantaginaceae'))  # ott:648853
     # genus Tipuloidea (not superfamily) ott:5708808 = gbif:6101461
@@ -799,6 +905,16 @@ def align_irmng(irmng, ott):
     irmng.taxon('Semionotiformes').absorb(irmng.taxon('Lepisosteiformes'))
     irmng.taxon('Semionotiformes').extant()
 
+    # From deprecated.tsv file for OTT 2.10
+    irmng.taxon('Plectospira', 'Brachiopoda').prune(this_source)    # extinct, polysemy with SAR
+    irmng.taxon('Leptomitus', 'Porifera').prune(this_source)  # extinct, SAR polysemy, =gbif:3251526
+
+    # Annelida is a barrier, need to put Sipuncula inside it
+    irmng.taxon('Annelida').take(irmng.taxon('Sipuncula'))
+
+    # Noticed while scanning species polysemies
+    irmng.taxon('Peranemaceae').take(irmng.maybeTaxon('Heteronema', 'Rhodophyta'))
+
     return a
 
 # ----- Final patches -----
@@ -864,7 +980,7 @@ def patch_ott(ott):
     # ott.taxon('Chromista').take(ott.taxon('Adlerocystis','Fungi'))
 
     # Adlerocystis seems to be a fungus, but unclassified - JAR 2014-03-10
-    ott.taxon('Adlerocystis').incertaeSedis()
+    ott.taxon('Adlerocystis', 'Fungi').incertaeSedis()
 
     # "No clear identity has emerged"
     #  http://forestis.rsvs.ulaval.ca/REFERENCES_X/phylogeny.arizona.edu/tree/eukaryotes/accessory/parasitic.html
@@ -1199,9 +1315,43 @@ def patch_ott(ott):
     # Related to https://github.com/OpenTreeOfLife/feedback/issues/307
     pter = ott.maybeTaxon('Pteridophyta')
     if pter != None and pter.parent == ott.taxon('Archaeplastida'):
-        for child in pter.children:
+        for child in pter.getChildren():
             child.unplaced()
         ott.taxon('Tracheophyta').absorb(pter)
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/221
+    for name in ['Elephas cypriotes',         # NCBI
+                 'Elephas antiquus',          # NCBI
+                 'Elephas sp. NHMC 20.2.2.1', # NCBI
+                 'Mammuthus',                 # NCBI
+                 'Parelephas',                # GBIF
+                 'Numidotheriidae',           # GBIF
+                 'Barytheriidae',             # GBIF
+                 'Anthracobunidae',           # GBIF
+                 ]:
+        taxon = ott.maybeTaxon(name, 'Proboscidea')
+        if taxon != None:
+            taxon.extinct()
+
+    # From 2.10 deprecated list
+    for (name, anc) in [
+                 # Sphaerulina	if:5128,ncbi:237179,worms:100120,worms:100117,gbif:2621555,gbif:2574294,gbif:7254927,gbif:2564487,irmng:1291796	newly-hidden[extinct]	Sphaerulina	=		
+                 # Cucurbita	ncbi:3660,gbif:2874506,irmng:1009179	newly-hidden[extinct]	Cucurbita	=	synthesis	
+                 # Tuber	if:5629,ncbi:36048,gbif:7257845,gbif:7257854,gbif:2593130,gbif:5237010,irmng:1120184,irmng:1029932	newly-hidden[extinct]	Tuber	=		
+                 # Blastocystis	silva:U26177/#4,ncbi:12967,if:20081,gbif:3269640,irmng:1031549	newly-hidden[extinct]	Blastocystis	=		
+                 # Clavulinopsis	if:17324,ncbi:104211,gbif:2521976,irmng:1340486	newly-hidden[extinct]	Clavulinopsis	=		
+                 # Nesophontidae	gbif:9467,irmng:104821	newly-hidden[extinct]	Nesophontidae	=		
+                 # Polystoma	ncbi:92216,gbif:2503819,irmng:1269690,irmng:1269737	newly-hidden[extinct]	Polystoma	=		
+                 # Rustia	ncbi:86991,gbif:2904559,irmng:1356264	newly-hidden[extinct]	Rustia	=		
+                 ('Thalassiosira guillardii', 'SAR'),    # mistake in WoRMS
+            ]:
+        taxon = ott.maybeTaxon(name, anc)
+        if taxon != None:
+            taxon.extant()
+
+    # we were getting extinctness from IRMNG, but now it's suppressed
+    ott.taxon('Dinaphis', 'Aphidoidea').extinct()
+
 
 # The processed GBIF taxonomy contains a file listing GBIF taxon ids for all 
 # taxa that are listed as coming from PaleoDB.  This is processed after all
@@ -1288,7 +1438,6 @@ def report(ott):
     #  Campanella,Holozoa,5343447,""
     #  Hessea,Holozoa,5295839,""
     #  Neoptera,Tachinidae,5340261,"test of genus"
-
 
 names_of_interest = ['Ciliophora',
                      'Phaeosphaeria',
@@ -1391,4 +1540,7 @@ names_of_interest = ['Ciliophora',
                      'Helotiales',
                      'Leotiales',
                      'Desertella',
+                     'Cyclophora',
+                     'Pohlia',
+                     'Lonicera',
                      ]

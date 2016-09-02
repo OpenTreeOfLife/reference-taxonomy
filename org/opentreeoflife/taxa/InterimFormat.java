@@ -468,7 +468,7 @@ class InterimFormat {
                         continue;
                     if (type.equals("valid")) // IRMNG - redundant - ?
                         continue;
-                    if (type.equals(""))
+                    if (type.equals("") || type.equals("None"))
                         type = "synonym";
 
                     Node syn = node.addSynonym(name, type);

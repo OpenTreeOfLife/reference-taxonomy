@@ -218,7 +218,7 @@ public enum Flag {
             if (needComma) out.append(","); else needComma = true;
             out.append("extinct");
         }
-        if ((iflags & Taxonomy.EXTINCT) != 0) {
+        else if ((iflags & Taxonomy.EXTINCT) != 0) {
             if (needComma) out.append(","); else needComma = true;
             out.append("extinct_inherited");
         }

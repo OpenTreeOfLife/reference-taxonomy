@@ -566,7 +566,7 @@ There are four of them:
 2. OTT 103964 = diatom in Fragillares = silva:HQ912611/#7 = ncbi:1003038
    Contains Ctenophora pulchella
 
-3. OTT 1043126 = cranefly = ncbi:516519 (not extinct).  Same as gbif:1507726 ?
+3. OTT 1043126 = cranefly = ncbi:516519 (not extinct).  Same as gbif:1507726.
 
 4. OTT 5680147 = irmng:1279363 has been deleted from IRMNG, no longer
 in OTT.
@@ -804,6 +804,29 @@ OTT 2.9 has:
 
 does this mean we're discarding *all* merged placeholders?
 
+
+## Cyclophora
+
+Diatom genus:
+  ott:678569
+  (SILVA something)
+  ncbi:216819
+  worms:450716
+  gbif:2630051
+  irmng:1301066
+
+Butterfly genus:  (contains Cyclophora nanaria)
+  ott:1030079 in OTT 2.9
+  ncbi:190338
+  gbif:3260327
+  irmng:1301089
+
+Why didn't these get separated as a result of adding Bacillariophyta
+as a skeleton node?  Then the diatom and the butterfly would have been
+separated (in disjoint divisions).
+
+Anyhow why is the taxon id for Bacillariophyta so high (5342311)?
+Id should be 150991.
 
 ## Division problems
 

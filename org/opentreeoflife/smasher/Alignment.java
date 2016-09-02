@@ -520,25 +520,25 @@ abstract class Criterion {
 				Taxon xdiv = subject.getDivision();
 				Taxon ydiv = target.getDivision();
 
-                // Debugging
-                if (subject.name != null &&
-                    (subject.name.equals("Tricellulortus peponiformis") ||
-                     subject.name.equals("Marssonina") ||
-                     subject.name.equals("Marssonia")))
-                    System.out.format("## %s %s | %s %s\n",
-                                      subject, xdiv, ydiv, target);
-                    
 				if (xdiv == ydiv)
 					return Answer.NOINFO;
-				if (xdiv == null)
+				else if (xdiv == null)
                     return Answer.noinfo(subject, target, "note/weak-null-source-division", null);
-				if (ydiv == null)
+				else if (ydiv == null)
                     return Answer.noinfo(subject, target, "note/weak-null-target-division", xdiv.name);
-				if (xdiv.descendsFrom(ydiv) || ydiv.descendsFrom(xdiv))
+				else if (xdiv.divergence(ydiv) != null)
+                    return Answer.heckNo(subject, target, "not-same/division",
+                                         String.format("%s|%s", xdiv.name, ydiv.name));
+                else if (subject.rank == Rank.GENUS_RANK ||
+                         target.rank == Rank.GENUS_RANK)
+                    return Answer.heckNo(subject, target, "not-same/division+genus",
+                                         String.format("%s|%s", xdiv.name, ydiv.name));
+                else if (!target.hasChildren() || !subject.hasChildren())
+                    // sort of random but let's try it
                     return Answer.noinfo(subject, target, "note/weak-division",
                                          String.format("%s|%s", xdiv.name, ydiv.name));
                 else
-                    return Answer.heckNo(subject, target, "not-same/division",
+                    return Answer.heckNo(subject, target, "not-same/division+internal",
                                          String.format("%s|%s", xdiv.name, ydiv.name));
 			}
 		};
@@ -560,7 +560,6 @@ abstract class Criterion {
 				else
                     // about 17,000 of these... that's too many
                     // 2016-06-26 down to about 900 now.
-                    // but I bet they're almost all supposed to be matches.
                     return Answer.weakNo(subject, target, "not-same/weak-division",
                                          String.format("%s|%s", xdiv.name, ydiv.name));
 			}
@@ -628,6 +627,8 @@ abstract class Criterion {
 	// Find a near-ancestor (parent, grandparent, etc) node that's in
 	// common with the other taxonomy
 	Taxon scan(Taxon node, Taxonomy other) {
+        // if (!node.isPlaced()) return null; // Protozoa
+
 		Taxon up = node.parent;
 
 		// Cf. informative() method

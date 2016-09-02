@@ -122,14 +122,25 @@ public class AlignmentByName extends Alignment {
         if (getTaxon(node) == null) {
             Answer a = findAlignment(node);
             if (a != null) {
-                if (a.isYes())
+                if (a.isYes()) {
                     alignWith(node, a.target, a);
-                else
+                    // logDivisions(a);  -- too much noise now.
+                } else
                     this.setAnswer(node, a);
             }
             return a;
         } else
             return null;
+    }
+
+    void logDivisions(Answer a) {
+        Taxon node = a.subject;
+        Taxon unode = a.target;
+        Taxon xdiv = node.getDivision();
+        Taxon ydiv = unode.getDivision();
+        if (xdiv != ydiv && xdiv != null && ydiv != null && !xdiv.noMrca() && !ydiv.noMrca())
+            System.out.format("* Weakly divided: %s %s|%s %s because %s\n",
+                              node, xdiv.name, ydiv.name, unode, a.reason);
     }
 
     int cutoff = Answer.DUNNO;
@@ -156,13 +167,14 @@ public class AlignmentByName extends Alignment {
             lg.add(start);
         }
 
+        Taxon anyCandidate = null;
         Answer result = null;
         for (Criterion criterion : criteria) {
             List<Answer> answers = new ArrayList<Answer>(candidates.size());
             int max = -100;
             int count = 0;
             Answer anyAnswer = null;
-            Taxon anyCandidate = null;
+            anyCandidate = null;
             for (Taxon cand : candidates) {
                 Answer a = criterion.assess(node, cand);
                 if (a.subject != null) lg.add(a);
@@ -184,17 +196,7 @@ public class AlignmentByName extends Alignment {
                 break;
             }
 
-            // If unique, sieze it.
-            if (count == 1) {
-                if (!anyAnswer.isYes()) {
-                    result = Answer.yes(node, anyCandidate, "elimination", null);
-                    lg.add(result);
-                } else
-                    result = anyAnswer;
-                break;
-            }
-
-            // If still ambiguous, winnow and try the next criterion.
+            // Winnow.
             if (count < candidates.size()) {
                 // This criterion eliminated some candidates.
 
@@ -209,12 +211,23 @@ public class AlignmentByName extends Alignment {
                 }
                 candidates = winners;
             }
+
+            // If unique and affirmative, seize it.
+            if (count == 1 && anyAnswer.isYes()) {
+                result = anyAnswer;
+                break;
+            }
+
+            // Loop: Try the next criterion.
         }
 
         if (result == null) {
-            // Ambiguity (not none or singleton)
-            if (node.getChildren().size() == 0) {
-                // Avoid creating yet another homonym.  
+            // Singleton
+            if (candidates.size() == 1) {
+                result = Answer.yes(node, anyCandidate, "elimination", null);
+                lg.add(result);
+            } else if (node.getChildren().size() == 0) {
+                // Ambiguous.  Avoid creating yet another homonym.  
                 result = Answer.noinfo(node, null, "ambiguous", null);
                 lg.add(result);
             } else {
@@ -287,10 +300,10 @@ public class AlignmentByName extends Alignment {
         Criterion.ranks,                  // separate by rank
 		Criterion.lineage,
         Criterion.subsumption,
+        Criterion.weakDivision,
         Criterion.byPrimaryName,
 		Criterion.sameSourceId,
 		Criterion.anySourceId,
-        Criterion.sameDivisionPreferred,
     };
 
 }

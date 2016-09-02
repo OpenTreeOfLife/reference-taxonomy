@@ -20,7 +20,7 @@ public class Taxon extends Node {
 	public String id = null;
 	public Rank rank = Rank.NO_RANK;
     public static Collection<Taxon> NO_CHILDREN = null;
-    public static Collection<Taxon> NO_CHILDREN_REALLY = new ArrayList<Taxon>(0);
+    private static Collection<Taxon> NO_CHILDREN_LIST = new ArrayList<Taxon>(0);
 	public Collection<Taxon> children = NO_CHILDREN;
     public static Collection<Synonym> NO_SYNONYMS = new ArrayList<Synonym>(0);
 	private Collection<Synonym> synonyms = NO_SYNONYMS;
@@ -59,10 +59,14 @@ public class Taxon extends Node {
     }
 
     public Collection<Taxon> getChildren() {
-        if (children == null)
-            return NO_CHILDREN_REALLY;
+        if (children == NO_CHILDREN)
+            return NO_CHILDREN_LIST;
         else
             return children;
+    }
+
+    public boolean hasChildren() {
+        return children != NO_CHILDREN;
     }
 
     public Collection<Synonym> getSynonyms() {
@@ -267,11 +271,6 @@ public class Taxon extends Node {
                 child.isPlaced()) {
                 child.markEvent("rank inversion");
 				//Taxon.backtrace();
-            }
-            if (false && child.name != null && child.name.equals("Pseudostomum")) {
-                System.err.format("** Changing Pseudostomum parent to %s\n",
-                                  this);
-				Taxon.backtrace();
             }
 			child.parent = this;
 			if (this.children == NO_CHILDREN)
@@ -759,21 +758,24 @@ public class Taxon extends Node {
             return "(this shouldn't happen)";
         }
                 
+        if (nodes.size() == 1)
+            return this.name;
+
 		boolean homonymp = false;
 
 		// Ancestor that distinguishes this taxon from all others with same name
-		Taxon unique = null;
+		Taxon ancestor = null;
 		for (Node othernode : nodes) {
-            Taxon other = othernode.taxon();
-			if (other != this) {  //  && other.name.equals(this.name)
+			if (othernode instanceof Taxon && othernode != this) {  //  && other.name.equals(this.name)
+                Taxon other = othernode.taxon();
 				homonymp = true;
-				if (unique != this) {
+				if (ancestor != this) {
 					Taxon[] div = this.divergence(other);
 					if (div != null) {
-						if (unique == null)
-							unique = div[0];
-						else if (div[0].descendsFrom(unique))
-							unique = div[0];
+						if (ancestor == null)
+							ancestor = div[0];
+						else if (div[0].descendsFrom(ancestor))
+							ancestor = div[0];
 					}
 				}
 			}
@@ -781,7 +783,7 @@ public class Taxon extends Node {
         String result;
 		if (homonymp) {
 			String thisrank = ((this.rank == Rank.NO_RANK) ? "" : (this.rank.name + " "));
-			if (unique == null || unique == this) {
+			if (ancestor == null || ancestor == this) {
 				if (this.sourceIds != null)
 					result = this.name + " (" + thisrank + this.sourceIds.get(0) + ")";
 				else if (this.id != null)
@@ -790,8 +792,8 @@ public class Taxon extends Node {
 					/* No unique name, just leave it alone and pray */
 					result = this.name;
 			} else {
-				String qrank = ((unique.rank == Rank.NO_RANK) ? "" : (unique.rank.name + " "));
-				String qname = unique.longUniqueName();
+				String qrank = ((ancestor.rank == Rank.NO_RANK) ? "" : (ancestor.rank.name + " "));
+				String qname = ancestor.longUniqueName();
 				result = this.name + " (" + thisrank + "in " + qrank + qname + ")";
 			}
 		} else

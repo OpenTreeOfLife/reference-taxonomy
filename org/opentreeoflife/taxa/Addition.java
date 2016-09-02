@@ -293,9 +293,10 @@ public class Addition {
 
         if (true) {            // for debugging
             try {
-                PrintStream out = Taxonomy.openw("addition-request.json.tmp");
+                PrintStream out = Taxonomy.openw("addition_request.json");
                 PrintWriter pw = new PrintWriter(new OutputStreamWriter(out, "UTF-8"));
                 JSONObject.writeJSONString(request, pw);
+                pw.println();
                 pw.close();
                 out.close();
             } catch (Exception e) {

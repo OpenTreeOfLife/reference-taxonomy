@@ -72,11 +72,13 @@ public class UnionTaxonomy extends Taxonomy {
 	public void setSkeleton(SourceTaxonomy skel) {
 		// Copy skeleton into union
 		Alignment a = new AlignmentByName(skel, this);
-        this.forest.setDivision(skel.forest);
-        this.skeletonAlignment = a;
 		for (Taxon div : skel.taxa())
             div.unsourced = true;
         this.merge(skel, a);
+
+        if (false) {
+        // set divisions on union nodes (initially all null)
+        this.forest.setDivision(skel.forest);
 		for (Taxon div : skel.taxa()) {
             if (div.name == null)
                 System.err.format("## Anonymous division ?! %s in %s\n", div, div.parent);
@@ -86,6 +88,9 @@ public class UnionTaxonomy extends Taxonomy {
                 udiv.setDivision(div);
             }
         }
+        }
+
+        this.skeletonAlignment = a;
 	}
 
 	// -----
@@ -110,12 +115,14 @@ public class UnionTaxonomy extends Taxonomy {
         else
             a = new ComplicatedAlignment(source, this);
         source.clearDivisions(); // division determinations are cached in nodes
-        source.forest.setDivision(this.skeletonAlignment.source.forest);
+        // source.forest.setDivision(this.skeletonAlignment.source.forest);
         return a;
     }
 
     public void align(Alignment a) {
         Taxonomy source = a.source;
+        if (false)
+            // source.forest.getDivision() should still be null at this point
         if (source.forest.getDivision() != this.forest.getDivision())
             System.err.format("## Oops! Forest division mismatch: %s != %s",
                                source.forest, this.forest);
@@ -169,31 +176,38 @@ public class UnionTaxonomy extends Taxonomy {
     // a will align source to target
 
     private void markDivisionsFromSkeleton(Alignment a, Alignment skeletonAlignment) {
+        this.clearDivisions();
+
         Taxonomy source = a.source;
 
         Taxonomy skel = skeletonAlignment.source; // maps skeleton to union
 
-        for (String name : skel.allNames()) {
-            Taxon div = skel.unique(name);
-            Taxon unode = skeletonAlignment.getTaxon(div);
-            if (unode == null)
-                System.err.format("** Skeleton node %s not mapped to union\n", div);
+        source.forest.setDivision(skel.forest);
+        this.forest.setDivision(skel.forest);
 
+        for (String name : skel.allNames()) {
             Taxon node = highest(source, name);
             if (node != null) {
-                if (node.getDivisionProper() == null) {
+                Taxon div = skel.unique(name);
+                Taxon unode = skeletonAlignment.getTaxon(div);
+                if (unode == null)
+                    System.err.format("** Skeleton node %s not mapped to union\n", div);
+                else if (node.getDivisionProper() != null && node.getDivisionProper() != div)
+                    System.err.format("** Help!  Conflict over division mapping: %s have %s want %s\n",
+                                      node, node.getDivisionProper(), div);
+                else {
                     Taxon otherUnode = a.getTaxon(node);
                     if (otherUnode != null && otherUnode != unode)
+                        // e.g. Ctenophora in SILVA
                         System.out.format("| Source node %s maps to %s, not to division %s\n", node, otherUnode, unode);
                     else {
                         a.alignWith(node, unode, "same/by-division-name");
                         // %% this is setting a nonnull div node with a null name
                         node.setDivision(div);
+                        unode.setDivision(div);
                         System.out.format("## Division of %s is %s\n", node, div);
                     }
-                } else if (node.getDivisionProper() != div)
-                    System.err.format("** Help!  Conflict over division mapping: %s have %s want %s\n",
-                                      node, node.getDivisionProper(), div);
+                }
             }
         }
     }
@@ -511,7 +525,7 @@ public class UnionTaxonomy extends Taxonomy {
                 node.setId(id);
             }
 
-            node.setSourceIds(row[1]);
+            // node.setSourceIds(row[1]);  these aren't IRIorCURIEs
             if (seriousp)
                 node.inSynthesis = true;
         }

@@ -364,6 +364,7 @@ def patch_fung(fung):
 
     # 2015-10-06 JAR noticed while debugging deprecated taxa list:
     # This should cover Basidiomycota, Zygomycota, Glomeromycota, and Ascomycota
+    # 2016-08-30 This should be no longer needed (but innocuous)
     for taxon in fung.taxa():
         if taxon.getRank() == 'phylum' and taxon.isRoot():
             fung.taxon('Fungi').take(taxon)
@@ -373,6 +374,10 @@ def patch_fung(fung):
         fung.taxon('Ascomycota').take(fung.taxon('Taphrinomycotina'))
     if fung.taxon('Saccharomycotina').isRoot():
         fung.taxon('Ascomycota').take(fung.taxon('Saccharomycotina'))
+
+    # 2016-09-01 This is unplaced and keeps getting erroneously mapped to
+    # Rhodophyta, creating duplicates (it's really a Chlorophyte)
+    fung.taxonThatContains('Byssus', 'Byssus rufa').prune(this_source)
 
     print "Fungi in Index Fungorum has %s nodes"%fung.taxon('Fungi').count()
 
@@ -647,6 +652,12 @@ def patch_ncbi(ncbi):
     ncbi.taxon('Aotus azarai infulatus').rename('Aotus azarae infulatus')
     ncbi.taxon('Aotus azarai boliviensis').rename('Aotus azarae boliviensis')
 
+    # 2016-08-31 This matches SILVA, and was breaking Streptophyta.  Cluster EF023721
+    capenv = ncbi.taxon('Caprifoliaceae environmental sample')
+    ncbi.taxon('Eukaryota').take(capenv)
+    capenv.unplaced()
+
+
 def load_worms():
     worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
     worms.smush()
@@ -675,6 +686,9 @@ def load_worms():
     worms.taxon('Actinopterygii').notCalled('Osteichthyes')
 
     worms.smush()  # Gracilimesus gorbunovi, pg_1783
+
+    # According to NCBI and IF, this is not in Fungi
+    worms.taxon('Fungi').parent.take(worms.taxon('Eccrinales'))
 
     return worms
 
@@ -882,12 +896,32 @@ def patch_gbif(gbif):
     gbif.taxon('Naviculae mesoleiae').rename('Navicula mesoleiae')
     gbif.taxon('Navicula').absorb(gbif.taxon('Naviculae'))
 
+    # GBIF as of 2016-09-01 says "doubtful taxon"
+    gbif.taxon('Foraminifera', 'Granuloreticulosea').prune(this_source)
+
+    # 2016-09-01 Wrongly in Hymenoptera
+    gbif.taxon('Pieridae', 'Insecta').take(gbif.taxonThatContains('Aporia', 'Aporia agathon'))
+
+    # 2016-09-01 Wrongly in Platyhelminthes, belongs in mites
+    gbif.taxon('Bdellidae').take(gbif.taxonThatContains('Bdellodes', 'Bdellodes serpentinus'))
+
+    # 2016-09-01 These are fossil fungi spores, not plants.  They're in 
+    # Index Fungorum, so we don't need wrong info from GBIF.
+    gbif.taxon('Inapertisporites', 'Plantae').prune(this_source)
+
+    # 2016-09-01 This is not a plant.  Checked W. van Hoven 1987, found
+    # in pubmed via web search, which says these things are ciliates, 
+    # and puts them in Cycloposthiidae.
+    # gbif.taxon('Cycloposthiidae').take(gbif.taxon('Monoposthium'))
+
     return gbif
 
 def load_irmng():
     irmng = Taxonomy.getTaxonomy('tax/irmng/', 'irmng')
     irmng.smush()
     irmng.analyzeMajorRankConflicts()
+
+    # patch_irmng
 
     irmng.taxon('Viruses').prune("taxonomies.py")
 
@@ -999,6 +1033,20 @@ def load_irmng():
 
     # https://github.com/OpenTreeOfLife/feedback/issues/303
     irmng.taxon('Neolepas', 'Maxillopoda').extant()
+
+    # wrongly in Plantae, should be a Lep
+    irmng.taxon('Pieridae', 'Insecta').take(irmng.taxonThatContains('Aporia', 'Aporia agathon'))
+
+    # members of Charis (a Riodinid genus) wrongly placed in genus Epimelitta in Cerambycidae
+    losers = []
+    for species in irmng.taxon('Charis aphanis', 'Insecta').parent.children:
+        if species.name.startswith('Charis '):
+            losers.append(species)
+    for species in losers:
+        species.prune(this_source)
+
+    # See above for GBIF
+    #irmng.taxon('Cycloposthiidae').take(irmng.taxon('Monoposthium'))
 
     return irmng
 

@@ -17,22 +17,31 @@ public class QualifiedId {
 	}
 	public QualifiedId(String qid) {
         String[] foo = colonPattern.split(qid, 2);
-        if (foo.length == 1)
-            { this.prefix = foo[0]; this.id = null; }
-        else if (foo.length != 2)
-            throw new RuntimeException("ill-formed qualified id: " + qid);
-        else if (foo[0].equals("http") || foo[0].equals("https"))
+        if (foo.length != 2)
+            throw new RuntimeException("ill-formed CURIEorIRI: " + qid);
+        else if (foo[1].startsWith("//"))
+            // IRI
             { this.prefix = qid; this.id = null; }
+        else if (foo[1].length() == 0)
+            // CURIE
+            { this.prefix = foo[0]; this.id = null; }
         else
+            // CURIE
             { this.prefix = foo[0]; this.id = foo[1]; }
 	}
 
     public String getPrefix() { return prefix; }
     public String getId() { return id; }
 	public String toString() {
-        if (id == null)
-            return prefix + ":";
-        else
+        if (id == null) {
+            if (prefix.indexOf("//") > 0)
+                // IRI
+                return prefix;
+            else
+                // CURIE
+                return prefix + ":";
+        } else
+            // CURIE
             return prefix + ":" + id;
 	}
 	public boolean equals(Object o) {

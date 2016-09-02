@@ -158,6 +158,7 @@ class MergeMachine {
                     augment(child, sink);
                 // Examine mapped parents of the children
                 boolean consistentp = true;
+                boolean paraconsistentp = true;
                 Taxon commonParent = null;    // should end up being node.lub
                 int count = 0;
                 for (Taxon child : node.children) {
@@ -165,11 +166,19 @@ class MergeMachine {
                     if (childTarget != null && !childTarget.isDetached() && childTarget.isPlaced()) {
                         if (commonParent == null)
                             commonParent = childTarget.parent;
-                        else if (childTarget.parent != commonParent)
+                        else if (childTarget.parent != commonParent) {
                             consistentp = false;
+                            if (child.isPlaced())
+                                paraconsistentp = false;
+                        }
                         ++count;
                     }
                 }
+                if (paraconsistentp && !consistentp) {
+                    System.out.format("* %s has unplaced children that make it inconsistent\n", node);
+                    // consistentp = true;
+                }
+
                 if (count == 0) {
                     // new & unplaced old children only... copying stuff over to union.
                     Taxon newnode = acceptNew(node, "new/graft");
@@ -340,7 +349,7 @@ class MergeMachine {
         }
     }
 
-    // Set parent pointers.
+    // Set parent pointers of mapped targets of children of source to target.
 
     Taxon takeOn(Taxon source, Taxon target, int flags) {
         for (Taxon child: source.children) {

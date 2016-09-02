@@ -1,3 +1,7 @@
+/*
+  Smaller number means higher (more rootward) rank
+*/
+
 package org.opentreeoflife.taxa;
 
 import java.util.Map;

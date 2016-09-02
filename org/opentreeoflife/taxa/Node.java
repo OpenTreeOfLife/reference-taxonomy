@@ -53,8 +53,10 @@ public abstract class Node {
 		String[] ids = commaPattern.split(info);
 		if (ids.length > 0) {
 			this.sourceIds = new ArrayList(ids.length);
-			for (String qid : ids)
-				this.addSourceId(new QualifiedId(qid));
+			for (String qid : ids) {
+                if (qid.length() > 0)
+                    this.addSourceId(new QualifiedId(qid));
+            }
 		}
 	}
 

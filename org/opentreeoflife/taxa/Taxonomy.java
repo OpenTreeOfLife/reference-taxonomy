@@ -1587,6 +1587,15 @@ public abstract class Taxonomy {
         return taxon(name, null, null, false);
     }
 
+	public Taxon taxonThatContains(String name, String descendant) {
+        return taxon(name, null, descendant, true);
+    }
+
+	// Look up a taxon by name or unique id.  Name must be unique in the taxonomy.
+	public Taxon maybeTaxonThatContains(String name, String descendant) {
+        return taxon(name, null, descendant, false);
+    }
+
     List<Taxon> nodesToTaxa(List<Node> nodes) {
         List<Taxon> taxa = new ArrayList<Taxon>();
         for (Node node : nodes)
@@ -1595,8 +1604,6 @@ public abstract class Taxonomy {
         return taxa;
     }
 
-    // WORK IN PROGRESS - I plan to move all the ancestor/descendant
-    // filtering logic here
 	public Taxon taxon(String name, String ancestor, String descendant, boolean windy) {
 		List<Node> nodes = this.lookup(name);
         if (nodes != null) {
@@ -1666,10 +1673,6 @@ public abstract class Taxonomy {
 	public Taxon maybeTaxon(String name, String context) {
         return taxon(name, context, null, false);
 	}
-
-	public Taxon taxonThatContains(String name, String descendant) {
-        return taxon(name, null, descendant, true);
-    }
 
 	// Test case: Valsa
 	public List<Taxon> filterByAncestor(String taxonName, String ancestorName) {

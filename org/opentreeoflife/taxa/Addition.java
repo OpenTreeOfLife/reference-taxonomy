@@ -20,10 +20,14 @@ import java.io.BufferedReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.InputStream;
+import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.IOException;
+import java.io.FileNotFoundException;
+
 import org.json.simple.JSONObject; 
+import org.json.simple.JSONArray; 
 import org.json.simple.parser.JSONParser; 
 import org.json.simple.parser.ParseException;
 
@@ -35,30 +39,32 @@ public class Addition {
     // Process any existing additions from the amendments repository.
     // For invocation from python (assemble-ott.py).
 
-    public static void processAdditions(String repo, Taxonomy tax) throws IOException, ParseException {
-        File dir = new File(repo);
-        if (!dir.isDirectory())
-            dir.mkdirs();
-        for (File doc : Addition.listAdditionDocuments(dir)) {
+    public static void processAdditions(String repoPath, Taxonomy tax) throws IOException, ParseException {
+        File repo = new File(repoPath);
+        if (!repo.isDirectory())
+            repo.mkdirs();
+        for (File doc : Addition.repoAdditionDocuments(repo)) {
             System.out.format("| Processing %s\n", doc);
             processAdditionDocument(doc, tax);
         }
     }
 
-    // dir is the root directory of the repository (or fake repository).
-
-    public static List<File> listAdditionDocuments(String dir) {
-        return listAdditionDocuments(new File(dir));
+    public static List<File> repoAdditionDocuments(File repo) {
+        File subdir = new File(repo, "amendments");
+        if (!subdir.isDirectory())
+            subdir.mkdirs();
+        return listAdditionDocuments(subdir);
     }
 
+    // repo is the root directory of the repository (or fake repository).
+
     public static List<File> listAdditionDocuments(File dir) {
-        File subdir = new File(dir, "amendments");
         FilenameFilter filter = new FilenameFilter() {
                 public boolean accept(File subdir, String name) {
                     return name.startsWith("additions-") && name.endsWith(".json");
                 }
             };
-        File[] files = subdir.listFiles(filter);
+        File[] files = dir.listFiles(filter);
         if (files == null)      // directory doesn't exist
             return new ArrayList<File>();
         List<File> listOfFiles = Arrays.asList(files);
@@ -267,17 +273,109 @@ public class Addition {
 
     static String userAgent = "smasher";
 
-    static long FIRST_DUMMY_ID = 9000000;
-
     static boolean useWebService = false;
+    static String requestName = "id_requests.json";
+    static String responseName = "id_assignments.json";
+
+    static long fakeFirst = 9000000L;
+    static long fakeLast = Long.MAX_VALUE;
 
     // Mint an id for each taxon in the taxon list.
     // Parents must occur before their children in the taxon list.
 
-    public static void assignNewIds(List<Taxon> nodes, long maxid, String additionsPath) {
-        long firstid = maxid + 1;
-        if (firstid < FIRST_DUMMY_ID) firstid = FIRST_DUMMY_ID;
+    public static void assignNewIds(List<Taxon> nodes, String newTaxaPath) {
 
+        if (nodes.size() == 0)
+            return;
+
+        File newTaxaDir = new File(newTaxaPath);
+
+        Taxonomy tax = nodes.get(0).taxonomy;
+
+        try {
+            // Use any existing id assignments
+            if (!newTaxaDir.isDirectory())
+                newTaxaDir.mkdirs();
+            for (File doc : Addition.listAdditionDocuments(newTaxaDir)) {
+                System.out.format("| Mining %s for id assignments\n", doc);
+                processAdditionDocument(doc, tax);
+            }
+        } catch (Exception e) {
+            // IOException, ParseException
+            System.err.format("** Failed to read cached id asignments from %s: %s\n", newTaxaDir, e);
+        }
+
+        List<Taxon> fewerNodes = new ArrayList<Taxon>();
+        for (Taxon node : nodes)
+            if (node.id == null) fewerNodes.add(node);
+        if (fewerNodes.size() == 0) {
+            System.out.format("| All id requests satisfied\n");
+            return;
+        }
+
+        File idRangeFile = new File(newTaxaDir, "range.json");
+        if (idRangeFile.canRead()) {
+            JSONArray idRanges = null;
+            try {
+                idRanges = (JSONArray)loadJSON(idRangeFile);
+            } catch (Exception e) {
+                System.err.format("** Lose %s\n", e);
+            }
+
+            Map <String, Object> range = (Map<String, Object>)idRanges.get(0);
+            Long firstId = (Long)range.get("first");
+            Long lastId = (Long)range.get("last");
+            if (assignIds(fewerNodes, firstId, lastId)) {
+                Map<String, Object> r = generateRequest(fewerNodes, new HashMap<Taxon, String>());
+                File f = new File(newTaxaDir, String.format("addition-%s-%s.json", firstId, lastId));
+                System.err.format("| Writing %s id assignments to %s\n", fewerNodes.size(), f);
+                emitJSON(r, f);
+                System.err.format("| Deleting id range file %s\n", idRangeFile);
+                idRangeFile.delete();
+            } else {
+                System.err.format("** Range [%s, %s] not big enough to provide %s ids\n",
+                                  firstId, lastId, fewerNodes.size());
+                assignIds(fewerNodes, fakeFirst, fakeLast);
+            }
+        } else {
+            System.err.format("** No range of available ids provided (%s not found)\n",
+                              idRangeFile);
+            demand(nodes.size(), newTaxaDir);
+            assignIds(fewerNodes, fakeFirst, fakeLast);
+        }
+    }
+
+    static void demand(long count, File newTaxaDir) {
+        File f = new File(newTaxaDir, "need_ids.json");
+        Map<String, Object> blob = new HashMap<String, Object>();
+        blob.put("count", count);
+        System.out.format("| Requesting %s ids (see %s)\n", count, f);
+        emitJSON(blob, f);
+    }
+
+    // Assign ids sequentially to nodes
+
+    static boolean assignIds(List<Taxon> nodes, long firstId, long lastId) {
+        System.out.format("| Assigning %s ids starting at %s\n", nodes.size(), firstId);
+        long id = firstId;
+        for (Taxon node : nodes) {
+            if (node.id == null) {
+                String sid;
+                while (node.taxonomy.lookupId(sid = Long.toString(id)) != null)
+                    ++id;
+                if (id > lastId)
+                    return false;
+                node.taxonomy.addId(node, sid);
+                node.markEvent("addition");
+                ++id;
+            }
+        }
+        return true;
+    }
+
+    // Write id request records to a file
+
+    static void writeRequest(List<Taxon> nodes, File requestFile) {
         // Give each node a tag
         int counter = 0;
         Map<Taxon, String> taxonToTag = new HashMap<Taxon, String>();
@@ -289,103 +387,134 @@ public class Addition {
         }
         // Compose the additions request per 
         // https://github.com/OpenTreeOfLife/germinator/wiki/Taxonomic-service-for-adding-new-taxa
-        Map<String, Object> request = generateRequest(nodes, taxonToTag, counter);
+        Map<String, Object> request = generateRequest(nodes, taxonToTag);
+        emitJSON(request, requestFile);
+    }
 
-        if (true) {            // for debugging
-            try {
-                PrintStream out = Taxonomy.openw("addition_request.json");
-                PrintWriter pw = new PrintWriter(new OutputStreamWriter(out, "UTF-8"));
-                JSONObject.writeJSONString(request, pw);
-                pw.println();
-                pw.close();
-                out.close();
-            } catch (Exception e) {
-                // IOException, UnsupportedEncodingException
-                e.printStackTrace();
-            }
+    static void emitJSON(Map request, File requestFile) {
+        try {
+            PrintStream out = new java.io.PrintStream(new java.io.BufferedOutputStream(new java.io.FileOutputStream(requestFile)),
+                                                      false,
+                                                      "UTF-8");
+            PrintWriter pw = new PrintWriter(new OutputStreamWriter(out, "UTF-8"));
+            JSONObject.writeJSONString(request, pw);
+            pw.println();
+            pw.close();
+            out.close();
+        } catch (Exception e) {
+            // IOException, UnsupportedEncodingException
+            e.printStackTrace();
         }
+    }
 
-        // Fake service - convert request to response.
-        // It would be more realistic if it went over the request blob.
+    static boolean tryToUseCache(List<Taxon> nodes, File newTaxaDir) {
 
-        Map<String, String> idAssignments = null;
+        File requestFile = new File(newTaxaDir, requestName);
+        File responseFile = new File(newTaxaDir, responseName);
+
+        if (!requestFile.canRead() || !responseFile.canRead())
+            return false;
+
+        Map<String, Long> keyToId = new HashMap<String, Long>();
 
         try {
-            Object response;
-            if (useWebService)
-                response = invokeAdditionWebService(request);
-            else
-                response = invokeAdditionService(request, counter, firstid, additionsPath);
+            JSONObject cachedRequest = (JSONObject)loadJSON(requestFile); // {"taxa":[...], ...}
+            JSONObject cachedResponse = (JSONObject)loadJSON(responseFile); // {"tag":id, ...}
 
-            Map responseMap = (Map)response; // maps tag to OTT id
-            Object err = responseMap.get("error");
+            for (Object record : (List<Object>)cachedRequest.get("taxa")) {
+                JSONObject r = (JSONObject)record;
+                String tag = (String)r.get("tag");
+                Long id = (Long)cachedResponse.get(tag);
+                String key = (String)r.get("name") + (String)r.get("parent");
+                keyToId.put(key, id);
+            }
+        } catch (ParseException e) {
+            System.err.format("** Failed to read cache - ids not assigned (%s)\n", e);
+            return false;
+        } catch (IOException e) {
+            System.err.format("** Failed to read cache - ids not assigned (%s)\n", e);
+            return false;
+        }
+        System.out.format("| Got %s id assignments\n", keyToId.size());
+
+        int losers = 0;
+        long least = Long.MAX_VALUE;
+        long greatest = Long.MIN_VALUE;
+        for (Taxon node : nodes) {
+            String key = node.name + node.parent.id;
+            Long id = keyToId.get(key);
+            if (id == null) {
+                System.err.format("** Failed to find %s in id cache\n", node.name);
+                ++losers;
+            } else {
+                node.taxonomy.addId(node, id.toString());
+                node.markEvent("addition");
+                if (id < least) least = id;
+                if (id > greatest) greatest = id;
+            }
+        }
+        if (greatest > least)
+            System.out.format("| New ids run from %s to %s\n", least, greatest);
+        return (losers == 0);
+    }
+
+    // Not currently used
+    static void useAdditionService(Map<String, Taxon> tagToTaxon, Object request, String additionsPath) {
+
+        Map<String, Long> tagToId =  // tag to id
+            new HashMap<String, Long>();
+
+        try {
+            // response maps tag to OTT id
+            Map<String, Object> response = (Map<String, Object>)invokeAdditionService(request, additionsPath);
+            Object err = response.get("error");
             if (err != null)
                 System.err.format("** Error from service: %s\n", err);
             else {
-                idAssignments = new HashMap<String, String>();
-                for (Object tag : responseMap.keySet())
-                    idAssignments.put((String)tag, Long.toString((Long)responseMap.get(tag)));
-                System.out.format("| Got %s tag/id assignments\n", idAssignments.size());
+                for (Object tag : response.keySet())
+                    tagToId.put((String)tag, (Long)response.get(tag));
+                System.out.format("| Got %s tag/id assignments\n", tagToId.size());
             }
         } catch (Exception e) {
             System.err.format("** Exception in assignNewIds: %s %s\n", e.getClass().getName(), e.getMessage());
+            System.err.format("** Ids not assigned!");
             e.printStackTrace();
         }
-        if (idAssignments == null) {
-            // cheat
-            idAssignments = new HashMap<String, String>();
-            for (Taxon node : taxonToTag.keySet())
-                idAssignments.put(taxonToTag.get(node), Long.toString(firstid++));
-        }
-
-        // Process result of calling service (idAssignments)
-
-        else if (idAssignments.size() > 0) {
+        if (tagToId.size() > 0) {
             long least = Long.MAX_VALUE;
             long greatest = Long.MIN_VALUE;
-            for (String tag : idAssignments.keySet()) {
+            for (String tag : tagToId.keySet()) {
                 Taxon node = tagToTaxon.get(tag);
                 if (node == null) {
                     System.err.format("** No node with tag %s\n", tag);
                     continue;
                 }
-                String id = idAssignments.get(tag);
-                node.taxonomy.addId(node, id);
+                Long id = tagToId.get(tag);
+                node.taxonomy.addId(node, Long.toString(id));
                 node.markEvent("addition");
-                long lid = Long.parseLong(id);
-                if (lid < least) least = lid;
-                if (lid > greatest) greatest = lid;
+                if (id < least) least = id;
+                if (id > greatest) greatest = id;
             }
             if (greatest > least)
                 System.out.format("| New ids run from %s to %s\n", least, greatest);
         }
     }
 
-    // Talk to phylesystem-api / peyotl web service to get 'real' ids
+    // Invoke python script... not used for now
 
-    static Object invokeAdditionWebService(final Object request)
-        throws IOException, InterruptedException, ParseException
-    {
-        throw new RuntimeException("** Amendment service invocation not yet implemented");
-    }
-
-    // Invoke python script
-
-    static Object invokeAdditionService(final Object request, int count, long firstid, String additionsPath)
+    static Object invokeAdditionService(final Object request, String additionsPath)
         throws IOException, InterruptedException, ParseException
     {
         ProcessBuilder pb =
             new ProcessBuilder("/usr/bin/python", "util/process_addition_request.py",
-                               "--dir", additionsPath,
-                               "--count", Integer.toString(count),
-                               "--min", Long.toString(firstid),
-                               "--no-advance");
+                               "--repo", additionsPath);
         Process p = pb.start();
         final PrintWriter pw = new PrintWriter(new OutputStreamWriter(p.getOutputStream()));
         BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
         InputStream er = p.getErrorStream();
 
         if (false) {
+            // correct but not necessary
             Thread th = new Thread(new Runnable() {
                     public void run() {
                         try {
@@ -430,18 +559,22 @@ public class Addition {
     // Generate the JSON blob to go in the taxon-addition service request.
     // Returns map from tag to node.
 
-    public static Map<String, Object> generateRequest(List<Taxon> nodes, Map<Taxon, String> taxonToTag, int count) {
+    public static Map<String, Object> generateRequest(List<Taxon> nodes, Map<Taxon, String> taxonToTag) {
         Map<String, Object> m = new HashMap<String, Object>();
         List<Object> descriptions = new ArrayList<Object>();
         for (Taxon node : nodes) {
             Map<String, Object> description = new HashMap<String, Object>();
-            description.put("tag", taxonToTag.get(node));
+            String tag = taxonToTag.get(node);
+            if (tag != null)
+                description.put("tag", tag);
             if (node.name != null)
                 description.put("name", node.name);
             if (node.rank != Rank.NO_RANK)
                 description.put("rank", node.rank.name);
             if (node.isRoot())
                 description.put("parent", "root");
+            if (node.id != null)
+                description.put("ott_id", Long.parseLong(node.id));
             else if (node.parent.id != null) {
                 try {
                     long pid = Long.parseLong(node.parent.id);
@@ -472,5 +605,21 @@ public class Addition {
         m.put("user_agent", userAgent);
         return m;
     }
+
+	static Object loadJSON(File file) throws IOException, ParseException {
+		BufferedReader fr;
+		try {
+			fr = new BufferedReader(new InputStreamReader(new FileInputStream(file),
+                                                          "UTF-8"));
+		} catch (java.io.FileNotFoundException e) {
+			return null;
+		}
+		JSONParser parser = new JSONParser();
+		try {
+			return parser.parse(fr);
+		} finally {
+            fr.close();
+        }
+	}
 
 }

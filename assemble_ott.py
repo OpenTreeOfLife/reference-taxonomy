@@ -20,7 +20,7 @@ import csv
 this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/make-ott.py'
 inclusions_path = 'inclusions.csv'
 additions_clone_path = 'feed/amendments/amendments-1'
-additions_temp_path = 'additions_temp'
+new_taxa_path = 'new_taxa'
 
 do_notSames = False
 
@@ -231,7 +231,7 @@ def create_ott():
     Addition.processAdditions(additions_clone_path, ott)
 
     # Mint ids for new nodes
-    ott.assignNewIds(additions_temp_path)
+    ott.assignNewIds(new_taxa_path)
 
     ott.check()
 
@@ -1035,11 +1035,12 @@ def patch_ott(ott):
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/88
     ott.taxon('Protostomia').take(ott.taxonThatContains('Chaetognatha','Sagittoidea'))
     ott.taxon('Lophotrochozoa').take(ott.taxon('Platyhelminthes'))
-    ott.taxon('Polychaeta','Annelida').take(ott.taxon('Myzostomida'))
     ott.taxon('Lophotrochozoa').take(ott.taxon('Gnathostomulida'))
     ott.taxon('Bilateria').take(ott.taxon('Acoela'))
     ott.taxon('Bilateria').take(ott.taxon('Xenoturbella'))
     ott.taxon('Bilateria').take(ott.taxon('Nemertodermatida'))
+    # Myzostomida no longer in Annelida
+    # ott.taxon('Polychaeta','Annelida').take(ott.taxon('Myzostomida'))
     # https://dx.doi.org/10.1007/s13127-011-0044-4
     # Not in deuterostomes
     ott.taxon('Bilateria').take(ott.taxon('Xenacoelomorpha'))

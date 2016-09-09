@@ -87,6 +87,9 @@ silva_bad_names = [
     ('JW107284', 'Capsicum annuum'),
     ('JL594206', 'Ophthalmotilapia ventralis'),
     ('JV125402', 'Aiptasia pallida'),
+
+    # Phylesystem outlier check
+    ('A16379', 'Trachelomonas grandis'),   # euglenida
 ]
 
 def patch_silva(silva):

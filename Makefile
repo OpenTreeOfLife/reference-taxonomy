@@ -43,8 +43,8 @@ SILVA_URL=$(SILVA_EXPORTS)/SSURef_NR99_115_tax_silva.fasta.tgz
 # This is used as a source of OTT id assignments.
 PREV_OTT_URL=http://files.opentreeoflife.org/ott/ott$(PREV_WHICH)/ott$(PREV_WHICH).tgz
 
-# 20 Aug 2016, Nico Franz
-AMENDMENTS_REFSPEC=8c76e691b28cecc6029f8a852aea3ad2a4f374ac
+# 9 Sep 2016
+AMENDMENTS_REFSPEC=feed/amendments/refspec
 
 # -----
 
@@ -327,8 +327,9 @@ feed/amendments/amendments-1/next_ott_id.json:
 refresh-amendments: feed/amendments/amendments-1
 	(cd feed/amendments/amendments-1; git checkout master)
 	(cd feed/amendments/amendments-1; git pull)
-	(cd feed/amendments/amendments-1; git log | head -1)
-	(cd feed/amendments/amendments-1; git checkout -q $(AMENDMENTS_REFSPEC))
+	(cd feed/amendments/amendments-1; git log -n 1) | head -1 | sed -e 's/commit //' >$(AMENDMENTS_REFSPEC).new
+	mv $(AMENDMENTS_REFSPEC).new $(AMENDMENTS_REFSPEC)
+	(cd feed/amendments/amendments-1; git checkout -q `cat ../../../$(AMENDMENTS_REFSPEC)`)
 
 feed/amendments/amendments-1:
 	@mkdir -p feed/amendments

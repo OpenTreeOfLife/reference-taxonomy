@@ -33,40 +33,6 @@ reproducible synthesis of input taxonomies; for easy update when input
 taxonomies change; and for user-contributed patches to fix specific issues or
 add missing information.
 
-### Related projects
-
-* NCBI taxonomy: The NCBI taxonomy exists to support annotation and 
-  search of sequence data. NCBI has one or
-  more taxonomy curators on staff.  Curators add taxa that are needed to cover sequence
-  deposits, and also update classifications as the need arises.  The NCBI
-  taxonomy adds as many levels to the tree as necessary in order to reflect current
-  phylogenetic knowledge, meaning sibling taxa often have different
-  ranks and many taxa (e.g. 'eudicots') are lacking rank altogether.
-  There is no requirement that nomenclature follow code.
-  (No citation available?)
-* GBIF backbone taxonomy: This taxonomy's purpose is to 
-  facilitate annotation and search of occurrence data hosted on GBIF's web site.
-  GBIF has collected a set of 'checklists' [150
-  last time I looked] that are combined algorithmically, so among 
-  such projects, it is the most similar to Open Tree.
-  The GBIF backbone adheres strictly to the seven-rank system.
-* IRMNG:  IRMNG seems to
-  mainly be the work of one person (Tony Rees) who imports information
-  from outside sources both in detail and in bulk.  
-  IRMNG adheres strictly to the seven-rank system, and retains taxa
-  such as Protista that are known to be non-monophyletic.
-  (No citation available?)
-* Catalog of Life: (research) - focus on nomenclature - hierarchically
-  distributed responsibility.  Not open; licensing business model
-  supports a full-time administrator. CoL is an input to IRMNG and
-  GBIF.
-* WoRMS: (need to research)
-* uBio: (research)
-* EOL: not a taxonomy project, imports taxonomies from other sources without integration.
-
-There are also numerous projects covering particular groups: the Plant List, etc.
-
-
 # Method
 How we build the taxonomy. [See [`method.md`](./method.md) in this directory.]
 

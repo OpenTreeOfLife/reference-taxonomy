@@ -12,7 +12,7 @@ be determined whether the species should be removed (e.g. the name is
 not current), or kept (the new source is incomplete).
 
 Federated management is geared toward repeated harvest of information
-from multiple sources.  A federated does not have its own information,
+from multiple sources.  A federated taxonomy does not have "its own" information,
 but instead it algorithmically combines information from a number of
 source taxonomies.  The advantage of federation is that it tracks all
 source taxonomies faithfully. Every piece of information in the
@@ -66,14 +66,18 @@ A taxonomy in interim taxonomy format has the following parts:
  * an optional synonyms table, with one name-taxon association row per synonym
  * an optional identifier merge table, with one row for each identifier alias (where one identifier is an alias for another)
 
-The most important annotation is 'extinct'.  When early on we included
-extinct taxa in the synthetic phylogenetic tree, most extinct taxa
-were badly placed in the tree - for example, many extinct genera
-showed up as direct children of Mammalia.  While the NCBI Taxonomy
-usually gives a modern classification for the species it covers, it
-makes no attempt to fit in extinct taxa, so when such taxa are found
-in other taxonomies, there is no good place to put them in the Open
-Tree taxonomy.  Filtering out extinct taxa leads to a cleaner result.
+The most important annotation is 'extinct'.  We initially included
+extinct taxa in the synthetic phylogenetic tree, and the result was
+that most extinct taxa were badly placed in the tree - for example,
+many extinct genera showed up as direct children of Mammalia.  While
+the NCBI Taxonomy usually gives a modern classification for the
+species it covers, it makes no attempt to fit in extinct taxa, so when
+such taxa are found in other taxonomies, there is no good place to put
+them in the Open Tree taxonomy.  Removing from synthesis those
+(usually badly placed) taxa in the taxonomy that are annotated extinct
+leads to a cleaner synthesis.
+
+[KC: 'I wonder if there should be a separate section somewhere about extinct taxa.']
 
 In two cases, an imported source taxonomy is split into parts before
 processing continues, so that the parts can be positioned in different
@@ -216,6 +220,7 @@ This is not currently handled.
 ### Separation heuristic: Skeleton taxonomy
 
 The heuristics are described in the order in which they are applied.
+The outcome is sensitive to the ordering.
 
 If taxa A and B belong to taxa C and D (respectively), and C and D are
 known to be disjoint, then A and B can be considered distinct.  For
@@ -234,9 +239,11 @@ actually arise.  For example, there are many [how many? dozens?
 hundreds?] of fungus/plant polysemies, even though the two groups are
 covered by the same nomenclatural code.
 
-Some cases like this one are actual differences of opinion concerning
-classification, and different placement of a name between two source
-taxonomies does not mean that we are talking about different taxa.
+Some cases of apparent polysemy might be differences of opinion
+concerning whether a taxon possesses an apomorphy or belongs in some
+clade (the MRCA of some other taxa).  Different placement of a name in
+two source taxonomies does not necessarily mean that the name denotes
+different taxa in the two taxonomies.
 
 The separation heuristic used here works as follows.  We establish a
 "skeleton" taxonomy, containing about 25 higher taxa (Bacteria,

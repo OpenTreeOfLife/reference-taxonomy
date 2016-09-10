@@ -31,7 +31,7 @@ The assembly process works, in outline, as follows:
  1. Initialize the 'union' taxonomy U to be empty
  1. For each source S:
      1. Load, normalize, and patch S
-     1. Align S to U, i.e. match nodes of S to nodes of U, where possible
+     1. Align S to U, i.e. match the nodes of S to nodes of U, where possible
      1. Merge S into U
          1. Unaligned subtrees of S (subtrees of S that contain
             no matched nodes other than their root) are grafted onto U
@@ -51,33 +51,6 @@ state that persists from one version of OTT to the next is OTT
 identifier assignment.
 
 Details of each step follow.
-
-## Source taxonomy selection
-
-The Open Tree of Life project adopts an "open science" policy: inputs
-and products (trees, taxonomies) must be reuseable in other scientific
-work, such as reproducing what we've done, or excerpting in follow-on
-work.  Unfortunately this policy rules out the use of information
-sources (such as Catalogue of Life and the IUCN Red List) that have
-restrictive terms of use.  Fortunately a number of sources are not so
-restricted.
-
-* NCBI Taxonomy: NCBI maintains a taxonomy primarily as an aid to
-  genetic sequence search, for example, "find sequences from bony
-  fishes similar to this one".  Only taxa that have at least one
-  associated sequence are present in the taxonomy.  NCBI Taxonomy is
-  an excellent source of taxa for Open Tree because most sequences
-  used in sequence-based phylogenetic studies are deposited in NCBI
-  Taxonomy. A large number of taxa [how many?] in the NCBI Taxonomy
-  are lacking valid names according to the nomenclatural codes.
-  (article in NAR http://dx.doi.org/10.1093/nar/gkr1178)
-* GBIF backbone taxonomy:
-* SILVA
-* Index Fungorum
-* IRMNG
-* WoRMS
-
-Quentin Wheeler, The New Taxonomy (book, 2008)
 
 ## Source taxonomy import and normalization
 
@@ -150,7 +123,6 @@ either the sources or the final taxonomy directly, we can preserve the
 provenance of the changes, as comments in the file containing the
 script.  At present this provenance information is unfortunately not
 copied into the final taxonomy file, but ideally it would be.
-
 
 ## Align source to union
 
@@ -445,12 +417,11 @@ newly 'minted' identifiers.
 
 ## Results
 
-(Get metrics for OTT 2.10)
+[TBD: Get metrics for OTT 2.10]
 
+[Challenges in construction: dirty inputs, homonyms, a gazillion special cases...]
 
-## Discussion
+[Artifacts: e.g. (a,b,c,d,e)f + ((a,b)g,(c,e)h)f ]
 
-Challenges in construction: dirty inputs, homonyms, a gazillion special cases...
-
-Limitations of method: ...
+[Limitations of method: ...]
 

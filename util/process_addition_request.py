@@ -12,7 +12,7 @@
 
 import sys, os, json, argparse
 
-def get_ids(count, minid, dir):
+def get_ids(count, minid, dir, advance):
     if not os.path.exists(dir):
         os.makedirs(dir)
     idpath = os.path.join(dir, 'next_ott_id.json')
@@ -24,14 +24,15 @@ def get_ids(count, minid, dir):
             id = stuff["next_ott_id"]
     if id < minid:
         id = minid
-    bump = id + count
-    stuff["next_ott_id"] = bump
-    with open(idpath, 'w') as idfile:
-        json.dump(stuff, idfile)
-        idfile.write('\n')
+    if advance:
+        bump = id + count
+        stuff["next_ott_id"] = bump
+        with open(idpath, 'w') as idfile:
+            json.dump(stuff, idfile)
+            idfile.write('\n')
     return id
 
-def service_request(blob, count, minid, dir):
+def service_request(blob, count, minid, dir, advance):
     taxa = blob["taxa"]         # fail fast
 
     count_again = 0
@@ -52,7 +53,7 @@ def service_request(blob, count, minid, dir):
     if count_again != count:
         return {"error": "number of taxa %s does not match count %s" % (count_again, count)}
 
-    id = get_ids(count, minid, dir)
+    id = get_ids(count, minid, dir, advance)
 
     tag_to_id = {}
 
@@ -89,6 +90,8 @@ if __name__ == '__main__':
     argparser.add_argument('--dir', dest='dir', help='where to find/put addition docs and ott id counter')
     argparser.add_argument('--count', dest='count', type=int, help='how many ids to allocate')
     argparser.add_argument('--min', dest='min', type=int, help='smallest possible id')
+    argparser.add_argument('--advance', dest='advance', action='store_true', help='store updated id counter')
+    argparser.add_argument('--no-advance', dest='advance', action='store_false', help='do not store updated id counter')
     args = argparser.parse_args()
 
     blob = json.load(sys.stdin)
@@ -96,7 +99,7 @@ if __name__ == '__main__':
     sys.stderr.write('Got request...\n')
     sys.stderr.flush()
 
-    tag_to_id = service_request(blob, int(args.count), int(args.min), args.dir)
+    tag_to_id = service_request(blob, int(args.count), int(args.min), args.dir, args.advance)
 
     sys.stderr.write('Serviced request...\n')
     sys.stderr.flush()

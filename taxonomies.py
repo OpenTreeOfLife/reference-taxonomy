@@ -28,6 +28,11 @@ def load_silva():
     silva.taxon('Florideophycidae', 'Rhodophyceae').synonym('Florideophyceae')
     silva.taxon('Stramenopiles', 'SAR').synonym('Heterokonta') # needed by WoRMS
 
+    # JAR 2016-07-29 I could find no argument supporting the name 'Choanomonada'
+    # as a replacement for 'Choanoflagellida'.
+    silva.taxon('Choanomonada', 'Opisthokonta').rename('Choanoflagellida')
+    silva.taxon('Choanomonada', 'Opisthokonta').synonym('Choanoflagellatea') #wikipedia
+
     for name in ['Metazoa',
                  'Fungi',
                  'Chloroplast',
@@ -107,10 +112,13 @@ def patch_silva(silva):
     # Note order dependence between the following two
     silva.taxon('Intramacronucleata','Intramacronucleata').clobberName('Intramacronucleata inf.')
     silva.taxon('Spirotrichea','Intramacronucleata inf.').clobberName('Spirotrichea inf.')
-    silva.taxon('Cyanobacteria','Bacteria').clobberName('Cyanobacteria sup.')
-    silva.taxon('Actinobacteria','Bacteria').clobberName('Actinobacteria sup.')
-    silva.taxon('Acidobacteria','Bacteria').clobberName('Acidobacteria sup.')
-    silva.taxon('Ochromonas','Ochromonadales').clobberName('Ochromonas sup.')
+    silva.taxonThatContains('Cyanobacteria','Chloroplast').clobberName('Cyanobacteria/Melainabacteria group')
+    # this one is funny, NCBI really wants it to be a parent/child homonym
+    silva.taxonThatContains('Actinobacteria','Acidimicrobiia').clobberName('Actinobacteraeota')
+    # Change the inferior Acidobacteria to -iia.  Designation is fragile!
+    silva.taxon('D26171/#3').clobberName('Acidobacteriia')
+    # This is fixed in a later version of SILVA
+    silva.taxonThatContains('Ochromonas','Dinobryon').clobberName('Ochromonas sup.')
     silva.taxon('Tetrasphaera','Tetrasphaera').clobberName('Tetrasphaera inf.')
 
     # SILVA's placement of Rozella as a sibling of Fungi is contradicted
@@ -182,6 +190,11 @@ def patch_silva(silva):
     # similarly
     silva.taxon('CP002976').synonym('Phaeobacter gallaeciensis DSM 17395 = CIP 105210')
 
+    # Nonspecific Pseudomonas, from a patent
+    # https://github.com/OpenTreeOfLife/feedback/issues/309
+    silva.taxon('HC510467').clobberName('cluster HC510467')
+    silva.taxon('HC510467').hide()
+
 def load_h2007():
     h2007 = Taxonomy.getTaxonomy('feed/h2007/tree.tre', 'h2007')
 
@@ -221,13 +234,7 @@ def load_fung():
     # smush folds sibling taxa that have the same name.
     # fung.smush()
 
-    if True:
-        patch_fung(fung)
-    else:
-        try:
-            patch_fung(fung)
-        except:
-            print '**** Exception in patch_fung'
+    patch_fung(fung)
 
     fung.smush()
 
@@ -345,23 +352,19 @@ def patch_fung(fung):
     # JAR 2015-07-20 - largest unattached subtree was Microeccrina, which is dubious.
     fung.taxon('Microeccrina').prune('http://www.nhm.ku.edu/~fungi/Monograph/Text/chapter12.htm')
 
-    # JAR 2015-07-20 - homonym, Nom. illegit.
-    fung.taxon('Acantharia').prune('http://www.indexfungorum.org/Names/NamesRecord.asp?RecordID=8')
-
     # JAR 2015-09-10 on perusing a long list of equivocal homonyms
     # (weaklog.csv).  Hibbett 2007 and NCBI put Microsporidia in Fungi.
     fung.taxon('Fungi').take(fung.taxon('Microsporidia'))
 
-    # This is helpful if SAR is a division
-    # fung.taxon('SAR').take(fung.taxon('Oomycota'))
-
     # 2015-09-15 Pezizomycotina has no parent pointer; without Fungi as a barrier,
     # the placement of genus Onychophora is screwed up.
     # Found while investigating https://github.com/OpenTreeOfLife/feedback/issues/88
-    fung.taxon('Ascomycota').take(fung.taxon('Pezizomycotina'))
+    if fung.taxon('Pezizomycotina').isRoot():
+        fung.taxon('Ascomycota').take(fung.taxon('Pezizomycotina'))
 
     # 2015-10-06 JAR noticed while debugging deprecated taxa list:
     # This should cover Basidiomycota, Zygomycota, Glomeromycota, and Ascomycota
+    # 2016-08-30 This should be no longer needed (but innocuous)
     for taxon in fung.taxa():
         if taxon.getRank() == 'phylum' and taxon.isRoot():
             fung.taxon('Fungi').take(taxon)
@@ -371,6 +374,10 @@ def patch_fung(fung):
         fung.taxon('Ascomycota').take(fung.taxon('Taphrinomycotina'))
     if fung.taxon('Saccharomycotina').isRoot():
         fung.taxon('Ascomycota').take(fung.taxon('Saccharomycotina'))
+
+    # 2016-09-01 This is unplaced and keeps getting erroneously mapped to
+    # Rhodophyta, creating duplicates (it's really a Chlorophyte)
+    fung.taxonThatContains('Byssus', 'Byssus rufa').prune(this_source)
 
     print "Fungi in Index Fungorum has %s nodes"%fung.taxon('Fungi').count()
 
@@ -385,15 +392,15 @@ def link_to_h2007(tax):
          ('Cladochytriales', ['Cladochytriaceae', 'Nowakowskiellaceae', 'Septochytriaceae', 'Endochytriaceae']),
          ('Jaapiales', ['Jaapiaceae']),
          ('Coniocybales', ['Coniocybaceae']),
-         ('Hyaloraphidiales', ['Hyaloraphidiaceae']), # no such family
+         ('Hyaloraphidiales', ['Hyaloraphidium']), # was Hyaloraphidiaceae, no such family
          ('Mytilinidiales', ['Mytilinidiaceae', 'Gloniaceae']),
         ]:
-        order = tax.maybeTaxon(order_name)
+        order = tax.maybeTaxon(order_name, 'Fungi')
         if order != None:
             for family in family_names:
-                order.take(tax.taxon(family))
+                order.take(tax.taxon(family, 'Fungi'))
         else:
-            print '*** Missing fungal order', foo[0]
+            print '*** Missing fungal order', order_name
 
     # Stereopsidaceae = Stereopsis + Clavulicium
     if tax.maybeTaxon('Stereopsidaceae') == None:
@@ -441,7 +448,6 @@ def load_ncbi():
     ncbi = Taxonomy.getTaxonomy('tax/ncbi/', 'ncbi')
     fix_SAR(ncbi)
 
-    ncbi.taxon('Viridiplantae').rename('Chloroplastida')
     patch_ncbi(ncbi)
 
     # analyzeOTUs sets flags on questionable taxa ("unclassified",
@@ -595,6 +601,7 @@ def patch_ncbi(ncbi):
     # NCBI puts Chaetognatha in Deuterostomia.
     ncbi.taxon('Protostomia').take(ncbi.taxonThatContains('Chaetognatha','Sagittoidea'))
 
+    # https://github.com/OpenTreeOfLife/feedback/issues/184
     h = ncbi.maybeTaxon('Hylobates alibarbis')
     if h != None:
         if ncbi.maybeTaxon('Hylobates albibarbis') != None:
@@ -620,6 +627,36 @@ def patch_ncbi(ncbi):
     # 2016-07-01 JAR while studying rank inversions
     if ncbi.taxon('Vezdaeaceae').getRank() == 'genus':
         ncbi.taxon('Vezdaeaceae').setRank('family')
+
+    # JAR 2016-07-29 Researched Choano* taxa a bit.  NCBI has a bogus synonymy with
+    # paraphyletic Choanozoa.  SILVA calls this taxon Choanomonada (see above).
+    ncbi.taxon('Choanoflagellida', 'Opisthokonta').notCalled('Choanozoa')
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/281
+    ncbi.taxon('Equisetopsida', 'Moniliformopses').take(ncbi.taxon('Equisetidae', 'Moniliformopses'))
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/278
+    # NCBI Pinidae = Coniferales = Wikipedia Pinophyta = Coniferophyta
+    ncbi.taxon('Pinidae', 'Acrogymnospermae').absorb(ncbi.taxon('Coniferopsida', 'Coniferophyta'))
+    ncbi.taxon('Pinidae', 'Acrogymnospermae').absorb(ncbi.taxon('Coniferophyta', 'Acrogymnospermae'))
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/248
+    ncbi.taxon('Acomys cahirinus').notCalled('Acomys airensis')
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/152
+    ncbi.taxon('Selachii').synonym('Selachimorpha')
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/142
+    ncbi.taxon('Aotus azarai').rename('Aotus azarae')
+    ncbi.taxon('Aotus azarai azarai').rename('Aotus azarae azarae')
+    ncbi.taxon('Aotus azarai infulatus').rename('Aotus azarae infulatus')
+    ncbi.taxon('Aotus azarai boliviensis').rename('Aotus azarae boliviensis')
+
+    # 2016-08-31 This matches SILVA, and was breaking Streptophyta.  Cluster EF023721
+    capenv = ncbi.taxon('Caprifoliaceae environmental sample')
+    ncbi.taxon('Eukaryota').take(capenv)
+    capenv.unplaced()
+
 
 def load_worms():
     worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
@@ -649,6 +686,9 @@ def load_worms():
     worms.taxon('Actinopterygii').notCalled('Osteichthyes')
 
     worms.smush()  # Gracilimesus gorbunovi, pg_1783
+
+    # According to NCBI and IF, this is not in Fungi
+    worms.taxon('Fungi').parent.take(worms.taxon('Eccrinales'))
 
     return worms
 
@@ -818,7 +858,11 @@ def patch_gbif(gbif):
         print '** No extant member of Sphenodontidae'
 
     # https://github.com/OpenTreeOfLife/feedback/issues/159
-    gbif.taxon('Nesophontidae', 'Insectivora').extinct()
+    # GBIF sez: 'The order Soricomorpha ("shrew-form") is a taxon within the 
+    # class of mammals. In previous years it formed a significant group 
+    # within the former order Insectivora. However, that order was shown 
+    # to be polyphyletic ...'
+    gbif.taxon('Nesophontidae', 'Soricomorpha').extinct()
 
     # https://github.com/OpenTreeOfLife/feedback/issues/135
     gbif.taxon('Cryptobranchus matthewi', 'Amphibia').extinct()
@@ -841,12 +885,43 @@ def patch_gbif(gbif):
     if not gbif.taxon('Chonetoidea').setRank('superfamily'):
         print '** setRank failed for Chonetoidea'
 
+    # https://github.com/OpenTreeOfLife/feedback/issues/144
+    gbif.taxon('Lepilemur tymerlachsonorum').rename('Lepilemur tymerlachsoni')
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/123
+    gbif.taxon('Gryphodobatis', 'Orectolobidae').extinct()
+
+    # Related to https://github.com/OpenTreeOfLife/feedback/issues/307
+    # This problem is remedied by the 2016 GBIF update.
+    gbif.taxon('Naviculae mesoleiae').rename('Navicula mesoleiae')
+    gbif.taxon('Navicula').absorb(gbif.taxon('Naviculae'))
+
+    # GBIF as of 2016-09-01 says "doubtful taxon"
+    gbif.taxon('Foraminifera', 'Granuloreticulosea').prune(this_source)
+
+    # 2016-09-01 Wrongly in Hymenoptera
+    gbif.taxon('Pieridae', 'Insecta').take(gbif.taxonThatContains('Aporia', 'Aporia agathon'))
+
+    # 2016-09-01 Wrongly in Platyhelminthes, belongs in mites
+    gbif.taxon('Bdellidae').take(gbif.taxonThatContains('Bdellodes', 'Bdellodes serpentinus'))
+
+    # 2016-09-01 These are fossil fungi spores, not plants.  They're in 
+    # Index Fungorum, so we don't need wrong info from GBIF.
+    gbif.taxon('Inapertisporites', 'Plantae').prune(this_source)
+
+    # 2016-09-01 This is not a plant.  Checked W. van Hoven 1987, found
+    # in pubmed via web search, which says these things are ciliates, 
+    # and puts them in Cycloposthiidae.
+    # gbif.taxon('Cycloposthiidae').take(gbif.taxon('Monoposthium'))
+
     return gbif
 
 def load_irmng():
     irmng = Taxonomy.getTaxonomy('tax/irmng/', 'irmng')
     irmng.smush()
     irmng.analyzeMajorRankConflicts()
+
+    # patch_irmng
 
     irmng.taxon('Viruses').prune("taxonomies.py")
 
@@ -944,6 +1019,35 @@ def load_irmng():
         tax = irmng.maybeTaxon(id)
         if tax != None: tax.prune(this_source)
 
+    # 2016-07-28 JAR
+    # Discovered by ambiguity in an inclusion test.  The IRMNG genus appears to be
+    # disjoint with the NCBI genus of the same name, but they're
+    # actually the same due to species synonymy (from wikispecies).
+    irmng.taxon('Aulacomonas submarina').synonym('Diphylleia rotans')
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/167
+    irmng.taxon('Plectophanes altus').absorb(irmng.taxon('Plectophanes alta'))
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/304
+    irmng.taxon('Notobalanus', 'Maxillopoda').extant()
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/303
+    irmng.taxon('Neolepas', 'Maxillopoda').extant()
+
+    # wrongly in Plantae, should be a Lep
+    irmng.taxon('Pieridae', 'Insecta').take(irmng.taxonThatContains('Aporia', 'Aporia agathon'))
+
+    # members of Charis (a Riodinid genus) wrongly placed in genus Epimelitta in Cerambycidae
+    losers = []
+    for species in irmng.taxon('Charis aphanis', 'Insecta').parent.children:
+        if species.name.startswith('Charis '):
+            losers.append(species)
+    for species in losers:
+        species.prune(this_source)
+
+    # See above for GBIF
+    #irmng.taxon('Cycloposthiidae').take(irmng.taxon('Monoposthium'))
+
     return irmng
 
 # Common code for the 'old fashioned' taxonomies IF, GBIF, IRMNG,
@@ -953,7 +1057,6 @@ def load_irmng():
 def fix_basal(tax):
     fix_protists(tax)
     fix_SAR(tax)
-    fix_plants(tax)
 
 # Common code for GBIF, IRMNG, Index Fungorum
 def fix_protists(tax):
@@ -968,7 +1071,7 @@ def fix_protists(tax):
         else:
             print('* No parent "life" for Eukaryota, probably OK')
 
-    for name in ['Animalia', 'Fungi', 'Plantae']:
+    for name in ['Animalia', 'Fungi', 'Plantae', 'Haptophyta', 'Metazoa']:
         node = tax.maybeTaxon(name)
         if node != None:
             euk.take(node)
@@ -981,8 +1084,6 @@ def fix_protists(tax):
             for child in bad.children:
                 child.incertaeSedis()
             bad.elide()
-
-    fix_SAR(tax)
 
 # Add SAR and populate it
 
@@ -1004,30 +1105,6 @@ def fix_SAR(tax):
             else: print '** No Alveolata'
             if r != None: sar.take(r)
             else: print '** No Rhizaria'
-
-# 'Fix' plants to match SILVA and NCBI...
-def fix_plants(tax):
-    euk = tax.taxon('Eukaryota')
-
-    # 1. co-opt GBIF taxon for a slightly different purpose
-    plants = tax.maybeTaxon('Plantae')
-    if plants != None:
-        plants.rename('Chloroplastida')
-        # euk.take(plants)  ???
-
-    if euk != None:
-        # JAR 2014-04-25 GBIF puts rhodophytes under Plantae, but it's not
-        # in Chloroplastida.
-        # Need to fix this before alignment because of division calculations.
-        # Plantae is a child of 'life' in GBIF, and Rhodophyta is one of many
-        # phyla below that.  Move up to be a sibling of Plantae.
-        # This redefines GBIF Plantae, sort of, which is not nice.
-        # Discovered while looking at Bostrychia alignment problem.
-        # JAR 2014-05-13 similarly
-        # Glaucophyta - there's a GBIF/IRMNG false homonym, should be merged
-        # This needs to match the skeleton!
-        for name in ['Rhodophyta', 'Glaucophyta', 'Haptophyta', 'Fungi', 'Metazoa', 'Chloroplastida']:
-            # should check to see if this is an improvement in specificity?
-            rho = tax.maybeTaxon(name)
-            if rho != None:
-                euk.take(rho)
+    bac = tax.maybeTaxon('Bacillariophyta', 'Plantae')
+    if bac != None and s != None:
+        s.take(bac)

@@ -342,8 +342,12 @@ def write_taxonomy(taxa, synonyms, ncbi_to_taxon, url, nodesfilename, outdir):
                 parent_id = form_id(taxa[taxon.parent_id])
             else:
                 parent_id = ''
-            taxfile.write("%s\t|\t%s\t|\t%s\t|\t%s\t|\t\t|\t\n" %
-                          (taxid, parent_id, taxon.name, taxon.rank))
+            source_info = ''
+            probe = accession_to_ncbi_info.get(taxid)
+            if probe != None:
+                source_info = 'ncbi:' + probe[0]
+            taxfile.write("%s\t|\t%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n" %
+                          (taxid, parent_id, taxon.name, taxon.rank, source_info))
     os.rename(newtaxpath, taxpath)
 
     synpath = os.path.join(outdir, 'synonyms.tsv')

@@ -318,6 +318,8 @@ class With_ancestor:
             descendants = get_candidates(self.designator, taxonomy)
             return [d for d in descendants for a in ancestors if (d.descendsFrom(a) and d != a)]
         else: return []
+    def name(self):
+        return designator_name(designator)
     def unapply(self):
         return ('With_ancestor', [self.designator, self.ancestor])
 
@@ -331,6 +333,8 @@ class With_descendant:
             descendants = get_candidates(self.descendant, taxonomy)
             return [a for d in descendants for a in ancestors if (d.descendsFrom(a) and d != a)]
         else: return []
+    def name(self):
+        return designator_name(designator)
     def unapply(self):
         return ('With_descendant', [self.designator, self.descendant])
 
@@ -338,6 +342,9 @@ class With_descendant:
 
 def resolve_in(designator, taxonomy, windy=True):
     candidates = get_candidates(designator, taxonomy)
+    if len(candidates) > 1:
+        name = designator_name(designator)
+        candidates = [c for c in candidates if c.name == name]
     if len(candidates) == 1:
         return candidates[0]
     elif len(candidates) == 0:
@@ -350,6 +357,12 @@ def resolve_in(designator, taxonomy, windy=True):
             for candidate in candidates:
                 print ' ', candidate
         return None
+
+def designator_name(d):
+    if isinstance(d, str):
+        return d
+    else:
+        return d.name()
 
 # Designator implementation infrastructure
 

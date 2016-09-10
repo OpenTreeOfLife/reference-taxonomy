@@ -54,7 +54,10 @@ public abstract class Taxonomy {
 	private String tag = null;     // unique marker
 	private int taxid = -1234;	   // kludge
 
-    public EventLogger eventlogger = null;
+    public EventLogger eventLogger = new EventLogger();
+
+    Map<QualifiedId, Node> qidIndex = null;
+    Set<QualifiedId> qidAmbiguous = null;
 
 	public Taxonomy() {
     }
@@ -67,8 +70,9 @@ public abstract class Taxonomy {
 		return "(taxonomy " + this.getTag() + ")";
 	}
 
-    public void setEventLogger(EventLogger eventlogger) {
-        this.eventlogger = eventlogger;
+    public void setEventLogger(EventLogger eventLogger) {
+        eventLogger.resetEvents();    // usually no output
+        this.eventLogger = eventLogger;
     }
 
     // Every taxonomy defines a namespace, although not every node has a name.
@@ -111,7 +115,7 @@ public abstract class Taxonomy {
 
     // compare addSynonym
 	void addToNameIndex(Node node, String name) {
-        if (node.taxonomy != this)
+        if (node.getTaxonomy() != this)
             throw new RuntimeException(String.format("attempt to put node %s in wrong taxonomy %s", node, this));
         if (name == null)
             throw new RuntimeException("bug " + node);
@@ -123,8 +127,8 @@ public abstract class Taxonomy {
 		} else if (!nodes.contains(node)) {
             nodes.add(node);
             if (nodes.size() == 75) {
-                // should use eventlogger
-                System.err.format("| %s is the 75th in %s to have the name '%s'\n",
+                // should use eventLogger
+                System.out.format("| %s is the 75th in %s to have the name '%s'\n",
                                   node,
                                   this.getTag(),
                                   name);
@@ -141,6 +145,7 @@ public abstract class Taxonomy {
             if (nodes.size() == 0)
                 this.nameIndex.remove(node.name);
         }
+        node.name = null;       // maintain invariant.
 	}
 
     // Similar, there is an idspace, but not every node has an id.
@@ -174,9 +179,12 @@ public abstract class Taxonomy {
     // utility
 	public Taxon unique(String name) {
 		List<Node> probe = this.lookup(name);
-		if (probe != null && probe.size() == 1)
-			return probe.get(0).taxon();
-		else 
+		if (probe != null) {
+            if (probe.size() == 1)
+                return probe.get(0).taxon();
+            else
+                return null;
+		} else 
 			return this.lookupId(name);
 	}
 
@@ -187,7 +195,8 @@ public abstract class Taxonomy {
         if (t == null)
             return t;
         if (t.prunedp) {
-            System.out.format("** Prunedp taxon in id index: %s\n", t);
+            // System.err.format("** Pruned taxon found in id index: %s\n", t);
+            // this.idIndex.remove(id);
             return null;
         }
         return t;
@@ -261,79 +270,44 @@ public abstract class Taxonomy {
         return this.idspace;
 	}
 
-    // Ensure that the taxon has the indicated name, either as synonym or as primary
+    public void startQidIndex() {
+        this.qidIndex = new HashMap<QualifiedId, Node>();
+        this.qidAmbiguous = new HashSet<QualifiedId>();
+    }
 
-	public boolean addSynonym(String name, Taxon taxon, String type) {
-		if (taxon.hasName(name)) {
-            // System.out.format("| Skipping self-synonym %s\n", name);
-            // No need for a new synonym - the taxon already has the name in question
-            //   (although maybe we should care about the type ...)
-            return true;
-        } else {
-            return taxon.newSynonym(name, type) != null;
+    public Node lookupQid(QualifiedId qid) {
+        Node node = this.qidIndex.get(qid);
+        if (node != null && this.qidAmbiguous.contains(qid))
+            return null;
+        return node;
+    }
+
+    // index a single node by one qid
+    public void indexByQid(Node node, QualifiedId qid) {
+        if (this.qidIndex != null) {
+            Node other = this.qidIndex.get(qid);
+            if (other != null) {
+                if (other != node)
+                    this.qidAmbiguous.add(qid);
+            } else
+                this.qidIndex.put(qid, node);
         }
-	}
+    }
 
-	// Propogate synonyms from source taxonomy (= this) to union or selection.
-	// Some names that are synonyms in the source might be primary names in the union,
-	//	and vice versa.
-	void copySynonyms(Taxonomy targetTaxonomy, boolean mappedp) {
-		int count = 0;
-        for (Node node : this.allNamedNodes()) {
-            if (node instanceof Taxon) continue;
-            Synonym syn = (Synonym)node;
-
-            // It's a synonym for what in the target?
-            Taxon taxon = syn.taxon();
-            Taxon targetTaxon =
-                (mappedp
-                 ? taxon.mapped
-                 : targetTaxonomy.lookupId(taxon.id));
-            if (targetTaxon == null) continue;
-
-            // Find or create synonym in target taxonomy
-            Synonym targetSyn = null;
-
-            String name = syn.name;
-            List<Node> targetNodes = targetTaxonomy.lookup(name);
-            if (targetNodes != null) {
-                // One or more nodes with this name already exist in target
-                for (Node targetNode : targetNodes)
-                    if (targetNode instanceof Synonym) {
-                        if (targetSyn == null)
-                            targetSyn = (Synonym)targetNode;
-                        else {
-                            // more than one synonym - shouldn't happen - they'll cancel out
-                            targetSyn = null;
-                            break;
-                        }
-                    }
-                if (targetSyn == null) continue;
-            } else {
-                targetSyn = targetTaxon.newSynonym(name, syn.type);
-            }
-            if (mappedp)
-                targetSyn.addSourceId(taxon.getQualifiedId());
-            else {
-                if (targetSyn.sourceIds == null) {
-                    if (syn.sourceIds != null)
-                        targetSyn.sourceIds = new ArrayList<QualifiedId>(syn.sourceIds);
-                } else
-                    targetSyn.sourceIds.addAll(syn.sourceIds);
-            }
-            ++count;
+    // index all nodes by all their qids
+    public void indexByQid() {
+        this.startQidIndex();
+        for (Taxon taxon : this.taxa()) {
+            if (taxon.sourceIds != null)
+                for (QualifiedId qid : taxon.sourceIds)
+                    indexByQid(taxon, qid);
+            for (Synonym syn : taxon.getSynonyms())
+                if (syn.sourceIds != null)
+                    for (QualifiedId qid : syn.sourceIds)
+                        indexByQid(syn, qid);
         }
-		if (count > 0)
-			System.err.println("| Added " + count + " synonyms");
-	}
+    }
 
-	void copySelectedSynonyms(Taxonomy target) {
-		copySynonyms(target, false);
-	}
-
-	public void copyMappedSynonyms(Taxonomy target) {
-		copySynonyms(target, true);
-	}
 
     /* Nodes with more children come before nodes with fewer children.
        Nodes with shorter ids come before nodes with longer ids.
@@ -383,7 +357,7 @@ public abstract class Taxonomy {
             tax.loadNewick(designator);
         } else {
 			if (!designator.endsWith("/")) {
-				System.err.println("Taxonomy designator should end in / but doesn't: " + designator);
+				System.out.println("* Taxonomy designator should end in / but doesn't: " + designator);
 				designator = designator + "/";
 			}
 			System.out.println("--- Reading " + designator + " ---");
@@ -438,7 +412,6 @@ public abstract class Taxonomy {
 
         // Some statistics & reports
 		this.investigateHomonyms();
-        System.out.format("| y\n");
         int nroots = this.rootCount();
         int ntips = this.tipCount();
         int nnodes = this.count();
@@ -453,6 +426,12 @@ public abstract class Taxonomy {
             if (node instanceof Synonym)
                 ++i;
         return i;
+    }
+
+    public void clearDivisions() {
+        for (Taxon node : this.taxa())
+            node.division = null;
+        this.forest.division = null;
     }
 
     // ----- Standard topology manipulations! -----
@@ -490,8 +469,11 @@ public abstract class Taxonomy {
                 if (!node.isRoot()) {
                     Collection<Taxon> xchildren = node.getChildren();
                     // https://github.com/OpenTreeOfLife/reference-taxonomy/issues/210
-                    if (xchildren.size() <= 1)
+                    // "If 'incertae sedis' is the only child, elide it"
+                    if (node.parent.children.size() <= 1) {
+                        System.out.format("* Only child of %s is container %s\n", node.parent, node);
                         flag = 0;
+                    }
                     for (Taxon child : new ArrayList<Taxon>(xchildren))
                         // changeParent sets properFlags
                         child.changeParent(node.parent, flag);
@@ -1014,7 +996,6 @@ public abstract class Taxonomy {
     Taxonomy finishSelection(Taxonomy tax2, Taxon selection) {
         System.out.println("| Selection has " + selection.count() + " taxa");
         tax2.addRoot(selection);
-        this.copySelectedSynonyms(tax2);
         this.copySelectedIds(tax2);
         // copy flags and sourceids
         for (Taxon node : tax2.taxa())
@@ -1111,7 +1092,7 @@ public abstract class Taxonomy {
 			// TBD: synonyms ?
 			return tax2;
 		} else {
-			System.err.println("Missing or ambiguous name: " + designator);
+			System.err.println("** Missing or ambiguous name: " + designator);
 			return null;
 		}
 	}
@@ -1182,7 +1163,7 @@ public abstract class Taxonomy {
 		for (Taxon r : this.roots()) root = r;	//bad kludge. uniroot assumed
 		Taxon newroot = chop(root, m, n, cuttings, tax);
 		tax.addRoot(newroot);
-		System.err.format("Cuttings: %s Residue: %s\n", cuttings.size(), newroot.count());
+		System.out.format("| Cuttings: %s Residue: %s\n", cuttings.size(), newroot.count());
 
 		// Temp kludge ... ought to be able to specify the file name
 		String outprefix = "chop/";
@@ -1204,7 +1185,7 @@ public abstract class Taxonomy {
 		int c = node.count();
 		Taxon newnode = tax.dup(node, "sample");
 		if (m < c && c <= n) {
-			newnode.setName(newnode.name + " (" + node.count() + ")");
+			newnode.clobberName(newnode.name + " (" + node.count() + ")");
 			chopped.add(node);
 		} else if (node.children != null)
 			for (Taxon child : node.children) {
@@ -1220,6 +1201,7 @@ public abstract class Taxonomy {
         Taxon newnode = dupWithoutId(node, reason);
         if (node.id != null)
             newnode.setId(node.id);
+        node.copySynonymsTo(newnode);
         return newnode;
     }
 
@@ -1299,7 +1281,7 @@ public abstract class Taxonomy {
             Taxon second = rootsList.get(1);
             int count2 = second.count();
             if (rootsList.size() >= 2 && count1 < count2*500)
-                System.err.format("* Nontrivial forest: biggest is %s, 2nd biggest is %s\n", count1, count2);
+                System.out.format("* Nontrivial forest: biggest is %s, 2nd biggest is %s\n", count1, count2);
         }
         return rootsList;
     }
@@ -1322,7 +1304,6 @@ public abstract class Taxonomy {
                     id = Long.toString(minid--);
                 } while (lookupId(id) != null);
 				node.setId(id);
-				node.markEvent("no-id");
 			}
     }
 
@@ -1598,33 +1579,83 @@ public abstract class Taxonomy {
 	// ----- METHODS FOR USE IN JYTHON SCRIPTS -----
 
 	public Taxon taxon(String name) {
-		return maybeTaxon(name, true);
+		return taxon(name, null, null, true);
 	}
 
 	// Look up a taxon by name or unique id.  Name must be unique in the taxonomy.
 	public Taxon maybeTaxon(String name) {
-        return maybeTaxon(name, false);
+        return taxon(name, null, null, false);
     }
 
-	public Taxon maybeTaxon(String name, boolean windy) {
+	public Taxon taxonThatContains(String name, String descendant) {
+        return taxon(name, null, descendant, true);
+    }
+
+	// Look up a taxon by name or unique id.  Name must be unique in the taxonomy.
+	public Taxon maybeTaxonThatContains(String name, String descendant) {
+        return taxon(name, null, descendant, false);
+    }
+
+    List<Taxon> nodesToTaxa(List<Node> nodes) {
+        List<Taxon> taxa = new ArrayList<Taxon>();
+        for (Node node : nodes)
+            if (!taxa.contains(node.taxon()))
+                taxa.add(node.taxon());
+        return taxa;
+    }
+
+	public Taxon taxon(String name, String ancestor, String descendant, boolean windy) {
 		List<Node> nodes = this.lookup(name);
-		if (nodes != null) {
-			if (nodes.size() == 1)
-				return nodes.get(0).taxon();
-
-            // Filter out synonyms (if there are any...)
-            List<Node> nonsynonyms = new ArrayList<Node>();
+        if (nodes != null) {
+            List<Taxon> candidates = nodesToTaxa(nodes);
             for (Node node : nodes)
-                if (!(node instanceof Synonym))
-                    nonsynonyms.add(node);
-            if (nonsynonyms.size() == 1)
-                return nonsynonyms.get(0).taxon();
+                if (!candidates.contains(node.taxon()))
+                    candidates.add(node.taxon());
 
-            System.err.format("** Ambiguous taxon name: %s\n", name);
-            for (Node node : nodes) {
-                String uniq = node.uniqueName();
-                if (uniq.equals("")) uniq = name;
-                System.err.format("**   %s %s\n", node.taxon().id, uniq);
+            // TBD: Filter by ancestor
+            // TBD: Filter by descendant
+
+            if (ancestor != null)
+                candidates = filterByAncestor(candidates, ancestor);
+            if (descendant != null)
+                candidates = filterByDescendant(candidates, descendant);
+
+			if (candidates == null || candidates.size() == 0) {
+                if (windy) {
+                    if (ancestor != null)
+                        System.err.format("** No such taxon: %s in %s\n", name, ancestor);
+                    else if (descendant != null)
+                        System.err.format("** No such taxon: %s containing %s\n", name, descendant);
+                    else
+                        System.err.format("** No such taxon: %s\n", name);
+                }
+                return null;
+            }
+
+			if (candidates.size() == 1)
+				return candidates.get(0);
+
+            // Try filtering out synonyms
+            List<Taxon> candidates2 = new ArrayList<Taxon>();
+            for (Taxon cand : candidates)
+                if (cand.name.equals(name))
+                    candidates2.add(cand);
+			if (candidates2.size() == 1)
+				return candidates2.get(0);
+
+            // That didn't work.
+            if (windy) {
+                System.err.format("** Ambiguous taxon name: %s\n", name);
+                for (Taxon taxon : candidates) {
+                    String uniq = taxon.uniqueName();
+                    if (uniq.equals("")) uniq = taxon.name;
+                    System.err.format("**   %s = %s in %s\n",
+                                      uniq,
+                                      taxon,
+                                      (taxon.getDivision() == null ?
+                                       "-" :
+                                       taxon.getDivision().name));
+                }
             }
             return null;
 		} else {
@@ -1636,118 +1667,50 @@ public abstract class Taxonomy {
 	}
 
 	public Taxon taxon(String name, String context) {
-		Taxon probe = maybeTaxon(name, context);
-		if (probe == null) {
-			System.err.format("** No taxon found with name %s in context %s\n", name, context);
-            probe = maybeTaxon(name);
-            if (probe != null)
-                System.err.format("    but note %s\n", probe);
-        }
-		return probe;
+        return taxon(name, context, null, true);
 	}
 
 	public Taxon maybeTaxon(String name, String context) {
-		List<Taxon> nodes = filterByAncestor(name, context);
-		if (nodes == null) {
-			if (this.lookup(context) == null) {
-				Taxon probe = this.maybeTaxon(name);
-				if (probe != null)
-					System.err.format("| Found %s but there is no context %s\n", name, context);
-				return probe;
-			} else
-				return null;
-		} else if (nodes.size() == 1)
-			return nodes.get(0);
-		else {
-			// Still ambiguous even in context.
-			Taxon candidate = null;
-			Taxon otherCandidate = null;
-			// Chaetognatha
-			for (Taxon node : nodes)
-				if (!node.isRoot()
-                    && node.parent.name != null
-                    && node.parent.name.equals(context))
-					if (candidate == null)
-						candidate = node;
-					else {
-						otherCandidate = node;
-						break;
-					}
-			if (otherCandidate == null)
-				return candidate;
-			else {
-				System.err.format("** Ancestor %s of %s does not distinguish %s from %s\n",
-								  context, name, candidate, otherCandidate);
-				return null;
-			}
-		}
-	}
-
-	public Taxon taxonThatContains(String name, String descendant) {
-		List<Taxon> nodes = filterByDescendant(name, descendant);
-		if (nodes == null) {
-			System.err.format("** Taxon %s doesn't contain anything named %s\n", name, descendant);
-            Taxon probe = maybeTaxon(name);
-            if (probe != null)
-                System.err.format("   but note %s\n", probe);
-			return null;
-		} else if (nodes.size() == 1)
-			return nodes.get(0);
-		else {
-			Taxon candidate = null;
-			Taxon otherCandidate = null;
-			// Chaetognatha
-			for (Taxon node : nodes)
-				if (!node.isRoot()
-                    && node.parent.name != null
-                    && node.parent.name.equals(name))
-					if (candidate == null)
-						candidate = node.parent;
-					else {
-						otherCandidate = node.parent;
-						break;
-					}
-			if (otherCandidate == null)
-				return candidate;
-			else {
-				System.err.format("** Descendant %s of %s does not disambiguate between %s and %s\n",
-								  descendant, name, candidate.id, otherCandidate.id);
-				return null;
-			}
-		}
-
+        return taxon(name, context, null, false);
 	}
 
 	// Test case: Valsa
 	public List<Taxon> filterByAncestor(String taxonName, String ancestorName) {
 		List<Node> smallNodes = this.lookup(taxonName);
 		if (smallNodes == null) return null;
+        List<Taxon> result = filterByAncestor(nodesToTaxa(smallNodes), ancestorName);
+        return result.size() == 0 ? null : result;
+    }
+
+	List<Taxon> filterByAncestor(List<Taxon> smallTaxa, String ancestorName) {
+        if (smallTaxa == null) return null;
 		List<Node> bigNodes = this.lookup(ancestorName);
 		if (bigNodes == null) return null;
-		List<Taxon> bigTaxa = new ArrayList<Taxon>(bigNodes.size());
-        for (Node node : bigNodes)
-            bigTaxa.add(node.taxon());
+		List<Taxon> bigTaxa = nodesToTaxa(bigNodes);
 
 		List<Taxon> result = new ArrayList<Taxon>(1);
-		for (Node smallNode : smallNodes) {
+		for (Taxon smallTaxon : smallTaxa) {
 			// Follow ancestor chain to see whether this node is an ancestor
-			for (Taxon chain = smallNode.taxon().parent; chain != null; chain = chain.parent)
+			for (Taxon chain = smallTaxon.parent; chain != null; chain = chain.parent)
 				if (bigTaxa.contains(chain)) {
-					result.add(smallNode.taxon());
+					result.add(smallTaxon);
 					break;
 				}
 		}
-		return result.size() == 0 ? null : result;
+		return result;
 	}
 
 	public List<Taxon> filterByDescendant(String taxonName, String descendantName) {
-		List<Node> smallNodes = this.lookup(descendantName);
-		if (smallNodes == null) return null;
 		List<Node> bigNodes = this.lookup(taxonName);
 		if (bigNodes == null) return null;
-		List<Taxon> bigTaxa = new ArrayList<Taxon>(bigNodes.size());
-        for (Node node : bigNodes)
-            bigTaxa.add(node.taxon());
+        List<Taxon> result = filterByDescendant(nodesToTaxa(bigNodes), descendantName);
+		return result.size() == 0 ? null : result;
+    }
+
+	List<Taxon> filterByDescendant(List<Taxon> bigTaxa, String descendantName) {
+        if (bigTaxa == null) return null;
+		List<Node> smallNodes = this.lookup(descendantName);
+		if (smallNodes == null) return null;
 
 		List<Taxon> result = new ArrayList<Taxon>(1);
 		for (Node smallNode : smallNodes) {
@@ -1758,13 +1721,13 @@ public abstract class Taxonomy {
 					break;
 				}
 		}
-		return result.size() == 0 ? null : result;
+		return result;
 	}
 
     // For use from jython code.  Result is added as a root.
 	public Taxon newTaxon(String name, String rankname, String sourceIds) {
 		if (this.lookup(name) != null)
-			System.err.format("* Warning: A taxon by the name of %s already exists\n", name);
+			System.out.format("* Warning: A taxon by the name of %s already exists\n", name);
 		Taxon t = new Taxon(this, name);
 		if (rankname != null && !rankname.equals("no rank"))
 			t.rank = Rank.getRank(rankname);
@@ -1785,7 +1748,7 @@ public abstract class Taxonomy {
         Set<Taxon> all = new HashSet<Taxon>();
         for (Taxon taxon : this.taxa()) {
             if (taxon.prunedp)
-                System.out.format("** check: Pruned taxon found in hierarchy: %s in %s\n", taxon, taxon.parent);
+                System.err.format("** check: Pruned taxon found in hierarchy: %s in %s\n", taxon, taxon.parent);
             else
                 all.add(taxon);
         }
@@ -1795,12 +1758,12 @@ public abstract class Taxonomy {
             Taxon taxon = node.taxon();
             if (!all.contains(taxon)) {
                 if (node == taxon)
-                    System.out.format("** check: Named taxon not in hierarchy: %s in %s\n", taxon, taxon.parent);
+                    System.err.format("** check: Named taxon not in hierarchy: %s in %s\n", taxon, taxon.parent);
                 else if (taxon.prunedp)
-                    System.out.format("** check: Pruned taxon found in name index: %s = %s in %s\n",
+                    System.err.format("** check: Pruned taxon found in name index: %s = %s in %s\n",
                                       node.name, taxon, taxon.parent);
                 else
-                    System.out.format("** check: Synonym %s taxon not in hierarchy: %s in %s\n",
+                    System.err.format("** check: Synonym %s taxon not in hierarchy: %s in %s\n",
                                       node.name, taxon, taxon.parent);
                 all.add(taxon);
             }
@@ -1810,9 +1773,9 @@ public abstract class Taxonomy {
         for (Taxon taxon : idIndex.values()) {
             if (!all.contains(taxon)) {
                 if (taxon.prunedp)
-                    System.out.format("** check: Pruned taxon is in identifier index: %s\n", taxon);
+                    System.err.format("** check: Pruned taxon is in identifier index: %s\n", taxon);
                 else {
-                    System.out.format("** check: Identified taxon not in hierarchy: %s\n", taxon);
+                    System.err.format("** check: Identified taxon not in hierarchy: %s\n", taxon);
                     all.add(taxon);
                 }
             }
@@ -1823,16 +1786,16 @@ public abstract class Taxonomy {
             if (node.name != null && !node.prunedp) {
                 Collection<Node> nodes = this.lookup(node.name);
                 if (nodes == null)
-                    System.out.format("** check: Named node not in name index: %s\n", node);
+                    System.err.format("** check: Named node not in name index: %s\n", node);
                 else if (!nodes.contains(node))
-                    System.out.format("** check: Named node is not in name index: %s\n", node);
+                    System.err.format("** check: Named node is not in name index: %s\n", node);
             }
             if (node.id != null) {
                 Taxon taxon = lookupId(node.id);
                 if (taxon == null)
-                    System.out.format("** check: Identified node not in id index: %s\n", node);
+                    System.err.format("** check: Identified node not in id index: %s\n", node);
                 else if (taxon != node)
-                    System.out.format("** check: Identified node collision with id index: %s %s\n", node,  taxon);
+                    System.err.format("** check: Identified node collision with id index: %s %s\n", node,  taxon);
             }
         }
 
@@ -1840,9 +1803,9 @@ public abstract class Taxonomy {
         for (Taxon node : all) {
             if (node.parent == null) {
                 if (node != forest && !node.prunedp)
-                    System.out.format("** check: null parent %s\n", node);
+                    System.err.format("** check: null parent %s\n", node);
             } else if (!node.parent.children.contains(node))
-                System.out.format("** check: not in parent's children list: %s %s\n",
+                System.err.format("** check: not in parent's children list: %s %s\n",
                                   node, node.parent);
         }
     }
@@ -1867,7 +1830,7 @@ public abstract class Taxonomy {
 		PrintStream out;
 		if (filename.equals("-")) {
 			out = System.out;
-			System.err.println("Writing to standard output");
+			System.out.println("Writing to standard output");
 		} else {
 			out = new java.io.PrintStream(new java.io.BufferedOutputStream(new java.io.FileOutputStream(filename)),
 										  false,
@@ -1877,7 +1840,7 @@ public abstract class Taxonomy {
 
 			// PrintStream(new OutputStream(new FileOutputStream(filename, "UTF-8")))
 
-			System.err.println("Writing " + filename);
+			System.out.println("Writing " + filename);
 		}
 		return out;
 	}
@@ -1929,7 +1892,7 @@ public abstract class Taxonomy {
             if (node1 != node2)
                 return true;
             if (setp) {
-                System.out.format("** Cannot un-lump %s\n", node1);
+                System.err.format("** Cannot un-lump %s\n", node1);
                 return false;
             }
             else
@@ -1940,21 +1903,14 @@ public abstract class Taxonomy {
     // Event logging
 
 	public boolean markEvent(String tag) { // formerly startReport
-        if (this.eventlogger != null)
-            return this.eventlogger.markEvent(tag);
+        if (this.eventLogger != null)
+            return this.eventLogger.markEvent(tag);
         else return false;
 	}
 
     public boolean markEvent(String tag, Taxon node) {
-        if (this.eventlogger != null)
-            return this.eventlogger.markEvent(tag, node);
-        else return false;
-    }
-
-    public boolean markEvent(String tag, Taxon node, Taxon unode) {
-        // sort of a kludge
-        if (this.eventlogger != null)
-            return this.eventlogger.markEvent(tag, node, unode);
+        if (this.eventLogger != null)
+            return this.eventLogger.markEvent(tag, node);
         else return false;
     }
 

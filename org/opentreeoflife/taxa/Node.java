@@ -6,18 +6,18 @@ import java.util.regex.Pattern;
 
 public abstract class Node {
 	public String name;
-	public Taxonomy taxonomy;			// For subsumption checks etc.
 	public Taxon parent = null;
 	public List<QualifiedId> sourceIds = null;
 
-    public Node(Taxonomy tax, String name) {
-        this.taxonomy = tax;
+    public Node(String name) {
         this.name = name;
-        if (name != null)
-            this.taxonomy.addToNameIndex(this, name);
     }
 
     public abstract Taxon taxon();
+
+    public abstract String getType();
+
+    public abstract Taxonomy getTaxonomy();
 
     public abstract boolean taxonNameIs(String othername);
 
@@ -30,8 +30,10 @@ public abstract class Node {
 	public void addSourceId(QualifiedId qid) {
 		if (this.sourceIds == null)
 			this.sourceIds = new ArrayList<QualifiedId>(1);
-		if (!this.sourceIds.contains(qid))
+		if (!this.sourceIds.contains(qid)) {
 			this.sourceIds.add(qid);
+            this.getTaxonomy().indexByQid(this, qid);
+        }
 	}
 
 	// Note: There can be multiple sources, separated by commas.
@@ -51,8 +53,10 @@ public abstract class Node {
 		String[] ids = commaPattern.split(info);
 		if (ids.length > 0) {
 			this.sourceIds = new ArrayList(ids.length);
-			for (String qid : ids)
-				this.addSourceId(new QualifiedId(qid));
+			for (String qid : ids) {
+                if (qid.length() > 0)
+                    this.addSourceId(new QualifiedId(qid));
+            }
 		}
 	}
 

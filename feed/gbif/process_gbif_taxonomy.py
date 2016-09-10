@@ -164,6 +164,8 @@ if __name__ == "__main__":
     output the id parentid name rank
     """
     print "writing %s taxa" % len(nm_storage)
+    outfile.write("uid\t|\tparent_uid\t|\tname\t|\trank\t|\t\n")
+
     count = 0
     for id in nm_storage:
         parent_id = ""

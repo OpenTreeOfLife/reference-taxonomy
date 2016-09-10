@@ -82,6 +82,13 @@ def init_grandfathered(grandfathered):
         ('11102182', 'Basilosaurus cetoides'),
         ('11103647', 'Pseudastacus pustulosa'),
         ('10532033', 'Hyopsodus paulus'),
+        ('1435408', 'Auletes'),
+        ('10532250', 'Allosaurus fragilis'),
+        ('10537012', 'Gallimimus bullatus'),
+        ('1178867', 'Songlingornis'),
+        ('10532020', 'Cypselosoma australis'),
+        ('1407317', 'Lithornis'),
+        ('10957072', 'Velociraptor mongoliensis'),
     ]:
         grandfathered[id] = name
 

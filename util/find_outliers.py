@@ -2,6 +2,15 @@
 # from tips in the ingroup, that lie outside the focal clade taxon.
 
 # Much of this code was copied from germinator/trees_report/conflict.py.
+# It might be nice to have a module of shared functions...
+
+# Arguments:
+#   --treelist X    - X is pathname of file listing trees (one study@tree per line)
+#   --shard X       - X is pathname of directory containing phylesystem shard
+#   --taxonomy X    - X is pathname of taxonomy directory
+#   --out X         - X is pathname of where to write the report
+
+# Run with bin/jython (uses classes in smasher) (create with 'make bin/jython')
 
 
 import sys, os, json, argparse, csv, codecs
@@ -9,10 +18,9 @@ from org.opentreeoflife.taxa import Taxonomy, Nexson, Flag
 
 repo_dir = '..'              # directory containing repo clones
 
-study_tree_pairs_path = 'study_tree_pairs.txt'
 trees_in_synthesis = {}
 
-def report_on_shard(shard, taxpath, allp, outpath):
+def report_on_shard(study_tree_pairs_path, shard, taxpath, allp, outpath):
     if not allp:
         with open(study_tree_pairs_path, 'r') as infile:
             print 'reading', study_tree_pairs_path
@@ -243,19 +251,21 @@ def all_study_ids(shard):
 
 if __name__ == '__main__':
     argparser = argparse.ArgumentParser(description='Show taxa outside ingroups.')
-    argparser.add_argument('--out', dest='outfile', default='check_ingroups.out')
+    argparser.add_argument('--treelist', dest='treelist', default='study_tree_pairs.txt')
     argparser.add_argument('--shard', dest='shard',
                            default=os.path.join(repo_dir, 'phylesystem-1'),
                            help='root directory of repository (shard) containing nexsons')
     argparser.add_argument('--taxonomy', dest='taxonomy',
                            default='tax/ott/',
                            help='reference taxonomy')
+    argparser.add_argument('--out', dest='outfile', default='check_ingroups.out')
     args = argparser.parse_args()
 
     # refs = get_refs(args.refs, os.path.join(registry_dir, 'plants-ott29/'))
     # refs = get_refs(args.refs, os.path.join(registry_dir, 'ott2.9/'))
 
-    report_on_shard(args.shard,
+    report_on_shard(args.treelist,
+                    args.shard,
                     args.taxonomy,
                     False,
                     args.outfile)

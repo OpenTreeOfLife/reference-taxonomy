@@ -11,6 +11,7 @@ tax/prev_ott
 feed/*/in/
 feed/*/out/
 lib
+study_tree_pairs.txt
 feed/misc/chromista_spreadsheet.py
 diff.out
 tax/silva
@@ -18,6 +19,7 @@ tax/worms
 tax/ncbi
 tax/gbif
 tax/irmng
+tax/fung
 t/tax/aster
 service/service.config
 service/service.pid
@@ -27,3 +29,10 @@ service/synth
 ws-tests/.out*
 bin/jython
 bin/smasher
+.DS_Store
+TAGS
+feed/amendments/amendments-1
+t/feed/amendments/amendments-0
+feed/silva/work
+tarballs
+*-tmp

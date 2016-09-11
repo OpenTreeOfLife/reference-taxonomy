@@ -13,7 +13,7 @@
 JAVAFLAGS=-Xmx14G
 
 # Modify as appropriate
-WHICH=2.10draft10
+WHICH=2.10draft11
 PREV_WHICH=2.9
 
 # ----- Taxonomy source locations -----
@@ -321,7 +321,7 @@ feed/misc/chromista_spreadsheet.py: feed/misc/chromista-spreadsheet.csv feed/mis
 
 fetch_amendments: feed/amendments/amendments-1/next_ott_id.json
 
-feed/amendments/amendments-1/next_ott_id.json:
+feed/amendments/amendments-1/next_ott_id.json: $(AMENDMENTS_REFSPEC)
 	$(MAKE) refresh-amendments
 
 refresh-amendments: feed/amendments/amendments-1

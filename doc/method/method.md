@@ -1,5 +1,6 @@
-
 # Taxonomy assembly
+
+## Taxonomy construction
 
 The assembly process works, in outline, as follows:
 
@@ -37,20 +38,48 @@ converted to the Open Tree 'interim taxonomy format' by a python
 script.  Given the ITF files, the taxonomy can be 'loaded' by the
 assembly procedure.
 
-In two cases an imported source taxonomy is split into parts before
+A taxonomy in interim taxonomy format has the following parts:
+ * a taxonomy table, with one row per taxon; each row gives an identifier that is unique to this taxonomy, the taxon's name, the id of its parent taxon, and optional annotations or 'flags'
+ * an optional synonyms table, with one name-taxon association row per synonym
+ * an optional identifier merge table, with one row for each identifier alias (where one identifier is an alias for another)
+
+The most important annotation is 'extinct'.  We initially included
+extinct taxa in the synthetic phylogenetic tree, and the result was
+that most extinct taxa were badly placed in the tree - for example,
+many extinct genera showed up as direct children of Mammalia.  While
+the NCBI Taxonomy usually gives a modern classification for the
+species it covers, it makes no attempt to fit in extinct taxa, so when
+such taxa are found in other taxonomies, there is no good place to put
+them in the Open Tree taxonomy.  Removing from synthesis those
+(usually badly placed) taxa in the taxonomy that are annotated extinct
+leads to a cleaner synthesis.
+
+[KC: 'I wonder if there should be a separate section somewhere about extinct taxa.']
+
+In two cases, an imported source taxonomy is split into parts before
 processing continues, so that the parts can be positioned in different
-places in the align/merge order: Index Fungorum is split into high
-priority Fungi and lower priority everything-except-Fungi, and WoRMS
-is split into Malacostraca and everything-except-Malacostraca.
+places in the align/merge order.  The decision to divide a source
+taxonomy is made by a curator.  In the case of Index Fungorum, a
+curator noted that the coverage and curation quality outside of Fungi
+did not seem to improve on NCBI Taxonomy, while inside Fungi it did.
+Index Fungorum is therefore split into high priority Fungi and lower
+priority everything-except-Fungi.  Similarly, in the case of WoRMS,
+Malacostraca was a project priority at that point, and the quality of
+the rest of WoRMS was unreviewed, so rather than risk possible
+problems by overriding NCBI, we simply made non-Malaconstraca be low
+priority.
 
 After each source taxonomy is loaded, the following two normalizations
 are performed:
 
  1. Child taxa of "containers" in the source taxonomy are made to be
     children of the parent container's parent.  "Containers" are
-    grouping nodes in the tree that don't represent taxa, for example
-    "incertae sedis" or "environmental samples" nodes.  The fact that
-    the child had been in a container is recorded as a flag on the
+    groupings in the tree that don't represent taxa, for example
+    "incertae sedis" or "environmental samples" nodes.  The members of
+    a container aren't more closely related to one another than they
+    are to the container's siblings; the container is only present as
+    a way to say something about the members.  The fact that a taxon
+    had originally been in a container is recorded as a flag on the
     child node.
  1. Monotypic homonym removal - when taxon with name N has as its
     only child another taxon with name N, the parent is removed.
@@ -59,19 +88,22 @@ are performed:
 
 ## Source patching
 
-Most source taxonomies have ad hoc patches that are applied at this
-point.  Capitalizations andmisspellings can be fixed at this point,
-and synonyms added (e.g. 'Stramenopiles' for 'Heterokonta'), to
-improve matches between taxonomies.  Other patches such as extinct or
-extant annotations or topology changes can be applied at this point.
+Most source taxonomies have scripted ad hoc patches that are applied
+at this point.  Some capitalizations and misspellings are fixed, and
+synonyms added (e.g. 'Stramenopiles' for 'Heterokonta'), to improve
+matches between taxonomies.  Other patches, such as extinct or extant
+annotations or topology changes, are applied at this point.
 Generally it's best to handle taxonomic problems by correcting source
 taxonomies at this point, but if it is difficult or inconvenient to
-localize the problem to one or more sources, repair can be left until
+localize the problem to one or more sources, repair is left until
 the final patch phase after all source taxonomies have been loaded and
 merged.
 
-Editing the source taxonomy presents a provenance tracking problem
-that has yet to be addressed.
+By scripting edits to source taxonomies, as opposed to just editing
+either the sources or the final taxonomy directly, we can preserve the
+provenance of the changes, as comments in the file containing the
+script.  At present this provenance information is unfortunately not
+copied into the final taxonomy file, but ideally it would be.
 
 ## Align source to union
 
@@ -122,12 +154,14 @@ follows:
 
  1. Start with a source node and a set C of union nodes (candidates).
  2. For each heuristic H:
-      1. Let C' = those members of C for which H succeeds.
+      1. Let C' = those members of C for which H returns true.
       2. If C' is singleton, we are done; the source node matches the member of C'.
-      3. If H is a separation heuristic, replace C with C'.  If C is now empty, we're done.
-      4. If H is a preference heuristic, and C' is nonempty, replace C
-      with C'.  (If C' is empty or C' = C, it gave us no information,
-      and we ignore it.)
+      3. If H is a separation heuristic:
+          1. Replace C with C'.
+          1. If C is empty, we're done; there are no acceptable matches.
+      4. If H is a preference heuristic:
+          1. If C' is empty, make no change to C.
+          2. Otherwise, replace C with C'.
  3. If C is empty, no union node matches the source node.  (A polysemy may be created in the merge phase.)
  4. If C is singleton, its member is taken to be the correct match.
  5. Otherwise, the source node is ambiguous.
@@ -163,6 +197,7 @@ This is not currently handled.
 ### Separation heuristic: Skeleton taxonomy
 
 The heuristics are described in the order in which they are applied.
+The outcome is sensitive to the ordering.
 
 If taxa A and B belong to taxa C and D (respectively), and C and D are
 known to be disjoint, then A and B can be considered distinct.  For
@@ -181,9 +216,11 @@ actually arise.  For example, there are many [how many? dozens?
 hundreds?] of fungus/plant polysemies, even though the two groups are
 covered by the same nomenclatural code.
 
-Some cases like this one are actual differences of opinion concerning
-classification, and different placement of a name between two source
-taxonomies does not mean that we are talking about different taxa.
+Some cases of apparent polysemy might be differences of opinion
+concerning whether a taxon possesses an apomorphy or belongs in some
+clade (the MRCA of some other taxa).  Different placement of a name in
+two source taxonomies does not necessarily mean that the name denotes
+different taxa in the two taxonomies.
 
 The separation heuristic used here works as follows.  We establish a
 "skeleton" taxonomy, containing about 25 higher taxa (Bacteria,
@@ -340,21 +377,35 @@ an unplaced taxon (more resolved, or resolved), or not.  Unplaced taxa
 should not inhibit the application of any rule, but they shouldn't get
 lost during merge, either.
 
-## Postprocessing
+### Postprocessing
 
 After all source taxonomies are aligned and merged, general ad hoc
-patches are applied to the union taxonomy.  Some patches are
-represented in the 'version 1' (TSV-based) form, and others in the
-'version 2' (python-based) form.  A further set of patches for
-microbial Eukaryotes comes from a spreadsheet prepared by the Katz
-lab.
+patches are applied to the union taxonomy, in a manner similar to that
+employed with the source taxonomies.  Some patches are represented in
+the 'version 1' (TSV-based) form, and others in the 'version 2'
+(python-based) form.  A further set of patches for microbial
+Eukaryotes comes from a spreadsheet prepared by the Katz lab.
 
-There is a special step to locate taxa that come only from PaleoDB
-and mark them extinct.
+There is a step to mark as extinct those taxa whose only source
+taxonomy is GBIF and that come to GBIF via PaleoDB.  This is a
+heuristic, as PaleoDB can (rarely) contain extant taxa, but the
+alternative is failing to recognize a much larger number of taxa as
+extinct.
 
-## Id assignment
+### Id assignment
 
 The final step is to assign OTT ids to taxa.  This is done by aligning
 the previous version of OTT to the new union taxonomy.  After
 transferring ids of aligned taxa, any remaining union taxa are given
 newly 'minted' identifiers.
+
+## Results
+
+[TBD: Get metrics for OTT 2.10]
+
+[Challenges in construction: dirty inputs, homonyms, a gazillion special cases...]
+
+[Artifacts: e.g. (a,b,c,d,e)f + ((a,b)g,(c,e)h)f ]
+
+[Limitations of method: ...]
+

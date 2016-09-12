@@ -78,7 +78,7 @@ public class Smasher {
 						// To smush or not to smush?
 						UnionTaxonomy union = promote(tax); tax = union;
 						SourceTaxonomy idsource = Taxonomy.getTaxonomy(argv[++i], defaultIdspace);
-						union.assignIds(idsource, "additions");
+						union.additionsAndIds(idsource, "feed/additions", "new_taxa");
 					}
 
 					else if (argv[i].equals("--select2")) {

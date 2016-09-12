@@ -70,7 +70,7 @@ source taxonomies.  For code,
 see <a href="https://github.com/OpenTreeOfLife/reference-taxonomy">the
 source code repository</a>.
 Version 2.10 draft 11 was generated using 
-<a href="https://github.com/OpenTreeOfLife/reference-taxonomy/commit/b12979be9cbb8b2616f2506bb8e1a5aed0ca44b1">commit b12979b</a>.</p>
+<a href="https://github.com/OpenTreeOfLife/reference-taxonomy/commit/eca7bdefdc8ad10fb39b9ff8c98db1cc186d7e94">commit eca7bde</a>.</p>
 
 ## Sources
 
@@ -89,7 +89,7 @@ retrieved.
     Newick string with revisions
     archived at [http://figshare.com/articles/Fungal\_Classification\_2015/1465038](http://figshare.com/articles/Fungal_Classification_2015/1465038).
     <br />
-    Download location: [TBD: FIX ME] [http://purl.org/opentree/ott/??TBD??](http://purl.org/opentree/ott/??TBD??)
+    Download location: [https://github.com/OpenTreeOfLife/reference-taxonomy/tree/ott2.10draft11/feed/h2007](https://github.com/OpenTreeOfLife/reference-taxonomy/tree/ott2.10draft11/feed/h2007)
 
 1.  Taxonomy from: SILVA 16S ribosomal RNA database, version 115.
     See: Quast C, Pruesse E, Yilmaz P, Gerken J, Schweer T, Yarza P, Peplies J,

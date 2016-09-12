@@ -65,14 +65,12 @@ on github.
 
 ## Build script
 
-[TBD: copy from 2.9 release notes.  Commit id is 7b8da9db30e5c220db6d2f6baa67548af26468b4]
-
 The reference taxonomy is an algorithmic combination of several
 source taxonomies.  For code,
 see <a href="https://github.com/OpenTreeOfLife/reference-taxonomy">the
 source code repository</a>.
 Version 2.10 draft 11 was generated using 
-<a href="https://github.com/OpenTreeOfLife/reference-taxonomy/commit/7b8da9db30e5c220db6d2f6baa67548af26468b4">commit 7b8da9d</a>.</p>
+<a href="https://github.com/OpenTreeOfLife/reference-taxonomy/commit/b12979be9cbb8b2616f2506bb8e1a5aed0ca44b1">commit b12979b</a>.</p>
 
 ## Sources
 
@@ -81,7 +79,7 @@ should be assumed to have been introduced by the Open Tree of Life
 project until confirmed as originating in the source taxonomy.
 
 Download locations are for the particular versions used to construct
-OTT 2.9.  For new work, current versions of these sources should be
+OTT 2.10.  For new work, current versions of these sources should be
 retrieved.
 
 1.  Taxonomy from: 

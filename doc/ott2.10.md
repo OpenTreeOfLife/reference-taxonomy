@@ -10,10 +10,13 @@ Version 2.10 draft 11 was generated on 10 September 2016.
 ## Major changes since OTT 2.9
 
 * Updated to NCBI Taxonomy downloaded June 29, 2016.
-* The basic taxon matching method has been rewritten, and now considers all synonym/synonym matches, 
-  and matches based on ids.
-* Names in IRMNG that are marked invalid (nomen nudum, etc.) do not become OTT taxa.
+* The basic taxon matching method has been rewritten.  Among other improvements it
+  now considers all synonym/synonym matches, and matches based on ids.
+* Names in IRMNG that are marked invalid (nomen nudum, etc.) do not become OTT taxa
+  (unless grandfathered because used in an OTU match).  There are 365811 of these
+  although the corresponding OTT taxa are not removed if they also come from another source.
 * IRMNG-only taxa are annotated 'hidden' to reduce number of problematic species.
+  There are 351271 of these.
 * Build transcript is now in transcript.out.
 * The download file synonyms.tsv contains information about where synonyms come from.
 * Changes to improve the NCBI/SILVA mapping
@@ -26,8 +29,8 @@ Version 2.10 draft 11 was generated on 10 September 2016.
 * OTT identifiers ('taxa'): 3453839 (74510 fewer, due to IRMNG trim)
 * Visible: [TBD]
 * Synonyms: 1001466 [contains some duplicates, get better number and show delta]
-* Deprecated ids occuring in phylesystem: 531
-* Deprecated ids used in synthesis: 184
+* Deprecated/hidden ids occurring in phylesystem: 531
+* Deprecated/hidden ids occurring in studies in synthesis: 184
 * Source taxa dissolved due to conflict (conflicts.tsv): 1167
 
 ## Contents of download

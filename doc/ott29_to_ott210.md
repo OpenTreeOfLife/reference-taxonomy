@@ -34,7 +34,7 @@ have to do with taxon alignment.
 ### Patches
 
 Dealt with Yan Wong's comment on the google group (2015-10-10) about
-Uncia by renaming Uncia Uncia to Panthera Uncia and putting Uncia in
+Uncia by renaming Uncia uncia to Panthera uncia and putting Uncia in
 Panthera.  This is an NCBI patch, so I put it in the NCBI-specific
 part of taxonomies.py (could have gone in assemble-ott.py).
 https://github.com/OpenTreeOfLife/feedback/issues/291
@@ -59,7 +59,7 @@ Choanoflagellida that all the other sources use, and deleted the
 bogus NCBI synonymy for Choanozoa.
 https://github.com/OpenTreeOfLife/feedback/issues/45
 
-Semionotiformes was erroenously marked extinct; it should be extant
+Semionotiformes was erroneously marked extinct; it should be extant
 now.  The fix was to merge the taxa Semionotiformes and
 Lepisosteiformes which are gien as distinct in IRMNG (one extinct, the
 other not) but unified in NCBI.  I'm not sure this is the best
@@ -142,9 +142,6 @@ https://github.com/OpenTreeOfLife/reference-taxonomy/issues/195
 Cestracion is redundant
 https://github.com/OpenTreeOfLife/feedback/issues/127
 
-Hylobates albibarbis is a misspelling
-https://github.com/OpenTreeOfLife/feedback/issues/184
-
 Attempt at straightening out the Equisetopsida situation (NCBI error)
 https://github.com/OpenTreeOfLife/feedback/issues/281
 
@@ -159,9 +156,6 @@ https://github.com/OpenTreeOfLife/feedback/issues/152
 
 Deal with spelling problem in Aotus
 https://github.com/OpenTreeOfLife/feedback/issues/142
-
-Most Sphenodontids are extinct (sadly)
-https://github.com/OpenTreeOfLife/feedback/issues/165
 
 Name of Lepilemur tymerlachsonorum
 https://github.com/OpenTreeOfLife/feedback/issues/144

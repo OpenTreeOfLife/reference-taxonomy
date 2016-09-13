@@ -13,7 +13,7 @@
 JAVAFLAGS=-Xmx14G
 
 # Modify as appropriate
-WHICH=2.10draft9
+WHICH=2.10draft11
 PREV_WHICH=2.9
 
 # ----- Taxonomy source locations -----
@@ -43,8 +43,8 @@ SILVA_URL=$(SILVA_EXPORTS)/SSURef_NR99_115_tax_silva.fasta.tgz
 # This is used as a source of OTT id assignments.
 PREV_OTT_URL=http://files.opentreeoflife.org/ott/ott$(PREV_WHICH)/ott$(PREV_WHICH).tgz
 
-# 20 Aug 2016, Nico Franz
-AMENDMENTS_REFSPEC=8c76e691b28cecc6029f8a852aea3ad2a4f374ac
+# 9 Sep 2016
+AMENDMENTS_REFSPEC=feed/amendments/refspec
 
 # -----
 
@@ -115,6 +115,7 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
 	@mkdir -p tax/ott
 	@echo Writing transcript to tax/ott/transcript.out
 	time bin/jython make-ott.py 2>&1 | tee tax/ott/transcript.out
+	echo $(WHICH) >tax/ott/version.txt
 
 tax/ott/version.txt:
 	echo $(WHICH) >tax/ott/version.txt
@@ -320,14 +321,15 @@ feed/misc/chromista_spreadsheet.py: feed/misc/chromista-spreadsheet.csv feed/mis
 
 fetch_amendments: feed/amendments/amendments-1/next_ott_id.json
 
-feed/amendments/amendments-1/next_ott_id.json:
+feed/amendments/amendments-1/next_ott_id.json: $(AMENDMENTS_REFSPEC)
 	$(MAKE) refresh-amendments
 
 refresh-amendments: feed/amendments/amendments-1
 	(cd feed/amendments/amendments-1; git checkout master)
 	(cd feed/amendments/amendments-1; git pull)
-	(cd feed/amendments/amendments-1; git log | head -1)
-	(cd feed/amendments/amendments-1; git checkout -q $(AMENDMENTS_REFSPEC))
+	(cd feed/amendments/amendments-1; git log -n 1) | head -1 | sed -e 's/commit //' >$(AMENDMENTS_REFSPEC).new
+	mv $(AMENDMENTS_REFSPEC).new $(AMENDMENTS_REFSPEC)
+	(cd feed/amendments/amendments-1; git checkout -q `cat ../../../$(AMENDMENTS_REFSPEC)`)
 
 feed/amendments/amendments-1:
 	@mkdir -p feed/amendments
@@ -375,7 +377,7 @@ $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 # For publishing OTT drafts or releases.
 # File names beginning with # are emacs lock links.
  
-tarball: tax/ott/log.tsv
+tarball: tax/ott/log.tsv tax/ott/version.txt
 	(mkdir -p $(TARDIR) && \
 	 tar czvf $(TARDIR)/ott$(WHICH).tgz.tmp -C tax ott \
 	   --exclude differences.tsv --exclude "#*" && \

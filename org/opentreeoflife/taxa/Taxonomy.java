@@ -34,8 +34,6 @@ import java.util.Collection;
 import java.io.PrintStream;
 import java.io.File;
 import org.json.simple.JSONObject; 
-import org.json.simple.parser.JSONParser; 
-import org.json.simple.parser.ParseException;
 
 public abstract class Taxonomy {
     private Map<String, List<Node>> nameIndex = new HashMap<String, List<Node>>();

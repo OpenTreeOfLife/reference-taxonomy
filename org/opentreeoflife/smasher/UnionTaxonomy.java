@@ -298,7 +298,7 @@ public class UnionTaxonomy extends Taxonomy {
 
 	// Assign ids, harvested from idsource and new ones as needed, to nodes in union.
 
-	public void assignIds(SourceTaxonomy idsource, String amendmentsPath) {
+	public void additionsAndIds(SourceTaxonomy idsource, String amendmentsPath, String newTaxaPath) {
         // Phase 1: assign ids from idsource
         carryOverIds(idsource);
 
@@ -310,9 +310,12 @@ public class UnionTaxonomy extends Taxonomy {
             System.err.format("** Exceptions are annoying (processAdditions): %s\n", e);
         }
 		// Phase 3: give new ids to union nodes that didn't get them above.
-		this.assignNewIds(amendmentsPath);
+		this.assignNewIds(newTaxaPath);
 		// remember, this = union, idsource = previous version of ott
     }
+
+
+    // Assign ids from previous version of taxonomy, when possible
 
 	public void carryOverIds(SourceTaxonomy idsource) {
         // Align the taxonomies; generates report
@@ -362,7 +365,7 @@ public class UnionTaxonomy extends Taxonomy {
                           sameName, differentName, already, blocked);
     }
 
-	public void assignNewIds(String amendmentsPath) {
+	public void assignNewIds(String newTaxaPath) {
         List<Taxon> nodes = new ArrayList<Taxon>();
         for (Taxon root: this.roots())
             findTaxaNeedingIds(root, nodes);
@@ -375,7 +378,7 @@ public class UnionTaxonomy extends Taxonomy {
         System.out.format("| %s taxa need ids; greatest id so far is %s\n", nodes.size(), maxid);
 
         if (nodes.size() > 0)
-            Addition.assignNewIds(nodes, maxid, amendmentsPath);
+            Addition.assignNewIds(nodes, newTaxaPath);
 	}
 
     public void findTaxaNeedingIds(Taxon node, List<Taxon> nodes) {

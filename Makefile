@@ -65,7 +65,7 @@ JAVASOURCES=$(shell find org/opentreeoflife -name "*.java")
 
 # ----- Targets
 
-all: ott
+all: compile
 
 # Shorthand target
 compile: $(CLASS)

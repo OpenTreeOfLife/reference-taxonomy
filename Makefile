@@ -74,7 +74,8 @@ compile: $(CLASS)
 $(CLASS): $(JAVASOURCES) \
 	  lib/jython-standalone-2.7.0.jar \
 	  lib/json-simple-1.1.1.jar \
-	  lib/junit-4.12.jar
+	  lib/junit-4.12.jar \
+	  lib/skosapi.jar
 	javac -g $(CP) $(JAVASOURCES)
 
 # Script to start up jython (with OTT classes preloaded)
@@ -434,6 +435,11 @@ lib/junit-4.12.jar:
 	  "http://search.maven.org/remotecontent?filepath=junit/junit/4.12/junit-4.12.jar"
 	@ls -l $@
 
+lib/skosapi.jar:
+	wget --output-document=$@ --no-check-certificate \
+	  "http://skosapi.sourceforge.net/skosapi.jar"
+	@ls -l $@
+
 # -----Taxon inclusion tests
 
 # OK to override this locally, e.g. with
@@ -527,3 +533,4 @@ squeakyclean:
 	rm -f lib/*
 	rm -rf tax/fung tax/gbif tax/irmng tax/ncbi tax/silva tax/worms 
 	rm -rf tax/prev_ott
+

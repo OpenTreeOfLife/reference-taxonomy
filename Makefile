@@ -426,7 +426,7 @@ lib/jython-standalone-2.7.0.jar:
 
 lib/json-simple-1.1.1.jar:
 	wget --output-document=$@ --no-check-certificate \
-	  "https://json-simple.googlecode.com/files/json-simple-1.1.1.jar"
+	  "http://search.maven.org/remotecontent?filepath=com/googlecode/json-simple/json-simple/1.1.1/json-simple-1.1.1.jar"
 	@ls -l $@
 
 lib/junit-4.12.jar:

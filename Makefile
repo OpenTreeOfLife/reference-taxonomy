@@ -525,7 +525,7 @@ clean:
 #	rm -rf feed/*/work ?
 	rm -rf feed/amendments t/amendments bin/jython
 	rm -rf tax/fung tax/ncbi tax/prev_nem tax/silva
-	rm -f `find . -name *.class`
+	rm -f `find . -name '*.class'`
 	rm -f feed/misc/chromista_spreadsheet.py
 #	rm -f feed/ncbi/in/taxdump.tar.gz
 

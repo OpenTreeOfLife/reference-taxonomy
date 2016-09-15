@@ -51,8 +51,8 @@ for claim in claims:
     print claim.check(tax)
 
 gen = tax.newTaxon("Opentreeia", "genus", "data:testing")
-gen.take(tax.newTaxon("Opentreeia sp. A", "species", "data:testing"))
-gen.take(tax.newTaxon("Opentreeia sp. B", "species", "data:testing"))
+gen.take(tax.newTaxon("Opentreeia sp. C", "species", "data:testing"))
+gen.take(tax.newTaxon("Opentreeia sp. D", "species", "data:testing"))
 
 # Example of referring to a taxon
 fam = tax.maybeTaxon("Phellinaceae")
@@ -68,15 +68,17 @@ sp.prune("aster.py")
 
 # tax.loadPreferredIds('ids-that-are-otus.tsv')
 
-additions_path = 't/amendments-0'
+additions_repo_path = 't/feed/amendments/amendments-0'
+new_taxa_path = 't/new_taxa'
 
 # Assign identifiers to the taxa in the model taxonomy.  Identifiers
 # assigned in the previous version are carried over to this version.
 ids = Taxonomy.getTaxonomy('t/tax/prev_aster/', 'ott')
-
 tax.carryOverIds(ids)    # performs alignment
-Addition.processAdditions(additions_path, tax)
-tax.assignNewIds(additions_path)
+
+Addition.processAdditions(additions_repo_path, tax)
+
+tax.assignNewIds(new_taxa_path)
 
 # Write the model taxonomy out to a set of files
 tax.dump('t/tax/aster/', '\t|\t')

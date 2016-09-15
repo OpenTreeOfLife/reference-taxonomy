@@ -65,7 +65,7 @@ JAVASOURCES=$(shell find org/opentreeoflife -name "*.java")
 
 # ----- Targets
 
-all: ott
+all: compile
 
 # Shorthand target
 compile: $(CLASS)
@@ -322,7 +322,9 @@ feed/misc/chromista_spreadsheet.py: feed/misc/chromista-spreadsheet.csv feed/mis
 fetch_amendments: feed/amendments/amendments-1/next_ott_id.json
 
 feed/amendments/amendments-1/next_ott_id.json: $(AMENDMENTS_REFSPEC)
-	$(MAKE) refresh-amendments
+	(cd feed/amendments/amendments-1; git checkout master)
+	(cd feed/amendments/amendments-1; git pull)
+	(cd feed/amendments/amendments-1; git checkout -q `cat ../../../$(AMENDMENTS_REFSPEC)`)
 
 refresh-amendments: feed/amendments/amendments-1
 	(cd feed/amendments/amendments-1; git checkout master)
@@ -426,7 +428,7 @@ lib/jython-standalone-2.7.0.jar:
 
 lib/json-simple-1.1.1.jar:
 	wget --output-document=$@ --no-check-certificate \
-	  "https://json-simple.googlecode.com/files/json-simple-1.1.1.jar"
+	  "http://search.maven.org/remotecontent?filepath=com/googlecode/json-simple/json-simple/1.1.1/json-simple-1.1.1.jar"
 	@ls -l $@
 
 lib/junit-4.12.jar:
@@ -516,9 +518,9 @@ clean:
 	rm -rf tax/ott
 	rm -rf feed/*/out *.tmp
 #	rm -rf feed/*/work ?
-	rm -rf feed/amendments t/amendments bin/jython
+	rm -rf feed/amendments/amendments-1 t/amendments bin/jython
 	rm -rf tax/fung tax/ncbi tax/prev_nem tax/silva
-	rm -f `find . -name *.class`
+	rm -f `find . -name "*.class"`
 	rm -f feed/misc/chromista_spreadsheet.py
 #	rm -f feed/ncbi/in/taxdump.tar.gz
 

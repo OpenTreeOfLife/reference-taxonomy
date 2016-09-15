@@ -6,7 +6,7 @@
 
 import sys
 
-from org.opentreeoflife.taxa import Taxonomy, SourceTaxonomy, TsvEdits, Addition, Rank
+from org.opentreeoflife.taxa import Taxonomy, SourceTaxonomy, TsvEdits, Addition, Rank, Taxon
 from org.opentreeoflife.smasher import UnionTaxonomy
 import ncbi_ott_assignments
 sys.path.append("feed/misc/")
@@ -248,7 +248,8 @@ def hide_irmng(irmng):
         reader = csv.reader(infile)
         reader.next()           # header row
         for row in reader:
-            irmng.lookupId(row[0]).unhide()
+            if irmng.lookupId(row[0]) is not None:
+                irmng.lookupId(row[0]).unhide()
 
 def debug_divisions(name, ncbi, ott):
     print '##'

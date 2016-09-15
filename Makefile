@@ -31,7 +31,8 @@ NCBI_URL="http://files.opentreeoflife.org/ncbi/ncbi-20151006/ncbi-20151006.tgz"
 # GBIF_URL=http://purl.org/opentree/gbif-backbone-2013-07-02.zip
 GBIF_URL=http://files.opentreeoflife.org/gbif/gbif-20130702/gbif-20130702.zip
 
-IRMNG_URL=http://files.opentreeoflife.org/irmng-ot/irmng-ot-20160630/irmng-ot-20160630.tgz
+#IRMNG_URL=http://files.opentreeoflife.org/irmng-ot/irmng-ot-20160630/irmng-ot-20160630.tgz
+IRMNG_URL=http://files.opentreeoflife.org/irmng-ot/irmng-ot-20160628/irmng-ot-20160628.tgz
 
 # Silva 115: 206M uncompresses to 817M
 # issue #62 - verify  (is it a tsv file or csv file?)
@@ -74,7 +75,8 @@ compile: $(CLASS)
 $(CLASS): $(JAVASOURCES) \
 	  lib/jython-standalone-2.7.0.jar \
 	  lib/json-simple-1.1.1.jar \
-	  lib/junit-4.12.jar
+	  lib/junit-4.12.jar \
+	  lib/skosapi.jar
 	javac -g $(CP) $(JAVASOURCES)
 
 # Script to start up jython (with OTT classes preloaded)
@@ -321,7 +323,7 @@ feed/misc/chromista_spreadsheet.py: feed/misc/chromista-spreadsheet.csv feed/mis
 
 fetch_amendments: feed/amendments/amendments-1/next_ott_id.json
 
-feed/amendments/amendments-1/next_ott_id.json: $(AMENDMENTS_REFSPEC)
+feed/amendments/amendments-1/next_ott_id.json:
 	$(MAKE) refresh-amendments
 
 refresh-amendments: feed/amendments/amendments-1
@@ -426,12 +428,17 @@ lib/jython-standalone-2.7.0.jar:
 
 lib/json-simple-1.1.1.jar:
 	wget --output-document=$@ --no-check-certificate \
-	  "https://json-simple.googlecode.com/files/json-simple-1.1.1.jar"
+	  "http://search.maven.org/remotecontent?filepath=com/googlecode/json-simple/json-simple/1.1.1/json-simple-1.1.1.jar"
 	@ls -l $@
 
 lib/junit-4.12.jar:
 	wget --output-document=$@ --no-check-certificate \
 	  "http://search.maven.org/remotecontent?filepath=junit/junit/4.12/junit-4.12.jar"
+	@ls -l $@
+
+lib/skosapi.jar:
+	wget --output-document=$@ --no-check-certificate \
+	  "http://skosapi.sourceforge.net/skosapi.jar"
 	@ls -l $@
 
 # -----Taxon inclusion tests
@@ -518,7 +525,7 @@ clean:
 #	rm -rf feed/*/work ?
 	rm -rf feed/amendments t/amendments bin/jython
 	rm -rf tax/fung tax/ncbi tax/prev_nem tax/silva
-	rm -f `find . -name *.class`
+	rm -f `find . -name '*.class'`
 	rm -f feed/misc/chromista_spreadsheet.py
 #	rm -f feed/ncbi/in/taxdump.tar.gz
 
@@ -527,3 +534,4 @@ squeakyclean:
 	rm -f lib/*
 	rm -rf tax/fung tax/gbif tax/irmng tax/ncbi tax/silva tax/worms 
 	rm -rf tax/prev_ott
+

@@ -13,25 +13,31 @@ import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Collections;
-import java.io.PrintStream;
+import java.io.Writer;
+import java.io.PrintWriter;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class HomonymReport {
 
     public static void homonymReport(Taxonomy tax, String filename) throws IOException {
-        PrintStream stream = Taxonomy.openw(filename);
+        Writer writer = openw(filename);
         // for each name that's a homonym...
         //  for each taxon named by that name...
         //   for every *other* taxon named by that name...
         //    report name, MRCA, and size of MRCA of the two
         //     (& maybe subtract sizes of the two taxa)
         for (String name : tax.allNames())
-			homonymReport(tax, name, stream);
-        stream.close();
+			homonymReport(tax, name, writer);
+        writer.close();
 	}
 
-    public static void homonymReport(Taxonomy tax, String name, PrintStream stream) throws IOException {
+    public static void homonymReport(Taxonomy tax, String name, Writer writer) throws IOException {
         List<Node> nodes = tax.lookup(name);
+        CSVWriter cwriter = new CSVWriter(writer);
         if (nodes.size() > 1)
             for (Node n1node : nodes) {
                 Taxon n1 = n1node.taxon();
@@ -54,20 +60,20 @@ public class HomonymReport {
                             mrca = sibs[0].parent;
                         } else if (n1.parent != null && n1.parent == n2.parent)
                             mrca = n1.parent;
-                        stream.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-                                      name,
-                                      putativeSourceRef(n1),
-                                      n1.count(),
-                                      sib1name,
-                                      putativeSourceRef(n2),
-                                      n2.count(),
-                                      sib2name,
-                                      mrca == null ? "" : Integer.toString(mrca.count()),
-                                      mrca == null ? "" : mrca.name,
-                                      (disjointDivisions(n1, n2) ?
-                                       1 :
-                                       0));
-                    }
+                        cwriter.writeNext(new String[]{
+                                name,
+                                putativeSourceRef(n1),
+                                Integer.toString(n1.count()),
+                                sib1name,
+                                putativeSourceRef(n2),
+                                Integer.toString(n2.count()),
+                                sib2name,
+                                mrca == null ? "" : Integer.toString(mrca.count()),
+                                mrca == null ? "" : mrca.name,
+                                (disjointDivisions(n1, n2) ?
+                                 "1" :
+                                 "0")});
+                            }
                 }
             }
     }
@@ -95,7 +101,8 @@ public class HomonymReport {
 	// Plot histogram of homonyms as a function of mrca size
 
     public static void homonymDensityReport(Taxonomy tax, String filename) throws IOException {
-        PrintStream stream = Taxonomy.openw(filename);
+        Writer writer = openw(filename);
+        CSVWriter cwriter = new CSVWriter(writer);
 		int count = tax.count();
 		int nbuckets = 100;
 		// Taxon sizes range from 1 to count, inclusive.
@@ -140,21 +147,22 @@ public class HomonymReport {
 			}
 		}
 		for (int i = 0; i < nbuckets/2; ++i)
-			stream.format("%s\t%s\t%s\t%s\t%s\t%s\n",
-						  i*taxaPerBucket,
-						  primary[i],
-						  vcounts[i],
-						  tcounts[i],
+			cwriter.writeNext(new String[]{
+						  Integer.toString(i*taxaPerBucket),
+						  Integer.toString(primary[i]),
+						  Integer.toString(vcounts[i]),
+						  Integer.toString(tcounts[i]),
 						  (samples[i] == null ? "" : samples[i].name),
-						  (divisions[i] == null ? "" : divisions[i].name));
-        stream.close();
+						  (divisions[i] == null ? "" : divisions[i].name)});
+        writer.close();
 	}
 
 	// Rank homonym pairs by how easy it is to decide
     /// (tips/species only)
 
     public static void homonymUncertaintyReport(Taxonomy tax, String filename) throws IOException {
-        PrintStream stream = Taxonomy.openw(filename);
+        Writer writer = openw(filename);
+        CSVWriter cwriter = new CSVWriter(writer);
 
 		final List<Record> records = new ArrayList<Record>();
 		for (Taxon node : tax.taxa()) {
@@ -218,8 +226,8 @@ public class HomonymReport {
 					return (r1.u1 + r1.u2) - (r2.u1 + r2.u2);
 				}
 			});
-		for (Record r : records) stream.println(r);
-		stream.close();
+		for (Record r : records) r.writeNext(cwriter);
+		writer.close();
 	}
 
 	static class Record {
@@ -228,14 +236,28 @@ public class HomonymReport {
 			this.name = name; this.low = low; this.high = high; this.loser = loser; this.mrca = mrca;
 			this.u1 = this.u2 = 50;
 		}
-		public String toString() {
-			return String.format("%s\t%s\t%s\t%s\t%s",
-								 this.low,
-								 this.high,
-								 this.name,
-								 this.loser.name,
-								 this.mrca.name);
+		public void writeNext(CSVWriter cwriter) throws IOException {
+            cwriter.writeNext(new String[]{
+                    Integer.toString(this.low),
+                    Integer.toString(this.high),
+                    this.name,
+                    this.loser.name,
+                    this.mrca.name});
 		}
+	}
+
+	static Writer openw(String filename) throws IOException {
+		Writer out;
+		if (filename.equals("-")) {
+			out = new java.io.OutputStreamWriter(System.out);
+			System.out.println("Writing to standard output");
+		} else {
+
+            out = new PrintWriter(new BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(filename),
+                                                                                    "UTF-8")));
+			System.out.println("Writing " + filename);
+		}
+		return out;
 	}
 
 }

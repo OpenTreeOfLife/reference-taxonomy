@@ -2,19 +2,23 @@ from org.opentreeoflife.taxa import Taxonomy, HomonymReport
 
 import os
 
-def report(tag):
-    tax = Taxonomy.getTaxonomy('tax/' + tag + '/', tag)
+report_dir = 'report'
+
+def report(dir, idspace):
+    tax = Taxonomy.getTaxonomy(os.path.join('tax', dir, ''), idspace)
     tax.smush() 
-    # HomonymReport.homonymDensityReport(tax, tag + '-density-report.tsv')
-    # HomonymReport.homonymUncertaintyReport(tax, 'reports/' + tag + '-uncertainty-report.tsv')
-    HomonymReport.homonymReport(tax, 'reports/' + tag + '-homonym-report.tsv')
+    # HomonymReport.homonymDensityReport(tax, dir + '-density-report.csv')
+    # HomonymReport.homonymUncertaintyReport(tax, 'reports/' + dir + '-uncertainty-report.csv')
+    if not os.path.isdir(report_dir):
+        os.makedirs(report_dir)
+    HomonymReport.homonymReport(tax, os.path.join(report_dir, dir + '-homonym-report.csv'))
     # a = tax.alignTo(tax)
 
-report('silva')
-report('fung')
-report('worms')
-report('ncbi')
-report('gbif')
-report('irmng')
-report('ott')
-report('prev_ott')
+report('silva', 'silva')
+report('ott', 'ott')
+report('fung', 'if')
+report('worms', 'worms')
+report('ncbi', 'ncbi')
+report('gbif', 'gbif')
+report('irmng', 'irmng')
+report('prev_ott', 'ott')

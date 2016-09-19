@@ -14,8 +14,8 @@ def report(dir, idspace):
     HomonymReport.homonymReport(tax, os.path.join(report_dir, dir + '-homonym-report.csv'))
     # a = tax.alignTo(tax)
 
-report('silva', 'silva')
 report('ott', 'ott')
+report('silva', 'silva')
 report('fung', 'if')
 report('worms', 'worms')
 report('ncbi', 'ncbi')

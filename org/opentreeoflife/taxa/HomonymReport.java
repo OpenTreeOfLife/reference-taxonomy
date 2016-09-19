@@ -47,8 +47,6 @@ public class HomonymReport {
                         && Taxonomy.compareTaxa(n1, n2) < 0
                         && n1.name.equals(name)
                         && n2.name.equals(name)
-                        && !n1.isHidden()
-                        && !n2.isHidden()
                         && (n1.children == null || n2.children == null)
                         ) {
                         String sib1name = "", sib2name = "";

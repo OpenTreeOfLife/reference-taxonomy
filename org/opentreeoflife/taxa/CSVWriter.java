@@ -27,7 +27,9 @@ public class CSVWriter {
         for (int i = 0; i < nfields; ++i) {
             if (i > 0)
                 sb.append(',');
-            if (fields[i].indexOf(',') >= 0 || fields[i].indexOf('"') >= 0) {
+            if (fields[i] == null)
+                ;
+            else if (fields[i].indexOf(',') >= 0 || fields[i].indexOf('"') >= 0) {
                 sb.append('"');
                 sb.append(fields[i].replace("\"", "\"\""));
                 sb.append('"');

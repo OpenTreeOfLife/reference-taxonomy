@@ -141,7 +141,9 @@ public class Nexson {
         }
 
         // Set the ingroup
-        tax.ingroupId = (String)treeson.get("^ot:inGroupClade");
+        String ingroupId = (String)treeson.get("^ot:inGroupClade");
+        if (ingroupId != null)
+            tax.ingroup = tax.lookupId(ingroupId);
 
         // Set the root
         String rootid = (String)treeson.get("^ot:rootNodeId");
@@ -156,10 +158,9 @@ public class Nexson {
                     if (spec != null) {
                         System.err.format("** Specified root %s not= represented root %s - rerooting NYI (%s)\n",
                                           specid, rootid, tag);
-                        Taxon ingroup = tax.ingroupId == null ? null : tax.lookupId(tax.ingroupId);
-                        if (ingroup != null && !ingroup.descendsFrom(spec))
+                        if (tax.ingroup != null && !tax.ingroup.descendsFrom(spec))
                             System.err.format("** BAD: Ingroup %s does not descend from specified root %s (%s)\n",
-                                              tax.ingroupId, specid, tag);
+                                              tax.ingroup.id, specid, tag);
                     }
                 }
                 tax.addRoot(node);

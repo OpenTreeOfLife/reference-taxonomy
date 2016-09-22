@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Collection;
+import java.util.Set;
 
 import org.opentreeoflife.taxa.Node;
 import org.opentreeoflife.taxa.Taxon;
@@ -52,6 +53,10 @@ public class Alignment {
         start();
     }
 
+    public Set<Taxon> keySet() {
+        return mappings.keySet();
+    }
+
     private void start() {
         target.eventLogger.resetEvents();
         this.reset();          // depths, brackets, comapped
@@ -76,7 +81,7 @@ public class Alignment {
         }
     }
 
-    Taxon getTaxon(Taxon node) {
+    public Taxon getTaxon(Taxon node) {
         Answer a = mappings.get(node);
         if (a == null) return null;
         else if (a.isYes()) return a.target;

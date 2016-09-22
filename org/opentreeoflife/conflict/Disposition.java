@@ -1,10 +1,16 @@
 package org.opentreeoflife.conflict;
 
 public enum Disposition {
-    NONE,
-    CONFLICTS_WITH,
-    RESOLVES,
-    SUPPORTED_BY,
-    PATH_SUPPORTED_BY,
-    EXCLUDES,
+    NONE ("none"),
+    CONFLICTS_WITH ("conflicts_with"),
+    RESOLVES ("resolves"),
+    SUPPORTED_BY ("supported_by"),
+    PATH_SUPPORTED_BY ("partial_path_of"),
+    EXCLUDES ("excludes");
+
+    public String name;
+
+    Disposition(String name) {
+        this.name = name;
+    }
 }

@@ -23,7 +23,7 @@ import org.opentreeoflife.taxa.QualifiedId;
 
 public class AlignmentByName extends Alignment {
 
-    AlignmentByName(Taxonomy source, Taxonomy target) {
+    public AlignmentByName(Taxonomy source, Taxonomy target) {
         super(source, target);
     }
 

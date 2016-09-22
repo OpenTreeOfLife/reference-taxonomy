@@ -188,17 +188,6 @@ public class ConflictAnalysis {
         if (refnode != null
             && (includeSuppressed || !refnode.isHidden())) {
             map.put(node, refnode);
-            // Invert
-            Taxon othernode = comap.get(refnode);
-            if (othernode == null) {
-                comap.put(refnode, node);
-                return true;
-            } else
-                // Multiple input nodes map to a single ref node.
-                // Map only one of them to the ref node, leaving the
-                // others unmapped.
-                // TBD: exemplars and/or least id
-                return false;
         }
         return false;
     }

@@ -126,23 +126,35 @@ public class ConflictAnalysis {
     Map<Taxon, Taxon> invertMap(Map<Taxon, Taxon> map) {
         Map<Taxon, Taxon> comap = new HashMap<Taxon, Taxon>();
         Set<Taxon> ambiguous = new HashSet<Taxon>(); // set of ambiguous ref nodes
+        int collisions = 0;
         for (Taxon node : map.keySet()) {
             Taxon refnode = map.get(node);
             if (!ambiguous.contains(refnode)) {
                 Taxon othernode = comap.get(refnode);
                 if (othernode != null) {
-                    // maybe do mrca instead ?
-                    // or, lexicographically least ?
-                    // if (node.id.compareTo(othernode.id) < 0) comap.put(refnode, othernode);
-                    // OR: comap.put(refnode, othernode.mrca(node));
-                    comap.remove(refnode);
-                    ambiguous.add(refnode);
+                    ++collisions;
+                    // Things one might do when there is a collision:
+                    // 1. take the mrca
+                    //     comap.put(refnode, othernode.mrca(node));
+                    // 2. lexicographically least
+                    //     if (node.id.compareTo(othernode.id) < 0) comap.put(refnode, othernode);
+                    // 3. remove entirely
+                    //     comap.remove(refnode); ambiguous.add(refnode);
+                    // 4. first come first served
+                    //     ;
+                    if (true) {
+                        if (node.id.compareTo(othernode.id) < 0)
+                            comap.put(refnode, othernode);
+                    } else {
+                        comap.remove(refnode);
+                        ambiguous.add(refnode);
+                    } 
                 } else
                     comap.put(refnode, node);
             }
         }
-        if (ambiguous.size() > 0)
-            System.out.format("* %s collisions\n", ambiguous.size());
+        if (collisions > 0)
+            System.out.format("* %s collisions\n", collisions);
         return comap;
     }
 

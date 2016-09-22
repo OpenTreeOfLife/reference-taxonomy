@@ -25,10 +25,6 @@ public class Answer {
             !(subject.taxonomy instanceof SourceTaxonomy))
             throw new RuntimeException(String.format("Subject %s of new Answer is not in a source taxonomy",
                                                      subject));
-        if (target != null &&
-            (target.taxonomy instanceof SourceTaxonomy))
-            throw new RuntimeException(String.format("Target %s of new Answer is not in a union taxonomy",
-                                                     target));
 		this.subject = subject;
         this.target = target;
 		this.value = value;

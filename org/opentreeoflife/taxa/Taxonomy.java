@@ -47,7 +47,7 @@ public abstract class Taxonomy {
 	Integer infocolumn = null;
 	Integer flagscolumn = null;
 	public JSONObject properties = new JSONObject();
-    public String ingroupId = null;    // for trees, not taxonomies
+    public Taxon ingroup = null;    // for trees, not taxonomies
 
 	private String tag = null;     // unique marker
 	private int taxid = -1234;	   // kludge

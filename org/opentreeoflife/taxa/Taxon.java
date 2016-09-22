@@ -442,7 +442,7 @@ public class Taxon extends Node {
             else if (this.parent == null)
                 ids = this.taxonomy.getIdspace() + ":<detached>";
             else
-                ids = "~";
+                ids = this.taxonomy.getIdspace() + ":";
         } else if (this.id != null)
             ids = this.id;
         else

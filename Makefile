@@ -519,7 +519,7 @@ clean:
 	rm -rf feed/*/out *.tmp
 #	rm -rf feed/*/work ?
 	rm -rf feed/amendments/amendments-1 t/amendments bin/jython
-	rm -rf tax/fung tax/ncbi tax/prev_nem tax/silva
+	rm -rf tax/fung tax/ncbi tax/prev_nem tax/silva tax/irmng* tax/worms
 	rm -f `find . -name "*.class"`
 	rm -f feed/misc/chromista_spreadsheet.py
 #	rm -f feed/ncbi/in/taxdump.tar.gz
@@ -527,5 +527,5 @@ clean:
 squeakyclean:
 	rm -rf feed/*/in
 	rm -f lib/*
-	rm -rf tax/fung tax/gbif tax/irmng tax/ncbi tax/silva tax/worms 
+	rm -rf tax/fung tax/gbif tax/irmng* tax/ncbi tax/silva tax/worms 
 	rm -rf tax/prev_ott

@@ -174,6 +174,7 @@ public class Services {
         return conflictAnalysisToJSON(c, flipped);
     }
 
+    @SuppressWarnings("unchecked")
     public static JSONObject conflictAnalysisToJSON(ConflictAnalysis c, boolean flipped) {
         if (c.inducedIngroup == null)
             throw new BadRequest("No mapped OTUs");

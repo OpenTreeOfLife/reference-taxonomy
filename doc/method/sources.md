@@ -6,7 +6,7 @@ using the NCBI taxonomy, since (1) most phylogenies are molecular, (2)
 publishers require molecular sequences used in studies to be deposited
 in Genbank, (3) every Genbank deposit is annotated with a taxon from
 NCBI taxonomy.  The NCBI taxonomy therefore forms the nucleus of OTT.
-The particular version of OTT described below (OTT 2.10) was downloaded on
+The particular version of NCBI taxonomy used in the OTT assembly described below (OTT 2.10) was downloaded on
 [date], but we have retrieved a fresh version with every OTT build.
 
 *GBIF backbone taxonomy.*  The NCBI taxonomy has only [NNN] species

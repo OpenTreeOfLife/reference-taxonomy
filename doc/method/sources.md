@@ -1,4 +1,4 @@
-
+<
 ### Taxonomy sources
 
 *NCBI Taxonomy.*  The first objective of the Open Tree taxonomy is to
@@ -18,26 +18,22 @@ needed a second source taxonomy providing species going beyond NCBI's
 literature [citation needed].
 
 An initial attempt to use a global taxonomy in progress from another
-project (Union4) was suspended over concerns about future support as
-well as a number of technical difficulties.  The Open Tree project is
-a phylogeny project, not a taxonomy project, so is not in a position
-to support a taxonomic project of this kind.  The goal was to
-"outsource" the job of taxonomic curation and development to some
-reliable provider, to the extent possible.
-
-https://web.archive.org/web/20130823172016/http://gnaclr.globalnames.org/classifications
+project
+([Union4](https://web.archive.org/web/20130823172016/http://gnaclr.globalnames.org/classifications))
+was suspended over concerns about future support as well as a number
+of technical difficulties.
 
 The natural place to look was Catalog of Life, a successful ongoing
-effort to develop a taxonomy of all life.  Col was unavailable for
+effort to develop a taxonomy of all life.  CoL was unavailable for
 direct use due to unsuitable contract terms, but much of its content
-was available in the GBIF backbone.  All in all, because the GBIF
-backbone draws from a number of sources (including IRMNG and Index
-Fungorum), has ongoing institutional support, and no terms of use, it
-seemed a good choice for the goal of coverage.
+was available in the GBIF backbone taxonomy [reference].  All in all,
+because the GBIF backbone draws from a number of sources (including
+IRMNG and Index Fungorum), has ongoing institutional support, and no
+special terms of use, it seemed a good choice for the goal of coverage.
 
-The version of the GBIF backbone in OTT 2.10 is dated [date].  We had
-hoped for periodic updates, but a successor was only released on
-[date], as this report was being prepared.
+Although we started with an earlier version, the version of the GBIF
+backbone in OTT 2.10 the one released in July 2003.  A successor was
+only released on [date], as this report was being prepared.
 
 Beyond NCBI and GBIF, which together meet the objectives, additional
 development of the taxonomy has been driven unsystematically by
@@ -45,17 +41,18 @@ curator requests.
 
 *SILVA:* Our microbe curators were unhappy about the conventional
 classification of prokaryotes and unicellular Eukaryotes and provided
-a script to import the SILVA taxonomy.  We incorporated SILVA version
-115 into OTT 2.10.  We did not include the plants, animals, or fungi
-branches.  [references]
+a script to import the SILVA taxonomy, which is based on molecular
+evidence.  We incorporated SILVA version 115 into OTT 2.10.  We did
+not include SILVA's plant, animal, or fungi branches in OTT.
+[references]
 
 We gave SILVA higher priority than NCBI or GBIF at curator request.
 
 *Lamiales:* Plant curators requested a revision of order Lamiales based
 on a recent publication about this group.
-[reference]
+[reference, see release notes]
 
-We gave Lamiales higher priority than NCBI or GBIF at curator request.
+We gave the Lamiales higher priority than NCBI or GBIF at curator request.
 
 *Index Fungorum:* The Open Tree Fungi curators expressed concern over
 the the quality of the combined NCBI/GBIF coverage of Fungi and
@@ -65,7 +62,7 @@ years older).  [reference]
 
 We gave the Fungi branch of Index Fungorum higher priority than NCBI
 or GBIF, at curator request.  There was no real call to keep the rest
-of IF, which is not substantial, but we kept in at low priority
+of IF, which is not substantial, but we kept it at low priority
 (between NCBI and GBIF) in case it could provide any useful
 information.
 
@@ -82,8 +79,8 @@ WoRMS.  Given questions over terms of use of the dump files for WoRMS,
 which were only available on request, we obtained the taxonomy via the
 web API, around [date].  [reference]
 
-We gave the decapod branch of WoRMS higher priority than other
-sources at curator request.  Mostly due to unfamiliarity, it was felt
+We gave the decapod branch of WoRMS higher priority than other sources
+at curator request.  Mostly due to unfamiliarity with WoRMS, we felt
 that there was some risk in having the rest of WoRMS also override
 NCBI, so we kept it with lower priority (between NCBI and GBIF).
 
@@ -91,17 +88,18 @@ NCBI, so we kept it with lower priority (between NCBI and GBIF).
 taxa were extinct vs. extant.  (See elsewhere for discussion of the
 importance of this information.)  For extinctness information we
 decided to import IRMNG.  Initial we included all IRMNG records but
-learned the hard way (through user complaints) that it was necessary
-to exclude names known to be invalid, which fortunately is information
-present in the IRMNG dump.
-[reference]
+learned through reviewer comments that it was necessary to exclude
+names known to be invalid, which fortunately is information present in
+the IRMNG dump.  [reference]
 
 *Additions:* For various reasons some taxa occurring as OTUs in
 phylogenetic studies do not occur in OTT.  This could be due to a
 delay in curation by NCBI itself, a delay in importing a fresh NCBI
 version into OTT, a morphological study with otherwise unknown
-species, or other causes.  To handle this situation we have developed a user
-interface for capturing new taxa with relevant documentation.  New
-taxon records are entered into a repository for this purpose, which is
-linked from the OTT taxonomy files and user interfaces.
+species, or other causes.  To handle this situation we have developed
+a user interface for creating new taxon records with relevant
+documentation (publications, databases, and so on).  New taxon records
+are entered into a repository assigned to this purpose, which is
+linked from the OTT taxonomy files and user interfaces so that
+provenance is always available.
 

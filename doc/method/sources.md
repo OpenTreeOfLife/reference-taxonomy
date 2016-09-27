@@ -1,4 +1,3 @@
-<
 ### Taxonomy sources
 
 *NCBI Taxonomy.*  The first objective of the Open Tree taxonomy is to

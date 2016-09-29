@@ -1,5 +1,9 @@
 ### Taxonomy sources
 
+[NMF asks: What do the source taxonomies look like ("sampling", in
+terms of depth (# of levels, breadth (overlap? are they
+"comprehensive?"), homogeneity)?] [JAR: results section?]
+
 *NCBI Taxonomy.*  The first objective of the Open Tree taxonomy is to
 align OTUs across phylogenetic studies.  This need is largely met by
 using the NCBI taxonomy, since (1) most phylogenies are molecular, (2)

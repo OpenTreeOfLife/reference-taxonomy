@@ -2,9 +2,15 @@
 
 ## Taxonomy construction
 
+Terminology: 
+  * polysemy = where a single name-string belongs to multiple taxon records; in 
+    nomenclatural terms, either a homonym or hemihomonym
+  * node = a taxon record from some taxonomy, giving name-string,
+    parent taxon, and perhaps other information
+
 The assembly process works, in outline, as follows:
 
- 1. Start with an ordered list of source taxonomies S1, S2, ...
+ 1. Start with an ordered list of source taxonomies S1, S2, ... (see above)
  1. Initialize the 'union' taxonomy U to be empty
  1. For each source S:
      1. Load, normalize, and patch S
@@ -15,136 +21,143 @@ The assembly process works, in outline, as follows:
          1. Where S provides a more resolved classification than U, 
             'insert' unmatched nodes of S into U
  1. Apply patches and perform ad hoc postprocessing steps
- 1. Assign OTT identifiers to the nodes of U, by aligning the previous 
-    version of OTT to U
+ 1. Assign OTT identifiers to the nodes of U, by aligning (but not merging)
+    the previous version of OTT to U
 
 The hierarchical relationships are therefore determined by priority:
 ancestor/descendant relationships in an earlier source S may be
-refined by a later source S', but are never overridden.
+refined by a later source S', but are never overridden (except by patches, q.v.).
 
 For each new version of OTT, construction begins de novo, so that we
 always get the latest version of the source taxonomies.  The only
-state that persists from one version of OTT to the next is OTT
-identifier assignment.
+state that persists from one version of OTT to the next is node
+identifier assignments that are carried over from one version to the
+next.
 
 Details of each step follow.
 
 ## Source taxonomy import and normalization
 
 Each source taxonomy has its own import procedure, usually a file
-transfer followed by application of a format conversion script.
-E.g. the GBIF taxonomy is downloaded from the GBIF web site, and then
-converted to the Open Tree 'interim taxonomy format' by a python
-script.  Given the ITF files, the taxonomy can be 'loaded' by the
-assembly procedure.
+download from the provider's web site followed by application of a
+script that converts the source to a common format for ingest.  Given
+the convert source files, the taxonomy can be 'loaded' by the assembly
+procedure.
 
-A taxonomy in interim taxonomy format has the following parts:
- * a taxonomy table, with one row per taxon; each row gives an identifier that is unique to this taxonomy, the taxon's name, the id of its parent taxon, and optional annotations or 'flags'
- * an optional synonyms table, with one name-taxon association row per synonym
+A taxonomy in the common format has the following parts:
+ * a taxonomy table, with one row (record) per putative taxon; each row gives an identifier that is unique to this taxonomy, the taxon's name, the identifier of its parent taxon record, and optional annotations or 'flags'
+ * an optional synonyms table, with one name/taxon association row per synonym
  * an optional identifier merge table, with one row for each identifier alias (where one identifier is an alias for another)
 
-The most important annotation is 'extinct'.  We initially included
-extinct taxa in the synthetic phylogenetic tree, and the result was
-that most extinct taxa were badly placed in the tree - for example,
-many extinct genera showed up as direct children of Mammalia.  While
-the NCBI Taxonomy usually gives a modern classification for the
-species it covers, it makes no attempt to fit in extinct taxa, so when
-such taxa are found in other taxonomies, there is no good place to put
-them in the Open Tree taxonomy.  Removing from synthesis those
-(usually badly placed) taxa in the taxonomy that are annotated extinct
-leads to a cleaner synthesis.
+[NMF: Would be helpful to have 2-5 rows deep example, for 3 tables.
+JAR: it's pretty boring.  Here are a few rows from the NCBI ingest:
 
-[KC: 'I wonder if there should be a separate section somewhere about extinct taxa.']
+Taxonomy -
 
-In two cases, an imported source taxonomy is split into parts before
-processing continues, so that the parts can be positioned in different
-places in the align/merge order.  The decision to divide a source
-taxonomy is made by a curator.  In the case of Index Fungorum, a
-curator noted that the coverage and curation quality outside of Fungi
-did not seem to improve on NCBI Taxonomy, while inside Fungi it did.
-Index Fungorum is therefore split into high priority Fungi and lower
-priority everything-except-Fungi.  Similarly, in the case of WoRMS,
-Malacostraca was a project priority at that point, and the quality of
-the rest of WoRMS was unreviewed, so rather than risk possible
-problems by overriding NCBI, we simply made non-Malaconstraca be low
-priority.
+    141976  |       8335    |       Plethodon cinereus      |       species |       
+    8335    |       269181  |       Plethodon       |       genus   |       
+    269181  |       8332    |       Plethodontinae  |       subfamily       |       
+
+Synonyms -
+
+    141976  |       Plethodon cinerea       |       synonym |       |       
+    73625   |       Lycopodium alpina       |       misspelling     |       |       
+    73625   |       Lycopodium alpinum      |       synonym |       |       
+
+Merges -
+
+    12      74109
+    30      29
+    36      184914
+
+The vertical bars are an embarrassment - Stephen just copied them over
+from the NCBI dump format, but I think they're just silly.]
 
 After each source taxonomy is loaded, the following two normalizations
 are performed:
 
  1. Child taxa of "containers" in the source taxonomy are made to be
-    children of the parent container's parent.  "Containers" are
+    children of the container's parent.  "Containers" are
     groupings in the tree that don't represent taxa, for example
     "incertae sedis" or "environmental samples" nodes.  The members of
     a container aren't more closely related to one another than they
     are to the container's siblings; the container is only present as
-    a way to say something about the members.  The fact that a taxon
+    a way to say something about the members.  The fact that a node
     had originally been in a container is recorded as a flag on the
     child node.
- 1. Monotypic homonym removal - when taxon with name N has as its
-    only child another taxon with name N, the parent is removed.
+ 1. Monotypic homonym removal - when node with name N has as its
+    only child another node with the same name N, the parent is removed.
     This is done to avoid an ambiguity when later on a node with name
-    N needs to be matched.
+    N needs to be matched.  [get examples by rerunning]
 
 ## Source patching
 
 Most source taxonomies have scripted ad hoc patches that are applied
 at this point.  Some capitalizations and misspellings are fixed, and
 synonyms added (e.g. 'Stramenopiles' for 'Heterokonta'), to improve
-matches between taxonomies.  Other patches, such as extinct or extant
-annotations or topology changes, are applied at this point.
-Generally it's best to handle taxonomic problems by correcting source
-taxonomies at this point, but if it is difficult or inconvenient to
-localize the problem to one or more sources, repair is left until
-the final patch phase after all source taxonomies have been loaded and
-merged.
+matches between taxonomies.  Other patches, such as extinct
+annotations or topology changes, are applied at this point.  Many
+patches can be applied either to a source taxonomy or to the final OTT
+assembly, but patches that can affect alignment are better applied
+before alignment, to the source.
 
 By scripting edits to source taxonomies, as opposed to just editing
-either the sources or the final taxonomy directly, we can preserve the
-provenance of the changes, as comments in the file containing the
-script.  At present this provenance information is unfortunately not
-copied into the final taxonomy file, but ideally it would be.
+either the sources or the final taxonomy directly, we accomplish two
+things: First, the script can be applied to a later version of the
+source, which means it is relatively easy to update OTT to newer
+versions of source taxonomies as they come out.  Second, we can
+preserve the provenance of the changes in the script.  (For now this
+is done as comments in the file containing the script, but there is no
+reason not to make provenance information machine readable.)
+Provenance includes some combination of curator name, github issue
+number, publication, and descriptive information gleaned from
+investigation of the problem.  At present this provenance information
+is unfortunately not linked from the final taxonomy file, but it could
+be, and ideally it would be.  [NMF: Fair to say it's one of the/your
+longer term design maxims? If so, bring that up at some point.]
 
 ## Align source to union
 
-It is important that source taxa be matched with union taxa when
-and only when this is appropriate.  A mistaken identity between a
-source taxon and a union taxon can be disastrous, leading not just to
-an incorrect tree but to downstream curation errors in OTU matching
+It is important that source taxa be matched with union taxa when and
+only when this is appropriate.  A mistaken identity between a source
+taxon and a union taxon can be disastrous, leading not just to an
+incorrect tree but to downstream curation errors in OTU matching
 (e.g. putting a snail in flatworms).  A mistaken non-identity
-(separation) can also be a problem, since taxon duplication leads to
-incomplete annotation (information about one copy not propagating to
-the other) and to loss of unification opportunities in phylogeny
-synthesis.
+(separation) can also be a problem, since taxon duplication
+(i.e. multiple nodes for the same taxon) leads to incomplete
+annotation (information about one copy not propagating to the other)
+and to loss of unification opportunities in phylogeny synthesis.
 
 The process of matching source nodes with union nodes, or equivalently
 determining the identity of the corresponding taxa, is called
 "alignment" in the following.
 
 Ultimately there is no automatable test to determine whether alignment
-has been done correctly.  The process is necessarily heuristic.
-Difficult cases must be investigated manually and either repaired
-manually (patched) or repaired by improvements to the heuristics.
+has been done correctly.  There is no oracle for deciding whether node
+A and node B are about the same taxon; and available information
+(names, relationships) from the source taxonomies is often mistaken,
+making positives look like negatives and vice versa. The process is
+necessarily heuristic.  Difficult cases must be investigated manually
+and either repaired manually (patched) or repaired by improvements to
+the heuristics.
 
-Alignment proceeds one name at a time.  First, a list of candidate
-union matches is made for the source nodes having that name.  Then, a
-set of heuristics is applied to find a unique best union node match,
-if any, for each source node having the given name.
-
-[Going one name at a time is not really correct since it does not
-handle synonyms very well.  There is a kludge for dealing with
-synonyms, but it is not satisfactory.  An experimental version of
-the code deals with one source node at a time, with the potential for
-a different candidate set for each node having a given name, based on
-its synonyms.]
+Alignment proceeds one source node at a time.  First, a list
+of candidate union matches, based on synonyms and shared identifiers,
+is prepared for the source node.  Then, a set of heuristics is applied
+to find a unique best union node match, if any, for that source node.
 
 Heuristics are of two kinds:
 
- 1. Separation heuristics identify union nodes that mustn't be match
-    targets for the source node.
- 2. Preference heuristics attempt to separate the set of candidate
-    targets into two groups, those that are more appropriate vs. less
-    appropriate as match targets for the given source node.
+ 1. Separation heuristics are those that identify union nodes that
+    mustn't be match targets for the source node.
+ 2. Preference heuristics are those that attempt to separate the set
+    of candidate targets into two groups, those that are more
+    appropriate vs. less appropriate as match targets for the given
+    source node.
+
+[This will have to be updated.  I tried this structure and it doesn't
+work.  The working version is very similar but not quite the same as
+this.]
 
 A heuristic is essentially a two-place predicate, applied to a source
 node and a union node, that either succeeds (the two could match
@@ -166,6 +179,12 @@ follows:
  4. If C is singleton, its member is taken to be the correct match.
  5. Otherwise, the source node is ambiguous.
 
+[NMF: Again, depending on target audience, a brief worked example may
+help communicate what's being achieved here.  JAR: easy to find
+examples - the log.tsv file is full of them, e.g. Conocybe siliginea.  But hard to find
+illumnating examples since in most cases only one aspect of the method
+is being used, and the answer almost always looks obvious to the human eye.  I will try though.]
+
 If the process ends with multiple candidates, an unresolvable
 ambiguity is declared.  If the ambiguous source node has no children,
 it is dropped - which is OK because it probably corresponds to one of
@@ -173,7 +192,7 @@ the existing candidates and therefore would make no new contribution
 to the union taxonomy.  If the ambiguous source node has children, it
 is treated as a potentially new node, possibly turning an N-way
 polysemy into an N+1-way polysemy, which is almost certainly wrong.
-Usually, subsequent analysis determines that the taxon is inconsistent
+Usually, subsequent analysis determines that the grouping is inconsistent
 with the union taxonomy and it is dropped.  If it is not dropped, then
 this is a rare and troublesome situation that requires manual
 intervention.
@@ -188,11 +207,6 @@ information that can be used to definitively rule out any particular
 match.  Of course considering all options is not practical, so we
 limit the search to union nodes that have a name (primary or synonym)
 in common with the source node.
-
-In some cases it would be possible to identify further candidates by
-looking at identifiers; for example, it often happens that when NCBI
-is revised, a taxon keeps its NCBI identifier, but changes its name.
-This is not currently handled.
 
 ### Separation heuristic: Skeleton taxonomy
 
@@ -216,11 +230,16 @@ actually arise.  For example, there are many [how many? dozens?
 hundreds?] of fungus/plant polysemies, even though the two groups are
 covered by the same nomenclatural code.
 
+[NMF: Check here for harder data:
+http://biodiversitydatajournal.com/articles.php?id=8080 (names
+management sections and refs. therein).]
+
 Some cases of apparent polysemy might be differences of opinion
-concerning whether a taxon possesses an apomorphy or belongs in some
-clade (the MRCA of some other taxa).  Different placement of a name in
-two source taxonomies does not necessarily mean that the name denotes
-different taxa in the two taxonomies.
+concerning whether or not a taxon possesses a diagnostic apomorphy, or
+belongs phylogenetically in some designated clade (the MRCA of some
+other taxa).  Different placement of a name in two source taxonomies
+does not necessarily mean that the name denotes different taxa in the
+two taxonomies.
 
 The separation heuristic used here works as follows.  We establish a
 "skeleton" taxonomy, containing about 25 higher taxa (Bacteria,
@@ -247,16 +266,67 @@ _Brightonia_ the mollusc (from IRMNG) from _Brightonia_ the echinoderm
 echinoderms, so [whatever happens].  [need example going the other
 way.]
 
+[JAR in response to NMF: The skeleton is not just the
+top of the tree; it omits many intermediate layers (ranks) and only
+includes big, well-known taxa. E.g. Opisthokonta is omitted because so
+few sources have it, even though there are skeleton nodes both above
+and below it. The skeleton is "found" in as many source taxonomies as
+possible, for the purpose of aligning and dividing up the namespace
+and preventing animals from being plants.
+
+JAR continuing in response to NMF:
+The problem is not placing everything; that's not hard. The only purpose of
+the skeleton (whose taxa are called 'divisions') is to prevent incorrect
+collapse of what ought to be polysemies. If you have record A with name Mus
+bos, and record B with name Mus bos, then you generally want them to be
+unified if they're both chordates, but if one is a chordate and the other
+is a mollusc, you'd rather they not unify.
+
+It's hard to find real examples of polysemies where one can be sure it's not an artifact
+or mistake, but one of them (from my polysemy list) is probably Porella capensis. I
+have about 180 at the species level, many of which look like mistakes
+(since sometimes two or three have the same genus name). Most are
+plant/animal or plant/fungus or animal/fungus, but some cases, like
+Ctenella aurantia, are covered by the same code (Cnidaria / Ctenophora in
+this case). I can't analyze every one, so we need to err on the side of
+creating redundant records, rather than unifying, which would cause higher
+taxa from the lower priority taxonomy to be "broken".
+
+Someone has published a list of the ones that are legit, and incorporating
+that is on my to-do list.
+
+I'll put some of this info in the writeup. Thanks]
+
 ### Preference heuristic: Lineage
 
-Taxa with a common lineage are preferred to those that don't.  The
-rule here is: If A's 'quasiparent name' is the name of an ancestor of
-B, or vice versa, then B is a preferred match for A.  The 'quasiparent
-name' of A (or B) is the name of the nearest ancestor of A (or B)
-whose name is not a prefix of A's name.  E.g. if A is a species then
-the genus name is skipped (because it is uninformative) and A's
-quasiparent name is that of the containing family (or subfamily, etc.)
-name.
+Taxa with a common lineage are preferred to those that don't.  There
+are several factors that make it tricky to turn this truism into an
+actionable rule.
+
+* At the time that alignment is being done, we do not know the
+  alignments of the ancestors, so we cannot compare ancestors.
+  As a proxy in this test, we use ancestor name as a proxy for ancestor identity.
+* Sometimes having ancestors of the same name is not informative, as
+  with species that are true polysemies, which have ancestors (genera)
+  that are also true polysemies.  Ancestors whose names are string
+  prefixes of the given taxon's name should be ignored.
+* It is not enough that *some* ancestor (or ancestor name) is shared,
+  since every pair of taxa share some ancestor (name).  We need to
+  restrict the assessment to near ancestors.
+
+The rule we settled on is this one: 
+
+Let the 'quasiparent name' of A (or B) be the name of the nearest
+ancestor of A (or B) whose name is not a prefix of A's name.  If A's
+'quasiparent name' is the name of an ancestor of B, or vice versa,
+then B is a preferred match for A.
+
+Broadening the search beyond the 'quasiparent' of both nodes is
+necessary because different taxonomies have different resolution: in
+one a family might be divided into subfamilies, where in the other it
+is not.  But by ensuring that one of the two nodes being compared is a
+quasiparent, we avoid vacuous positives due to both being descendants
+of 'life'.
 
 ### Separation heuristic: Incompatible membership
 
@@ -269,7 +339,7 @@ If A and B both have nonempty membership proxies, and the proxies are
 disjoint, then we consider A and B to be incompatible, and prevent a
 match between them.
 
-The incompatibility calculation relies an a bit of implementation
+The incompatibility calculation relies on a bit of implementation
 cleverness for speed, so that it is not necessary to create data
 structures for every proxy.  Most of the time the calculation is a
 simple range check.
@@ -323,6 +393,11 @@ prevention logic remains in the code (class `Matrix`), so we do not
 always remove false polysemies in a source, even when there is a union
 node to map them to.  I don't really understand how the code works or
 whether it's doing the right thing; need to review.]
+
+[NMF: What you do here is follow a general pattern of introducing a
+particular workflow step, then say what may go wrong, then try to
+discuss that. And this repeats for each paragraph / workflow step. I
+will suggest a different arrangement.. [SEE BELOW]]
 
 
 ## Merge source into union
@@ -381,31 +456,46 @@ lost during merge, either.
 
 After all source taxonomies are aligned and merged, general ad hoc
 patches are applied to the union taxonomy, in a manner similar to that
-employed with the source taxonomies.  Some patches are represented in
-the 'version 1' (TSV-based) form, and others in the 'version 2'
-(python-based) form.  A further set of patches for microbial
-Eukaryotes comes from a spreadsheet prepared by the Katz lab.
+employed with the source taxonomies.  Patches are represented in a
+variety of formats representing different theories of what patches
+should look like as developed through the course of the project.  For
+example, a set of patches for microbial Eukaryotes was prepared by the
+Katz lab as a table of their own design.  Rather than convert it to
+some form already known to the system, we kept it in the original form
+to facilitate further editing.
 
 There is a step to mark as extinct those taxa whose only source
-taxonomy is GBIF and that come to GBIF via PaleoDB.  This is a
-heuristic, as PaleoDB can (rarely) contain extant taxa, but the
+taxonomy is GBIF and that come to GBIF via PaleoDB [reference].  This
+is a heuristic, as PaleoDB can (rarely) contain extant taxa, but the
 alternative is failing to recognize a much larger number of taxa as
 extinct.
 
-### Id assignment
+### Identifier assignment
 
 The final step is to assign OTT ids to taxa.  This is done by aligning
-the previous version of OTT to the new union taxonomy.  After
-transferring ids of aligned taxa, any remaining union taxa are given
-newly 'minted' identifiers.
+the previous version of OTT to the new union taxonomy.  The previous
+version is not merged into the new version; the alignment is only for
+the purpose of assigning identifiers.  After transferring ids of
+aligned taxa, any remaining union taxa are given newly 'minted'
+identifiers.
 
-## Results
 
-[TBD: Get metrics for OTT 2.10]
+## NMF comments
 
-[Challenges in construction: dirty inputs, homonyms, a gazillion special cases...]
+1. Is it possible to assume an ideal case where merging two or more OTT input taxonomies requires no or only very minimal conflict/noise/ambiguity resolution? And the result is almost unambiguously correct? If so, perhaps you start your "assembly process" description by imaging/introducing such a case, and your core pipeline in relation to it. That is then out of the way - a scenario that OTT can handle well and easily.
 
-[Artifacts: e.g. (a,b,c,d,e)f + ((a,b)g,(c,e)h)f ]
+[JAR: Ideal case is something like NCBI: (Bufo pageoti, Bufo japonicus)Bufo + GBIF: (Buf japonicus, Bufo luchunnicus)Bufo -> OTT: (Bufo pageoti, Bufo japonicus, Bufo luchunnicus)Bufo  - is that too simple?]
 
-[Limitations of method: ...]
+2. Complications, 1 - those complications that through various profound or pragmatic solution you can address to a fairly large degree of satisfaction. Outcome -- still rather sound OTT, but drawing now on a full scope of things you've added because you've had to given case 1. was not what the input looked like.
 
+3. Complications, 2 - issues that you either handle not to your own satisfaction, or simply cannot handle at all. 
+
+   I guess I am suggesting this because 1 & 2 give you an opportunity to shine first, and somewhat conclusively, for a significant subset of the input trees. At least for the purpose of mounting the narrative. Clearly any complete OTT assembly job will encounter everything. But you may not have to write such that you directly follow what I assume may be real -- every input taxonomy has instances 1, 2, 3 represented to varying degrees, or they arise as the OTT grows. Instead you could pretend that some input taxonomies are clean (1), individually and jointly. Or clean enough (2) - because of your work. And only 3 is the tough stuff - but tough for anybody, etc.
+
+   So, I wonder what would happen if you did this kind of thing. "For the sake of making this assembly process accessible to a wide readership, we first illustrate the entire pipeline when acting on two or more input taxonomies that are highly internally consistent, and also pose minimal conflict among them. Here the assembly works well from A to Z, as we show and exemplify. 
+
+"A second category are complications that occur frequently but for which we have developed adequate diagnosis and repair/resolution mechanisms. We show how we do this, and also show what else could be done for even better performance".
+
+"A third category contains lingering challenges that point to future solution analysis/development needs. And we suggest ..."
+
+(and of course you'd say that in reality, every input may be a mix of 1-3)

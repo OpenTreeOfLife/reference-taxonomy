@@ -32,24 +32,3 @@ the software that creates it is called 'smasher'. The method allows for
 reproducible synthesis of input taxonomies; for easy update when input
 taxonomies change; and for user-contributed patches to fix specific issues or
 add missing information.
-
-# Method
-How we build the taxonomy. [See [`method.md`](./method.md) in this directory.]
-
-# Results
-General results on the Open Tree taxonomy. Not a review on the taxonomic quality of any particular clade.
-
-* number tips, synonyms, homonyms
-* number patches
-* number of inter-source conflicts? (about 1000)
-
-* compare OTT's coverage of phylesystem with coverage by NCBI, GBIF
-  (i.e. how well does OTT do what it's supposed to do, compared to
-  ready-made taxonomies?)
-
-# Discussion
-
-* challenges in construction
-* limitations of method
-* OTU curation challenges?  additions feature?
-

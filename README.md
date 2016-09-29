@@ -39,7 +39,7 @@ See files in the doc/ directory for release notes for the taxonomy itself.
   so refreshing it is sort of a waste of time.  Silva is updated 
   every few months, I think.)
 
-- 'make'
+- 'make ott'
 
 - Result will be in tax/ott/
 

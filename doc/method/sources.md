@@ -20,12 +20,6 @@ needed a second source taxonomy providing species going beyond NCBI's
 [NNN] and reaching toward the [MMM] species that are described in the
 literature [citation needed].
 
-An initial attempt to use a global taxonomy in progress from another
-project
-([Union4](https://web.archive.org/web/20130823172016/http://gnaclr.globalnames.org/classifications))
-was suspended over concerns about future support as well as a number
-of technical difficulties.
-
 The natural place to look was Catalog of Life, a successful ongoing
 effort to develop a taxonomy of all life.  CoL was unavailable for
 direct use due to unsuitable contract terms, but much of its content
@@ -34,9 +28,10 @@ because the GBIF backbone draws from a number of sources (including
 IRMNG and Index Fungorum), has ongoing institutional support, and no
 special terms of use, it seemed a good choice for the goal of coverage.
 
-Although we started with an earlier version, the version of the GBIF
-backbone in OTT 2.10 the one released in July 2003.  A successor was
-only released on [date], as this report was being prepared.
+Although initially we started with the July 2012 version of the GBIF
+backbone, the version used in assembling OTT 2.10 is the one released
+in July 2013.  A successor was only released in August 2016, as this
+report was being prepared.
 
 Beyond NCBI and GBIF, which together meet the objectives, additional
 development of the taxonomy has been driven unsystematically by

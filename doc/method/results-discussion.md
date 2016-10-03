@@ -87,4 +87,5 @@ about the efficiency/complexity of the process, because I am assuming
 that it is more efficient (given the amount of operations undertaken)
 than any "competitor".'
 
-discuss global names architecture and bionames
+discuss global names architecture, bionames, bioguid
+

@@ -287,7 +287,7 @@ or mistake, but one of them (from my polysemy list) is probably Porella capensis
 have about 180 at the species level, many of which look like mistakes
 (since sometimes two or three have the same genus name). Most are
 plant/animal or plant/fungus or animal/fungus, but some cases, like
-Ctenella aurantia, are covered by the same code (Cnidaria / Ctenophora in
+Ctenella aurantia, have distinct records within the same code (Cnidaria / Ctenophora in
 this case). I can't analyze every one, so we need to err on the side of
 creating redundant records, rather than unifying, which would cause higher
 taxa from the lower priority taxonomy to be "broken".
@@ -299,7 +299,7 @@ I'll put some of this info in the writeup. Thanks]
 
 ### Preference heuristic: Lineage
 
-Taxa with a common lineage are preferred to those that don't.  There
+Taxa with a common lineage are preferred to those without.  There
 are several factors that make it tricky to turn this truism into an
 actionable rule.
 

@@ -1,5 +1,7 @@
 ### Taxonomy sources
 
+We build the present version of OTT from eight sources. Five of these are curated online taxonomies : NCBI, GBIF, IRMNG, Index Fungorum, and WoRMS. The remaining three are an automatically generation classification based on sequence clustering (SILVA); a family-specific classification based on a published phylogeny (Lamiales); and a set of user-generated taxonomy patches.
+
 *NCBI Taxonomy.*  The first objective of the Open Tree taxonomy is to
 align OTUs across phylogenetic studies.  This need is largely met by
 using the NCBI taxonomy, since (1) most phylogenies are molecular, (2)
@@ -7,7 +9,7 @@ publishers require molecular sequences used in studies to be deposited
 in Genbank, (3) every Genbank deposit is annotated with a taxon from
 NCBI taxonomy.  The NCBI taxonomy therefore forms the nucleus of OTT.
 The particular version of NCBI taxonomy used in the OTT assembly described below (OTT 2.10) was downloaded on
-[date], but we have retrieved a fresh version with every OTT build.
+[date], but we have retrieved a fresh version with every OTT build. 
 
 *GBIF backbone taxonomy.*  The NCBI taxonomy has only [NNN] species
 records with standard binomial names.  In order for Open Tree to
@@ -101,4 +103,3 @@ documentation (publications, databases, and so on).  New taxon records
 are entered into a repository assigned to this purpose, which is
 linked from the OTT taxonomy files and user interfaces so that
 provenance is always available.
-

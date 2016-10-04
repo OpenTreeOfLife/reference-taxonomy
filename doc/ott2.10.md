@@ -85,6 +85,8 @@ Download locations are for the particular versions used to construct
 OTT 2.10.  For new work, current versions of these sources should be
 retrieved.
 
+1.  Curated additions from the Open Tree amendments-1 repository, commit [4b3ba1a](https://github.com/OpenTreeOfLife/amendments-1/commit/4b3ba1afdf1fd650b41d520486cdf1bbfba7f36c).  These taxa are added during OTU mapping using the curator application.
+
 1.  Taxonomy from: 
     DS Hibbett, M Binder, JF Bischoff, M Blackwell, et al. 
     A higher-level phylogenetic classification of the <i>Fungi</i>.
@@ -233,3 +235,8 @@ than GBIF.
 ## Previous versions
 
 See <a href="http://files.opentreeoflife.org/ott/">http://files.opentreeoflife.org/ott/</a>
+
+## Errata
+
+* Two records have irregular sources lists; the peculiar entries should be removed.  The records are Eukaryota (304358) and SAR (5246039).
+* There are a few redundant synonym records (45727 to be exact).  Programs reading the synonyms.tsv file should ignore rows with a given id and name, other than the first such.

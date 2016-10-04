@@ -7,9 +7,9 @@ align OTUs across phylogenetic studies.  This need is largely met by
 using the NCBI taxonomy, since (1) most phylogenies are molecular, (2)
 publishers require molecular sequences used in studies to be deposited
 in Genbank, (3) every Genbank deposit is annotated with a taxon from
-NCBI taxonomy.  The NCBI taxonomy therefore forms the nucleus of OTT.
+NCBI taxonomy.  NCBI also tends to be more-phylogenetically informed than other taxonomies (see Results, below), which means that it also plays a key role in providing backbone information to Open Tree of Life in the absence of phylogenetic trees for a given clade. The NCBI taxonomy therefore forms the nucleus of OTT.
 The particular version of NCBI taxonomy used in the OTT assembly described below (OTT 2.10) was downloaded on
-[date], but we have retrieved a fresh version with every OTT build. 
+[date], but we have retrieved a fresh version with every OTT build.
 
 *GBIF backbone taxonomy.*  The NCBI taxonomy has only [NNN] species
 records with standard binomial names.  In order for Open Tree to

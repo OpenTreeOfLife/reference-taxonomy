@@ -39,46 +39,39 @@ on a recent publication
 [reference, see release notes]. This phylogenetically-informed source is higher-ranked that NCBI or GBIF.
 
 *Index Fungorum*  
-The Open Tree Fungi curators expressed concern over
-the the quality of the combined NCBI/GBIF coverage of Fungi and
-requested we use Index Fungorum.  Around [date] we obtained database
-table dumps for a recent version of IF (the one in GBIF was [XXX]
+We incorporated Index Fungorum to improve the coverage and classification of Fungi. We obtained database dumps of Index Fungorum around [date] (noting that the version of IF in in GBIF was [XXX]
 years older).  [reference]
 
 We gave the Fungi branch of Index Fungorum higher priority than NCBI
-or GBIF, at curator request.  There was no real call to keep the rest
-of IF, which is not substantial, but we kept it at low priority
+or GBIF.  We kept the non-fungal data at low priority
 (between NCBI and GBIF) in case it could provide any useful
 information.
 
 *Hibbett 2007*
-The Fungi curators provided a
-higher taxonomy of Fungi down to order.  [reference] We gave this
-taxonomy higher priority than other sources at curator request.  To
-ensure that all of our sources were public, curators deposited this
-taxonomy with Figshare.
+The OpenTree Fungi curators provided am order-level
+higher taxonomy of Fungi.  [reference] We gave this
+taxonomy higher priority than other sources of fungal data. This taxonomy is deposited in Figshare [reference]
 
 *WoRMS*  
 We incorporated WoRMS in order to improve coverage in decapods. Combined, NCBI and GBIF contained only about 80%  of decapod species [confirm that
 this is true]. We obtained the WoRMS taxonomy via the API around [date].  [reference]
 
-On advice of curators, the decapod branch of WoRMS is ranked higher than other sources of decapod data.  The remainder or WoRMS has priority between NCBI and GBIF. 
+On advice of curators, the decapod branch of WoRMS is ranked higher than other sources of decapod data.  The remainder or WoRMS has priority between NCBI and GBIF.
 
 *IRMNG:* The GBIF backbone did not come with information about whether
 taxa were extinct vs. extant.  (See elsewhere for discussion of the
-importance of this information.)  For extinctness information we
-decided to import IRMNG.  Initial we included all IRMNG records but
-learned through reviewer comments that it was necessary to exclude
-names known to be invalid, which fortunately is information present in
+importance of this information.) To obtain this information,
+we imported IRMNG, which logs the extinct / extant status of taxa. Initial versions of OTT included all IRMNG records, but after review, we excluded names labeled
+as invalid in
 the IRMNG dump.  [reference]
 
-*Additions:* For various reasons some taxa occurring as OTUs in
-phylogenetic studies do not occur in OTT.  This could be due to a
+*Additions:* It is not uncommon to have taxa as OTUs in
+phylogenetic studies that do not occur in OTT.  This can be due to a
 delay in curation by NCBI itself, a delay in importing a fresh NCBI
 version into OTT, a morphological study with otherwise unknown
-species, or other causes.  To handle this situation we have developed
-a user interface for creating new taxon records with relevant
+species, or other causes.  To handle this situation, we have developed
+a user interface that allows curators to create new taxon records along with relevant
 documentation (publications, databases, and so on).  New taxon records
-are entered into a repository assigned to this purpose, which is
+are saved into a specific GitHub repository, and these records are then
 linked from the OTT taxonomy files and user interfaces so that
 provenance is always available.

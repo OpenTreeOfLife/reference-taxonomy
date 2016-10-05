@@ -1,46 +1,32 @@
 ### Taxonomy sources
 
-We build the present version of OTT from eight sources. Five of these are curated online taxonomies : NCBI, GBIF, IRMNG, Index Fungorum, and WoRMS. The remaining three are an automatically generation classification based on sequence clustering (SILVA); a family-specific classification based on a published phylogeny (Lamiales); and a set of user-generated taxonomy patches.
+We build the present version of OTT from eight sources. Five of these are curated online taxonomies : NCBI, GBIF, IRMNG, Index Fungorum, and WoRMS. The remaining three are an automatically generation classification based on sequence clustering (SILVA); a family-specific classification based on a published phylogeny (Lamiales); and a set of user-generated taxonomy patches. The primary inputs are NCBI and GBIF, while incorporation of other taxonomies has been driven by curator requests.
 
-*NCBI Taxonomy.*  The first objective of the Open Tree taxonomy is to
+The choice and ranking of input taxonomies reflects the need for 1) mapping tips from phylogenies to taxa in taxonomies; 2) a backbone hierarchy in the absence of phylogenies that cover a particular clade; and 3) coverage of the synthetic tree beyond the tips present in the input trees to the [MMM] species species that are described in the literature [citation needed]. We also limit the list to taxonomies that are available for download and licensed for re-use [re-wording probably required, and decide if we want to specifically mention taxonomies that we wanted to use but can't].
+
+*NCBI Taxonomy*  
+The first objective of the Open Tree taxonomy is to
 align OTUs across phylogenetic studies.  This need is largely met by
 using the NCBI taxonomy, since (1) most phylogenies are molecular, (2)
 publishers require molecular sequences used in studies to be deposited
 in Genbank, (3) every Genbank deposit is annotated with a taxon from
-NCBI taxonomy.  NCBI also tends to be more-phylogenetically informed than other taxonomies (see Results, below), which means that it also plays a key role in providing backbone information to Open Tree of Life in the absence of phylogenetic trees for a given clade. The NCBI taxonomy therefore forms the nucleus of OTT.
+NCBI taxonomy.  NCBI also tends to be more phylogenetically-informed than other taxonomies (see Results, below), which makes it a good candidate as a default backbone. The NCBI taxonomy therefore forms the nucleus of OTT.
+
+The disadvantage of the NCBI taxonomy is that it has only [NNN] species
+records with standard binomial names. This represents taxa that have sequence information. NCBI therefore does not alone provide sufficient coverage for OpenTree.
+
 The particular version of NCBI taxonomy used in the OTT assembly described below (OTT 2.10) was downloaded on
 [date], but we have retrieved a fresh version with every OTT build.
 
-*GBIF backbone taxonomy.*  The NCBI taxonomy has only [NNN] species
-records with standard binomial names.  In order for Open Tree to
-improve its coverage of the tree of life (the second objective), we
-needed a second source taxonomy providing species going beyond NCBI's
-[NNN] and reaching toward the [MMM] species that are described in the
-literature [citation needed].
-
-An initial attempt to use a global taxonomy in progress from another
-project
-([Union4](https://web.archive.org/web/20130823172016/http://gnaclr.globalnames.org/classifications))
-was suspended over concerns about future support as well as a number
-of technical difficulties.
-
-The natural place to look was Catalog of Life, a successful ongoing
-effort to develop a taxonomy of all life.  CoL was unavailable for
-direct use due to unsuitable contract terms, but much of its content
-was available in the GBIF backbone taxonomy [reference].  All in all,
-because the GBIF backbone draws from a number of sources (including
+*GBIF backbone taxonomy*  
+The GBIF taxonomy provides much greater coverage, in terms of number of binomials, than NCBI. The GBIF backbone draws from a number of sources (including
 IRMNG and Index Fungorum), has ongoing institutional support, and no
-special terms of use, it seemed a good choice for the goal of coverage.
+special terms of use, making it a good choice for the goal of coverage. It provides much of the content available in Catalog of Life, but with terms of use that are suitable  for OpenTree.
 
-Although we started with an earlier version, the version of the GBIF
-backbone in OTT 2.10 the one released in July 2003.  A successor was
-only released on [date], as this report was being prepared.
+The GBIF version used in OTT 2.10 was released in July 2003.  A successor was released on [date], as this report was being prepared, and is scheduled for incorporation into OTT.
 
-Beyond NCBI and GBIF, which together meet the objectives, additional
-development of the taxonomy has been driven unsystematically by
-curator requests.
-
-*SILVA:* Our microbe curators were unhappy about the conventional
+*SILVA:*
+The classification of Our microbe curators were unhappy about the conventional
 classification of prokaryotes and unicellular Eukaryotes and provided
 a script to import the SILVA taxonomy, which is based on molecular
 evidence.  We incorporated SILVA version 115 into OTT 2.10.  We did

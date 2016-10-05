@@ -1,10 +1,12 @@
 ### Taxonomy sources
 
-We build the present version of OTT from eight sources. Five of these are curated online taxonomies : NCBI, GBIF, IRMNG, Index Fungorum, and WoRMS. The remaining three are an automatically generation classification based on sequence clustering (SILVA); a family-specific classification based on a published phylogeny (Lamiales); and a set of user-generated taxonomy patches. The primary inputs are NCBI and GBIF, while incorporation of other taxonomies has been driven by curator requests.
+We build the present version of OTT from nine sources. Five of these are curated online taxonomies : NCBI, GBIF, IRMNG, Index Fungorum, and WoRMS. The remaining four are an automatically generation classification based on sequence clustering (SILVA); a family-specific classification based on a published phylogeny (Lamiales); an order-level classification of Fungi (Hibbett2007); and a set of user-generated taxonomy additions. The primary inputs are NCBI and GBIF, while incorporation of other taxonomies has been driven by curator requests where NCBI and GBIF did not provide sufficient coverage and / or had out-of-date classifications.
 
-The choice and ranking of input taxonomies reflects the need for 1) mapping tips from phylogenies to taxa in taxonomies; 2) a backbone hierarchy in the absence of phylogenies that cover a particular clade; and 3) coverage of the synthetic tree beyond the tips present in the input trees to the [MMM] species species that are described in the literature [citation needed]. We also limit the list to taxonomies that are available for download and licensed for re-use [re-wording probably required, and decide if we want to specifically mention taxonomies that we wanted to use but can't].
+The choice and ranking of input taxonomies reflects the need for 1) mapping tips from phylogenies to taxa in taxonomies; 2) a backbone hierarchy in the absence of phylogenies that cover a particular clade; and 3) coverage of the synthetic tree beyond the tips present in the input trees to the [MMM] species species that are described in the literature [citation needed]. We also limit our sources to taxonomies that are available for download and licensed for re-use [re-wording probably required, and decide if we want to specifically mention taxonomies that we wanted to use but can't].
 
-*NCBI Taxonomy*  
+OTT assembly is dependent on the input order of the sources - higher ranked inputs take priority over lower ranked inputs. The ranking of inputs is as follows (with detail and justification given below): 1) SILVA; 2) Lamiales; 3) Hibbett2007; 4) Index Fungorum (fungi only); 5) WoRMS (decapods only); 6) NCBI; 7) IRMNG; 8) GBIF; 9) OTT additions.
+
+*NCBI*  
 The first objective of the Open Tree taxonomy is to
 align OTUs across phylogenetic studies.  This need is largely met by
 using the NCBI taxonomy, since (1) most phylogenies are molecular, (2)
@@ -18,30 +20,26 @@ records with standard binomial names. This represents taxa that have sequence in
 The particular version of NCBI taxonomy used in the OTT assembly described below (OTT 2.10) was downloaded on
 [date], but we have retrieved a fresh version with every OTT build.
 
-*GBIF backbone taxonomy*  
+*GBIF*  
 The GBIF taxonomy provides much greater coverage, in terms of number of binomials, than NCBI. The GBIF backbone draws from a number of sources (including
 IRMNG and Index Fungorum), has ongoing institutional support, and no
 special terms of use, making it a good choice for the goal of coverage. It provides much of the content available in Catalog of Life, but with terms of use that are suitable  for OpenTree.
 
 The GBIF version used in OTT 2.10 was released in July 2003.  A successor was released on [date], as this report was being prepared, and is scheduled for incorporation into OTT.
 
-*SILVA:*
-The classification of Our microbe curators were unhappy about the conventional
-classification of prokaryotes and unicellular Eukaryotes and provided
-a script to import the SILVA taxonomy, which is based on molecular
-evidence.  We incorporated SILVA version 115 into OTT 2.10.  We did
-not include SILVA's plant, animal, or fungi branches in OTT.
-[references]
+*SILVA*  
+The classification of prokaryotes and unicellular Eukaryotes in NCBI and GBIF is not consistent with current phylogenetic thinking. We therefore imported the SILVA taxonomy, which is built algorithmically based on clustering of molecular
+sequences.  We incorporated SILVA version 115 into OTT 2.10.  We did
+not include SILVA's plant, animal, or fungi branches in OTT
+[references]. SILVA has higher priority than NCBI or GBIF in order to capture the deep relationships in the tree.
 
-We gave SILVA higher priority than NCBI or GBIF at curator request.
+*Lamiales*  
+OpenTree plant curators provided a taxonomy of the order Lamiales based
+on a recent publication
+[reference, see release notes]. This phylogenetically-informed source is higher-ranked that NCBI or GBIF.
 
-*Lamiales:* Plant curators requested a revision of order Lamiales based
-on a recent publication about this group.
-[reference, see release notes]
-
-We gave the Lamiales higher priority than NCBI or GBIF at curator request.
-
-*Index Fungorum:* The Open Tree Fungi curators expressed concern over
+*Index Fungorum*  
+The Open Tree Fungi curators expressed concern over
 the the quality of the combined NCBI/GBIF coverage of Fungi and
 requested we use Index Fungorum.  Around [date] we obtained database
 table dumps for a recent version of IF (the one in GBIF was [XXX]
@@ -53,23 +51,18 @@ of IF, which is not substantial, but we kept it at low priority
 (between NCBI and GBIF) in case it could provide any useful
 information.
 
-*Fungal orders from Hibbett 2007:* The Fungi curators provided a
+*Hibbett 2007*
+The Fungi curators provided a
 higher taxonomy of Fungi down to order.  [reference] We gave this
 taxonomy higher priority than other sources at curator request.  To
 ensure that all of our sources were public, curators deposited this
 taxonomy with Figshare.
 
-*WoRMS:* The Open Tree decapod curators observed that our combined
-taxonomy had only about 80% coverage of decapod species [confirm that
-this is true], and suggested we obtain the decapod taxonomic tree from
-WoRMS.  Given questions over terms of use of the dump files for WoRMS,
-which were only available on request, we obtained the taxonomy via the
-web API, around [date].  [reference]
+*WoRMS*  
+We incorporated WoRMS in order to improve coverage in decapods. Combined, NCBI and GBIF contained only about 80%  of decapod species [confirm that
+this is true]. We obtained the WoRMS taxonomy via the API around [date].  [reference]
 
-We gave the decapod branch of WoRMS higher priority than other sources
-at curator request.  Mostly due to unfamiliarity with WoRMS, we felt
-that there was some risk in having the rest of WoRMS also override
-NCBI, so we kept it with lower priority (between NCBI and GBIF).
+On advice of curators, the decapod branch of WoRMS is ranked higher than other sources of decapod data.  The remainder or WoRMS has priority between NCBI and GBIF. 
 
 *IRMNG:* The GBIF backbone did not come with information about whether
 taxa were extinct vs. extant.  (See elsewhere for discussion of the

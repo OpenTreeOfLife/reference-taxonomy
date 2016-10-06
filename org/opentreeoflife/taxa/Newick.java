@@ -178,7 +178,7 @@ class Newick {
             List<Taxon> sorted = new ArrayList(node.children);
 			Collections.sort(sorted, Taxon.compareNodes);
 			Taxon last = sorted.get(sorted.size()-1);
-			for (Taxon child : node.children) {
+			for (Taxon child : sorted) {
 				appendNewickTo(child, useIds, buf);
 				if (child != last)
 					buf.append(",");

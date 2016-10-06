@@ -6,7 +6,7 @@
 
 import csv, string, sys
 
-status_for_keeps = {}
+nomenclatural_statuses_to_keep = {}
 for status in [
                '',
                'conservandum',
@@ -23,7 +23,7 @@ for status in [
                'Ruhberg et al., 1988',
                'later usage',
                ]:
-    status_for_keeps[status] = True
+    nomenclatural_statuses_to_keep[status] = True
 
 not_extinct = ['1531',     # Sarcopterygii
                '10565',    # Saurischia
@@ -195,13 +195,14 @@ def fix_irmng():
 
     keep_count = 0
     missing_parent_count = 0
+    taxon_statuses_to_keep = ['accepted', 'valid', '']
     for taxon in taxa.itervalues():
         if taxon.keep:
             True    # already seen
         elif (taxon.id in grandfathered or
-              ((taxon.tstatus == 'accepted' or taxon.tstatus == 'valid') and
+              (taxon.tstatus in taxon_statuses_to_keep and
                 # reduces number of kept taxa from 1685133 to 1351145
-               taxon.nstatus in status_for_keeps)):
+               taxon.nstatus in nomenclatural_statuses_to_keep)):
             scan = taxon
             while not scan.keep:
                 scan.keep = True

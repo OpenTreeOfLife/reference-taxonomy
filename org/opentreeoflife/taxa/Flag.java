@@ -63,6 +63,9 @@ public enum Flag {
 			lookupInheritedTable.put(flag.inheritedName, flag);
         }
 
+        // For reading OTT 2.1 (very old)
+		lookupTable.put("D", HIDDEN);
+
 		// Container stubs - legacy
 		lookupTable.put("incertae_sedis_direct", WAS_CONTAINER);
 		lookupTable.put("unclassified_direct", WAS_CONTAINER);

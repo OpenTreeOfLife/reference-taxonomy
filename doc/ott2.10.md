@@ -239,4 +239,8 @@ See <a href="http://files.opentreeoflife.org/ott/">http://files.opentreeoflife.o
 ## Errata
 
 * Two records have irregular sources lists; the peculiar entries should be removed.  The records are Eukaryota (304358) and SAR (5246039).
+  This is corrected in draft 12.
 * There are a few redundant synonym records (45727 to be exact).  Programs reading the synonyms.tsv file should ignore rows with a given id and name, other than the first such.
+  This is corrected in draft 12.
+* The Makefile specifies the 20151006 version of NCBI taxonomy, but
+  actually the 20161001 version was used to build OTT 2.10.

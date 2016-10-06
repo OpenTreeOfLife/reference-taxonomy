@@ -342,10 +342,18 @@ public abstract class Taxonomy {
             return 0;
 	}
 
-	// DWIMmish - does Newick if string starts with paren, otherwise
-	// loads from directory
+	// DWIMmish - taxonomy can be specified in any of the following ways:
+    //   1. interim taxonomy format, if argument ends with '/'
+    //   2. literal Newick string, if argument starts with '(',
+    //   3. load Newick from file, if argument ends with '.tre'
 
 	public static SourceTaxonomy getTaxonomy(String designator, String idspace) throws IOException {
+        SourceTaxonomy tax = getRawTaxonomy(designator, idspace);
+        tax.postLoadActions();
+        return tax;
+    }
+
+	public static SourceTaxonomy getRawTaxonomy(String designator, String idspace) throws IOException {
 		SourceTaxonomy tax = new SourceTaxonomy(idspace);
 		if (designator.startsWith("(")) {
             Taxon root = Newick.newickToNode(designator, tax);
@@ -362,7 +370,6 @@ public abstract class Taxonomy {
 			new InterimFormat(tax).loadTaxonomy(designator);
             tax.purgeTemporaryIds();
 		}
-        tax.postLoadActions();
 		return tax;
 	}
 

@@ -557,14 +557,47 @@
     "filename": "opentree5.0_tree.tgz"
   }, 
   {
-    "===": "combines if.1, if.2, if.3, if.4; input to 2.9, 12787947", 
+    "===": "combines if.1, if.2, if.3, if.4; input to 2.9, 2.10", 
     "_type": "capture", 
     "name": "fung-9", 
-    "generated_on": "2016-10-06", 
+    "generated_on": "2015-10-06", 
     "legal": "cc0", 
     "label": "9", 
     "capture_of": "fung", 
-    "date": "2016-10-06", 
+    "date": "2015-10-06", 
     "filename": "fung-9-ot.tgz"
+  },
+  {
+    "===": "Input to ott2.10", 
+    "_type": "capture", 
+    "name": "ncbi-20160629", 
+    "bytes": 36492586, 
+    "legal": "pd", 
+    "filename": "ncbi-20160629.tgz", 
+    "last_modified": "2016-06-29", 
+    "capture_of": "ncbi", 
+    "date": "2016-06-29", 
+    "label": "20160629"
+  }, 
+  {
+    "_type": "capture", 
+    "name": "ott2.10", 
+    "generated_on": "2016-10-01", 
+    "legal": "cc0", 
+    "label": "2.10", 
+    "sources": {
+      "silva": "silva-115", 
+      "ncbi": "ncbi-20160629", 
+      "gbif": "gbif-20130702", 
+      "irmng": "irmng-ot-20140316", 
+      "worms": "worms-1", 
+      "study713": "study713-20140721", 
+      "h2007": "h2007-2015-v4", 
+      "if": "fung-9"
+    }, 
+    "capture_of": "ott", 
+    "date": "2016-10-01", 
+    "commit": "https://github.com/OpenTreeOfLife/reference-taxonomy/commit/eca7bdefdc8ad10fb39b9ff8c98db1cc186d7e94", 
+    "filename": "ott2.10.tgz"
   }
 ]

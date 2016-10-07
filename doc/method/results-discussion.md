@@ -1,15 +1,53 @@
 
 # Results
+
 General results on the Open Tree taxonomy. Not a review on the taxonomic quality of any particular clade.
 
 * number tips, synonyms, homonyms [TBD: Get metrics for OTT 2.10]
 * number patches
 * number of inter-source conflicts? (about 1000)
 
+[Consult the introduction: how well did we meet our goals.]
+
+## Coverage of OTUs
+
 * compare OTT's coverage of phylesystem with coverage by NCBI, GBIF
   (i.e. how well does OTT do what it's supposed to do, compared to
   ready-made taxonomies?)
 
+## Higher taxa
+
+* anything to say about this?
+
+## Filling in gaps
+
+(Table or plot showing how many taxa come from each source, & how many exclusively:)
+
+```
+taxon,source,binomials-from-that-source,binomials-exclusively-from-that-source
+
+life total: 3453838 binomials: 2093125 single source: 959613
+life,irmng,1111550,313261
+life,worms,258378,53233
+life,silva,13953,44
+life,gbif,1629523,486411
+life,ncbi,360455,88358
+life,if,237482,18291
+life,addition,15,15
+
+Fungi total: 394138 binomials: 251156 single source: 35427
+Fungi,irmng,31637,192
+Fungi,worms,1347,42
+Fungi,gbif,246147,14514
+Fungi,ncbi,34134,3435
+Fungi,if,232257,17244
+
+Malacostraca total: 59095 binomials: 44235 single source: 5509
+Malacostraca,irmng,26343,1057
+Malacostraca,worms,33069,1375
+Malacostraca,gbif,42054,2789
+Malacostraca,ncbi,6514,288
+```
 
 
 

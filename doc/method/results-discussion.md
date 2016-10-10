@@ -127,3 +127,7 @@ than any "competitor".'
 
 discuss global names architecture, bionames, bioguid
 
+At present this provenance information [for source patches]
+is unfortunately not linked from the final taxonomy file, but it could
+be, and ideally it would be.  [NMF: Fair to say it's one of the/your
+longer term design maxims? If so, bring that up at some point.]

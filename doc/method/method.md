@@ -1,6 +1,4 @@
-# Taxonomy assembly
-
-## Taxonomy construction
+## Taxonomy assembly overview
 
 Terminology: 
   * polysemy = where a single name-string belongs to multiple taxon records; in 
@@ -40,38 +38,41 @@ Details of each step follow.
 
 Each source taxonomy has its own import procedure, usually a file
 download from the provider's web site followed by application of a
-script that converts the source to a common format for ingest.  Given
+script that converts the source to a common format for import.  Given
 the convert source files, the taxonomy can be 'loaded' by the assembly
 procedure.
 
 A taxonomy in the common format has the following parts:
+
  * a taxonomy table, with one row (record) per putative taxon; each row gives an identifier that is unique to this taxonomy, the taxon's name, the identifier of its parent taxon record, and optional annotations or 'flags'
  * an optional synonyms table, with one name/taxon association row per synonym
  * an optional identifier merge table, with one row for each identifier alias (where one identifier is an alias for another)
 
 [NMF: Would be helpful to have 2-5 rows deep example, for 3 tables.
-JAR: it's pretty boring.  Here are a few rows from the NCBI ingest:
+JAR: it's pretty boring.  Here are a few rows from the NCBI import:
 
 Taxonomy -
 
-    141976  |       8335    |       Plethodon cinereus      |       species |       
-    8335    |       269181  |       Plethodon       |       genus   |       
-    269181  |       8332    |       Plethodontinae  |       subfamily       |       
+    uid     parent  name            rank
+    141976  8335    Plethodon cinereus      species 
+    8335    269181  Plethodon       genus   
+    269181  8332    Plethodontinae  subfamily       
 
 Synonyms -
 
-    141976  |       Plethodon cinerea       |       synonym |       |       
-    73625   |       Lycopodium alpina       |       misspelling     |       |       
-    73625   |       Lycopodium alpinum      |       synonym |       |       
+    uid     name                    type
+    141976  Plethodon cinerea       synonym 
+    73625   Lycopodium alpina       misspelling     
+    73625   Lycopodium alpinum      synonym
 
 Merges -
 
+    uid     replacement
     12      74109
     30      29
     36      184914
 
-The vertical bars are an embarrassment - Stephen just copied them over
-from the NCBI dump format, but I think they're just silly.]
+end]
 
 After each source taxonomy is loaded, the following two normalizations
 are performed:
@@ -111,10 +112,7 @@ is done as comments in the file containing the script, but there is no
 reason not to make provenance information machine readable.)
 Provenance includes some combination of curator name, github issue
 number, publication, and descriptive information gleaned from
-investigation of the problem.  At present this provenance information
-is unfortunately not linked from the final taxonomy file, but it could
-be, and ideally it would be.  [NMF: Fair to say it's one of the/your
-longer term design maxims? If so, bring that up at some point.]
+investigation of the problem.
 
 ## Align source to union
 
@@ -452,7 +450,7 @@ an unplaced taxon (more resolved, or resolved), or not.  Unplaced taxa
 should not inhibit the application of any rule, but they shouldn't get
 lost during merge, either.
 
-### Postprocessing
+## Postprocessing
 
 After all source taxonomies are aligned and merged, general ad hoc
 patches are applied to the union taxonomy, in a manner similar to that
@@ -470,10 +468,8 @@ is a heuristic, as PaleoDB can (rarely) contain extant taxa, but the
 alternative is failing to recognize a much larger number of taxa as
 extinct.
 
-### Identifier assignment
-
 The final step is to assign OTT ids to taxa.  This is done by aligning
-the previous version of OTT to the new union taxonomy.  The previous
+the previous version of OTT to the new union taxonomy.  The previous OTT
 version is not merged into the new version; the alignment is only for
 the purpose of assigning identifiers.  After transferring ids of
 aligned taxa, any remaining union taxa are given newly 'minted'

@@ -9,7 +9,7 @@ biodiversity project that aims to synthesize data based on taxonomic
 names.
 
 Open Tree of Life is a system for synthesis of phylogenetic supertrees from
-inputs drawn from a corpus of published phylogenetic trees. The process
+inputs drawn from a corpus of published phylogenetic trees. The system
 requires an overall taxonomy of life meeting the following requirements:
 
  1. *OTU coverage*: connecting the OTUs of phylogenetic
@@ -26,11 +26,11 @@ requires an overall taxonomy of life meeting the following requirements:
     fidelity.
  1. *Taxonomic coverage*: the taxonomy should cover the [MMM] species
     [citation needed] that are described in the literature, so that we
-    can 'fill in the gaps' not filled by phylogenetic studies.  This 
-    is important when building an integrative 'tree of life'.
+    have the option to 'fill in the gaps' not filled by phylogenetic studies.  
+    This is important when building an integrative 'tree of life'.
 
 No single available taxonomic source meets all three requirements.
-NCBI taxonomy has fairly good coverage of OTUs, but its coverage is
+NCBI taxonomy has good coverage of OTUs, but its taxonomic coverage is
 limited to taxa that have sequence data in GenBank. On the other hand,
 conventional taxonomies such as Catalog of Life, GBIF, and IRMNG meet
 the taxonomic coverage requirement, but miss OTUs from our input

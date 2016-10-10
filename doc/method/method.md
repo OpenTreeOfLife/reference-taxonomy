@@ -91,30 +91,15 @@ are performed:
     This is done to avoid an ambiguity when later on a node with name
     N needs to be matched.  [get examples by rerunning]
 
-## Source patching
+## Source taxonomy adjustment
 
-Most source taxonomies have scripted ad hoc patches that are applied
-at this point.  Some capitalizations and misspellings are fixed, and
-synonyms added (e.g. 'Stramenopiles' for 'Heterokonta'), to improve
-matches between taxonomies.  Other patches, such as extinct
+Other patches, such as extinct
 annotations or topology changes, are applied at this point.  Many
 patches can be applied either to a source taxonomy or to the final OTT
 assembly, but patches that can affect alignment are better applied
 before alignment, to the source.
 
-By scripting edits to source taxonomies, as opposed to just editing
-either the sources or the final taxonomy directly, we accomplish two
-things: First, the script can be applied to a later version of the
-source, which means it is relatively easy to update OTT to newer
-versions of source taxonomies as they come out.  Second, we can
-preserve the provenance of the changes in the script.  (For now this
-is done as comments in the file containing the script, but there is no
-reason not to make provenance information machine readable.)
-Provenance includes some combination of curator name, github issue
-number, publication, and descriptive information gleaned from
-investigation of the problem.
-
-## Align source to union
+## Alignment of source taxonomy to union taxonomy
 
 It is important that source taxa be matched with union taxa when and
 only when this is appropriate.  A mistaken identity between a source
@@ -139,10 +124,17 @@ necessarily heuristic.  Difficult cases must be investigated manually
 and either repaired manually (patched) or repaired by improvements to
 the heuristics.
 
-Alignment proceeds one source node at a time.  First, a list
-of candidate union matches, based on synonyms and shared identifiers,
-is prepared for the source node.  Then, a set of heuristics is applied
-to find a unique best union node match, if any, for that source node.
+Alignment consists of scripted ad hoc patches followed by an automatic
+alignment procedure.  Scripted patches that allow source nodes to be
+correctly matched to union nodes include capitalization and spelling
+repairs and addition and removal of synonyms (e.g. 'Stramenopiles' for
+'Heterokonta').
+
+Automated alignment proceeds one source node at a time.  First, a list
+of candidate union matches, based on name, synonyms, and shared
+identifiers (if any), is prepared for the source node.  Then, a set of
+heuristics is applied to find a unique best union node match, if any,
+for that source node.
 
 Heuristics are of two kinds:
 
@@ -398,7 +390,7 @@ discuss that. And this repeats for each paragraph / workflow step. I
 will suggest a different arrangement.. [SEE BELOW]]
 
 
-## Merge source into union
+## Merging source taxonomy into union taxonomy
 
 Following alignment, taxa from the source taxonomy are merged into the
 union taxonomy.  This is performed via bottom-up traversal of the
@@ -462,6 +454,8 @@ Katz lab as a table of their own design.  Rather than convert it to
 some form already known to the system, we kept it in the original form
 to facilitate further editing.
 
+* give the number of patches, breakdown by type
+
 There is a step to mark as extinct those taxa whose only source
 taxonomy is GBIF and that come to GBIF via PaleoDB [reference].  This
 is a heuristic, as PaleoDB can (rarely) contain extant taxa, but the
@@ -476,19 +470,19 @@ aligned taxa, any remaining union taxa are given newly 'minted'
 identifiers.
 
 
-## NMF comments
+## *NMF comments*
 
 1. Is it possible to assume an ideal case where merging two or more OTT input taxonomies requires no or only very minimal conflict/noise/ambiguity resolution? And the result is almost unambiguously correct? If so, perhaps you start your "assembly process" description by imaging/introducing such a case, and your core pipeline in relation to it. That is then out of the way - a scenario that OTT can handle well and easily.
 
-[JAR: Ideal case is something like NCBI: (Bufo pageoti, Bufo japonicus)Bufo + GBIF: (Buf japonicus, Bufo luchunnicus)Bufo -> OTT: (Bufo pageoti, Bufo japonicus, Bufo luchunnicus)Bufo  - is that too simple?]
+   [JAR: Ideal case is something like NCBI: (Bufo pageoti, Bufo japonicus)Bufo + GBIF: (Buf japonicus, Bufo luchunnicus)Bufo -> OTT: (Bufo pageoti, Bufo japonicus, Bufo luchunnicus)Bufo  - is that too simple?]
 
 2. Complications, 1 - those complications that through various profound or pragmatic solution you can address to a fairly large degree of satisfaction. Outcome -- still rather sound OTT, but drawing now on a full scope of things you've added because you've had to given case 1. was not what the input looked like.
 
 3. Complications, 2 - issues that you either handle not to your own satisfaction, or simply cannot handle at all. 
 
-   I guess I am suggesting this because 1 & 2 give you an opportunity to shine first, and somewhat conclusively, for a significant subset of the input trees. At least for the purpose of mounting the narrative. Clearly any complete OTT assembly job will encounter everything. But you may not have to write such that you directly follow what I assume may be real -- every input taxonomy has instances 1, 2, 3 represented to varying degrees, or they arise as the OTT grows. Instead you could pretend that some input taxonomies are clean (1), individually and jointly. Or clean enough (2) - because of your work. And only 3 is the tough stuff - but tough for anybody, etc.
+I guess I am suggesting this because 1 & 2 give you an opportunity to shine first, and somewhat conclusively, for a significant subset of the input trees. At least for the purpose of mounting the narrative. Clearly any complete OTT assembly job will encounter everything. But you may not have to write such that you directly follow what I assume may be real -- every input taxonomy has instances 1, 2, 3 represented to varying degrees, or they arise as the OTT grows. Instead you could pretend that some input taxonomies are clean (1), individually and jointly. Or clean enough (2) - because of your work. And only 3 is the tough stuff - but tough for anybody, etc.
 
-   So, I wonder what would happen if you did this kind of thing. "For the sake of making this assembly process accessible to a wide readership, we first illustrate the entire pipeline when acting on two or more input taxonomies that are highly internally consistent, and also pose minimal conflict among them. Here the assembly works well from A to Z, as we show and exemplify. 
+So, I wonder what would happen if you did this kind of thing. "For the sake of making this assembly process accessible to a wide readership, we first illustrate the entire pipeline when acting on two or more input taxonomies that are highly internally consistent, and also pose minimal conflict among them. Here the assembly works well from A to Z, as we show and exemplify. 
 
 "A second category are complications that occur frequently but for which we have developed adequate diagnosis and repair/resolution mechanisms. We show how we do this, and also show what else could be done for even better performance".
 

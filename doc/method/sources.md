@@ -14,20 +14,27 @@ OTT assembly is dependent on the input order of the sources - higher ranked inpu
 [The following should be a table:
 
  * the ARB-SILVA taxonomy
- * Hibbett 2007 - an order-level classification of Fungi [ref. Hibbett2007]
+ * Hibbett 2007
  * Index Fungorum 
  * Schaferhoff 2010
  * WoRMS
- * the NCBI taxonomy  [references for all sources?]
+ * the NCBI taxonomy
  * the GBIF backbone taxonomy
  * IRMNG
  * additional taxa provided by Open Tree study curators
 
-The ranking can be a column in the table.
+References for all sources could be a column in the table.
+
+The root clade could be a column in the table.
+
+The ranking can be a column in the table (although if the table is in
+rank order, it would just be sequential numbers).
+
+The following information might also go in the table: total number of
+taxa, number of exclusive taxa.
 
 The following information might also go in the table: number of binomials,
 number of exclusive binomials (i.e. coming only from that source).
-Maybe also number of taxa, number of exclusive taxa.
 
     irmng,1111550,313261
     worms,258378,53233
@@ -36,6 +43,8 @@ Maybe also number of taxa, number of exclusive taxa.
     ncbi,360455,88358
     if,237482,18291
     addition,15,15
+
+Maybe some measure of resolution, like maximum depth.
 
 end table]
 

@@ -41,10 +41,15 @@ class InterimFormat {
 
 	public void loadTaxonomy(String dirname) throws IOException {
 		this.loadMetadata(dirname + "about.json");
-		this.loadTaxonomyProper(dirname + "taxonomy.tsv");
-		this.loadSynonyms(dirname + "synonyms.tsv");
+        String tname = dirname + "taxonomy.tsv";
+        if (!new File(tname).exists())
+            tname = dirname + "taxonomy";
+        this.loadTaxonomyProper(tname);
+        String sname = dirname + "synonyms.tsv";
+        if (!new File(sname).exists())
+            sname = dirname + "taxonomy";
+		this.loadSynonyms(sname);
         this.loadForwards(dirname + "forwards.tsv");
-        this.loadForwards(dirname + "new-forwards.tsv"); // OTT 2.9 peculiarity
         tax.purgeTemporaryIds();
 	}
 

@@ -23,7 +23,7 @@ FUNG_URL=http://files.opentreeoflife.org/fung/fung-9/fung-9-ot.tgz
 
 WORMS_URL=http://files.opentreeoflife.org/worms/worms-1/worms-1-ot.tgz
 
-NCBI_URL="http://files.opentreeoflife.org/ncbi/ncbi-20151006/ncbi-20151006.tgz"
+NCBI_URL="http://files.opentreeoflife.org/ncbi/ncbi-20160629/ncbi-20160629.tgz"
 
 # Was http://ecat-dev.gbif.org/repository/export/checklist1.zip
 # Could be http://rs.gbif.org/datasets/backbone/backbone.zip
@@ -170,6 +170,9 @@ refresh-ncbi:
 	wget --output-document=$(NCBI_TAXDUMP).new $(NCBI_ORIGIN_URL)
 	mv $(NCBI_TAXDUMP).new $(NCBI_TAXDUMP)
 	@ls -l $(NCBI_TAXDUMP)
+
+# Don't forget to scp -p feed/ncbi/in/taxdump.tar.gz to
+#  files:files.opentreeoflife.org/ncbi/ncbi-YYYYMMDD/ncbi-YYYYMMDD.tgz
 
 # Formerly, where it says /dev/null, we had ../data/gbif/ignore.txt
 

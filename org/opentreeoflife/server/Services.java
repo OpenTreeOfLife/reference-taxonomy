@@ -206,8 +206,9 @@ public class Services {
             if (tag != null) {
                 JSONObject info = new JSONObject();
                 Taxon w = a.witness;
-                if (w != null && w.id != null && !w.id.startsWith("-")) {
-                    info.put("witness", w.id);
+                if (w != null) {
+                    if (w.id != null && !w.id.startsWith("-"))
+                        info.put("witness", w.id);
                     if (w.name != null)
                         info.put("witness_name", w.name);
                 }

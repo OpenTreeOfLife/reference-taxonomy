@@ -1134,7 +1134,7 @@ public class Taxon extends Node {
 		System.out.format("%s(%s)\n %s size:%s\n	", this.name, this.id, this.rank.name, this.count());
         this.showLineage(this.taxonomy.forest);
 		if (this.children != NO_CHILDREN) {
-            List<Taxon> sorted = new ArrayList(this.children);
+            List<Taxon> sorted = new ArrayList<>(this.children);
 			Collections.sort(sorted, compareNodesBySize);
 			int count = 0;
 			for (Taxon child : sorted)

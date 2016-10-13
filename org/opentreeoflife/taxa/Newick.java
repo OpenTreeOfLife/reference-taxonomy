@@ -175,7 +175,7 @@ class Newick {
 	static void appendNewickTo(Taxon node, boolean useIds, StringBuffer buf) {
 		if (node.children != null) {
 			buf.append("(");
-            List<Taxon> sorted = new ArrayList(node.children);
+            List<Taxon> sorted = new ArrayList<>(node.children);
 			Collections.sort(sorted, Taxon.compareNodes);
 			Taxon last = sorted.get(sorted.size()-1);
 			for (Taxon child : sorted) {

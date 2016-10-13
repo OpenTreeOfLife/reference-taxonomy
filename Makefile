@@ -324,7 +324,7 @@ feed/misc/chromista_spreadsheet.py: feed/misc/chromista-spreadsheet.csv feed/mis
 
 fetch_amendments: feed/amendments/amendments-1/next_ott_id.json
 
-feed/amendments/amendments-1/next_ott_id.json: $(AMENDMENTS_REFSPEC)
+feed/amendments/amendments-1/next_ott_id.json: $(AMENDMENTS_REFSPEC) feed/amendments/amendments-1
 	(cd feed/amendments/amendments-1; git checkout master)
 	(cd feed/amendments/amendments-1; git pull)
 	(cd feed/amendments/amendments-1; git checkout -q `cat ../../../$(AMENDMENTS_REFSPEC)`)
@@ -522,7 +522,7 @@ clean:
 	rm -rf feed/*/out *.tmp
 #	rm -rf feed/*/work ?
 	rm -rf feed/amendments/amendments-1 t/amendments bin/jython
-	rm -rf tax/fung tax/ncbi tax/prev_nem tax/silva
+	rm -rf tax/fung tax/ncbi tax/prev_nem tax/silva tax/irmng* tax/worms
 	rm -f `find . -name "*.class"`
 	rm -f feed/misc/chromista_spreadsheet.py
 #	rm -f feed/ncbi/in/taxdump.tar.gz
@@ -530,5 +530,5 @@ clean:
 squeakyclean:
 	rm -rf feed/*/in
 	rm -f lib/*
-	rm -rf tax/fung tax/gbif tax/irmng tax/ncbi tax/silva tax/worms 
+	rm -rf tax/fung tax/gbif tax/irmng* tax/ncbi tax/silva tax/worms 
 	rm -rf tax/prev_ott

@@ -1268,7 +1268,7 @@ public abstract class Taxonomy {
 
     // Sort by size and make sure the biggest one is placed.  This is idempotent.
     public List<Taxon> normalizeRoots() {
-        List<Taxon> rootsList = new ArrayList(this.forest.children);
+        List<Taxon> rootsList = new ArrayList<>(this.forest.children);
 		Collections.sort(rootsList, new Comparator<Taxon>() {
 				public int compare(Taxon source, Taxon target) {
                     int foo = ((source.name != null && source.name.equals("life") ? 0 : 1) -
@@ -1858,7 +1858,7 @@ public abstract class Taxonomy {
                 Taxon node = nodenode.taxon();
 				Collection<String> names = nameMap.get(node);  // of this node
 				if (names == null) {
-					names = new ArrayList(1);
+					names = new ArrayList<>(1);
 					nameMap.put(node, names);
 				}
 				names.add(name);

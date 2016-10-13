@@ -52,7 +52,7 @@ public abstract class Node {
 		if (info.equals("null")) return;	// glitch in OTT 2.2
 		String[] ids = commaPattern.split(info);
 		if (ids.length > 0) {
-			this.sourceIds = new ArrayList(ids.length);
+			this.sourceIds = new ArrayList<>(ids.length);
 			for (String qid : ids) {
                 if (qid.length() > 0)
                     this.addSourceId(new QualifiedId(qid));

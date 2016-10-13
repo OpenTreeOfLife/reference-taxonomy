@@ -608,6 +608,7 @@ public class UnionTaxonomy extends Taxonomy {
     }
     */
 
+    @SuppressWarnings("unchecked")
 	public void prepareMetadata() {
 		List<Object> sourceMetas = new ArrayList<Object>();
 		for (Taxonomy source : this.sources)

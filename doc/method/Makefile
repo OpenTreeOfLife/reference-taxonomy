@@ -7,14 +7,25 @@ all: draft.html
 draft.md: introduction.md sources.md method.md results-discussion.md
 	cat $^ >draft.md
 
-draft.html: draft.md
-	md draft.md >draft.html
+# use --html4tags flag?
+
+draft.html: draft.md lib/Markdown.pl
+	bin/markdown $< >$@.new
+	mv $@.new $@
 
 open: draft.html
 	open draft.html
 
 clean:
 	rm draft.*
+
+lib/Markdown.pl:
+	mkdir -p lib
+	wget "http://daringfireball.net/projects/downloads/Markdown_1.0.1.zip"
+	unzip Markdown_1.0.1.zip
+	mv Markdown_1.0.1/Markdown.pl $@
+	rm -r Markdown_1.0.1 Markdown_1.0.1.zip
+
 
 
 

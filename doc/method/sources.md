@@ -1,21 +1,23 @@
 # Materials and methods
 
+This publication describes a particular version of the Open Tree taxonomy
+(version 2.10), but one should keep in mind that the taxonomy is
+constantly evolving as sources are updated, methods improve, and users request
+additional functionality and patches.
+
 ## Taxonomic sources
 
-This report describes a particular version of the Open Tree taxonomy
-(version 2.10), but one should keep in mind that the taxonomy is
-constantly evolving as sources are updated, methods improve, and
-functionality is demanded by users.
-
-We build the taxonomy from nine sources.
+We build the taxonomy from nine sources. Some of these sources are from
+taxonomy projects, while others were manually assembled based on recent
+publications.
 OTT assembly is dependent on the input order of the sources - higher ranked inputs take priority over lower ranked inputs.
 [see table]
 
-[The following should be a table:
+[The following should be a table:]
 
  * the ARB-SILVA taxonomy
  * Hibbett 2007
- * Index Fungorum 
+ * Index Fungorum
  * Schaferhoff 2010
  * WoRMS
  * the NCBI taxonomy
@@ -50,9 +52,9 @@ end table]
 
 The choice and ranking of input taxonomies are driven by the three
 requirements listed in the introduction: 1) OTU coverage (mapping OTUs
-from phylogenies to taxa in the taxonomy); 2) a backbone hierarchy in the
-absence of phylogenies that cover a particular clade; and 3) taxonomic coverage
-of the tree of life beyond the OTUs present in the input trees. 
+from phylogenies to taxa in the taxonomy); 2) a phylogenetically-informed
+backbone hierarchy; and 3) taxonomic coverage
+of the tree of life beyond the OTUs present in the input trees.
 
 As an open science project, Open Tree of Life only uses information
 sources that are not subject to terms of use (data use agreement).
@@ -76,16 +78,17 @@ phylogenetically informed than other taxonomies (see Results, below),
 which makes it a good backbone for Open Tree's purposes. The NCBI
 taxonomy therefore forms the nucleus of OTT.
 
-However, as NCBI taxonomy only contains taxa that have sequence
-information, it only has 360455 records with standard binomial species
-names.  It therefore does not meet the taxonomic coverage requirement.
+However, since NCBI taxonomy only includes taxa that have sequence
+information, it is relatively small, containing only 360455 records
+with standard binomial species
+names. It therefore does not meet the taxonomic coverage requirement.
 
 The particular version of NCBI taxonomy used in OTT 2.10 was
 downloaded from NCBI on [date].  [maybe put dates in table??]
 
 
 *GBIF backbone taxonomy*  
-The GBIF backbone taxonomy provides taxonomic coverage - 1.6 million
+The GBIF backbone taxonomy provides good taxonomic coverage - 1.6 million
 species (binomials).  The GBIF backbone draws from a number of sources
 (including IRMNG and Index Fungorum), has ongoing institutional
 support for maintenance and growth, and provides access without
@@ -100,14 +103,14 @@ prepared, and is scheduled for incorporation into OTT.
 
 
 *SILVA taxonomy*  
-The classification of prokaryotes and unicellular Eukaryotes in NCBI
-and GBIF is not consistent with current phylogenetic thinking. We
-therefore imported the SILVA taxonomy, which is a curated,
-phylogenetically informed classification of an automatically generated
-clustering of a set of RNA sequences derived from GenBank.
+The classification of prokaryotes and unicellular Eukaryotes in NCBI and GBIF is
+not consistent with current phylogenetic thinking. We therefore imported the
+SILVA taxonomy, which is a curated, phylogenetically informed classification.
+The OTUs in the SILVA  taxonomy are algorithmically-generated clusters of RNA
+sequences derived from GenBank.
 
 We incorporated SILVA version 115 into OTT 2.10, downloaded on [xxxx].
-We did not include SILVA's plant, animal, or fungi branches in OTT
+We did not include SILVA's plant, animal, or fungal branches in OTT
 [references]. SILVA has higher priority than NCBI or GBIF in order to
 capture the deep relationships in the tree.
 
@@ -120,7 +123,7 @@ on a recent publication [for reference, see release notes].
 *Hibbett 2007 (Fungi)*  
 The OpenTree Fungi curators provided an order-level
 higher taxonomy of Fungi.  [reference] We gave this
-taxonomy higher priority than other sources of fungal data. This taxonomy 
+taxonomy higher priority than other sources of fungal data. This taxonomy
 is deposited in Figshare [reference].
 
 

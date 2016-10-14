@@ -10,7 +10,17 @@ challenges.]
 
 * number tips, synonyms, homonyms (about 13,000) [TBD: Get metrics for OTT 2.10]
     * could classify the homonyms?  by rank, proximity, etc.  and compare to GBIF / NCBI
+    * homonyms vs hemihomonyms?
 * number of inter-source conflicts (1167)
+* effectiveness of various alignment and separation heuristics
+   * do certain heuristics work better / worse for different types of problems?
+   * since the process runs through a set of heuristics until it finds a
+   solution or gives up, can we say anything about the number of heuristics
+   required across source / union node combinations (or the number of unresolved
+     ambiguities)? i.e. 70% of combinations solved with 1st heuristic, 20% with
+     second heuristic, etc?
+* number of manual operations required (i.e. modifications to the generic
+  assembly process)
 
 (example of a conflict: Zygomycota (if:90405) is not included
 because ... paraphyletic w.r.t. Hibbett 2007.  get proof?)
@@ -35,7 +45,7 @@ After extracting name-strings from study tip labels using a regexp, it
 appears that 195934 out of 203559 names are mapped (of those studies
 that are at least 50% mapped).  That's 96.3% of name-strings.  (The
 regexp is pretty restrictive, so does not include subspecies or
-strains.  Includes some false hits like 'Foo sp.'  Might be interesting 
+strains.  Includes some false hits like 'Foo sp.'  Might be interesting
 to count OTUs instead of name-strings.)
 
 ## Taxonomic coverage
@@ -99,7 +109,6 @@ Comparing the OTT backbone with Ruggiero et al. taxonomy of all life to order:
 * other: 21 (higher R. taxa none of whose orders is in OTT)
 
 (this could be a pie chart or bar chart?)
-
 
 
 # Discussion
@@ -243,11 +252,10 @@ I guess and make best effort.]
   name to A' and B to B', and A' and B' are close, then A and B map to
   A' and B'.
 * Would be good to try membership based alignment of internal nodes.
-* Should deal with the large number of higher-taxon ambiguities due to 
+* Should deal with the large number of higher-taxon ambiguities due to
   disjointness - probably most could be merged
 * More work on *removing* names
 * Rank inversions are probably errors and should be fixed.
 * Anchoring OTT ids to source taxonomy records (particular version).
 * microbes (SILVA tips) - internal disagreement in the project, but
   there are ways we could move forward
-

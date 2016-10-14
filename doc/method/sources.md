@@ -1,77 +1,172 @@
-### Taxonomy sources
+# Materials and methods
 
-We build the present version of OTT from nine sources. Five of these are curated online taxonomies : NCBI, GBIF, IRMNG, Index Fungorum, and WoRMS. The remaining four are an automatically generation classification based on sequence clustering (SILVA); a family-specific classification based on a published phylogeny (Lamiales); an order-level classification of Fungi (Hibbett2007); and a set of user-generated taxonomy additions. The primary inputs are NCBI and GBIF, while incorporation of other taxonomies has been driven by curator requests where NCBI and GBIF did not provide sufficient coverage and / or had out-of-date classifications.
+This publication describes a particular version of the Open Tree taxonomy
+(version 2.10), but one should keep in mind that the taxonomy is
+constantly evolving as sources are updated, methods improve, and users request
+additional functionality and patches.
 
-The choice and ranking of input taxonomies reflects the need for 1) mapping tips from phylogenies to taxa in taxonomies; 2) a backbone hierarchy in the absence of phylogenies that cover a particular clade; and 3) coverage of the synthetic tree beyond the tips present in the input trees to the [MMM] species species that are described in the literature [citation needed]. We also limit our sources to taxonomies that are available for download and licensed for re-use [re-wording probably required, and decide if we want to specifically mention taxonomies that we wanted to use but can't].
+## Taxonomic sources
 
-OTT assembly is dependent on the input order of the sources - higher ranked inputs take priority over lower ranked inputs. The ranking of inputs is as follows (with detail and justification given below): 1) SILVA; 2) Lamiales; 3) Hibbett2007; 4) Index Fungorum (fungi only); 5) WoRMS (decapods only); 6) NCBI; 7) IRMNG; 8) GBIF; 9) OTT additions.
+We build the taxonomy from nine sources. Some of these sources are from
+taxonomy projects, while others were manually assembled based on recent
+publications.
+OTT assembly is dependent on the input order of the sources - higher ranked inputs take priority over lower ranked inputs.
+[see table]
 
-*NCBI*  
-The first objective of the Open Tree taxonomy is to
-align OTUs across phylogenetic studies.  This need is largely met by
-using the NCBI taxonomy, since (1) most phylogenies are molecular, (2)
-publishers require molecular sequences used in studies to be deposited
-in Genbank, (3) every Genbank deposit is annotated with a taxon from
-NCBI taxonomy.  NCBI also tends to be more phylogenetically-informed than other taxonomies (see Results, below), which makes it a good candidate as a default backbone. The NCBI taxonomy therefore forms the nucleus of OTT.
+[The following should be a table:]
 
-The disadvantage of the NCBI taxonomy is that it has only [NNN] species
-records with standard binomial names. This represents taxa that have sequence information. NCBI therefore does not alone provide sufficient coverage for OpenTree.
+ * the ARB-SILVA taxonomy
+ * Hibbett 2007
+ * Index Fungorum
+ * Schaferhoff 2010
+ * WoRMS
+ * the NCBI taxonomy
+ * the GBIF backbone taxonomy
+ * IRMNG
+ * additional taxa provided by Open Tree study curators
 
-The particular version of NCBI taxonomy used in the OTT assembly described below (OTT 2.10) was downloaded on
-[date], but we have retrieved a fresh version with every OTT build.
+References for all sources could be a column in the table.
 
-*GBIF*  
-The GBIF taxonomy provides much greater coverage, in terms of number of binomials, than NCBI. The GBIF backbone draws from a number of sources (including
-IRMNG and Index Fungorum), has ongoing institutional support, and no
-special terms of use, making it a good choice for the goal of coverage. It provides much of the content available in Catalog of Life, but with terms of use that are suitable  for OpenTree.
+The root clade could be a column in the table.
 
-The GBIF version used in OTT 2.10 was released in July 2003.  A successor was released on [date], as this report was being prepared, and is scheduled for incorporation into OTT.
+The ranking can be a column in the table (although if the table is in
+rank order, it would just be sequential numbers).
 
-*SILVA*  
-The classification of prokaryotes and unicellular Eukaryotes in NCBI and GBIF is not consistent with current phylogenetic thinking. We therefore imported the SILVA taxonomy, which is built algorithmically based on clustering of molecular
-sequences.  We incorporated SILVA version 115 into OTT 2.10.  We did
-not include SILVA's plant, animal, or fungi branches in OTT
-[references]. SILVA has higher priority than NCBI or GBIF in order to capture the deep relationships in the tree.
+The following information might also go in the table: total number of
+taxa, number of exclusive taxa.
 
-*Lamiales*  
-OpenTree plant curators provided a taxonomy of the order Lamiales based
-on a recent publication
-[reference, see release notes]. This phylogenetically-informed source is higher-ranked that NCBI or GBIF.
+The following information might also go in the table: number of binomials,
+number of exclusive binomials (i.e. coming only from that source).
 
-*Index Fungorum*  
-We incorporated Index Fungorum to improve the coverage and classification of Fungi. We obtained database dumps of Index Fungorum around [date] (noting that the version of IF in in GBIF was [XXX]
-years older).  [reference]
+    irmng,1111550,313261
+    worms,258378,53233
+    silva,13953,44
+    gbif,1629523,486411
+    ncbi,360455,88358
+    if,237482,18291
+    addition,15,15
 
-We gave the Fungi branch of Index Fungorum higher priority than NCBI
-or GBIF.  We kept the non-fungal data at low priority
-(between NCBI and GBIF) in case it could provide any useful
-information.
+Maybe some measure of resolution, like maximum depth.
 
-*Hibbett 2007*
-The OpenTree Fungi curators provided am order-level
+end table]
+
+The choice and ranking of input taxonomies are driven by the three
+requirements listed in the introduction: 1) OTU coverage (mapping OTUs
+from phylogenies to taxa in the taxonomy); 2) a phylogenetically-informed
+backbone hierarchy; and 3) taxonomic coverage
+of the tree of life beyond the OTUs present in the input trees.
+
+As an open science project, Open Tree of Life only uses information
+sources that are not subject to terms of use (data use agreement).
+This policy decision imposes an additional requirement on the
+taxonomy, ruling out some sources that would otherwise be a good fit
+for the project.
+
+
+Details of sources: [in what order? the rank order is in the table,
+use rank order or something different?  historical? by number of
+taxa?]
+
+*NCBI taxonomy*  
+The first requirement of the taxonomy is to align OTUs across
+phylogenetic studies.  This need is largely met by using the NCBI
+taxonomy, since (1) most modern phylogenetic studies are molecular,
+(2) publishers require molecular sequences used in studies to be
+deposited in GenBank, and (3) every GenBank deposit is annotated with
+a taxon in the NCBI taxonomy.  NCBI taxonomy also tends to be more
+phylogenetically informed than other taxonomies (see Results, below),
+which makes it a good backbone for Open Tree's purposes. The NCBI
+taxonomy therefore forms the nucleus of OTT.
+
+However, since NCBI taxonomy only includes taxa that have sequence
+information, it is relatively small, containing only 360455 records
+with standard binomial species
+names. It therefore does not meet the taxonomic coverage requirement.
+
+The particular version of NCBI taxonomy used in OTT 2.10 was
+downloaded from NCBI on [date].  [maybe put dates in table??]
+
+
+*GBIF backbone taxonomy*  
+The GBIF backbone taxonomy provides good taxonomic coverage - 1.6 million
+species (binomials).  The GBIF backbone draws from a number of sources
+(including IRMNG and Index Fungorum), has ongoing institutional
+support for maintenance and growth, and provides access without
+agreement to terms of use, making it a good choice for the project. It
+provides much of the content available in Catalog of Life and other
+closed sources, without violating Open Tree's no-terms-of-use requirement.
+
+The GBIF backbone version used in OTT 2.10 was downloaded in July
+2013.  A successor was released on [date], as this report was being
+prepared, and is scheduled for incorporation into OTT.
+
+
+
+*SILVA taxonomy*  
+The classification of prokaryotes and unicellular Eukaryotes in NCBI and GBIF is
+not consistent with current phylogenetic thinking. We therefore imported the
+SILVA taxonomy, which is a curated, phylogenetically informed classification.
+The OTUs in the SILVA  taxonomy are algorithmically-generated clusters of RNA
+sequences derived from GenBank.
+
+We incorporated SILVA version 115 into OTT 2.10, downloaded on [xxxx].
+We did not include SILVA's plant, animal, or fungal branches in OTT
+[references]. SILVA has higher priority than NCBI or GBIF in order to
+capture the deep relationships in the tree.
+
+
+*Schaferhoff 2010 (Lamiales)*  
+Open Tree plant curators provided a taxonomy of the order Lamiales based
+on a recent publication [for reference, see release notes].
+
+
+*Hibbett 2007 (Fungi)*  
+The OpenTree Fungi curators provided an order-level
 higher taxonomy of Fungi.  [reference] We gave this
-taxonomy higher priority than other sources of fungal data. This taxonomy is deposited in Figshare [reference]
+taxonomy higher priority than other sources of fungal data. This taxonomy
+is deposited in Figshare [reference].
 
-*WoRMS*  
-We incorporated WoRMS in order to improve coverage in decapods. Combined, NCBI and GBIF contained only about 80%  of decapod species [confirm that
-this is true]. We obtained the WoRMS taxonomy via the API around [date].  [reference]
 
-On advice of curators, the decapod branch of WoRMS is ranked higher than other sources of decapod data.  The remainder or WoRMS has priority between NCBI and GBIF.
+*Index Fungorum (Fungi)*  
+We incorporated Index Fungorum to improve the coverage and
+classification of Fungi. We obtained database dumps of Index Fungorum
+around [date] (noting that the version of IF in in GBIF was [XXX]).
 
-*IRMNG:* The GBIF backbone did not come with information about whether
-taxa were extinct vs. extant.  (See elsewhere for discussion of the
-importance of this information.) To obtain this information,
-we imported IRMNG, which logs the extinct / extant status of taxa. Initial versions of OTT included all IRMNG records, but after review, we excluded names labeled
-as invalid in
-the IRMNG dump.  [reference]
 
-*Additions:* It is not uncommon to have taxa as OTUs in
+*WoRMS (Decapoda)*  
+We incorporated WoRMS in order to improve coverage in
+decapods.  We obtained the WoRMS taxonomy
+via its Web API around [date].  [reference]
+
+
+*IRMNG*  
+Curators requested information about whether taxa were extinct
+vs. extant.  (See elsewhere for discussion of the importance of this
+information.) This was not present in any of our other sources, so we
+imported IRMNG, which logs the extinct / extant status of
+taxa.
+[reference]
+
+
+*Additions*  
+It is not uncommon to have taxa as OTUs in
 phylogenetic studies that do not occur in OTT.  This can be due to a
 delay in curation by NCBI itself, a delay in importing a fresh NCBI
 version into OTT, a morphological study with otherwise unknown
-species, or other causes.  To handle this situation, we have developed
+species, or other causes.  To handle this situation, we developed
 a user interface that allows curators to create new taxon records along with relevant
 documentation (publications, databases, and so on).  New taxon records
 are saved into a specific GitHub repository, and these records are then
 linked from the OTT taxonomy files and user interfaces so that
 provenance is always available.
+
+
+### Characterization of sources
+
+[NMF asks: What do the source taxonomies look like ("sampling", in
+terms of depth (# of levels, breadth (overlap? are they
+"comprehensive?"), homogeneity)?]
+
+[organizational note: this is not for the results section, but an
+assessment of the inputs to the method.  Some of this information
+could go in the table.]

@@ -1,14 +1,15 @@
 ## Taxonomy assembly overview
 
 Terminology: 
+
   * polysemy = where a single name-string belongs to multiple taxon records; in 
     nomenclatural terms, either a homonym or hemihomonym
-  * node = a taxon record from some taxonomy, giving name-string,
+  * node = a taxon record derived from a source taxonomy, giving name-string,
     parent taxon, and perhaps other information
 
 The assembly process works, in outline, as follows:
 
- 1. Start with an ordered list of source taxonomies S1, S2, ... (see above)
+ 1. Start with an ordered list of imported source taxonomies S1, S2, ... (see above)
  1. Initialize the 'union' taxonomy U to be empty
  1. For each source S:
      1. Load, normalize, and patch S
@@ -91,14 +92,6 @@ are performed:
     This is done to avoid an ambiguity when later on a node with name
     N needs to be matched.  [get examples by rerunning]
 
-## Source taxonomy adjustment
-
-Other patches, such as extinct
-annotations or topology changes, are applied at this point.  Many
-patches can be applied either to a source taxonomy or to the final OTT
-assembly, but patches that can affect alignment are better applied
-before alignment, to the source.
-
 ## Alignment of source taxonomy to union taxonomy
 
 It is important that source taxa be matched with union taxa when and
@@ -126,9 +119,17 @@ the heuristics.
 
 Alignment consists of scripted ad hoc patches followed by an automatic
 alignment procedure.  Scripted patches that allow source nodes to be
-correctly matched to union nodes include capitalization and spelling
-repairs and addition and removal of synonyms (e.g. 'Stramenopiles' for
-'Heterokonta').
+correctly matched to union nodes in cases where this cannot be
+automatically inferred or where information might confuse the
+alignment process.  Scripted alignment patches include capitalization
+and spelling repairs, addition of synonyms (e.g. 'Heterokonta' as
+synonym for 'Stramenopiles'), name changes (e.g. 'Choanomonada' to
+'Choanoflagellida'), deletions (e.g. removing synonym 'Eucarya' for
+'Eukaryota' to avoid confusion with the genus in Magnoliopsida),
+removing paraphyletic taxa ('Protozoa', 'Protista').  [metrics on
+scripted alignments?  many non-alignment-related changes are also made
+at this point, but they would be better done in the final patch phase
+much later.]
 
 Automated alignment proceeds one source node at a time.  First, a list
 of candidate union matches, based on name, synonyms, and shared
@@ -220,8 +221,7 @@ actually arise.  For example, there are many [how many? dozens?
 hundreds?] of fungus/plant polysemies, even though the two groups are
 covered by the same nomenclatural code.
 
-[NMF: Check here for harder data:
-http://biodiversitydatajournal.com/articles.php?id=8080 (names
+[NMF: Check [here](http://biodiversitydatajournal.com/articles.php?id=8080) for harder data (names
 management sections and refs. therein).]
 
 Some cases of apparent polysemy might be differences of opinion
@@ -242,19 +242,19 @@ containing A is called its _division_.  If taxa A and B with the same
 name N have divisions C and D, and C and D are disjoint in the
 skeleton, then A and B are taken to be distinct.
 
-There are many cases (about 4,000) where A's division (say, C) is
-properly contained in B's nearest division (say, D) or vice versa.  A
-and B are therefore not separated.  It is not clear what to do in
-these cases.  In many situations the taxon in question is unplaced in
-the source (e.g. in Eukaryota but not in Metazoa) and ought to be
-matched with a placed taxon in the union (in both Eukaryota and
-Metazoa).  In OTT 2.9, [?? figure out what happens - not sure], but
-the number of affected names is quite high, so many false polysemies
-are created.  Example: the skeleton taxonomy does not separate
-_Brightonia_ the mollusc (from IRMNG) from _Brightonia_ the echinoderm
-(from higher priority WoRMS), because there is no division for
-echinoderms, so [whatever happens].  [need example going the other
-way.]
+There are many cases (about 4,000? will need to instrument and re-run
+to count) where A's division (say, C) is properly contained in B's
+nearest division (say, D) or vice versa.  A and B are therefore not
+separated.  It is not clear what to do in these cases.  In many
+situations the taxon in question is unplaced in the source (e.g. is in
+Eukaryota but not in Metazoa) and ought to be matched with a placed
+taxon in the union (in both Eukaryota and Metazoa).  In OTT 2.9, [??
+figure out what happens - not sure], but the number of affected names
+is quite high, so many false polysemies are created.  Example: the
+skeleton taxonomy does not separate _Brightonia_ the mollusc (from
+IRMNG) from _Brightonia_ the echinoderm (from higher priority WoRMS),
+because there is no division for echinoderms, so [whatever happens].
+[need example going the other way.]
 
 [JAR in response to NMF: The skeleton is not just the
 top of the tree; it omits many intermediate layers (ranks) and only
@@ -272,20 +272,16 @@ bos, and record B with name Mus bos, then you generally want them to be
 unified if they're both chordates, but if one is a chordate and the other
 is a mollusc, you'd rather they not unify.
 
-It's hard to find real examples of polysemies where one can be sure it's not an artifact
-or mistake, but one of them (from my polysemy list) is probably Porella capensis. I
-have about 180 at the species level, many of which look like mistakes
-(since sometimes two or three have the same genus name). Most are
-plant/animal or plant/fungus or animal/fungus, but some cases, like
-Ctenella aurantia, have distinct records within the same code (Cnidaria / Ctenophora in
-this case). I can't analyze every one, so we need to err on the side of
-creating redundant records, rather than unifying, which would cause higher
-taxa from the lower priority taxonomy to be "broken".
-
-Someone has published a list of the ones that are legit, and incorporating
-that is on my to-do list.
-
-I'll put some of this info in the writeup. Thanks]
+It's hard to find real examples of species-level polysemies where one
+can be sure it's not an artifact or mistake, but one of them (from my
+polysemy list) is probably Porella capensis. I have about 180 at the
+species level, many of which look like mistakes (since sometimes two
+or three have the same genus name). Most are plant/animal or
+plant/fungus or animal/fungus, but some cases, like Ctenella aurantia,
+have distinct records within the same code (Cnidaria / Ctenophora in
+this case). I can't analyze every one, so we need to err on the side
+of creating redundant records, rather than unifying, which would cause
+higher taxa from the lower priority taxonomy to be "broken".]
 
 ### Preference heuristic: Lineage
 
@@ -378,12 +374,6 @@ taxonomy has no such node, both source nodes will end up being copied
 into the union.  This is an error in the method which needs to be
 fixed.
 
-[The above is a bit of a lie.  In fact some amount of collision
-prevention logic remains in the code (class `Matrix`), so we do not
-always remove false polysemies in a source, even when there is a union
-node to map them to.  I don't really understand how the code works or
-whether it's doing the right thing; need to review.]
-
 [NMF: What you do here is follow a general pattern of introducing a
 particular workflow step, then say what may go wrong, then try to
 discuss that. And this repeats for each paragraph / workflow step. I
@@ -412,7 +402,8 @@ The following cases arise during the merge process:
    processed (recursively), and are all matched to targets in the
    union (or, rarely, blocked, see above).  The targets are either
    'old' (they were already in the union before the merge started) or
-   'new' (created in the union during the merge process).  One of the
+   'new' (copied from source to union during this round of the merge
+   process).  One of the
    following rules then applies (assuming in each case that none of
    the previous rules apply):
 
@@ -454,7 +445,7 @@ Katz lab as a table of their own design.  Rather than convert it to
 some form already known to the system, we kept it in the original form
 to facilitate further editing.
 
-* give the number of patches, breakdown by type
+* give the number of patches [at least 151 - not clear how to count], give breakdown by type
 
 There is a step to mark as extinct those taxa whose only source
 taxonomy is GBIF and that come to GBIF via PaleoDB [reference].  This
@@ -470,13 +461,15 @@ aligned taxa, any remaining union taxa are given newly 'minted'
 identifiers.
 
 
-## *NMF comments*
+## *NMF suggestion on how to explain all this*
 
 1. Is it possible to assume an ideal case where merging two or more OTT input taxonomies requires no or only very minimal conflict/noise/ambiguity resolution? And the result is almost unambiguously correct? If so, perhaps you start your "assembly process" description by imaging/introducing such a case, and your core pipeline in relation to it. That is then out of the way - a scenario that OTT can handle well and easily.
 
-   [JAR: Ideal case is something like NCBI: (Bufo pageoti, Bufo japonicus)Bufo + GBIF: (Buf japonicus, Bufo luchunnicus)Bufo -> OTT: (Bufo pageoti, Bufo japonicus, Bufo luchunnicus)Bufo  - is that too simple?]
+   [JAR: Ideal case is something like NCBI (Bufo pageoti, Bufo japonicus)Bufo + GBIF (Buf japonicus, Bufo luchunnicus)Bufo -> OTT: (Bufo pageoti, Bufo japonicus, Bufo luchunnicus)Bufo  - could be expanded to two genera]
 
 2. Complications, 1 - those complications that through various profound or pragmatic solution you can address to a fairly large degree of satisfaction. Outcome -- still rather sound OTT, but drawing now on a full scope of things you've added because you've had to given case 1. was not what the input looked like.
+
+    [JAR: lumping is easy; splitting is anguishing, when source 2 has species that source 1 doesn't.]
 
 3. Complications, 2 - issues that you either handle not to your own satisfaction, or simply cannot handle at all. 
 
@@ -489,3 +482,10 @@ So, I wonder what would happen if you did this kind of thing. "For the sake of m
 "A third category contains lingering challenges that point to future solution analysis/development needs. And we suggest ..."
 
 (and of course you'd say that in reality, every input may be a mix of 1-3)
+
+JAR: This sounds plausible to me.  Making a user-friendly exposition
+will require many figures containing lots of little trees, but so it
+goes.  I'm not sure that 2 and 3 can be separated; there are not very
+many cases (graft, refinement, inconsistent, merge) and they are not
+very complicated.
+

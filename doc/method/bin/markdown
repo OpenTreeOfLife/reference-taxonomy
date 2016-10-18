@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# E.g. md file.md >tmp.html && open tmp.html
+# Thanks https://github.com/mixu/markdown-styles/blob/master/layouts/github/assets/css/github-markdown.css
+
+cat <<EOF
+<html>
+  <head>
+    <meta charset="UTF-8"/>
+    <link rel="stylesheet" href="//opentreeoflife.github.io/css/main.css" />
+    <style type="text/css">
+      body {
+        font-family: "Helvetica Neue", Helvetica, "Segoe UI", Arial, freesans, sans-serif;
+      }
+    </style>
+  </head>
+<body>
+EOF
+
+# TBD: Remove assuption that working directory = doc/method/
+
+LIB=lib
+
+if [ $# = 1 ]; then
+    perl $LIB/Markdown.pl <$1
+else
+    perl $LIB/Markdown.pl
+fi
+echo '</body>'
+
+echo '</html>'

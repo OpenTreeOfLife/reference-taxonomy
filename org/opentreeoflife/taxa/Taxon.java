@@ -208,13 +208,15 @@ public class Taxon extends Node {
     }
 
 	public void clobberName(String newname) {
+        if (newname.equals(this.name))
+            return;
+        Taxon existing = this.taxonomy.unique(newname);
+        if (existing != null && existing != this)
+            System.out.format("* Warning in clobberName: creating a polysemy: %s %s->%s\n",
+                              existing, this, newname);
 		String oldname = this.name;
         if (oldname != null)
             this.notCalled(oldname);
-        Taxon existing = this.taxonomy.unique(newname);
-        if (existing != null)
-            System.out.format("* Warning in clobberName: creating a polysemy: %s %s->%s\n",
-                              existing, this, newname);
         this.setName(newname);
 	}
 

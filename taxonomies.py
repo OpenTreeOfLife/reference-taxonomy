@@ -324,10 +324,6 @@ def patch_fung(fung):
     # ** (null=if:81865 Rhizocarpaceae) is already a child of (null=h2007:212 Rhizocarpales)
     # ** No taxon found with this name: Hyaloraphidiaceae
 
-    # Yan Wong https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116
-    # fung.taxon('Mycosphaeroides').extinct()  - gone
-    fung.taxon('Majasphaeridium').extinct()
-
     fung.taxon('Urosporidium').prune(this_source) # parasitic protist, SILVA looks correct
     fung.taxon('Bonamia').prune(this_source)      # parasitic protist, SILVA looks correct
     fung.taxon('Zonaria').prune(this_source)
@@ -382,8 +378,13 @@ def patch_fung(fung):
     # Rhodophyta, creating duplicates (it's really a Chlorophyte)
     fung.taxonThatContains('Byssus', 'Byssus rufa').prune(this_source)
 
+    # Nudge to alignment with IRMNG (unclassified fossil Fungi)
+    # IF 585158 = IRMNG 1090915
+    fung.taxon('Fungi').take(fung.taxon('Majasphaeridium'))
+
     print "Fungi in Index Fungorum has %s nodes"%fung.taxon('Fungi').count()
 
+# tax = ott
 
 def link_to_h2007(tax):
     print '-- Putting families in Hibbett 2007 orders --'
@@ -449,7 +450,6 @@ def load_713():
 
 def load_ncbi():
     ncbi = Taxonomy.getTaxonomy('tax/ncbi/', 'ncbi')
-    fix_SAR(ncbi)
 
     patch_ncbi(ncbi)
 
@@ -676,9 +676,6 @@ def load_worms():
     if worms.maybeTaxon('Scenedesmus communis') != None:
         worms.taxon('Scenedesmus communis').synonym('Scenedesmus caudata')
 
-    # See NCBI
-    worms.taxon('Millericrinida').extant()
-
     # Species fungorum puts this species in Candida
     worms.taxon('Trichosporon diddensiae').rename('Candida diddensiae')
 
@@ -812,12 +809,6 @@ def patch_gbif(gbif):
 
     # 4010070	pg_1378	Gelidiellaceae	gbif:8998  -- ok, paraphyletic
 
-    # https://github.com/OpenTreeOfLife/feedback/issues/64
-    gbif.taxon('Plagiomene').extinct()
-
-    # https://github.com/OpenTreeOfLife/feedback/issues/65
-    gbif.taxon('Worlandia').extinct()
-
     tip = gbif.maybeTaxon('6101461') # ('Tipuloidea', 'Hemiptera') gbif:6101461 - extinct
     if tip != None:
         tip.prune("about:blank#this-homonym-is-causing-too-much-trouble")
@@ -828,56 +819,6 @@ def patch_gbif(gbif):
 
     # 2015-07-25 Extra Dipteras are confusing new division logic.  Barren genus
     gbif.taxon('3230674').prune(this_source)
-
-    # 2015-09-11 https://github.com/OpenTreeOfLife/feedback/issues/72
-    gbif.taxon('Myeladaphus').extinct()
-
-    # 2015-09-11 https://github.com/OpenTreeOfLife/feedback/issues/78
-    gbif.taxon('Oxyprinichthys').extinct()
-
-    # 2015-09-11 https://github.com/OpenTreeOfLife/feedback/issues/82
-    gbif.taxon('Tarsius thailandica').extinct()
-
-    # https://github.com/OpenTreeOfLife/feedback/issues/86
-    gbif.taxon('Gillocystis').extinct()
-
-    # https://github.com/OpenTreeOfLife/feedback/issues/186
-    # https://en.wikipedia.org/wiki/Réunion_ibis
-    thres = gbif.taxon('Threskiornis solitarius')
-    thres.absorb(gbif.taxon('Raphus solitarius'))
-    thres.extinct()
-
-    # https://github.com/OpenTreeOfLife/feedback/issues/282
-    gbif.taxon('Chelomophrynus', 'Anura').extinct()
-
-    # https://github.com/OpenTreeOfLife/feedback/issues/283
-    gbif.taxon('Shomronella', 'Anura').extinct()
-
-    # https://github.com/OpenTreeOfLife/feedback/issues/165
-    sphe = False
-    for child in gbif.taxon('Sphenodontidae').children:
-        if child.name != 'Sphenodon':
-            child.extinct()
-        else:
-            sphe = True
-    if not sphe:
-        print '** No extant member of Sphenodontidae'
-
-    # https://github.com/OpenTreeOfLife/feedback/issues/159
-    # GBIF sez: 'The order Soricomorpha ("shrew-form") is a taxon within the 
-    # class of mammals. In previous years it formed a significant group 
-    # within the former order Insectivora. However, that order was shown 
-    # to be polyphyletic ...'
-    gbif.taxon('Nesophontidae', 'Soricomorpha').extinct()
-
-    # https://github.com/OpenTreeOfLife/feedback/issues/135
-    gbif.taxon('Cryptobranchus matthewi', 'Amphibia').extinct()
-
-    # https://github.com/OpenTreeOfLife/feedback/issues/134
-    gbif.taxon('Hemitrypus', 'Amphibia').extinct()
-
-    # https://github.com/OpenTreeOfLife/feedback/issues/133
-    gbif.taxon('Cordicephalus', 'Amphibia').extinct()
 
     # JAR 2016-07-01 while studying rank inversions.
     # Ophidiasteridae the genus was an error and has been deleted from GBIF.
@@ -893,9 +834,6 @@ def patch_gbif(gbif):
 
     # https://github.com/OpenTreeOfLife/feedback/issues/144
     gbif.taxon('Lepilemur tymerlachsonorum').rename('Lepilemur tymerlachsoni')
-
-    # https://github.com/OpenTreeOfLife/feedback/issues/123
-    gbif.taxon('Gryphodobatis', 'Orectolobidae').extinct()
 
     # Related to https://github.com/OpenTreeOfLife/feedback/issues/307
     # This problem is remedied by the 2016 GBIF update.
@@ -1004,23 +942,6 @@ def load_irmng():
     if irmng.maybeTaxon('Notochelys', 'Cheloniidae') != None:
         irmng.taxon('Notochelys', 'Cheloniidae').prune(this_source)
 
-    # Recover missing extinct flags.  I think these are problems in
-    # the dump that I have, but have been fixed in the current IRMNG
-    # (July 2016).
-    for (name, super) in [
-            ('Tvaerenellidae', 'Ostracoda'),
-            ('Chrysocythere', 'Ostracoda'),
-            ('Mutilus', 'Ostracoda'),
-            ('Aurila', 'Ostracoda'),
-            ('Loxostomum', 'Ostracoda'),
-            ('Loxostomatidae', 'Ostracoda'),
-    ]:
-        if super == None:
-            tax = irmng.maybeTaxon(name)
-        else:
-            tax = irmng.maybeTaxon(name, super)
-        if tax != None: tax.extinct()
-
     # JAR 2016-07-04 Duplicates of leps in Diptera, noticed when reviewing 
     # homonym report
     for (id, name) in [('10888189', 'Aricia brunnescens'),
@@ -1037,12 +958,6 @@ def load_irmng():
 
     # https://github.com/OpenTreeOfLife/feedback/issues/167
     irmng.taxon('Plectophanes altus').absorb(irmng.taxon('Plectophanes alta'))
-
-    # https://github.com/OpenTreeOfLife/feedback/issues/304
-    irmng.taxon('Notobalanus', 'Maxillopoda').extant()
-
-    # https://github.com/OpenTreeOfLife/feedback/issues/303
-    irmng.taxon('Neolepas', 'Maxillopoda').extant()
 
     # wrongly in Plantae, should be a Lep
     irmng.taxon('Pieridae', 'Insecta').take(irmng.taxonThatContains('Aporia', 'Aporia agathon'))
@@ -1069,13 +984,13 @@ def load_irmng():
 
 def fix_basal(tax):
     fix_protists(tax)
-    fix_SAR(tax)
 
 # Common code for GBIF, IRMNG, Index Fungorum
 def fix_protists(tax):
     euk = tax.maybeTaxon('Eukaryota')
     if euk == None:
         euk = tax.newTaxon('Eukaryota', 'domain', 'ncbi:2759')
+        euk.unsourced = True
     co = tax.maybeTaxon('cellular organisms')
     if co != None: co.take(euk)
     else:
@@ -1097,27 +1012,3 @@ def fix_protists(tax):
             for child in bad.children:
                 child.incertaeSedis()
             bad.elide()
-
-# Add SAR and populate it
-
-def fix_SAR(tax):
-    sar = tax.maybeTaxon('SAR')
-    if sar == None:
-        euk = tax.taxon('Eukaryota')
-        s = tax.maybeTaxon('Stramenopiles')
-        if s == None:
-            s = tax.maybeTaxon('Heterokonta')
-        a = tax.maybeTaxon('Alveolata')
-        r = tax.maybeTaxon('Rhizaria')
-        if s != None or a != None or r != None:
-            sar = tax.newTaxon('SAR', None, 'silva:E17133/#2')
-            euk.take(sar)
-            if s != None: sar.take(s)
-            else: print '** No Stramenopiles'
-            if a != None: sar.take(a)
-            else: print '** No Alveolata'
-            if r != None: sar.take(r)
-            else: print '** No Rhizaria'
-    bac = tax.maybeTaxon('Bacillariophyta', 'Plantae')
-    if bac != None and s != None:
-        s.take(bac)

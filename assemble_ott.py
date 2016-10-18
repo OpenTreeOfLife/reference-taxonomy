@@ -830,7 +830,7 @@ def align_irmng(irmng, ott):
     irmng.taxon('Fungi').hideDescendantsToRank('species')
 
     # Microbes suppressed at Laura Katz's request
-    irmng.taxon('Bacteria','life').hideDescendants()
+    irmng.taxonThatContains('Bacteria','Escherichia coli').hideDescendants()
     irmng.taxonThatContains('Archaea','Halobacteria').hideDescendants()
 
     # Cnidaria is a barrier node
@@ -1026,7 +1026,9 @@ def patch_ott(ott):
         tax.rename('Verrucomicrobia group')
     # The following is obviated by algorithm changes
     # ott.taxon('Heterolobosea','Discicristata').absorb(ott.taxon('Heterolobosea','Percolozoa'))
-    ott.taxon('Excavata','Eukaryota').take(ott.taxon('Oxymonadida','Eukaryota'))
+    tax = ott.taxonThatContains('Excavata', 'Euglena')
+    if tax != None:
+        tax.take(ott.taxon('Oxymonadida','Eukaryota'))
 
     # There is no Reptilia in OTT 2.9, so this can probably be deleted
     if ott.maybeTaxon('Reptilia') != None:
@@ -1163,10 +1165,11 @@ def patch_ott(ott):
         if tax != None: tax.extinct()
 
     # Dail 2014-03-31 https://github.com/OpenTreeOfLife/feedback/issues/4
+    # "The parent [of Lentisphaerae] should be Bacteria and not Verrucomicrobia"
     # no evidence given
-    lent = ott.taxonThatContains('Bacteria', 'Lentisphaerae')
-    if lent != None:
-        lent.take(ott.taxon('Lentisphaerae'))
+    bact = ott.taxonThatContains('Bacteria', 'Lentisphaerae')
+    if bact != None:
+        bact.take(ott.taxon('Lentisphaerae'))
 
     # David Hibbett 2014-04-02 misspelling in h2007 file
     # (Dacrymecetales is 'no rank', Dacrymycetes is a class)
@@ -1353,6 +1356,97 @@ def patch_ott(ott):
 
     # we were getting extinctness from IRMNG, but now it's suppressed
     ott.taxon('Dinaphis', 'Aphidoidea').extinct()
+
+    # Yan Wong https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116
+    # fung.taxon('Mycosphaeroides').extinct()  - gone
+    if ott.maybeTaxon('Majasphaeridium'):
+        ott.taxon('Majasphaeridium').extinct() # From IF
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/64
+    ott.taxon('Plagiomene').extinct() # from GBIF
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/65
+    ott.taxon('Worlandia').extinct() # from GBIF
+
+    # 2015-09-11 https://github.com/OpenTreeOfLife/feedback/issues/72
+    ott.taxon('Myeladaphus').extinct() # from GBIF
+
+    # 2015-09-11 https://github.com/OpenTreeOfLife/feedback/issues/78
+    ott.taxon('Oxyprinichthys').extinct() # from GBIF
+
+    # 2015-09-11 https://github.com/OpenTreeOfLife/feedback/issues/82
+    ott.taxon('Tarsius thailandica').extinct() # from GBIF
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/86
+    ott.taxon('Gillocystis').extinct() # from GBIF
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/186
+    # https://en.wikipedia.org/wiki/Réunion_ibis
+    thres = ott.taxon('Threskiornis solitarius') # from GBIF
+    thres.absorb(ott.taxon('Raphus solitarius')) # from GBIF
+    thres.extinct()
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/282
+    ott.taxon('Chelomophrynus', 'Anura').extinct() # from GBIF
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/283
+    ott.taxon('Shomronella', 'Anura').extinct() # from GBIF
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/165
+    sphe = False
+    for child in ott.taxon('Sphenodontidae').children: # from GBIF
+        if child.name != 'Sphenodon':
+            child.extinct()
+        else:
+            sphe = True
+    if not sphe:
+        print '** No extant member of Sphenodontidae'
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/159
+    # sez: 'The order Soricomorpha ("shrew-form") is a taxon within the 
+    # class of mammals. In previous years it formed a significant group 
+    # within the former order Insectivora. However, that order was shown 
+    # to be polyphyletic ...'
+    ott.taxon('Nesophontidae', 'Soricomorpha').extinct() # from GBIF
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/135
+    ott.taxon('Cryptobranchus matthewi', 'Amphibia').extinct() # from GBIF
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/134
+    ott.taxon('Hemitrypus', 'Amphibia').extinct() # from GBIF
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/133
+    ott.taxon('Cordicephalus', 'Amphibia').extinct() # from GBIF
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/123
+    ott.taxon('Gryphodobatis', 'Orectolobidae').extinct() # from GBIF
+
+    # Recover missing extinct flags.  I think these are problems in
+    # the dump that I have, but have been fixed in the current IRMNG
+    # (July 2016).
+    for (name, super) in [
+            ('Tvaerenellidae', 'Ostracoda'),
+            ('Chrysocythere', 'Ostracoda'),
+            ('Mutilus', 'Ostracoda'),
+            ('Aurila', 'Ostracoda'),
+            ('Loxostomum', 'Ostracoda'),
+            ('Loxostomatidae', 'Ostracoda'),
+    ]:
+        if super == None:
+            tax = ott.maybeTaxon(name) # IRMNG
+        else:
+            tax = ott.maybeTaxon(name, super)
+        if tax != None: tax.extinct()
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/304
+    ott.taxon('Notobalanus', 'Maxillopoda').extant() # IRMNG
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/303
+    ott.taxon('Neolepas', 'Maxillopoda').extant() # IRMNG
+
+    # See NCBI
+    ott.taxon('Millericrinida').extant() # WoRMS
+
 
 
 # The processed GBIF taxonomy contains a file listing GBIF taxon ids for all 

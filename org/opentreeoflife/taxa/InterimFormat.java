@@ -112,7 +112,6 @@ class InterimFormat {
 		BufferedReader br = Taxonomy.fileReader(filename);
 		String str;
 		int row = 0;
-		int normalizations = 0;
 
         Pattern pat = null;
 		String suffix = null;	// Java loses somehow.  I don't get it
@@ -165,8 +164,7 @@ class InterimFormat {
                 } else if (parts.length <= 4) {
                     System.err.format("** Too few columns in row: id = %s\n", id);
                 } else {
-                    String rawname = parts[2];
-                    String name = Taxon.normalizeName(rawname);
+                    String name = parts[2];
 					Taxon node = new Taxon(tax, name);
                     initTaxon(node,
                               id,
@@ -174,10 +172,6 @@ class InterimFormat {
                               parts[3], // rank
                               (tax.flagscolumn != null ? parts[tax.flagscolumn] : ""),
                               parts);
-                    if (name != null && !name.equals(rawname)) {
-                        node.addSynonym(rawname, "equivalent_name");
-                        ++normalizations;
-                    }
 
                     // Delay until after all ids are defined
                     String parentId = parts[1];
@@ -191,8 +185,6 @@ class InterimFormat {
 				System.out.println(row);
 		}
 		br.close();
-		if (normalizations > 0)
-			System.out.format("| %s names normalized\n", normalizations);
 
         // Look up all the parent ids and store parent pointers in the nodes
 

@@ -36,6 +36,8 @@ if __name__ == "__main__":
     infile = open(sys.argv[1],"r")
     outfile = open(sys.argv[3]+"/taxonomy.tsv","w")
     outfilesy = open(sys.argv[3]+"/synonyms.tsv","w")
+    infile_taxon_count = 0
+    infile_synonym_count = 0
     count = 0
     bad_id = 0
     no_parent = 0
@@ -52,10 +54,19 @@ if __name__ == "__main__":
     print "taxa synonyms no_parent"
     infile.next()
     for row in infile:
-        fields = row.strip().split("\t")
-
+        fields = row.strip().split('\t')
         # For information on what information is in each column see
         # meta.xml in the gbif distribution.
+   
+        # acceptedNameUsageID
+        syn_target_id_string = fields[2].strip()
+        synonymp = syn_target_id_string.isdigit()
+
+        if synonymp:
+            infile_synonym_count += 1
+        else:
+            infile_taxon_count += 1
+
         id_string = fields[0].strip()
         if len(id_string) == 0 or not id_string.isdigit():
             # Header line has "taxonID" here
@@ -68,10 +79,8 @@ if __name__ == "__main__":
             bad_id += 1
             continue
 
-        accepted_status = fields[6].strip()
-        synonymp = (accepted_status != "accepted")
-
         source = fields[12].strip()
+        tstatus = fields[6].strip()  # taxonomicStatus
 
         # Filter out IRMNG and IPNI tips
         if (("IRMNG Homonym" in source) or ("Interim Register of Marine" in source) or
@@ -83,11 +92,17 @@ if __name__ == "__main__":
                 to_remove.append(id)
         elif synonymp:
             synnames[id] = name
-            syntargets[id] = fields[2].strip()
-            syntypes[id] = accepted_status
+            syntargets[id] = int(syn_target_id_string)
+            syntypes[id] = tstatus    # heterotypic synonym, etc.
             continue
         elif "Paleobiology Database" in source:
             paleos.append(id)
+
+        if tstatus == 'doubtful' or tstatus == 'synonym':
+            to_remove.append(id)
+            continue
+        if tstatus != 'accepted':
+            print id, name, tstatus, source
 
         rank = fields[5].strip()
         if rank == "form" or rank == "variety" or rank == "subspecies" or rank == "infraspecificname":
@@ -115,6 +130,8 @@ if __name__ == "__main__":
             print count, len(synnames), no_parent
 
     infile.close()
+
+    print ('%s taxa, %s synonyms\n' % (infile_taxon_count, infile_synonym_count))
 
     print ('%s bad id; %s no parent id; %s synonyms; %s bad source' % 
            (bad_id, no_parent, len(synnames), flushed_because_source))
@@ -186,9 +203,10 @@ if __name__ == "__main__":
     print "writing %s synonyms" % len(synnames)
     outfilesy.write('uid\t|\tname\t|\ttype\t|\t\n')
     for id in synnames:
-        target = syntargets[id]
+        target = syntargets[id]    # taxon id of target (int)
         if target in nm_storage:
-            outfilesy.write(target+"\t|\t"+synnames[id]+"\t|\t"+syntypes[id]+"\t|\t\n")
+            outfilesy.write('%s\t|\t%s\t|\t%s\t|\t\n' %
+                            (target, synnames[id], syntypes[id]))
     outfilesy.close()
 
     print 'writing %s paleodb ids' % len(paleos)

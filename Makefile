@@ -13,8 +13,8 @@
 JAVAFLAGS=-Xmx14G
 
 # Modify as appropriate
-WHICH=2.10draft11
-PREV_WHICH=2.9
+WHICH=2.11draft1
+PREV_WHICH=2.10
 
 # ----- Taxonomy source locations -----
 

@@ -123,6 +123,8 @@ def read_irmng():
     # 14 "PARENTNAMEUSAGEID","TAXONREMARKS","MODIFIED","NOMENCLATURALCODE"
 
     rows = 0
+    source_taxon_count = 0
+    source_synonym_count = 0
 
     with open(irmng_file_name, 'rb') as csvfile:
         csvreader = csv.reader(csvfile)
@@ -138,6 +140,12 @@ def read_irmng():
             nstatus = row[8]         # NOMENCLATURALSTATUS
             syn_target_id = row[12]
             parent = row[-4]
+            synonymp = (tstatus == 'synonym' or (syn_target_id != '' and syn_target_id != taxonid))
+            if synonymp:
+                source_synonym_count += 1
+            else:
+                source_taxon_count += 1
+
             if parent == '':
                 roots.append(taxonid)
             # Calculate taxon name
@@ -155,7 +163,7 @@ def read_irmng():
             else:
                 name = longname
             taxon = Taxon(taxonid, parent, name, rank, tstatus, nstatus)
-            if (tstatus == 'synonym' or (syn_target_id != '' and syn_target_id != taxonid)):
+            if synonymp:
                 taxon.parentid = syn_target_id
                 synonyms[taxonid] = taxon
             else:
@@ -166,7 +174,9 @@ def read_irmng():
                 # FOR DEBUGGING
                 # break
 
-    print >>sys.stderr, "%s taxa, %s synonyms" % (len(taxa), len(synonyms))
+    print >>sys.stderr, 'Source: %s taxa, %s synonyms' % (source_taxon_count, source_synonym_count)
+
+    print >>sys.stderr, 'Processed: %s taxa, %s synonyms' % (len(taxa), len(synonyms))
 
 def fix_irmng():
 

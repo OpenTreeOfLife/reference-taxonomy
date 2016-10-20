@@ -208,12 +208,15 @@ public class Taxon extends Node {
     }
 
 	public void clobberName(String newname) {
+        if (newname.equals(this.name))
+            return;
+        Taxon existing = this.taxonomy.unique(newname);
+        if (existing != null && existing != this)
+            System.out.format("* Warning in clobberName: creating a polysemy: %s %s->%s\n",
+                              existing, this, newname);
 		String oldname = this.name;
         if (oldname != null)
             this.notCalled(oldname);
-        Taxon existing = this.taxonomy.unique(newname);
-        if (existing != null)
-            System.out.format("* Warning in clobberName: creating a polysemy: %s\n", newname);
         this.setName(newname);
 	}
 
@@ -957,6 +960,10 @@ public class Taxon extends Node {
 	}
 
 	public boolean rename(String name) {
+        return this.rename(name, "synonym");
+    }
+
+	public boolean rename(String name, String typ) {
 		String oldname = this.name;
 		if (name.equals(oldname)) return true;
 
@@ -978,14 +985,11 @@ public class Taxon extends Node {
             }
         }
 
-        // Remove old name from index (and remove synonym, if it was a synonym)
-        this.notCalled(oldname);
-
         // Change primary name
         this.clobberName(name);
 
         // Add old name as a synonym
-        this.addSynonym(oldname, "synonym");  // awkward, maybe wrong
+        this.addSynonym(oldname, typ);
 
         return true;
 	}

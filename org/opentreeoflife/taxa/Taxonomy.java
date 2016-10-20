@@ -396,10 +396,13 @@ public abstract class Taxonomy {
     // parser was used
 
     public void postLoadActions() {
+        // Get rid of diacritics and so on
+        this.normalizeNames();
+
         // Flag changes - make sure inherited flags have something to inherit from
         this.fixFlags();
 
-        this.placeBiggest(); // 'life' or biggest is placed
+        this.placeBiggest(); // 'life' or biggest root is placed
 
         // Topology changes:
 
@@ -423,6 +426,26 @@ public abstract class Taxonomy {
         int snodes = this.synonymCount();
         System.out.format("| %s roots + %s internal + %s tips = %s total, %s synonyms\n",
                           nroots, nnodes - (ntips + nroots), ntips, nnodes, snodes);
+    }
+
+    // Get rid of diacritics and similar marks
+    void normalizeNames() {
+        int norm = 0;
+        List<String[]> changes = new ArrayList<String[]>();
+        for (String name : this.allNames()) {
+            String newname = Taxon.normalizeName(name);
+            if (!newname.equals(name) && this.lookup(newname) == null)
+                changes.add(new String[]{name, newname});
+        }
+        for (String[] change : changes) {
+            String name = change[0], newname = change[1];
+            for (Node node : new ArrayList<Node>(this.lookup(name)))
+                if (node instanceof Taxon)
+                    ((Taxon)node).rename(newname, "spelling variant");
+            ++norm;
+        }
+        if (norm > 0)
+            System.out.format("| Normalized %s names\n", norm);
     }
 
     int synonymCount() {

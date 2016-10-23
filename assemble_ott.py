@@ -74,8 +74,14 @@ def create_ott():
     ott.absorb(lamiales, align_lamiales(lamiales, ott))
 
     # WoRMS
-    (malacostraca, worms_sans_malacostraca) = split_worms(ott)
+    # higher priority to Worms for Malacostraca, Cnidaria so we split out
+    # those clades from worms and absorb them before NCBI
+    worms = taxonomies.load_worms()
+    # Malacostraca instead of Decapoda because M. is in the skeleton
+    (malacostraca, worms_sans_malacostraca) = split_worms('Malacostraca',worms)
     ott.absorb(malacostraca)
+    (cnidaria,low_priority_worms) = split_worms('Cnidaria',worms_sans_malacostraca)
+    ott.absorb(cnidaria)
 
     # NCBI
     ncbi = taxonomies.load_ncbi()
@@ -106,12 +112,12 @@ def create_ott():
             print '** No NCBI taxon %s - %s' % (ncbi_id, name)
 
     # WoRMS
-    worms_sans_malacostraca.taxon('Biota').synonym('life')
+    low_priority_worms.taxon('Biota').synonym('life')
     # This is suboptimal, but the names are confusing the division logic
-    worms_sans_malacostraca.taxon('Glaucophyta'). \
-        absorb(worms_sans_malacostraca.taxon('Glaucophyceae'))
-    a = align_worms(worms_sans_malacostraca, ott)
-    ott.absorb(worms_sans_malacostraca, a)
+    low_priority_worms.taxon('Glaucophyta'). \
+        absorb(low_priority_worms.taxon('Glaucophyceae'))
+    a = align_worms(low_priority_worms, ott)
+    ott.absorb(low_priority_worms, a)
 
     # The rest of Index Fungorum (maybe not a good idea)
     ott.absorb(fungorum_sans_fungi, align_fungorum_sans_fungi(fungorum_sans_fungi, ott))
@@ -158,7 +164,7 @@ def create_ott():
     # OTT id assignment
 
     # Force some id assignments... will try to automate this in the future.
-    # Most of these come from looking at the otu-deprecated.tsv file after a 
+    # Most of these come from looking at the otu-deprecated.tsv file after a
     # series of smasher runs.
 
     for (inf, sup, id) in [
@@ -215,7 +221,7 @@ def create_ott():
             taxon.sourceIds[1].prefix == "silva"):
             taxon.sourceIds.remove(taxon.sourceIds[0])
 
-    # OTT 2.9 has both Glaucophyta and Glaucophyceae... 
+    # OTT 2.9 has both Glaucophyta and Glaucophyceae...
     # this creates an ambiguity when aligning.
     # Need to review this; maybe they *should* be separate taxa.
     g1 = ids.maybeTaxon('Glaucophyta')
@@ -272,10 +278,10 @@ def deal_with_ctenophora(ott):
 
     # The comb jellies are already in the taxonomy at this point (from skeleton).
 
-    # Add the diatom to OTT so that SILVA has something to map its diatom to 
+    # Add the diatom to OTT so that SILVA has something to map its diatom to
     # that's not the comb jellies.
 
-    # To do this without creating a sibling-could homonym, we have to create 
+    # To do this without creating a sibling-could homonym, we have to create
     # a place to put it.  This will be rederived from SILVA soon enough.
     establish('Bacillariophyta', ott, division='Eukaryota', ott_id='5342311')
 
@@ -368,7 +374,7 @@ def align_fungi(fungi, ott):
             print '** no %s in IF' % name # 'no Acantharia in IF'
         else:
             a.same(tax1, establish(name, ott, ancestor=f))
-                    
+
     # 2014-04-25 JAR
     # There are three Bostrychias: a rhodophyte, a fungus, and a bird.
     # The fungus name is a synonym for Cytospora.
@@ -437,9 +443,9 @@ def align_fungorum_sans_fungi(sans, ott):
 
 def align_lamiales(study713, ott):
     a = ott.alignment(study713)
-    # Without the explicit alignment of Chloroplastida, alignment thinks that 
-    # the study713 Chloroplastida cannot be the same as the OTT Chloroplastida, 
-    # because of something something something Buchnera (which is a 
+    # Without the explicit alignment of Chloroplastida, alignment thinks that
+    # the study713 Chloroplastida cannot be the same as the OTT Chloroplastida,
+    # because of something something something Buchnera (which is a
     # bacteria/plant polysemy).
     a.same(study713.taxon('Chloroplastida'), ott.taxon('Chloroplastida'))
     if do_notSames:
@@ -447,15 +453,17 @@ def align_lamiales(study713, ott):
     return a
 
 # ----- WoRMS -----
-
-def split_worms(ott):
-    worms = taxonomies.load_worms()
-    # Malacostraca instead of Decapoda because M. is in the skeleton
-    mal = worms.taxon('Malacostraca')
-    malacostraca = worms.select(mal)
-    mal.trim()
-    worms_sans_malacostraca = worms
-    return (malacostraca, worms_sans_malacostraca)
+# splits worms into two parts: 1. the subtree rooted at taxon_name
+# and 2. everything else
+def split_worms(taxon_name,worms):
+    # get the taxon with name=taxon_name from worms
+    t = worms.taxon(taxon_name)
+    # get the subtree rooted at this taxon
+    subtree = worms.select(t)
+    # remove all of the descendants of this taxon
+    t.trim()
+    worms_sans_subtree = worms
+    return (subtree, worms_sans_subtree)
 
 # ----- NCBI Taxonomy -----
 
@@ -502,7 +510,7 @@ def align_ncbi(ncbi, silva, ott):
 
     # JAR attempt to resolve ambiguous alignment of Trichosporon in IF to
     # NCBI based on common member.
-    # T's type = T. beigelii, which is current, according to Mycobank, 
+    # T's type = T. beigelii, which is current, according to Mycobank,
     # but it's not in our copy of IF.
     # I'm going to use a different exemplar, Trichosporon cutaneum, which
     # seems to occur in all of the source taxonomies.
@@ -622,7 +630,7 @@ def align_worms(worms, ott):
            ott.taxonThatContains('Trichoderma', 'Trichoderma koningii'))
     # 2016-07-28 Noticed this in deprecated.tsv:
     # NCBI puts Myzostomida outside of Annelida.  To ensure matches, we have
-    # to do so here as well, because Annelida is a barrier node and somewhat 
+    # to do so here as well, because Annelida is a barrier node and somewhat
     # difficult to cross.
     worms.taxon('Animalia').take(worms.taxon('Myzostomida'))
 
@@ -923,10 +931,10 @@ def align_irmng(irmng, ott):
 def patch_ott(ott):
 
     # Romina 2014-04-09: Hypocrea = Trichoderma.
-    # IF and all the other taxonomies have both Hypocrea and Trichoderma.  
+    # IF and all the other taxonomies have both Hypocrea and Trichoderma.
     # Need to merge them.
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/86
-    # Hypocrea rufa is the type species for genus Hypocrea, and it's the same as 
+    # Hypocrea rufa is the type species for genus Hypocrea, and it's the same as
     # Trichoderma viride.
     ott.taxon('Hypocrea').absorb(ott.taxonThatContains('Trichoderma', 'Trichoderma viride'))
     ott.taxon('Hypocrea rufa').absorb(ott.taxon('Trichoderma viride'))
@@ -1012,7 +1020,7 @@ def patch_ott(ott):
     print '-- Chromista/Protozoa spreadsheet from Katz lab --'
     fixChromista(ott)
     # 2016-06-30 deleted from spreadsheet because ambiguous:
-    #   Enigma,Protozoa,Polychaeta ,,,,, - 
+    #   Enigma,Protozoa,Polychaeta ,,,,, -
     #   Acantharia,Protozoa,Radiozoa,,,,,
     #   Lituolina,Chromista,Lituolida ,WORMS,,,,
 
@@ -1052,7 +1060,7 @@ def patch_ott(ott):
         ott.taxon('Cnidaria').take(ott.taxon('Stauromedusae'))
     ott.taxon('Copepoda').take(ott.taxon('Prionodiaptomus'))
 
-    # Bryan Drew patches 2014-01-30 
+    # Bryan Drew patches 2014-01-30
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/89
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/90
     ott.taxon('Scapaniaceae').absorb(ott.taxon('Lophoziaceae'))
@@ -1100,7 +1108,7 @@ def patch_ott(ott):
     ott.taxon('Santalaceae').absorb(ott.taxon('Comandraceae'))
 
     # Bryan Drew 2014-01-30
-    # http://dx.doi.org/10.1126/science.282.5394.1692 
+    # http://dx.doi.org/10.1126/science.282.5394.1692
     ott.taxon('Magnoliophyta').take(ott.taxon('Archaefructus'))
 
     # Bryan Drew 2014-01-30
@@ -1248,7 +1256,7 @@ def patch_ott(ott):
             tax = ott.maybeTaxon(name, super)
         if tax != None: tax.extant()
 
-    # JAR 2014-05-08 while looking at the deprecated ids file. 
+    # JAR 2014-05-08 while looking at the deprecated ids file.
     # http://www.theplantlist.org/tpl/record/kew-2674785
     ott.taxon('Berendtiella rugosa').synonym('Berendtia rugosa')
 
@@ -1303,7 +1311,7 @@ def patch_ott(ott):
     TsvEdits.edit(ott, 'feed/ott/edits/')
 
     # JAR 2016-06-30 Fixing a warning from 'report_on_h2007'
-    # There really ought to be a family (Hyaloraphidiaceae, homonym) in 
+    # There really ought to be a family (Hyaloraphidiaceae, homonym) in
     # between, but it's not really necessary, so I won't bother
     ott.taxon('Hyaloraphidiales', 'Fungi').take(ott.taxon('Hyaloraphidium', 'Fungi'))
 
@@ -1340,14 +1348,14 @@ def patch_ott(ott):
 
     # From 2.10 deprecated list
     for (name, anc) in [
-                 # Sphaerulina	if:5128,ncbi:237179,worms:100120,worms:100117,gbif:2621555,gbif:2574294,gbif:7254927,gbif:2564487,irmng:1291796	newly-hidden[extinct]	Sphaerulina	=		
-                 # Cucurbita	ncbi:3660,gbif:2874506,irmng:1009179	newly-hidden[extinct]	Cucurbita	=	synthesis	
-                 # Tuber	if:5629,ncbi:36048,gbif:7257845,gbif:7257854,gbif:2593130,gbif:5237010,irmng:1120184,irmng:1029932	newly-hidden[extinct]	Tuber	=		
-                 # Blastocystis	silva:U26177/#4,ncbi:12967,if:20081,gbif:3269640,irmng:1031549	newly-hidden[extinct]	Blastocystis	=		
-                 # Clavulinopsis	if:17324,ncbi:104211,gbif:2521976,irmng:1340486	newly-hidden[extinct]	Clavulinopsis	=		
-                 # Nesophontidae	gbif:9467,irmng:104821	newly-hidden[extinct]	Nesophontidae	=		
-                 # Polystoma	ncbi:92216,gbif:2503819,irmng:1269690,irmng:1269737	newly-hidden[extinct]	Polystoma	=		
-                 # Rustia	ncbi:86991,gbif:2904559,irmng:1356264	newly-hidden[extinct]	Rustia	=		
+                 # Sphaerulina	if:5128,ncbi:237179,worms:100120,worms:100117,gbif:2621555,gbif:2574294,gbif:7254927,gbif:2564487,irmng:1291796	newly-hidden[extinct]	Sphaerulina	=
+                 # Cucurbita	ncbi:3660,gbif:2874506,irmng:1009179	newly-hidden[extinct]	Cucurbita	=	synthesis
+                 # Tuber	if:5629,ncbi:36048,gbif:7257845,gbif:7257854,gbif:2593130,gbif:5237010,irmng:1120184,irmng:1029932	newly-hidden[extinct]	Tuber	=
+                 # Blastocystis	silva:U26177/#4,ncbi:12967,if:20081,gbif:3269640,irmng:1031549	newly-hidden[extinct]	Blastocystis	=
+                 # Clavulinopsis	if:17324,ncbi:104211,gbif:2521976,irmng:1340486	newly-hidden[extinct]	Clavulinopsis	=
+                 # Nesophontidae	gbif:9467,irmng:104821	newly-hidden[extinct]	Nesophontidae	=
+                 # Polystoma	ncbi:92216,gbif:2503819,irmng:1269690,irmng:1269737	newly-hidden[extinct]	Polystoma	=
+                 # Rustia	ncbi:86991,gbif:2904559,irmng:1356264	newly-hidden[extinct]	Rustia	=
                  ('Thalassiosira guillardii', 'SAR'),    # mistake in WoRMS
             ]:
         taxon = ott.maybeTaxon(name, anc)
@@ -1403,9 +1411,9 @@ def patch_ott(ott):
         print '** No extant member of Sphenodontidae'
 
     # https://github.com/OpenTreeOfLife/feedback/issues/159
-    # sez: 'The order Soricomorpha ("shrew-form") is a taxon within the 
-    # class of mammals. In previous years it formed a significant group 
-    # within the former order Insectivora. However, that order was shown 
+    # sez: 'The order Soricomorpha ("shrew-form") is a taxon within the
+    # class of mammals. In previous years it formed a significant group
+    # within the former order Insectivora. However, that order was shown
     # to be polyphyletic ...'
     ott.taxon('Nesophontidae', 'Soricomorpha').extinct() # from GBIF
 
@@ -1449,10 +1457,10 @@ def patch_ott(ott):
 
 
 
-# The processed GBIF taxonomy contains a file listing GBIF taxon ids for all 
+# The processed GBIF taxonomy contains a file listing GBIF taxon ids for all
 # taxa that are listed as coming from PaleoDB.  This is processed after all
 # taxonomies are processed but before patches are applied.  We use it to set
-# extinct flags for taxa originating only from GBIF (i.e. if the taxon also 
+# extinct flags for taxa originating only from GBIF (i.e. if the taxon also
 # comes from NCBI, WoRMS, etc. then we do not mark it as extinct).
 
 def get_default_extinct_info_from_gbif(gbif, gbif_to_ott):

@@ -324,14 +324,12 @@ feed/misc/chromista_spreadsheet.py: feed/misc/chromista-spreadsheet.csv feed/mis
 
 fetch_amendments: feed/amendments/amendments-1/next_ott_id.json
 
-feed/amendments/amendments-1/next_ott_id.json: $(AMENDMENTS_REFSPEC)
-	(cd feed/amendments/amendments-1; git checkout master)
-	(cd feed/amendments/amendments-1; git pull)
+feed/amendments/amendments-1/next_ott_id.json: feed/amendments/amendments-1 $(AMENDMENTS_REFSPEC)
+	(cd feed/amendments/amendments-1 && git checkout master && git pull)
 	(cd feed/amendments/amendments-1; git checkout -q `cat ../../../$(AMENDMENTS_REFSPEC)`)
 
 refresh-amendments: feed/amendments/amendments-1
-	(cd feed/amendments/amendments-1; git checkout master)
-	(cd feed/amendments/amendments-1; git pull)
+	(cd feed/amendments/amendments-1 && git checkout master && git pull)
 	(cd feed/amendments/amendments-1; git log -n 1) | head -1 | sed -e 's/commit //' >$(AMENDMENTS_REFSPEC).new
 	mv $(AMENDMENTS_REFSPEC).new $(AMENDMENTS_REFSPEC)
 	(cd feed/amendments/amendments-1; git checkout -q `cat ../../../$(AMENDMENTS_REFSPEC)`)

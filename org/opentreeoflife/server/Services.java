@@ -174,6 +174,8 @@ public class Services {
         return conflictAnalysisToJSON(c, flipped);
     }
 
+    // The JSON implementation predates Java 1.5 and generics, so we get annoying warnings
+    @SuppressWarnings("unchecked") 
     public static JSONObject conflictAnalysisToJSON(ConflictAnalysis c, boolean flipped) {
         if (c.inducedIngroup == null)
             throw new BadRequest("No mapped OTUs");

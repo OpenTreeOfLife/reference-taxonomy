@@ -608,6 +608,7 @@ public class UnionTaxonomy extends Taxonomy {
     }
     */
 
+    @SuppressWarnings("unchecked") // this.properties is a json object
 	public void prepareMetadata() {
 		List<Object> sourceMetas = new ArrayList<Object>();
 		for (Taxonomy source : this.sources)

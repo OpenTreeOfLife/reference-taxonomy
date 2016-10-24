@@ -213,7 +213,7 @@ public class EventLogger {
 			System.out.println(prefix + tag + ": " + this.eventStats.get(tag));
 		}
 		this.eventStats = new HashMap<String, Long>();
-		this.eventStatNames = new ArrayList();
+		this.eventStatNames = new ArrayList<String>();
 	}
 
 	public void resetEvents() {         // was resetStats

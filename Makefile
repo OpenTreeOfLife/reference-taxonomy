@@ -297,10 +297,10 @@ feed/silva/work/silva_no_sequences.fasta: feed/silva/in/silva.fasta
 # This file has genbank id, ncbi id, strain, taxon name
 feed/silva/work/accessions.tsv: feed/silva/work/silva_no_sequences.fasta \
 				tax/ncbi/taxonomy.tsv \
-				feed/silva/work/accessionid_to_taxonid.tsv
+				feed/silva/accessionid_to_taxonid.tsv
 	python feed/silva/get_taxon_names.py \
 	       tax/ncbi/taxonomy.tsv \
-	       feed/silva/work/accessionid_to_taxonid.tsv \
+	       feed/silva/accessionid_to_taxonid.tsv \
 	       $@.new
 	mv $@.new $@
 
@@ -324,14 +324,12 @@ feed/misc/chromista_spreadsheet.py: feed/misc/chromista-spreadsheet.csv feed/mis
 
 fetch_amendments: feed/amendments/amendments-1/next_ott_id.json
 
-feed/amendments/amendments-1/next_ott_id.json: $(AMENDMENTS_REFSPEC)
-	(cd feed/amendments/amendments-1; git checkout master)
-	(cd feed/amendments/amendments-1; git pull)
+feed/amendments/amendments-1/next_ott_id.json: feed/amendments/amendments-1 $(AMENDMENTS_REFSPEC)
+	(cd feed/amendments/amendments-1 && git checkout master && git pull)
 	(cd feed/amendments/amendments-1; git checkout -q `cat ../../../$(AMENDMENTS_REFSPEC)`)
 
 refresh-amendments: feed/amendments/amendments-1
-	(cd feed/amendments/amendments-1; git checkout master)
-	(cd feed/amendments/amendments-1; git pull)
+	(cd feed/amendments/amendments-1 && git checkout master && git pull)
 	(cd feed/amendments/amendments-1; git log -n 1) | head -1 | sed -e 's/commit //' >$(AMENDMENTS_REFSPEC).new
 	mv $(AMENDMENTS_REFSPEC).new $(AMENDMENTS_REFSPEC)
 	(cd feed/amendments/amendments-1; git checkout -q `cat ../../../$(AMENDMENTS_REFSPEC)`)
@@ -517,18 +515,22 @@ aster-tarball: t/tax/aster/taxonomy.tsv
 
 # ----- Clean
 
-clean:
-	rm -rf tax/ott
-	rm -rf feed/*/out *.tmp
-#	rm -rf feed/*/work ?
-	rm -rf feed/amendments/amendments-1 t/amendments bin/jython
-	rm -rf tax/fung tax/ncbi tax/prev_nem tax/silva
-	rm -f `find . -name "*.class"`
-	rm -f feed/misc/chromista_spreadsheet.py
-#	rm -f feed/ncbi/in/taxdump.tar.gz
+# The 'clean' target deletes everything except files fetched from the Internet.
+# To really delete everything, use the 'distclean' target.
 
-squeakyclean:
-	rm -rf feed/*/in
+clean:
+	rm -f `find . -name "*.class"`
+	rm -rf bin/jython
+	rm -rf tax/ott
+	rm -rf feed/*/out feed/*/work
+	rm -rf *.tmp new_taxa
+	rm -rf tax/ncbi tax/gbif tax/silva
+	rm -f feed/misc/chromista_spreadsheet.py
+	rm -rf t/amendments t/tax/aster
+
+distclean: clean
 	rm -f lib/*
-	rm -rf tax/fung tax/gbif tax/irmng tax/ncbi tax/silva tax/worms 
+	rm -rf feed/amendments/amendments-1
+	rm -rf feed/*/in
+	rm -rf tax/fung tax/irmng* tax/worms 
 	rm -rf tax/prev_ott

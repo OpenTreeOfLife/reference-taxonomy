@@ -8,27 +8,82 @@ First, some overall measurements
 they'd illustrate the magnitude of the achievements, and magnitude of
 challenges.]
 
-* number tips, synonyms, homonyms (about 13,000) [TBD: Get metrics for OTT 2.10]
+* number of nodes (taxa): 3577714  [using wc]
+* number tips
+    * number of tips
+    * 2913390 with rank 'species'  [using wc]
+    * binomials ?  compare with CoL
+* synonyms  1567363  [using wc]
+* homonyms (about 13,000)  (number 2-way, 3-way, ...)
     * could classify the homonyms?  by rank, proximity, etc.  and compare to GBIF / NCBI
+        * could be inherited from source taxonomy
+            * sibling, cousin, parent/child
+        * could be created via skeleton separation
+        * could be created via membership separation
     * homonyms vs hemihomonyms?
-* number of inter-source conflicts (1167)
-* effectiveness of various alignment and separation heuristics
+* number of manual operations required (i.e. modifications to the generic
+  assembly process)... hmm.
+* number of ambiguities - 228 [using how-many on the transcript].  that's way too high.
+
+* table showing number of taxa coming from various sources? coming from various numbers of sources?
+* NCBI / GBIF comparison?
+
+Output of results.py script:
+
+TBD: filter out the was_container nodes.  and maybe all the not_otus?
+
+    Number of nodes: 3577714
+    Number of synonyms: 1567363
+    Number of tips: 3323318
+    Number of binomials: 2115765
+    Number taxa suppressed / not: 1248964 / 2328750
+    Number extinct: 199918
+    Polysemies:
+    2-way: 11375  (ncbi: 831, silva: 141.... where do they all come from?)
+    3-way: 1366
+    4-way: 262
+    5-way: 61
+    6-way: 14
+    7-way: 4
+    8-way: 2
+    11-way: 1
+    18-way: 1
+    20-way: 1
+    43-way: 1
+    237-way: 1
+
+[Factoid I don't know if we can use: 4306127 OTT ids have been
+allocated (through 2.10), so something like 728413 are either merged
+or 'deprecated'.  This has to do with the update mechanism.  Don't
+know whether this is good or bad.  Haven't analyzed these yet, what
+the reasons are... will be hard since would need to scan all previous
+OTT versions...]
+
+## Conflict
+
+* number of source nodes dropped due to conflict (1167)
+
+  (example of a conflict: Zygomycota (if:90405) is not included because
+  ... paraphyletic w.r.t. Hibbett 2007.  get proof?  not a great
+  example, ncbi/gbif would be better.)
+
+## Evaluation of alignment heuristics
+
+* effectiveness of the various alignment heuristics
    * do certain heuristics work better / worse for different types of problems?
+     [how would one assess this ?? what examples of 'types of problems'?]
    * since the process runs through a set of heuristics until it finds a
-   solution or gives up, can we say anything about the number of heuristics
-   required across source / union node combinations (or the number of unresolved
+     solution or gives up, can we say anything about the number of heuristics
+     required across source / union node combinations (or the number of unresolved
      ambiguities)? i.e. 70% of combinations solved with 1st heuristic, 20% with
      second heuristic, etc?
-* number of manual operations required (i.e. modifications to the generic
-  assembly process)
 
-(example of a conflict: Zygomycota (if:90405) is not included
-because ... paraphyletic w.r.t. Hibbett 2007.  get proof?)
+## Evaluation relative to goals
 
-Next: The introduction sets out three requirements for the taxonomy.
+The introduction sets out three requirements for the taxonomy.
 How well are these requirements met?
 
-## OTU coverage
+### OTU coverage
 
 * compare OTT's coverage of phylesystem with coverage by NCBI, GBIF
   (i.e. how well does OTT do what it's supposed to do, compared to
@@ -48,7 +103,7 @@ regexp is pretty restrictive, so does not include subspecies or
 strains.  Includes some false hits like 'Foo sp.'  Might be interesting
 to count OTUs instead of name-strings.)
 
-## Taxonomic coverage
+### Taxonomic coverage
 
 (Table or plot showing how many taxa come from each source, & how many exclusively:)
 
@@ -83,7 +138,7 @@ above)]
 [Consider evaluating against HHDB (hemihomonyms) - for coverage and/or
 accuracy (ideally we would have all senses of each HHDB polysemy)]
 
-## Backbone quality
+### Backbone quality
 
 * number of internal nodes ??  compared to ... ?  ratio of
   nonterminal to terminal (branching factor) ... ?  average branching factor controlled
@@ -146,6 +201,7 @@ Comparing the OTT backbone with Ruggiero et al. taxonomy of all life to order:
   communicate 'taxon concept' to curators or whether curators would be
   able to make any sensible use of the information.
 
+* time required to build: 11 minutes 42 second real time (for OTT 2.11)
 
 ## File formats
 

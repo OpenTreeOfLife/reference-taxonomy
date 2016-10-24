@@ -4,20 +4,31 @@
 
 all: draft.html
 
-draft.md: introduction.md sources.md method.md results-discussion.md
-	cat $^ >draft.md
-
 # use --html4tags flag?
 
-draft.html: draft.md lib/Markdown.pl
+draft.html: out/draft.html
+	ln -sf $< $@
+
+out/draft.html: out/draft.md lib/Markdown.pl
+	@mkdir -p out
 	bin/markdown $< >$@.new
 	mv $@.new $@
 
-open: draft.html
-	open draft.html
+out/draft.md: introduction.md sources.md out/sources_table.md method.md results-discussion.md
+	@mkdir -p out
+	cat $^ >$@
+
+out/sources_table.md: sources_table.py
+	@mkdir -p out
+	python $< >$@.new
+	mv $@.new $@
+
+open: out/draft.html
+	open $<
 
 clean:
-	rm draft.*
+	rm -rf out/*
+	rm draft.html
 
 lib/Markdown.pl:
 	mkdir -p lib
@@ -26,6 +37,15 @@ lib/Markdown.pl:
 	mv Markdown_1.0.1/Markdown.pl $@
 	rm -r Markdown_1.0.1 Markdown_1.0.1.zip
 
+REF_HOME=../../../../repo/reference-taxonomy
+JYTHON=$(REF_HOME)/bin/jython
+
+results: results.py
+	$(JYTHON) $< $(REF_HOME)/tax/ott/
+
+# Use this to test that results.py works before siccing it on OTT
+test-results: results.py
+	$(JYTHON) $< $(REF_HOME)/t/tax/aster/
 
 
 

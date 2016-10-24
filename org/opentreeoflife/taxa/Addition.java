@@ -322,7 +322,7 @@ public class Addition {
                 System.err.format("** Lose %s\n", e);
             }
 
-            Map <String, Object> range = (Map<String, Object>)idRanges.get(0);
+            Map <?, ?> range = (Map<?, ?>)idRanges.get(0);
             Long firstId = (Long)range.get("first");
             Long lastId = (Long)range.get("last");
             if (assignIds(fewerNodes, firstId, lastId)) {
@@ -421,7 +421,7 @@ public class Addition {
             JSONObject cachedRequest = (JSONObject)loadJSON(requestFile); // {"taxa":[...], ...}
             JSONObject cachedResponse = (JSONObject)loadJSON(responseFile); // {"tag":id, ...}
 
-            for (Object record : (List<Object>)cachedRequest.get("taxa")) {
+            for (Object record : (List<?>)cachedRequest.get("taxa")) {
                 JSONObject r = (JSONObject)record;
                 String tag = (String)r.get("tag");
                 Long id = (Long)cachedResponse.get(tag);
@@ -466,7 +466,7 @@ public class Addition {
 
         try {
             // response maps tag to OTT id
-            Map<String, Object> response = (Map<String, Object>)invokeAdditionService(request, additionsPath);
+            Map<?, ?> response = (Map<?, ?>)invokeAdditionService(request, additionsPath);
             Object err = response.get("error");
             if (err != null)
                 System.err.format("** Error from service: %s\n", err);

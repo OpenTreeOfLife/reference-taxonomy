@@ -9,7 +9,7 @@
 # Reference number(s) - full reference in article's reference list
 # Maximum depth
 
-
+header = ['name', 'reference', 'version', 'taxa', 'synonyms', 'priority']
 
 table = [
     {'name': 'ARB-SILVA',
@@ -32,32 +32,38 @@ table = [
      'synonyms': 157734},
     {'name': 'Sch&auml;ferhoff 2010',
      'reference': 'x',
-     'version' : '',
+     'version' : '2013-11-23',
      'priority': 4,
      'taxa': 119,
      'synonyms': 0},
     {'name': 'WoRMS',
      'reference': 'x',
-     'version' : '',
+     'version' : '2015-10-01',
      'priority': 5,
      'taxa': 330412,
      'synonyms': 223196},
     {'name': 'NCBI',
      'reference': 'x',
-     'version' : '',
+     'version' : '2016-06-29',
      'priority': 6,
+     # These numbers come from running process_ncbi_taxonomy.py.
+     # Need to review - names.dmp seems to have 2207998 rows, much bigger
+     # (some of those will be authorities, etc.)
+     # (+ 1488029 404511)
      'taxa': 1488029,   # Boils down to 1488019
      'synonyms': 719526},  # Careful about how to count.
     {'name': 'GBIF',
      'reference': 'x',
-     'version' : '',
+     'version' : '2013-07-02',
      'priority': 7,
+     # These numbers come from running process_gbif_taxonomy.py
      'taxa': 3273321,     # Boils down to 1863834
      'synonyms': 1143026},  # Boils down to 879745
     {'name': 'IRMNG',
      'reference': 'x',
-     'version' : '',
+     'version' : '2014-01-31',
      'priority': 8,
+     # These numbers come from running process_irmng.py, I think
      'taxa': 1706655,    # Boils down to 1685134
      'synonyms': 685983} # Boils down to 659851
 ]
@@ -78,9 +84,9 @@ def do_row(cells):
 print '### (Table 1)'
 
 print '<table>'
-do_row(['name', 'reference', 'priority', 'version', 'taxa', 'synonyms'])
+do_row(header)
 for row in table:
-    do_row([row['name'], row['reference'], row['version'], row['priority'], row['taxa'], row['synonyms']])
+    do_row([row['name'], row['reference'], row['version'], row['taxa'], row['synonyms'], row['priority']])
 print '</table>'
 
 """

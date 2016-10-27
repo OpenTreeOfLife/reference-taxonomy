@@ -124,7 +124,12 @@ def doit(ottpath, registry_path):
                     continue
                 # We're changing the qid for a registered id
                 if prev_id == None:
-                    reg_type = 'was %s' % prev_qid.toString() # Java
+                    # Reverting to a previous qid?
+                    if qid in [reg[1] for reg in regs]:
+                        print >>sys.stderr, '%s returning' % id
+                        reg_type = 'return %s' % prev_qid.toString() # Java
+                    else:
+                        reg_type = 'was %s' % prev_qid.toString() # Java
                     changes += 1
                 else:
                     reg_type = 'merge %s %s' % (prev_qid.toString(), prev_id) # Java

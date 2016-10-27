@@ -21,18 +21,23 @@ public class CSVWriter {
         this.writer = writer;
     }
 
+    static final char SEP = ',';
+    static final char QUOTE = '"';
+    static final String QUOTE_STRING = new String(new char[]{QUOTE});
+    static final String QUOTE_QUOTE_STRING = new String(new char[]{QUOTE, QUOTE});
+
     public void writeNext(String[] fields) throws IOException {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         int nfields = fields.length;
         for (int i = 0; i < nfields; ++i) {
             if (i > 0)
-                sb.append(',');
+                sb.append(SEP);
             if (fields[i] == null)
                 ;
-            else if (fields[i].indexOf(',') >= 0 || fields[i].indexOf('"') >= 0) {
-                sb.append('"');
-                sb.append(fields[i].replace("\"", "\"\""));
-                sb.append('"');
+            else if (fields[i].indexOf(SEP) >= 0 || fields[i].indexOf(QUOTE) >= 0) {
+                sb.append(QUOTE);
+                sb.append(fields[i].replace(QUOTE_STRING, QUOTE_QUOTE_STRING));
+                sb.append(QUOTE);
             } else
                 sb.append(fields[i]);
         }

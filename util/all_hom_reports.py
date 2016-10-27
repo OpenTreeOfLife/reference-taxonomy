@@ -5,8 +5,8 @@ import os
 report_dir = 'report'
 
 def report(dir, idspace):
-    tax = Taxonomy.getTaxonomy(os.path.join('tax', dir, ''), idspace)
-    tax.smush() 
+    tax = Taxonomy.getRawTaxonomy(os.path.join('tax', dir, ''), idspace)
+    # tax.smush() 
     # HomonymReport.homonymDensityReport(tax, dir + '-density-report.csv')
     # HomonymReport.homonymUncertaintyReport(tax, 'reports/' + dir + '-uncertainty-report.csv')
     if not os.path.isdir(report_dir):

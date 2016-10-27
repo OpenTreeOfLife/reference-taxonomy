@@ -515,8 +515,11 @@ abstract class Criterion {
 
 	abstract Answer assess(Taxon x, Taxon target);
 
-    static int kludge = 0;
-    static int kludgeLimit = 100;
+    String informative;
+
+    Criterion() {
+        informative = "used " + this.toString();
+    }
 
 	static Criterion division =
 		new Criterion() {

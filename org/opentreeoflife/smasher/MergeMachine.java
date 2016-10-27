@@ -175,6 +175,7 @@ class MergeMachine {
                     }
                 }
                 if (paraconsistentp && !consistentp) {
+                    // 110 occurrences of this situation
                     System.out.format("* %s has unplaced children that make it inconsistent\n", node);
                     // consistentp = true;
                 }
@@ -203,6 +204,7 @@ class MergeMachine {
                     reject(node, "merged", commonParent, Taxonomy.MERGED);
                 }
             }
+            // the following is just a sanity check
 			for (Taxon child: node.children) {
                 Taxon uchild = alignment.getTaxon(child);
                 if (uchild != null && uchild.parent == null)
@@ -383,7 +385,7 @@ class MergeMachine {
                     child.markEvent("not-placed/does-not-descend");
                 else if (target == uchild.parent) {
                     // A placement here could promote an unplaced taxon in union to placed...
-                    // sort of dangerous, because later taxonomies (e.g. worms) tend to be unreliable
+                    // sort of dangerous, because lower-priority taxonomies tend to be unreliable
                     if (flags > 0) {
                         child.markEvent("not-placed/already-unplaced");
                     } else {

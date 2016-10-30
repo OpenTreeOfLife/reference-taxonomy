@@ -186,6 +186,8 @@ public class Services {
                 System.err.format("** id-less node %s\n", node);
                 continue;
             }
+            if (!node.hasChildren())
+                continue;
             Articulation a = c.articulation(node);
             if (a == null) continue;
             String tag = null;

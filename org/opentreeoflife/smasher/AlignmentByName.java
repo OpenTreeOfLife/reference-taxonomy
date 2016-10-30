@@ -167,14 +167,12 @@ public class AlignmentByName extends Alignment {
             lg.add(start);
         }
 
-        Taxon anyCandidate = null;
         Answer result = null;
         for (Criterion criterion : criteria) {
             List<Answer> answers = new ArrayList<Answer>(candidates.size());
             int max = -100;
             int count = 0;  // number of candidates that have the max value
             Answer anyAnswer = null;
-            anyCandidate = null;
             for (Taxon cand : candidates) {
                 Answer a = criterion.assess(node, cand);
                 if (a.subject != null) lg.add(a);
@@ -184,7 +182,6 @@ public class AlignmentByName extends Alignment {
                         max = a.value;
                         count = 1;
                         anyAnswer = a;
-                        anyCandidate = cand;
                     } else if (a.value == max)
                         count++;
                 }
@@ -225,11 +222,14 @@ public class AlignmentByName extends Alignment {
         }
 
         if (result == null) {   // ended up with noinfo.
-            target.markEvent("used: elimination");
             // Singleton
-            if (candidates.size() == 1)
-                result = Answer.yes(node, anyCandidate, "elimination", null);
-            else if (!node.hasChildren())
+            if (candidates.size() == 1) {
+                target.markEvent("by elimination");
+                for (Taxon cand : candidates) {
+                    result = Answer.yes(node, cand, "elimination", null);
+                    break;
+                }
+            } else if (!node.hasChildren())
                 // Ambiguous.  Avoid creating yet another homonym.  
                 result = Answer.noinfo(node, null, "ambiguous tip", null);
             else

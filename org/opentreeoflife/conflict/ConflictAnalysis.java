@@ -415,7 +415,7 @@ public class ConflictAnalysis {
         // If node conflicts with anything, it conflicts with one of conode's children
         // That is, if node either contains or excludes every child of
         // conode, then node resolves conode, otherwise it conflicts.
-        for (Taxon cochild : conode.children) {
+        for (Taxon cochild : conode.getChildren()) {
             Taxon back = comap.get(cochild);
             if (back == null)
                 ;

@@ -66,6 +66,16 @@ public class Services {
         this.referenceTaxonomy = reftax;
         this.syntheticTree = synth;
         this.studyBase = studyBase;
+        int count = 0;
+        for (Taxon node : synth.taxa())
+            if (node.name == null && node.id.startsWith("ott")) {
+                Taxon ottnode = reftax.lookupId(node.id.substring(3));
+                if (ottnode != null) {
+                    node.setName(ottnode.name);
+                    ++count;
+                }
+            }
+        System.out.format("| Transferred %s names from OTT to synthetic tree\n", count);
     }
 
     // Does not return

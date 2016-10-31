@@ -42,7 +42,64 @@ public class ConflictAnalysis {
     public int opportunities = 0;
 
     public ConflictAnalysis(Taxonomy input, Taxonomy ref) {
-        init(input, ref, makeTipMap(ref), true);
+        this(input, ref, true);
+    }
+
+    public ConflictAnalysis(Taxonomy input, Taxonomy ref, boolean includeSuppressed) {
+        if (input.idspace == null ?
+            (input.idspace == ref.idspace) :
+            input.idspace.equals(ref.idspace))
+            init(input,
+                 ref,
+                 new SimpleMap<Taxon, Taxon>() {
+                     public Taxon get(Taxon node) {
+                         return ref.lookupId(node.id);
+                     }
+                 },
+                 includeSuppressed);
+        else
+            init(input,
+                 ref,
+                 new SimpleMap<Taxon, Taxon>() {
+                     public Taxon get(Taxon node) {
+                         if (node.sourceIds != null)
+                             for (QualifiedId qid : node.sourceIds)
+                                 if (qid.prefix.equals(ref.idspace))
+                                     return ref.lookupId(qid.id);
+                         return null;
+                     }
+                 },
+                 includeSuppressed);
+    }
+
+    // This is used to analyze a study against the synthetic tree.
+    // Taxon ids in the synthetic tree look like "ott123".
+
+    public static ConflictAnalysis againstSynthesis(Taxonomy input, Taxonomy ref, boolean includeSuppressed) {
+        SimpleMap<Taxon, Taxon> tipMap;
+        if ("ott".equals(input.idspace))
+            tipMap = new SimpleMap<Taxon, Taxon>() {
+                    public Taxon get(Taxon node) {
+                        if (node.id != null)
+                            return ref.lookupId("ott" + node.id);
+                        else
+                            return null;
+                    }
+                };
+        else
+            tipMap = new SimpleMap<Taxon, Taxon>() {
+                    public Taxon get(Taxon node) {
+                        if (node.sourceIds != null)
+                            for (QualifiedId qid : node.sourceIds)
+                                if (qid.prefix.equals("ott"))
+                                    return ref.lookupId("ott" + qid.id);
+                        return null;
+                    }
+                };
+        return new ConflictAnalysis(input,
+                                    ref,
+                                    tipMap,
+                                    includeSuppressed);
     }
 
     public ConflictAnalysis(Taxonomy input, Taxonomy ref, final Alignment alignment, boolean includeSuppressed) {
@@ -86,29 +143,6 @@ public class ConflictAnalysis {
         // inducedIngroup = mrca in ref of all the shared tips in input
     }
 
-    // default
-    SimpleMap<Taxon, Taxon> makeTipMap(final Taxonomy ref) {
-        return new SimpleMap<Taxon, Taxon>() {
-            public Taxon get(Taxon node) {
-                String id = null;
-                if (node.taxonomy.idspace.equals(ref.idspace)) // useful for testing
-                    id = node.id;
-                else if (node.sourceIds != null)
-                    for (QualifiedId qid : node.sourceIds)
-                        if (qid.prefix.equals(ref.idspace)) {
-                            id = qid.id;
-                            break;
-                        }
-                Taxon refnode = ref.lookupId(id);
-                if (refnode != null
-                    && (includeSuppressed || !refnode.isHidden())) {
-                    return refnode;
-                }
-                return null;
-            }
-        };
-    }
-        
     Taxon uniqueRoot(Taxonomy tax) {
         Taxon root = null;
         for (Taxon r : tax.roots()) {
@@ -200,7 +234,8 @@ public class ConflictAnalysis {
             return true;
         else {
             Taxon refnode = this.tipMap.get(node);
-            if (refnode != null) {
+            if (refnode != null
+                && (includeSuppressed || !refnode.isHidden())) {
                 map.put(node, refnode);
                 return true;
             } else

@@ -43,8 +43,6 @@ public class Services {
     private static final int STATUS_METHOD_NOT_ALLOWED = 405;
     private static final String ALLOWED_METHODS = "OPTIONS,GET";
 
-    private static final String idspace = "ott";
-
     private Taxonomy referenceTaxonomy;
     private Taxonomy syntheticTree;
     private String studyBase;
@@ -58,9 +56,9 @@ public class Services {
     static int port = 8081;
 
     public static void main(final String... args) throws IOException {
-        new Services(args.length > 0 ? Taxonomy.getTaxonomy(args[0], idspace) : null,
-                     args.length > 1 ? Taxonomy.getTaxonomy(args[1], idspace) : null,
-                     args.length > 2 ? args[2] : "https://api.opentreeoflife.org/v2/study/")
+        new Services(args.length > 0 ? Taxonomy.getRawTaxonomy(args[0], "ott") : null,
+                     args.length > 1 ? Taxonomy.getRawTaxonomy(args[1], "synth") : null,
+                     args.length > 2 ? args[2] : "https://api.opentreeoflife.org/v3/study/")
             .serve("localhost", port);
     }
 
@@ -158,19 +156,23 @@ public class Services {
             Taxonomy tree2 = specToTree(treespec2, useCache);
             if (tree2 == null)
                 throw new BadRequest(String.format("Can't find %s", treespec2));
-            return conflictStatus(tree1, tree2);
+            return conflictStatus(tree1, tree2, true);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static JSONObject conflictStatus(Taxonomy tree1, Taxonomy tree2) {
+    public static JSONObject conflictStatus(Taxonomy tree1, Taxonomy tree2, boolean includeSuppressed) {
         boolean flipped = false;
         Taxonomy input = tree1, ref = tree2;
         if (tree2.count() < tree1.count()) { // heuristic!
             input = tree2; ref = tree1; flipped = true;
         }
-        ConflictAnalysis c = new ConflictAnalysis(input, ref);
+        ConflictAnalysis c;
+        if (ref.idspace.equals("synth"))
+            c = ConflictAnalysis.againstSynthesis(input, ref, includeSuppressed);
+        else
+            c = new ConflictAnalysis(input, ref);
         return conflictAnalysisToJSON(c, flipped);
     }
 
@@ -186,13 +188,12 @@ public class Services {
                 System.err.format("** id-less node %s\n", node);
                 continue;
             }
-            if (!node.hasChildren())
-                continue;
             Articulation a = c.articulation(node);
             if (a == null) continue;
             String tag = null;
             switch (a.disposition) {
-            case NONE: break;
+            case NONE:
+                break;
             case SUPPORTED_BY:
                 tag = "supported_by";
                 break;
@@ -206,15 +207,20 @@ public class Services {
             case CONFLICTS_WITH:
                 tag = "conflicts_with";
                 break;
+            case TIP:
+                // these don't tell the webapp anything it doesn't already know
+                break;
             }
             if (tag != null) {
                 JSONObject info = new JSONObject();
-                Taxon w = a.witness;
+                Taxon w = a.witness; // in ref
                 if (w != null) {
                     if (w.id != null && !w.id.startsWith("-"))
                         info.put("witness", w.id);
                     if (w.name != null)
                         info.put("witness_name", w.name);
+                    // TBD: Fill in synth node names from taxonomy by peeling
+                    // off the "ott" prefix and looking up in OTT
                 }
                 info.put("status", tag);
                 result.put(node.id, info);
@@ -224,7 +230,9 @@ public class Services {
     }
 
     public Taxonomy specToTree(String spec, boolean useCache) throws IOException {
-        String[] parts = spec.split("#");
+        String delim = "#";
+        if (spec.contains("@")) delim = "@";
+        String[] parts = spec.split(delim);
         if (parts.length == 0)
             throw new BadRequest("Empty tree specifier");
         else if (parts.length == 1)
@@ -233,11 +241,11 @@ public class Services {
         else if (parts.length == 2)
             return getSourceTree(parts[0], parts[1], useCache);
         else
-            throw new BadRequest(String.format("Too many #'s: %s", spec));
+            throw new BadRequest(String.format("Too many %s's: %s", delim, spec));
     }
 
     private Taxonomy getReferenceTree(String spec) {
-        if (spec.startsWith(idspace))
+        if (spec.startsWith("ott"))
             return referenceTaxonomy;
         else if (spec.startsWith("synth"))
             return syntheticTree;

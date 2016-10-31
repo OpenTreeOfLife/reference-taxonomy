@@ -381,19 +381,15 @@ public class ConflictAnalysis {
     public static boolean maximizeWitness = true;
 
     public Articulation articulation(Taxon node, Map<Taxon, Taxon> map, Map<Taxon, Taxon> comap) {
-        Taxon conode = map.get(node);
+        Taxon conode = map.get(node); // usually in ref. taxonomy
         if (conode == null)
             return null;
-        Taxon bounce = comap.get(conode);
+        Taxon bounce = comap.get(conode); // back in original taxonomy
         if (bounce == null) {
             System.err.format("Shouldn't happen 1 %s\n", node);
             return null; // shouldn't happen
         }
         if (node.mrca(bounce) == node) {  // bounce <= node?
-
-            // TODO: Generalize this!
-            if (node.children == null || conode.children == null)
-                return new Articulation(Disposition.TIP, conode);
 
             Taxon witness = conode;
             if (maximizeWitness)
@@ -411,10 +407,6 @@ public class ConflictAnalysis {
         if (node.parent == null) {
             System.err.format("Shouldn't happen 2 %s\n", node);
             return null; // shouldn't happen
-        }
-        if (conode.children == null) {
-            System.err.format("** Articulation: shouldn't happen\n");
-            return null;
         }
 
         // ???? in (a,(b,c)) vs. (a,b,c)  (b,c) conflicts with a ????

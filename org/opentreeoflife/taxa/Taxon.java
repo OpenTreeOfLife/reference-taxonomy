@@ -986,6 +986,8 @@ public class Taxon extends Node {
                     if (taxon.parent == this.parent) {
                         System.err.format("** rename: there's already a node with name %s in %s\n",
                                           name, this.parent);
+                        // taxon.addSynonym(oldname, typ);
+                        // or taxon.absorb(this);
                         return false;
                     }
                 }

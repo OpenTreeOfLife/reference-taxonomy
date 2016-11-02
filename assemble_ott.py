@@ -22,8 +22,6 @@ inclusions_path = 'inclusions.csv'
 additions_clone_path = 'feed/amendments/amendments-1'
 new_taxa_path = 'new_taxa'
 
-do_notSames = False
-
 # temporary debugging thing
 invariants = [Has_child('Nucletmycea', 'Fungi'),
               Has_child('Opisthokonta', 'Nucletmycea'),
@@ -172,8 +170,6 @@ def create_ott():
             ('Saccharomycetes', 'Saccharomycotina', '989999'),
             ('Phaeosphaeria', 'Ascomycota', '5486272'),
             ('Synedra acus','Eukaryota','992764'),
-            ('Epiphloea','Archaeplastida','5342325'),
-            ('Epiphloea', 'Lichinales', '5342482'),
             ('Hessea','Archaeplastida','600099'),
             ('Morganella','Arthropoda','6400'),
             ('Rhynchonelloidea','Rhynchonellidae','5316010'),
@@ -192,6 +188,9 @@ def create_ott():
             ('Pohlia', 'Foraminifera', '5325989'),
             ('Trachelomonas grandis', 'Bacteria', '58035'), # study ot_91 Tr46259
             ('Hypomyzostoma', 'Myzostomida', '552744'),   # was incorrectly in Annelida
+            ('Gyromitus', 'SAR', '696946'),
+            ('Pseudogymnoascus destructans', 'Pezizomycotina', '428163'),
+            # ('Amycolicicoccus subflavus', 'Mycobacteriaceae', '541768'),  # ncbi:639313
     ]:
         tax = ott.maybeTaxon(inf, sup)
         if tax != None:
@@ -243,6 +242,9 @@ def create_ott():
 
     report_on_h2007(h2007, h2007_to_ott)
 
+    # Morganella mystery
+    ott.taxon('973932').show()
+
     return ott
 
 def hide_irmng(irmng):
@@ -258,13 +260,16 @@ def hide_irmng(irmng):
                 irmng.lookupId(row[0]).unhide()
 
 def debug_divisions(name, ncbi, ott):
-    print '##'
-    ncbi.taxon(name).show()
-    ott.taxon(name).show()
-    foo = ott.taxon(name)
-    while foo != None:
-        print foo, foo.getDivision()
-        foo = foo.parent
+    print '##', name
+    n = ncbi.taxon(name)
+    if n != None:
+        n.show()
+    o = ott.taxon(name)
+    if o != None:
+        o.show()
+        while o != None:
+            print o, o.getDivision()
+            o = o.parent
     print '##'
 
 
@@ -317,6 +322,9 @@ def deal_with_ctenophora(ott):
     establish('Diphylleia', ott, division='Eukaryota',      source='ncbi:177250', ott_id='4738987') #apusozoan
     establish('Diphylleia', ott, division='Chloroplastida', source='ncbi:63346' , ott_id='570408') #eudicot
 
+    # Discovered via failed inclusion test
+    establish('Epiphloea', ott, division='Fungi',      source='if:1869', ott_id='5342482') #lichinales
+    establish('Epiphloea', ott, division='Rhodophyta', source='ncbi:257604', ott_id='471770')  #florideophycidae
 
 # ----- SILVA -----
 
@@ -326,6 +334,11 @@ def align_silva(silva, ott):
            ott.taxon('103964'))
     #a.same(silva.taxonThatContains('Ctenophora', 'Beroe ovata'),
     #       ott.taxon('641212'))
+
+    # From Laura and Dail on 5 Feb 2014
+    # https://groups.google.com/forum/#!topic/opentreeoflife/a69fdC-N6pY
+    a.same(silva.taxon('Diatomea'), ott.taxon('Bacillariophyta'))
+
     return a
 
 # ----- Index Fungorum -----
@@ -349,19 +362,16 @@ def align_fungi(fungi, ott):
 
     # *** Alignment to SILVA
 
-    # 2014-03-07 Prevent a false match
+    # 2014-03-07 Prevent a false match between Phaeosphaerias
     # https://groups.google.com/d/msg/opentreeoflife/5SAPDerun70/fRjA2M6z8tIJ
-    # This is a fungus in Pezizomycotina
-    # ### CHECK: was silva.taxon('Phaeosphaeria')
-    # ott.notSame(ott.taxon('Phaeosphaeria', 'Rhizaria'), fungi.taxon('Phaeosphaeria', 'Ascomycota'))
+    # One is a fungus in Pezizomycotina, the other a rhizarian
+    # Now handled automatically.  Checked in inclusions.csv
 
-    # 2014-04-08 This was causing Agaricaceae to be paraphyletic
-    # ### CHECK: was silva.taxon('Morganella')
-    # ott.notSame(ott.taxon('Morganella'), fungi.taxon('Morganella'))
+    # 2014-04-08 Bad Morganella match was causing Agaricaceae to be paraphyletic
+    # Checked in inclusions.csv
 
     # 2014-04-08 More IF/SILVA bad matches
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/63
-    # The notSame directives are unnecessary if SAR is a division
     for (name, f, o) in [('Acantharia', 'Fungi', 'Rhizaria'),   # fungus if:8 is nom. illegit. but it's also in gbif
                          ('Lacrymaria', 'Fungi', 'Alveolata'),
                          ('Steinia', 'Fungi', 'Alveolata'),   # also insect < Holozoa in irmng
@@ -378,11 +388,7 @@ def align_fungi(fungi, ott):
     # 2014-04-25 JAR
     # There are three Bostrychias: a rhodophyte, a fungus, and a bird.
     # The fungus name is a synonym for Cytospora.
-    # ### CHECK: was silva.taxon
-    if fungi.maybeTaxon('Bostrychia', 'Ascomycota') != None:
-        if do_notSames:
-            a.notSame(fungi.taxon('Bostrychia', 'Ascomycota'),
-                      ott.taxon('Bostrychia', 'Rhodophyceae'))
+    # Now handled automatically, see inclusions.csv
 
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/20
     # Problem: Chlamydotomus is an incertae sedis child of Fungi.  Need to
@@ -407,10 +413,7 @@ def align_fungi(fungi, ott):
     # Just make it incertae sedis and put off dealing with it until someone cares...
 
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/79
-    # ### CHECK: was silva.taxon
     # As of 2016-06-05, the fungus has changed its name to Melampsora, so there is no longer a problem.
-    # a.notSame(fungi.taxon('Podocystis', 'Fungi'), ott.taxon('Podocystis', 'Stramenopiles'))
-
     a.same(fungi.taxon('Podocystis', 'Fungi'), ott.taxon('Podocystis', 'Fungi'))
 
     # Create a homonym (the one in Fungi, not the same as the one in Alveolata)
@@ -448,8 +451,7 @@ def align_lamiales(study713, ott):
     # because of something something something Buchnera (which is a
     # bacteria/plant polysemy).
     a.same(study713.taxon('Chloroplastida'), ott.taxon('Chloroplastida'))
-    if do_notSames:
-        a.notSame(study713.taxon('Buchnera', 'Orobanchaceae'), ott.taxon('Buchnera', 'Enterobacteriaceae'))
+    # Buchnera is also a hemihomonym with a bacterial genus.  Checked in inclusions.csv
     return a
 
 # ----- WoRMS -----
@@ -497,16 +499,13 @@ def align_ncbi(ncbi, silva, ott):
 
     #a.same(ncbi.taxon('Cyanobacteria'), silva.taxon('D88288/#3'))
     # #### Check - was fungi.taxon
+    # Not sure what happened with these:
     # ** No unique taxon found with this name: Burkea
     # ** No unique taxon found with this name: Coscinium
     # ** No unique taxon found with this name: Perezia
-    # a.notSame(ncbi.taxon('Burkea', 'Viridiplantae'), ott.taxon('Burkea'))
-    # a.notSame(ncbi.taxon('Coscinium', 'Viridiplantae'), ott.taxon('Coscinium'))
-    # a.notSame(ncbi.taxon('Perezia', 'Viridiplantae'), ott.taxon('Perezia'))
 
-    # JAR 2014-04-11 Discovered during regression testing
-    # now handled in other ways
-    # a.notSame(ncbi.taxon('Epiphloea', 'Rhodophyta'), ott.taxon('Epiphloea', 'Ascomycota'))
+    # JAR 2014-04-11 Epiphloea problem discovered during regression testing
+    # Now handled in other ways (Rhodophyta vs. Ascomycota)
 
     # JAR attempt to resolve ambiguous alignment of Trichosporon in IF to
     # NCBI based on common member.
@@ -547,10 +546,8 @@ def align_ncbi(ncbi, silva, ott):
     # IRMNG has Diphylleida < Diphyllatea < Apusozoa < Protista
     # They're probably the same thing.  So not sure why this is being
     # handled specially.
-    if do_notSames:
-        a.notSame(ncbi.taxon('Diphylleia', 'Chloroplastida'),
-                  ott.taxonThatContains('Diphylleia', 'Diphylleia rotans'))
 
+    # Annoying polysemy
     a.same(ncbi.taxon('Podocystis', 'Bacillariophyta'),
            ott.taxon('Podocystis', 'Bacillariophyta'))
 
@@ -699,9 +696,7 @@ def align_gbif(gbif, ott):
     # There is a test for this.  The GBIF taxon no longer exists.
     # a.notSame(ott.taxon('Rhynchonelloidea', 'Brachiopoda'), gbif.taxon('Rhynchonelloidea'))
 
-    # There are tests.  Seems OK
-    if do_notSames:
-        a.notSame(gbif.taxon('Neoptera', 'Diptera'), ott.taxonThatContains('Neoptera', 'Lepidoptera'))
+    # Neoptera - there are tests.  Seems OK
 
     # a.notSame(gbif.taxon('Tipuloidea', 'Chiliocyclidae'), ott.taxon('Tipuloidea', 'Diptera')) # genus Tipuloidea
     #  taken care of in taxonomies.py
@@ -881,10 +876,7 @@ def align_irmng(irmng, ott):
     def trouble(name, ancestor, not_ancestor):
         probe = irmng.maybeTaxon(name, ancestor)
         if probe == None: return
-        if do_notSames:
-            a.notSame(probe, ott.taxon(name, not_ancestor))
-        else:
-            probe.prune(this_source)
+        probe.prune(this_source)
 
     # JAR 2014-04-24 false match
     # IRMNG has one in Pteraspidomorphi (basal Chordate) as well as a

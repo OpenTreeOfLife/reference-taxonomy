@@ -143,10 +143,6 @@ def patch_silva(silva):
     # RR #55 - this is a silva/ncbi homonym
     fix_name('vesicomya', 'Vesicomya')
 
-    # From Laura and Dail on 5 Feb 2014
-    # https://groups.google.com/forum/#!topic/opentreeoflife/a69fdC-N6pY
-    silva.taxon('Diatomea').rename('Bacillariophyta')
-
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/30
     # https://github.com/OpenTreeOfLife/feedback/issues/5
     for name in ['GAL08', 'GOUTA4', 'JL-ETNP-Z39', 'Kazan-3B-28',

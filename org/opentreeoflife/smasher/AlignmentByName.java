@@ -65,34 +65,38 @@ public class AlignmentByName extends Alignment {
         }
     }
 
-    boolean experimentalp = false;
-
     // Treat all taxa equally - tips same as internal - random order
 
     public void alignByName() {
-        if (experimentalp) { this.tryThisOut(); return; }
-        assignBrackets();
-        for (Taxon node : source.taxa())
-            alignTaxon(node);
+        if (EXPERIMENTALP) {
+            this.tryThisOut();
+            return;
+        } else {
+            assignBrackets();
+            for (Taxon node : source.taxa())
+                alignTaxon(node);
+        }
     }
 
-    // Map unambiguous tips first, then retry ambiguous(?), then internal nodes
+    // Map unambiguous tips first(?), then retry ambiguous(?), then internal nodes
+
+    int tipMappings = 0;
 
     void tryThisOut() {
-        Set<Taxon> tips = new HashSet<Taxon>();
         for (Taxon root : source.roots())
-            mapTipsOnly(root, tips);
-        System.out.format("| %s quasi-tips\n", tips.size());
+            alignTipsOnly(root);
+        System.out.format("| %s quasi-tips\n", tipMappings);
+        this.USE_ALIGNMENT = true;
         assignBrackets();
         for (Taxon root : source.roots())
-            mapInternal(root, tips);
+            alignInternal(root);
     }
 
     // return true iff any quasi-tip under node
-    boolean mapTipsOnly(Taxon node, Set<Taxon> tips) {
+    boolean alignTipsOnly(Taxon node) {
         boolean anyMapped = false;
         for (Taxon child : node.getChildren()) {
-            if (mapTipsOnly(child, tips))
+            if (alignTipsOnly(child))
                 anyMapped = true;
         }
         if (anyMapped)
@@ -100,27 +104,25 @@ public class AlignmentByName extends Alignment {
         // Potential quasi-tip
         Answer answer = alignTaxon(node);
         if (answer != null && answer.isYes()) {
-            tips.add(answer.target);
+            tipMappings++;
             return true;
         }
         return false;
     }
 
     // align internal nodes (above quasi-tips)
-    void mapInternal(Taxon node, Set<Taxon> tips) {
-        if (tips.contains(node))
-            ;
-        else {
-            for (Taxon child : node.getChildren())
-                mapInternal(child, tips);
-            alignTaxon(node);
-        }
+    void alignInternal(Taxon node) {
+        for (Taxon child : node.getChildren())
+            alignInternal(child);
+        // Cf. computeLubs
+        alignTaxon(node);
     }
 
     // Find answer for a single node, and put it in table
     Answer alignTaxon(Taxon node) {
-        if (getTaxon(node) == null) {
-            Answer a = findAlignment(node);
+        Answer a = getAnswer(node);
+        if (a == null) {
+            a = findAlignment(node);
             if (a != null) {
                 if (a.isYes()) {
                     alignWith(node, a.target, a);
@@ -128,9 +130,8 @@ public class AlignmentByName extends Alignment {
                 } else
                     this.setAnswer(node, a);
             }
-            return a;
-        } else
-            return null;
+        }
+        return a;
     }
 
     void logDivisions(Answer a) {
@@ -162,20 +163,21 @@ public class AlignmentByName extends Alignment {
         for (Taxon candidate : candidates) {
             if (candidate == null)
                 System.err.format("** No taxon !? %s\n", node);
-
+            /*
             Answer start = Answer.noinfo(node, candidate, "candidate", candidateMap.get(candidate));
             lg.add(start);
+            */
         }
 
         Answer result = null;
-        for (Criterion criterion : criteria) {
+        for (Heuristic criterion : criteria) {
             List<Answer> answers = new ArrayList<Answer>(candidates.size());
             int max = -100;
             int count = 0;  // number of candidates that have the max value
             Answer anyAnswer = null;
             for (Taxon cand : candidates) {
                 Answer a = criterion.assess(node, cand);
-                if (a.subject != null) lg.add(a);
+                // if (a.subject != null) lg.add(a);
                 answers.add(a); // in parallel with candidates
                 if (a.value >= cutoff) {
                     if (a.value > max) {
@@ -191,13 +193,6 @@ public class AlignmentByName extends Alignment {
                 // This criterion eliminated some candidates.
                 target.markEvent(criterion.informative);
 
-                // If all rejected, give up.
-                if (count == 0) {
-                    result = new Answer(node, null, max, "all-candidates-rejected", null);
-                    lg.add(result);
-                    break;
-                }
-
                 // Winnow the candidate set.
                 // Iterate over candidates and answers in parallel.
                 Set<Taxon> winners = new HashSet<Taxon>();
@@ -206,9 +201,21 @@ public class AlignmentByName extends Alignment {
                     Answer a = aiter.next();
                     if (a.value == max) {
                         winners.add(cand);
-                    }
+                    } else
+                        if (a.subject == null)
+                            lg.add(Answer.noinfo(node, cand, "noinfo", null));
+                        else
+                            lg.add(a);
                 }
                 candidates = winners;
+                // at this point, count == candidates.size()
+
+                // If all rejected, give up.
+                if (count == 0) {
+                    result = new Answer(node, null, max, "> all-candidates-rejected", null);
+                    lg.add(result);
+                    break;
+                }
 
                 // If unique and affirmative, seize it.
                 if (count == 1 && anyAnswer.isYes()) {
@@ -226,14 +233,14 @@ public class AlignmentByName extends Alignment {
             if (candidates.size() == 1) {
                 target.markEvent("by elimination");
                 for (Taxon cand : candidates) {
-                    result = Answer.yes(node, cand, "elimination", null);
+                    result = Answer.yes(node, cand, "> elimination", null);
                     break;
                 }
             } else if (!node.hasChildren())
                 // Ambiguous.  Avoid creating yet another homonym.  
-                result = Answer.noinfo(node, null, "ambiguous tip", null);
+                result = Answer.noinfo(node, null, "> ambiguous tip", null);
             else
-                result = Answer.noinfo(node, null, "ambiguous internal", null);
+                result = Answer.noinfo(node, null, "> bambiguous internal", null);
             lg.add(result);
         }
         // Decide after the fact whether the dance was interesting enough to log
@@ -297,15 +304,15 @@ public class AlignmentByName extends Alignment {
         candidateMap.put(utaxon, modes);
     }
 
-	static Criterion[] criteria = {
-		Criterion.division,
-        Criterion.ranks,                  // separate by rank
-		Criterion.lineage,
-        Criterion.subsumption,
-        Criterion.weakDivision,
-        Criterion.byPrimaryName,
-		Criterion.sameSourceId,
-		Criterion.anySourceId,
+	static Heuristic[] criteria = {
+		Heuristic.division,               // fail if disjoint divisions
+        Heuristic.ranks,                  // fail if incompatible ranks
+		Heuristic.lineage,                // prefer shared lineage
+        Heuristic.subsumption,            // prefer shared membership
+        Heuristic.weakDivision,           // prefer same division
+        Heuristic.byPrimaryName,          // prefer same name
+		Heuristic.sameSourceId,           // prefer same source id
+		Heuristic.anySourceId,            // prefer candidate with any source id the same
     };
 
 }

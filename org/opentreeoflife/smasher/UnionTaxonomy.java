@@ -205,7 +205,7 @@ public class UnionTaxonomy extends Taxonomy {
                         // %% this is setting a nonnull div node with a null name
                         node.setDivision(div);
                         unode.setDivision(div);
-                        // System.out.format("## Division of %s is %s\n", node, div);
+                        System.out.format("## Division of %s is %s\n", node, div);
                     }
                 }
             }

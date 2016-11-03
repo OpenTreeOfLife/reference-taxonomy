@@ -158,27 +158,23 @@ class MergeMachine {
                     augment(child, sink);
                 // Examine mapped parents of the children
                 boolean consistentp = true;
-                boolean paraconsistentp = true;
                 Taxon commonParent = null;    // should end up being node.lub
                 int count = 0;
                 for (Taxon child : node.children) {
-                    Taxon childTarget = alignment.getTaxon(child);
-                    if (childTarget != null && !childTarget.isDetached() && childTarget.isPlaced()) {
-                        if (commonParent == null)
-                            commonParent = childTarget.parent;
-                        else if (childTarget.parent != commonParent) {
-                            consistentp = false;
-                            if (child.isPlaced())
-                                paraconsistentp = false;
+                    if (child.isPlaced()) {
+                        Taxon childTarget = alignment.getTaxon(child);
+                        if (childTarget != null &&
+                            !childTarget.isDetached() &&
+                            childTarget.isPlaced()) {
+                            if (commonParent == null)
+                                commonParent = childTarget.parent;
+                            else if (childTarget.parent != commonParent) {
+                                consistentp = false;
+                            }
+                            ++count;
                         }
-                        ++count;
                     }
                 }
-                if (paraconsistentp && !consistentp) {
-                    System.out.format("* %s has unplaced children that make it inconsistent\n", node);
-                    // consistentp = true;
-                }
-
                 if (count == 0) {
                     // new & unplaced old children only... copying stuff over to union.
                     Taxon newnode = acceptNew(node, "new/graft");
@@ -203,6 +199,7 @@ class MergeMachine {
                     reject(node, "merged", commonParent, Taxonomy.MERGED);
                 }
             }
+            // the following is just a sanity check
 			for (Taxon child: node.children) {
                 Taxon uchild = alignment.getTaxon(child);
                 if (uchild != null && uchild.parent == null)
@@ -383,7 +380,7 @@ class MergeMachine {
                     child.markEvent("not-placed/does-not-descend");
                 else if (target == uchild.parent) {
                     // A placement here could promote an unplaced taxon in union to placed...
-                    // sort of dangerous, because later taxonomies (e.g. worms) tend to be unreliable
+                    // sort of dangerous, because lower-priority taxonomies tend to be unreliable
                     if (flags > 0) {
                         child.markEvent("not-placed/already-unplaced");
                     } else {

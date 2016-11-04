@@ -10,28 +10,7 @@ this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/
 def load_silva():
     silva = Taxonomy.getTaxonomy('tax/silva/', 'silva')
 
-    # Used in studies pg_2448,pg_2783,pg_2753, seen deprecated on 2015-07-20
-    # These are probably now obviated by improvements in the way silva is merged
-    if silva.maybeTaxon('AF364847') != None:
-        silva.taxon('AF364847').rename('Pantoea ananatis LMG 20103')    # ncbi:706191
-    if silva.maybeTaxon('EF690403') != None:
-        silva.taxon('EF690403').rename('Pantoea ananatis B1-9')  # ncbi:1048262
-
     patch_silva(silva)
-
-    # JAR 2014-05-13 scrutinizing pin() and BarrierNodes.  Wikipedia
-    # confirms this synonymy.  Dail L. prefers -phyta to -phyceae
-    # but says -phytina would be more correct per code.
-    # Skeleton taxonomy has -phyta (on Dail's advice).
-    silva.taxon('Rhodophyceae').synonym('Rhodophyta')    # moot now?
-
-    silva.taxon('Florideophycidae', 'Rhodophyceae').synonym('Florideophyceae')
-    silva.taxon('Stramenopiles', 'SAR').synonym('Heterokonta') # needed by WoRMS
-
-    # JAR 2016-07-29 I could find no argument supporting the name 'Choanomonada'
-    # as a replacement for 'Choanoflagellida'.
-    silva.taxon('Choanomonada', 'Opisthokonta').rename('Choanoflagellida')
-    silva.taxon('Choanomonada', 'Opisthokonta').synonym('Choanoflagellatea') #wikipedia
 
     for name in ['Metazoa',
                  'Fungi',
@@ -40,59 +19,18 @@ def load_silva():
                  'Herdmania',
                  'Oryza',
                  'Chloroplastida']:
+        print '| dropping', name, silva.taxon(name).count()
         silva.taxon(name).trim()
     return silva
 
-# Sample contamination ?
-# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/201
-silva_bad_names = [
-    ('JX888097', 'Trichoderma harzianum'),
-    ('JU096348', 'Sclerotinia homoeocarpa'),
-    ('JU096305', 'Sclerotinia homoeocarpa'),
-    ('HP451821', 'Puccinia triticina'),
-    ('HP459251', 'Puccinia triticina'),
-    ('ACJG01014252', 'Daphnia pulex'),
-    ('ABAV01034229', 'Nematostella vectensis'),  #Excavata should be Opisth.
-    ('JT491765', 'Ictalurus punctatus'),
-
-    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/104
-    ('JN975069', 'Caenorhabditis elegans'),
-
-    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/100
-    ('AEKE02005637', 'Solanum lycopersicum'),
-    ('BABP01087923', 'Solanum lycopersicum'),    # and 22 others...
-
-    # These were formerly in process_silva.py
-    ('ABEG02010941', 'Caenorhabditis brenneri'),
-    ('ABRM01041397', 'Hydra magnipapillata'),
-    ('ALWT01111512', 'Myotis davidii'),  # bat; SILVA puts this in SAR
-    ('HP641760', 'Alasmidonta varicosa'), # bivalve; SILVA puts it in SAR
-    ('JR876587', 'Embioptera sp. UVienna-2012'),
-
-    # Via compare_ncbi_to_silva
-    ('AEKZ01001951', 'Apis florea'),
-    ('AMGZ01279395', 'Elephantulus edwardii'),
-    ('CACX01001880', 'Strongyloides ratti'),
-    ('EU221512', 'Trachelomonas grandis'),
-    ('ABJB010370606', 'Ixodes scapularis'),
-    ('JU112734', 'Agrostis stolonifera'),
-    ('CU179746', 'Danio rerio'),
-    ('ABKP02007643', 'Anopheles gambiae M'),
-    ('AY833572', 'Bemisia tabaci'),
-    ('ABRR02151433', 'Vicugna pacos'),
-    ('CQ786497', 'Crenarchaeota'),
-    ('ADMH01000290', 'Anopheles darlingi'),
-    ('AAGD02009939', 'Caenorhabditis remanei'),
-    ('JT042258', 'Stegodyphus tentoriicola'),
-    ('JW107284', 'Capsicum annuum'),
-    ('JL594206', 'Ophthalmotilapia ventralis'),
-    ('JV125402', 'Aiptasia pallida'),
-
-    # Phylesystem outlier check
-    ('A16379', 'Trachelomonas grandis'),   # euglenida
-]
-
 def patch_silva(silva):
+
+    # Used in studies pg_2448,pg_2783,pg_2753, seen deprecated on 2015-07-20
+    # These are probably now obviated by improvements in the way silva is merged
+    if silva.maybeTaxon('AF364847') != None:
+        silva.taxon('AF364847').rename('Pantoea ananatis LMG 20103')    # ncbi:706191
+    if silva.maybeTaxon('EF690403') != None:
+        silva.taxon('EF690403').rename('Pantoea ananatis B1-9')  # ncbi:1048262
 
     for (anum, name) in silva_bad_names:
         tax = silva.maybeTaxon(anum)
@@ -126,8 +64,7 @@ def patch_silva(silva):
 
     # SILVA's placement of Rozella as a sibling of Fungi is contradicted
     # by Hibbett 2007, which puts it under Fungi.  Hibbett gets priority.
-    # We make the change to SILVA to prevent Nucletmycea from being
-    # labeled 'tattered'.
+    # We make the change to SILVA to prevent an inconsistency.
     silva.taxon('Fungi').take(silva.taxon('Rozella'))
 
     def fix_name(bad, good):
@@ -194,17 +131,74 @@ def patch_silva(silva):
     silva.taxon('HC510467').clobberName('cluster HC510467')
     silva.taxon('HC510467').hide()
 
+    # JAR 2014-05-13 scrutinizing pin() and BarrierNodes.  Wikipedia
+    # confirms this synonymy.  Dail L. prefers -phyta to -phyceae
+    # but says -phytina would be more correct per code.
+    # Skeleton taxonomy has -phyta (on Dail's advice).
+    silva.taxon('Rhodophyceae').synonym('Rhodophyta')    # moot now?
+
+    silva.taxon('Florideophycidae', 'Rhodophyceae').synonym('Florideophyceae')
+    silva.taxon('Stramenopiles', 'SAR').synonym('Heterokonta') # needed by WoRMS
+
+    # JAR 2016-07-29 I could find no argument supporting the name 
+    # 'Choanomonada' as a replacement for 'Choanoflagellida'.  I
+    # suggested to the SILVA folks that they change the name.
+    silva.taxon('Choanomonada', 'Opisthokonta').rename('Choanoflagellida')
+    silva.taxon('Choanomonada', 'Opisthokonta').synonym('Choanoflagellatea') #wikipedia
+
+# Sample contamination ?
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/201
+silva_bad_names = [
+    ('JX888097', 'Trichoderma harzianum'),
+    ('JU096348', 'Sclerotinia homoeocarpa'),
+    ('JU096305', 'Sclerotinia homoeocarpa'),
+    ('HP451821', 'Puccinia triticina'),
+    ('HP459251', 'Puccinia triticina'),
+    ('ACJG01014252', 'Daphnia pulex'),
+    ('ABAV01034229', 'Nematostella vectensis'),  #Excavata should be Opisth.
+    ('JT491765', 'Ictalurus punctatus'),
+
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/104
+    ('JN975069', 'Caenorhabditis elegans'),
+
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/100
+    ('AEKE02005637', 'Solanum lycopersicum'),
+    ('BABP01087923', 'Solanum lycopersicum'),    # and 22 others...
+
+    # These were formerly in process_silva.py
+    ('ABEG02010941', 'Caenorhabditis brenneri'),
+    ('ABRM01041397', 'Hydra magnipapillata'),
+    ('ALWT01111512', 'Myotis davidii'),  # bat; SILVA puts this in SAR
+    ('HP641760', 'Alasmidonta varicosa'), # bivalve; SILVA puts it in SAR
+    ('JR876587', 'Embioptera sp. UVienna-2012'),
+
+    # Via compare_ncbi_to_silva
+    ('AEKZ01001951', 'Apis florea'),
+    ('AMGZ01279395', 'Elephantulus edwardii'),
+    ('CACX01001880', 'Strongyloides ratti'),
+    ('EU221512', 'Trachelomonas grandis'),
+    ('ABJB010370606', 'Ixodes scapularis'),
+    ('JU112734', 'Agrostis stolonifera'),
+    ('CU179746', 'Danio rerio'),
+    ('ABKP02007643', 'Anopheles gambiae M'),
+    ('AY833572', 'Bemisia tabaci'),
+    ('ABRR02151433', 'Vicugna pacos'),
+    ('CQ786497', 'Crenarchaeota'),
+    ('ADMH01000290', 'Anopheles darlingi'),
+    ('AAGD02009939', 'Caenorhabditis remanei'),
+    ('JT042258', 'Stegodyphus tentoriicola'),
+    ('JW107284', 'Capsicum annuum'),
+    ('JL594206', 'Ophthalmotilapia ventralis'),
+    ('JV125402', 'Aiptasia pallida'),
+
+    # Phylesystem outlier check
+    ('A16379', 'Trachelomonas grandis'),   # euglenida
+]
+
+# Hibbett 2007
+
 def load_h2007():
     h2007 = Taxonomy.getTaxonomy('feed/h2007/tree.tre', 'h2007')
-
-    # 2014-04-08 Misspelling
-    if h2007.maybeTaxon('Chaetothryriomycetidae') != None:
-        h2007.taxon('Chaetothryriomycetidae').rename('Chaetothyriomycetidae')
-
-    if h2007.maybeTaxon('Asteriniales') != None:
-        h2007.taxon('Asteriniales').rename('Asterinales')
-    else:
-        h2007.taxon('Asterinales').synonym('Asteriniales')
 
     # h2007/if synonym https://github.com/OpenTreeOfLife/reference-taxonomy/issues/40
     h2007.taxon('Urocystales').synonym('Urocystidales')
@@ -227,8 +221,6 @@ def load_fung():
     if fung.maybeTaxon('90155') != None:
         print 'Removing Fungi 90155'
         fung.taxon('90155').prune(this_source)
-
-    fix_basal(fung)
 
     # smush folds sibling taxa that have the same name.
     # fung.smush()
@@ -623,10 +615,6 @@ def patch_ncbi(ncbi):
         ncbi.taxon('Ophion (Platophion)').rename('Platophion')
     # TBD: deal with 'Plasmodium (Haemamoeba)' and siblings
 
-    # 2016-07-01 JAR while studying rank inversions
-    if ncbi.taxon('Vezdaeaceae').getRank() == 'genus':
-        ncbi.taxon('Vezdaeaceae').setRank('family')
-
     # JAR 2016-07-29 Researched Choano* taxa a bit.  NCBI has a bogus synonymy with
     # paraphyletic Choanozoa.  SILVA calls this taxon Choanomonada (see above).
     ncbi.taxon('Choanoflagellida', 'Opisthokonta').notCalled('Choanozoa')
@@ -666,8 +654,6 @@ def load_worms():
     worms.taxon('Biota').rename('life')
     worms.taxon('Animalia').synonym('Metazoa')
 
-    fix_basal(worms)
-
     # 2015-02-17 According to WoRMS web site.  Occurs in pg_1229
     if worms.maybeTaxon('Scenedesmus communis') != None:
         worms.taxon('Scenedesmus communis').synonym('Scenedesmus caudata')
@@ -699,7 +685,6 @@ def load_gbif():
     # means the rank-skipped children are incertae sedis.  Mark them so.
     gbif.analyzeMajorRankConflicts()
 
-    fix_basal(gbif)  # creates a Eukaryota node
     gbif.taxon('Animalia').synonym('Metazoa')
 
     patch_gbif(gbif)
@@ -869,7 +854,6 @@ def load_irmng():
 
     irmng.taxon('Viruses').prune("taxonomies.py")
 
-    fix_basal(irmng)
     irmng.taxon('Animalia').synonym('Metazoa')
 
     # JAR 2014-04-26 Flush all 'Unaccepted' taxa
@@ -973,38 +957,3 @@ def load_irmng():
     irmng.taxon('Tylosurus').notCalled('Tylosaurus')
 
     return irmng
-
-# Common code for the 'old fashioned' taxonomies IF, GBIF, IRMNG,
-# WoRMS - important for getting divisions in the right place, which is
-# important for homonym separation.
-
-def fix_basal(tax):
-    fix_protists(tax)
-
-# Common code for GBIF, IRMNG, Index Fungorum
-def fix_protists(tax):
-    euk = tax.maybeTaxon('Eukaryota')
-    if euk == None:
-        euk = tax.newTaxon('Eukaryota', 'domain', 'ncbi:2759')
-        euk.unsourced = True
-    co = tax.maybeTaxon('cellular organisms')
-    if co != None: co.take(euk)
-    else:
-        li = tax.maybeTaxon('life')
-        if li != None: li.take(euk)
-        else:
-            print('* No parent "life" for Eukaryota, probably OK')
-
-    for name in ['Animalia', 'Fungi', 'Plantae', 'Haptophyta', 'Metazoa']:
-        node = tax.maybeTaxon(name)
-        if node != None:
-            euk.take(node)
-
-    for name in ['Chromista', 'Protozoa', 'Protista']:
-        bad = tax.maybeTaxon(name)
-        if bad != None:
-            euk.take(bad)
-            bad.hide()   # recursive
-            for child in bad.children:
-                child.incertaeSedis()
-            bad.elide()

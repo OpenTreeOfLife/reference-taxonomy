@@ -40,11 +40,6 @@ def create_ott():
     for name in names_of_interest:
         ott.eventLogger.namesOfInterest.add(name)
 
-    # When lumping, prefer to use ids that have been used in OTU matching
-    # This list could be used for all sorts of purposes...
-    ott.loadPreferredIds('ids_that_are_otus.tsv', False)
-    ott.loadPreferredIds('ids_in_synthesis.tsv', True)
-
     # idspace string 'skel' is magical, see Taxon.addSource
     ott.setSkeleton(Taxonomy.getTaxonomy('tax/skel/', 'skel'))
 
@@ -62,7 +57,8 @@ def create_ott():
     h2007_to_ott = ott.absorb(h2007)
 
     # Index Fungorum
-    (fungi, fungorum_sans_fungi) = split_fungorum(ott)
+    fungorum = taxonomies.load_fung()
+    (fungi, fungorum_sans_fungi) = split_taxonomy(fungorum, 'Fungi')
     ott.absorb(fungi, align_fungi(fungi, ott))
     check_invariants(ott)
 
@@ -76,26 +72,22 @@ def create_ott():
     # those clades from worms and absorb them before NCBI
     worms = taxonomies.load_worms()
     # Malacostraca instead of Decapoda because M. is in the skeleton
-    (malacostraca, worms_sans_malacostraca) = split_worms('Malacostraca',worms)
+    (malacostraca, worms_sans_malacostraca) = split_taxonomy(worms, 'Malacostraca')
     ott.absorb(malacostraca)
-    (cnidaria,low_priority_worms) = split_worms('Cnidaria',worms_sans_malacostraca)
+    (cnidaria, low_priority_worms) = split_taxonomy(worms_sans_malacostraca, 'Cnidaria')
     ott.absorb(cnidaria)
 
     # NCBI
     ncbi = taxonomies.load_ncbi()
-
-    # Get mapping from NCBI to OTT, derived via SILVA and Genbank.
-    # ... need to pass silva alignment, not OTT here
-    mappings = load_ncbi_to_silva(ncbi, silva, silva_to_ott)
-
     ncbi_to_ott = align_ncbi(ncbi, silva, ott)
     ott.absorb(ncbi, ncbi_to_ott)
 
-    debug_divisions('Reticularia splendens', ncbi, ott)
-
-    # ... need to pass silva alignment, not OTT here
+    # Reporting
+    # Get mapping from NCBI to OTT, derived via SILVA and Genbank.
+    mappings = load_ncbi_to_silva(ncbi, silva, silva_to_ott)
     compare_ncbi_to_silva(mappings, silva_to_ott)
 
+    debug_divisions('Reticularia splendens', ncbi, ott)
     check_invariants(ott)
 
     for (ncbi_id, ott_id, name) in ncbi_ott_assignments.ncbi_assignments_list:
@@ -109,8 +101,7 @@ def create_ott():
         else:
             print '** No NCBI taxon %s - %s' % (ncbi_id, name)
 
-    # WoRMS
-    low_priority_worms.taxon('Biota').synonym('life')
+    # Low-priority WoRMS
     # This is suboptimal, but the names are confusing the division logic
     low_priority_worms.taxon('Glaucophyta'). \
         absorb(low_priority_worms.taxon('Glaucophyceae'))
@@ -125,7 +116,6 @@ def create_ott():
     gbif_to_ott = align_gbif(gbif, ott)
     ott.absorb(gbif, gbif_to_ott)
     debug_divisions('Enterobryus cingaloboli', gbif, ott)
-
     # Cylindrocarpon is now Neonectria
     cyl = gbif_to_ott.image(gbif.taxon('Cylindrocarpon', 'Ascomycota'))
     if cyl != None:
@@ -133,9 +123,7 @@ def create_ott():
 
     # IRMNG
     irmng = taxonomies.load_irmng()
-
     hide_irmng(irmng)
-
     a = align_irmng(irmng, ott)
     if True:                   # Include taxa from irmng?
         ott.absorb(irmng, a)
@@ -143,20 +131,35 @@ def create_ott():
         ott.align(a)
         a.transferProperties(irmng)
 
+    # Misc fixups
     taxonomies.link_to_h2007(ott)
-
     get_default_extinct_info_from_gbif(gbif, gbif_to_ott)
 
     check_invariants(ott)
     # consider try: ... except: print '**** Exception in patch_ott'
     patch_ott(ott)
 
-    # Experimental...
-    if False:
-        unextinct_ncbi(ncbi, ott)
-
     # Remove all trees but the largest (or make them life incertae sedis)
     ott.deforestate()
+
+    # End of topology changes.  Now assign ids.
+    assign_ids(ott)
+
+    ott.check()
+
+    # Reporting
+    report_on_h2007(h2007, h2007_to_ott)
+
+    # Morganella mystery
+    ott.taxon('973932').show()
+
+    # For deprecated id report (dump)
+    ott.loadPreferredIds('ids_that_are_otus.tsv', False)
+    ott.loadPreferredIds('ids_in_synthesis.tsv', True)
+
+    return ott
+
+def assign_ids(ott):
 
     # -----------------------------------------------------------------------------
     # OTT id assignment
@@ -238,15 +241,6 @@ def create_ott():
     # Mint ids for new nodes
     ott.assignNewIds(new_taxa_path)
 
-    ott.check()
-
-    report_on_h2007(h2007, h2007_to_ott)
-
-    # Morganella mystery
-    ott.taxon('973932').show()
-
-    return ott
-
 def hide_irmng(irmng):
     # Sigh...
     # https://github.com/OpenTreeOfLife/feedback/issues/302
@@ -271,6 +265,18 @@ def debug_divisions(name, ncbi, ott):
             print o, o.getDivision()
             o = o.parent
     print '##'
+
+# Splits a taxonomy into two parts: 1. the subtree rooted at taxon_name
+# and 2. everything else
+def split_taxonomy(taxy, taxon_name):
+    # get the taxon with name=taxon_name from the taxonomy
+    t = taxy.taxon(taxon_name)
+    # get the subtree rooted at this taxon
+    subtree = taxy.select(t)
+    # remove all of the descendants of this taxon
+    t.trim()
+    taxy_sans_subtree = taxy
+    return (subtree, taxy_sans_subtree)
 
 
 # ----- Ctenophora polysemy -----
@@ -346,16 +352,6 @@ def align_silva(silva, ott):
 # things, mostly eukaryotic microbes.  We should treat the former as
 # more authoritative than NCBI, and the latter as less authoritative
 # than NCBI.
-
-def split_fungorum(ott):
-    fungorum = taxonomies.load_fung()
-
-    fungi_root = fungorum.taxon('Fungi')
-    fungi = fungorum.select(fungi_root)
-    fungi_root.trim()
-
-    print "Fungi in Index Fungorum has %s nodes"%fungi.count()
-    return (fungi, fungorum)
 
 def align_fungi(fungi, ott):
     a = ott.alignment(fungi)
@@ -453,19 +449,6 @@ def align_lamiales(study713, ott):
     a.same(study713.taxon('Chloroplastida'), ott.taxon('Chloroplastida'))
     # Buchnera is also a hemihomonym with a bacterial genus.  Checked in inclusions.csv
     return a
-
-# ----- WoRMS -----
-# splits worms into two parts: 1. the subtree rooted at taxon_name
-# and 2. everything else
-def split_worms(taxon_name,worms):
-    # get the taxon with name=taxon_name from worms
-    t = worms.taxon(taxon_name)
-    # get the subtree rooted at this taxon
-    subtree = worms.select(t)
-    # remove all of the descendants of this taxon
-    t.trim()
-    worms_sans_subtree = worms
-    return (subtree, worms_sans_subtree)
 
 # ----- NCBI Taxonomy -----
 
@@ -594,6 +577,7 @@ def load_ncbi_to_silva(ncbi, silva, silva_to_ott):
     return mappings
 
 # Report on differences between how NCBI and OTT map to SILVA
+# 2016-11-03 This is a disturbingly large number: 67254
 
 def compare_ncbi_to_silva(mappings, silva_to_ott):
     problems = 0
@@ -616,9 +600,10 @@ def align_ncbi_to_silva(mappings, a):
         changes += 1
     print changes, '| NCBI taxa mapped to SILVA clusters'
 
-
+# Align low-priority WoRMS
 def align_worms(worms, ott):
     a = ott.alignment(worms)
+    a.same(worms.taxon('Biota'), ott.taxon('life'))
     a.same(worms.taxon('Plantae'), ott.taxon('Archaeplastida'))
 
     a.same(worms.taxonThatContains('Trichosporon', 'Trichosporon lodderae'),
@@ -925,6 +910,9 @@ def align_irmng(irmng, ott):
 # ----- Final patches -----
 
 def patch_ott(ott):
+
+    # troublemakers.  we don't use them
+    ott.taxon('Viruses').prune()
 
     # Romina 2014-04-09: Hypocrea = Trichoderma.
     # IF and all the other taxonomies have both Hypocrea and Trichoderma.
@@ -1311,6 +1299,10 @@ def patch_ott(ott):
     # between, but it's not really necessary, so I won't bother
     ott.taxon('Hyaloraphidiales', 'Fungi').take(ott.taxon('Hyaloraphidium', 'Fungi'))
 
+    # 2016-07-01 JAR while studying rank inversions.  NCBI has wrong rank.
+    if ott.taxon('Vezdaeaceae').getRank() == 'genus':
+        ott.taxon('Vezdaeaceae').setRank('family')
+
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/195
     ott.taxon('Opisthokonta').setRank('no rank')
 
@@ -1477,34 +1469,6 @@ def get_default_extinct_info_from_gbif(gbif, gbif_to_ott):
                     taxon.extinct()
     infile.close()
     print '| Flagged %s of %s taxa from paleodb\n' % (flagged, paleos)
-
-def unextinct_ncbi(ncbi, ncbi_to_ott):
-    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/68
-    # 'Extinct' would really mean 'extinct and no sequence' with this change
-    print 'Non-extincting NCBI'
-
-    def recur(node):
-        unode = ncbi_to_ott.image(node)
-        if node.children == None:
-            if unode == None:
-                return True
-            else:
-                return unode.isAnnotatedExtinct()
-        else:
-            inct = True
-            for child in node.children:
-                inct = inct and recur(child)
-            if not inct:
-                if unode != None and unode.isAnnotatedExtinct():
-                    # Contains a possibly extant descendant...
-                    print '* Changing from extinct to extant because in NCBI', unode.name, unode.id
-                    unode.extant()
-                return False
-            else:
-                return True
-
-    for node in ncbi.roots():
-        recur(node)
 
 
 # Reports

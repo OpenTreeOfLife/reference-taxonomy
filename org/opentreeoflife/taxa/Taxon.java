@@ -725,6 +725,10 @@ public class Taxon extends Node {
 				child.prune("trim");
 	}
 
+	public boolean prune() {
+        return this.prune("");
+    }
+
 	// Delete this node and all of its descendants.
 	public boolean prune(String reason) {
         this.detach();

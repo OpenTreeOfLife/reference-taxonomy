@@ -743,8 +743,7 @@ public class UnionTaxonomy extends Taxonomy {
                                 replacementId = "<" + unode.parent.id;
                                 witness = unode.parent.name;
                             } else {
-                                Taxon target = node.lub;
-                                if (target == null) target = unode.parent;
+                                Taxon target = unode.parent;
                                 reason = "emptied-container";
                                 replacementId = "<" + target.id;
                                 witness = target.name;
@@ -771,7 +770,7 @@ public class UnionTaxonomy extends Taxonomy {
                     } else
                         this.markEvent("continued-hidden", node);
                 } else if (node.isHidden())
-                    // NOt really a deprecation event!  Nice to know about though.
+                    // NOT really a deprecation event!  Nice to know about though.
                     this.markEvent("not-deprecated/exposed", node);
 
                 if (replacementId == null) {
@@ -784,8 +783,11 @@ public class UnionTaxonomy extends Taxonomy {
             }
             if (replacementId == null) replacementId = "*";
             String serious = "";
-            if (important != null && important.inSynthesis)
-                serious = "synthesis";
+            if (important != null)
+                if (important.inSynthesis)
+                    serious = "synthesis";
+                else
+                    serious = "phylesystem";
 
             if (reason != null) {
                 out.format("%s\t%s\t%s\t%s\t" + "%s\t%s\t%s\t" + "%s\t\n",

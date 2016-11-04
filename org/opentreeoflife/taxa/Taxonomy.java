@@ -1012,7 +1012,7 @@ public abstract class Taxonomy {
     // Recursion
 	// node is in source taxonomy, tax is the destination taxonomy ('union' or similar)
 	static Taxon select(Taxon node, Taxonomy tax) {
-		Taxon sam = tax.dup(node, "select");
+		Taxon sam = tax.dupThoroughly(node, "select");
 		if (node.children != null)
 			for (Taxon child : node.children) {
 				Taxon c = select(child, tax);
@@ -1069,7 +1069,7 @@ public abstract class Taxonomy {
 	}
 
 	Taxon selectToDepth(Taxon node, Taxonomy tax, int depth) {
-		Taxon sam = tax.dup(node, "selectToDepth");
+		Taxon sam = tax.dupThoroughly(node, "selectToDepth");
 		if (node.children != null && depth > 0)
 			for (Taxon child : node.children) {
 				Taxon c = selectToDepth(child, tax, depth-1);
@@ -1095,13 +1095,13 @@ public abstract class Taxonomy {
 		if (node.isHidden()) return null;
 		Taxon sam = null;
 		if (node.children == null)
-			sam = tax.dup(node, "selectVisible");
+			sam = tax.dupThoroughly(node, "selectVisible");
 		else
 			for (Taxon child : node.children) {
 				Taxon c = selectVisible(child, tax);
 				if (c != null) {
 					if (sam == null)
-						sam = tax.dup(node, "selectVisible");
+						sam = tax.dupThoroughly(node, "selectVisible");
 					sam.addChild(c);
 				}
 			}
@@ -1178,7 +1178,7 @@ public abstract class Taxonomy {
 		if (newChildren.size() == 1)
 			return newChildren.get(0);
 
-		Taxon sam = tax.dup(node, "sample");
+		Taxon sam = tax.dupThoroughly(node, "sample");
 		for (Taxon c : newChildren)
 			sam.addChild(c);
 		return sam;
@@ -1211,7 +1211,7 @@ public abstract class Taxonomy {
 
 	Taxon chop(Taxon node, int m, int n, List<Taxon> chopped, Taxonomy tax) {
 		int c = node.count();
-		Taxon newnode = tax.dup(node, "sample");
+		Taxon newnode = tax.dupThoroughly(node, "sample");
 		if (m < c && c <= n) {
 			newnode.clobberName(newnode.name + " (" + node.count() + ")");
 			chopped.add(node);
@@ -1230,6 +1230,13 @@ public abstract class Taxonomy {
         if (node.id != null)
             newnode.setId(node.id);
         node.copySynonymsTo(newnode);
+        return newnode;
+    }
+
+    Taxon dupThoroughly(Taxon node, String reason) {
+        Taxon newnode = dup(node, reason);
+        node.copySourceIdsTo(newnode);
+        newnode.properFlags = node.properFlags;
         return newnode;
     }
 

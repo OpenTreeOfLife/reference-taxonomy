@@ -158,7 +158,7 @@ class MergeMachine {
                     augment(child, sink);
                 // Examine mapped parents of the children
                 boolean consistentp = true;
-                Taxon commonParent = null;    // should end up being node.lub
+                Taxon commonParent = null;    // should end up being targetMrca(node)
                 int count = 0;
                 for (Taxon child : node.children) {
                     if (child.isPlaced()) {
@@ -214,8 +214,9 @@ class MergeMachine {
         // Put the new children unplaced under the mrca of the placed children.
         reportConflict(node);
         // Tighten it if possible... does this always make sense?
-        if (node.lub != null && node.lub.descendsFrom(sink))
-            sink = node.lub;
+        Taxon unode = alignment.getTargetMrca(node);
+        if (unode != null && unode.descendsFrom(sink))
+            sink = unode;
         takeOn(node, sink, Taxonomy.UNPLACED);
         reject(node, "reject/inconsistent", sink, Taxonomy.INCONSISTENT);
     }
@@ -270,7 +271,6 @@ class MergeMachine {
     // If we leave it out, there is often nothing for the previous OTT version to map it to.
 
     void reject(Taxon node, String reason, Taxon replacement, int flag) {
-        checkRejection(node, reason); // for diagnostics
         // Could leave lub behind as a forwarding address.
         // But be careful about replacement ids when doing deprecation.
         // HEURISTIC.
@@ -324,17 +324,6 @@ class MergeMachine {
         newnode.comapped = node;
         answer.maybeLog(target);
         return newnode;
-    }
-
-    void checkRejection(Taxon node, String reason) {
-        if (union != null && union.importantIds != null) {
-            List<Node> probe = union.importantIds.lookup(node.name);
-            if (probe != null) {
-                Answer.no(node, null, "reject/otu", reason).maybeLog(union);
-                // System.out.format("| Rejecting OTU %s (ott:%s) because %s\n", node, node.id, reason);
-                // this.show();
-            }
-        }
     }
 
     // implement a refinement
@@ -451,9 +440,10 @@ class MergeMachine {
 
 	// 3799 conflicts as of 2014-04-12
 	void reportConflict(Taxon node) {
-        // node.lub is mrca of the children's map targets and/or lubs ...
         Taxon alice = null, bob = null, mrca = null;
         boolean foundit = false;
+        // unode is mrca of the children's map targets and/or lubs ...
+        Taxon unode = alignment.getTargetMrca(node);
         for (Taxon child: node.children) {
 
             // This was a particulary hard-to-debug problem... the solution ended up
@@ -475,7 +465,7 @@ class MergeMachine {
                     Taxon newmrca = mrca.carefulMrca(bob);
                     if (newmrca != null)
                         mrca = newmrca;
-                    if (mrca == node.lub)
+                    if (mrca == unode)
                         break;
                 }
             }
@@ -483,7 +473,7 @@ class MergeMachine {
 
         if (foundit) {
             System.err.format("** Pseudostomum is in inconsistent taxon %s, moving to %s\n",
-                              node, node.lub);
+                              node, unode);
             for (Taxon child : node.children) {
                 System.err.format("**   Child: %s\n", child);
                 Taxon uchild = alignment.getTaxon(child);
@@ -567,7 +557,7 @@ class Conflict {
                                      (isHidden ? 0 : 1));
         } catch (Exception e) {
             e.printStackTrace();
-            System.err.format("*** Conflict info: %s %s %s %s\n", node, node.lub, alice, bob);
+            System.err.format("*** Conflict info: %s %s %s\n", node, alice, bob);
             return "failed";
         }
 	}

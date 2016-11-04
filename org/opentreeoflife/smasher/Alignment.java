@@ -39,6 +39,8 @@ public class Alignment {
     Taxonomy target;
 
     private Map<Taxon, Answer> mappings;
+    // TBD private Map<Taxon, Answer> targetMrcas;
+    // TBD private Map<Taxon, Answer> sourceMrcas;
 
     Alignment(Taxonomy source, Taxonomy target) {
         this.source = source;
@@ -88,6 +90,12 @@ public class Alignment {
         if (a == null) return null;
         else if (a.isYes()) return a.target;
         else return null;
+    }
+
+    // mrca in target of target-mrcas of children of source node,
+    // or else target node corresponding to tip
+    public Taxon getTargetMrca(Taxon node) {
+        return node.lub;
     }
 
     public final void align() {
@@ -250,14 +258,15 @@ public class Alignment {
 
     // Input is in source taxonomy, return value is in target taxonomy
 
-    Taxon computeLubs(Taxon node) {
+    void computeLubs(Taxon node) {
         if (node.children == null)
-            return node.lub = getTaxon(node);
+            node.lub = getTaxon(node);
         else {
             Taxon mrca = null;  // in target
             for (Taxon child : node.children) {
-                Taxon a = computeLubs(child); // in target
+                computeLubs(child);
                 if (child.isPlaced()) {
+                    Taxon a = this.getTaxon(child);
                     if (a != null) {
                         if (a.noMrca()) continue;
                         a = a.parent; // in target
@@ -303,7 +312,6 @@ public class Alignment {
                     setAnswer(node, answer);
                 }
             }
-            return getTaxon(node);
         }
     }
 
@@ -361,6 +369,7 @@ public class Alignment {
     }
 
     // Map source taxon to nearest available target taxon
+    // Won't this always be the same as getTargetMrca ? Or awfully similar?
     public Taxon bridge(Taxon node) {
         Taxon unode;
         while ((unode = getTaxon(node)) == null) {

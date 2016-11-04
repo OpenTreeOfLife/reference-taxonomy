@@ -30,12 +30,6 @@ Polysemy analysis:
      * could be created via skeleton separation
      * could be created via membership separation
 
-## Manual vs. automatic synthesis operations
-
-It's not just turn-and-go.
-
- * number of manual alignment operations required
-
 ## Characterizing the assembly process
 
 Alignment
@@ -45,19 +39,21 @@ Alignment
     * number of taxa contributed (incrementally) by that source
     * number of taxa in the source matched to the developing OTT
 
-    source | binomial-taxa-from-that-source | binomial-taxa-exclusively-from-that-source
-    if | 237482 | 18291
-    worms | 258378 | 53233
-    silva | 13953 | 44
-    ncbi | 360455 | 88358
-    gbif | 1629523 | 486411
-    irmng | 1111550 | 313261
-    addition | 15 | 15
+[The following is not that table, but similar]
 
- * Taxa coming from only a single source: 959613
+    source   | binomial-taxa-from-that-source
+    if       |  237482
+    worms    |  258378
+    silva    |   13953
+    ncbi     |  360455
+    gbif     | 1629523
+    irmng    | 1111550
+    addition |      15
+
+Breakdown of source nodes by fate
 
  * Total number of source nodes: ...
- * No candidates: ...
+ * No candidates: ... about 959613 ...
  * >=1 candidate, no match / match:
  * >1 candidate, no match / unique match / ambiguity
 
@@ -74,12 +70,20 @@ Merge
 [number of taxa unplaced in one source that get placed by a later
 source????  that's too detailed I think.]
 
+## Manual vs. automatic synthesis operations
+
+It's not just turn-and-go.
+
+ * number of manual alignment operations required
+
+recent example of bad alignment: Morganella fungus -> bacteria
+
 ## Evaluation of alignment heuristics
 
 * effectiveness of the various alignment heuristics
-   * do certain heuristics work better / worse for different types of problems?
+   * KC: do certain heuristics work better / worse for different types of problems?
      [how would one assess this ?? what are examples of 'types of problems'?]
-   * since the process runs through a set of heuristics until it finds a
+   * KC: since the process runs through a set of heuristics until it finds a
      solution or gives up, can we say anything about the number of heuristics
      required across source / union node combinations (or the number of unresolved
      ambiguities)? i.e. 70% of combinations solved with 1st heuristic, 20% with
@@ -98,14 +102,15 @@ add up all these numbers for all 8 merges, and format it nicely.]
  * same-division-weak: 61
  * same-primary-name: 2235
 
-If the alignment loop exhausts all heuristics without getting any
+If the alignment loop exhausts all heuristics without getting a
 'yes' or 'no' from any of them, we have either alignment by process of
 elimination, if a single candidate remains; or an ambiguity, if there
 are several.  There were 116269 alignments by elimination, and 8088
 amiguities.  Of the ambiguities, 7749 were of tips, 339 of internal
-nodes.  Ambiguous tips are simply ignored, while the ambiguous
-internal nodes lead to multiple nodes with the same name-string [but this
-ought to be explained in the methods section].
+nodes.  Ambiguous tips are simply ignored [I think the method section
+says this], while the ambiguous internal nodes may lead to multiple nodes
+with the same name-string [but this ought to be explained in the
+methods section].  (Some of these nodes may be eliminated during merge.)
 
 ## Evaluating the taxonomy relative to goals
 
@@ -114,68 +119,81 @@ How well are these requirements met?
 
 ### OTU coverage
 
-We set out to get coverage of the Open Tree corpus of phylogenetic
-trees.  Curators have mapped 514346 of 538728 OTUs from 2871 curated
-studies to OTT taxa, or 95.5%.  (371 studies, those having less than
-50% OTUs mapped, were excluded, as such a low mapping rate usually
-indicates incomplete curation.)
+We set out to cover the OTUs in the Open Tree corpus of phylogenetic
+trees.  To assess this, we looked at the 2871 curated studies having
+at least 50% of OTUs mapped to OTT (excluding 371 from the total set).
+A low mapping rate usually indicates incomplete curation, not an
+inability to map to OTT.  Curators have mapped 514346 of 538728 OTUs
+from these studies to OTT taxa, or 95.5%.
 
-To assess the reason the remaining 4.5% being unmapped, we
-investigated a small random sample of 10 OTUs.  In three cases, the
-label was a genus name followed by "sp" (e.g. "Euglena sp"),
-suggesting an unwillingness to make any use of an OTU not classified
-to species.  In the remaining seven cases, the taxon was already in
-OTT, and additional curator effort would find it.  (Two of these were
-misspellings in the phylogeny source; one was present under a
-different name-string (subspecies in OTT, valid species in study); and
-in the remaining four cases, the taxon may have been added to OTT
-after the study was curated, or the curation task was left
-incomplete.)
+To assess the reason for the remaining 4.5% of OTUs being unmapped, we
+investigated a random sample of 10 OTUs.  In three cases, the label
+was a genus name in OTT followed by "sp" (e.g. "Euglena sp"),
+suggesting the curator's unwillingness to make use of an OTU not
+classified to species.  In the remaining seven cases, the taxon was
+already in OTT, and additional curator effort would have found it.
+Two of these were misspellings in the phylogeny source; one was
+present under a slightly different name-string (subspecies in OTT,
+species in study, the study reflecting a very recent
+reclassification); and in the remaining four cases, either the taxon
+was added to OTT after the study was curated, or the curation task was
+left incomplete.
 
-[need to explain what curation has to do with it?... appears to be
-wandering off topic]
+[do we need to explain what curation has to do with it?...]
 
 * compare OTT's coverage of phylesystem with coverage by NCBI, GBIF
   (i.e. how well does OTT do what it's supposed to do, compared to
-  ready-made taxonomies?  OTT gets 95% of OTUs, NCBI only gets ??92%??)
+  ready-made taxonomies?  OTT gets 95% of OTUs, NCBI only gets ??92%??
+  (besides just being interesting, this will tell us whether we could
+   have gotten away with just NCBI, or if GBIF and the rest were really 
+   needed.)
+  (how about GNI?? trying to think of an independent name source 
+  to compare to, as a control?)
 * number of OTUs that are mapped, that come from NCBI - I previously
-  measured this as about 97% of OTUs in phylesystem
-* what about unmapped OTUs?  how many are binomials?
-  (need to distinguish unmapped because someone tried and failed, from
-  unmapped because nobody bothered.  check to see how many other OTUs
-  in the study are mapped (measure of attempt), and/or just look up
-  binomials in OTT and look for failures)
+  measured this as about 97% of OTUs in phylesystem (actually 97% 
+  of taxon names, not OTUs)
+* what about unmapped OTUs?  of those, how many are binomials (and 
+  presumably mappable)?
 
 [can we find *any* OTUs that do not have a taxon in OTT?
-rather difficult.]
+rather difficult.  this is what the additions feature was for.]
 
 ### Taxonomic coverage
 
-OTT has 2.1M, vs. 1.6M for Catalogue of Life (CoL).  The number is
-larger because OTT has many names that are either not valid or not
-current.
+OTT has 2.1M binomials (presumptive valid names), vs. 1.6M for
+Catalogue of Life (CoL).  The number is larger because OTT has many
+names that are either not valid or not currently accepted.
 
-Since GBIF includes the 2011 edition of CoL [2011], OTT's coverage
-includes everything in that edition of CoL.
+Since the GBIF source we used includes the 2011 edition of CoL [2011],
+OTT's coverage includes everything in that edition of CoL.
 
-This level of coverage meets Open Tree's taxonomic coverage goal.
+This level of coverage would seem to meet Open Tree's taxonomic
+coverage goal [hmm, hard to make a definite statement since the goal
+is 'best effort' rather than quantitative]
 
-[Consider evaluating against HHDB (hemihomonyms) - for coverage and/or
-accuracy (ideally we would have all senses of each HHDB polysemy)]
+[As another coverage check, and test of alignment, consider evaluating
+against HHDB (hemihomonyms) - (ideally we would have all senses of
+each HHDB polysemy, in the right places)
 
 ### Backbone quality
 
-[Not clear what to measure here.]
-
-* what comparison to make - NCBI, GBIF, IRMNG ... ?  ratio of
-  nonterminal to terminal (branching factor) ... ?  average branching factor controlled
-  for tip set ... ?
-* how phylogenetic is it?  how many nodes are found paraphyletic as a result of supertree synthesis?
-  2614 contested taxa (out of ...?).  ideally we would compare meaningfully to NCBI, GBIF.
+* We can check for resolution compared to other taxonomies, e.g. NCBI, GBIF, 
+  IRMNG.  Crude measure is ratio of
+  nonterminal to terminal = average branching factor.  Might be good
+  to control for tip set (use same set of species for every taxonomy)
+  and/or only look at taxa above the species level.
+* How phylogenetically accurate is it?  One test of this: How many
+  nodes are found paraphyletic as a result of supertree synthesis?
+  2614 contested taxa (out of ...?).  Ideally we would compare
+  meaningfully to NCBI, GBIF, but this would require new syntheses...
   http://files.opentreeoflife.org/synthesis/opentree7.0/output/subproblems/index.html#contested
 
-Comparing the OTT backbone with Ruggiero et al. taxonomy of all life to order:
-(counts are for taxa *above* order.)  (Maybe a 3-way comparison, OTT / Ruggiero / synthesis?)
+Comparing the OTT backbone with Ruggiero et al. taxonomy of all life
+to order: (counts are for taxa *above* order.)  (Maybe a 3-way
+comparison, OTT / Ruggiero / synthesis?  We can ask which has fewer
+inconsistencies, Ruggiero or OTT.
+
+Following is the breakdown of Ruggiero taxa in comparison to OTT:
 
  * conflicts\_with: 83  (R. taxa that are paraphyletic per OTT)
  * resolves: 119  (R. taxa that provide resolution to OTT)
@@ -185,7 +203,10 @@ Comparing the OTT backbone with Ruggiero et al. taxonomy of all life to order:
  * unmapped tips: 141 (R. orders that were not found in OTT)
  * other: 21 (higher R. taxa none of whose orders is in OTT)
 
-(this could be a pie chart, maybe?)
+With a bit of work, could get similar numbers for R. vs. synth and OTT
+vs. synth.
+
+[Using the synthetic tree as ground truth seems a bit risky.]
 
 ### Ongoing update
 
@@ -200,11 +221,11 @@ agreements in order to obtain its taxonomic sources, it is not obliged
 to require any such agreement from users of the taxonomy.  Therefore
 users are not restricted by contract (terms of use).  In addition, the
 taxonomy is not creative expression, and therefore copyright
-limitations do not apply either.
+limitations do not apply either.  Therefore use of OTT is unrestricted.
 
 Certainly the taxonomy could be improved by incorporating closed
-sources such as CoL and the IUCN Red List, but doing so would conflict
-with the open data goal.
+sources such the IUCN Red List, but doing so would conflict with the
+project's goal of providing open data.
 
 
 # Discussion
@@ -249,23 +270,27 @@ with the open data goal.
 
 ## File formats
 
-[NMF asks about choice of common format for converted source
-taxonomies.]
+Every source taxonomy we imported is provided in a different format,
+so there is no shared import code on the import side.  The Open Tree
+taxonomy exchange format is a simple, ad hoc format specific to Open
+Tree: a taxonomy is represented as a three TSV tables, for taxa,
+synonyms, and identifier aliases (merges).
+This form is trivially parsed using tools built into modern
+programming languages.
 
-JAR answer: every source taxonomy we used is provided in a different
-format, so there is no shared code on the import side.  (could review
-them all...)  The Open Tree "common format" is an ad hoc format
-specific to Open Tree: a taxonomy is represented as a small set of TSV
-tables, trivially parsed using tools built into modern programming
-languages.  Smasher also reads and writes Newick format.
+GBIF and IRMNG are provided using quite different subsets of Darwin
+Core Archive (DwCA) format.  [reference GBIF] With some effort we might be
+able to import general Darwin Core Archive (DwCA), JSON-LD
+[reference W3C], or CSVW [reference W3C] internally and/or for publication.
+If we were going to import a large number of sources in one of these
+formats, establishing such facilities would be a good investment.
 
-With some effort we might be able to use Darwin Core Archive (DwCA)
-[reference], JSON-LD [reference], or CSVW [reference] internally
-and/or for publication, but would this be appropriate, and would it be
-worth the effort?  In any data integration task, parsing the data is
+Smasher reads and writes Newick format.
+
+In any data integration task, parsing the data is
 usually the least difficult part; most of the effort is in data
 cleaning and alignment.  Therefore conformance to standards has not
-been a priority for the project.]
+been a priority for the project.
 
 ## Extinct/extant annotations
 
@@ -346,16 +371,20 @@ I guess and make best effort.]
 ## Potential improvements / future work
 
 * It would be good to find an alternative to the skeleton.  One thing
-  to try is continuity: we know that taxa cannot be mapped only on
-  name, but it is possible that pairs of 'nearby' taxa *can* be mapped
-  by name: if A and B are close (in the taxonomic tree), and A maps by
-  name to A' and B to B', and A' and B' are close, then A and B map to
-  A' and B'.
+  to try is continuity: we know that taxa cannot be matched only on
+  name, but it is possible that pairs of 'nearby' taxa *can* be matched
+  by name: if A and B are close in the source, and A maps by
+  name to A' and B to B', and A' and B' are close in the target, 
+  then it is very likely that A and B map to A' and B', respectively.
+  [Probably a subject for another paper.]
 * Would be good to try membership based alignment of internal nodes.
+  Not clear what to do when membership based and name based
+  (heuristic) alignments conflict.
 * Should deal with the large number of higher-taxon ambiguities due to
-  disjointness - probably most could be merged
-* More work on *removing* names
-* Rank inversions are probably errors and should be fixed.
+  equivocal disjointness - probably most could be merged
+* More work on *removing* names (?? what did I mean by that ??)
+* Rank inversions are probably errors and should be fixed somehow.
 * Anchoring OTT ids to source taxonomy records (particular version).
+  (sort of done.)
 * microbes (SILVA tips) - internal disagreement in the project, but
   there are ways we could move forward

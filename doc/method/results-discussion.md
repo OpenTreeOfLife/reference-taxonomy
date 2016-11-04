@@ -370,6 +370,7 @@ I guess and make best effort.]
 
 ## Potential improvements / future work
 
+* Fishbase, world bird names, plant list
 * It would be good to find an alternative to the skeleton.  One thing
   to try is continuity: we know that taxa cannot be matched only on
   name, but it is possible that pairs of 'nearby' taxa *can* be matched
@@ -382,9 +383,10 @@ I guess and make best effort.]
   (heuristic) alignments conflict.
 * Should deal with the large number of higher-taxon ambiguities due to
   equivocal disjointness - probably most could be merged
-* More work on *removing* names (?? what did I mean by that ??)
+* More work on *removing* names - e.g. can use IRMNG annotations 
+  to remove names from GBIF
 * Rank inversions are probably errors and should be fixed somehow.
 * Anchoring OTT ids to source taxonomy records (particular version).
-  (sort of done.)
-* microbes (SILVA tips) - internal disagreement in the project, but
-  there are ways we could move forward
+  (this is sort of done.  have list but not implemented in smasher.)
+* microbes (SILVA tips) - add all clusters for assembly, then remove 
+  or hide clusters we don't want at the very end

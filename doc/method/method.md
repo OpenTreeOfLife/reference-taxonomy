@@ -118,55 +118,42 @@ and either repaired manually (patched) or repaired by improvements to
 the heuristics.
 
 Alignment consists of scripted ad hoc patches followed by an automatic
-alignment procedure.  Scripted patches that allow source nodes to be
+alignment procedure.  Scripted patches allow source nodes to be
 correctly matched to union nodes in cases where this cannot be
-automatically inferred or where information might confuse the
-alignment process.  Scripted alignment patches include capitalization
-and spelling repairs, addition of synonyms (e.g. 'Heterokonta' as
-synonym for 'Stramenopiles'), name changes (e.g. 'Choanomonada' to
-'Choanoflagellida'), deletions (e.g. removing synonym 'Eucarya' for
-'Eukaryota' to avoid confusion with the genus in Magnoliopsida),
-removing paraphyletic taxa ('Protozoa', 'Protista').  [metrics on
-scripted alignments?  many non-alignment-related changes are also made
-at this point, but they would be better done in the final patch phase
-much later.]
+automatic, or prevent incorrect matches.  Scripted alignment patches
+include capitalization and spelling repairs, addition of synonyms
+(e.g. 'Heterokonta' as synonym for 'Stramenopiles'), name changes
+(e.g. 'Choanomonada' to 'Choanoflagellida'), deletions (e.g. removing
+synonym 'Eucarya' for 'Eukaryota' to avoid confusing eukaryotes with
+genus Eucarya in Magnoliopsida).
 
-Automated alignment proceeds one source node at a time.  First, a list
-of candidate union matches, based on name, synonyms, and shared
-identifiers (if any), is prepared for the source node.  Then, a set of
-heuristics is applied to find a unique best union node match, if any,
-for that source node.
+There are NNN ad hoc patches to prepare for alignment.
 
-Heuristics are of two kinds:
+The automated alignment process proceeds one source node at a time.
+First, a list of candidate union matches, based on names and synonyms,
+is prepared for the source node.  Then, a set of heuristics is applied
+to find a unique best union node match, if any, for that source node.
 
- 1. Separation heuristics are those that identify union nodes that
-    mustn't be match targets for the source node.
- 2. Preference heuristics are those that attempt to separate the set
-    of candidate targets into two groups, those that are more
-    appropriate vs. less appropriate as match targets for the given
-    source node.
+A heuristic is a rule that, when presented with a source node and a
+union node, answers 'yes', 'no', or 'no information'.  'Yes' means
+that according to the rule the two nodes refer to the same taxon, 'no'
+means they refer to different taxa, and 'no information' means that
+this rule provides no information as to whether the nodes refer to the
+same taxon.
 
-[This will have to be updated.  I tried this structure and it doesn't
-work.  The working version is very similar but not quite the same as
-this.]
+The answers are assigned numeric scores of -1 for no, 0 for no
+information, and 1 for yes.
 
-A heuristic is essentially a two-place predicate, applied to a source
-node and a union node, that either succeeds (the two could match
-according to this heuristic) or fails (they do not match according to
-this heuristic).  The method for applying the heuristics is as
-follows:
+The method for applying the heuristics is as follows:
 
- 1. Start with a source node and a set C of union nodes (candidates).
+ 1. Start with a source node N and a set C of union node candidates C1 ... Cn.
  2. For each heuristic H:
-      1. Let C' = those members of C for which H returns true.
-      2. If C' is singleton, we are done; the source node matches the member of C'.
-      3. If H is a separation heuristic:
-          1. Replace C with C'.
-          1. If C is empty, we're done; there are no acceptable matches.
-      4. If H is a preference heuristic:
-          1. If C' is empty, make no change to C.
-          2. Otherwise, replace C with C'.
- 3. If C is empty, no union node matches the source node.  (A polysemy may be created in the merge phase.)
+      1. For each candidate Ci, obtain the score H(N, Ci)
+      1. Let Z = the highest score from among the scores H(N, Ci)
+      1. If Z = -1, we are done
+      1. Let C' = those members of C that have score Z
+      1. If Z = 1 and C' contains only one candidate, we are done (match is that candidate)
+      1. Replace C with C' and proceed to the next heuristic
  4. If C is singleton, its member is taken to be the correct match.
  5. Otherwise, the source node is ambiguous.
 
@@ -453,13 +440,19 @@ is a heuristic, as PaleoDB can (rarely) contain extant taxa, but the
 alternative is failing to recognize a much larger number of taxa as
 extinct.
 
-The final step is to assign OTT ids to taxa.  This is done by aligning
-the previous version of OTT to the new union taxonomy.  The previous OTT
-version is not merged into the new version; the alignment is only for
-the purpose of assigning identifiers.  After transferring ids of
+The final step is to assign OTT ids to taxa.  As before, some
+identifiers are assigned on an ad hoc basis.  Then, automated
+identifier assignment is done by aligning the previous version of OTT
+to the new union taxonomy.  Additional candidates are found by comparing
+identifiers of source taxonomy nodes to source taxon identifiers
+stored in the previous OTT version.  After transferring identifiers of
 aligned taxa, any remaining union taxa are given newly 'minted'
 identifiers.
 
+The previous OTT version is not merged into the new version; the
+alignment is only for the purpose of assigning identifiers.
+Therefore, if a taxon record is deleted from every source taxonomy
+that contributes it, it is automatically deleted from OTT.
 
 ## *NMF suggestion on how to explain all this*
 

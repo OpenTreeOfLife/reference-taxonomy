@@ -1,93 +1,143 @@
 
 # Results
 
-First, some overall measurements
+## Characterizing the assembly product
 
-[NMF comment:
-'Any sort of metric about the OTT (2.10) are likely helpful, because
-they'd illustrate the magnitude of the achievements, and magnitude of
-challenges.]
+ * Number of taxon records: 3577714
+ * Number of synonym records: 1567363
+ * Number of tips: 3323318
+ * Number of binomials: 2115765
+ * Number of taxa with rank 'species': 2913390
+ * Number of polysemous name-strings: 13089
 
-* number of nodes (taxa): 3577714  [using wc]
-* number tips
-    * number of tips
-    * 2913390 with rank 'species'  [using wc]
-    * binomials ?  compare with CoL
-* synonyms  1567363  [using wc]
-* homonyms (about 13,000)  (number 2-way, 3-way, ...)
-    * could classify the homonyms?  by rank, proximity, etc.  and compare to GBIF / NCBI
-        * could be inherited from source taxonomy
-            * sibling, cousin, parent/child
-        * could be created via skeleton separation
-        * could be created via membership separation
-    * homonyms vs hemihomonyms?
-* number of manual operations required (i.e. modifications to the generic
-  assembly process)... hmm.
-* number of ambiguities - 228 [using how-many on the transcript].  that's way too high.
+[TBD: filter out the was\_container nodes.  and maybe all the not\_otus.]
 
-* table showing number of taxa coming from various sources? coming from various numbers of sources?
-* NCBI / GBIF comparison?
+Annotations:
 
-Output of results.py script:
+ * Number of taxa suppressed in supertree synthesis: 1248964, not suppressed 2328750
+ * Incertae sedis (generically): ... of which unplaced due to merge: ...
+ * Extinct: 199918
+ * Suppressed at curator request: ...
+ * Taxa below the level of species: ...
+ * Higher taxa having no descendant species records: ...
+ * Non-OTUs: [probably we should just remove these from the taxonomy!]
 
-TBD: filter out the was_container nodes.  and maybe all the not_otus?
+Polysemy analysis:
 
-    Number of nodes: 3577714
-    Number of synonyms: 1567363
-    Number of tips: 3323318
-    Number of binomials: 2115765
-    Number taxa suppressed / not: 1248964 / 2328750
-    Number extinct: 199918
-    Polysemies:
-    2-way: 11375  (ncbi: 831, silva: 141.... where do they all come from?)
-    3-way: 1366
-    4-way: 262
-    5-way: 61
-    6-way: 14
-    7-way: 4
-    8-way: 2
-    11-way: 1
-    18-way: 1
-    20-way: 1
-    43-way: 1
-    237-way: 1
+ * could we classify the polysemies?  by taxon rank, proximity, etc.  and compare to GBIF / NCBI
+     * sibling, cousin, parent/child, within code, between codes
+     * how many inherited from source taxonomy, as opposed to created?
+     * could be created via skeleton separation
+     * could be created via membership separation
 
-[Factoid I don't know if we can use: 4306127 OTT ids have been
-allocated (through 2.10), so something like 728413 are either merged
-or 'deprecated'.  This has to do with the update mechanism.  Don't
-know whether this is good or bad.  Haven't analyzed these yet, what
-the reasons are... will be hard since would need to scan all previous
-OTT versions...]
+## Manual vs. automatic synthesis operations
 
-## Conflict
+It's not just turn-and-go.
 
-* number of source nodes dropped due to conflict (1167)
+ * number of manual alignment operations required
+
+## Characterizing the assembly process
+
+Alignment
+
+* Table with one row per source showing...
+    * number of taxa
+    * number of taxa contributed (incrementally) by that source
+    * number of taxa in the source matched to the developing OTT
+
+    source | binomial-taxa-from-that-source | binomial-taxa-exclusively-from-that-source
+    if | 237482 | 18291
+    worms | 258378 | 53233
+    silva | 13953 | 44
+    ncbi | 360455 | 88358
+    gbif | 1629523 | 486411
+    irmng | 1111550 | 313261
+    addition | 15 | 15
+
+ * Taxa coming from only a single source: 959613
+
+ * Total number of source nodes: ...
+ * No candidates: ...
+ * >=1 candidate, no match / match:
+ * >1 candidate, no match / unique match / ambiguity
+
+Merge
+
+ * Number of unmatched internal source nodes imported: ...
+ * Number of unmatched internal source nodes merged (rather than inserted) due to non-coverage: ...
+ * Number of unmatched internal source nodes dropped due to conflict between sources: 1167
 
   (example of a conflict: Zygomycota (if:90405) is not included because
   ... paraphyletic w.r.t. Hibbett 2007.  get proof?  not a great
   example, ncbi/gbif would be better.)
 
+[number of taxa unplaced in one source that get placed by a later
+source????  that's too detailed I think.]
+
 ## Evaluation of alignment heuristics
 
 * effectiveness of the various alignment heuristics
    * do certain heuristics work better / worse for different types of problems?
-     [how would one assess this ?? what examples of 'types of problems'?]
+     [how would one assess this ?? what are examples of 'types of problems'?]
    * since the process runs through a set of heuristics until it finds a
      solution or gives up, can we say anything about the number of heuristics
      required across source / union node combinations (or the number of unresolved
      ambiguities)? i.e. 70% of combinations solved with 1st heuristic, 20% with
      second heuristic, etc?
 
-## Evaluation relative to goals
+Number of times each heuristic was able to reduce the number of
+candidates:
 
-The introduction sets out three requirements for the taxonomy.
+[following is some sample data to look at, for the NCBI merge.  we can
+add up all these numbers for all 8 merges, and format it nicely.]
+
+ * same-division: 971
+ * ranks: 2
+ * same-ancestor: 762
+ * overlaps: 159
+ * same-division-weak: 61
+ * same-primary-name: 2235
+
+If the alignment loop exhausts all heuristics without getting any
+'yes' or 'no' from any of them, we have either alignment by process of
+elimination, if a single candidate remains; or an ambiguity, if there
+are several.  There were 116269 alignments by elimination, and 8088
+amiguities.  Of the ambiguities, 7749 were of tips, 339 of internal
+nodes.  Ambiguous tips are simply ignored, while the ambiguous
+internal nodes lead to multiple nodes with the same name-string [but this
+ought to be explained in the methods section].
+
+## Evaluating the taxonomy relative to goals
+
+The introduction sets out requirements for an Open Tree taxonomy.
 How well are these requirements met?
 
 ### OTU coverage
 
+We set out to get coverage of the Open Tree corpus of phylogenetic
+trees.  Curators have mapped 514346 of 538728 OTUs from 2871 curated
+studies to OTT taxa, or 95.5%.  (371 studies, those having less than
+50% OTUs mapped, were excluded, as such a low mapping rate usually
+indicates incomplete curation.)
+
+To assess the reason the remaining 4.5% being unmapped, we
+investigated a small random sample of 10 OTUs.  In three cases, the
+label was a genus name followed by "sp" (e.g. "Euglena sp"),
+suggesting an unwillingness to make any use of an OTU not classified
+to species.  In the remaining seven cases, the taxon was already in
+OTT, and additional curator effort would find it.  (Two of these were
+misspellings in the phylogeny source; one was present under a
+different name-string (subspecies in OTT, valid species in study); and
+in the remaining four cases, the taxon may have been added to OTT
+after the study was curated, or the curation task was left
+incomplete.)
+
+[need to explain what curation has to do with it?... appears to be
+wandering off topic]
+
 * compare OTT's coverage of phylesystem with coverage by NCBI, GBIF
   (i.e. how well does OTT do what it's supposed to do, compared to
-  ready-made taxonomies?  OTT gets X%, NCBI only gets Y%?)
+  ready-made taxonomies?  OTT gets 95% of OTUs, NCBI only gets ??92%??)
 * number of OTUs that are mapped, that come from NCBI - I previously
   measured this as about 97% of OTUs in phylesystem
 * what about unmapped OTUs?  how many are binomials?
@@ -96,74 +146,65 @@ How well are these requirements met?
   in the study are mapped (measure of attempt), and/or just look up
   binomials in OTT and look for failures)
 
-After extracting name-strings from study tip labels using a regexp, it
-appears that 195934 out of 203559 names are mapped (of those studies
-that are at least 50% mapped).  That's 96.3% of name-strings.  (The
-regexp is pretty restrictive, so does not include subspecies or
-strains.  Includes some false hits like 'Foo sp.'  Might be interesting
-to count OTUs instead of name-strings.)
+[can we find *any* OTUs that do not have a taxon in OTT?
+rather difficult.]
 
 ### Taxonomic coverage
 
-(Table or plot showing how many taxa come from each source, & how many exclusively:)
+OTT has 2.1M, vs. 1.6M for Catalogue of Life (CoL).  The number is
+larger because OTT has many names that are either not valid or not
+current.
 
-    taxon,source,binomial-taxa-from-that-source,binomial-taxa-exclusively-from-that-source
+Since GBIF includes the 2011 edition of CoL [2011], OTT's coverage
+includes everything in that edition of CoL.
 
-    life total: 3453838 binomials: 2093125 single source: 959613
-    life,irmng,1111550,313261
-    life,worms,258378,53233
-    life,silva,13953,44
-    life,gbif,1629523,486411
-    life,ncbi,360455,88358
-    life,if,237482,18291
-    life,addition,15,15
-
-    Fungi total: 394138 binomials: 251156 single source: 35427
-    Fungi,irmng,31637,192
-    Fungi,worms,1347,42
-    Fungi,gbif,246147,14514
-    Fungi,ncbi,34134,3435
-    Fungi,if,232257,17244
-
-    Malacostraca total: 59095 binomials: 44235 single source: 5509
-    Malacostraca,irmng,26343,1057
-    Malacostraca,worms,33069,1375
-    Malacostraca,gbif,42054,2789
-    Malacostraca,ncbi,6514,288
-
-[Another possible measurement is binomials (taxa, etc) coming
-primarily from a source (as opposed to merely aligned, as in column 3
-above)]
+This level of coverage meets Open Tree's taxonomic coverage goal.
 
 [Consider evaluating against HHDB (hemihomonyms) - for coverage and/or
 accuracy (ideally we would have all senses of each HHDB polysemy)]
 
 ### Backbone quality
 
-* number of internal nodes ??  compared to ... ?  ratio of
+[Not clear what to measure here.]
+
+* what comparison to make - NCBI, GBIF, IRMNG ... ?  ratio of
   nonterminal to terminal (branching factor) ... ?  average branching factor controlled
   for tip set ... ?
-* how phylogenetic is it?  how many nodes are found paraphyletic by the corpus?
-  2614 contested taxa (out of ...?).  ideally we would compare to NCBI, GBIF
+* how phylogenetic is it?  how many nodes are found paraphyletic as a result of supertree synthesis?
+  2614 contested taxa (out of ...?).  ideally we would compare meaningfully to NCBI, GBIF.
   http://files.opentreeoflife.org/synthesis/opentree7.0/output/subproblems/index.html#contested
-* something like the following: of all the internal nodes that coincide
-  with GBIF nodes, how many are found paraphyletic by the corpus, as a
-  fraction of all GBIF internal nodes?... how to come up with any kind
-  of null hypothesis?
-* rank analysis?; number of rank inversions, sampling of reasons for them (hard to figure out)
 
 Comparing the OTT backbone with Ruggiero et al. taxonomy of all life to order:
-(counts are for taxa *above* order)
+(counts are for taxa *above* order.)  (Maybe a 3-way comparison, OTT / Ruggiero / synthesis?)
 
-* conflicts_with: 83  (R. taxa that are paraphyletic per OTT)
-* resolves: 119  (R. taxa that provide resolution to OTT)
-* partial_path_of: 270 (cases where several R. taxa match one OTT taxon)
-* supported_by: 285 (exact matches)
-* mapped tips: 1357 (R. orders that were found in OTT)
-* unmapped tips: 141 (R. orders that were not found in OTT)
-* other: 21 (higher R. taxa none of whose orders is in OTT)
+ * conflicts\_with: 83  (R. taxa that are paraphyletic per OTT)
+ * resolves: 119  (R. taxa that provide resolution to OTT)
+ * partial\_path\_of: 270 (cases where several R. taxa match one OTT taxon)
+ * supported\_by: 285 (exact matches)
+ * mapped tips: 1357 (R. orders that were found in OTT)
+ * unmapped tips: 141 (R. orders that were not found in OTT)
+ * other: 21 (higher R. taxa none of whose orders is in OTT)
 
-(this could be a pie chart or bar chart?)
+(this could be a pie chart, maybe?)
+
+### Ongoing update
+
+[TBD: do an NCBI update and see what happens - how much manual
+intervention is required.]
+
+
+### Open data
+
+As the Open Tree project did not have to enter into data use
+agreements in order to obtain its taxonomic sources, it is not obliged
+to require any such agreement from users of the taxonomy.  Therefore
+users are not restricted by contract (terms of use).  In addition, the
+taxonomy is not creative expression, and therefore copyright
+limitations do not apply either.
+
+Certainly the taxonomy could be improved by incorporating closed
+sources such as CoL and the IUCN Red List, but doing so would conflict
+with the open data goal.
 
 
 # Discussion
@@ -191,6 +232,7 @@ Comparing the OTT backbone with Ruggiero et al. taxonomy of all life to order:
 * (almost) rank-free approach
 
 * richly resolved classification in NCBI (e.g. has unranked taxa like eudicots.  can quantify??)
+* rank analysis? ... ; number of rank inversions, sampling of reasons for them (hard to figure out)
 * paraphyletic taxa in conventional taxonomies
 
 * skeleton woes: Annelida/Myzostomida, Fungi/Microsporidia
@@ -203,10 +245,12 @@ Comparing the OTT backbone with Ruggiero et al. taxonomy of all life to order:
 
 * time required to build: 11 minutes 42 second real time (for OTT 2.11)
 
+* talk about inclusions.csv ?
+
 ## File formats
 
-[NMF asks about choice of common format [for converted source
-taxonomies.
+[NMF asks about choice of common format for converted source
+taxonomies.]
 
 JAR answer: every source taxonomy we used is provided in a different
 format, so there is no shared code on the import side.  (could review
@@ -243,7 +287,7 @@ into subfamilies (from NCBI) is unknown.  Fungi? but that had other
 problems.  Examples in primates?  umm, may need to measure
 distribution of extinct taxa.
 
-
+## Patches
 
 Coming up with a patch notation that is general enough to cover most
 common cases but simple enough for non-programmers to understand has

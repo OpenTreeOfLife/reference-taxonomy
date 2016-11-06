@@ -153,6 +153,8 @@ public abstract class Taxonomy {
     }
 
     public void addId(Taxon node, String id) {
+        if (node.prunedp)
+            return;
         if (id != null) {
             Taxon existing = this.lookupId(id);
             if (existing != null) {
@@ -168,10 +170,15 @@ public abstract class Taxonomy {
 
     public void removeFromIdIndex(Taxon node, String id) {
         // could check that lookupId(id) == node
-		if (id != null)
-			this.idIndex.remove(id);
-        if (node.id != null && node.id.equals(id))
-            node.id = null;
+        this.idIndex.remove(id);
+    }
+
+    public void removeFromQidIndex(Taxon node, QualifiedId qid) {
+        // could check that lookupQid(id) == node
+        if (this.qidIndex != null) {
+            this.qidIndex.remove(qid);
+            this.qidAmbiguous.remove(qid);
+        }
     }
 
     // utility
@@ -192,11 +199,9 @@ public abstract class Taxonomy {
         Taxon t = this.idIndex.get(id);
         if (t == null)
             return t;
-        if (t.prunedp) {
+        if (t.prunedp)
             // System.err.format("** Pruned taxon found in id index: %s\n", t);
-            // this.idIndex.remove(id);
             return null;
-        }
         return t;
 	}
 
@@ -274,10 +279,16 @@ public abstract class Taxonomy {
     }
 
     public Node lookupQid(QualifiedId qid) {
-        Node node = this.qidIndex.get(qid);
-        if (node != null && this.qidAmbiguous.contains(qid))
+        if (qidIndex == null)
             return null;
-        return node;
+        else {
+            Node node = this.qidIndex.get(qid);
+            if (node != null) {
+                if (node.taxon().prunedp || this.qidAmbiguous.contains(qid))
+                    return null;
+            }
+            return node;
+        }
     }
 
     // index a single node by one qid
@@ -1811,9 +1822,11 @@ public abstract class Taxonomy {
         // Ensure every identified node is reachable...
         for (Taxon taxon : idIndex.values()) {
             if (!all.contains(taxon)) {
-                if (taxon.prunedp)
-                    System.err.format("** check: Pruned taxon is in identifier index: %s\n", taxon);
-                else {
+                if (taxon.prunedp) {
+                    if (taxon.id != null)
+                        // foo. we don't have a list of ids for use in removeFromIdIndex.
+                        System.err.format("** check: Pruned taxon is in identifier index: %s\n", taxon);
+                } else {
                     System.err.format("** check: Identified taxon not in hierarchy: %s\n", taxon);
                     all.add(taxon);
                 }

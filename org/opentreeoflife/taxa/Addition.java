@@ -330,16 +330,17 @@ public class Addition {
                 File f = new File(newTaxaDir, String.format("addition-%s-%s.json", firstId, lastId));
                 System.err.format("| Writing %s id assignments to %s\n", fewerNodes.size(), f);
                 emitJSON(r, f);
-                System.err.format("| Deleting id range file %s\n", idRangeFile);
-                idRangeFile.delete();
             } else {
                 System.err.format("** Range [%s, %s] not big enough to provide %s ids\n",
                                   firstId, lastId, fewerNodes.size());
                 assignIds(fewerNodes, fakeFirst, fakeLast);
             }
         } else {
-            System.err.format("** No range of available ids provided (%s not found)\n",
+            System.err.format("** Did not find %s for id range to use for new ids.\n",
                               idRangeFile);
+            System.err.format("** Please assign a range of at least %s ids and place it in that file.\n",
+                              nodes.size());
+            System.err.format("** Format should be: {\"first\": mmm, \"last\": nnn}\n");
             demand(nodes.size(), newTaxaDir);
             assignIds(fewerNodes, fakeFirst, fakeLast);
         }

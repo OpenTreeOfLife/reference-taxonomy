@@ -460,8 +460,6 @@ def patch_ncbi(ncbi):
     ncbi.taxon('Glaucocystophyceae').rename('Glaucophyta')
     ncbi.taxon('Haptophyceae').rename('Haptophyta')
 
-    ncbi.taxon('Viruses').hide()
-
     # - Touch-up -
 
     # RR 2014-04-12 #49
@@ -648,8 +646,6 @@ def patch_ncbi(ncbi):
 def load_worms():
     worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
     worms.smush()
-
-    worms.taxon('Viruses').prune("taxonomies.py")
 
     worms.taxon('Biota').rename('life')
     worms.taxon('Animalia').synonym('Metazoa')
@@ -851,8 +847,6 @@ def load_irmng():
     irmng.analyzeMajorRankConflicts()
 
     # patch_irmng
-
-    irmng.taxon('Viruses').prune("taxonomies.py")
 
     irmng.taxon('Animalia').synonym('Metazoa')
 

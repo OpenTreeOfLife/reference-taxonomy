@@ -125,6 +125,10 @@ public class Taxon extends Node {
     }
 
 	public Node setName(String name) {
+        if (this.prunedp) {
+            System.err.format("** Attempt to set name of a pruned taxon: %s %s\n", this, name);
+            return null;
+        }
         if (name == null) {
             System.err.format("** Null is not a valid name-string: %s\n", this);
             backtrace();
@@ -221,6 +225,10 @@ public class Taxon extends Node {
 	}
 
 	public void setId(String id) {
+        if (this.prunedp) {
+            System.err.format("** Attempt to set id of a pruned taxon: %s %s\n", this, id);
+            return;
+        }
 		if (id != null && this.id == null)
             this.taxonomy.addId(this, id);
         else if (!this.id.equals(id))
@@ -745,8 +753,15 @@ public class Taxon extends Node {
         for (Synonym syn : this.synonyms)
             this.taxonomy.removeFromNameIndex(syn);
         this.taxonomy.removeFromNameIndex(this);
-		if (this.id != null)
+		if (this.id != null) {
             this.taxonomy.removeFromIdIndex(this, this.id);
+            this.id = null;
+        }
+        if (this.sourceIds != null) {
+            for (QualifiedId qid : this.sourceIds)
+                this.taxonomy.removeFromQidIndex(this, qid);
+            this.sourceIds = null;
+        }
         return true;
     }
 

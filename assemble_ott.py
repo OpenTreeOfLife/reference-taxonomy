@@ -8,6 +8,11 @@ import sys
 
 from org.opentreeoflife.taxa import Taxonomy, SourceTaxonomy, TsvEdits, Addition, Rank, Taxon
 from org.opentreeoflife.smasher import UnionTaxonomy
+
+# for id list
+from org.opentreeoflife.taxa import CSVReader, QualifiedId
+from java.io import FileReader
+
 import ncbi_ott_assignments
 sys.path.append("feed/misc/")
 from chromista_spreadsheet import fixChromista
@@ -44,7 +49,7 @@ def create_ott():
     ott.setSkeleton(Taxonomy.getTaxonomy('tax/skel/', 'skel'))
 
     # This is a particularly hard case; create alignment targets up front
-    deal_with_ctenophora(ott)
+    deal_with_polysemies(ott)
 
     # SILVA
     silva = taxonomies.load_silva()
@@ -238,14 +243,45 @@ def assign_ids(ott):
     print '-- Processing additions --'
     Addition.processAdditions(additions_clone_path, ott)
 
+    print '-- Checking id list'
+    assign_ids_from_list(ott, 'ott_id_list/by_qid.csv')
+
     # Mint ids for new nodes
     ott.assignNewIds(new_taxa_path)
+
+# Use master OTT id list to assign some ids
+
+def assign_ids_from_list(tax, filename):
+    count = 0
+    if True:
+        infile = FileReader(filename)
+        r = CSVReader(infile)
+        while True:
+            row = r.readNext()
+            if row == None: break
+            [qid, ids] = row
+            taxon = tax.lookupQid(QualifiedId(qid))
+            if taxon != None:
+                id_list = ids.split(';')
+                for id in id_list:
+                    z = tax.lookupId(id)
+                    if z == None:
+                        taxon.taxonomy.addId(taxon, id)
+                        count += 1
+        infile.close()
+    print '| Assigned %s ids from %s' % (count, filename)
+
+    # Could harvest merges from the id list, as well, and
+    # maybe even restore lower-numbered OTT ids.
 
 def hide_irmng(irmng):
     # Sigh...
     # https://github.com/OpenTreeOfLife/feedback/issues/302
     for root in irmng.roots():
         root.hide()
+    # 2016-11-06 Laura Katz personal email to JAR:
+    # "IRMNG great for microbial diversity, for example"
+    irmng.taxon('Protista').unhide()
     with open('irmng_only_otus.csv', 'r') as infile:
         reader = csv.reader(infile)
         reader.next()           # header row
@@ -281,7 +317,7 @@ def split_taxonomy(taxy, taxon_name):
 
 # ----- Ctenophora polysemy -----
 
-def deal_with_ctenophora(ott):
+def deal_with_polysemies(ott):
     # Ctenophora is seriously messing up the division logic.
     # ncbi 1003038	|	33856	|	Ctenophora	|	genus	|	= diatom        OTT 103964
     # ncbi 10197 	|	6072	|	Ctenophora	|	phylum	|	= comb jellies  OTT 641212
@@ -297,21 +333,15 @@ def deal_with_ctenophora(ott):
     establish('Bacillariophyta', ott, division='Eukaryota', ott_id='5342311')
 
     # Diatom.  Contains e.g. Ctenophora pulchella.
-    ctenophora_diatom = establish('Ctenophora', ott,
-                                  ancestor='Bacillariophyta',
-                                  ott_id='103964')
+    establish('Ctenophora', ott, ancestor='Bacillariophyta', ott_id='103964')
 
     # The comb jelly should already be in skeleton, but include the code for symmetry.
     # Contains e.g. Leucothea multicornis
-    ctenophora_jelly = establish('Ctenophora', ott,
-                                 parent='Metazoa',
-                                 ott_id='641212')
+    establish('Ctenophora', ott, parent='Metazoa', ott_id='641212')
 
     # The fly will be added by NCBI; provide a node to map it to.
     # Contains e.g. Ctenophora dorsalis
-    ctenophora_fly = establish('Ctenophora', ott,
-                               division='Diptera',
-                               ott_id='1043126')
+    establish('Ctenophora', ott, division='Diptera', ott_id='1043126')
 
     establish('Podocystis', ott, division='Fungi', ott_id='809209')
     establish('Podocystis', ott, parent='Bacillariophyta', ott_id='357108')
@@ -331,6 +361,11 @@ def deal_with_ctenophora(ott):
     # Discovered via failed inclusion test
     establish('Epiphloea', ott, division='Fungi',      source='if:1869', ott_id='5342482') #lichinales
     establish('Epiphloea', ott, division='Rhodophyta', source='ncbi:257604', ott_id='471770')  #florideophycidae
+
+    # Discovered on scrutinizing the log.  There's a third one but it gets 
+    # separated automatically
+    establish('Morganella', ott, division='Bacteria', source='ncbi:581', ott_id='524780') #also in silva
+    establish('Morganella', ott, division='Fungi',    source='if:19222', ott_id='973932')
 
 # ----- SILVA -----
 
@@ -638,8 +673,6 @@ def align_gbif(gbif, ott):
     # similarly
     gbif.taxon('Cnidaria').take(gbif.taxon('Myxozoa'))
 
-    gbif.taxon('Viruses').hide()
-
     # Fungi suppressed at David Hibbett's request
     gbif.taxon('Fungi').hideDescendantsToRank('species')
 
@@ -812,8 +845,6 @@ def align_irmng(irmng, ott):
     plants = fix_plants(irmng)
     a.same(plants, ott.taxon('Archaeplastida'))
 
-    # irmng.taxon('Viruses').hide()  see taxonomies.py
-
     # Fungi suppressed at David Hibbett's request
     irmng.taxon('Fungi').hideDescendantsToRank('species')
 
@@ -912,6 +943,7 @@ def align_irmng(irmng, ott):
 def patch_ott(ott):
 
     # troublemakers.  we don't use them
+    print '| Flushing %s viruses' % ott.taxon('Viruses').count()
     ott.taxon('Viruses').prune()
 
     # Romina 2014-04-09: Hypocrea = Trichoderma.

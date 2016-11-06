@@ -192,6 +192,8 @@ public class UnionTaxonomy extends Taxonomy {
                 Taxon unode = skeletonAlignment.getTaxon(div);
                 if (unode == null)
                     System.err.format("** Skeleton node %s not mapped to union\n", div);
+                else if (unode.prunedp)
+                    ;           // Viruses
                 else if (node.getDivisionProper() != null && node.getDivisionProper() != div)
                     System.err.format("** Help!  Conflict over division mapping: %s have %s want %s\n",
                                       node, node.getDivisionProper(), div);

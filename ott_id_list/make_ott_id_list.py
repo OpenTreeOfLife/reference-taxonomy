@@ -158,7 +158,7 @@ def doit(ottpath, registry_path):
                     for i in range(start, stop):
                         if i >= len(new_regs): break # needed?
                         (id, qid, version, reg_type, name) = new_regs[i]
-                        writer.writerow([id, qid, version, reg_type])
+                        writer.writerow([id, qid, version, dir, reg_type])
                 start = stop
 
         # Stow the registrations for reference next time around

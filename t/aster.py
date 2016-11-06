@@ -2,8 +2,9 @@
 
 import os
 from org.opentreeoflife.taxa import Taxonomy
-from org.opentreeoflife.taxa import TsvEdits, Addition
+from org.opentreeoflife.taxa import TsvEdits, Addition, CSVReader, QualifiedId
 from org.opentreeoflife.smasher import UnionTaxonomy
+from java.io import FileReader
 from claim import Has_child
 
 # Create model taxonomy
@@ -77,6 +78,30 @@ ids = Taxonomy.getTaxonomy('t/tax/prev_aster/', 'ott')
 tax.carryOverIds(ids)    # performs alignment
 
 Addition.processAdditions(additions_repo_path, tax)
+
+def assign_ids_from_list(tax, filename):
+    count = 0
+    if True:
+        infile = FileReader(filename)
+        r = CSVReader(infile)
+        while True:
+            row = r.readNext()
+            if row == None: break
+            [qid, ids] = row
+            taxon = tax.lookupQid(QualifiedId(qid))
+            if taxon != None:
+                for id in ids.split(';'):
+                    z = tax.lookupId(id)
+                    if z == None:
+                        taxon.taxonomy.addId(taxon, id)
+                        count += 1
+        infile.close()
+    print '| Assigned %s ids from %s' % (count, filename)
+
+# Could harvest merges from the id list, as well.
+
+print '-- Checking id list'
+assign_ids_from_list(tax, 'ott_id_list/by_qid.csv')
 
 tax.assignNewIds(new_taxa_path)
 

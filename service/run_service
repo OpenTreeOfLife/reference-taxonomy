@@ -21,7 +21,7 @@ set -e
 
 # Modify as appropriate to your own hardware
 if [ "x$JAVAFLAGS" = "x" ]; then
-    JAVAFLAGS="-Xmx14G"
+    JAVAFLAGS="-Xmx7G"
 fi
 
 CLASSPATH="..:../lib/json-simple-1.1.1.jar"

@@ -1,9 +1,9 @@
 # Materials and methods
 
-This publication describes a particular version of the Open Tree taxonomy
-(version 2.10), but one should keep in mind that the taxonomy is
-constantly evolving as sources are updated, methods improve, and users request
-additional functionality and patches.
+In the following, any definite claims or measurements apply to the
+Open Tree taxonomy (version 2.11), but keep in mind that the taxonomy
+is constantly evolving as sources are updated, assembly methods
+improve, and errors are fixed.
 
 ## Taxonomic sources
 

@@ -39,15 +39,30 @@ Details of each step follow.
 
 Each source taxonomy has its own import procedure, usually a file
 download from the provider's web site followed by application of a
-script that converts the source to a common format for import.  Given
-the convert source files, the taxonomy can be 'loaded' by the assembly
+script that converts the source to a exchange format for import.  Given
+the converted source files, the taxonomy can be read by the assembly
 procedure.
 
-A taxonomy in the common format has the following parts:
+[JAR: Nico asked for description of the exchange format, but I think
+it's completely uninteresting.  I think it should be flushed, but
+maybe information about what's in a taxon record / node should be
+given somewhere.]
 
- * a taxonomy table, with one row (record) per putative taxon; each row gives an identifier that is unique to this taxonomy, the taxon's name, the identifier of its parent taxon record, and optional annotations or 'flags'
- * an optional synonyms table, with one name/taxon association row per synonym
- * an optional identifier merge table, with one row for each identifier alias (where one identifier is an alias for another)
+A taxonomy in the exchange format has the following parts:
+
+ * A taxonomy table, with one row (record) per putative taxon.  Important columns are:
+     * An identifier that is unique with this taxonomy
+     * The identifier of its parent taxon record
+     * The taxon's primary name-string
+     * The taxon's designated rank (optional)
+     * Optional annotations i.e. 'flags'
+ * An optional synonyms table.
+     * The identifier of a taxon
+     * A synonym name-string for that taxon
+ * An optional set of identifier merges.  A merge gives the identifier for a 
+   taxon from a previous version of this taxonomy 
+   that has been merged with another taxon, usually to repair
+   what was an undetected synonymy in the previous version.
 
 [NMF: Would be helpful to have 2-5 rows deep example, for 3 tables.
 JAR: it's pretty boring.  Here are a few rows from the NCBI import:
@@ -175,21 +190,24 @@ with the union taxonomy and it is dropped.  If it is not dropped, then
 this is a rare and troublesome situation that requires manual
 intervention.
 
+The heuristics are applied in the order in which they are listed
+below.  The outcome is sensitive to the ordering.  The ordering is
+forced to some extent by internal logic [discuss after the reader
+knows what the heuristics are].
+
 ### Candidate identification
 
-The analysis loop begins by identifying candidate nodes.
+Given a source node, the analysis loop begins by identifying candidate
+nodes in the union taxonomy.
 
 Potentially, any source node might match any union node, because we do
 not have complete information about synonymies, and we have no
 information that can be used to definitively rule out any particular
 match.  Of course considering all options is not practical, so we
-limit the search to union nodes that have a name (primary or synonym)
-in common with the source node.
+limit the search to union nodes that have a name-string (either
+primary or synonym) that matches any name-string of the source node.
 
-### Separation heuristic: Skeleton taxonomy
-
-The heuristics are described in the order in which they are applied.
-The outcome is sensitive to the ordering.
+### Separate taxa if in disjoint 'divisions'
 
 If taxa A and B belong to taxa C and D (respectively), and C and D are
 known to be disjoint, then A and B can be considered distinct.  For
@@ -211,7 +229,7 @@ covered by the same nomenclatural code.
 [NMF: Check [here](http://biodiversitydatajournal.com/articles.php?id=8080) for harder data (names
 management sections and refs. therein).]
 
-Some cases of apparent polysemy might be differences of opinion
+Some cases of apparent polysemy might be differences of scientific opinion
 concerning whether or not a taxon possesses a diagnostic apomorphy, or
 belongs phylogenetically in some designated clade (the MRCA of some
 other taxa).  Different placement of a name in two source taxonomies
@@ -219,29 +237,16 @@ does not necessarily mean that the name denotes different taxa in the
 two taxonomies.
 
 The separation heuristic used here works as follows.  We establish a
-"skeleton" taxonomy, containing about 25 higher taxa (Bacteria,
-Metazoa, etc.).  Every source taxonomy is aligned - manually, if
-necessary - to the skeleton taxonomy.  (Usually this initial
-mini-alignment is by simply by name, although there are a few
-troublesome cases, such as Bacteria, where higher taxon names are
-polysemies.)  For any node/taxon A, the smallest skeleton taxon
-containing A is called its _division_.  If taxa A and B with the same
-name N have divisions C and D, and C and D are disjoint in the
-skeleton, then A and B are taken to be distinct.
-
-There are many cases (about 4,000? will need to instrument and re-run
-to count) where A's division (say, C) is properly contained in B's
-nearest division (say, D) or vice versa.  A and B are therefore not
-separated.  It is not clear what to do in these cases.  In many
-situations the taxon in question is unplaced in the source (e.g. is in
-Eukaryota but not in Metazoa) and ought to be matched with a placed
-taxon in the union (in both Eukaryota and Metazoa).  In OTT 2.9, [??
-figure out what happens - not sure], but the number of affected names
-is quite high, so many false polysemies are created.  Example: the
-skeleton taxonomy does not separate _Brightonia_ the mollusc (from
-IRMNG) from _Brightonia_ the echinoderm (from higher priority WoRMS),
-because there is no division for echinoderms, so [whatever happens].
-[need example going the other way.]
+"skeleton" taxonomy, containing about 25 higher taxa (Bacteria, Fungi,
+Metazoa, etc.).  Before the main alignment process starts, every
+source taxonomy is aligned - manually, if necessary - to the skeleton
+taxonomy.  (Usually this initial mini-alignment is by simply by name,
+although there are a few troublesome cases, such as Bacteria, where
+higher taxon names are polysemies.)  For any node/taxon A, the
+smallest skeleton taxon containing A is called its _division_.  If
+taxa A and B with the same name N have divisions C and D, and C and D
+are disjoint in the skeleton, then A and B are taken to be distinct.
+The heuristic does not apply if C is an ancestor of D (or vice versa); see below.
 
 [JAR in response to NMF: The skeleton is not just the
 top of the tree; it omits many intermediate layers (ranks) and only
@@ -270,11 +275,18 @@ this case). I can't analyze every one, so we need to err on the side
 of creating redundant records, rather than unifying, which would cause
 higher taxa from the lower priority taxonomy to be "broken".]
 
-### Preference heuristic: Lineage
+### Separate taxa with wildly different ranks
 
-Taxa with a common lineage are preferred to those without.  There
-are several factors that make it tricky to turn this truism into an
-actionable rule.
+We assume that a taxon with rank above the level of genus (family,
+class, etc.) cannot be the same as a taxon with rank genus or below
+(tribe, species, etc.).
+
+### Prefer taxa with shared lineage names
+
+A taxon that's in the same place in the taxonomy as a source is
+preferred to one that's not; for example we would rather match a
+weasel to a weasel than to a fish.  There are several factors that
+make it tricky to turn this truism into an actionable rule.
 
 * At the time that alignment is being done, we do not know the
   alignments of the ancestors, so we cannot compare ancestors.
@@ -287,12 +299,13 @@ actionable rule.
   since every pair of taxa share some ancestor (name).  We need to
   restrict the assessment to near ancestors.
 
-The rule we settled on is this one: 
+The rule used is this one: 
 
 Let the 'quasiparent name' of A (or B) be the name of the nearest
 ancestor of A (or B) whose name is not a prefix of A's name.  If A's
 'quasiparent name' is the name of an ancestor of B, or vice versa,
-then B is a preferred match for A.
+then B is a preferred match for A.  For example, the quasiparent of a
+species would typically be a family.
 
 Broadening the search beyond the 'quasiparent' of both nodes is
 necessary because different taxonomies have different resolution: in
@@ -301,7 +314,7 @@ is not.  But by ensuring that one of the two nodes being compared is a
 quasiparent, we avoid vacuous positives due to both being descendants
 of 'life'.
 
-### Separation heuristic: Incompatible membership
+### Separate taxa that have incompatible membership
 
 For each source or union node A, we define its 'membership proxy' as
 follows.  Let S be the set of names that are (a) present in both
@@ -321,17 +334,8 @@ This heuristic has both false negatives (taxa that should be combined
 but aren't) and false positives (cases where merging taxa does not
 lead to the best results).
 
-### Other heuristics
+### Prefer same division
 
-1. Overlapping membership:
-   We prefer a candidate node if its membership proxy (see above) overlaps
-   with the source node's.
-1. Same source id: candidate B is preferred if A's primary source id
-   (e.g. NCBI:1234) is the same as B's.  This heuristic applies mainly
-   during the final id assignment phase, since before this point no
-   identifiers are shared between the source and union taxonomies.
-1. Any source id: candidate B is preferred if any of A's source ids matches any of
-   B's.
 1. 'Weak division' separation:
    B and A are considered distinct at this point if they are in different
    divisions.  E.g. [looking in log files for examples. need better
@@ -339,10 +343,24 @@ lead to the best results).
    _Brightonia_ in division Mollusca is distinguished from 
    _Brightonia_ in division Metazoa (which includes Mollusca), which turns out to be correct because
    the second _Brightonia_ is an echinoderm, not a mollusc.
-1. Rank:
-   B is preferred if A and B both have designated ranks, and the ranks are the same.
-1. Synonym avoidance:
-   B is preferred if its primary name is the same as A's.
+
+There are many cases (about 4,000? will need to instrument and re-run
+to count) where A's division (say, C) is properly contained in B's
+nearest division (say, D) or vice versa.  A and B are therefore not
+separated.  It is not clear what to do in these cases.  In many
+situations the taxon in question is unplaced in the source (e.g. is in
+Eukaryota but not in Metazoa) and ought to be matched with a placed
+taxon in the union (in both Eukaryota and Metazoa).  In OTT 2.9, [??
+figure out what happens - not sure], but the number of affected names
+is quite high, so many false polysemies are created.  Example: the
+skeleton taxonomy does not separate _Brightonia_ the mollusc (from
+IRMNG) from _Brightonia_ the echinoderm (from higher priority WoRMS),
+because there is no division for echinoderms, so [whatever happens].
+[need example going the other way.]
+
+### Prefer matches not involving synonyms
+
+B is preferred if its primary name is the same as A's.
 
 
 ### Collisions

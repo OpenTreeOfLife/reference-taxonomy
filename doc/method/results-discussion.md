@@ -1,6 +1,9 @@
 
 # Results
 
+[KC: results section should start with comment about difficulty in assessing correctness.
+Mention spot checking.]
+
 ## Characterizing the assembly product
 
  * Number of taxon records: 3577714
@@ -24,7 +27,8 @@ Annotations:
 
 Polysemy analysis:
 
- * could we classify the polysemies?  by taxon rank, proximity, etc.  and compare to GBIF / NCBI
+ * There are 13089 polysemous name-strings.  Most (11375) are 2-way.
+ * Could we classify the polysemies?  by taxon rank, proximity, etc.  and compare to GBIF / NCBI
      * sibling, cousin, parent/child, within code, between codes
      * how many inherited from source taxonomy, as opposed to created?
      * could be created via skeleton separation
@@ -36,8 +40,9 @@ Alignment
 
 * Table with one row per source showing...
     * number of taxa
-    * number of taxa contributed (incrementally) by that source
-    * number of taxa in the source matched to the developing OTT
+    * number of taxa in the source matched to union (already there)
+    * number of taxa contributed (incrementally) by that source (new)
+    * number of higher taxa lost due to merges and inconsistensies
 
 [The following is not that table, but similar]
 
@@ -53,6 +58,7 @@ Alignment
 Breakdown of source nodes by fate
 
  * Total number of source nodes: ...
+ * 'Manually' aligned: ...
  * No candidates: ... about 959613 ...
  * >=1 candidate, no match / match:
  * >1 candidate, no match / unique match / ambiguity
@@ -161,19 +167,21 @@ rather difficult.  this is what the additions feature was for.]
 ### Taxonomic coverage
 
 OTT has 2.1M binomials (presumptive valid names), vs. 1.6M for
-Catalogue of Life (CoL).  The number is larger because OTT has many
-names that are either not valid or not currently accepted.
+Catalogue of Life (CoL).  The number is larger in part because the
+combination of the inputs has greater coverage than CoL, and in part
+because OTT has many names that are either not valid or not currently
+accepted.
 
 Since the GBIF source we used includes the 2011 edition of CoL [2011],
 OTT's coverage includes everything in that edition of CoL.
 
 This level of coverage would seem to meet Open Tree's taxonomic
-coverage goal [hmm, hard to make a definite statement since the goal
+coverage goal. [hmm, hard to make a definite statement since the goal
 is 'best effort' rather than quantitative]
 
 [As another coverage check, and test of alignment, consider evaluating
-against HHDB (hemihomonyms) - (ideally we would have all senses of
-each HHDB polysemy, in the right places)
+against HHDB (hemihomonyms) - ideally we would have all senses of
+each HHDB polysemy, in the right places]
 
 ### Backbone quality
 
@@ -211,17 +219,19 @@ vs. synth.
 ### Ongoing update
 
 [TBD: do an NCBI update and see what happens - how much manual
-intervention is required.]
+intervention is required.  - The fact that we haven't done any other
+updates would threaten any claim that this goal has been met, but
+maybe talking about NCBI is enough.]
 
 
 ### Open data
 
 As the Open Tree project did not have to enter into data use
-agreements in order to obtain its taxonomic sources, it is not obliged
-to require any such agreement from users of the taxonomy.  Therefore
-users are not restricted by contract (terms of use).  In addition, the
-taxonomy is not creative expression, and therefore copyright
-limitations do not apply either.  Therefore use of OTT is unrestricted.
+agreements in order to obtain OTT's taxonomic sources, it is not
+obliged to require any such agreement from users of OTT.  Therefore,
+users are not restricted by any contract (terms of use).  In addition,
+the taxonomy is not creative expression, so copyright limitations do
+not apply either.  Therefore use of OTT is unrestricted.
 
 Certainly the taxonomy could be improved by incorporating closed
 sources such the IUCN Red List, but doing so would conflict with the
@@ -285,7 +295,8 @@ able to import general Darwin Core Archive (DwCA), JSON-LD
 If we were going to import a large number of sources in one of these
 formats, establishing such facilities would be a good investment.
 
-Smasher reads and writes Newick format.
+Smasher reads Newick format, which is used for one of the sources
+(Hibbett 2007).
 
 In any data integration task, parsing the data is
 usually the least difficult part; most of the effort is in data

@@ -175,15 +175,15 @@ public abstract class Taxonomy {
     }
 
     // utility
-	public Taxon unique(String name) {
-		List<Node> probe = this.lookup(name);
+	public Taxon unique(String designator) {
+		List<Node> probe = this.lookup(designator);
 		if (probe != null) {
             if (probe.size() == 1)
                 return probe.get(0).taxon();
             else
                 return null;
 		} else 
-			return this.lookupId(name);
+			return this.lookupId(designator);
 	}
 
     // Every taxonomy has an idspace, even if not every node has an id.
@@ -1199,8 +1199,8 @@ public abstract class Taxonomy {
 		for (Taxon cutting : cuttings) {
 			PrintStream out = 
 				openw(outprefix + cutting.name.replaceAll(" ", "_") + ".tre");
-			StringBuffer buf = new StringBuffer();
-			Newick.appendNewickTo(cutting, true, buf);
+			StringBuilder buf = new StringBuilder();
+			Newick.appendNewickTo(cutting, Newick.USE_NAMES_AND_IDS, buf);
 			out.print(buf.toString());
 			out.close();
 		}
@@ -1348,13 +1348,17 @@ public abstract class Taxonomy {
 	// This feature is very primitive and only intended for debugging purposes!
 
 	public String toNewick() {
-        return this.toNewick(true);
+        return this.toNewick(Newick.USE_NAMES_AND_IDS);
     }
 
 	public String toNewick(boolean useIds) {
-		StringBuffer buf = new StringBuffer();
+        return toNewick(useIds ? Newick.USE_NAMES_AND_IDS : Newick.USE_NAMES);
+    }
+
+	public String toNewick(int mode) {
+		StringBuilder buf = new StringBuilder();
 		for (Taxon root: this.roots()) {
-			Newick.appendNewickTo(root, useIds, buf);
+			Newick.appendNewickTo(root, mode, buf);
 			buf.append(";");
 		}
 		return buf.toString();

@@ -15,11 +15,13 @@
 
 # Not a good location for this config file; fix later
 
+set -e
+
 . service.config
 
 # Modify as appropriate to your own hardware
 if [ "x$JAVAFLAGS" = "x" ]; then
-    JAVAFLAGS="-Xmx14G"
+    JAVAFLAGS="-Xmx7G"
 fi
 
 CLASSPATH="..:../lib/json-simple-1.1.1.jar"
@@ -48,8 +50,8 @@ else
   exit 1
 fi
 
-if "x$STUDY_BASE_URL" = x; then
-  STUDY_BASE_URL="https://api.opentreeoflife.org/v2/study/"
+if [ "x$STUDY_BASE_URL" = x ]; then
+  STUDY_BASE_URL="https://api.opentreeoflife.org/v3/study/"
 fi
 
 echo Starting services $TAXONOMY $SYNTH $STUDY_BASE_URL

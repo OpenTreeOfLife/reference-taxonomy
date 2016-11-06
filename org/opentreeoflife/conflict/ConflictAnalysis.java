@@ -14,13 +14,18 @@ import org.opentreeoflife.taxa.Taxon;
 import org.opentreeoflife.taxa.Taxonomy;
 import org.opentreeoflife.taxa.SourceTaxonomy;
 import org.opentreeoflife.taxa.QualifiedId;
+import org.opentreeoflife.taxa.SimpleMap;
 import org.opentreeoflife.smasher.Alignment;
+import org.opentreeoflife.smasher.AlignmentByName;
 
 public class ConflictAnalysis {
 
     // input is an input tree, ref is a 'reference' tree (either taxonomy or synthetic tree)
     public Taxonomy input;
     public Taxonomy ref;
+
+    boolean includeSuppressed;
+    SimpleMap<Taxon, Taxon> tipMap;
 
     // The Taxonomy class allows multiple roots, but we can only deal with one
     public Taxon inputRoot;
@@ -36,39 +41,97 @@ public class ConflictAnalysis {
     public int conflicting = 0;
     public int opportunities = 0;
 
-    boolean includeSuppressed;
-
     public ConflictAnalysis(Taxonomy input, Taxonomy ref) {
-        this(input, ref, null, true);
-    }
-    /*
-    // deprecated
-    public ConflictAnalysis(Taxonomy input, Taxonomy ref, String ingroupId) {
-        if (input.ingroup == null) input.ingroup = input.lookupId(ingroupId);
         this(input, ref, true);
     }
-    // deprecated
-    public ConflictAnalysis(Taxonomy input, Taxonomy ref, String ingroupId, boolean includeSuppressed) {
-        if (input.ingroup == null) input.ingroup = input.lookupId(ingroupId);
-        this(input, ref, includeSuppressed);
-    }
-    */
 
-    public ConflictAnalysis(Taxonomy input, Taxonomy ref, Alignment alignment, boolean includeSuppressed) {
+    public ConflictAnalysis(Taxonomy input, Taxonomy ref, boolean includeSuppressed) {
+        if (input.idspace == null ?
+            (input.idspace == ref.idspace) :
+            input.idspace.equals(ref.idspace))
+            init(input,
+                 ref,
+                 new SimpleMap<Taxon, Taxon>() {
+                     public Taxon get(Taxon node) {
+                         return ref.lookupId(node.id);
+                     }
+                 },
+                 includeSuppressed);
+        else
+            init(input,
+                 ref,
+                 new SimpleMap<Taxon, Taxon>() {
+                     public Taxon get(Taxon node) {
+                         if (node.sourceIds != null)
+                             for (QualifiedId qid : node.sourceIds)
+                                 if (qid.prefix.equals(ref.idspace))
+                                     return ref.lookupId(qid.id);
+                         return null;
+                     }
+                 },
+                 includeSuppressed);
+    }
+
+    // This is used to analyze a study against the synthetic tree.
+    // Taxon ids in the synthetic tree look like "ott123".
+
+    public static ConflictAnalysis againstSynthesis(Taxonomy input, Taxonomy ref, boolean includeSuppressed) {
+        SimpleMap<Taxon, Taxon> tipMap;
+        if ("ott".equals(input.idspace))
+            tipMap = new SimpleMap<Taxon, Taxon>() {
+                    public Taxon get(Taxon node) {
+                        if (node.id != null)
+                            return ref.lookupId("ott" + node.id);
+                        else
+                            return null;
+                    }
+                };
+        else
+            tipMap = new SimpleMap<Taxon, Taxon>() {
+                    public Taxon get(Taxon node) {
+                        if (node.sourceIds != null)
+                            for (QualifiedId qid : node.sourceIds)
+                                if (qid.prefix.equals("ott"))
+                                    return ref.lookupId("ott" + qid.id);
+                        return null;
+                    }
+                };
+        return new ConflictAnalysis(input,
+                                    ref,
+                                    tipMap,
+                                    includeSuppressed);
+    }
+
+    public ConflictAnalysis(Taxonomy input, Taxonomy ref, final Alignment alignment, boolean includeSuppressed) {
+        init(input,
+             ref,
+             new SimpleMap<Taxon, Taxon>() {
+                 public Taxon get(Taxon node) {
+                     Taxon refnode = alignment.getTaxon(node);
+                     return refnode;
+                 }
+             },
+             includeSuppressed);
+    }
+
+    public ConflictAnalysis(Taxonomy input, Taxonomy ref, SimpleMap<Taxon, Taxon> tipMap, boolean includeSuppressed) {
+        init(input, ref, tipMap, includeSuppressed);
+    }
+
+    // tipMap maps input node to ref node.  Only used for tips and quasi-tips
+
+    private void init(Taxonomy input, Taxonomy ref, SimpleMap<Taxon, Taxon> tipMap, boolean includeSuppressed) {
         this.input = input;
         this.ref = ref;
+        this.tipMap = tipMap;
+        this.includeSuppressed = includeSuppressed;
+
         this.inputRoot = uniqueRoot(input);
         this.refRoot = uniqueRoot(ref);
 
         // Populate map and comap
         map = new HashMap<Taxon, Taxon>();
-        if (alignment == null) {
-            this.mapTips(this.inputRoot);
-        } else {
-            for (Taxon node : alignment.keySet())
-                // might want to restrict this to tips
-                map.put(node, alignment.getTaxon(node));
-        }
+        this.mapTips(this.inputRoot);
         comap = this.invertMap(map);
         this.induce();
 
@@ -163,33 +226,22 @@ public class ConflictAnalysis {
 
     boolean mapTips(Taxon node) {
         boolean anyMapped = false;
-        if (node.children != null) {
+        if (node.hasChildren()) {
             for (Taxon child : node.children)
                 anyMapped = mapTips(child) || anyMapped;
         }
-        if (!anyMapped) {
-            mapTip(node);
+        if (anyMapped)
             return true;
-        } else
-            return false;
-    }
-
-    boolean mapTip(Taxon node) {
-        String id = null;
-        if (node.taxonomy.idspace.equals(ref.idspace)) // useful for testing
-            id = node.id;
-        else if (node.sourceIds != null)
-            for (QualifiedId qid : node.sourceIds)
-                if (qid.prefix.equals(ref.idspace)) {
-                    id = qid.id;
-                    break;
-                }
-        Taxon refnode = ref.lookupId(id);
-        if (refnode != null
-            && (includeSuppressed || !refnode.isHidden())) {
-            map.put(node, refnode);
+        else {
+            Taxon refnode = this.tipMap.get(node);
+            if (refnode != null
+                && (includeSuppressed || !refnode.isHidden())) {
+                map.put(node, refnode);
+                return true;
+            } else
+                return false;
         }
-        return false;
+
     }
 
     boolean induce() {
@@ -329,12 +381,10 @@ public class ConflictAnalysis {
     public static boolean maximizeWitness = true;
 
     public Articulation articulation(Taxon node, Map<Taxon, Taxon> map, Map<Taxon, Taxon> comap) {
-        if (node.children == null)
-            return null;
-        Taxon conode = map.get(node);
+        Taxon conode = map.get(node); // usually in ref. taxonomy
         if (conode == null)
             return null;
-        Taxon bounce = comap.get(conode);
+        Taxon bounce = comap.get(conode); // back in original taxonomy
         if (bounce == null) {
             System.err.format("Shouldn't happen 1 %s\n", node);
             return null; // shouldn't happen
@@ -358,10 +408,6 @@ public class ConflictAnalysis {
             System.err.format("Shouldn't happen 2 %s\n", node);
             return null; // shouldn't happen
         }
-        if (conode.children == null) {
-            System.err.format("** Articulation: shouldn't happen\n");
-            return null;
-        }
 
         // ???? in (a,(b,c)) vs. (a,b,c)  (b,c) conflicts with a ????
         
@@ -369,7 +415,7 @@ public class ConflictAnalysis {
         // If node conflicts with anything, it conflicts with one of conode's children
         // That is, if node either contains or excludes every child of
         // conode, then node resolves conode, otherwise it conflicts.
-        for (Taxon cochild : conode.children) {
+        for (Taxon cochild : conode.getChildren()) {
             Taxon back = comap.get(cochild);
             if (back == null)
                 ;
@@ -433,4 +479,16 @@ public class ConflictAnalysis {
         }
         return arts;
     }
+
+    public static void main(String[] argv) throws Exception {
+        Taxonomy t1 = Taxonomy.getTaxonomy("((a,b)ab,(c,d)cd)top", "t1");
+        Taxonomy u = Taxonomy.getTaxonomy("(a,(b,(c,d)cd)bcd)top", "u");
+        Alignment a = new AlignmentByName(t1, u);
+        a.align();
+        u.eventLogger.eventsReport("| ");
+        ConflictAnalysis c = new ConflictAnalysis(t1, u, a, true);
+        for (Taxon t : t1.taxa())
+            System.out.format("%s %s\n", t, c.articulation(t));
+    }
+
 }

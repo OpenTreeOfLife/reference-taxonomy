@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.io.PushbackReader;
 import java.io.IOException;
 
-class Newick {
+public class Newick {
 
     // ----- READ -----
 
@@ -67,8 +67,10 @@ class Newick {
         }
     }
             
+    // http://evolution.genetics.washington.edu/phylip/newick_doc.html
+
     static String readLabel(PushbackReader in) throws IOException {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         int c = in.read();
         if (c == '\'')
             while (true) {
@@ -99,6 +101,7 @@ class Newick {
                     in.unread(c);
                     break;
                 } else {
+                    if (c == '_') c = ' ';
                     buf.appendCodePoint(c);
                     c = in.read();
                 }
@@ -122,29 +125,27 @@ class Newick {
         return c;
     }
 
-    static Pattern ottidPattern = Pattern.compile("(.*)_ott([0-9]+)");
-    static Pattern ottidPattern2 = Pattern.compile("ott([0-9]+)");
+    static private String synthid = "(ott[0-9]+|mrcaott[0-9]+ott[0-9]+)";
+    static Pattern nameAndIdPattern = Pattern.compile("(.+)[_ ]" + synthid);
+    static Pattern idPattern = Pattern.compile(synthid);
 
 	// Specially hacked to support the Hibbett 2007 spreadsheet & synthesis output
 	static void initNewickNode(Taxon node, String label) {
+        node.rank = Rank.NO_RANK;
 
-        if (label == null) {
-            node.rank = Rank.NO_RANK;
+        if (label == null || label.length() == 0)
             return;
-        }
 
         // Look for special synthesis output pattern e.g. Picomonas_judraskeda_ott4738960
-        Matcher m = ottidPattern.matcher(label);
+        Matcher m = nameAndIdPattern.matcher(label); // name id (name_id)
         if (m.matches()) {
-            node.rank = Rank.NO_RANK;
-            node.setId(m.group(2));
-            node.setName(spacify(m.group(1)));
+            setId(node, m.group(2));
+            node.setName(m.group(1));
             return;
         }
-        Matcher m2 = ottidPattern2.matcher(label);
+        Matcher m2 = idPattern.matcher(label); // id
         if (m2.matches()) {
-            node.rank = Rank.NO_RANK;
-            node.setId(m2.group(1));
+            setId(node, label);
             return;
         }
 
@@ -158,35 +159,50 @@ class Newick {
                 rank = Rank.NO_RANK;
             }
             node.rank = rank;
-            node.setName(spacify(label.substring(pos+1)));
-		} else {
-			node.rank = Rank.NO_RANK;
-			node.setName(spacify(label));
-		}
+            node.setName(label.substring(pos+1));
+		} else
+			node.setName(label);
 	}
 
-    static private String spacify(String s) {
-        String r = s.replaceAll("_", " ");
-        return (r.length() == 0 ? null : r);
+    static void setId(Taxon node, String id) {
+        node.setId(id);
+        /* don't know whether this would be useful.
+        if (id.startsWith("ott"))
+            node.addSourceId(new QualifiedId("ott", id.substring(3)));
+        */
     }
 
     // ----- WRITE -----
 
-	static void appendNewickTo(Taxon node, boolean useIds, StringBuffer buf) {
+    public final static int USE_IDS = 1;
+    public final static int USE_NAMES = 2;
+    public final static int USE_NAMES_AND_IDS = 3;
+
+	public static String toNewick(Taxonomy tax, int mode) {
+		StringBuilder buf = new StringBuilder();
+		for (Taxon root: tax.roots()) {
+			Newick.appendNewickTo(root, mode, buf);
+			buf.append(";");
+		}
+		return buf.toString();
+	}
+
+	static void appendNewickTo(Taxon node, int mode, StringBuilder buf) {
 		if (node.children != null) {
 			buf.append("(");
             List<Taxon> sorted = new ArrayList<Taxon>(node.children);
 			Collections.sort(sorted, Taxon.compareNodes);
 			Taxon last = sorted.get(sorted.size()-1);
 			for (Taxon child : sorted) {
-				appendNewickTo(child, useIds, buf);
+				appendNewickTo(child, mode, buf);
 				if (child != last)
 					buf.append(",");
 			}
 			buf.append(")");
 		}
-		if (node.name != null)
-			buf.append(newickName(node.name, useIds, node.taxonomy.getTag(), node.id));
+        String label = newickLabel(node.name, mode, node.id);
+        if (label != null)
+            buf.append(label);
 	}
 
     // Newick stuff copied from src/main/java/opentree/GeneralUtils.java
@@ -195,7 +211,7 @@ class Newick {
 
     // All common non-alphanumeric chars except "_" and "-", for use when cleaning strings
     public static final Pattern newickIllegal =
-        Pattern.compile(".*[\\Q:;/[]{}(),\\E]+.*");
+        Pattern.compile("[\\Q:;/[]{}(),\\E'_]");
 	
 	/**
 	 * Make sure name conforms to valid newick usage
@@ -205,38 +221,45 @@ class Newick {
      * around the entire string.
 	 * Puts quotes around name if any illegal characters are present.
 	 * 
-	 * Author: Joseph W. Brown
+	 * Derives from code written by: Joseph W. Brown
 	 *
 	 * @param origName
-	 * @return newickName
+	 * @return newick label, with quotes or _ if needed
 	 */
-	public static String newickName(String origName, boolean useIds, String tag, String id) {
-		boolean needQuotes = false;
-		String newickName = origName;
-		
-		// replace all spaces with underscore
-		newickName = newickName.replaceAll(" ", "_");
-		
-		// replace ':' with '_'. a hack for working with older versions of
-        // dendroscope e.g. 2.7.4
-		newickName = newickName.replaceAll(":", "_");
-		
-		// newick standard way of dealing with single quotes in taxon names
-		if (newickName.contains("'")) {
-			newickName = newickName.replaceAll("'", "''");
-			needQuotes = true;
+	public static String newickLabel(String origName, int mode, String id) {
+        String label = null;
+        switch (mode) {
+        case USE_IDS:
+            label = id; break;
+        case USE_NAMES:
+            label = origName; break;
+        case USE_NAMES_AND_IDS: 
+            // turn foo into foo_ott1234
+            if (origName != null && id != null)
+                label = String.format("%s %s", origName, id);
+            else if (id != null)
+                label = id;
+            else if (origName != null)
+                label = origName;
+            break;
         }
-        // not sure about this one.  turn foo into foo_ott1234
-		if (useIds && tag != null && id != null)
-			newickName = String.format("%s_%s%s", newickName, tag, id);
+        if (label == null) return null;
+        return newickQuote(label);
+    }
 
-		// if offending characters are present, quotes are needed
-		if (newickIllegal.matcher(newickName).matches())
-			needQuotes = true;
-		if (needQuotes)
-			newickName = "'" + newickName + "'";
+    static String newickQuote(String label) {
+		if (newickIllegal.matcher(label).find()) {
 		
-		return newickName;
+            // replace ':' with something else. a hack for working
+            // with older versions of dendroscope e.g. 2.7.4
+            label = label.replaceAll(":", "<colon>");
+		
+            // newick standard way of dealing with single quotes in taxon names
+            if (label.contains("'"))
+                label = label.replaceAll("'", "''");
+            return String.format("'%s'", label);
+        } else
+            return label.replaceAll(" ", "_");
 	}
 
 }

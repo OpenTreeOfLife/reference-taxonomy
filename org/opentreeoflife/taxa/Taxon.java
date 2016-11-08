@@ -229,10 +229,16 @@ public class Taxon extends Node {
             System.err.format("** Attempt to set id of a pruned taxon: %s %s\n", this, id);
             return;
         }
-		if (id != null && this.id == null)
+		if (id == null)
+            return;
+        if (this.id == null)
             this.taxonomy.addId(this, id);
-        else if (!this.id.equals(id))
-			System.err.println("** Attempt to replace id " + this.id + " with " + id);
+        else if (!this.id.equals(id)) {
+            String wasid = this.id;
+            this.id = null;
+            this.taxonomy.addId(this, id);
+            this.taxonomy.addId(this, wasid);
+        }
 	}
 
 	public Taxon getParent() {
@@ -740,7 +746,6 @@ public class Taxon extends Node {
 	// Delete this node and all of its descendants.
 	public boolean prune(String reason) {
         this.detach();
-        this.addFlag(Taxonomy.EDITED);
         return this.setRemoved(reason);
     }
 
@@ -934,11 +939,15 @@ public class Taxon extends Node {
 	public boolean unhide() {
         this.addFlag(Taxonomy.FORCED_VISIBLE);
         boolean success = true;
-        for (Taxon t = this; !t.isRoot(); t = t.parent) {
-            if (t.isDirectlyHidden()) {
-                t.properFlags &= ~Taxonomy.HIDDEN;
-                if (t.isDirectlyHidden()) {
-                    System.err.format("** %s will remain hidden until problems with %s are fixed\n", t, this);
+        for (Taxon a = this; !a.isRoot(); a = a.parent) {
+            if (a.isDirectlyHidden()) {
+                a.properFlags &= ~Taxonomy.HIDDEN;
+                if (a.isDirectlyHidden()) {
+                    if (!a.isExtinct())
+                        System.err.format("** %s will remain hidden until %s [%s] is exposed\n",
+                                          this,
+                                          a,
+                                          Flag.toString(a.properFlags, 0));
                     success = false;
                 }
             }
@@ -1000,13 +1009,12 @@ public class Taxon extends Node {
                 Taxon taxon = node.taxon();
                 if (taxon == node) {  // only consider non-synonyms
                     if (taxon == this)
-                        // Primary name is already name
+                        // Primary name is already the right name
                         return true;
                     if (taxon.parent == this.parent) {
-                        System.err.format("** rename: there's already a node with name %s in %s\n",
-                                          name, this.parent);
-                        // taxon.addSynonym(oldname, typ);
-                        // or taxon.absorb(this);
+                        System.err.format("* rename: absorbing %s into %s\n",
+                                          this, taxon);
+                        taxon.absorb(this);
                         return false;
                     }
                 }

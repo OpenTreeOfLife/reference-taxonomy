@@ -84,6 +84,11 @@ def create_ott():
 
     # NCBI
     ncbi = taxonomies.load_ncbi()
+
+    # analyzeOTUs sets flags on questionable taxa (hybrid, metagenomes,
+    #  etc) to allow the option of suppression downstream
+    ncbi.analyzeOTUs()
+
     ncbi_to_ott = align_ncbi(ncbi, silva, ott)
     ott.absorb(ncbi, ncbi_to_ott)
 
@@ -130,11 +135,7 @@ def create_ott():
     irmng = taxonomies.load_irmng()
     hide_irmng(irmng)
     a = align_irmng(irmng, ott)
-    if True:                   # Include taxa from irmng?
-        ott.absorb(irmng, a)
-    else:
-        ott.align(a)
-        a.transferProperties(irmng)
+    ott.absorb(irmng, a)
 
     # Misc fixups
     taxonomies.link_to_h2007(ott)
@@ -154,9 +155,6 @@ def create_ott():
 
     # Reporting
     report_on_h2007(h2007, h2007_to_ott)
-
-    # Morganella mystery
-    ott.taxon('973932').show()
 
     # For deprecated id report (dump)
     ott.loadPreferredIds('ids_that_are_otus.tsv', False)
@@ -193,12 +191,14 @@ def assign_ids(ott):
             ('Exaiptasia pallida', 'Cnidaria', '135923'),
             ('Choanoflagellida', 'Holozoa', '202765'),
             ('Billardiera', 'Lamiales', '798963'),
-            ('Pohlia', 'Foraminifera', '5325989'),
             ('Trachelomonas grandis', 'Bacteria', '58035'), # study ot_91 Tr46259
             ('Hypomyzostoma', 'Myzostomida', '552744'),   # was incorrectly in Annelida
             ('Gyromitus', 'SAR', '696946'),
             ('Pseudogymnoascus destructans', 'Pezizomycotina', '428163'),
             # ('Amycolicicoccus subflavus', 'Mycobacteriaceae', '541768'),  # ncbi:639313
+            # ('Pohlia', 'Foraminifera', '5325989')  - NO
+            ('Pohlia', 'Amphibia', '5325989'),  # irmng:1311321
+
     ]:
         tax = ott.maybeTaxon(inf, sup)
         if tax != None:
@@ -217,7 +217,7 @@ def assign_ids(ott):
 
     # --------------------
     # Assign OTT ids to taxa that don't have them, re-using old ids when possible
-    ids = Taxonomy.getTaxonomy('tax/prev_ott/', 'ott')
+    ids = Taxonomy.getRawTaxonomy('tax/prev_ott/', 'ott')
 
     # Edit the id source taxonomy to optimize id coverage
 
@@ -253,23 +253,34 @@ def assign_ids(ott):
 
 def assign_ids_from_list(tax, filename):
     count = 0
-    if True:
-        infile = FileReader(filename)
-        r = CSVReader(infile)
-        while True:
-            row = r.readNext()
-            if row == None: break
-            [qid, ids] = row
-            taxon = tax.lookupQid(QualifiedId(qid))
-            if taxon != None:
-                id_list = ids.split(';')
-                for id in id_list:
-                    z = tax.lookupId(id)
-                    if z == None:
-                        taxon.taxonomy.addId(taxon, id)
+    change_count = 0
+    infile = FileReader(filename)
+    r = CSVReader(infile)
+    while True:
+        row = r.readNext()
+        if row == None: break
+        [qid, ids] = row
+        taxon = tax.lookupQid(QualifiedId(qid))
+        if taxon != None:
+            id_list = ids.split(';')
+
+            # If every id maps either nowhere or to the taxon,
+            # set every id to map to the taxon.
+            win = True
+            for id in id_list:
+                z = tax.lookupId(id)
+                if z != None and z != taxon: win = False
+            if win:
+                if taxon.id != id_list[0]:
+                    if taxon.id == None:
                         count += 1
-        infile.close()
-    print '| Assigned %s ids from %s' % (count, filename)
+                    else:
+                        change_count += 1
+                        taxon.setId(id_list[0])
+                        for id in id_list:
+                            taxon.taxonomy.addId(taxon, id)
+                            infile.close()
+                            print '| Assigned %s, changed %s ids from %s' % (count, change_count, filename)
 
     # Could harvest merges from the id list, as well, and
     # maybe even restore lower-numbered OTT ids.
@@ -279,9 +290,11 @@ def hide_irmng(irmng):
     # https://github.com/OpenTreeOfLife/feedback/issues/302
     for root in irmng.roots():
         root.hide()
+
     # 2016-11-06 Laura Katz personal email to JAR:
     # "IRMNG great for microbial diversity, for example"
     irmng.taxon('Protista').unhide()
+
     with open('irmng_only_otus.csv', 'r') as infile:
         reader = csv.reader(infile)
         reader.next()           # header row
@@ -294,12 +307,12 @@ def debug_divisions(name, ncbi, ott):
     n = ncbi.taxon(name)
     if n != None:
         n.show()
-    o = ott.taxon(name)
-    if o != None:
-        o.show()
-        while o != None:
-            print o, o.getDivision()
-            o = o.parent
+        o = ott.taxon(name)
+        if o != None:
+            o.show()
+            while o != None:
+                print o, o.getDivision()
+                o = o.parent
     print '##'
 
 # Splits a taxonomy into two parts: 1. the subtree rooted at taxon_name
@@ -330,7 +343,7 @@ def deal_with_polysemies(ott):
 
     # To do this without creating a sibling-could homonym, we have to create
     # a place to put it.  This will be rederived from SILVA soon enough.
-    establish('Bacillariophyta', ott, division='Eukaryota', ott_id='5342311')
+    establish('Bacillariophyta', ott, division='SAR', ott_id='5342311')
 
     # Diatom.  Contains e.g. Ctenophora pulchella.
     establish('Ctenophora', ott, ancestor='Bacillariophyta', ott_id='103964')
@@ -351,7 +364,7 @@ def deal_with_polysemies(ott):
     establish('Euxinia', ott, division='Metazoa', source='ncbi:225958', ott_id='329188') #amphipod
 
     # Discovered via failed inclusion test
-    establish('Campanella', ott, division='Eukaryota', source='ncbi:168241', ott_id='136738') #alveolata
+    establish('Campanella', ott, division='SAR', source='ncbi:168241', ott_id='136738') #alveolata
     establish('Campanella', ott, division='Fungi', source='ncbi:71870', ott_id='5342392')    #basidiomycete
 
     # Discovered via failed inclusion test
@@ -366,6 +379,12 @@ def deal_with_polysemies(ott):
     # separated automatically
     establish('Morganella', ott, division='Bacteria', source='ncbi:581', ott_id='524780') #also in silva
     establish('Morganella', ott, division='Fungi',    source='if:19222', ott_id='973932')
+
+    # Discovered from inclusions test after tweaking alignment heuristics.
+    establish('Cyclophora', ott, division='SAR',         source='ncbi:216819', ott_id='678569') #diatom
+    establish('Cyclophora', ott, division='Lepidoptera', source='ncbi:190338', ott_id='1030079') #moth
+    # there are two more Cyclophora/us but they take care of themselves
+
 
 # ----- SILVA -----
 
@@ -468,7 +487,8 @@ def align_fungi(fungi, ott):
 
 def align_fungorum_sans_fungi(sans, ott):
     a = ott.alignment(sans)
-    a.same(sans.taxon('Byssus'), ott.taxon('Trentepohlia', 'Chlorophyta'))
+    if sans.maybeTaxon('Byssus') != None: # seems to have disappeared
+        a.same(sans.taxon('Byssus'), ott.taxon('Trentepohlia', 'Chlorophyta'))
     a.same(sans.taxon('Achlya'), ott.taxon('Achlya', 'Stramenopiles'))
     return a
 
@@ -491,13 +511,9 @@ def align_ncbi(ncbi, silva, ott):
 
     a = ott.alignment(ncbi)
 
+    set_SAR_divisions(ncbi, ott)
+
     a.same(ncbi.taxon('Viridiplantae'), ott.taxon('Chloroplastida'))
-    arch = establish('Archaeplastida', ncbi, division='Eukaryota') # No id
-    ncbi.taxon('Eukaryota').take(arch)
-    arch.take(ncbi.taxon('Viridiplantae'))
-    arch.take(ncbi.taxon('Rhodophyta'))
-    arch.take(ncbi.taxon('Glaucocystophyceae'))
-    arch.unsourced = True
 
     a.same(ncbi.taxonThatContains('Ctenophora', 'Ctenophora pulchella'),
            ott.taxonThatContains('Ctenophora', 'Ctenophora pulchella')) # should be 103964
@@ -639,7 +655,15 @@ def align_ncbi_to_silva(mappings, a):
 def align_worms(worms, ott):
     a = ott.alignment(worms)
     a.same(worms.taxon('Biota'), ott.taxon('life'))
-    a.same(worms.taxon('Plantae'), ott.taxon('Archaeplastida'))
+
+    a.same(worms.taxon('Harosa'), ott.taxon('SAR'))
+    a.same(worms.taxon('Heterokonta'), ott.taxon('Stramenopiles'))
+
+    plants = set_divisions(worms, ott)
+    a.same(plants, ott.taxon('Archaeplastida'))
+
+    ott.setDivision(worms.taxon('Chromista'), 'Eukaryota')
+    ott.setDivision(worms.taxon('Protozoa'), 'Eukaryota')
 
     a.same(worms.taxonThatContains('Trichosporon', 'Trichosporon lodderae'),
            ott.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
@@ -665,8 +689,17 @@ def align_gbif(gbif, ott):
 
     a = ott.alignment(gbif)
 
-    plants = fix_plants(gbif)
+    # Get rid of diatoms, they do not belong here
+    bac = gbif.taxon('Bacillariophyta', 'Plantae')
+    if bac != None:
+        a.same(bac, ott.taxon('Diatomea'))
+        ott.setDivision(bac, 'SAR')
+
+    plants = set_divisions(gbif, ott)
     a.same(plants, ott.taxon('Archaeplastida'))
+
+    ott.setDivision(gbif.taxon('Chromista'), 'Eukaryota')
+    ott.setDivision(gbif.taxon('Protozoa'), 'Eukaryota')
 
     # GBIF puts this one directly in Animalia, but Annelida is a barrier node
     gbif.taxon('Annelida').take(gbif.taxon('Echiura'))
@@ -724,9 +757,9 @@ def align_gbif(gbif, ott):
     # This one seems to have gone away given changes to GBIF
     # a.notSame(gbif.taxon('Gorkadinium', 'Dinophyta'),
     #              ott.taxon('Tetrasphaera', 'Intrasporangiaceae')) # = Tetrasphaera in Protozoa
-
+    
     # Rick Ree 2014-03-28 https://github.com/OpenTreeOfLife/reference-taxonomy/issues/37
-    # ### CHECK: was ncbi.taxon
+    # CHECK - was ncbi.taxon
     # a.same(gbif.taxon('Calothrix', 'Rivulariaceae'), ott.taxon('Calothrix', 'Rivulariaceae'))
     a.same(gbif.taxon('Chlorella', 'Chlorellaceae'), ott.taxon('Chlorella', 'Chlorellaceae'))
     a.same(gbif.taxon('Myrmecia', 'Microthamniales'), ott.taxon('Myrmecia', 'Microthamniales'))
@@ -744,9 +777,9 @@ def align_gbif(gbif, ott):
     # JAR 2014-04-23 More sample contamination in SILVA 115
     # redundant
     # a.same(gbif.taxon('Lamprospora'), fungi.taxon('Lamprospora'))
-
+    
     # JAR 2014-04-23 IF update fallout
-    # ### CHECK: was ncbi.taxon
+    # - CHECK - was ncbi.taxon
     a.same(gbif.taxonThatContains('Penicillium', 'Penicillium expansum'),
            ott.taxonThatContains('Penicillium', 'Penicillium expansum'))
 
@@ -807,43 +840,18 @@ def align_gbif(gbif, ott):
 
     return a
 
-def fix_plants(taxonomy):
-
-    plants = taxonomy.taxon('Plantae')
-
-    chlor = establish('Chloroplastida', taxonomy, parent='Plantae') # No id
-    chlor.unsourced = True
-    plants.take(chlor)
-
-    # Dispose of all the children of Plantae
-    bac = taxonomy.maybeTaxon('Bacillariophyta', 'Plantae')
-    if bac != None:
-        plants.parent.take(bac)
-    to_move = []
-    for plant in plants.children:
-        if (plant.name != 'Rhodophyta' and plant.name != 'Glaucophyta'
-            and plant.rank.level <= Rank.FAMILY_RANK.level):
-            to_move.append(plant)
-    for plant in to_move:
-        un = not plant.isPlaced()
-        chlor.take(plant)
-        if un: plant.unplaced()
-
-    # straighten out Byssus division
-    ulv = taxonomy.maybeTaxon('Ulvophyceae')
-    if ulv.parent == chlor.parent:
-        chlor.take(ulv)
-
-    return plants
-
 # ----- Interim Register of Marine and Nonmarine Genera (IRMNG) -----
 
 def align_irmng(irmng, ott):
 
     a = ott.alignment(irmng)
 
-    plants = fix_plants(irmng)
+    a.same(irmng.taxon('Heterokontophyta'), ott.taxon('Stramenopiles'))
+
+    plants = set_divisions(irmng, ott)
     a.same(plants, ott.taxon('Archaeplastida'))
+
+    ott.setDivision(irmng.taxon('Protista'), 'Eukaryota')
 
     # Fungi suppressed at David Hibbett's request
     irmng.taxon('Fungi').hideDescendantsToRank('species')
@@ -901,7 +909,7 @@ def align_irmng(irmng, ott):
 
     # JAR 2014-04-18 while investigating hidden status of Coscinodiscus radiatus.
     # tests
-    trouble('Coscinodiscus', 'Porifera', 'Stramenopiles')
+    trouble('Coscinodiscus', 'Porifera', 'Heterokontophyta')
 
     # 2015-09-10 Inclusion test failing irmng:1340611
     trouble('Retaria', 'Brachiopoda', 'Rhizaria')
@@ -936,7 +944,49 @@ def align_irmng(irmng, ott):
     # the deprecated.tsv file
     irmng.taxon('Goeppertia', 'Pteridophyta').prune(this_source)
 
+    # Not fungi - Romina 2014-01-28
+    # ott.taxon('Adlerocystis').show()  - it's Chromista ...
+    # Index Fungorum says Adlerocystis is Chromista, but I don't believe it
+    # ott.taxon('Chromista').take(ott.taxon('Adlerocystis','Fungi'))
+
+    # IRMNG says Adlerocystis is a fungus (Zygomycota), but unclassified - JAR 2014-03-10
+    # ott.taxon('Adlerocystis', 'Fungi').incertaeSedis()
+
+    adler = irmng.maybeTaxon('Adlerocystis', 'Fungi')
+    if adler != None:
+        adler.prune()
+
+    # Discovered on looking at build diagnostics for Chromista/Protozoa spreadsheet
+    irmng.taxon('Microsporidia', 'Protista').prune()
+
     return a
+
+# Common to GBIF, IRMNG, and WoRMS
+
+nonchloroplastids = ['Rhodophyta', 'Rhodophyceae', 'Glaucophyta', 'Glaucophyceae']
+
+def set_divisions(taxonomy, ott):
+
+    plants = taxonomy.taxon('Plantae') # = Archaeplastida
+
+    # Any child that's not a rhodophyte or glaucophyte is a chloroplastid
+    for plant in plants.children:
+        if (not (plant.name in nonchloroplastids)
+            and plant.rank.level <= Rank.FAMILY_RANK.level):
+            ott.setDivision(plant, 'Chloroplastida')
+
+    # These aren't plants
+    set_SAR_divisions(taxonomy, ott)
+
+    return plants
+
+sar_child_names = ['Stramenopiles', 'Heterokonta', 'Heterokontophyta', 'Alveolata', 'Rhizaria']
+
+def set_SAR_divisions(taxonomy, ott):
+    for name in sar_child_names:
+        z = taxonomy.maybeTaxon(name)
+        if z != None:
+            ott.setDivision(z, 'SAR')
 
 # ----- Final patches -----
 
@@ -998,14 +1048,6 @@ def patch_ott(ott):
     ott.taxon('Krabitherium').extinct()
     ott.taxon('Discritochoerus').extinct()
     ott.taxon('Brachyhyops').extinct()
-
-    # Not fungi - Romina 2014-01-28
-    # ott.taxon('Adlerocystis').show()  - it's Chromista ...
-    # Index Fungorum says Adlerocystis is Chromista, but I don't believe it
-    # ott.taxon('Chromista').take(ott.taxon('Adlerocystis','Fungi'))
-
-    # Adlerocystis seems to be a fungus, but unclassified - JAR 2014-03-10
-    ott.taxon('Adlerocystis', 'Fungi').incertaeSedis()
 
     # "No clear identity has emerged"
     #  http://forestis.rsvs.ulaval.ca/REFERENCES_X/phylogeny.arizona.edu/tree/eukaryotes/accessory/parasitic.html
@@ -1097,9 +1139,11 @@ def patch_ott(ott):
     #  http://dx.doi.org/10.1111/cla.12061
     # Bryan Drew 2013-09-30
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/91
-    ott.taxon('Boraginaceae').absorb(ott.taxon('Hydrophyllaceae'))
-    ott.taxon('Boraginales').take(ott.taxon('Boraginaceae'))
-    ott.taxon('lamiids').take(ott.taxon('Boraginales'))
+    bora1 = ott.taxonThatContains('Boraginaceae', 'Borago officinalis')
+    bora1.absorb(ott.taxon('Hydrophyllaceae'))
+    bora2 = ott.taxonThatContains('Boraginales', 'Borago officinalis')
+    bora2.take(bora1)
+    ott.taxon('lamiids').take(bora2)
 
     # Bryan Drew 2014-01-30
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/90
@@ -1117,11 +1161,12 @@ def patch_ott(ott):
     ott.taxon('Viscaceae').rename('Visceae')
     ott.taxon('Amphorogynaceae').rename('Amphorogyneae')
     ott.taxon('Thesiaceae').rename('Thesieae')
-    ott.taxon('Santalaceae').take(ott.taxon('Visceae'))
-    ott.taxon('Santalaceae').take(ott.taxon('Amphorogyneae'))
-    ott.taxon('Santalaceae').take(ott.taxon('Thesieae'))
-    ott.taxon('Santalaceae').absorb(ott.taxon('Cervantesiaceae'))
-    ott.taxon('Santalaceae').absorb(ott.taxon('Comandraceae'))
+    sant = ott.taxonThatContains('Santalaceae', 'Santalum insulare')
+    sant.take(ott.taxon('Visceae'))
+    sant.take(ott.taxon('Amphorogyneae'))
+    sant.take(ott.taxon('Thesieae'))
+    sant.absorb(ott.taxon('Cervantesiaceae'))
+    sant.absorb(ott.taxon('Comandraceae'))
 
     # Bryan Drew 2014-01-30
     # http://dx.doi.org/10.1126/science.282.5394.1692
@@ -1162,6 +1207,9 @@ def patch_ott(ott):
     ott.taxon('Tenebrioninae').take(ott.taxon('Tribolium','Coleoptera'))
 
     # Bryan Drew 2014-03-20 http://dx.doi.org/10.1186/1471-2148-14-23
+    # This isn't quite right - we really want to create a new taxon 'eurosides'
+    # equal to rosids minus Vitales, and either leave rosids alone or get rid of 
+    # it
     ott.taxon('Pentapetalae').take(ott.taxon('Vitales'))
 
     # Bryan Drew 2014-03-14 http://dx.doi.org/10.1186/1471-2148-14-23
@@ -1444,10 +1492,14 @@ def patch_ott(ott):
     ott.taxon('Hemitrypus', 'Amphibia').extinct() # from GBIF
 
     # https://github.com/OpenTreeOfLife/feedback/issues/133
-    ott.taxon('Cordicephalus', 'Amphibia').extinct() # from GBIF
+    cord = ott.taxon('Cordicephalus', 'Amphibia')
+    if cord != None:
+        cord.extinct() # from GBIF
 
     # https://github.com/OpenTreeOfLife/feedback/issues/123
-    ott.taxon('Gryphodobatis', 'Orectolobidae').extinct() # from GBIF
+    gryph = ott.taxon('Gryphodobatis', 'Orectolobidae')
+    if gryph != None:
+        gryph.extinct() # from GBIF
 
     # Recover missing extinct flags.  I think these are problems in
     # the dump that I have, but have been fixed in the current IRMNG
@@ -1639,4 +1691,5 @@ names_of_interest = ['Ciliophora',
                      'Cyclophora',
                      'Pohlia',
                      'Lonicera',
+                     'Chromista',
                      ]

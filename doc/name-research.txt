@@ -524,6 +524,8 @@ irmng:1134127 is Protista-Protista (awaiting allocation)
 
 ### Diphylleia
 
+1. The protist
+
 SILVA 117 has a Diphylleia (AF420478/#4) in Palpitomonas < Incertae Sedis < Eukaryota.
   (Better way to identify: it contains Diphylleia rotans.)
 IRMNG 1223253 is Protista-Apusozoa-Diphyllatea-Diphylleida.
@@ -531,8 +533,14 @@ IRMNG 1223253 is Protista-Apusozoa-Diphyllatea-Diphylleida.
 Should be same as ncbi:177250,gbif:2688063,irmng:1223253 = ott:4738987.
 NCBI puts it under Collodictyonidae.
 
-The other one is a eudicot.
+In Collodictyonidae ?  Says who?
+
+2. The plant
+
+The other one is a eudicot (Ranunculales).
 ott:570408 = ncbi:63346,gbif:3033928,irmng:1052707
+
+3. What is this
 
 ### Retaria
 
@@ -807,19 +815,25 @@ does this mean we're discarding *all* merged placeholders?
 
 ## Cyclophora
 
-Diatom genus:
-  ott:678569
+Diatom genus: OTT 678569 = ncbi:216819
   (SILVA something)
   ncbi:216819
   worms:450716
   gbif:2630051
   irmng:1301066
 
-Butterfly genus:  (contains Cyclophora nanaria)
+Moth (Ecdysozoa) genus:  OTT 1030079 = ncbi:190338
+  (contains Cyclophora nanaria)
   ott:1030079 in OTT 2.9
   ncbi:190338
   gbif:3260327
   irmng:1301089
+
+Mollusc: Cyclophorus = OTT 370526 = ncbi:75122
+  with synonym Cyclophora
+
+Fly: Cyclophorus = OTT 5752875 = irmng:1290130
+  Incertae sedis in Diptera.
 
 Why didn't these get separated as a result of adding Bacillariophyta
 as a skeleton node?  Then the diatom and the butterfly would have been
@@ -827,6 +841,36 @@ separated (in disjoint divisions).
 
 Anyhow why is the taxon id for Bacillariophyta so high (5342311)?
 Id should be 150991.
+
+## Adlerocystis
+
+Romina 2014-01-28 said it's not a fungus.
+
+EOL has Adlerocystis Feldm.-Muhs. & Havivi 1963, says IRMNG puts it in Fungi.
+Index Fungorum says it's in Chromista (directly).
+So does GBIF.
+IRMNG puts it in Zygomycota incertae sedis - not a homonym, same authority.
+'originally described as Phycomycete; current tax. position uncertain'
+
+So there's only one taxon here, but nobody knows where to put it.
+
+## Pohlia
+
+414928 = Chloroplastida (Bryophyta) = ncbi:67238
+
+5325989 = Chordata (Amphibia) = irmng:1311321
+
+5325989 ?= Foraminifera = worms:721643
+
+Previous taxonomies merged the ambphibian and the foram.  Time to fix.
+
+5325989 has priority IRMNG.  Need a new id for the foram.
+
+## Tuber
+
+508058 = Fungus (truffles) = if:5629 = ncbi:36048
+
+5352207 = SAR (Sarcomastigophora) = irmng:1292651 extinct
 
 ## Division problems
 

@@ -439,7 +439,7 @@ public abstract class Taxonomy {
                           nroots, nnodes - (ntips + nroots), ntips, nnodes, snodes);
     }
 
-    // Get rid of diacritics and similar marks
+    // Get rid of diacritics and similar marks.
     void normalizeNames() {
         int norm = 0;
         List<String[]> changes = new ArrayList<String[]>();
@@ -485,39 +485,27 @@ public abstract class Taxonomy {
 
 	public static void elideContainers(Taxon node) {
 		// Recursive descent
+        
+        for (Taxon child : node.getChildren())
+            elideContainers(child);
+
         Collection<Taxon> children = node.getChildren();
-
-        if (children.size() > 0) {
-			for (Taxon child : new ArrayList<Taxon>(children))
-				elideContainers(child);
-
+        for (Taxon child : new ArrayList<Taxon>(children)) {
             int flag = 0;
-            if (node.name != null) {
-                if (unclassifiedRegex.matcher(node.name).find()) // Rule 3+5
-                    flag = UNCLASSIFIED;
-                else if (environmentalRegex.matcher(node.name).find()) // Rule 3+5
-                    flag = ENVIRONMENTAL;
-                else if (incertae_sedisRegex.matcher(node.name).find()) // Rule 3+5
+            if (child.name != null) {
+                if (incertae_sedisRegex.matcher(child.name).find()) // Rule 3+5
                     flag = INCERTAE_SEDIS;
+                else if (environmentalRegex.matcher(child.name).find()) // Rule 3+5
+                    flag = ENVIRONMENTAL;
             }
             if (flag != 0) {
-                node.addFlag(flag);
-                // After (compare elide() - why not use elide()?)
-                // Splice the node out of the hierarchy, but leave it as a
-                // residual terminal non-OTU node.
-                if (!node.isRoot()) {
-                    Collection<Taxon> xchildren = node.getChildren();
-                    // https://github.com/OpenTreeOfLife/reference-taxonomy/issues/210
-                    // "If 'incertae sedis' is the only child, elide it"
-                    if (node.parent.children.size() <= 1) {
-                        node.parent.markEvent("eliding only child because it's a container");
-                        flag = 0;
-                    }
-                    for (Taxon child : new ArrayList<Taxon>(xchildren))
-                        // changeParent sets properFlags
-                        child.changeParent(node.parent, flag);
-                    node.addFlag(WAS_CONTAINER);
+                child.addFlag(WAS_CONTAINER); // probably should remove it entirely
+                if (children.size() <= 1) {
+                    node.markEvent("eliding only child because it's a container");
+                    flag = 0;
                 }
+                for (Taxon grand : new ArrayList<Taxon>(child.getChildren()))
+                    grand.changeParent(node, flag);
             }
         }
 	}
@@ -619,9 +607,7 @@ public abstract class Taxonomy {
             // Now absorb all the others into the smallest
             for (Taxon other : homs)
                 if (other != smallest) {
-                    if (other.children != Taxon.NO_CHILDREN &&
-                        smallest.children != Taxon.NO_CHILDREN)
-                        System.out.format("| Smushing %s into %s\n", other, smallest);
+                    this.markEvent("smushing");
                     if (other.isExtant()) // should transfer other flags too?
                         smallest.properFlags &= ~Taxonomy.EXTINCT;
                     smallest.absorb(other);
@@ -705,7 +691,9 @@ public abstract class Taxonomy {
          | FORMER_CONTAINER);   // kludge, review
 
 	// Individually troublesome - not sticky - combine using &  ? no, | ?
+    public
 	static final int NOT_OTU			 = (1 <<  9);
+    public
 	static final int HYBRID				 = (1 << 10);
 	static final int VIRAL				 = (1 << 11);
 
@@ -720,7 +708,9 @@ public abstract class Taxonomy {
 	static final int EDITED				 = (1 << 19);			  // combine using |
 
 	// Inferred
+    public
 	static final int INFRASPECIFIC		 = (1 << 21);  // Is below a 'species'
+    public
 	static final int BARREN			     = (1 << 22);  // Does not contain a species?
 
     // Intended to match treemachine's list
@@ -750,7 +740,8 @@ public abstract class Taxonomy {
 
         for (Taxon node : this.taxa()) {
             if (!node.isRoot()) {
-                int wrongFlags = node.inferredFlags & ~(node.parent.properFlags | node.parent.inferredFlags);
+                int wrongFlags = (node.inferredFlags &
+                                  ~(node.properFlags | node.parent.properFlags | node.parent.inferredFlags));
                 wrongFlags &= ~inferredOnly;
                 if (wrongFlags != 0) {
                     node.addFlag(wrongFlags); // adds to properFlags
@@ -823,10 +814,10 @@ public abstract class Taxonomy {
 					barren = false;
 			}
 		}
-		if (node.rank == null && node.children == null)
+		if (node.rank == Rank.NO_RANK && !node.hasChildren())
 			// The "no rank - terminal" case
 			barren = false;
-		if (node.children != null) {
+		if (!node.hasChildren()) {
 			boolean allextinct = true;	   // Any descendant is extant?
 			for (Taxon child : node.children) {
 				count += analyzeBarren(child);
@@ -845,7 +836,7 @@ public abstract class Taxonomy {
             ++count;
 		} else
 			node.inferredFlags &= ~Taxonomy.BARREN;
-        return 0;
+        return count;
 	}
 	
 	// NCBI only (not SILVA)
@@ -958,6 +949,8 @@ public abstract class Taxonomy {
 
 	static Pattern notOtuRegex =
 		Pattern.compile(
+						"\\buncultured\\b|" +
+						"\\bunclassified\\b|" +
 						"\\bunidentified\\b|" +
 						"\\bunknown\\b|" +
 						"\\bmetagenomes?\\b|" +	 // SILVA has a bunch of these
@@ -983,24 +976,25 @@ public abstract class Taxonomy {
 						"\\bvirus\\b"
 						);
 
-	static Pattern unclassifiedRegex =
+	static Pattern randomRegex =
 		Pattern.compile(
-                        // Always container
-						"\\bmycorrhizal samples\\b|" +
-                        // Sometimes container, sometimes not
-						"\\b[Uu]nclassified\\b|" +
                         // These never occur as containers
 						"\\buncultured\\b|" +       // maybe these aren't OTUs!
 						"\\bendophyte\\b|" +
-						"\\bendophytic\\b"
+						"\\bendophytic\\b" // word delimited
 						);
 
-	static Pattern environmentalRegex = Pattern.compile("\\benvironmental\\b");
+    // Containers
+	static Pattern environmentalRegex = Pattern.compile("\\bmycorrhizal samples\\b|" +
+                                                        "\\benvironmental samples\\b");
 
+    // Containers
 	static Pattern incertae_sedisRegex =
 		Pattern.compile("\\b[Ii]ncertae [Ss]edis\\b|" +
                         "\\b[Ii]ncertae[Ss]edis\\b|" +
-						"[Uu]nallocated|\\b[Mm]itosporic\\b");
+						"\\b[Uu]nallocated\\b|" +
+						"\\b[Uu]nclassified\\b|" +
+                        "\\b[Mm]itosporic\\b");
 
     // ----- SELECTIONS -----
 
@@ -1711,7 +1705,7 @@ public abstract class Taxonomy {
 		} else {
             Taxon probe = this.lookupId(name);
             if (windy && probe == null)
-                System.err.format("** No taxon found with this name or id: %s\n", name);
+                System.err.format("** No taxon found in %s with this name or id: %s\n", this.getTag(), name);
             return probe;
         }
 	}

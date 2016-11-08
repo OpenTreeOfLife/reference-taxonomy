@@ -336,18 +336,21 @@ public class Addition {
                 assignIds(fewerNodes, fakeFirst, fakeLast);
             }
         } else {
+            File f = new File(newTaxaDir, "need_ids.json");
+            System.err.println();
             System.err.format("** Did not find %s for id range to use for new ids.\n",
                               idRangeFile);
             System.err.format("** Please assign a range of at least %s ids and place it in that file.\n",
                               nodes.size());
-            System.err.format("** Format should be: {\"first\": mmm, \"last\": nnn}\n");
-            demand(nodes.size(), newTaxaDir);
+            System.err.format("** File contents should be: {\"first\": mmm, \"last\": nnn}\n");
+            System.err.format("** Number of ids needed has been written to %s\n", f);
+            System.err.println();
+            demand(nodes.size(), f);
             assignIds(fewerNodes, fakeFirst, fakeLast);
         }
     }
 
-    static void demand(long count, File newTaxaDir) {
-        File f = new File(newTaxaDir, "need_ids.json");
+    static void demand(long count, File f) {
         Map<String, Object> blob = new HashMap<String, Object>();
         blob.put("count", count);
         System.out.format("| Requesting %s ids (see %s)\n", count, f);

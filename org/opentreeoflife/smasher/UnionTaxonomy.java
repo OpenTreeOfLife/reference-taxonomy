@@ -61,7 +61,9 @@ public class UnionTaxonomy extends Taxonomy {
 		return new UnionTaxonomy(idspace);
 	}
 
-	// ----- INITIALIZATION FOR EACH SOURCE -----
+	// ----- INITIALIZATION -----
+
+    boolean useCompleteSkeleton = true;
 
 	// The 'division' field of a Taxon is always either null or a
 	// taxon belonging to the skeleton taxonomy...
@@ -76,22 +78,30 @@ public class UnionTaxonomy extends Taxonomy {
             div.unsourced = true;
         this.merge(skel, a);
 
-        if (false) {
-        // set divisions on union nodes (initially all null)
-        this.forest.setDivision(skel.forest);
-		for (Taxon div : skel.taxa()) {
-            if (div.name == null)
-                System.err.format("## Anonymous division ?! %s in %s\n", div, div.parent);
-            else {
-                Taxon udiv = a.getTaxon(div);
-                udiv.setId(div.id);
-                udiv.setDivision(div);
+        if (useCompleteSkeleton) {
+            // set divisions on union nodes (initially all null)
+            this.forest.setDivision(skel.forest);
+            for (Taxon div : skel.taxa()) {
+                if (div.name == null)
+                    System.err.format("## Anonymous division ?! %s in %s\n", div, div.parent);
+                else {
+                    Taxon udiv = a.getTaxon(div);
+                    udiv.setId(div.id);
+                    udiv.setDivision(div);
+                }
             }
-        }
         }
 
         this.skeletonAlignment = a;
 	}
+
+    public void setDivision(Taxon node, String divname) {
+        Taxon div = skeletonAlignment.source.unique(divname);
+        if (div != null)
+            node.setDivision(div);
+        else
+            System.err.format("** Unrecognized division: %s (for %s)\n", divname, node);
+    }
 
 	// -----
 
@@ -157,10 +167,7 @@ public class UnionTaxonomy extends Taxonomy {
     // ----- Align divisions from skeleton taxonomy -----
 
 	public void markDivisions(Alignment a) {
-		if (this.skeletonAlignment == null)
-			this.pin(a);	// Obsolete code, for backward compatibility!
-		else
-            markDivisionsFromSkeleton(a, this.skeletonAlignment);
+        markDivisionsFromSkeleton(a, this.skeletonAlignment);
 	}
 
 	// Before every alignment pass (folding source taxonomy into
@@ -176,14 +183,17 @@ public class UnionTaxonomy extends Taxonomy {
     // a will align source to target
 
     private void markDivisionsFromSkeleton(Alignment a, Alignment skeletonAlignment) {
-        this.clearDivisions();
+        Taxonomy skel = skeletonAlignment.source; // maps skeleton to union
+        if (!useCompleteSkeleton) {
+            this.clearDivisions();
+            this.forest.setDivision(skel.forest);
+        }
 
         Taxonomy source = a.source;
-
-        Taxonomy skel = skeletonAlignment.source; // maps skeleton to union
-
         source.forest.setDivision(skel.forest);
-        this.forest.setDivision(skel.forest);
+
+        // Instead of the following, we could just get an alignment
+        // between the skeleton and the source.
 
         for (String name : skel.allNames()) {
             Taxon node = highest(source, name);
@@ -206,67 +216,17 @@ public class UnionTaxonomy extends Taxonomy {
                         a.alignWith(node, unode, "same/by-division-name");
                         // %% this is setting a nonnull div node with a null name
                         node.setDivision(div);
-                        unode.setDivision(div);
-                        System.out.format("## Division of %s is %s\n", node, div);
+                        if (!useCompleteSkeleton)
+                            unode.setDivision(div);
+                        //System.out.format("## Division of %s is %s\n", node, div);
                     }
                 }
             }
         }
     }
 
-	// List determined manually and empirically
-	// @deprecated
-	private void pin(Alignment a) {
-        Taxonomy source = a.source;
-		String[][] pins = {
-			// Stephen's list
-			{"Fungi"},
-			{"Bacteria"},
-			{"Alveolata"},
-			// {"Rhodophyta"},	creates duplicate of Cyanidiales
-			{"Glaucophyta", "Glaucocystophyceae"},
-			{"Haptophyta", "Haptophyceae"},
-			{"Choanoflagellida"},
-			{"Metazoa", "Animalia"},
-			{"Chloroplastida", "Viridiplantae", "Plantae"},
-			// JAR's list
-			{"Mollusca"},
-			{"Arthropoda"},		// Tetrapoda, Theria
-			{"Chordata"},
-			// {"Eukaryota"},		// doesn't occur in gbif, but useful for ncbi/ncbi test merge
-			// {"Archaea"},			// ambiguous in ncbi
-			{"Viruses"},
-		};
-		int count = 0;
-		for (int i = 0; i < pins.length; ++i) {
-			String names[] = pins[i];
-			Taxon n1 = null, div = null;
-			// The division (div) is in the union taxonomy.
-			// For each pinnable name, look for it in both taxonomies
-			// under all possible synonyms
-			for (int j = 0; j < names.length; ++j) {
-				String name = names[j];
-				Taxon m1 = highest(source, name);
-				if (m1 != null) n1 = m1;
-				Taxon m2 = highest(this, name);
-				if (m2 != null) div = m2;
-			}
-			if (div != null) {
-				div.setDivision(div);
-				if (n1 != null)
-					n1.setDivision(div);
-				if (n1 != null && div != null)
-					a.alignWith(n1, div, "same/pinned"); // hmm.  TBD: move this out of here
-				if (n1 != null || div != null)
-					++count;
-			}
-		}
-		if (count > 0)
-			System.out.println("Pinned " + count + " out of " + pins.length);
-	}
-
 	// Most rootward node in the given taxonomy having a given name
-	private static Taxon highest(Taxonomy tax, String name) { // See pin()
+	private static Taxon highest(Taxonomy tax, String name) {
 		List<Node> l = tax.lookup(name);
 		if (l == null) return null;
 		Taxon best = null, otherbest = null;

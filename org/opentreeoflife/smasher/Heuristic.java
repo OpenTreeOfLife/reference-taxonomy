@@ -36,27 +36,16 @@ abstract class Heuristic {
                     return Answer.noinfo(subject, target, "note/weak-null-source-division", null);
 				else if (ydiv == null)
                     return Answer.noinfo(subject, target, "note/weak-null-target-division", xdiv.name);
-				else if (xdiv.divergence(ydiv) != null)
-                    return Answer.heckNo(subject, target, "not-same/division",
-                                         String.format("%s|%s", xdiv.name, ydiv.name));
-                /*
-                else if (subject.rank == Rank.GENUS_RANK ||
-                         target.rank == Rank.GENUS_RANK)
-                    // sort of random but let's try it - used 32839 times
-                    return Answer.heckNo(subject, target, "not-same/division+genus",
-                                         String.format("%s|%s", xdiv.name, ydiv.name));
-                else if (target.hasChildren() && subject.hasChildren())
-                    // sort of random but let's try it - used 262 times
-                    return Answer.heckNo(subject, target, "not-same/division+internal",
-                                         String.format("%s|%s", xdiv.name, ydiv.name));
-                */
-
-                else
+				else if (xdiv.divergence(ydiv) == null)
                     return Answer.noinfo(subject, target, "note/weak-division",
+                                         String.format("%s|%s", xdiv.name, ydiv.name));
+                else
+                    return Answer.heckNo(subject, target, "not-same/division",
                                          String.format("%s|%s", xdiv.name, ydiv.name));
 			}
 		};
 
+    // Not currently used
 	static Heuristic weakDivision =
 		new Heuristic() {
 			public String toString() { return "same-division-weak"; }

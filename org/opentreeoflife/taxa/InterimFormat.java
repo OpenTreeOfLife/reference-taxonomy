@@ -488,40 +488,29 @@ class InterimFormat {
 		PrintStream out = Taxonomy.openw(filename);
 		out.format("name\t|\tuid\t|\ttype\t|\tuniqname\t|\tsourceinfo\t|\t\n");
 		String format = "%s\t|\t%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n";
-		for (String name : tax.allNames()) {
-            boolean primaryp = false;
-            boolean synonymp = false;
-			for (Node node : tax.lookup(name)) {
-                if (node instanceof Synonym) {
-                    Synonym syn = (Synonym)node;
-                    Taxon taxon = syn.taxon();
-                    if (taxon.prunedp) {
-                        System.err.format("** Prunedp taxon for synonym: %s %s\n", syn, taxon);
-                        continue;
+        for (Taxon taxon : tax.taxa()) { // deterministic order
+            for (Synonym syn : taxon.getSynonyms()) {
+                if (taxon.prunedp) {
+                    System.err.format("** Prunedp taxon for synonym: %s %s\n", syn, taxon);
+                    continue;
+                }
+                if (taxon.id == null) {
+                    // E.g. Populus tremuloides
+                    if (!taxon.isRoot()) {
+                        System.err.format("** Synonym for node with no id: %s %s %s\n",
+                                          syn.name, taxon, taxon.parent);
+                        //taxon.show();
                     }
-                    if (taxon.id == null) {
-                        // E.g. Populus tremuloides
-                        if (!taxon.isRoot()) {
-                            System.err.format("** Synonym for node with no id: %s %s %s\n",
-                                              syn.name, taxon, taxon.parent);
-                            //taxon.show();
-                        }
-                    } else {
-                        out.format(format,
-                                   name,
-                                   taxon.id,
-                                   syn.type,
-                                   syn.uniqueName(),
-                                   syn.getSourceIdsString());
-                    }
-                    synonymp = true;
                 } else {
-                    primaryp = true;
+                    out.format(format,
+                               syn.name,
+                               taxon.id,
+                               syn.type,
+                               syn.uniqueName(),
+                               syn.getSourceIdsString());
                 }
             }
-            if (false && primaryp && synonymp)
-                System.err.println("** Synonym in parallel with primary: " + name);
-            }
+        }
 		out.close();
 	}
 

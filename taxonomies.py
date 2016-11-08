@@ -441,10 +441,6 @@ def load_ncbi():
 
     patch_ncbi(ncbi)
 
-    # analyzeOTUs sets flags on questionable taxa ("unclassified",
-    #  hybrids, and so on) to allow the option of suppression downstream
-    ncbi.analyzeOTUs()
-
     return ncbi
 
 def patch_ncbi(ncbi):
@@ -656,9 +652,6 @@ def load_worms():
 
     # Species fungorum puts this species in Candida
     worms.taxon('Trichosporon diddensiae').rename('Candida diddensiae')
-
-    # Help to match up with IRMNG
-    worms.taxon('Ochrophyta').synonym('Heterokontophyta')
 
     # https://github.com/OpenTreeOfLife/feedback/issues/194 I think
     worms.taxon('Actinopterygii').notCalled('Osteichthyes')

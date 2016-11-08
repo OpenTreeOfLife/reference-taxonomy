@@ -109,7 +109,8 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
 		    bin/jython \
 		    inclusions.csv \
 		    feed/amendments/amendments-1/next_ott_id.json \
-		    tax/skel/taxonomy.tsv
+		    tax/skel/taxonomy.tsv \
+		    ott_id_list/by_qid.csv
 	@date
 	@rm -f *py.class
 	@mkdir -p tax/ott
@@ -221,13 +222,12 @@ tax/worms/taxonomy.tsv:
 irmng: tax/irmng/taxonomy.tsv
 
 tax/irmng/taxonomy.tsv:
-	@mkdir -p tax/irmng tmp/x
+	@mkdir -p tmp/irmng-ot
 	wget --output-document=tmp/irmng-ot.tgz $(IRMNG_URL)
-	(cd tmp/x; tar xzf ../irmng-ot.tgz)
-	(x=`cd tmp/x; ls` && \
-	 rm -rf tax/irmng tax/$$x && \
-	 mv -f tmp/x/$$x tax/ && \
-	 cd tax; ln -sf $$x irmng)
+	(cd tmp/irmng-ot; tar xzf ../irmng-ot.tgz)
+	(rm -rf tax/irmng && \
+	 mv -f tmp/irmng-ot/* tax/irmng && \
+	 rm -rf tmp/irmng-ot)
 
 # Build IRMNG from Tony's .csv files - these files unfortunately are
 # not public

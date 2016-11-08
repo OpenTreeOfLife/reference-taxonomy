@@ -692,8 +692,12 @@ def align_gbif(gbif, ott):
     # Get rid of diatoms, they do not belong here
     bac = gbif.taxon('Bacillariophyta', 'Plantae')
     if bac != None:
-        a.same(bac, ott.taxon('Diatomea'))
+        a.same(bac, ott.taxon('Bacillariophyta', 'SAR'))
         ott.setDivision(bac, 'SAR')
+
+    # cant figure out why this is necessary.
+    a.same(gbif.taxon('Cyclophora', 'Bacillariophyta'),
+           ott.taxon('Cyclophora', 'SAR'))
 
     plants = set_divisions(gbif, ott)
     a.same(plants, ott.taxon('Archaeplastida'))
@@ -958,6 +962,9 @@ def align_irmng(irmng, ott):
 
     # Discovered on looking at build diagnostics for Chromista/Protozoa spreadsheet
     irmng.taxon('Microsporidia', 'Protista').prune()
+
+    for sad in ['Xanthophyta', 'Chrysophyta', 'Phaeophyta', 'Raphidophyta', 'Bacillariophyta']:
+        irmng.taxon('Heterokontophyta').notCalled(sad)
 
     return a
 

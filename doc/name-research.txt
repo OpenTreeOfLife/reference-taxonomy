@@ -835,12 +835,9 @@ Mollusc: Cyclophorus = OTT 370526 = ncbi:75122
 Fly: Cyclophorus = OTT 5752875 = irmng:1290130
   Incertae sedis in Diptera.
 
-Why didn't these get separated as a result of adding Bacillariophyta
-as a skeleton node?  Then the diatom and the butterfly would have been
-separated (in disjoint divisions).
+Why is gbif:2630051 not unifying with the diatom?  It's in
+Bacillariophyta ... which is in Plantae, but that shouldn't matter...
 
-Anyhow why is the taxon id for Bacillariophyta so high (5342311)?
-Id should be 150991.
 
 ## Adlerocystis
 

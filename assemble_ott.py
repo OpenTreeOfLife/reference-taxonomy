@@ -279,8 +279,8 @@ def assign_ids_from_list(tax, filename):
                         taxon.setId(id_list[0])
                         for id in id_list:
                             taxon.taxonomy.addId(taxon, id)
-                            infile.close()
-                            print '| Assigned %s, changed %s ids from %s' % (count, change_count, filename)
+    infile.close()
+    print '| Assigned %s, changed %s ids from %s' % (count, change_count, filename)
 
     # Could harvest merges from the id list, as well, and
     # maybe even restore lower-numbered OTT ids.
@@ -946,7 +946,9 @@ def align_irmng(irmng, ott):
 
     # 2016-10-28 Noticed Goeppertia wrongly extinct while eyeballing 
     # the deprecated.tsv file
-    irmng.taxon('Goeppertia', 'Pteridophyta').prune(this_source)
+    goe = irmng.maybeTaxon('Goeppertia', 'Pteridophyta')
+    if goe != None:
+        goe.prune(this_source)
 
     # Not fungi - Romina 2014-01-28
     # ott.taxon('Adlerocystis').show()  - it's Chromista ...
@@ -961,7 +963,9 @@ def align_irmng(irmng, ott):
         adler.prune()
 
     # Discovered on looking at build diagnostics for Chromista/Protozoa spreadsheet
-    irmng.taxon('Microsporidia', 'Protista').prune()
+    mic = irmng.maybeTaxon('Microsporidia', 'Protista')
+    if mic != None:
+        mic.prune()
 
     for sad in ['Xanthophyta', 'Chrysophyta', 'Phaeophyta', 'Raphidophyta', 'Bacillariophyta']:
         irmng.taxon('Heterokontophyta').notCalled(sad)

@@ -256,6 +256,69 @@ and hope the problem goes away.
 
 ### Byssus phosphorea
 
+Byssus phosphorea
+
+Chlorophyte or fungus?  This one is very confused.
+
+OTT id 5293089 is used in these studies:
+pg_2597,pg_391,pg_1160,pg_438,pg_1744,pg_1065,pg_738,pg_2264,pg_2283
+
+The associated name is Byssus phosphorea.
+
+"Byssus phosphorea" is not in NCBI, CoL, or Wikipedia.
+
+Initially it looked like a chlorophyte (green alga):
+
+  Index Fungorum says it's a chlorophyte, not a fungus
+  The generic name in this combination is not currently considered to apply to an organism within the fungal clade
+  Trentepohliaceae, Trentepohliales, Incertae sedis, Incertae sedis, Incertae sedis, Chlorophyta, Plantae
+
+  Mycobank says:
+  Byssus phosphorea Byssus phosphorea L., Species Plantarum: 1168 (1753) [MB#231380]
+  Classification : Algae, Byssus
+
+  EOL gets its information from Mycobank.
+
+  GBIF doesn't have the species, but it has a genus Byssus
+    Plantae > Chlorophyta > Ulvophyceae > Trentepohliales > Trentepohliaceae > Byssus
+
+But now it looks like it should be a fungus:
+
+  The IRMNG dump (but not the web site) says it's a synonym for Terana
+    caerulea (cobalt crust fungus).  The web site defers to CoL, but I
+    can't find either name there.  
+
+  CoL says "Terana coerulea (Lam.) Kuntze 1891" is an accepted name.
+  That's a fungus in Phanerochaetaceae.  IRMNG says Terana coerulea is
+  a synonym for Terana caerulea.
+
+  TrekNature classifies it as follows:
+    Basidiomycota > Basidiomycetes > Polyporales > Corticiaceae 
+
+  Study pg_391 puts it sister to Phlebiopsis gigantea, in Basidiomycota
+  Study pg_1744 puts it sister to genus Phanerochaete, which is in Basidiomycota.
+  Study pg_1160 puts it close to Phanerochaete and Hyphodermella.
+  Study pg_2597 puts it close to Phanerochaete and Hyphodermella.
+
+So is it Terana coerulea?
+
+  OTT 4935351 = Terana coerulea = if:493426,ncbi:1647800,gbif:5244849
+
+  IF puts it here:
+    Phanerochaetaceae, Polyporales, Incertae sedis, Agaricomycetes, Agaricomycotina, Basidiomycota, Fungi
+    Terana coerulea (Lam.) Kuntze, Revis. gen. pl. (Leipzig) 2: 872 (1891)
+ncb
+  NCBI puts it here:
+    Fungi; Dikarya; Basidiomycota; Agaricomycotina; Agaricomycetes; Agaricomycetes incertae sedis; Polyporales; Phanerochaetaceae; Terana
+    Synonym: Byssus caerulea
+    Authority: Terana caerulea (Schrad. ex Lam.) Kuntze, 1891
+
+Propose to define 5293089 to be the OTT id for Terana coerulea =
+if:493426,ncbi:1647800,gbif:5244849 on the basis of IRMNG.
+
+Define IRMNG 10877277 to be same as NCBI Terana caerulea (or IF Terana
+coerulea) -- that will bring Byssus phosphorea in as a synonym.  This
+will cause 5293089 and 4935351 to be merged... then which id will be assigned?...
 
 ### Neoptera
 

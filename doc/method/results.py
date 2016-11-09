@@ -68,30 +68,6 @@ rug_alignment = AlignmentByName(rug, ott)
 rug_alignment.align()
 rug_conflict = ConflictAnalysis(rug, ott, rug_alignment, True)
 
-
-# Report
-
-print
-print '(Excluding %s non-taxa from analysis)' % excluded
-print
-print 'General metrics:'
-print ' * Number of taxon records:', ott.count()-excluded
-print ' * Number of synonym records:', syn_count
-print ' * Number of internal nodes:', internals
-print ' * Number of tips:', tip_count
-print " * Number of records with rank 'species':", species
-print ' * Number of taxa with binomial name-strings:', binomials
-
-print
-print 'Annotations:'
-print " * Number of taxa marked incertae sedis or equivalent: %s  " % incertae
-print '     of which leftover children of inconsistent source taxa: %s' % unplaced
-print ' * Number of extinct taxa: %s' % extinct
-# hidden at curator request ?
-print ' * Number of infraspecific taxa (below the rank of species): %s' % infra
-print ' * Number of species-less higher taxa (rank above species but containing no species): %s' % barren
-print ' * Number of taxa suppressed for supertree synthesis purposes: %s' % suppressed
-
 # Polysemies
 # Classify them somehow?
 
@@ -120,8 +96,31 @@ for name in names:
         if semies > 4:
             poly_list.append((semies, name))
 
-print ' * Number of polysemic name-strings: %s  ' % poly
+
+# Report
+
+print
+print '(Excluding %s non-taxa from analysis)' % excluded
+print
+print 'General metrics:'
+print ' * Number of taxon records:', ott.count()-excluded
+print ' * Number of synonym records:', syn_count
+print ' * Number of internal nodes:', internals
+print ' * Number of tips:', tip_count
+print " * Number of records with rank 'species':", species
+print ' * Number of taxa with binomial name-strings:', binomials
+print ' * Number of polysemous name-strings: %s  ' % poly
 print '     of which species %s, genera %s' % (poly_species, poly_genera)
+
+print
+print 'Annotations:'
+print " * Number of taxa marked incertae sedis or equivalent: %s  " % incertae
+print '     of which leftover children of inconsistent source taxa: %s' % unplaced
+print ' * Number of extinct taxa: %s' % extinct
+# hidden at curator request ?
+print ' * Number of infraspecific taxa (below the rank of species): %s' % infra
+print ' * Number of species-less higher taxa (rank above species but containing no species): %s' % barren
+print ' * Number of taxa suppressed for supertree synthesis purposes: %s' % suppressed
 
 def fix_prefix(qid):
     prefix = qid.prefix
@@ -174,7 +173,7 @@ total_first = 0
 total_merged = 0
 total_inconsistent = 0
 total_aligned = 0
-format_string = '%12s %9s %9s %9s %9s'
+format_string = '%13s %9s %9s %9s %9s'
 print format_string % ('Source', 'Contrib', 'Aligned', 'Merged', 'Conflict')
 for source in sources:
     con = contributed.get(source, 0)
@@ -202,8 +201,7 @@ print ' * Maximum depth of any node in the tree: %s' % (max_depth(ott.forest) - 
 print ' * Branching factor: average %.2f children per internal node' % ((ott.count() - 1.0) / internals)
 
 print
-print 'Comparison with Ruggiero'
-
+print 'Comparison with Ruggiero et al. 2015'
 print ' * Number of taxa in Ruggiero: %s' % rug.count()
 
 order_match = 0
@@ -236,9 +234,9 @@ for taxon in rug.taxa():
 print ' * Ruggiero orders aligned by name to OTT: %s' % order_match
 print ' * Disposition of Ruggiero taxa above rank of order:'
 print '     * Taxon contains at least one order aligned by name to OTT: %s' % higher
-print '     * Exact alignment between Ruggiero and OTT: %s' % supported_by
-print '     * Taxon resolves OTT polytomy: %s' % resolves
-print '     * Taxon supports several OTT taxa: %s' % partial_path_of
+print '     * Fully consistent topological alignment between Ruggiero and OTT: %s' % supported_by
+print '     * Taxon resolves an OTT polytomy: %s' % resolves
+print '     * Taxon supports more than one OTT taxon: %s' % partial_path_of
 print '     * Taxon conflicts with one or more OTT taxa: %s' % conflicts_with
 print '     * Taxon containing no aligned order: %s' % other
 

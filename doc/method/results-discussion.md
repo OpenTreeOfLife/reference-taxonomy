@@ -4,29 +4,60 @@
 [KC: results section should start with comment about difficulty in assessing correctness.
 Mention spot checking.]
 
-[TBD: filter out the was\_container and not_otu nodes up front.]
+[begin automatically generated]
 
-## Characterizing the assembly product
-
- * Number of taxon records: 3577714
- * Number of synonym records: 1567363
- * Number of tips: 3323318
- * Number of binomials: 2115765
- * Number of taxa with rank 'species': 2913390
- * Number of polysemous name-strings: 13089
+General metrics:
+ * Number of taxon records: 3300547
+ * Number of synonym records: 1543159
+ * Number of internal nodes: 249706
+ * Number of tips: 3050841
+ * Number of records with rank 'species': 2870706
+ * Number of taxa with binomial name-strings: 2112660
+ * Number of polysemous name-strings: 9295  
+     of which species 2531, genera 6622
 
 Annotations:
+ * Number of taxa marked incertae sedis or equivalent: 322155  
+     of which leftover children of inconsistent source taxa: 22957
+ * Number of extinct taxa: 167501
+ * Number of infraspecific taxa (below the rank of species): 71185
+ * Number of species-less higher taxa (rank above species but containing no species): 1
+ * Number of taxa suppressed for supertree synthesis purposes: 861323
 
- * Number of taxa suppressed in supertree synthesis: 1248964, not suppressed 2328750
- * Incertae sedis (generically): ... of which unplaced due to merge: ...
- * Extinct: 199918
- * Suppressed at curator request: ...
- * Taxa below the level of species: ...
- * Higher taxa having no descendant species records: ...
+Assembly:
+ * Contributions from various sources
+       Source   Contrib   Aligned    Merged  Conflict
+        silva     74428         5         -         -
+        h2007       226         1         -         -
+           if    281748      3014        38        16
+        worms    269574     55860       912       472
+     study713       118         1         -         -
+         ncbi   1164001    118893      1721       728
+         gbif   1111758    747237      1126       408
+        irmng    398675   1162528       703       161
+    additions        17         0         -         -
+         misc         2         0         -         -
+        total   3300547   2087539      4500      1785
+
+Topology:
+ * Maximum depth of any node in the tree: 38
+ * Branching factor: average 13.38 children per internal node
+
+Comparison with Ruggiero
+ * Number of taxa in Ruggiero: 2276
+ * Ruggiero orders aligned by name to OTT: 1355
+ * Disposition of Ruggiero taxa above rank of order:
+     * Taxon contains at least one order aligned by name to OTT: 757
+     * Fully consistent alignment between Ruggiero and OTT: 278
+     * Taxon resolves an OTT polytomy: 123
+     * Taxon supports more than one OTT taxon: 276
+     * Taxon conflicts with one or more OTT taxa: 80
+     * Taxon containing no aligned order: 20
+
+[end automatically generated]
 
 Polysemy analysis:
 
- * There are 13089 polysemous name-strings.  Most (11375) are 2-way.
  * Could we classify the polysemies?  by taxon rank, proximity, etc.  and compare to GBIF / NCBI
      * sibling, cousin, parent/child, within code, between codes
      * how many inherited from source taxonomy, as opposed to created?

@@ -13,7 +13,19 @@ nomenclatural synthesis for downstream biodiversity projects.
 
 # Introduction
 
-Taxonomy and nomenclature data are critical for almost any
+Biodiversity projects aggregate and reason over data sets involving
+taxa.  The representation of information about taxa in data sources
+employs taxon names or 'name-strings' [cite darwin core?].  To use a
+data set it is necessary to be able to determine whether or not a
+given occurrence of name-string in one data source is equivalent, for
+the purposes of data integration, to any given name-string occurrence
+in another.  Solving this equivalence problem requires both
+identifying equivalent occurrences when the name-strings are different
+(synonym detection) and distinguishing occurrences with the same
+name-string (homonym detection).  Equivelance can then be used as a
+basis of taxonomic understanding, or the relationships between taxa.
+
+[KC's prior version] Taxonomy and nomenclature data are critical for almost any
 biodiversity project that aims to synthesize data based on taxonomic
 names. Such projects want to know whether given strings are equivalent
 to known taxonomic names (taxonomic name reconciliation), how to

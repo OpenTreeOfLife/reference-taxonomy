@@ -68,7 +68,7 @@ table = [
      'synonyms': 685983}, # Boils down to 659851
     {'name': 'additions',
      'reference': 'github',
-     'version': '2016-xx-xx',
+     'version': '4b3ba1afdf1fd650b41d520486cdf1bbfba7f36c',
      'priority': 9,
      'taxa': 'xx',
      'synonyms': 0}

@@ -4,6 +4,8 @@
 [KC: results section should start with comment about difficulty in assessing correctness.
 Mention spot checking.]
 
+[TBD: filter out the was\_container and not_otu nodes up front.]
+
 ## Characterizing the assembly product
 
  * Number of taxon records: 3577714
@@ -13,8 +15,6 @@ Mention spot checking.]
  * Number of taxa with rank 'species': 2913390
  * Number of polysemous name-strings: 13089
 
-[TBD: filter out the was\_container nodes.  and maybe all the not\_otus.]
-
 Annotations:
 
  * Number of taxa suppressed in supertree synthesis: 1248964, not suppressed 2328750
@@ -23,7 +23,6 @@ Annotations:
  * Suppressed at curator request: ...
  * Taxa below the level of species: ...
  * Higher taxa having no descendant species records: ...
- * Non-OTUs: [probably we should just remove these from the taxonomy!]
 
 Polysemy analysis:
 
@@ -38,8 +37,8 @@ Polysemy analysis:
 
 Alignment
 
-* Table with one row per source showing...
-    * number of taxa
+* Table with one row per source summarizing the fates of its records.
+    * number of taxa (records)
     * number of taxa in the source matched to union (already there)
     * number of taxa contributed (incrementally) by that source (new)
     * number of higher taxa lost due to merges and inconsistensies
@@ -203,18 +202,20 @@ inconsistencies, Ruggiero or OTT.
 
 Following is the breakdown of Ruggiero taxa in comparison to OTT:
 
- * conflicts\_with: 83  (R. taxa that are paraphyletic per OTT)
- * resolves: 119  (R. taxa that provide resolution to OTT)
- * partial\_path\_of: 270 (cases where several R. taxa match one OTT taxon)
- * supported\_by: 285 (exact matches)
  * mapped tips: 1357 (R. orders that were found in OTT)
  * unmapped tips: 141 (R. orders that were not found in OTT)
+
+ * supported\_by: 285 (exact matches)
+ * resolves: 119  (R. taxa that provide resolution to OTT)
+ * partial\_path\_of: 270 (cases where one R. taxa matches multiple OTT taxa i.e. OTT is more highly resolved)
+ * conflicts\_with: 83  (R. taxa that are paraphyletic per OTT)
  * other: 21 (higher R. taxa none of whose orders is in OTT)
 
 With a bit of work, could get similar numbers for R. vs. synth and OTT
 vs. synth.
 
-[Using the synthetic tree as ground truth seems a bit risky.]
+[Using the synthetic tree as ground truth seems a bit risky? But the
+numbers could turn out pretty well.]
 
 ### Ongoing update
 

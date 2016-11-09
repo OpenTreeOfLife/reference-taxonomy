@@ -226,7 +226,7 @@ actually arise.  For example, there are many [how many? dozens?
 hundreds?] of fungus/plant polysemies, even though the two groups are
 covered by the same nomenclatural code.
 
-[NMF: Check [here](http://biodiversitydatajournal.com/articles.php?id=8080) for harder data (names
+[NMF: Check [here](https://doi.org/10.3897/BDJ.4.e8080) for harder data (names
 management sections and refs. therein).]
 
 Some cases of apparent polysemy might be differences of scientific opinion

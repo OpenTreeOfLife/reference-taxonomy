@@ -75,7 +75,10 @@ abstract class Heuristic {
 				Taxon xdiv = subject.getDivision();
 				Taxon ydiv = target.getDivision();
 				if (xdiv == ydiv)
-					return Answer.yes(subject, target, "same/division", xdiv.name);
+					return Answer.yes(subject,
+                                      target,
+                                      "same/division",
+                                      (xdiv == null ? null : xdiv.name));
 				else
 					return Answer.NOINFO;
 			}

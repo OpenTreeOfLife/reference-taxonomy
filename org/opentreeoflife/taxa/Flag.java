@@ -17,7 +17,7 @@ public enum Flag {
     // Emptied containers - these never have children
     WAS_CONTAINER        ("was_container", null, Taxonomy.WAS_CONTAINER), // class incertae sedis, etc.
     INCONSISTENT         ("inconsistent", "inconsistent_inherited", Taxonomy.INCONSISTENT),
-    MERGED               ("merged", "merged_inherited", Taxonomy.INCONSISTENT), // new in 2.9
+    MERGED               ("merged", "merged_inherited", Taxonomy.MERGED), // new in 2.9
 
     // Various kinds of incertae sedis - former children of emptied containers
 	INCERTAE_SEDIS		 ("incertae_sedis", "incertae_sedis_inherited", Taxonomy.INCERTAE_SEDIS),

@@ -500,12 +500,12 @@ public abstract class Taxonomy {
             }
             if (flag != 0) {
                 child.addFlag(WAS_CONTAINER); // probably should remove it entirely
-                if (children.size() <= 1) {
-                    node.markEvent("eliding only child because it's a container");
+                if (child.getChildren().size() == 1) {
+                    child.markEvent("eliding only child because it's a container");
                     flag = 0;
                 }
-                for (Taxon grand : new ArrayList<Taxon>(child.getChildren()))
-                    grand.changeParent(node, flag);
+                for (Taxon grandchild : new ArrayList<Taxon>(child.getChildren()))
+                    grandchild.changeParent(node, flag);
             }
         }
 	}
@@ -686,9 +686,7 @@ public abstract class Taxonomy {
     public
 	static final int INCERTAE_SEDIS_ANY	 = 
         (MAJOR_RANK_CONFLICT | UNCLASSIFIED | ENVIRONMENTAL
-         | INCERTAE_SEDIS | UNPLACED
-         | TATTERED  // deprecated
-         | FORMER_CONTAINER);   // kludge, review
+         | INCERTAE_SEDIS | UNPLACED);
 
 	// Individually troublesome - not sticky - combine using &  ? no, | ?
     public
@@ -721,6 +719,8 @@ public abstract class Taxonomy {
                   Taxonomy.NOT_OTU |
                   Taxonomy.HYBRID |
                   Taxonomy.VIRAL |
+                  Taxonomy.TATTERED | // deprecated
+                  Taxonomy.FORMER_CONTAINER |
                   Taxonomy.INCERTAE_SEDIS_ANY);
 
     // ----- Flag inference -----
@@ -1963,7 +1963,7 @@ public abstract class Taxonomy {
 	// This gets overridden in a subclass.
     // Deforestate would have already been called, if it was going to be
 	public void dump(String outprefix, String sep) throws IOException {
-        System.out.format("| dumping to %s\n", outprefix);
+        System.out.format("-- Dumping to %s\n", outprefix);
         this.prepareForDump();
         new InterimFormat(this).dump(outprefix, sep);
 	}

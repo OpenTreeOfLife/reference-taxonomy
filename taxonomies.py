@@ -664,6 +664,9 @@ def load_worms():
     # 2016-09-02 on gitter: Pisces vs. Mososauridae confusion
     worms.taxon('Tylosurus').notCalled('Tylosaurus')
 
+    bad_ecc = worms.maybeTaxon('Trichomycetes', 'Zygomycota')
+    if bad_ecc != None: bad_ecc.prune()
+
     return worms
 
 def load_gbif():
@@ -684,22 +687,30 @@ def patch_gbif(gbif):
 
     # Rod Page blogged about this one
     # http://iphylo.blogspot.com/2014/03/gbif-liverwort-taxonomy-broken.html
-    gbif.taxon('Jungermanniales','Marchantiophyta').absorb(gbif.taxon('Jungermanniales','Bryophyta'))
+    bad_jung = gbif.maybeTaxon('Jungermanniales','Bryophyta')
+    if bad_jung != None:
+        gbif.taxon('Jungermanniales','Marchantiophyta').absorb(bad_jung)
 
     # Joseph 2013-07-23 https://github.com/OpenTreeOfLife/opentree/issues/62
     # GBIF has two copies of Myospalax
-    gbif.taxon('6006429').absorb(gbif.taxon('2439119'))
+    myo = gbif.maybeTaxon('6006429')
+    if myo != None:
+        myo.absorb(gbif.taxon('2439119'))
 
     # RR 2014-04-12 #47
-    gbif.taxon('Drake-brockmania').absorb(gbif.taxon('Drake-Brockmania'))
+    db = gbif.maybeTaxon('Drake-brockmania')
+    if db == None:
+        gbif.taxon('Drake-Brockmania').rename('Drake-brockmania')
+    else:
+        db.absorb(gbif.taxon('Drake-Brockmania'))
     # RR #50 - this one is in NCBI, see above
-    gbif.taxon('Saxofridericia').absorb(gbif.taxon('4930834')) #Saxo-Fridericia
+    gbif.taxon('Saxofridericia').absorb(gbif.maybeTaxon('Saxo-Fridericia'))
     # RR #57 - the genus is in NCBI, see above
-    gbif.taxon('Solms-laubachia').absorb(gbif.taxon('4908941')) #Solms-Laubachia
+    gbif.taxon('Solms-laubachia').absorb(gbif.taxon('Solms-Laubachia'))
     gbif.taxon('Solms-laubachia pulcherrima').absorb(gbif.taxon('Solms-Laubachia pulcherrima'))
 
     # RR #45
-    gbif.taxon('Cyrto-hypnum').absorb(gbif.taxon('4907605'))
+    gbif.taxon('Cyrto-hypnum').absorb(gbif.taxon('Cyrto-Hypnum'))
 
     # 2014-04-13 JAR noticed while grepping
     claims = [
@@ -741,14 +752,15 @@ def patch_gbif(gbif):
     # JAR 2014-04-23 Noticed while perusing silva/gbif conflicts
     gbif.taxon('Ebriaceae').synonym('Ebriacea')
     gbif.taxon('Acanthocystidae').absorb(gbif.taxon('Acanthocistidae'))
-    gbif.taxon('Dinophyta').synonym('Dinoflagellata')
+    # wrong: gbif.taxon('Dinophyta').synonym('Dinophyceae')  # according to NCBI
+    # these groups are missing from gbif 2016 anyhow
 
     # JAR 2014-06-29 stumbled on this while trying out new alignment
     # methods and examining troublesome homonym Bullacta exarata.
     # GBIF obviously puts it in the wrong place, see description at
     # http://www.gbif.org/species/4599744 (it's a snail, not a shrimp).
-    bex = gbif.taxon('Bullacta exarata', 'Atyidae')
-    bec = gbif.taxon('Bullacta ecarata', 'Atyidae')
+    bex = gbif.maybeTaxon('Bullacta exarata', 'Atyidae')
+    bec = gbif.maybeTaxon('Bullacta ecarata', 'Atyidae')
     if bex != None and bec != None:
         bex.absorb(bec)
         bex.detach()
@@ -768,14 +780,16 @@ def patch_gbif(gbif):
     # GBIF 6757656 = Helophorus Leach, from IRMNG homonym list
     #    in 7829 = Hydraenidae Mulsant, 1844
     #  ('Helophorus', 'Helophoridae') ('Helophorus', 'Hydraenidae')
-    gbif.taxon('3263442').absorb(gbif.taxon('6757656'))
+    gbif.taxon('3263442').absorb(gbif.maybeTaxon('6757656'))
 
     # JAR 2015-06-27  there are two Myospalax myospalax
     # The one in Spalacidae is the right one, Myospalacinae is the wrong one
     # (according to NCBI)
     # Probably should clean up the whole genus
     # 2439121 = Myospalax myospalax (Laxmann, 1773) from CoL
-    gbif.taxon('2439121').absorb(gbif.taxon('6075534'))
+    myo2 = gbif.maybeTaxon('6075534')
+    if myo2 != None:
+        gbif.taxon('2439121').absorb(myo2)
 
     # 4010070	pg_1378	Gelidiellaceae	gbif:8998  -- ok, paraphyletic
 
@@ -803,25 +817,39 @@ def patch_gbif(gbif):
         print '** setRank failed for Chonetoidea'
 
     # https://github.com/OpenTreeOfLife/feedback/issues/144
-    gbif.taxon('Lepilemur tymerlachsonorum').rename('Lepilemur tymerlachsoni')
+    lepi = gbif.maybeTaxon('Lepilemur tymerlachsonorum')
+    if lepi != None:
+        lepi.rename('Lepilemur tymerlachsoni')
 
     # Related to https://github.com/OpenTreeOfLife/feedback/issues/307
     # This problem is remedied by the 2016 GBIF update.
-    gbif.taxon('Naviculae mesoleiae').rename('Navicula mesoleiae')
-    gbif.taxon('Navicula').absorb(gbif.taxon('Naviculae'))
+    navi = gbif.maybeTaxon('Naviculae mesoleiae')
+    if navi != None:
+        navi.rename('Navicula mesoleiae')
+
+    # Bogus species-rank record in 2016 GBIF making 'Navicula' ambiguous
+    nav_species = gbif.maybeTaxon('8616388')
+    if nav_species != None: nav_species.prune()
+
+    gbif.taxon('Navicula').absorb(gbif.maybeTaxon('Naviculae'))
 
     # GBIF as of 2016-09-01 says "doubtful taxon"
-    gbif.taxon('Foraminifera', 'Granuloreticulosea').prune(this_source)
+    bad_foram = gbif.maybeTaxon('Foraminifera', 'Granuloreticulosea')
+    if bad_foram != None:
+        bad_foram.prune(this_source)
 
     # 2016-09-01 Wrongly in Hymenoptera
-    gbif.taxon('Pieridae', 'Insecta').take(gbif.taxonThatContains('Aporia', 'Aporia agathon'))
+    gbif.taxon('Pieridae', 'Insecta').take(gbif.taxonThatContains('Aporia', 'Aporia gigantea'))
 
-    # 2016-09-01 Wrongly in Platyhelminthes, belongs in mites
-    gbif.taxon('Bdellidae').take(gbif.taxonThatContains('Bdellodes', 'Bdellodes serpentinus'))
+    # The Bdellodes mites were in flatworms in GBIF 2013.  This
+    # has been straightened out.
+    gbif.taxon('Bdellidae').take(gbif.taxonThatContains('Bdellodes', 'Bdellodes robusta'))
 
     # 2016-09-01 These are fossil fungi spores, not plants.  They're in 
     # Index Fungorum, so we don't need wrong info from GBIF.
-    gbif.taxon('Inapertisporites', 'Plantae').prune(this_source)
+    inap = gbif.maybeTaxon('Inapertisporites', 'Plantae')
+    if inap != None:
+        inap.prune(this_source)
 
     # 2016-09-01 This is not a plant.  Checked W. van Hoven 1987, found
     # in pubmed via web search, which says these things are ciliates, 
@@ -831,6 +859,9 @@ def patch_gbif(gbif):
     # 2016-09-02 Confusion with Tylosurus
     ty = gbif.taxon('Tylosaurus', 'Belonidae')
     if ty != None: ty.prune(this_source)
+
+    bad_ecc = gbif.maybeTaxon('Eccrinaceae', 'Zygomycota')
+    if bad_ecc != None: bad_ecc.prune()
 
     return gbif
 

@@ -953,6 +953,21 @@ Ellobiopsis - probable SILVA/NCBI clash
 
 Cylindrotheca - homonyms
 
+## Dinophyta
+
+What does this correspond to in GBIF?
+ToLweb has Dinokaryota.
+
+In wikipedia we have phylum Dinoflagellata, class Dinophyceae (in SAR).
+
+GBIF has neither of these.
+
+Dinoflagellata has synonym Dinophyta for Dinoflagellata.
+
+GBIF has Gymnodiniaceae and Warnowiaceae directly in Chromista; it belongs in Dinophyceae.
+Maybe the whole phylum has been blown up.
+
+
 ## Other problems
 
 ** No unique taxon found with name Crepidula in context Microsporidia

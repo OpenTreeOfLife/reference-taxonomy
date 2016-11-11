@@ -125,7 +125,12 @@ def create_ott():
     gbif = taxonomies.load_gbif()
     gbif_to_ott = align_gbif(gbif, ott)
     ott.absorb(gbif, gbif_to_ott)
+
+    # http://dx.doi.org/10.1016/j.ympev.2004.12.019 "Eccrinales
+    # (Trichomycetes) are not fungi, but a clade of protists at the
+    # early divergence of animals and fungi"
     debug_divisions('Enterobryus cingaloboli', gbif, ott)
+
     # Cylindrocarpon is now Neonectria
     cyl = gbif_to_ott.image(gbif.taxon('Cylindrocarpon', 'Ascomycota'))
     if cyl != None:
@@ -1040,13 +1045,19 @@ def patch_ott(ott):
 
     # Joseph Brown 2014-01-27
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/87
+    # http://www.worldbirdnames.org/BOW/antbirds/
     # Occurs as Sakesphorus bernardi in ncbi, gbif, irmng, as Thamnophilus bernardi in bgif
-    ott.taxon('Thamnophilus bernardi').absorb(ott.taxon('Sakesphorus bernardi'))
-    ott.taxon('Thamnophilus melanonotus').absorb(ott.taxon('Sakesphorus melanonotus'))
-    ott.taxon('Thamnophilus melanothorax').absorb(ott.taxon('Sakesphorus melanothorax'))
-    ott.taxon('Thamnophilus bernardi').synonym('Sakesphorus bernardi')
-    ott.taxon('Thamnophilus melanonotus').synonym('Sakesphorus melanonotus')
-    ott.taxon('Thamnophilus melanothorax').synonym('Sakesphorus melanothorax')
+    for epithet in ['bernardi', 'melanonotus', 'melanothorax']:
+        sname = 'Sakesphorus ' + epithet
+        tname = 'Thamnophilus ' + epithet
+        sak = ott.maybeTaxon(sname)
+        tham = ott.maybeTaxon(tname)
+        if sak != None and tham != None and sak != tham:
+            tham.absorb(sak)
+        elif sak != None:
+            sak.rename(tname)
+        elif tham != None:
+            tham.synonym(sname)
 
     # Mammals - groups cluttering basal part of tree
     ott.taxon('Litopterna').extinct()
@@ -1164,7 +1175,9 @@ def patch_ott(ott):
     # Bryan Drew 2014-01-30
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/90
     # http://www.sciencedirect.com/science/article/pii/S0034666703000927
-    ott.taxon('Araripia').extinct()
+    # write this ?? ott.assert(as_said_by('https://github.com/OpenTreeOfLife/reference-taxonomy/issues/90', extinct('Araripia')))
+    ara = ott.taxon('Araripia')
+    if ara != None: ara.extinct()
 
     # Bryan Drew  2014-02-05
     # http://www.mobot.org/mobot/research/apweb/
@@ -1442,7 +1455,8 @@ def patch_ott(ott):
             taxon.extant()
 
     # we were getting extinctness from IRMNG, but now it's suppressed
-    ott.taxon('Dinaphis', 'Aphidoidea').extinct()
+    din = ott.maybeTaxon('Dinaphis', 'Aphidoidea')
+    if din != None: din.extinct()
 
     # Yan Wong https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116
     # fung.taxon('Mycosphaeroides').extinct()  - gone
@@ -1462,7 +1476,8 @@ def patch_ott(ott):
     ott.taxon('Oxyprinichthys').extinct() # from GBIF
 
     # 2015-09-11 https://github.com/OpenTreeOfLife/feedback/issues/82
-    ott.taxon('Tarsius thailandica').extinct() # from GBIF
+    tar = ott.maybeTaxon('Tarsius thailandica')
+    if tar != None: tar.extinct() # from GBIF
 
     # https://github.com/OpenTreeOfLife/feedback/issues/86
     ott.taxon('Gillocystis').extinct() # from GBIF
@@ -1497,7 +1512,8 @@ def patch_ott(ott):
     ott.taxon('Nesophontidae', 'Soricomorpha').extinct() # from GBIF
 
     # https://github.com/OpenTreeOfLife/feedback/issues/135
-    ott.taxon('Cryptobranchus matthewi', 'Amphibia').extinct() # from GBIF
+    cry = ott.maybeTaxon('Cryptobranchus matthewi', 'Amphibia')
+    if cry != None: cry.extinct() # from GBIF
 
     # https://github.com/OpenTreeOfLife/feedback/issues/134
     ott.taxon('Hemitrypus', 'Amphibia').extinct() # from GBIF

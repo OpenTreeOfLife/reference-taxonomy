@@ -178,11 +178,24 @@ refresh-ncbi:
 # Formerly, where it says /dev/null, we had ../data/gbif/ignore.txt
 
 gbif: tax/gbif/taxonomy.tsv
-tax/gbif/taxonomy.tsv: feed/gbif/in/taxon.txt feed/gbif/process_gbif_taxonomy.py
+
+feed/gbif/work/projection_2016.tsv: feed/gbif/in_2016/taxon.txt feed/gbif/project_2016.py
+	@mkdir -p feed/gbif/work
+	python feed/gbif/project_2016.py feed/gbif/in_2016/taxon.txt $@.new
+	mv $@.new $@
+
+feed/gbif/work/projection_2013.tsv: feed/gbif/in_2013/taxon.txt feed/gbif/project_2013.py
+	@mkdir -p feed/gbif/work
+	python feed/gbif/project_2013.py feed/gbif/in_2013/taxon.txt $@.new
+	mv $@.new $@
+
+GBIF_VERSION=2016
+
+tax/gbif/taxonomy.tsv: feed/gbif/work/projection_$(GBIF_VERSION).tsv feed/gbif/process_gbif_taxonomy.py
 	@mkdir -p tax/gbif.tmp
 	python feed/gbif/process_gbif_taxonomy.py \
-	       feed/gbif/in/taxon.txt \
-	       /dev/null tax/gbif.tmp
+	       feed/gbif/work/projection_$(GBIF_VERSION).tsv \
+	       tax/gbif.tmp
 	cp -p feed/gbif/about.json tax/gbif.tmp/
 	rm -rf tax/gbif
 	mv -f tax/gbif.tmp tax/gbif

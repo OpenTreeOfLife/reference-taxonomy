@@ -179,14 +179,14 @@ refresh-ncbi:
 
 gbif: tax/gbif/taxonomy.tsv
 
-feed/gbif/work/projection_2016.tsv: feed/gbif/in_2016/taxon.txt feed/gbif/project_2016.py
+feed/gbif/work/projection_2016.tsv: feed/gbif/in/taxon.txt feed/gbif/project_2016.py
 	@mkdir -p feed/gbif/work
-	python feed/gbif/project_2016.py feed/gbif/in_2016/taxon.txt $@.new
+	python feed/gbif/project_2016.py feed/gbif/in/taxon.txt $@.new
 	mv $@.new $@
 
-feed/gbif/work/projection_2013.tsv: feed/gbif/in_2013/taxon.txt feed/gbif/project_2013.py
+feed/gbif/work/projection_2013.tsv: feed/gbif/in/2013/taxon.txt feed/gbif/project_2013.py
 	@mkdir -p feed/gbif/work
-	python feed/gbif/project_2013.py feed/gbif/in_2013/taxon.txt $@.new
+	python feed/gbif/project_2013.py feed/gbif/in/2013/taxon.txt $@.new
 	mv $@.new $@
 
 GBIF_VERSION=2016
@@ -202,11 +202,11 @@ tax/gbif/taxonomy.tsv: feed/gbif/work/projection_$(GBIF_VERSION).tsv feed/gbif/p
 
 # The '|| true' is because unzip erroneously returns status code 1
 # when there are warnings.
-feed/gbif/in/taxon.txt: feed/gbif/in/checklist1.zip
-	(cd feed/gbif/in && (unzip checklist1.zip || true))
+feed/gbif/in/taxon.txt: feed/gbif/in/gbif-backbone.zip
+	(cd feed/gbif/in && (unzip gbif-backbone.zip || true))
 	touch feed/gbif/in/taxon.txt
 
-feed/gbif/in/checklist1.zip:
+feed/gbif/in/gbif-backbone.zip:
 	@mkdir -p feed/gbif/in
 	wget --output-document=$@.new "$(GBIF_URL)"
 	mv $@.new $@
@@ -216,9 +216,14 @@ GBIF_SOURCE_URL=http://rs.gbif.org/datasets/backbone/backbone-current.zip
 
 refresh-gbif:
 	@mkdir -p feed/gbif/in
-	wget --output-document=$@.new "$(GBIF_SOURCE_URL)"
-	mv $@.new $@
-	@ls -l $@
+	wget --output-document=gbif.new "$(GBIF_SOURCE_URL)"
+	rm -f feed/gbif/in/gbif-backbone.zip
+	mv gbif.new feed/gbif/in/gbif-backbone.zip
+
+# TBD: a publication rule for new GBIF versions.
+# publish-gbif
+#	bin/publish-taxonomy gbif
+
 
 # Input: WoRMS
 # This is assembled by feed/worms/process_worms.py which does a web crawl

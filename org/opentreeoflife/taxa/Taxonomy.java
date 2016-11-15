@@ -42,10 +42,6 @@ public abstract class Taxonomy {
 	public String idspace = null; // "ncbi", "ott", etc.
 	String[] header = null;
 
-	Integer sourcecolumn = null;
-	Integer sourceidcolumn = null;
-	Integer infocolumn = null;
-	Integer flagscolumn = null;
 	public JSONObject properties = new JSONObject();
     public Taxon ingroup = null;    // for trees, not taxonomies
 
@@ -258,7 +254,7 @@ public abstract class Taxonomy {
 		if (this.tag == null) {
 			if (this.taxid < 0)
 				this.taxid = globalTaxonomyIdCounter++;
-            this.tag = this.getIdspace() + taxid;
+            this.tag = String.format("%s-%s", this.getIdspace(), taxid);
         }
         return this.tag;
 	}
@@ -817,7 +813,7 @@ public abstract class Taxonomy {
 		if (node.rank == Rank.NO_RANK && !node.hasChildren())
 			// The "no rank - terminal" case
 			barren = false;
-		if (!node.hasChildren()) {
+		if (node.hasChildren()) {
 			boolean allextinct = true;	   // Any descendant is extant?
 			for (Taxon child : node.children) {
 				count += analyzeBarren(child);
@@ -966,7 +962,9 @@ public abstract class Taxonomy {
 						"\\bsp\\.$"
 						);
 
-	static Pattern hybridRegex = Pattern.compile(" x |\\bhybrid\\b");
+    // × = U+00D7 MULTIPLICATION SIGN
+
+	static Pattern hybridRegex = Pattern.compile(" x |\u00D7|\\bhybrid\\b");
 
 	static Pattern viralRegex =
 		Pattern.compile(

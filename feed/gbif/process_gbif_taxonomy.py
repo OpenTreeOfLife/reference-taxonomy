@@ -2,25 +2,15 @@
 
 # Command line arguments
 #   1: taxon.txt
-#   2: kill list
-#   3: directory in which to put taxonomy.tsv and synonyms.tsv
+#   2: directory in which to put taxonomy.tsv and synonyms.tsv
 
-if True:                        # Projection
-    col = {"taxonID": 0,
-           "parentNameUsageID": 1,
-           "acceptedNameUsageID": 2,
-           "canonicalName": 3,
-           "taxonRank": 4,
-           "taxonomicStatus": 5,
-           "nameAccordingTo": 6}
-else:                           # 2013 version of format
-    col = {"taxonID": 0,
-           "parentNameUsageID": 1,
-           "acceptedNameUsageID": 2,
-           "canonicalName": 4,
-           "taxonRank": 5,
-           "taxonomicStatus": 6,
-           "nameAccordingTo": 12}
+col = {"taxonID": 0,
+       "parentNameUsageID": 1,
+       "acceptedNameUsageID": 2,
+       "canonicalName": 3,
+       "taxonRank": 4,
+       "taxonomicStatus": 5,
+       "nameAccordingTo": 6}
 
 import sys, os, json
 from collections import Counter
@@ -97,8 +87,11 @@ def process_gbif(inpath, outdir):
         tstatus = fields[col_taxonomicStatus].strip()  # taxonomicStatus
 
         # Filter out IRMNG and IPNI tips
-        if (("IRMNG Homonym" in source) or ("Interim Register of Marine" in source) or
-            ("International Plant Names Index" in source)):
+        if (("IRMNG Homonym" in source) or
+            ("Interim Register of Marine" in source) or
+            ("International Plant Names Index" in source) or
+            # Blah.  See http://www.gbif.org/dataset/d9a4eedb-e985-4456-ad46-3df8472e00e8
+            (source == "d9a4eedb-e985-4456-ad46-3df8472e00e8")):
             flushed_because_source += 1
             if synonymp:
                 continue
@@ -109,7 +102,7 @@ def process_gbif(inpath, outdir):
             syntargets[id] = int(syn_target_id_string)
             syntypes[id] = tstatus    # heterotypic synonym, etc.
             continue
-        elif "Paleobiology Database" in source or "c33ce2f2-c3cc-43a5-a380-fe4526d63650" in source:
+        elif ("Paleobiology Database" in source) or (source == "c33ce2f2-c3cc-43a5-a380-fe4526d63650"):
             paleos.append(id)
 
         if tstatus == 'doubtful' or tstatus == 'synonym':

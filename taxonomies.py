@@ -19,7 +19,7 @@ def load_silva():
                  'Herdmania',
                  'Oryza',
                  'Chloroplastida']:
-        print '| dropping', name, silva.taxon(name).count()
+        print '| trimming', name, silva.taxon(name).count()
         silva.taxon(name).trim()
     return silva
 
@@ -802,7 +802,8 @@ def patch_gbif(gbif):
         oph.prune("about:blank#this-homonym-is-causing-too-much-trouble")
 
     # 2015-07-25 Extra Dipteras are confusing new division logic.  Barren genus
-    gbif.taxon('3230674').prune(this_source)
+    bad_dip = gbif.maybeTaxon('3230674')
+    if bad_dip != None: bad_dip.elide()
 
     # JAR 2016-07-01 while studying rank inversions.
     # Ophidiasteridae the genus was an error and has been deleted from GBIF.

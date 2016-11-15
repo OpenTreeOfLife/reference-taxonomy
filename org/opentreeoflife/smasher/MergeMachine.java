@@ -11,7 +11,6 @@ import org.opentreeoflife.taxa.Node;
 import org.opentreeoflife.taxa.Taxon;
 import org.opentreeoflife.taxa.Rank;
 import org.opentreeoflife.taxa.Taxonomy;
-import org.opentreeoflife.taxa.SourceTaxonomy;
 import org.opentreeoflife.taxa.QualifiedId;
 import org.opentreeoflife.taxa.Answer;
 
@@ -21,10 +20,10 @@ import org.opentreeoflife.taxa.Answer;
 class MergeMachine {
 
     UnionTaxonomy union;
-    SourceTaxonomy source;
+    Taxonomy source;
     Alignment alignment;
 
-    MergeMachine(SourceTaxonomy source, UnionTaxonomy union, Alignment a) {
+    MergeMachine(Taxonomy source, UnionTaxonomy union, Alignment a) {
         this.source = source;
         this.union = union;
         this.alignment = a;
@@ -100,7 +99,7 @@ class MergeMachine {
     Map<String, Integer> reasonCounts = new HashMap<String, Integer>();
     List<String> reasons = new ArrayList<String>();
 
-    void report(SourceTaxonomy source, int startroots, int startcount) {
+    void report(Taxonomy source, int startroots, int startcount) {
         System.out.format("| Started with: %s roots, %s taxa + %s source roots, %s source taxa\n",
                           startroots,
                           startcount,
@@ -196,7 +195,7 @@ class MergeMachine {
                     // 'trouble' = paraphyly risk - plain merge.
                     takeOn(node, commonParent, 0);
                     // should include a witness for debugging purposes - merged to/from what?
-                    reject(node, "merged", commonParent, Taxonomy.MERGED);
+                    reject(node, "reject/merged", commonParent, Taxonomy.MERGED);
                 }
             }
             // the following is just a sanity check

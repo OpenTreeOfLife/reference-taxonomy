@@ -44,7 +44,8 @@ public class Addition {
         if (!repo.isDirectory())
             repo.mkdirs();
         for (File doc : Addition.repoAdditionDocuments(repo)) {
-            System.out.format("| Processing %s\n", doc);
+            // don't log, there are now too many files
+            // System.out.format("| Processing %s\n", doc);
             processAdditionDocument(doc, tax);
         }
     }
@@ -185,11 +186,14 @@ public class Addition {
             // For backward references
             tagToTaxon.put(tag, target);
         }
+        if (false) {
+            // too many of these
         int unmatched = taxa.size() - matched;
         System.out.format("| %s matched, %s %s\n",
                           matched,
                           unmatched,
                           (originalp ? "deprecated" : "added"));
+        }
     }
 
     static Taxon getAddedTaxon(String name, Taxon parent, String firstSource, String ott_id, Taxonomy tax) {

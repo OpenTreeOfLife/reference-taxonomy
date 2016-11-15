@@ -20,21 +20,13 @@ import taxonomies
 import check_inclusions
 from establish import establish
 from claim import *
+import reason_report
 import csv
 
 this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/make-ott.py'
 inclusions_path = 'inclusions.csv'
 additions_clone_path = 'feed/amendments/amendments-1'
 new_taxa_path = 'new_taxa'
-
-# temporary debugging thing
-invariants = [Has_child('Nucletmycea', 'Fungi'),
-              Has_child('Opisthokonta', 'Nucletmycea'),
-              #Has_child('Rhizobiales', 'Xanthobacteraceae'), # D11342/#4 parent of D11342/#5
-]
-
-def check_invariants(ott):
-    test_claims(ott, invariants)
 
 def create_ott():
 
@@ -54,23 +46,22 @@ def create_ott():
     # SILVA
     silva = taxonomies.load_silva()
     silva_to_ott = align_silva(silva, ott)
-    ott.absorb(silva, silva_to_ott)
-    check_invariants(ott)
+    align_and_merge(silva_to_ott)
 
     # Hibbett 2007
     h2007 = taxonomies.load_h2007()
-    h2007_to_ott = ott.absorb(h2007)
+    h2007_to_ott = ott.alignment(h2007)
+    align_and_merge(h2007_to_ott)
 
     # Index Fungorum
     fungorum = taxonomies.load_fung()
     (fungi, fungorum_sans_fungi) = split_taxonomy(fungorum, 'Fungi')
-    ott.absorb(fungi, align_fungi(fungi, ott))
-    check_invariants(ott)
+    align_and_merge(align_fungi(fungi, ott))
 
     # the non-Fungi from Index Fungorum get absorbed below
 
     lamiales = taxonomies.load_713()
-    ott.absorb(lamiales, align_lamiales(lamiales, ott))
+    align_and_merge(align_lamiales(lamiales, ott))
 
     # WoRMS
     # higher priority to Worms for Malacostraca, Cnidaria so we split out
@@ -78,9 +69,9 @@ def create_ott():
     worms = taxonomies.load_worms()
     # Malacostraca instead of Decapoda because M. is in the skeleton
     (malacostraca, worms_sans_malacostraca) = split_taxonomy(worms, 'Malacostraca')
-    ott.absorb(malacostraca)
+    align_and_merge(ott.alignment(malacostraca))
     (cnidaria, low_priority_worms) = split_taxonomy(worms_sans_malacostraca, 'Cnidaria')
-    ott.absorb(cnidaria)
+    align_and_merge(ott.alignment(cnidaria))
 
     # NCBI
     ncbi = taxonomies.load_ncbi()
@@ -90,7 +81,10 @@ def create_ott():
     ncbi.analyzeOTUs()
 
     ncbi_to_ott = align_ncbi(ncbi, silva, ott)
-    ott.absorb(ncbi, ncbi_to_ott)
+    align_and_merge(ncbi_to_ott)
+
+    # extra, for testing
+    reason_report.report(assembly_report)
 
     # Reporting
     # Get mapping from NCBI to OTT, derived via SILVA and Genbank.
@@ -98,7 +92,6 @@ def create_ott():
     compare_ncbi_to_silva(mappings, silva_to_ott)
 
     debug_divisions('Reticularia splendens', ncbi, ott)
-    check_invariants(ott)
 
     for (ncbi_id, ott_id, name) in ncbi_ott_assignments.ncbi_assignments_list:
         n = ncbi.maybeTaxon(ncbi_id)
@@ -116,15 +109,15 @@ def create_ott():
     low_priority_worms.taxon('Glaucophyta'). \
         absorb(low_priority_worms.taxon('Glaucophyceae'))
     a = align_worms(low_priority_worms, ott)
-    ott.absorb(low_priority_worms, a)
+    align_and_merge(a)
 
     # The rest of Index Fungorum (maybe not a good idea)
-    ott.absorb(fungorum_sans_fungi, align_fungorum_sans_fungi(fungorum_sans_fungi, ott))
+    align_and_merge(align_fungorum_sans_fungi(fungorum_sans_fungi, ott))
 
     # GBIF
     gbif = taxonomies.load_gbif()
     gbif_to_ott = align_gbif(gbif, ott)
-    ott.absorb(gbif, gbif_to_ott)
+    align_and_merge(gbif_to_ott)
 
     # http://dx.doi.org/10.1016/j.ympev.2004.12.019 "Eccrinales
     # (Trichomycetes) are not fungi, but a clade of protists at the
@@ -140,18 +133,20 @@ def create_ott():
     irmng = taxonomies.load_irmng()
     hide_irmng(irmng)
     a = align_irmng(irmng, ott)
-    ott.absorb(irmng, a)
+    align_and_merge(a)
 
     # Misc fixups
     taxonomies.link_to_h2007(ott)
     get_default_extinct_info_from_gbif(gbif, gbif_to_ott)
 
-    check_invariants(ott)
     # consider try: ... except: print '**** Exception in patch_ott'
     patch_ott(ott)
 
     # Remove all trees but the largest (or make them life incertae sedis)
     ott.deforestate()
+
+    # Report counts of source nodes by reason
+    reason_report.report(assembly_report)
 
     # End of topology changes.  Now assign ids.
     assign_ids(ott)
@@ -167,10 +162,10 @@ def create_ott():
 
     return ott
 
-def assign_ids(ott):
+# -----------------------------------------------------------------------------
+# OTT id assignment
 
-    # -----------------------------------------------------------------------------
-    # OTT id assignment
+def assign_ids(ott):
 
     # Force some id assignments... will try to automate this in the future.
     # Most of these come from looking at the otu-deprecated.tsv file after a
@@ -203,11 +198,13 @@ def assign_ids(ott):
             # ('Amycolicicoccus subflavus', 'Mycobacteriaceae', '541768'),  # ncbi:639313
             # ('Pohlia', 'Foraminifera', '5325989')  - NO
             ('Pohlia', 'Amphibia', '5325989'),  # irmng:1311321
-
+            ('Phyllanthus', 'Pentapetalae', '452944'),  # pg_25 @josephwb = 5509975
     ]:
         tax = ott.maybeTaxon(inf, sup)
         if tax != None:
             tax.setId(id)
+
+    ott.taxon('452944').addId('5509975')
 
     # ott.taxon('474506') ...
 
@@ -695,12 +692,12 @@ def align_gbif(gbif, ott):
     a = ott.alignment(gbif)
 
     # Get rid of diatoms, they do not belong here
-    bac = gbif.taxon('Bacillariophyta', 'Plantae')
+    bac = gbif.maybeTaxon('Bacillariophyta', 'Plantae')
     if bac != None:
         a.same(bac, ott.taxon('Bacillariophyta', 'SAR'))
         ott.setDivision(bac, 'SAR')
 
-    # cant figure out why this is necessary.
+    # cant figure out why this is here.  maybe in wrong place.
     a.same(gbif.taxon('Cyclophora', 'Bacillariophyta'),
            ott.taxon('Cyclophora', 'SAR'))
 
@@ -1583,6 +1580,14 @@ def get_default_extinct_info_from_gbif(gbif, gbif_to_ott):
 
 
 # Reports
+
+assembly_report = reason_report.new_report()
+
+def align_and_merge(alignment):
+    ott = alignment.target
+    ott.align(alignment)
+    ott.merge(alignment)
+    reason_report.count(alignment, assembly_report)
 
 def report_on_h2007(h2007, h2007_to_ott):
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/40

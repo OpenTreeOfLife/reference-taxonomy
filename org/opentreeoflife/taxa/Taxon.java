@@ -232,14 +232,18 @@ public class Taxon extends Node {
 		if (id == null)
             return;
         if (this.id == null)
-            this.taxonomy.addId(this, id);
+            this.addId(id);
         else if (!this.id.equals(id)) {
             String wasid = this.id;
             this.id = null;
-            this.taxonomy.addId(this, id);
-            this.taxonomy.addId(this, wasid);
+            this.addId(id);
+            this.addId(wasid);
         }
 	}
+
+    public void addId(String id) {
+        this.taxonomy.addId(this, id);
+    }
 
 	public Taxon getParent() {
 		return parent;

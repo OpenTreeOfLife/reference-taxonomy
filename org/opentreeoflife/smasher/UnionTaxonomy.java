@@ -40,7 +40,7 @@ import org.opentreeoflife.taxa.Addition;
 
 public class UnionTaxonomy extends Taxonomy {
 
-	List<SourceTaxonomy> sources = new ArrayList<SourceTaxonomy>();
+	List<Taxonomy> sources = new ArrayList<Taxonomy>();
 	Alignment idsourceAlignment = null;
 	// One log per name-string
     List<Answer> weakLog = new ArrayList<Answer>();
@@ -76,7 +76,7 @@ public class UnionTaxonomy extends Taxonomy {
 		Alignment a = new AlignmentByName(skel, this);
 		for (Taxon div : skel.taxa())
             div.unsourced = true;
-        this.merge(skel, a);
+        this.merge(a);
 
         if (useCompleteSkeleton) {
             // set divisions on union nodes (initially all null)
@@ -111,7 +111,7 @@ public class UnionTaxonomy extends Taxonomy {
       1. create an alignment with a = .alignment(source)
       2. add ad-hoc node alignments to it with a.same(...)
       3. .align(a) to finish alignment
-      4. .merge(source, a) to merge in new taxa
+      4. .merge(a) to merge in new taxa
       If 2. is empty, then 1+3+4 can be expressed as .absorb(source)
       */
 
@@ -142,10 +142,11 @@ public class UnionTaxonomy extends Taxonomy {
 
 	public void absorb(SourceTaxonomy source, Alignment a) { // called from jython
         this.align(a);
-        merge(source, a);
+        merge(a);
 	}
 
-	public void merge(SourceTaxonomy source, Alignment a) { // called from jython
+	public void merge(Alignment a) { // called from jython
+        Taxonomy source = a.source;
         try {
             new MergeMachine(source, this, a).augment();
             this.check();

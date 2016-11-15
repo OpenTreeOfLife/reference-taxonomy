@@ -35,8 +35,8 @@ public class Alignment {
 
     boolean EXPERIMENTALP = true;
 
-	Taxonomy source;
-    Taxonomy target;
+	public Taxonomy source;
+    public Taxonomy target;
 
     private Map<Taxon, Answer> mappings;
     // TBD private Map<Taxon, Answer> targetMrcas;
@@ -201,7 +201,7 @@ public class Alignment {
                     return true;
 			}
             if (setp) {
-                this.alignWith(node, unode, "same/ad-hoc");
+                this.alignWith(node, unode, "same/curated");
                 return true;
             } else return false;
 		} else {				// notSame - no longer used.

@@ -102,7 +102,7 @@ for name in names:
 print
 print '(Excluding %s non-taxa from analysis)' % excluded
 print
-print 'General metrics:'
+print 'General metrics on OTT:'
 print ' * Number of taxon records:', ott.count()-excluded
 print ' * Number of synonym records:', syn_count
 print ' * Number of internal nodes:', internals
@@ -120,12 +120,11 @@ print ' * Number of extinct taxa: %s' % extinct
 # hidden at curator request ?
 print ' * Number of infraspecific taxa (below the rank of species): %s' % infra
 print ' * Number of species-less higher taxa (rank above species but containing no species): %s' % barren
-print ' * Number of taxa suppressed for supertree synthesis purposes: %s' % suppressed
 
 def fix_prefix(qid):
     prefix = qid.prefix
-    if prefix.startswith('http'): prefix = 'misc'
-    if prefix.startswith('additions'): prefix = 'additions'
+    if prefix.startswith('http'): prefix = 'curated'
+    elif prefix.startswith('additions'): prefix = 'curated'
     return prefix
 
 contributed = {}
@@ -133,16 +132,9 @@ aligned = {}
 merged = {}
 inconsistent = {}
 for taxon in ott.taxa():
+
+    # Note as 'aligned' all but first qid
     if taxon.sourceIds != None:
-        prefix = fix_prefix(taxon.sourceIds[0])
-        all_flags = taxon.properFlags | taxon.inferredFlags
-        if (all_flags & exclude_from_analysis) != 0:
-            if (taxon.properFlags & Taxonomy.MERGED) != 0:
-                merged[prefix] = merged.get(prefix, 0) + 1
-            elif (taxon.properFlags & Taxonomy.INCONSISTENT) != 0:
-                inconsistent[prefix] = inconsistent.get(prefix, 0) + 1
-            continue
-        contributed[prefix] = contributed.get(prefix, 0) + 1
         firstp = True
         for qid in taxon.sourceIds:
             if firstp == True:
@@ -151,7 +143,21 @@ for taxon in ott.taxa():
                 prefix = fix_prefix(qid)
                 aligned[prefix] = aligned.get(prefix, 0) + 1
 
-source_order = {'silva': 0,
+        prefix = fix_prefix(taxon.sourceIds[0])
+    else:
+        prefix = 'curated'
+
+    all_flags = taxon.properFlags | taxon.inferredFlags
+    if (all_flags & exclude_from_analysis) != 0:
+        if (taxon.properFlags & Taxonomy.MERGED) != 0:
+            merged[prefix] = merged.get(prefix, 0) + 1
+        elif (taxon.properFlags & Taxonomy.INCONSISTENT) != 0:
+            inconsistent[prefix] = inconsistent.get(prefix, 0) + 1
+    else:
+        contributed[prefix] = contributed.get(prefix, 0) + 1
+
+source_order = {'skeleton': -1,
+                'silva': 0,
                 'h2007': 1,
                 'if': 2,
                 'worms': 3,
@@ -159,8 +165,7 @@ source_order = {'silva': 0,
                 'ncbi': 5,
                 'gbif': 6,
                 'irmng': 7,
-                'additions': 8,
-                'misc': 9}
+                'curated': 8}
 sources = sorted(contributed.keys(), key=lambda(src): source_order.get(src, 99))
 
 print
@@ -201,8 +206,8 @@ print ' * Maximum depth of any node in the tree: %s' % (max_depth(ott.forest) - 
 print ' * Branching factor: average %.2f children per internal node' % ((ott.count() - 1.0) / internals)
 
 print
-print 'Comparison with Ruggiero et al. 2015'
-print ' * Number of taxa in Ruggiero: %s' % rug.count()
+print 'Comparison with Ruggiero et al. 2015 (goes to characterizing backbone):'
+print ' * Number of taxa in Ruggiero: %s  of which orders/tips: %s' % (rug.count(), rug.tipCount())
 
 order_match = 0
 supported_by = 0
@@ -234,11 +239,14 @@ for taxon in rug.taxa():
 print ' * Ruggiero orders aligned by name to OTT: %s' % order_match
 print ' * Disposition of Ruggiero taxa above rank of order:'
 print '     * Taxon contains at least one order aligned by name to OTT: %s' % higher
-print '     * Fully consistent topological alignment between Ruggiero and OTT: %s' % supported_by
+print '     * Full topological consistency between Ruggiero and OTT: %s' % supported_by
 print '     * Taxon resolves an OTT polytomy: %s' % resolves
 print '     * Taxon supports more than one OTT taxon: %s' % partial_path_of
 print '     * Taxon conflicts with one or more OTT taxa: %s' % conflicts_with
 print '     * Taxon containing no aligned order: %s' % other
+
+print 'For possible discussion:'
+print ' * Number of taxa suppressed for supertree synthesis purposes: %s' % suppressed
 
 print
 print 'Appendix: Some extreme polysemies.'

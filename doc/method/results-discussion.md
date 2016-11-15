@@ -43,7 +43,7 @@ Topology:
  * Maximum depth of any node in the tree: 38
  * Branching factor: average 13.38 children per internal node
 
-Comparison with Ruggiero
+Comparison with Ruggiero 2015:
  * Number of taxa in Ruggiero: 2276
  * Ruggiero orders aligned by name to OTT: 1355
  * Disposition of Ruggiero taxa above rank of order:
@@ -66,38 +66,45 @@ Polysemy analysis:
 
 ## Characterizing the assembly process
 
-Alignment
+Table - breakdown of source nodes by fate (alignment or merge): (needs
+explication, and maybe reduce the number of categories, and change the
+labels)
 
-* Table with one row per source summarizing the fates of its records.
-    * number of taxa (records)
-    * number of taxa in the source matched to union (already there)
-    * number of taxa contributed (incrementally) by that source (new)
-    * number of higher taxa lost due to merges and inconsistensies
+I think there's an error in the way I calculate these numbers... there
+are no entries for the not-same heuristics
 
-[The following is not that table, but similar]
+```
+             same/curated      44    'manual' alignment
+    same/by-division-name     108    skeleton alignment
 
-    source   | binomial-taxa-from-that-source
-    if       |  237482
-    worms    |  258378
-    silva    |   13953
-    ncbi     |  360455
-    gbif     | 1629523
-    irmng    | 1111550
-    addition |      15
+    Heuristics, number of times used to reduce number of candidates to 1
+        not-same/division            need to measure this
+           not-same/ranks            need to measure this
+       same/parent+parent 1973840    lineage
+     same/ancestor+parent   99403    lineage
+     same/parent+ancestor  110071    lineage
+      same/is-subsumed-by   21454    membership
+            same/overlaps    3747    membership
+            same/division  152463
+        same/primary-name   95766
 
-Breakdown of source nodes by fate
+    Default cases when heuristics are uninformative
+            single-option    2369    only one candidate in the first place
+           by-elimination     192    multiple candidates but no 'yes' answer
+            ambiguous-tip    8533    multiple candidates for a tip
 
- * Total number of source nodes: ...
- * 'Manually' aligned: ...
- * No candidates: ... about 959613 ...
- * >=1 candidate, no match / match:
- * >1 candidate, no match / unique match / ambiguity
+    Merge
+                  new/tip 3488708
+                new/graft  268607
+             new/polysemy    6178    like new/tip, but part of a polysemy
+           new/refinement    1866
+            reject/merged    8210
+      reject/inconsistent    2943
+
+                    total 6244502
+```
 
 Merge
-
- * Number of unmatched internal source nodes imported: ...
- * Number of unmatched internal source nodes merged (rather than inserted) due to non-coverage: ...
- * Number of unmatched internal source nodes dropped due to conflict between sources: 1167
 
   (example of a conflict: Zygomycota (if:90405) is not included because
   ... paraphyletic w.r.t. Hibbett 2007.  get proof?  not a great

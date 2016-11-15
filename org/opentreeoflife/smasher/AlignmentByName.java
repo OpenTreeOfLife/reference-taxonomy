@@ -174,18 +174,18 @@ public class AlignmentByName extends Alignment {
 
         // Second loop variable: candidates
 
-        for (Heuristic criterion : criteria) {
+        for (Heuristic heuristic : criteria) {
             List<Answer> answers = new ArrayList<Answer>(candidates.size());
             int max = -100;
             for (Taxon cand : candidates) {
-                Answer a = criterion.assess(node, cand);
+                Answer a = heuristic.assess(node, cand);
                 // if (a.subject != null) lg.add(a);
                 answers.add(a); // in parallel with candidates
                 if (a.value > max) {
                     max = a.value;
                     count = 1;
-                    anyAnswer = a;
                     anyCandidate = cand;
+                    anyAnswer = a;
                 } else if (a.value == max)
                     count++;
             }
@@ -205,8 +205,8 @@ public class AlignmentByName extends Alignment {
             }
 
             if (count < candidates.size()) {
-                // This criterion eliminated some candidates.
-                target.markEvent(criterion.informative);
+                // This heuristic eliminated some candidates.
+                target.markEvent(heuristic.informative);
 
                 // Winnow the candidate set for the next heuristic.
                 // Iterate over candidates and answers in parallel.
@@ -224,20 +224,23 @@ public class AlignmentByName extends Alignment {
                 }
                 candidates = winners;
                 // at this point, count == candidates.size()
+                // result = ...; if (result.source == null) result = Answer.noinfo(...);
             }
 
-            // Loop: Try the next criterion.
+            // Loop: Try the next heuristic.
         }
 
         if (result == null) {
-            // Finished the loop, ended up with noinfo or with ambiguous yes.
+            // Finished the loop, ended up with either noinfo or ambiguous yes.
             if (count == 1) {
                 // Singleton - convert noinfo to Yes - there was only one
                 // candidate in the first place
-                if (initialCandidates.size() > 1)
-                    result = Answer.yes(node, anyCandidate, "by-elimination", null);
-                else
+                if (anyAnswer.isYes())
+                    result = anyAnswer;           // yes answer can stand
+                else if (initialCandidates.size() == 1)
                     result = Answer.yes(node, anyCandidate, "single-option", null);
+                else
+                    result = Answer.yes(node, anyCandidate, "by-elimination", null);
             } else if (!node.hasChildren())
                 // Ambiguous.  Avoid creating yet another homonym.  
                 result = Answer.noinfo(node, null, "ambiguous-tip", null);

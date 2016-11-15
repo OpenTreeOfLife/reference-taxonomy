@@ -162,147 +162,7 @@ def create_ott():
 
     return ott
 
-# -----------------------------------------------------------------------------
-# OTT id assignment
-
-def assign_ids(ott):
-
-    # Force some id assignments... will try to automate this in the future.
-    # Most of these come from looking at the otu-deprecated.tsv file after a
-    # series of smasher runs.
-
-    for (inf, sup, id) in [
-            ('Tipuloidea', 'Diptera', '722875'),
-            ('Saccharomycetes', 'Saccharomycotina', '989999'),
-            ('Phaeosphaeria', 'Ascomycota', '5486272'),
-            ('Synedra acus','Eukaryota','992764'),
-            ('Hessea','Archaeplastida','600099'),
-            ('Morganella','Arthropoda','6400'),
-            ('Rhynchonelloidea','Rhynchonellidae','5316010'),
-            ('Morganella', 'Fungi', '973932'),
-            ('Parmeliaceae', 'Lecanorales', '305904'),
-            ('Cordana', 'Ascomycota', '946160'),
-            ('Pseudofusarium', 'Ascomycota', '655794'),
-            ('Marssonina', 'Dermateaceae', '372158'), # ncbi:324777
-            ('Marssonia', 'Lamiales', '5512668'), # gbif:7268388
-            # ('Gloeosporium', 'Pezizomycotina', '75019'),  # synonym for Marssonina
-            ('Escherichia coli', 'Enterobacteriaceae', '474506'), # ncbi:562
-            # ('Dischloridium', 'Trichocomaceae', '895423'),
-            ('Exaiptasia pallida', 'Cnidaria', '135923'),
-            ('Choanoflagellida', 'Holozoa', '202765'),
-            ('Billardiera', 'Lamiales', '798963'),
-            ('Trachelomonas grandis', 'Bacteria', '58035'), # study ot_91 Tr46259
-            ('Hypomyzostoma', 'Myzostomida', '552744'),   # was incorrectly in Annelida
-            ('Gyromitus', 'SAR', '696946'),
-            ('Pseudogymnoascus destructans', 'Pezizomycotina', '428163'),
-            # ('Amycolicicoccus subflavus', 'Mycobacteriaceae', '541768'),  # ncbi:639313
-            # ('Pohlia', 'Foraminifera', '5325989')  - NO
-            ('Pohlia', 'Amphibia', '5325989'),  # irmng:1311321
-            ('Phyllanthus', 'Pentapetalae', '452944'),  # pg_25 @josephwb = 5509975
-    ]:
-        tax = ott.maybeTaxon(inf, sup)
-        if tax != None:
-            tax.setId(id)
-
-    ott.taxon('452944').addId('5509975')
-
-    # ott.taxon('474506') ...
-
-    ott.taxonThatContains('Rhynchonelloidea', 'Sphenarina').setId('795939') # NCBI
-
-    # Trichosporon is a mess, because it occurs 3 times in NCBI.
-    trich = ott.taxonThatContains('Trichosporon', 'Trichosporon cutaneum')
-    if trich != None:
-        trich.setId('364222')
-
-    #ott.image(fungi.taxon('11060')).setId('4107132') #Cryptococcus - a total mess
-
-    # --------------------
-    # Assign OTT ids to taxa that don't have them, re-using old ids when possible
-    ids = Taxonomy.getRawTaxonomy('tax/prev_ott/', 'ott')
-
-    # Edit the id source taxonomy to optimize id coverage
-
-    # Kludge to undo lossage in OTT 2.9
-    for taxon in ids.taxa():
-        if (len(taxon.sourceIds) >= 2 and
-            taxon.sourceIds[0].prefix == "ncbi" and
-            taxon.sourceIds[1].prefix == "silva"):
-            taxon.sourceIds.remove(taxon.sourceIds[0])
-
-    # OTT 2.9 has both Glaucophyta and Glaucophyceae...
-    # this creates an ambiguity when aligning.
-    # Need to review this; maybe they *should* be separate taxa.
-    g1 = ids.maybeTaxon('Glaucophyta')
-    g2 = ids.maybeTaxon('Glaucophyceae')
-    if g1 != None and g2 != None and g1 != g2:
-        g1.absorb(g2)
-
-    # Assign old ids to nodes in the new version
-    ott.carryOverIds(ids) # Align & copy ids
-
-    # Apply the additions (which already have ids assigned)
-    print '-- Processing additions --'
-    Addition.processAdditions(additions_clone_path, ott)
-
-    print '-- Checking id list'
-    assign_ids_from_list(ott, 'ott_id_list/by_qid.csv')
-
-    # Mint ids for new nodes
-    ott.assignNewIds(new_taxa_path)
-
-# Use master OTT id list to assign some ids
-
-def assign_ids_from_list(tax, filename):
-    count = 0
-    change_count = 0
-    infile = FileReader(filename)
-    r = CSVReader(infile)
-    while True:
-        row = r.readNext()
-        if row == None: break
-        [qid, ids] = row
-        taxon = tax.lookupQid(QualifiedId(qid))
-        if taxon != None:
-            id_list = ids.split(';')
-
-            # If every id maps either nowhere or to the taxon,
-            # set every id to map to the taxon.
-            win = True
-            for id in id_list:
-                z = tax.lookupId(id)
-                if z != None and z != taxon: win = False
-            if win:
-                if taxon.id != id_list[0]:
-                    if taxon.id == None:
-                        count += 1
-                    else:
-                        change_count += 1
-                        taxon.setId(id_list[0])
-                        for id in id_list:
-                            taxon.taxonomy.addId(taxon, id)
-    infile.close()
-    print '| Assigned %s, changed %s ids from %s' % (count, change_count, filename)
-
-    # Could harvest merges from the id list, as well, and
-    # maybe even restore lower-numbered OTT ids.
-
-def hide_irmng(irmng):
-    # Sigh...
-    # https://github.com/OpenTreeOfLife/feedback/issues/302
-    for root in irmng.roots():
-        root.hide()
-
-    # 2016-11-06 Laura Katz personal email to JAR:
-    # "IRMNG great for microbial diversity, for example"
-    irmng.taxon('Protista').unhide()
-
-    with open('irmng_only_otus.csv', 'r') as infile:
-        reader = csv.reader(infile)
-        reader.next()           # header row
-        for row in reader:
-            if irmng.lookupId(row[0]) is not None:
-                irmng.lookupId(row[0]).unhide()
+# utilities
 
 def debug_divisions(name, ncbi, ott):
     print '##', name
@@ -846,6 +706,33 @@ def align_gbif(gbif, ott):
 
     return a
 
+
+# The processed GBIF taxonomy contains a file listing GBIF taxon ids for all
+# taxa that are listed as coming from PaleoDB.  This is processed after all
+# taxonomies are processed but before patches are applied.  We use it to set
+# extinct flags for taxa originating only from GBIF (i.e. if the taxon also
+# comes from NCBI, WoRMS, etc. then we do not mark it as extinct).
+
+def get_default_extinct_info_from_gbif(gbif, gbif_to_ott):
+    infile = open('tax/gbif/paleo.tsv')
+    paleos = 0
+    flagged = 0
+    for row in infile:
+        paleos += 1
+        id = row.strip()
+        gtaxon = gbif.lookupId(id)
+        if gtaxon != None:
+            taxon = gbif_to_ott.image(gtaxon)
+            if taxon != None:
+                if taxon.sourceIds[0].prefix == 'gbif':
+                    # See https://github.com/OpenTreeOfLife/feedback/issues/43
+                    # It's OK if it's also in IRMNG
+                    flagged += 1
+                    taxon.extinct()
+    infile.close()
+    print '| Flagged %s of %s taxa from paleodb\n' % (flagged, paleos)
+
+
 # ----- Interim Register of Marine and Nonmarine Genera (IRMNG) -----
 
 def align_irmng(irmng, ott):
@@ -973,6 +860,23 @@ def align_irmng(irmng, ott):
         irmng.taxon('Heterokontophyta').notCalled(sad)
 
     return a
+
+def hide_irmng(irmng):
+    # Sigh...
+    # https://github.com/OpenTreeOfLife/feedback/issues/302
+    for root in irmng.roots():
+        root.hide()
+
+    # 2016-11-06 Laura Katz personal email to JAR:
+    # "IRMNG great for microbial diversity, for example"
+    irmng.taxon('Protista').unhide()
+
+    with open('irmng_only_otus.csv', 'r') as infile:
+        reader = csv.reader(infile)
+        reader.next()           # header row
+        for row in reader:
+            if irmng.lookupId(row[0]) is not None:
+                irmng.lookupId(row[0]).unhide()
 
 # Common to GBIF, IRMNG, and WoRMS
 
@@ -1551,34 +1455,132 @@ def patch_ott(ott):
     # See NCBI
     ott.taxon('Millericrinida').extant() # WoRMS
 
+# -----------------------------------------------------------------------------
+# OTT id assignment
 
+def assign_ids(ott):
 
-# The processed GBIF taxonomy contains a file listing GBIF taxon ids for all
-# taxa that are listed as coming from PaleoDB.  This is processed after all
-# taxonomies are processed but before patches are applied.  We use it to set
-# extinct flags for taxa originating only from GBIF (i.e. if the taxon also
-# comes from NCBI, WoRMS, etc. then we do not mark it as extinct).
+    # Force some id assignments... will try to automate this in the future.
+    # Most of these come from looking at the otu-deprecated.tsv file after a
+    # series of smasher runs.
 
-def get_default_extinct_info_from_gbif(gbif, gbif_to_ott):
-    infile = open('tax/gbif/paleo.tsv')
-    paleos = 0
-    flagged = 0
-    for row in infile:
-        paleos += 1
-        id = row.strip()
-        gtaxon = gbif.lookupId(id)
-        if gtaxon != None:
-            taxon = gbif_to_ott.image(gtaxon)
-            if taxon != None:
-                if taxon.sourceIds[0].prefix == 'gbif':
-                    # See https://github.com/OpenTreeOfLife/feedback/issues/43
-                    # It's OK if it's also in IRMNG
-                    flagged += 1
-                    taxon.extinct()
+    for (inf, sup, id) in [
+            ('Tipuloidea', 'Diptera', '722875'),
+            ('Saccharomycetes', 'Saccharomycotina', '989999'),
+            ('Phaeosphaeria', 'Ascomycota', '5486272'),
+            ('Synedra acus','Eukaryota','992764'),
+            ('Hessea','Archaeplastida','600099'),
+            ('Morganella','Arthropoda','6400'),
+            ('Rhynchonelloidea','Rhynchonellidae','5316010'),
+            ('Morganella', 'Fungi', '973932'),
+            ('Parmeliaceae', 'Lecanorales', '305904'),
+            ('Cordana', 'Ascomycota', '946160'),
+            ('Pseudofusarium', 'Ascomycota', '655794'),
+            ('Marssonina', 'Dermateaceae', '372158'), # ncbi:324777
+            ('Marssonia', 'Lamiales', '5512668'), # gbif:7268388
+            # ('Gloeosporium', 'Pezizomycotina', '75019'),  # synonym for Marssonina
+            ('Escherichia coli', 'Enterobacteriaceae', '474506'), # ncbi:562
+            # ('Dischloridium', 'Trichocomaceae', '895423'),
+            ('Exaiptasia pallida', 'Cnidaria', '135923'),
+            ('Choanoflagellida', 'Holozoa', '202765'),
+            ('Billardiera', 'Lamiales', '798963'),
+            ('Trachelomonas grandis', 'Bacteria', '58035'), # study ot_91 Tr46259
+            ('Hypomyzostoma', 'Myzostomida', '552744'),   # was incorrectly in Annelida
+            ('Gyromitus', 'SAR', '696946'),
+            ('Pseudogymnoascus destructans', 'Pezizomycotina', '428163'),
+            # ('Amycolicicoccus subflavus', 'Mycobacteriaceae', '541768'),  # ncbi:639313
+            # ('Pohlia', 'Foraminifera', '5325989')  - NO
+            ('Pohlia', 'Amphibia', '5325989'),  # irmng:1311321
+            ('Phyllanthus', 'Pentapetalae', '452944'),  # pg_25 @josephwb = 5509975
+    ]:
+        tax = ott.maybeTaxon(inf, sup)
+        if tax != None:
+            tax.setId(id)
+
+    ott.taxon('452944').addId('5509975')
+
+    # ott.taxon('474506') ...
+
+    ott.taxonThatContains('Rhynchonelloidea', 'Sphenarina').setId('795939') # NCBI
+
+    # Trichosporon is a mess, because it occurs 3 times in NCBI.
+    trich = ott.taxonThatContains('Trichosporon', 'Trichosporon cutaneum')
+    if trich != None:
+        trich.setId('364222')
+
+    #ott.image(fungi.taxon('11060')).setId('4107132') #Cryptococcus - a total mess
+
+    # --------------------
+    # Assign OTT ids to taxa that don't have them, re-using old ids when possible
+    ids = Taxonomy.getRawTaxonomy('tax/prev_ott/', 'ott')
+
+    # Edit the id source taxonomy to optimize id coverage
+
+    # Kludge to undo lossage in OTT 2.9
+    for taxon in ids.taxa():
+        if (len(taxon.sourceIds) >= 2 and
+            taxon.sourceIds[0].prefix == "ncbi" and
+            taxon.sourceIds[1].prefix == "silva"):
+            taxon.sourceIds.remove(taxon.sourceIds[0])
+
+    # OTT 2.9 has both Glaucophyta and Glaucophyceae...
+    # this creates an ambiguity when aligning.
+    # Need to review this; maybe they *should* be separate taxa.
+    g1 = ids.maybeTaxon('Glaucophyta')
+    g2 = ids.maybeTaxon('Glaucophyceae')
+    if g1 != None and g2 != None and g1 != g2:
+        g1.absorb(g2)
+
+    # Assign old ids to nodes in the new version
+    ott.carryOverIds(ids) # Align & copy ids
+
+    # Apply the additions (which already have ids assigned)
+    print '-- Processing additions --'
+    Addition.processAdditions(additions_clone_path, ott)
+
+    print '-- Checking id list'
+    assign_ids_from_list(ott, 'ott_id_list/by_qid.csv')
+
+    # Mint ids for new nodes
+    ott.assignNewIds(new_taxa_path)
+
+# Use master OTT id list to assign some ids
+
+def assign_ids_from_list(tax, filename):
+    count = 0
+    change_count = 0
+    infile = FileReader(filename)
+    r = CSVReader(infile)
+    while True:
+        row = r.readNext()
+        if row == None: break
+        [qid, ids] = row
+        taxon = tax.lookupQid(QualifiedId(qid))
+        if taxon != None:
+            id_list = ids.split(';')
+
+            # If every id maps either nowhere or to the taxon,
+            # set every id to map to the taxon.
+            win = True
+            for id in id_list:
+                z = tax.lookupId(id)
+                if z != None and z != taxon: win = False
+            if win:
+                if taxon.id != id_list[0]:
+                    if taxon.id == None:
+                        count += 1
+                    else:
+                        change_count += 1
+                        taxon.setId(id_list[0])
+                        for id in id_list:
+                            taxon.taxonomy.addId(taxon, id)
     infile.close()
-    print '| Flagged %s of %s taxa from paleodb\n' % (flagged, paleos)
+    print '| Assigned %s, changed %s ids from %s' % (count, change_count, filename)
 
+    # Could harvest merges from the id list, as well, and
+    # maybe even restore lower-numbered OTT ids.
 
+# -----------------------------------------------------------------------------
 # Reports
 
 assembly_report = reason_report.new_report()

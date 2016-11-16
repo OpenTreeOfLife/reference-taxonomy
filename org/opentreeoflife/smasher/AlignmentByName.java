@@ -144,7 +144,7 @@ public class AlignmentByName extends Alignment {
                               node, xdiv.name, ydiv.name, unode, a.reason);
     }
 
-    // Alignment - new method
+    // Alignment - single source taxon -> target taxon or 'no'
 
     public Answer findAlignment(Taxon node) {
         List<Answer> lg = new ArrayList<Answer>();
@@ -154,7 +154,6 @@ public class AlignmentByName extends Alignment {
         Set<Taxon> candidates = initialCandidates;
 
         if (candidates.size() == 0) {
-            node.markEvent("no candidates");
             return null;
         } else if (candidates.size() > 1)
             target.eventLogger.namesOfInterest.add(node.name);
@@ -167,42 +166,39 @@ public class AlignmentByName extends Alignment {
             */
         }
 
-        Answer anyAnswer = null;
         Taxon anyCandidate = null;  // kludge for by-elimination
-        Answer result = null;
         int count = 0;  // number of candidates that have the max value
+        String reason = null;
+        int score = -100;
 
         // Second loop variable: candidates
 
         for (Heuristic heuristic : criteria) {
             List<Answer> answers = new ArrayList<Answer>(candidates.size());
-            int max = -100;
+            score = -100;
             for (Taxon cand : candidates) {
                 Answer a = heuristic.assess(node, cand);
                 // if (a.subject != null) lg.add(a);
                 answers.add(a); // in parallel with candidates
-                if (a.value > max) {
-                    max = a.value;
+                if (a.value > score) {
+                    score = a.value;
                     count = 1;
                     anyCandidate = cand;
-                    anyAnswer = a;
-                } else if (a.value == max)
+                } else if (a.value == score) {
                     count++;
+                    if (cand.compareTo(anyCandidate) < 0)
+                        anyCandidate = cand;
+                }
             }
 
             // count is positive
 
-            // If negative, no point in going further.
-            if (max < Answer.DUNNO) {
-                result = anyAnswer; // no
-                break;
-            }
+            if (count < candidates.size())
+                reason = heuristic.toString();
 
-            // If unique and affirmative, seize it.
-            if (count == 1 && max > Answer.DUNNO) {
-                result = anyAnswer; // yes
+            // If negative, or unique positive, no point in going further.
+            if (score < Answer.DUNNO || (count == 1 && score > Answer.DUNNO))
                 break;
-            }
 
             if (count < candidates.size()) {
                 // This heuristic eliminated some candidates.
@@ -214,40 +210,43 @@ public class AlignmentByName extends Alignment {
                 Iterator<Answer> aiter = answers.iterator();
                 for (Taxon cand : candidates) {
                     Answer a = aiter.next();
-                    if (a.value == max) {
+                    if (a.value == score) {
                         winners.add(cand);
                     } else
                         if (a.subject == null)
-                            lg.add(Answer.noinfo(node, cand, "noinfo", null));
+                            lg.add(Answer.noinfo(node, cand, heuristic.toString(), null));
                         else
                             lg.add(a);
                 }
                 candidates = winners;
                 // at this point, count == candidates.size()
-                // result = ...; if (result.source == null) result = Answer.noinfo(...);
             }
 
             // Loop: Try the next heuristic.
         }
 
-        if (result == null) {
-            // Finished the loop, ended up with either noinfo or ambiguous yes.
-            if (count == 1) {
-                // Singleton - convert noinfo to Yes - there was only one
-                // candidate in the first place
-                if (anyAnswer.isYes())
-                    result = anyAnswer;           // yes answer can stand
-                else if (initialCandidates.size() == 1)
-                    result = Answer.yes(node, anyCandidate, "single-option", null);
+        if (score < Answer.DUNNO) {
+            if (reason == null)
+                reason = "rejected";
+        } else if (count == 1) {
+            if (reason == null) {
+                if (score > Answer.DUNNO)
+                    reason = "confirmed";
                 else
-                    result = Answer.yes(node, anyCandidate, "by-elimination", null);
-            } else if (!node.hasChildren())
-                // Ambiguous.  Avoid creating yet another homonym.  
-                result = Answer.noinfo(node, null, "ambiguous-tip", null);
+                    reason = "by elimination";
+            }
+            if (score == Answer.DUNNO) score = Answer.WEAK_YES; // turn noinfo into yes
+        } else {
+            score = Answer.DUNNO;
+            if (!node.hasChildren())
+                reason = "ambiguous tip";
             else
-                result = Answer.noinfo(node, null, "ambiguous-internal", null);
-            lg.add(result);
+                reason = "ambiguous internal";
         }
+        Answer result = new Answer(node, anyCandidate, score, reason, null);
+
+        lg.add(result);
+
         // Decide after the fact whether the dance was interesting enough to log
         if (initialCandidates.size() > 1 ||
             result.isNo() ||

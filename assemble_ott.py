@@ -83,9 +83,6 @@ def create_ott():
     ncbi_to_ott = align_ncbi(ncbi, silva, ott)
     align_and_merge(ncbi_to_ott)
 
-    # extra, for testing
-    reason_report.report(assembly_report)
-
     # Reporting
     # Get mapping from NCBI to OTT, derived via SILVA and Genbank.
     mappings = load_ncbi_to_silva(ncbi, silva, silva_to_ott)
@@ -992,9 +989,12 @@ def patch_ott(ott):
     #Lycopsida and daughters need to be deleted;
     #Pteridophyta and daughters need to be deleted;
     #Gymnospermophyta and daughters need to be deleted;
+    # These had all disappeared from NCBI by Nov 2016, but the new GBIF
+    # has synonymized Pteridophyta with Tracheophyta.
     for name in ['Pinophyta', 'Pteridophyta', 'Gymnospermophyta']:
-        if ott.maybeTaxon(name,'Chloroplastida'):
-            ott.taxon(name,'Chloroplastida').incertaeSedis()
+        taxon = ott.maybeTaxon(name, 'Chloroplastida')
+        if taxon != None and ott.maybeTaxon('Rosa', name) == None:
+            taxon.incertaeSedis()
 
     # Patches from the Katz lab to give decent parents to taxa classified
     # as Chromista or Protozoa

@@ -25,7 +25,7 @@ abstract class Heuristic {
 
 	static Heuristic division =
 		new Heuristic() {
-			public String toString() { return "same-division"; }
+			public String toString() { return "disjoint divisions"; }
 			Answer assess(Taxon subject, Taxon target) {
 				Taxon xdiv = subject.getDivision();
 				Taxon ydiv = target.getDivision();
@@ -70,7 +70,7 @@ abstract class Heuristic {
 
 	static Heuristic sameDivisionPreferred =
 		new Heuristic() {
-			public String toString() { return "same-division-preferred"; }
+			public String toString() { return "same division"; }
 			Answer assess(Taxon subject, Taxon target) {
 				Taxon xdiv = subject.getDivision();
 				Taxon ydiv = target.getDivision();
@@ -87,7 +87,7 @@ abstract class Heuristic {
 
     static Heuristic ranks =
         new Heuristic() {
-            public String toString() { return "ranks"; }
+            public String toString() { return "disparate ranks"; }
             Answer assess(Taxon subject, Taxon target) {
                 if (subject.rank != Rank.NO_RANK &&
                     target.rank != Rank.NO_RANK &&
@@ -106,7 +106,7 @@ abstract class Heuristic {
 
 	static Heuristic lineage =
 		new Heuristic() {
-			public String toString() { return "same-ancestor"; }
+			public String toString() { return "by lineage"; }
 			Answer assess(Taxon x, Taxon target) {
 				Taxon y0 = scan(target, x.taxonomy);	  // ignore names not known in both taxonomies
 				Taxon x0 = scan(x, target.taxonomy);
@@ -156,7 +156,7 @@ abstract class Heuristic {
 
 	static Heuristic subsumption =
 		new Heuristic() {
-			public String toString() { return "overlaps"; }
+			public String toString() { return "overlapping membership"; }
 			Answer assess(Taxon x, Taxon target) {
                 if (x.children == null || target.children == null)
                     return Answer.NOINFO;                         // possible attachment point
@@ -194,7 +194,7 @@ abstract class Heuristic {
     // work in progress
 	static Heuristic disjoint =
 		new Heuristic() {
-			public String toString() { return "disjoint"; }
+			public String toString() { return "disjoint membership"; }
 			Answer assess(Taxon x, Taxon target) {
                 if (x.children != Taxon.NO_CHILDREN &&
                     target.children != Taxon.NO_CHILDREN &&
@@ -208,7 +208,7 @@ abstract class Heuristic {
 
 	static Heuristic byPrimaryName =
 		new Heuristic() {
-			public String toString() { return "same-primary-name"; }
+			public String toString() { return "by name"; }
 			Answer assess(Taxon x, Taxon target) {
 				if (x.name == null) {
                     System.out.format("** No name! %s\n", x);
@@ -225,7 +225,7 @@ abstract class Heuristic {
 
 	static Heuristic sameSourceId =
 		new Heuristic() {
-			public String toString() { return "same-source-id"; }
+			public String toString() { return "by source id"; }
 			Answer assess(Taxon x, Taxon target) {
 				// x is source node, target is target node.
 				QualifiedId xid = maybeQualifiedId(x);
@@ -239,7 +239,7 @@ abstract class Heuristic {
 
 
     static QualifiedId maybeQualifiedId(Taxon node) {
-        QualifiedId qid = node.putativeSourceRef();
+        QualifiedId qid = node.putativeSourceRef(); // first among sources
         if (qid != null) return qid;
         if (node.id != null && node.taxonomy.getIdspace() != null)
             return node.getQualifiedId();
@@ -251,7 +251,7 @@ abstract class Heuristic {
 	// x is a node in the old OTT.	target, the target node, is in the new OTT.
 	static Heuristic anySourceId =
 		new Heuristic() {
-			public String toString() { return "any-source-id"; }
+			public String toString() { return "any source id in common"; }
 			Answer assess(Taxon x, Taxon target) {
 				// x is source node, target is target node.
 				// Two cases:

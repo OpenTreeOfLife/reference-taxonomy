@@ -13,7 +13,7 @@
 JAVAFLAGS=-Xmx14G
 
 # Modify as appropriate
-WHICH=2.11draft4
+WHICH=2.11draft5
 PREV_WHICH=2.10
 
 # ----- Taxonomy source locations -----
@@ -23,15 +23,15 @@ FUNG_URL=http://files.opentreeoflife.org/fung/fung-9/fung-9-ot.tgz
 
 WORMS_URL=http://files.opentreeoflife.org/worms/worms-1/worms-1-ot.tgz
 
-NCBI_URL="http://files.opentreeoflife.org/ncbi/ncbi-20160629/ncbi-20160629.tgz"
+NCBI_URL="http://files.opentreeoflife.org/ncbi/ncbi-20161109/ncbi-20161109.tgz"
 
 # Was http://ecat-dev.gbif.org/repository/export/checklist1.zip
 # Could be http://rs.gbif.org/datasets/backbone/backbone.zip
 # 2016-05-17 purl.org is broken, cannot update this link
 # GBIF_URL=http://purl.org/opentree/gbif-backbone-2013-07-02.zip
-GBIF_URL=http://files.opentreeoflife.org/gbif/gbif-20130702/gbif-20130702.zip
+GBIF_URL=http://files.opentreeoflife.org/gbif/gbif-20160729/gbif-20160729.zip
 
-IRMNG_URL=http://files.opentreeoflife.org/irmng-ot/irmng-ot-20160630/irmng-ot-20160630.tgz
+IRMNG_URL=http://files.opentreeoflife.org/irmng-ot/irmng-ot-20161108/irmng-ot-20161108.tgz
 
 # Silva 115: 206M uncompresses to 817M
 # issue #62 - verify  (is it a tsv file or csv file?)

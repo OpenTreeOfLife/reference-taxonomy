@@ -708,7 +708,7 @@ public abstract class Taxonomy {
 	static final int BARREN			     = (1 << 22);  // Does not contain a species?
 
     // Intended to match treemachine's list
-	static final int HIDDEN_FLAGS =
+	static final int SUPPRESSED_FLAGS =
                  (Taxonomy.HIDDEN |
                   Taxonomy.EXTINCT |
                   Taxonomy.BARREN |
@@ -1328,7 +1328,7 @@ public abstract class Taxonomy {
         Taxon biggest = this.unique("life");
         if (biggest == null || !biggest.isRoot())
             biggest = this.normalizeRoots().get(0);  // sort the roots list
-        biggest.properFlags &= ~Taxonomy.HIDDEN_FLAGS;
+        biggest.properFlags &= ~Taxonomy.SUPPRESSED_FLAGS;
     }
 
     // ----- Id assignment -----

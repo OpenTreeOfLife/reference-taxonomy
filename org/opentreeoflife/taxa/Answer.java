@@ -80,10 +80,12 @@ public class Answer {
 
 	static final int HECK_YES = 3;
 	static final int YES = 2;
+    public
 	static final int WEAK_YES = 1;
     public
 	static final int DUNNO = 0;
 	static final int WEAK_NO = -1;
+    public
 	static final int NO = -2;
     public
 	static final int HECK_NO = -3;

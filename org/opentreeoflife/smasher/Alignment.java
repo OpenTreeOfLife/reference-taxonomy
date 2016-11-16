@@ -164,8 +164,8 @@ public class Alignment {
             Taxon.backtrace();
 		} else {
             this.setAnswer(node, answer);
-            if (node.name != null && unode.name != null && !node.name.equals(unode.name))
-                Answer.yes(node, unode, "synonym-match", node.name).maybeLog();
+            //if (node.name != null && unode.name != null && !node.name.equals(unode.name))
+            //    Answer.yes(node, unode, "synonym-match", node.name).maybeLog();
             if (unode.comapped != null) {
                 // Target node has already been matched to, but synonyms are OK
                 if (unode.comapped != node)

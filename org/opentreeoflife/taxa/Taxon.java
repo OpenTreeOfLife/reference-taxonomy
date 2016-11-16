@@ -15,7 +15,7 @@ import java.io.File;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 
-public class Taxon extends Node {
+public class Taxon extends Node implements Comparable<Taxon> {
     // name and taxonomy are inherited from Node
 	public String id = null;
 	public Rank rank = Rank.NO_RANK;
@@ -331,6 +331,8 @@ public class Taxon extends Node {
         newparent.addChild(this);
     }
     
+    // flags are to be set on the child (this)
+
 	public void changeParent(Taxon newparent, int flags) {
         if (flags == 0
             && !this.isPlaced()
@@ -343,11 +345,10 @@ public class Taxon extends Node {
 
     public void addFlag(int flags) {
         if (flags > 0
-            && ((flags & Taxonomy.HIDDEN_FLAGS) > 0)  // not just 'edited'
+            && ((flags & Taxonomy.SUPPRESSED_FLAGS) > 0)  // not just 'edited'
             && this.name != null
             && ((this.count() > 50000
-                 && flags != Taxonomy.HIDDEN)
-                || (this.name.equals("Blattodea")))) {
+                 && flags != Taxonomy.HIDDEN))) {
             System.out.format("* Setting flags on %s, size %s\nFlags to add: ", this, this.count());
 			Flag.printFlags(flags, 0, System.out);
             System.out.format("\n Preexisting flags: ");
@@ -718,23 +719,28 @@ public class Taxon extends Node {
 		return false;
 	}
 
-	static Comparator<Taxon> compareNodes = new Comparator<Taxon>() {
+	public static Comparator<Taxon> compareNodes = new Comparator<Taxon>() {
 		public int compare(Taxon x, Taxon y) {
-            if (x.id != null || y.id != null) {
-                // sort nodes with ids before ones without
-                if (x.id == null) return 1;
-                if (y.id == null) return -1;
-                return x.id.compareTo(y.id);
-            } else if (x.name != null || y.name != null) {
-                // sort named nodes before unnamed ones
-                if (x.name == null) return 1;
-                if (y.name == null) return -1;
-                return x.name.compareTo(y.name);
-            } else
-                // grasp at straws
-                return x.getChildren().size() - y.getChildren().size();
+            return x.compareTo(y);
 		}
 	};
+
+    public int compareTo(Taxon that) {
+        if (this.id != null || that.id != null) {
+            // sort nodes with ids before ones without
+            if (this.id == null) return 1;
+            if (that.id == null) return -1;
+            return this.id.compareTo(that.id);
+        } else if (this.name != null || that.name != null) {
+            // sort named nodes before unnamed ones
+            if (this.name == null) return 1;
+            if (that.name == null) return -1;
+            return this.name.compareTo(that.name);
+        } else
+            // grasp at straws
+            return this.getChildren().size() - that.getChildren().size();
+    }
+
 
 	// Delete all of this node's descendants.
 	public void trim() {
@@ -860,12 +866,12 @@ public class Taxon extends Node {
 
 	public boolean isHidden() {
 		return (((this.properFlags | this.inferredFlags) &
-                 Taxonomy.HIDDEN_FLAGS) != 0 &&
+                 Taxonomy.SUPPRESSED_FLAGS) != 0 &&
                 ((this.properFlags & Taxonomy.FORCED_VISIBLE) == 0));
 	}
 
 	public boolean isDirectlyHidden() {
-		return (((this.properFlags & Taxonomy.HIDDEN_FLAGS) != 0) &&
+		return (((this.properFlags & Taxonomy.SUPPRESSED_FLAGS) != 0) &&
                 ((this.properFlags & Taxonomy.FORCED_VISIBLE) == 0));
 	}
 

@@ -26,7 +26,7 @@ Annotations:
 
 Assembly:
  * Contributions from various sources
- 
+``` 
        Source   Contrib   Aligned    Merged  Conflict
         silva     74428         5         -         -
         h2007       226         1         -         -
@@ -39,6 +39,7 @@ Assembly:
     additions        17         0         -         -
          misc         2         0         -         -
         total   3300547   2087539      4500      1785
+```
 
 Topology:
  * Maximum depth of any node in the tree: 38
@@ -71,38 +72,50 @@ Table - breakdown of source nodes by fate (alignment or merge): (needs
 explication, and maybe reduce the number of categories, and change the
 labels)
 
-I think there's an error in the way I calculate these numbers... there
-are no entries for the not-same heuristics
-
+Alignments (source records matched to union records) done either by
+explicitly curated directive or by matching to the small 'skeleton'
+(division) taxonomy:
 ```
-             same/curated      44    'manual' alignment
-    same/by-division-name     108    skeleton alignment
+     44  curated alignment
+    108  align to skeleton taxonomy
+```
 
-    Heuristics, number of times used to reduce number of candidates to 1
-        not-same/division            need to measure this
-           not-same/ranks            need to measure this
-       same/parent+parent 1973840    lineage
-     same/ancestor+parent   99403    lineage
-     same/parent+ancestor  110071    lineage
-      same/is-subsumed-by   21454    membership
-            same/overlaps    3747    membership
-            same/division  152463
-        same/primary-name   95766
+Source record alignments that were automatic choices between
+alternative union records; breakdown is by which heuristic was
+responsible for narrowing the candidate set down to a single union
+record:
+```
+  21172  disjoint divisions
+    177  disparate ranks
+  25883  by lineage
+   7429  overlapping membership
+    225  same division
+  82699  by name
+```
 
-    Default cases when heuristics are uninformative
-            single-option    2369    only one candidate in the first place
-           by-elimination     192    multiple candidates but no 'yes' answer
-            ambiguous-tip    8533    multiple candidates for a tip
+Source alignments in which no choice was made.  'Confirmed' means that
+a match to a single candidate was confirmed by a 'yes' answer from one
+of the heuristics, 'by elimination' is no such confirmation.
+'Ambiguous' means the heuristics were unable to make a choice between
+multiple candidates (the source record is therefore ignored).
+```
+2319344  confirmed
+   2372  by elimination
+   8534  ambiguous tip
+```
 
-    Merge
-                  new/tip 3488708
-                new/graft  268607
-             new/polysemy    6178    like new/tip, but part of a polysemy
-           new/refinement    1866
-            reject/merged    8210
-      reject/inconsistent    2943
+There is no alignment process when there are no candidates at all for
+a source record.  In this situation, the record is brought into the
+source taxonomy during the merge phase.
+```
+3488707  new tip
+   6182  new tip (polysemous)
+ 268615  new internal node, part of graft
+   1866  refinement
+   8202  merge
+   2943  conflict
 
-                    total 6244502
+6244502  total
 ```
 
 Merge

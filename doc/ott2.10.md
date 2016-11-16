@@ -4,8 +4,7 @@ Version 2.10 draft 11 was generated on 10 September 2016.
 
 ## Download
 
-[Download](http://files.opentreeoflife.org/ott/ott2.10/ott2.10draft11.tgz)
-(gzipped tar file) - NOTE: the URL will change soon to remove draft designation
+[Download](http://files.opentreeoflife.org/ott/ott2.10/ott2.10.tgz)
 
 ## Major changes since OTT 2.9
 

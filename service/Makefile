@@ -1,0 +1,13 @@
+
+refresh-synth: labelled_supertree.tre
+	ln -sf labelled_supertree.tre synth.tre
+
+labelled_supertree.tre:
+	wget http://files.opentreeoflife.org/synthesis/current/output/labelled_supertree/labelled_supertree.tre
+
+asterales.tre:
+	../bin/jython ../util/select_from_taxonomy.py labelled_supertree.tre ott1042120 asterales.new.tre
+	mv asterales.new.tre asterales.tre
+
+clean:
+	rm labelled_supertree.tre

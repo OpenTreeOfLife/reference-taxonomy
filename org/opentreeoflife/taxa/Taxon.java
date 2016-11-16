@@ -179,11 +179,11 @@ public class Taxon extends Node {
     // Returns number of synonyms created.
 
     public int copySynonymsTo(Taxon targetTaxon) {
-        Taxon taxon = this;
         int count = 0;
-        if (targetTaxon.addSynonym(this, "synonym") != null)
-            ++count;
-        for (Synonym syn : taxon.getSynonyms())
+        if (this.name != null)
+            if (targetTaxon.addSynonym(this, "synonym") != null)
+                ++count;
+        for (Synonym syn : this.getSynonyms())
             if (targetTaxon.addSynonym(syn, syn.type) != null)
                 ++count;
         return count;
@@ -702,12 +702,19 @@ public class Taxon extends Node {
 
 	static Comparator<Taxon> compareNodes = new Comparator<Taxon>() {
 		public int compare(Taxon x, Taxon y) {
-            if (x.name != null && y.name != null)
-                return x.name.compareTo(y.name);
-            else if (x.id != null && y.id != null)
+            if (x.id != null || y.id != null) {
+                // sort nodes with ids before ones without
+                if (x.id == null) return 1;
+                if (y.id == null) return -1;
                 return x.id.compareTo(y.id);
-            else
-                return 0;
+            } else if (x.name != null || y.name != null) {
+                // sort named nodes before unnamed ones
+                if (x.name == null) return 1;
+                if (y.name == null) return -1;
+                return x.name.compareTo(y.name);
+            } else
+                // grasp at straws
+                return x.getChildren().size() - y.getChildren().size();
 		}
 	};
 

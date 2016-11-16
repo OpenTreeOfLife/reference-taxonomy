@@ -25,20 +25,31 @@ public class HomonymReport {
 
     public static void homonymReport(Taxonomy tax, String filename) throws IOException {
         Writer writer = openw(filename);
+        CSVWriter cwriter = new CSVWriter(writer);
+        cwriter.writeNext(new String[]{
+                "name",
+                "source 1",
+                "size 1",
+                "ancestor 1",
+                "source 2",
+                "size 2",
+                "ancestor 2",
+                "mrca name",
+                "mrca size",
+                "divided"});
         // for each name that's a homonym...
         //  for each taxon named by that name...
         //   for every *other* taxon named by that name...
         //    report name, MRCA, and size of MRCA of the two
         //     (& maybe subtract sizes of the two taxa)
         for (String name : tax.allNames())
-			homonymReport(tax, name, writer);
+			homonymReport(tax, name, cwriter);
         writer.close();
 	}
 
-    public static void homonymReport(Taxonomy tax, String name, Writer writer) throws IOException {
+    public static void homonymReport(Taxonomy tax, String name, CSVWriter cwriter) throws IOException {
         List<Node> nodes = tax.lookup(name);
-        CSVWriter cwriter = new CSVWriter(writer);
-        if (nodes.size() > 1)
+        if (nodes.size() > 1) {
             for (Node n1node : nodes) {
                 Taxon n1 = n1node.taxon();
                 for (Node n2node : nodes) {
@@ -66,14 +77,17 @@ public class HomonymReport {
                                 putativeSourceRef(n2),
                                 Integer.toString(n2.count()),
                                 sib2name,
-                                mrca == null ? "" : Integer.toString(mrca.count()),
                                 mrca == null ? "" : mrca.name,
+                                mrca == null ? "" : Integer.toString(mrca.count()),
                                 (disjointDivisions(n1, n2) ?
                                  "1" :
                                  "0")});
-                            }
+                        // Only report one homonym pair, not n^2/2
+                        break;
+                    }
                 }
             }
+        }
     }
 
     static String putativeSourceRef(Taxon n) {

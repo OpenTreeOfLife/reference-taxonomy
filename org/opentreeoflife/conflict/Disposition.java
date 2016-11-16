@@ -6,7 +6,8 @@ public enum Disposition {
     RESOLVES ("resolves"),
     SUPPORTED_BY ("supported_by"),
     PATH_SUPPORTED_BY ("partial_path_of"),
-    EXCLUDES ("excludes");
+    EXCLUDES ("excludes"),
+    TIP ("tip");
 
     public String name;
 

@@ -924,6 +924,10 @@ def align_irmng(irmng, ott):
     # Noticed while scanning species polysemies
     irmng.taxon('Peranemaceae').take(irmng.maybeTaxon('Heteronema', 'Rhodophyta'))
 
+    # 2016-10-28 Noticed Goeppertia wrongly extinct while eyeballing 
+    # the deprecated.tsv file
+    irmng.taxon('Goeppertia', 'Pteridophyta').prune(this_source)
+
     return a
 
 # ----- Final patches -----

@@ -21,7 +21,7 @@ def project_2016_gbif(inpath, outpath):
                                ))
 
 
-trimmer = re.compile(u"([A-Za-zäåàáãçéèëïíøöóü-]+( [a-záåäëèéïóöü'0-9.-]+)*) +(d'|von )?[A-ZÄÁÅÇÐÉÎŠÔØÖÔÓÜ(].*")
+trimmer = re.compile(u"([A-Za-zäåàáãçéèëïíøöóü-]+( [a-záåäëèéïóöü'0-9.-]+)*) +(d'|von |van der )?[A-ZÄÁÅÇÐÉÎŠÔØÖÔÓÜ(].*")
 
 def trim_name(name):
     m = trimmer.match(name)

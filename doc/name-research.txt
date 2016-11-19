@@ -587,6 +587,11 @@ irmng:1134127 is Protista-Protista (awaiting allocation)
 
 ### Diphylleia
 
+2016 GBIF has:
+3033928	the plant (in Berberidaceae)
+3236805	an unclassified  protozoan (Protozoa > Diphylleidae > Diphylleia)
+  = formerly gbif:2688063
+
 1. The protist
 
 SILVA 117 has a Diphylleia (AF420478/#4) in Palpitomonas < Incertae Sedis < Eukaryota.
@@ -932,6 +937,22 @@ Previous taxonomies merged the ambphibian and the foram.  Time to fix.
 
 5352207 = SAR (Sarcomastigophora) = irmng:1292651 extinct
 
+## Chlorella
+
+Problem:
+** Ambiguous taxon name: Chlorella
+**   Chlorella (genus ncbi:3071) = (Chlorella 339002=ncbi:3071+448) in Chloroplastida
+**   Chlorella (genus worms:160576) (inconsistent in Chlorellaceae) = (Chlorella =worms:160576?) in Chloroplastida
+
+There are five of these in 2.11draft5, four in 2.10.
+
+5233809 = ncbi:175242  i.s.
+5233812 = ncbi:114055  i.s.
+5233900 = ncbi:114049  i.s.
+339002 = ncbi:3071
+1588 (synonym)
+
+
 ## Division problems
 
 ? Poorly divided: (gbif:3326448. Clitocybe paxillus?) in Fungi vs. (=if:134911. Clitocybe paxillus?) in Eukaryota
@@ -967,6 +988,28 @@ Dinoflagellata has synonym Dinophyta for Dinoflagellata.
 GBIF has Gymnodiniaceae and Warnowiaceae directly in Chromista; it belongs in Dinophyceae.
 Maybe the whole phylum has been blown up.
 
+## Chaetocalyx longiflora/us
+
+NCBI has 'Chaetocalyx longiflora Benth. ex A.Gray' with 'Chaetocalyx
+longiflorus' and 'Chaetocalyx longiflora' as synonyms.
+
+2016 GBIF has Chaetocalyx longiflorus only.
+2013 GBIF has both Chaetocalyx longiflorus (CoL) and Chaetocalyx
+longiflora (GRIN) separately.  So maybe replacing -a with -us is right.
+
+OTT 2.10 has Chaetocalyx longiflora only (-us and -a are synonyms for 
+'Chaetocalyx longiflora Benth. ex A.Gray').
+
+Plant List has  Chaetocalyx longiflorus A.Gray.
+Wait, a different version has -a.
+
+IPNI has -us.
+
+IRMNG has -us.
+
+Wikipedia has -us, but wikispecies has -a.
+
+I think I'm going to go with -us, following GBIF, Wikipedia, and IPNI.
 
 ## Other problems
 

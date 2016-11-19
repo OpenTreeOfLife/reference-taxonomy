@@ -662,6 +662,7 @@ public abstract class Taxonomy {
     // Should move all these to Flag class
 
     // Former containers
+    public
 	static final int WAS_CONTAINER       = (1 <<  0);  // unclassified, environmental, ic, etc
     public
 	static final int INCONSISTENT		 = (1 <<  1);  // paraphyletic taxa
@@ -1654,9 +1655,6 @@ public abstract class Taxonomy {
                 if (!candidates.contains(node.taxon()))
                     candidates.add(node.taxon());
 
-            // TBD: Filter by ancestor
-            // TBD: Filter by descendant
-
             if (ancestor != null)
                 candidates = filterByAncestor(candidates, ancestor);
             if (descendant != null)
@@ -1674,8 +1672,12 @@ public abstract class Taxonomy {
                 return null;
             }
 
-			if (candidates.size() == 1)
-				return candidates.get(0);
+			if (candidates.size() == 1) {
+                Taxon result = candidates.get(0);
+                if (!result.name.equals(name))
+                    System.out.format("* Warning: taxon %s was referenced using synonym %s\n", result, name);
+				return result;
+            }
 
             // Try filtering out synonyms
             List<Taxon> candidates2 = new ArrayList<Taxon>();

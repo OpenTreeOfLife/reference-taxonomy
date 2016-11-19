@@ -22,11 +22,13 @@ class MergeMachine {
     UnionTaxonomy union;
     Taxonomy source;
     Alignment alignment;
+    Map<String, Integer> summary;
 
-    MergeMachine(Taxonomy source, UnionTaxonomy union, Alignment a) {
+    MergeMachine(Taxonomy source, UnionTaxonomy union, Alignment a, Map<String, Integer> summary) {
         this.source = source;
         this.union = union;
         this.alignment = a;
+        this.summary = summary;
     }
 
 	void augment() {
@@ -92,7 +94,7 @@ class MergeMachine {
             count += taxon.copySynonymsTo(targetTaxon);
         }
 		if (count > 0)
-			System.out.println("| Added " + count + " synonyms");
+			System.out.format("| Added %s synonyms\n", count);
 	}
 
 
@@ -265,65 +267,45 @@ class MergeMachine {
         return true;
 	}
 
-    // Reject an unmapped node.
-    // No way to win.  If we add it to the hierarchy, we get a gazillion homonyms.
-    // If we leave it out, there is often nothing for the previous OTT version to map it to.
+    // Reject an unmapped node because it is merged or inconsistent.
 
     void reject(Taxon node, String reason, Taxon replacement, int flag) {
-        // Could leave lub behind as a forwarding address.
-        // But be careful about replacement ids when doing deprecation.
-        // HEURISTIC.
-        if (replacement.taxonomy.lookup(node.name) == null) {
-            Taxon newnode = acceptNew(node, reason);
-            newnode.addFlag(flag);
-            alignment.setAnswer(node, Answer.noinfo(node, newnode, reason, replacement.name));
-            replacement.addChild(newnode);
-        } else {
-            alignment.setAnswer(node, Answer.noinfo(node, null, reason, null));
-        }
+        // Could leave lub behind as a forwarding address...
+        Taxon newnode = acceptNew(node, reason); // does setAnswer
+        newnode.addFlag(flag);
+        replacement.addChild(newnode);
     }
 
     // Node is mapped; accept mapping
 
-    Taxon accept(Taxon node, String reason) {
-        if (node == null) {
-            System.err.format("** Shouldn't happen\n"); return null;
-        }
-        Taxon unode = alignment.getTaxon(node);
-        if (unode == null) {
-            System.err.format("** Also shouldn't happen: %s\n", node); return null;
-        }
-        Answer a = alignment.getAnswer(node);
-        if (a == null) {
-            System.err.format("** Also also shouldn't happen: %s\n", node);
-            alignment.setAnswer(node, Answer.yes(node, unode, reason, null));
-        } else if (!a.isYes()) {
-            System.err.format("** Also also also shouldn't happen: %s %s\n", node, a.reason);
-            alignment.setAnswer(node, Answer.yes(node, unode, reason, null));
-        }
-        return unode;
+    void accept(Taxon node, String reason) {
+        if (alignment.getTaxon(node) == null)
+            System.err.format("** Shouldn't happen - accept %s %s\n", node, reason);
+        tick(reason);
+        return;
     }
 
     // Node is not mapped; copy it over
 
     Taxon acceptNew(Taxon node, String reason) {
+        if (alignment.getTaxon(node) != null)
+            System.err.format("** Shouldn't happen - acceptNew %s %s\n", node, reason);
+
         // dup makes the new node placed, iff the source node is.
         // various other properties carry over as well.
-        Taxon newnode = alignWithNew(node, union, reason);
+        Taxon newnode = union.dupWithoutId(node, reason);
+
+        Answer answer = Answer.yes(node, newnode, reason, null);
+
+        alignment.setAnswer(node, answer);
+        tick(reason);
+
+        // grumble. comapped should be stored in the alignment.
+        newnode.comapped = node;
+        answer.maybeLog(union);
         newnode.addSource(node);
         return newnode;
 	}
-
-    // target is the union taxonomy
-
-    Taxon alignWithNew(Taxon node, Taxonomy target, String reason) {
-        Taxon newnode = target.dupWithoutId(node, reason);
-        Answer answer = Answer.yes(node, newnode, reason, null);
-        alignment.setAnswer(node, answer);
-        newnode.comapped = node;
-        answer.maybeLog(target);
-        return newnode;
-    }
 
     // implement a refinement
     void takeOld(Taxon node, Taxon newnode) {
@@ -498,6 +480,11 @@ class MergeMachine {
         }
 	}
 
+    void tick(String action) {
+        Integer count = summary.get(action);
+        if (count == null) count = 0;
+        summary.put(action, count + 1);
+    }
 }
 
 class Conflict {

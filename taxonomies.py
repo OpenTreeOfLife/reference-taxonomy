@@ -69,10 +69,10 @@ def patch_silva(silva):
 
     def fix_name(bad, good):
         b = silva.maybeTaxon(bad)
-        if b != None: b.rename(good)
+        if b != None: b.rename(good, 'spelling variant')
         else:
             g = silva.maybeTaxon(good)
-            if g != None: g.synonym(bad)
+            if g != None: g.synonym(bad, 'spelling variant')
 
     # 2014-04-12 Rick Ree #58 and #48 - make them match NCBI
     fix_name('Arthrobacter Sp. PF2M5', 'Arthrobacter sp. PF2M5')
@@ -138,7 +138,6 @@ def patch_silva(silva):
     silva.taxon('Rhodophyceae').synonym('Rhodophyta')    # moot now?
 
     silva.taxon('Florideophycidae', 'Rhodophyceae').synonym('Florideophyceae')
-    silva.taxon('Stramenopiles', 'SAR').synonym('Heterokonta') # needed by WoRMS
 
     # JAR 2016-07-29 I could find no argument supporting the name 
     # 'Choanomonada' as a replacement for 'Choanoflagellida'.  I
@@ -304,7 +303,7 @@ def patch_fung(fung):
             cyph = fung.newTaxon('Cyphellopsis', 'genus', 'if:17439')
         fung.taxon('Niaceae').take(cyph)
 
-    fung.taxon('Asterinales').synonym('Asteriniales')  #backward compatibility
+    fung.taxon('Asterinales').synonym('Asteriniales', 'spelling variant')  #backward compatibility
 
     # ** No taxon found with this name: Nowakowskiellaceae
     # ** No taxon found with this name: Septochytriaceae
@@ -459,43 +458,43 @@ def patch_ncbi(ncbi):
     # - Touch-up -
 
     # RR 2014-04-12 #49
-    ncbi.taxon('leotiomyceta').rename('Leotiomyceta')
+    ncbi.taxon('leotiomyceta').rename('Leotiomyceta', 'spelling variant')
 
     # RR #53
-    ncbi.taxon('White-sloanea').synonym('White-Sloanea')
+    ncbi.taxon('White-sloanea').synonym('White-Sloanea', 'spelling variant')
 
     # RR #56
-    ncbi.taxon('sordariomyceta').rename('Sordariomyceta')
+    ncbi.taxon('sordariomyceta').rename('Sordariomyceta', 'spelling variant')
 
     # RR #52
     if ncbi.maybeTaxon('spinocalanus spinosus') != None:
-        ncbi.taxon('spinocalanus spinosus').rename('Spinocalanus spinosus')
+        ncbi.taxon('spinocalanus spinosus').rename('Spinocalanus spinosus', 'spelling variant')
     if ncbi.maybeTaxon('spinocalanus angusticeps') != None:
-        ncbi.taxon('spinocalanus angusticeps').rename('Spinocalanus angusticeps')
+        ncbi.taxon('spinocalanus angusticeps').rename('Spinocalanus angusticeps', 'spelling variant')
 
     # RR #59
-    ncbi.taxon('candidate division SR1').rename('Candidate division SR1')
-    ncbi.taxon('candidate division WS6').rename('Candidate division WS6')
-    ncbi.taxon('candidate division BRC1').rename('Candidate division BRC1')
-    ncbi.taxon('candidate division OP9').rename('Candidate division OP9')
-    ncbi.taxon('candidate division JS1').rename('Candidate division JS1')
+    ncbi.taxon('candidate division SR1').rename('Candidate division SR1', 'spelling variant')
+    ncbi.taxon('candidate division WS6').rename('Candidate division WS6', 'spelling variant')
+    ncbi.taxon('candidate division BRC1').rename('Candidate division BRC1', 'spelling variant')
+    ncbi.taxon('candidate division OP9').rename('Candidate division OP9', 'spelling variant')
+    ncbi.taxon('candidate division JS1').rename('Candidate division JS1', 'spelling variant')
 
     # RR #51
-    ncbi.taxon('Dendro-hypnum').synonym('Dendro-Hypnum')
+    ncbi.taxon('Dendro-hypnum').synonym('Dendro-Hypnum', 'spelling variant')
     # RR #45
-    ncbi.taxon('Cyrto-hypnum').synonym('Cyrto-Hypnum')
+    ncbi.taxon('Cyrto-hypnum').synonym('Cyrto-Hypnum', 'spelling variant')
     # RR #54
-    ncbi.taxon('Sciuro-hypnum').synonym('Sciuro-Hypnum')
+    ncbi.taxon('Sciuro-hypnum').synonym('Sciuro-Hypnum', 'spelling variant')
 
     # RR 2014-04-12 #46
-    ncbi.taxon('Pechuel-loeschea').synonym('Pechuel-Loeschea')
+    ncbi.taxon('Pechuel-loeschea').synonym('Pechuel-Loeschea', 'spelling variant')
 
     # RR #50
-    ncbi.taxon('Saxofridericia').synonym('Saxo-Fridericia')
-    ncbi.taxon('Saxofridericia').synonym('Saxo-fridericia')
+    ncbi.taxon('Saxofridericia').synonym('Saxo-Fridericia', 'spelling variant')
+    ncbi.taxon('Saxofridericia').synonym('Saxo-fridericia', 'spelling variant')
 
     # RR #57
-    ncbi.taxon('Solms-laubachia').synonym('Solms-Laubachia')
+    ncbi.taxon('Solms-laubachia').synonym('Solms-Laubachia', 'spelling variant')
 
     # Mark Holder https://github.com/OpenTreeOfLife/reference-taxonomy/issues/120
     ncbi.taxon('Cetartiodactyla').synonym('Artiodactyla')
@@ -507,7 +506,8 @@ def patch_ncbi(ncbi):
     # From examining the deprecated OTU list.  This one occurs in study pg_188
     # Name got better, old name lost  JAR 2015-06-27
     # This could probably be automated, just by looking up the NCBI id
-    # in the right table.
+    # in the right table.  2016-11-15 This is probably not needed now that
+    # ids are found via source ids.
     for (oldname, ncbiid) in [
             ('Bifidobacterium pseudocatenulatum DSM 20438 = JCM 1200 = LMG 10505', '547043'),
             ('Bifidobacterium catenulatum DSM 16992 = JCM 1194 = LMG 11043', '566552'),
@@ -592,7 +592,7 @@ def patch_ncbi(ncbi):
         if ncbi.maybeTaxon('Hylobates albibarbis') != None:
             ncbi.taxon('Hylobates albibarbis').absorb(h)
         else:
-            h.rename('Hylobates albibarbis')
+            h.rename('Hylobates albibarbis', 'misspelling')
 
     # https://github.com/OpenTreeOfLife/feedback/issues/194
     ncbi.taxon('Euteleostomi').synonym('Osteichthyes')
@@ -628,10 +628,10 @@ def patch_ncbi(ncbi):
     ncbi.taxon('Selachii').synonym('Selachimorpha')
 
     # https://github.com/OpenTreeOfLife/feedback/issues/142
-    ncbi.taxon('Aotus azarai').rename('Aotus azarae')
-    ncbi.taxon('Aotus azarai azarai').rename('Aotus azarae azarae')
-    ncbi.taxon('Aotus azarai infulatus').rename('Aotus azarae infulatus')
-    ncbi.taxon('Aotus azarai boliviensis').rename('Aotus azarae boliviensis')
+    ncbi.taxon('Aotus azarai').rename('Aotus azarae', 'misspelling')
+    ncbi.taxon('Aotus azarai azarai').rename('Aotus azarae azarae', 'misspelling')
+    ncbi.taxon('Aotus azarai infulatus').rename('Aotus azarae infulatus', 'misspelling')
+    ncbi.taxon('Aotus azarai boliviensis').rename('Aotus azarae boliviensis', 'misspelling')
 
     # 2016-08-31 This matches SILVA, and was breaking Streptophyta.  Cluster EF023721
     capenv = ncbi.taxon('Caprifoliaceae environmental sample')
@@ -642,9 +642,6 @@ def patch_ncbi(ncbi):
 def load_worms():
     worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
     worms.smush()
-
-    worms.taxon('Biota').rename('life')
-    worms.taxon('Animalia').synonym('Metazoa')
 
     # 2015-02-17 According to WoRMS web site.  Occurs in pg_1229
     if worms.maybeTaxon('Scenedesmus communis') != None:
@@ -677,8 +674,6 @@ def load_gbif():
     # means the rank-skipped children are incertae sedis.  Mark them so.
     gbif.analyzeMajorRankConflicts()
 
-    gbif.taxon('Animalia').synonym('Metazoa')
-
     patch_gbif(gbif)
     return gbif
 
@@ -700,7 +695,7 @@ def patch_gbif(gbif):
     # RR 2014-04-12 #47
     db = gbif.maybeTaxon('Drake-brockmania')
     if db == None:
-        gbif.taxon('Drake-Brockmania').rename('Drake-brockmania')
+        gbif.taxon('Drake-Brockmania').rename('Drake-brockmania', 'spelling variant')
     else:
         db.absorb(gbif.taxon('Drake-Brockmania'))
     # RR #50 - this one is in NCBI, see above
@@ -864,6 +859,68 @@ def patch_gbif(gbif):
     bad_ecc = gbif.maybeTaxon('Eccrinaceae', 'Zygomycota')
     if bad_ecc != None: bad_ecc.prune()
 
+    # 2016-11-15 Noticed these while perusing the deprecated.tsv after the 
+    # GBIF 2016 update.  GBIF has corrected the gender on many species names.
+    # These are the ones occurring in phylesystem.
+    for (name, wrong_name) in [
+            ('Alopochen mauritiana', 'Alopochen mauritianus'),
+            ('Tchagra minuta', 'Tchagra minutus'),
+            ('Eudynamys melanorhyncha', 'Eudynamys melanorhynchus'),
+            ('Aquila africana', 'Aquila africanus'),
+            ('Alectroenas pulcherrima', 'Alectroenas pulcherrimus'),
+            ('Megaceryle maxima', 'Megaceryle maximus'),
+            ('Coracias naevius', 'Coracias naevia'),
+            ('Myiothlypis coronata', 'Myiothlypis coronatus'),
+            ('Myiothlypis leucoblephara', 'Myiothlypis leucoblepharus'),
+            ('Myiothlypis bivittata', 'Myiothlypis bivittatus'),
+            ('Arizelocichla montana', 'Arizelocichla montanus'),
+            ('Myiothlypis flaveola', 'Myiothlypis flaveolus'),
+            ('Myiothlypis conspicillata', 'Myiothlypis conspicillatus'),
+            ('Myiothlypis signata', 'Myiothlypis signatus'),
+            ('Arizelocichla tephrolaema', 'Arizelocichla tephrolaemus'),
+            ('Monticola erythronotus', 'Monticola erythronota'),
+            ('Sturnia sturninus', 'Sturnia sturnina'),
+            ('Collocalia spodiopygius', 'Collocalia spodiopygia'),
+            ('Ceratogymna subcylindricus', 'Ceratogymna subcylindrica'),
+            ('Amazona mercenaria', 'Amazona mercenarius'),
+            ('Phaethornis aethopygus', 'Phaethornis aethopyga'),
+            ('Chlorestes notatus', 'Chlorestes notata'),
+            ('Mesitornis variegata', 'Mesitornis variegatus'),
+            ('Erethizon dorsatus', 'Erethizon dorsata'),
+            ('Incana incana', 'Incana incanus'),
+            ('Nemapteryx augusta', 'Nemapteryx augustus'),
+            ('Chaetocalyx longiflorus', 'Chaetocalyx longiflora'),
+            ('Monticola imerina', 'Monticola imerinus'),
+    ]:
+        if gbif.taxon(name) != None:
+            if gbif.maybeTaxon(wrong_name) == None:
+                gbif.taxon(name).synonym(wrong_name, 'gender variant')
+            else:
+                gbif_taxon(name).absorb(gbif.taxon(wrong_name))
+
+    # GBIF changed Chaetocalyx longiflora to -us.
+    # GBIF changed Collocalia spodiopygia to -us.
+
+    # 2016-11-18 These GBIF duplicates show up as ambiguous while processing 
+    # the chromista spreadsheet.
+    for (name, bad_id) in [
+            ('Rhaphidoscene', '7738163'),
+            ('Echinogromia', '8370412'),
+            ('Septammina', '7556572'),
+            ('Dendropela', '7509811'),
+            ('Ceratestina', '8322228'),
+            ('Turriclavula', '7705478'),
+            ('Buccinina', '7655969'),
+            ('Rhaphidohelix', '7431039'),
+            ('Marenda', '8281602'),
+            ('Urnulina', '7457155'),
+            ('Rhaphidodendron', '7957205'),
+            ('Millettella', '7884383'),
+    ]:
+        taxon = gbif.taxon(name, 'Foraminifera')
+        if taxon != None and gbif.maybeTaxon(bad_id) != None:
+            taxon.absorb(gbif.taxon(bad_id))
+    
     return gbif
 
 def load_irmng():
@@ -872,8 +929,6 @@ def load_irmng():
     irmng.analyzeMajorRankConflicts()
 
     # patch_irmng
-
-    irmng.taxon('Animalia').synonym('Metazoa')
 
     # JAR 2014-04-26 Flush all 'Unaccepted' taxa
     if irmng.maybeTaxon('Unaccepted', 'life') != None:

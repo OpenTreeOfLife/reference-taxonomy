@@ -114,8 +114,9 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
 	@date
 	@rm -f *py.class
 	@mkdir -p tax/ott
-	@echo Writing transcript to tax/ott/transcript.out
-	time bin/jython make-ott.py 2>&1 | tee tax/ott/transcript.out
+	@echo Writing transcript to tax/ott/transcript.out.new
+	time bin/jython make-ott.py 2>&1 | tee tax/ott/transcript.out.new
+	mv tax/ott/transcript.out.new tax/ott/transcript.out
 	echo $(WHICH) >tax/ott/version.txt
 
 tax/ott/version.txt:

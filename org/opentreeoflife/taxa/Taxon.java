@@ -726,19 +726,26 @@ public class Taxon extends Node implements Comparable<Taxon> {
 	};
 
     public int compareTo(Taxon that) {
-        if (this.id != null || that.id != null) {
-            // sort nodes with ids before ones without
-            if (this.id == null) return 1;
-            if (that.id == null) return -1;
-            return this.id.compareTo(that.id);
-        } else if (this.name != null || that.name != null) {
-            // sort named nodes before unnamed ones
-            if (this.name == null) return 1;
-            if (that.name == null) return -1;
-            return this.name.compareTo(that.name);
-        } else
-            // grasp at straws
-            return this.getChildren().size() - that.getChildren().size();
+        int z;
+        if (this.id != null &&
+            that.id != null &&
+            ((z = this.id.compareTo(that.id)) != 0))
+            return z;
+        if (this.name != null &&
+            that.name != null &&
+            ((z = this.name.compareTo(that.name)) != 0))
+            return z;
+
+        // sort nodes with ids before ones without
+        if (this.id == null && that.id != null) return 1;
+        if (that.id == null && this.id != null) return -1;
+
+        // sort named nodes before unnamed ones
+        if (this.name == null && that.name != null) return 1;
+        if (that.name == null && this.name != null) return -1;
+
+        // grasp at straws
+        return this.getChildren().size() - that.getChildren().size();
     }
 
 
@@ -1000,7 +1007,11 @@ public class Taxon extends Node implements Comparable<Taxon> {
     }
 
 	public void synonym(String name) {
-		if (this.addSynonym(name, "synonym") == null)
+        this.synonym(name, "synonym");
+	}
+
+	public void synonym(String name, String typ) {
+		if (this.addSynonym(name, typ) == null)
 			System.out.format("| Synonym already present: %s %s\n", this, name);
 	}
 

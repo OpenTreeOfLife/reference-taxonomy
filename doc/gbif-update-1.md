@@ -87,10 +87,11 @@ for all of phylesystem, and many many more in the whole tree.)  So the
 approach here is to pick a few at random to examine.
 
 Example: Hierococcyx bocki.  'grep' tells us that this species is in
-taxon.txt, so it must have been removed by the GBIF import script.
-Reason: the genus Hierococcyx is marked 'doubtful' and the script
-throws away anything that's doubtful, along with all of its
-descendants.
+GBIF's taxon.txt file, so it must have been removed by the GBIF import
+script.  Reason: the genus Hierococcyx is marked 'doubtful' and the
+script throws away anything that's doubtful, along with all of its
+descendants.  (Solution: maybe have a way to grandfather doubtful
+genera? I don't know...)
 
 Check another: Centropus burchellii - this one is different, it's just
 plain missing from the new GBIF.  globalnames.org tells us it's a
@@ -109,6 +110,44 @@ Chlorestes notatus.  Damn!  Globalnames has lots of entries for
 notata, none for notatum.  This could be patched, as could all 53
 problem cases, but here I'm looking for general patterns, and not
 finding any.
+
+In the case of Myiothlypis conspicillatus and many others, GBIF seems
+to have fixed the gender (new: Myiothlypis conspicillata) ending
+without leaving a synonym behind.  The change is fine, but losing the
+OTT id means losing curation effort.  (If GBIF had kept their old id
+for the taxon, things would have been fine, because we would have
+matched on GBID record id.)
+
+There are two ways one might address this: 1. go through the list
+manually, adding a .synonym to the patch list in assemble_ott.py for
+each one, or 2. add stemming logic to the alignment module to handle
+this situation.
+
+To guage how widespread the problem is, I added some logic to dumpLog
+to check for changes from -a to -us and vice versa.  Tested with 'make
+test' (after forcing a refresh of gbif_aster and ncbi_aster by
+deleting old versions).  That turned up 6 apparent gender changes,
+which is a lot given how small Asterales is.  So this looks
+real... just to check, I'll run the whole OTT to see.  OK, 28 cases.
+
+It wouldn't be hard to put a kludge in getCandidate, in effect adding
+an extra synonym automatically, but I'm reluctant to add this overhead
+to the inner loop of alignment, which gets run over two million times.
+
+Since there are only 28 (10 in synthesis), I will make a list of
+synonym directives and put it in the gbif section of taxonomies.py
+(pre-alignment adjustments).  Using emacs keyboard macros.
+
+In any case that's only about 20% of the problem cases.
+
+Psammocora nierstraszi and Psammocora explanulata are deprecated, and
+they stand out because they occur in four different taxonomies, in
+addition to being used in synthesis.  A search in the taxonomy shows
+the name "Psammocora explanulata van der" - clearly a mistake in the
+way that authorities are stripped when GBIF is processed.  There is a
+small list of special case name prefixes like this (d' and von), to
+which I added "van der".
+
 
 ## Archive, and add metadata to captures.json
 

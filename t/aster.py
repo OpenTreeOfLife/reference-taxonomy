@@ -82,9 +82,9 @@ def assemble():
 
     Addition.processAdditions(additions_repo_path, tax)
 
-    # Could harvest merges from the id list, as well.
+    reason_report.report(tax)
 
-    if False:  # too slow
+    if False:  # too slow for everyday testing purposes.
         print '-- Checking id list'
         assign_ids_from_list(tax, 'ott_id_list/by_qid.csv')
 
@@ -92,8 +92,6 @@ def assemble():
 
     # Write the model taxonomy out to a set of files
     tax.dump('t/tax/aster/', '\t|\t')
-
-    reason_report.report(aster_report)
 
 def assign_ids_from_list(tax, filename):
     count = 0
@@ -114,12 +112,9 @@ def assign_ids_from_list(tax, filename):
         infile.close()
     print '| Assigned %s ids from %s' % (count, filename)
 
-aster_report = reason_report.new_report()
-
 def align_and_merge(alignment):
     ott = alignment.target
     ott.align(alignment)
     ott.merge(alignment)
-    reason_report.count(alignment, aster_report)
 
 assemble()

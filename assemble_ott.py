@@ -90,17 +90,6 @@ def create_ott():
 
     debug_divisions('Reticularia splendens', ncbi, ott)
 
-    for (ncbi_id, ott_id, name) in ncbi_ott_assignments.ncbi_assignments_list:
-        n = ncbi.maybeTaxon(ncbi_id)
-        if n != None:
-            im = ncbi_to_ott.image(n)
-            if im != None:
-                im.setId(ott_id)
-            else:
-                print '** NCBI %s not mapped - %s' % (ncbi_id, name)
-        else:
-            print '** No NCBI taxon %s - %s' % (ncbi_id, name)
-
     # Low-priority WoRMS
     # This is suboptimal, but the names are confusing the division logic
     low_priority_worms.taxon('Glaucophyta'). \
@@ -142,11 +131,11 @@ def create_ott():
     # Remove all trees but the largest (or make them life incertae sedis)
     ott.deforestate()
 
-    # Report counts of source nodes by reason
-    reason_report.report(assembly_report)
-
     # End of topology changes.  Now assign ids.
-    assign_ids(ott)
+    ids_and_additions(ott)
+
+    # Report counts of source nodes by reason
+    reason_report.report(ott)
 
     ott.check()
 
@@ -514,6 +503,7 @@ def align_ncbi_to_silva(mappings, a):
 def align_worms(worms, ott):
     a = ott.alignment(worms)
     a.same(worms.taxon('Biota'), ott.taxon('life'))
+    a.same(worms.taxon('Animalia'), ott.taxon('Metazoa'))
 
     a.same(worms.taxon('Harosa'), ott.taxon('SAR'))
     a.same(worms.taxon('Heterokonta'), ott.taxon('Stramenopiles'))
@@ -547,6 +537,8 @@ def align_worms(worms, ott):
 def align_gbif(gbif, ott):
 
     a = ott.alignment(gbif)
+
+    a.same(gbif.taxon('Animalia'), ott.taxon('Metazoa'))
 
     # Get rid of diatoms, they do not belong here
     bac = gbif.maybeTaxon('Bacillariophyta', 'Plantae')
@@ -701,6 +693,14 @@ def align_gbif(gbif, ott):
     # WoRMS says it's not a fungus
     gbif.taxonThatContains('Minchinia', 'Minchinia cadomensis').prune(this_source)
 
+    # Taxon is in NCBI with bad primary name; correct name is a synonym
+    ott.taxon('Chaetocalyx longiflorus').rename('Chaetocalyx longiflorus')
+
+    # 2016-12-18 somehow came loose.  4738987 = apusozoan, 570408 = plant
+    # Without this, the plant was lumping in with the apusozoan.
+    a.same(gbif.taxon('3236805'), ott.taxon('4738987'))
+    a.same(gbif.taxon('3033928'), ott.taxon('570408'))
+
     return a
 
 
@@ -737,6 +737,8 @@ def align_irmng(irmng, ott):
     a = ott.alignment(irmng)
 
     a.same(irmng.taxon('Heterokontophyta'), ott.taxon('Stramenopiles'))
+
+    a.same(irmng.taxon('Animalia'), ott.taxon('Metazoa'))
 
     plants = set_divisions(irmng, ott)
     a.same(plants, ott.taxon('Archaeplastida'))
@@ -1458,10 +1460,21 @@ def patch_ott(ott):
 # -----------------------------------------------------------------------------
 # OTT id assignment
 
-def assign_ids(ott):
+def ids_and_additions(ott):
+
+    # ad hoc assignments specifically for NCBI taxa, basedon NCBI id
+
+    for (ncbi_id, ott_id, name) in ncbi_ott_assignments.ncbi_assignments_list:
+        im = ott.lookupQid(QualifiedId('ncbi', ncbi_id))
+        if im != None and im.id == None:
+            if im.name != name:
+                print '** ncbi:%s name is %s, but expected %s' % (ncbi_id, im.name, name)
+            im.setId(ott_id)
+        else:
+            print '** NCBI %s not mapped - %s' % (ncbi_id, name)
 
     # Force some id assignments... will try to automate this in the future.
-    # Most of these come from looking at the otu-deprecated.tsv file after a
+    # Most of these come from looking at the deprecated.tsv file after a
     # series of smasher runs.
 
     for (inf, sup, id) in [
@@ -1583,13 +1596,10 @@ def assign_ids_from_list(tax, filename):
 # -----------------------------------------------------------------------------
 # Reports
 
-assembly_report = reason_report.new_report()
-
 def align_and_merge(alignment):
     ott = alignment.target
     ott.align(alignment)
     ott.merge(alignment)
-    reason_report.count(alignment, assembly_report)
 
 def report_on_h2007(h2007, h2007_to_ott):
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/40

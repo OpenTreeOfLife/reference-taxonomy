@@ -556,6 +556,9 @@ def align_gbif(gbif, ott):
     ott.setDivision(gbif.taxon('Chromista'), 'Eukaryota')
     ott.setDivision(gbif.taxon('Protozoa'), 'Eukaryota')
 
+    # http://dev.gbif.org/issues/browse/POR-3073
+    ott.setDivision(gbif.taxon('Foraminifera'), 'SAR')
+
     # GBIF puts this one directly in Animalia, but Annelida is a barrier node
     gbif.taxon('Annelida').take(gbif.taxon('Echiura'))
     # similarly
@@ -896,10 +899,14 @@ def set_divisions(taxonomy, ott):
 
     return plants
 
-sar_child_names = ['Stramenopiles', 'Heterokonta', 'Heterokontophyta', 'Alveolata', 'Rhizaria']
+sar_contains = ['Stramenopiles', 'Heterokonta', 'Heterokontophyta',
+                'Alveolata', 'Rhizaria',
+                'Bacillariophyta', 'Bacillariophyceae',
+                'Foraminifera', 'Foraminiferida',
+                'Ochrophyta']
 
 def set_SAR_divisions(taxonomy, ott):
-    for name in sar_child_names:
+    for name in sar_contains:
         z = taxonomy.maybeTaxon(name)
         if z != None:
             ott.setDivision(z, 'SAR')

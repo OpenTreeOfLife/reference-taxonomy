@@ -111,6 +111,8 @@ notata, none for notatum.  This could be patched, as could all 53
 problem cases, but here I'm looking for general patterns, and not
 finding any.
 
+(I ended up making a list, with a loop to patch them.)
+
 In the case of Myiothlypis conspicillatus and many others, GBIF seems
 to have fixed the gender (new: Myiothlypis conspicillata) ending
 without leaving a synonym behind.  The change is fine, but losing the
@@ -148,6 +150,7 @@ way that authorities are stripped when GBIF is processed.  There is a
 small list of special case name prefixes like this (d' and von), to
 which I added "van der".
 
+Having fixed this, 
 
 ## Archive, and add metadata to captures.json
 

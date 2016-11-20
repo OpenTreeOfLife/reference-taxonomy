@@ -12,6 +12,10 @@ col = {"taxonID": 0,
        "taxonomicStatus": 5,
        "nameAccordingTo": 6}
 
+not_doubtful = {
+    8407745: "Hierococcyx"
+}
+
 import sys, os, json
 from collections import Counter
 
@@ -105,7 +109,7 @@ def process_gbif(inpath, outdir):
         elif ("Paleobiology Database" in source) or (source == "c33ce2f2-c3cc-43a5-a380-fe4526d63650"):
             paleos.append(id)
 
-        if tstatus == 'doubtful' or tstatus == 'synonym':
+        if tstatus == 'synonym' or (tstatus == 'doubtful' and not id in not_doubtful):
             to_remove.append(id)
             continue
         if tstatus != 'accepted':    # doesn't happen
@@ -230,3 +234,4 @@ if __name__ == "__main__":
     inpath = sys.argv[1]
     outdir = sys.argv[2]
     process_gbif(inpath, outdir)
+

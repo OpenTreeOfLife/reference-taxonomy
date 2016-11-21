@@ -25,18 +25,18 @@ identifying equivalent occurrences when the name-strings are different
 name-string (homonym detection).  Equivelance can then be used as a
 basis of taxonomic understanding, or the relationships between taxa.
 
-[KC's prior version] Taxonomy and nomenclature data are critical for almost any
+[KC's prior version: Taxonomy and nomenclature data are critical for almost any
 biodiversity project that aims to synthesize data based on taxonomic
 names. Such projects want to know whether given strings are equivalent
 to known taxonomic names (taxonomic name reconciliation), how to
 distinguish between multiple matches (homonym detection),
 and whether other strings apply to the same taxon (synonym detection).
 In addition, knowledge of the taxonomic hierarchy of names is crucial
-for organizing biodiversity data for downstream use.
+for organizing biodiversity data for downstream use.]
 
 Open Tree of Life is a system for synthesis of phylogenetic supertrees from
 inputs drawn from a corpus of published phylogenetic trees. Open Tree aims to
-build a phylogeny of all life, using phylogenies where available and filling
+build a phylogeny of all life, using phylogenetic trees where available and filling
 in gaps using taxonomic data. The system
 requires an overall taxonomy of life meeting the following requirements:
 

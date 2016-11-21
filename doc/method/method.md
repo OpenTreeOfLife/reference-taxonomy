@@ -263,26 +263,29 @@ this case). I can't analyze every one, so we need to err on the side
 of creating redundant records, rather than unifying, which would cause
 higher taxa from the lower priority taxonomy to be "broken".]
 
-### Separate taxa with wildly different ranks
+### Separate taxa with disparate ranks
 
 We assume that a taxon with rank above the level of genus (family,
 class, etc.) cannot be the same as a taxon with rank genus or below
 (tribe, species, etc.).
 
-### Prefer taxa with shared lineage names
+[e.g. Ascophora is a genus in Platyhelminthes, and an infraorder in
+Bryozoa]
 
-A taxon that's in the same place in the taxonomy as a source is
+### Prefer taxa with shared lineage
+
+A taxon that's in the "same place" in the taxonomy as a source is
 preferred to one that's not; for example we would rather match a
 weasel to a weasel than to a fish.  There are several factors that
 make it tricky to turn this truism into an actionable rule.
 
 * At the time that alignment is being done, we do not know the
-  alignments of the ancestors, so we cannot compare ancestors.
-  As a proxy in this test, we use ancestor name as a proxy for ancestor identity.
+  alignments of the ancestors, so we cannot compare ancestors very well.
+  We use ancestor name as a proxy for ancestor identity.
 * Sometimes having ancestors of the same name is not informative, as
   with species that are true polysemies, which have ancestors (genera)
   that are also true polysemies.  Ancestors whose names are string
-  prefixes of the given taxon's name should be ignored.
+  prefixes of the given taxon's name are skipped over.
 * It is not enough that *some* ancestor (or ancestor name) is shared,
   since every pair of taxa share some ancestor (name).  We need to
   restrict the assessment to near ancestors.
@@ -290,11 +293,13 @@ make it tricky to turn this truism into an actionable rule.
 The rule used is this one: 
 
 Let the 'quasiparent name' of A (or B) be the name of the nearest
-ancestor of A (or B) whose name is not a prefix of A's name.  If A's
+ancestor Q of A (or B) such that (1) Q's name occurs in both source
+and target, and (2) Q's name is not a prefix of A's name.  If A's
 'quasiparent name' is the name of an ancestor of B, or vice versa,
 then B is a preferred match for A.  For example, the quasiparent of a
 species would typically be a family.
 
+[move to discusion] 
 Broadening the search beyond the 'quasiparent' of both nodes is
 necessary because different taxonomies have different resolution: in
 one a family might be divided into subfamilies, where in the other it
@@ -303,6 +308,9 @@ quasiparent, we avoid vacuous positives due to both being descendants
 of 'life'.
 
 ### Separate taxa that have incompatible membership
+
+[This section needs to be rewritten!  This heuristic now makes use of
+aligned tips, rather than names.]
 
 For each source or union node A, we define its 'membership proxy' as
 follows.  Let S be the set of names that are (a) present in both
@@ -313,38 +321,26 @@ If A and B both have nonempty membership proxies, and the proxies are
 disjoint, then we consider A and B to be incompatible, and prevent a
 match between them.
 
-The incompatibility calculation relies on a bit of implementation
-cleverness for speed, so that it is not necessary to create data
-structures for every proxy.  Most of the time the calculation is a
-simple range check.
-
-This heuristic has both false negatives (taxa that should be combined
+[move to discusion] This heuristic has both false negatives (taxa that should be combined
 but aren't) and false positives (cases where merging taxa does not
 lead to the best results).
 
 ### Prefer same division
 
-1. 'Weak division' separation:
-   B and A are considered distinct at this point if they are in different
-   divisions.  E.g. [looking in log files for examples. need better
-   instrumentation.]  For example,
-   _Brightonia_ in division Mollusca is distinguished from 
-   _Brightonia_ in division Metazoa (which includes Mollusca), which turns out to be correct because
-   the second _Brightonia_ is an echinoderm, not a mollusc.
-
 There are many cases (about 4,000? will need to instrument and re-run
 to count) where A's division (say, C) is properly contained in B's
 nearest division (say, D) or vice versa.  A and B are therefore not
-separated.  It is not clear what to do in these cases.  In many
-situations the taxon in question is unplaced in the source (e.g. is in
-Eukaryota but not in Metazoa) and ought to be matched with a placed
-taxon in the union (in both Eukaryota and Metazoa).  In OTT 2.9, [??
-figure out what happens - not sure], but the number of affected names
-is quite high, so many false polysemies are created.  Example: the
-skeleton taxonomy does not separate _Brightonia_ the mollusc (from
-IRMNG) from _Brightonia_ the echinoderm (from higher priority WoRMS),
-because there is no division for echinoderms, so [whatever happens].
-[need example going the other way.]
+separated by the division separation heuristic.  It is not clear what
+to do in these cases.  In many situations the taxon in question is
+unplaced in the source (e.g. is in Eukaryota but not in Metazoa) and
+ought to be matched with a placed taxon in the union (in both
+Eukaryota and Metazoa).  In OTT 2.9, [??  figure out what happens -
+not sure], but the number of affected names is quite high, so many
+false polysemies are created.  Example: the skeleton taxonomy does not
+separate _Brightonia_ the mollusc (from IRMNG) from _Brightonia_ the
+echinoderm (from higher priority WoRMS), because there is no division
+for echinoderms, so [whatever happens].  [example no good in OTT
+2.11.]  [need example going the other way.]
 
 ### Prefer matches not involving synonyms
 
@@ -353,6 +349,7 @@ B is preferred if its primary name is the same as A's.
 
 ### Collisions
 
+[move to discussion?]
 There are often false polysemies within a source taxonomy - that is, a
 name belongs to more than one node in the source taxonomy, when on
 inspection it is clear that this is a mistake in the source taxonomy, and there
@@ -385,12 +382,16 @@ the union.
 
 The following cases arise during the merge process:
 
- * Source taxonomy tip: if the source node is matched to a union node,
-   there is nothing to do.  If it's unmatched and not blocked for some
-   reason (e.g. ambiguity), then create a corresponding tip node in
-   the union, to be attached later on.  The source tip is then matched
-   to the new union tip.
-
+ * Source taxonomy tip:
+     * If the source node is matched to a union node,
+       there is nothing to do - the taxon is already present.
+     * If it's ambiguous - could equally match
+       more than one union node, even after all alignment heuristics come
+       to bear - then there is also nothing to do; it is effectively
+       blocked and ignored.
+     * If unmatched and not ambiguous, then create a corresponding tip node in the union, to be
+       attached higher up in the recursion.  The source tip is then matched to the new union
+       tip.
  * Source taxonomy internal node: the source node's children have already been
    processed (recursively), and are all matched to targets in the
    union (or, rarely, blocked, see above).  The targets are either

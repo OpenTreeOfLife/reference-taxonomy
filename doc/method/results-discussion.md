@@ -1,31 +1,144 @@
 
 # Results
 
-[KC: results section should start with comment about difficulty in assessing correctness.
-Mention spot checking.]
+## Alignment
+
+The alignment procedure examines every source node.  The following is
+a breakdown of the disposition of source nodes, across all sources, as
+OTT is assembled.  Explanations of the categories follow.
+
+```
+     49  curated alignment
+    105  align to skeleton taxonomy
+
+  21584  disjoint divisions
+    172  disparate ranks
+  25800  by lineage
+   7653  overlapping membership
+    219  same division
+  83012  by name
+
+2325870  confirmed
+   1767  by elimination
+   8592  ambiguous tip
+    452  ambiguous internal
+  10678  disjoint membership
+    921  disjoint membership
+3757548  not aligned
+
+6244422  total source taxon records
+```
+
+
+_curated alignment:_ Some alignments are hand-crafted, usually to
+repair mistakes made by automatic alignment.  
+
+_align to skeleton taxonomy:_ Alignments to the skeleton (for
+'division' calculations) are performed before the main alignment loop
+begins.
+
+_disjoint divisions_, ..., _by name_:
+Automated source record alignments, broken down according to which
+heuristic (see methods) was responsible for narrowing the candidate
+set down to a single union record.
+
+_confirmed_: There was only a single candidate, and it was confirmed
+by a 'yes' answer from one of the heuristics (usually same name).
+
+_by elimination_: Only a single candidate, but not confirmed by any
+heuristic (match involved a synonym).
+
+_ambiguous_: The heuristics were unable to choose from among multiple
+candidates; no alignment is recorded for the source node.
+
+_ambiguous tip_: Ambiguous, and the source node is a tip.
+
+_ambiguous internal_: Ambiguous, and the source node is an internal
+node (has children).
+
+_not aligned_: There were union taxonomy no candidates at all for this
+source taxon.  The source taxon name is new at this point in assembly.
+
+
+   * KC: do certain heuristics work better / worse for different types of problems?
+     [how would one assess this ?? what are examples of 'types of problems'?]
+
+
+## Merge
+
+The merge phase examines every source node, copying unaligned source
+nodes into the union taxonomy when possible.  The following table
+categorizes the fate of each source node during the merge phase.
+
+```
+2162104  aligned tip
+ 304121  aligned internal node
+3482704  new tip
+   6178  new tip (polysemous)
+ 267746  new internal node, part of graft
+   1909  refinement
+   7938  merged into larger taxon
+   3158  merged into larger taxon due to conflict
+6235858  total
+```
+
+[why is the merge total different from the alignment total?]
+
+_aligned tip_: There is already a union node for the given source
+node, so the source node is not copied.  The only action is to record
+an additional source for the union node, and to copy any extinct flag.
+
+_aligned internal node_: Similarly.
+
+_new tip_: There were no candidates for aligning the source node, so a
+new node (a tip) is added to the union taxonomy.
+
+_new tip (polysemous)_: Same as _new tip_ but in copying the node, a
+polysemy is created.
+
+_new internal node_: No descendant of the source node is aligned, so
+this node is simply copied, finishing up a copy of its subtree.
+
+_refinement_: The source node refines a classification already present
+in the union.
+
+_merged into larger taxon_: [should be described in methods section]
+
+_merged into larger taxon due to conflict_: [should be described in methods section]
+
+
+
+[example of a conflict: Zygomycota (if:90405) is not included because
+  ... paraphyletic w.r.t. Hibbett 2007.  get proof?  not a great
+  example, ncbi/gbif would be better.]
+
+[Interesting?:  57 taxa that were unplaced in a higher priority source
+get placed by a lower priority source.]
+
+
+## Characterizing the overall assembly product
 
 [begin automatically generated]
 
-General metrics:
- * Number of taxon records: 3300547
- * Number of synonym records: 1543159
- * Number of internal nodes: 249706
- * Number of tips: 3050841
- * Number of records with rank 'species': 2870706
- * Number of taxa with binomial name-strings: 2112660
- * Number of polysemous name-strings: 9295  
-     of which species 2531, genera 6622
+General metrics on OTT:
+ * Number of taxon records: 3550554
+ * Number of synonym records: 2050661
+ * Number of internal nodes: 276148
+ * Number of tips: 3274406
+ * Number of records with rank 'species': 3118191
+ * Number of taxa with binomial name-strings: 2337337
+ * Number of polysemous name-strings: 8043  
+     of which species 2648, genera 5298
 
 Annotations:
- * Number of taxa marked incertae sedis or equivalent: 322155  
-     of which leftover children of inconsistent source taxa: 22957
- * Number of extinct taxa: 167501
- * Number of infraspecific taxa (below the rank of species): 71185
- * Number of species-less higher taxa (rank above species but containing no species): 1
- * Number of taxa suppressed for supertree synthesis purposes: 861323
+ * Number of taxa marked incertae sedis or equivalent: 318972  
+     of which leftover children of inconsistent source taxa: 17669
+ * Number of extinct taxa: 254929
+ * Number of infraspecific taxa (below the rank of species): 70873
+ * Number of species-less higher taxa (rank above species but containing no species): 66488
 
 Assembly:
- * Contributions from various sources
+ * Contributions from various sources  [older numbers - need to update]
 ``` 
        Source   Contrib   Aligned    Merged  Conflict
         silva     74428         5         -         -
@@ -36,7 +149,7 @@ Assembly:
          ncbi   1164001    118893      1721       728
          gbif   1111758    747237      1126       408
         irmng    398675   1162528       703       161
-    additions        17         0         -         -
+     curation        17         0         -         -
          misc         2         0         -         -
         total   3300547   2087539      4500      1785
 ```
@@ -45,7 +158,8 @@ Topology:
  * Maximum depth of any node in the tree: 38
  * Branching factor: average 13.38 children per internal node
 
-Comparison with Ruggiero 2015:
+## Comparison with Ruggiero 2015
+
  * Number of taxa in Ruggiero: 2276
  * Ruggiero orders aligned by name to OTT: 1355
  * Disposition of Ruggiero taxa above rank of order:
@@ -56,9 +170,7 @@ Comparison with Ruggiero 2015:
      * Taxon conflicts with one or more OTT taxa: 80
      * Taxon containing no aligned order: 20
 
-[end automatically generated]
-
-Polysemy analysis:
+## Polysemy analysis:
 
  * Could we classify the polysemies?  by taxon rank, proximity, etc.  and compare to GBIF / NCBI
      * sibling, cousin, parent/child, within code, between codes
@@ -66,108 +178,47 @@ Polysemy analysis:
      * could be created via skeleton separation
      * could be created via membership separation
 
-## Characterizing the assembly process
 
-Table - breakdown of source nodes by fate (alignment or merge): (needs
-explication, and maybe reduce the number of categories, and change the
-labels)
+## Evaluating the product
 
-Alignments (source records matched to union records) done either by
-explicitly curated directive or by matching to the small 'skeleton'
-(division) taxonomy:
-```
-     44  curated alignment
-    108  align to skeleton taxonomy
-```
+The outcome of the assembly method is a new version of OTT.  There are
+various ways to evaluate a taxonomy.
 
-Source record alignments that were automatic choices between
-alternative union records; breakdown is by which heuristic was
-responsible for narrowing the candidate set down to a single union
-record:
-```
-  21172  disjoint divisions
-    177  disparate ranks
-  25883  by lineage
-   7429  overlapping membership
-    225  same division
-  82699  by name
-```
+1. The ultimate determinant of correctness is scientific and
+bibliographic: are these all the taxa, are they given the right names,
+and do the stand in the correct relationship to one another?  - Nobody
+has the answers to all of these questions; without original taxonomic
+research, the best we can do is compare to the best available
+understanding, as reflected in the current scientific literature.
+Doing this would be a mammoth undertaking, but (as with many options
+below) one could consider samples, especially samples at particularly
+suspect points.
 
-Source alignments in which no choice was made.  'Confirmed' means that
-a match to a single candidate was confirmed by a 'yes' answer from one
-of the heuristics, 'by elimination' is no such confirmation.
-'Ambiguous' means the heuristics were unable to make a choice between
-multiple candidates (the source record is therefore ignored).
-```
-2319344  confirmed
-   2372  by elimination
-   8534  ambiguous tip
-```
+1. We can check to see whether the tests run.  Each test has been
+vetted by a curator.  However, there is a relatively small number of
+tests (107).
 
-There is no alignment process when there are no candidates at all for
-a source record.  In this situation, the record is brought into the
-source taxonomy during the merge phase.
-```
-3488707  new tip
-   6182  new tip (polysemous)
- 268615  new internal node, part of graft
-   1866  refinement
-   8202  merge
-   2943  conflict
+1. We can try to figure out whether the new version is 'better' than
+the new one.  What would be the measure of that?  Not size, since a
+better quality taxonomy might have fewer 'junk' taxon records.
 
-6244502  total
-```
+1. We can check for internal logical consistency.  But it is easy for
+a taxonomy to be both consistent and wrong, or inconsistent and right.
+(really?  example: rank inversion?  need to look at these?  any other
+such checks?)
 
-Merge
+1. We can check whether the sources are reflected properly - but this
+is not reliable, since in many cases OTT will use better information
+from another source.
 
-  (example of a conflict: Zygomycota (if:90405) is not included because
-  ... paraphyletic w.r.t. Hibbett 2007.  get proof?  not a great
-  example, ncbi/gbif would be better.)
+1. We can check that all information in OTT is justified by at least
+one source, and that every piece of information in a source is
+reflected in OTT.  (but this is true by construction?)
 
-[number of taxa unplaced in one source that get placed by a later
-source????  that's too detailed I think.]
+1. We can try to verify the assembly program itself.
 
-## Manual vs. automatic synthesis operations
+[and...]
 
-It's not just turn-and-go.
-
- * number of manual alignment operations required
-
-recent example of bad alignment: Morganella fungus -> bacteria
-
-## Evaluation of alignment heuristics
-
-* effectiveness of the various alignment heuristics
-   * KC: do certain heuristics work better / worse for different types of problems?
-     [how would one assess this ?? what are examples of 'types of problems'?]
-   * KC: since the process runs through a set of heuristics until it finds a
-     solution or gives up, can we say anything about the number of heuristics
-     required across source / union node combinations (or the number of unresolved
-     ambiguities)? i.e. 70% of combinations solved with 1st heuristic, 20% with
-     second heuristic, etc?
-
-Number of times each heuristic was able to reduce the number of
-candidates:
-
-[following is some sample data to look at, for the NCBI merge.  we can
-add up all these numbers for all 8 merges, and format it nicely.]
-
- * same-division: 971
- * ranks: 2
- * same-ancestor: 762
- * overlaps: 159
- * same-division-weak: 61
- * same-primary-name: 2235
-
-If the alignment loop exhausts all heuristics without getting a
-'yes' or 'no' from any of them, we have either alignment by process of
-elimination, if a single candidate remains; or an ambiguity, if there
-are several.  There were 116269 alignments by elimination, and 8088
-amiguities.  Of the ambiguities, 7749 were of tips, 339 of internal
-nodes.  Ambiguous tips are simply ignored [I think the method section
-says this], while the ambiguous internal nodes may lead to multiple nodes
-with the same name-string [but this ought to be explained in the
-methods section].  (Some of these nodes may be eliminated during merge.)
 
 ## Evaluating the taxonomy relative to goals
 
@@ -213,7 +264,7 @@ left incomplete.
   presumably mappable)?
 
 [can we find *any* OTUs that do not have a taxon in OTT?
-rather difficult.  this is what the additions feature was for.]
+rather difficult.  this is what the curation feature was for.]
 
 ### Taxonomic coverage
 
@@ -307,7 +358,7 @@ project's goal of providing open data.
   (dirty inputs, homonyms, a gazillion special cases...)
 * "junk" taxa (actually what does that mean?) or bad placement
 * limitations of method
-* OTU curation challenges?  additions feature?
+* OTU curation challenges?  curation feature?
 
 * importance of provenance for debugging (e.g. recent rosids example).  [implicit criticism of other taxonomies?]
 * do something messy and fix it.

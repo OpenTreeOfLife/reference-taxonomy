@@ -110,14 +110,15 @@ print ' * Number of tips:', tip_count
 print " * Number of records with rank 'species':", species
 print ' * Number of taxa with binomial name-strings:', binomials
 print ' * Number of polysemous name-strings: %s  ' % poly
-print '     of which species %s, genera %s' % (poly_species, poly_genera)
+print '      * of which any of the taxa is a species: %s' % (poly_species)
+print '      * of which any of the taxa is a genus:   %s' % (poly_genera)
 
 print
 print 'Annotations:'
 print " * Number of taxa marked incertae sedis or equivalent: %s  " % incertae
 print '     of which leftover children of inconsistent source taxa: %s' % unplaced
 print ' * Number of extinct taxa: %s' % extinct
-# hidden at curator request ?
+# hidden at curator request ? - that's a synthesis thing.
 print ' * Number of infraspecific taxa (below the rank of species): %s' % infra
 print ' * Number of species-less higher taxa (rank above species but containing no species): %s' % barren
 
@@ -178,19 +179,24 @@ total_first = 0
 total_merged = 0
 total_inconsistent = 0
 total_aligned = 0
-format_string = '%13s %9s %9s %9s %9s'
-print format_string % ('Source', 'Contrib', 'Aligned', 'Merged', 'Conflict')
+total_total = 0
+format_string = '%13s %9s %9s %9s %9s %9s'
+print '```'
+print format_string % ('Source', 'Total', 'Contrib', 'Aligned', 'Merged', 'Conflict')
 for source in sources:
     con = contributed.get(source, 0)
     al = aligned.get(source, 0)
     mer = merged.get(source, 0)
     inc = inconsistent.get(source, 0)
-    print format_string % (source, con, al, dashify(mer), dashify(inc))
+    tot = con + al + mer + inc
+    print format_string % (source, tot, con, al, dashify(mer), dashify(inc))
     total_first += con
     total_aligned += al
     total_merged += mer
     total_inconsistent += inc
-print format_string % ('total', total_first, total_aligned, dashify(total_merged), dashify(total_inconsistent))
+    total_total += tot
+print format_string % ('total', total_total, total_first, total_aligned, dashify(total_merged), dashify(total_inconsistent))
+print '```'
 
 
 def max_depth(node):
@@ -205,9 +211,7 @@ print 'Topology:'
 print ' * Maximum depth of any node in the tree: %s' % (max_depth(ott.forest) - 1)
 print ' * Branching factor: average %.2f children per internal node' % ((ott.count() - 1.0) / internals)
 
-print
-print 'Comparison with Ruggiero et al. 2015 (goes to characterizing backbone):'
-print ' * Number of taxa in Ruggiero: %s  of which orders/tips: %s' % (rug.count(), rug.tipCount())
+# Ruggiero comparison
 
 order_match = 0
 supported_by = 0
@@ -235,6 +239,12 @@ for taxon in rug.taxa():
             other += 1
     elif rug_alignment.getTaxon(taxon) != None:
         order_match += 1
+
+print
+print '<snip>'
+print
+print 'Comparison with Ruggiero et al. 2015 (goes to characterizing backbone):'
+print ' * Number of taxa in Ruggiero: %s  of which orders/tips: %s' % (rug.count(), rug.tipCount())
 
 print ' * Ruggiero orders aligned by name to OTT: %s' % order_match
 print ' * Disposition of Ruggiero taxa above rank of order:'

@@ -1,19 +1,25 @@
 ## Taxonomy assembly overview
 
 Terminology: 
-
-  * polysemy = where a single name-string belongs to multiple taxon records; in 
-    nomenclatural terms, either a homonym or hemihomonym
-  * node = a taxon record derived from a source taxonomy, giving name-string,
-    parent taxon, and perhaps other information
+  
+  * union taxonomy = data structure for creation of the reference 
+    taxonomy
+  * source taxonomy = imported taxonomic source (NCBI taxonomy, etc.)
+  * node = a taxon record, either from a source taxonomy or the union taxonomy;
+    giving name-string, source information,
+    parent node, and perhaps other information such as rank
+  * polysemy = where a single name-string belongs to multiple nodes
+    (within the same taxonomy); in 
+    nomenclatural terms, either a homonym, hemihomonym, or mistaken 
+    clerical duplication
 
 The assembly process works, in outline, as follows:
 
  1. Start with an ordered list of imported source taxonomies S1, S2, ... (see above)
- 1. Initialize the 'union' taxonomy U to be empty
+ 1. Initialize the union taxonomy U to be empty
  1. For each source S:
      1. Load, normalize, and patch S
-     1. Align S to U, i.e. match the nodes of S to nodes of U, where possible
+     1. Align S to U, i.e. match nodes of S to nodes of U, where possible
      1. Merge S into U
          1. Unaligned subtrees of S (subtrees of S that contain
             no matched nodes other than their root) are grafted onto U
@@ -35,6 +41,35 @@ next.
 
 Details of each step follow.
 
+## *NMF suggestion on how to explain all this*
+
+1. Is it possible to assume an ideal case where merging two or more OTT input taxonomies requires no or only very minimal conflict/noise/ambiguity resolution? And the result is almost unambiguously correct? If so, perhaps you start your "assembly process" description by imaging/introducing such a case, and your core pipeline in relation to it. That is then out of the way - a scenario that OTT can handle well and easily.
+
+   [JAR: Ideal case is something like NCBI (Bufo pageoti, Bufo japonicus)Bufo + GBIF (Buf japonicus, Bufo luchunnicus)Bufo -> OTT: (Bufo pageoti, Bufo japonicus, Bufo luchunnicus)Bufo  - could be expanded to two genera]
+
+2. Complications, 1 - those complications that through various profound or pragmatic solution you can address to a fairly large degree of satisfaction. Outcome -- still rather sound OTT, but drawing now on a full scope of things you've added because you've had to given case 1. was not what the input looked like.
+
+    [JAR: lumping is easy; splitting is anguishing, when source 2 has species that source 1 doesn't.]
+
+3. Complications, 2 - issues that you either handle not to your own satisfaction, or simply cannot handle at all. 
+
+I guess I am suggesting this because 1 & 2 give you an opportunity to shine first, and somewhat conclusively, for a significant subset of the input trees. At least for the purpose of mounting the narrative. Clearly any complete OTT assembly job will encounter everything. But you may not have to write such that you directly follow what I assume may be real -- every input taxonomy has instances 1, 2, 3 represented to varying degrees, or they arise as the OTT grows. Instead you could pretend that some input taxonomies are clean (1), individually and jointly. Or clean enough (2) - because of your work. And only 3 is the tough stuff - but tough for anybody, etc.
+
+So, I wonder what would happen if you did this kind of thing. "For the sake of making this assembly process accessible to a wide readership, we first illustrate the entire pipeline when acting on two or more input taxonomies that are highly internally consistent, and also pose minimal conflict among them. Here the assembly works well from A to Z, as we show and exemplify. 
+
+"A second category are complications that occur frequently but for which we have developed adequate diagnosis and repair/resolution mechanisms. We show how we do this, and also show what else could be done for even better performance".
+
+"A third category contains lingering challenges that point to future solution analysis/development needs. And we suggest ..."
+
+(and of course you'd say that in reality, every input may be a mix of 1-3)
+
+JAR: This sounds plausible to me.  Making a user-friendly exposition
+will require many figures containing lots of little trees, but so it
+goes.  I'm not sure that 2 and 3 can be separated; there are not very
+many cases (graft, refinement, inconsistent, merge) and they are not
+very complicated.
+
+
 ## Source taxonomy import and normalization
 
 Each source taxonomy has its own import procedure, usually a file
@@ -42,53 +77,6 @@ download from the provider's web site followed by application of a
 script that converts the source to a exchange format for import.  Given
 the converted source files, the taxonomy can be read by the assembly
 procedure.
-
-[JAR: Nico asked for description of the exchange format, but I think
-it's completely uninteresting.  I think it should be flushed, but
-maybe information about what's in a taxon record / node should be
-given somewhere.]
-
-A taxonomy in the exchange format has the following parts:
-
- * A taxonomy table, with one row (record) per putative taxon.  Important columns are:
-     * An identifier that is unique with this taxonomy
-     * The identifier of its parent taxon record
-     * The taxon's primary name-string
-     * The taxon's designated rank (optional)
-     * Optional annotations i.e. 'flags'
- * An optional synonyms table.
-     * The identifier of a taxon
-     * A synonym name-string for that taxon
- * An optional set of identifier merges.  A merge gives the identifier for a 
-   taxon from a previous version of this taxonomy 
-   that has been merged with another taxon, usually to repair
-   what was an undetected synonymy in the previous version.
-
-[NMF: Would be helpful to have 2-5 rows deep example, for 3 tables.
-JAR: it's pretty boring.  Here are a few rows from the NCBI import:
-
-Taxonomy -
-
-    uid     parent  name            rank
-    141976  8335    Plethodon cinereus      species 
-    8335    269181  Plethodon       genus   
-    269181  8332    Plethodontinae  subfamily       
-
-Synonyms -
-
-    uid     name                    type
-    141976  Plethodon cinerea       synonym 
-    73625   Lycopodium alpina       misspelling     
-    73625   Lycopodium alpinum      synonym
-
-Merges -
-
-    uid     replacement
-    12      74109
-    30      29
-    36      184914
-
-end]
 
 After each source taxonomy is loaded, the following two normalizations
 are performed:
@@ -471,32 +459,3 @@ The previous OTT version is not merged into the new version; the
 alignment is only for the purpose of assigning identifiers.
 Therefore, if a taxon record is deleted from every source taxonomy
 that contributes it, it is automatically deleted from OTT.
-
-## *NMF suggestion on how to explain all this*
-
-1. Is it possible to assume an ideal case where merging two or more OTT input taxonomies requires no or only very minimal conflict/noise/ambiguity resolution? And the result is almost unambiguously correct? If so, perhaps you start your "assembly process" description by imaging/introducing such a case, and your core pipeline in relation to it. That is then out of the way - a scenario that OTT can handle well and easily.
-
-   [JAR: Ideal case is something like NCBI (Bufo pageoti, Bufo japonicus)Bufo + GBIF (Buf japonicus, Bufo luchunnicus)Bufo -> OTT: (Bufo pageoti, Bufo japonicus, Bufo luchunnicus)Bufo  - could be expanded to two genera]
-
-2. Complications, 1 - those complications that through various profound or pragmatic solution you can address to a fairly large degree of satisfaction. Outcome -- still rather sound OTT, but drawing now on a full scope of things you've added because you've had to given case 1. was not what the input looked like.
-
-    [JAR: lumping is easy; splitting is anguishing, when source 2 has species that source 1 doesn't.]
-
-3. Complications, 2 - issues that you either handle not to your own satisfaction, or simply cannot handle at all. 
-
-I guess I am suggesting this because 1 & 2 give you an opportunity to shine first, and somewhat conclusively, for a significant subset of the input trees. At least for the purpose of mounting the narrative. Clearly any complete OTT assembly job will encounter everything. But you may not have to write such that you directly follow what I assume may be real -- every input taxonomy has instances 1, 2, 3 represented to varying degrees, or they arise as the OTT grows. Instead you could pretend that some input taxonomies are clean (1), individually and jointly. Or clean enough (2) - because of your work. And only 3 is the tough stuff - but tough for anybody, etc.
-
-So, I wonder what would happen if you did this kind of thing. "For the sake of making this assembly process accessible to a wide readership, we first illustrate the entire pipeline when acting on two or more input taxonomies that are highly internally consistent, and also pose minimal conflict among them. Here the assembly works well from A to Z, as we show and exemplify. 
-
-"A second category are complications that occur frequently but for which we have developed adequate diagnosis and repair/resolution mechanisms. We show how we do this, and also show what else could be done for even better performance".
-
-"A third category contains lingering challenges that point to future solution analysis/development needs. And we suggest ..."
-
-(and of course you'd say that in reality, every input may be a mix of 1-3)
-
-JAR: This sounds plausible to me.  Making a user-friendly exposition
-will require many figures containing lots of little trees, but so it
-goes.  I'm not sure that 2 and 3 can be separated; there are not very
-many cases (graft, refinement, inconsistent, merge) and they are not
-very complicated.
-

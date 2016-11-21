@@ -243,6 +243,11 @@ def align_silva(silva, ott):
     #a.same(silva.taxonThatContains('Ctenophora', 'Beroe ovata'),
     #       ott.taxon('641212'))
 
+    # 2016-11-20 Force matches with NCBI and WoRMS Protaspis
+    # WoRMS says: "Protapsa Cavalier-Smith in Howe et al., 2011 was proposed 
+    # to replace Protaspis Skuja, 1939 under the ICZN"
+    silva.taxon('Protaspa', 'Rhizaria').synonym('Protaspis')
+
     # From Laura and Dail on 5 Feb 2014
     # https://groups.google.com/forum/#!topic/opentreeoflife/a69fdC-N6pY
     a.same(silva.taxon('Diatomea'), ott.taxon('Bacillariophyta'))
@@ -568,7 +573,7 @@ def align_gbif(gbif, ott):
     gbif.taxon('Fungi').hideDescendantsToRank('species')
 
     # Suppressed at Laura Katz's request
-    gbif.taxonThatContains('Bacteria','Bacillus').hideDescendants()
+    gbif.taxonThatContains('Bacteria','Escherichia').hideDescendants()
     gbif.taxonThatContains('Archaea','Halobacteria').hideDescendants()
 
     # - Alignment -
@@ -577,7 +582,7 @@ def align_gbif(gbif, ott):
 
     # Automatic alignment makes the wrong choice for this one
     # a.same(ncbi.taxon('5878'), gbif.taxon('10'))    # Ciliophora
-    a.same(gbif.taxon('10'), ott.taxon('Ciliophora', 'Alveolata'))  # in Protozoa
+    a.same(gbif.maybeTaxon('10'), ott.taxon('Ciliophora', 'Alveolata'))  # in Protozoa
     # Not needed?
     # a.same(ott.taxon('Ciliophora', 'Ascomycota'), gbif.taxon('3269382')) # in Fungi
 
@@ -586,7 +591,8 @@ def align_gbif(gbif, ott):
     # OTT 2.8 has 936399 = in Retaria (which isn't in NCBI) extinct_inherited ? - no good.
     # GBIF 389 is in Protozoa... but it contains nothing!!  No way to identify it other than by id.
     #   amoeboid ...
-    a.same(gbif.taxon('389'), ott.taxon('Foraminifera', 'Rhizaria'))  # Foraminifera gbif:4983431
+    # 2016-11-20 This may be fixed now that SAR is a division.
+    a.same(gbif.maybeTaxon('389'), ott.taxon('Foraminifera', 'Rhizaria'))  # Foraminifera gbif:4983431
 
     # Tetrasphaera is a messy multi-way homonym
     #### Check: was ncbi.taxon
@@ -659,8 +665,9 @@ def align_gbif(gbif, ott):
 
     # Polysemy with an order in Chaetognatha (genus is a brachiopod)
     # https://github.com/OpenTreeOfLife/feedback/issues/306
-    establish('Phragmophora', ott, ancestor='Rhynchonellata', rank='genus', source='gbif:5430295')
-    a.same(gbif.taxon('5430295'), ott.taxon('Phragmophora', 'Rhynchonellata'))
+    establish('Phragmophora', ott, ancestor='Brachiopoda', rank='genus', ott_id='5972959')
+    # gbif:5430295 seems to be gone from 2016 GBIF.  Hmmph.
+    a.same(gbif.maybeTaxon('Phragmophora', 'Brachiopoda'), ott.taxon('Phragmophora', 'Brachiopoda'))
 
     # 2016 GBIF seems to have Fragillariophyceae in a class Bacillariophyceae.
     # In NCBI (and everywhere else) the taxon called 'Bacillariophyceae'
@@ -703,6 +710,11 @@ def align_gbif(gbif, ott):
     # Without this, the plant was lumping in with the apusozoan.
     a.same(gbif.taxon('3236805'), ott.taxon('4738987'))
     a.same(gbif.taxon('3033928'), ott.taxon('570408'))
+
+    # 2016-11-20 Showed up as ambiguous in transcript; log says ncbi and gbif records are separated because disjoint.
+    # But they cannot be proper homonyms; too close.
+    # (gbif is in Agaricomycotina, ncbi is in Ustilaginomycotina)
+    a.same(gbif.taxon('Moniliellaceae', 'Fungi'), ott.taxon('Moniliellaceae', 'Fungi'))
 
     return a
 
@@ -1464,6 +1476,23 @@ def patch_ott(ott):
     # See NCBI
     ott.taxon('Millericrinida').extant() # WoRMS
 
+    # Doug Soltis 2015-02-17 https://github.com/OpenTreeOfLife/feedback/issues/59 
+    # http://dx.doi.org/10.1016/0034-6667(95)00105-0
+    # Seems to have gone away with 2016 GBIF.  On fossilworks site
+    timo = ott.maybeTaxon('Timothyia', 'Laurales')
+    if timo != None: timo.extinct()
+
+    # Yan Wong 2014-12-16 https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116
+    for name in ['Griphopithecus', 'Asiadapis',
+                 'Lomorupithecus', 'Marcgodinotius', 'Muangthanhinius',
+                 'Plesiopithecus', 'Suratius', 'Killikaike blakei', 'Rissoina bonneti',
+                 # 'Mycosphaeroides'  - gone
+             ]:
+        claim = Whether_extant(name, False, 'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116')
+        claim.make_true(ott)
+
+
+
 # -----------------------------------------------------------------------------
 # OTT id assignment
 
@@ -1473,12 +1502,12 @@ def ids_and_additions(ott):
 
     for (ncbi_id, ott_id, name) in ncbi_ott_assignments.ncbi_assignments_list:
         im = ott.lookupQid(QualifiedId('ncbi', ncbi_id))
-        if im != None and im.id == None:
+        if im == None:
+            print '** ncbi:%s not found in OTT - %s' % (ncbi_id, name)
+        else:
             if im.name != name:
                 print '** ncbi:%s name is %s, but expected %s' % (ncbi_id, im.name, name)
-            im.setId(ott_id)
-        else:
-            print '** NCBI %s not mapped - %s' % (ncbi_id, name)
+            im.addId(ott_id)
 
     # Force some id assignments... will try to automate this in the future.
     # Most of these come from looking at the deprecated.tsv file after a

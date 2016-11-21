@@ -714,11 +714,6 @@ def patch_gbif(gbif):
         # Whether_same('Drepano-Hypnum', 'Drepano-hypnum', True),
         # Whether_same('Complanato-Hypnum', 'Complanato-hypnum', True),
         # Whether_same('Leptorrhyncho-Hypnum', 'Leptorrhyncho-hypnum', True),
-        
-        # Doug Soltis 2015-02-17 https://github.com/OpenTreeOfLife/feedback/issues/59 
-        # http://dx.doi.org/10.1016/0034-6667(95)00105-0
-        Whether_extant('Timothyia', False, 'https://github.com/OpenTreeOfLife/feedback/issues/59'),
-
     ]
     make_claims(gbif, claims)
     # See new versions above
@@ -759,15 +754,6 @@ def patch_gbif(gbif):
     if bex != None and bec != None:
         bex.absorb(bec)
         bex.detach()
-
-    # Yan Wong 2014-12-16 https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116
-    for name in ['Griphopithecus', 'Asiadapis',
-                 'Lomorupithecus', 'Marcgodinotius', 'Muangthanhinius',
-                 'Plesiopithecus', 'Suratius', 'Killikaike blakei', 'Rissoina bonneti',
-                 # 'Mycosphaeroides'  - gone
-             ]:
-        claim = Whether_extant(name, False, 'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116')
-        claim.make_true(gbif)
 
     # JAR 2014-07-18  - get rid of Helophorus duplication
     # GBIF 3263442 = Helophorus Fabricius, 1775, from CoL
@@ -892,11 +878,11 @@ def patch_gbif(gbif):
             ('Chaetocalyx longiflorus', 'Chaetocalyx longiflora'),
             ('Monticola imerina', 'Monticola imerinus'),
     ]:
-        if gbif.taxon(name) != None:
+        if gbif.maybeTaxon(name) != None:
             if gbif.maybeTaxon(wrong_name) == None:
                 gbif.taxon(name).synonym(wrong_name, 'gender variant')
             else:
-                gbif_taxon(name).absorb(gbif.taxon(wrong_name))
+                gbif.taxon(name).absorb(gbif.taxon(wrong_name))
 
     # GBIF changed Chaetocalyx longiflora to -us.
     # GBIF changed Collocalia spodiopygia to -us.
@@ -921,6 +907,33 @@ def patch_gbif(gbif):
         if taxon != None and gbif.maybeTaxon(bad_id) != None:
             taxon.absorb(gbif.taxon(bad_id))
     
+    # 2016-11-20 Diaphoropodon showed up as ambiguous in transcript.
+    # There are two Diaphoropodon in new GBIF (4898754 + 8212987).
+    # 4 is a foram, 8 is a 'Sarcomastigophora', which is paraphyletic.
+    # OTT thinks Sarc. is inconsistent.  8 is a child of 
+    # Chlamydophryidae -- which is in SAR!  So these two things are
+    # actually the same.
+    gbif.taxon('Diaphoropodon', 'Foraminifera').absorb(gbif.maybeTaxon('Diaphoropodon', 'Sarcomastigophora'))
+
+    # GBIF has two taxa Rotalites and two synonym Rotalites.  That
+    # seems excessive.
+    # 7966169	|	8376456	|	Rotalites	|	genus	|	 8376456 = Foraminifera
+    # 8101279	|	7	|	Rotalites	|	genus	|	     7 = Protozoa
+    # synonym 8063968	|	Rotalites	|	proparte synonym	|	Rotalia in Foraminifer
+    # synonym 8376456	|	Rotalites	|	proparte synonym	|	8376456 = Foraminifera
+    # I think these are all the same.
+    # Rotalites is also a proparte synonym in worms and irmng.
+    # There's also Rotalia, two of them in gbif, both genera:
+    # 7996474  parent 1 (! Animalia)
+    # 8063968 parent 7475854 = Rotaliidae
+    # Let's make them all the same as 8063968.
+    gbif.taxon('Rotalia', 'Foraminifera').absorb(gbif.taxon('Rotalites', 'Foraminifera'))
+    gbif.taxon('Rotalia', 'Foraminifera').absorb(gbif.maybeTaxon('8101279'))
+    gbif.taxon('Rotalia', 'Foraminifera').absorb(gbif.maybeTaxon('7996474'))
+
+    # Similar cases (probably): (from Chromista spreadsheet ambiguities)
+    # Umbellina, Rotalina
+
     return gbif
 
 def load_irmng():

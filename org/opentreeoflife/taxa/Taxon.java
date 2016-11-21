@@ -1077,7 +1077,7 @@ public class Taxon extends Node implements Comparable<Taxon> {
         // Not sure about the order of the following two, but if the
         // synonym comes before the prune, then it might be suppressed
         // by the presence in the name index of the deprecated taxon
-		this.addSynonym(other.name, "subsumed_by");	// Not sure this is a good idea
+		this.addSynonym(other.name, "proparte synonym");	// Not sure this is a good idea
 		other.prune("absorb");
         // copy sources from other to syn?
         return true;

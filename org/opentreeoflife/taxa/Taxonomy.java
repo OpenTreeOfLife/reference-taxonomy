@@ -1641,9 +1641,11 @@ public abstract class Taxonomy {
 
     List<Taxon> nodesToTaxa(List<Node> nodes) {
         List<Taxon> taxa = new ArrayList<Taxon>();
-        for (Node node : nodes)
-            if (!taxa.contains(node.taxon()))
-                taxa.add(node.taxon());
+        for (Node node : nodes) {
+            Taxon taxon = node.taxon();
+            if (!taxa.contains(taxon) && ((taxon.properFlags & Taxonomy.FORMER_CONTAINER) == 0))
+                taxa.add(taxon);
+        }
         return taxa;
     }
 
@@ -1651,9 +1653,6 @@ public abstract class Taxonomy {
 		List<Node> nodes = this.lookup(name);
         if (nodes != null) {
             List<Taxon> candidates = nodesToTaxa(nodes);
-            for (Node node : nodes)
-                if (!candidates.contains(node.taxon()))
-                    candidates.add(node.taxon());
 
             if (ancestor != null)
                 candidates = filterByAncestor(candidates, ancestor);
@@ -1663,11 +1662,11 @@ public abstract class Taxonomy {
 			if (candidates == null || candidates.size() == 0) {
                 if (windy) {
                     if (ancestor != null)
-                        System.err.format("** No such taxon: %s in %s\n", name, ancestor);
+                        System.err.format("** No such taxon: %s in %s (%s)\n", name, ancestor, this.idspace);
                     else if (descendant != null)
-                        System.err.format("** No such taxon: %s containing %s\n", name, descendant);
+                        System.err.format("** No such taxon: %s containing %s (%s)\n", name, descendant, this.idspace);
                     else
-                        System.err.format("** No such taxon: %s\n", name);
+                        System.err.format("** No such taxon: %s (in %s)\n", name, this.idspace);
                 }
                 return null;
             }
@@ -1675,7 +1674,7 @@ public abstract class Taxonomy {
 			if (candidates.size() == 1) {
                 Taxon result = candidates.get(0);
                 if (!result.name.equals(name))
-                    System.out.format("* Warning: taxon %s was referenced using synonym %s\n", result, name);
+                    System.out.format("* Warning: taxon %s was referenced using synonym %s (%s)\n", result, name, this.idspace);
 				return result;
             }
 
@@ -1689,7 +1688,7 @@ public abstract class Taxonomy {
 
             // That didn't work.
             if (windy) {
-                System.err.format("** Ambiguous taxon name: %s\n", name);
+                System.err.format("** Ambiguous taxon name: %s (%s)\n", name, this.idspace);
                 for (Taxon taxon : candidates) {
                     String uniq = taxon.uniqueName();
                     if (uniq.equals("")) uniq = taxon.name;
@@ -1705,7 +1704,7 @@ public abstract class Taxonomy {
 		} else {
             Taxon probe = this.lookupId(name);
             if (windy && probe == null)
-                System.err.format("** No taxon found in %s with this name or id: %s\n", this.getTag(), name);
+                System.err.format("** No taxon found in %s with this name or id: %s\n", this.idspace, name);
             return probe;
         }
 	}
@@ -1761,7 +1760,8 @@ public abstract class Taxonomy {
 			// Follow ancestor chain to see whether this node is an ancestor
 			for (Taxon chain = smallNode.taxon().parent; chain != null; chain = chain.parent)
 				if (bigTaxa.contains(chain)) {
-					result.add(chain);
+                    if (!result.contains(chain))
+                        result.add(chain);
 					break;
 				}
 		}
@@ -1787,6 +1787,9 @@ public abstract class Taxonomy {
 						  this.rootCount(),
 						  this.nameIndex.size());
 	}
+
+    // Check invariants that are supposed to hold for Taxonomy objects.
+    // Useful for debugging.
 
     public void check() {
         Set<Taxon> all = new HashSet<Taxon>();

@@ -65,7 +65,7 @@ ncbi_assignments_list = [
 
     # JAR 2014-05-13
     ('214887', '4773', 'Phytopythium montanum'),
-    ('317423', '289517', 'Rinorea dimakoensis'),
+    ('317423', '289517', "Rinorea sp. 'dimakoensis'"),
 
     # JAR 2016-11-18 from deprecated list 'incompatible-use' - fixed differently
     # ('371654', '555513', 'Psammocora nierstraszi'),

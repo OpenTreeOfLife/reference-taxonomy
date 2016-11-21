@@ -952,6 +952,12 @@ There are five of these in 2.11draft5, four in 2.10.
 339002 = ncbi:3071
 1588 (synonym)
 
+## Protaspis
+
+OTT 696938 = ncbi:188977 = Protaspis in Thaumatomonadidae in Cercozoa in Rhizaria
+OTT 4918135 = silva:AB252745/#8 = Protaspa in Cercozoa in Rhizaria
+  with a synonym of 'Protaspis'.  So these two are the same (if
+  classified differently).
 
 ## Division problems
 

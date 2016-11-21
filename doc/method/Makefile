@@ -14,7 +14,7 @@ out/draft.html: out/draft.md lib/Markdown.pl
 	bin/markdown $< >$@.new
 	mv $@.new $@
 
-out/draft.md: introduction.md sources.md out/sources_table.md method.md results-discussion.md
+out/draft.md: introduction.md sources.md out/sources_table.md method.md results.md discussion.md
 	@mkdir -p out
 	cat $^ >$@
 

@@ -1,3 +1,5 @@
+[preceded by sources subsection]
+
 ## Taxonomy assembly overview
 
 Terminology: 

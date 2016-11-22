@@ -1,6 +1,11 @@
 
 # Results
 
+We have described the taxonomic and nomenclatural needs of the Open Tree of
+Life project, and a process for building a taxonomy that meets these needs.
+Now, we present the performance of various stages of the taxonomy build process,
+and how the resulting taxonomy better meets the needs of the Open Tree.  
+
 ## Alignment
 
 The alignment procedure examines every source node.  The following is
@@ -141,7 +146,7 @@ Annotations:
 
 Assembly:
  * Contributions from various sources  [older numbers - need to update]
-``` 
+```
        Source     Total   Contrib   Aligned    Merged  Conflict
         silva     74412     74407         5         -         -
         h2007       227       226         1         -         -
@@ -242,14 +247,14 @@ left incomplete.
   (i.e. how well does OTT do what it's supposed to do, compared to
   ready-made taxonomies?  OTT gets 95% of OTUs, NCBI only gets ??92%??
   (besides just being interesting, this will tell us whether we could
-   have gotten away with just NCBI, or if GBIF and the rest were really 
+   have gotten away with just NCBI, or if GBIF and the rest were really
    needed.)
-  (how about GNI?? trying to think of an independent name source 
+  (how about GNI?? trying to think of an independent name source
   to compare to, as a control?)
 * number of OTUs that are mapped, that come from NCBI - I previously
-  measured this as about 97% of OTUs in phylesystem (actually 97% 
+  measured this as about 97% of OTUs in phylesystem (actually 97%
   of taxon names, not OTUs)
-* what about unmapped OTUs?  of those, how many are binomials (and 
+* what about unmapped OTUs?  of those, how many are binomials (and
   presumably mappable)?
 
 [can we find *any* OTUs that do not have a taxon in OTT?
@@ -276,7 +281,7 @@ each HHDB polysemy, in the right places]
 
 ### Backbone quality
 
-* We can check for resolution compared to other taxonomies, e.g. NCBI, GBIF, 
+* We can check for resolution compared to other taxonomies, e.g. NCBI, GBIF,
   IRMNG.  Crude measure is ratio of
   nonterminal to terminal = average branching factor.  Might be good
   to control for tip set (use same set of species for every taxonomy)
@@ -287,7 +292,7 @@ each HHDB polysemy, in the right places]
   meaningfully to NCBI, GBIF, but this would require new syntheses...
   http://files.opentreeoflife.org/synthesis/opentree7.0/output/subproblems/index.html#contested
 
-#### Comparison with Ruggiero et al. 2015 
+#### Comparison with Ruggiero et al. 2015
 
 (goes to characterizing backbone)
 
@@ -313,7 +318,7 @@ OTOH using the synthetic tree as ground truth seems a bit risky? ]
 
 NCBI update went smoothly - no intervention required.
 
-GBIF update had some issues: 
+GBIF update had some issues:
  * import code needed to be changed because columns in new GBIF backbone distrubtion are changed
  * lots of taxa are missing, requiring adjustments to patches, and a few new ones.
 

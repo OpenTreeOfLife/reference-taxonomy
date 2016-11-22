@@ -1,15 +1,13 @@
 # Abstract
 
-Taxonomy and nomenclature data are critical for any project that
-synthesizes biodiversity data, as most biodiveristy data sets use
-taxonomic names to identify taxa. The Open Tree of Life project
-synthesizes sets of published phylogenetic trees into comprehensive
-supertrees or "draft trees of life". Although it would have been
-preferable to build directly off of another project's taxonomic work,
-no single published taxonomy met the needs of the project. We describe
-here a system for reproducibly combining several source taxonomies
-into a synthetic taxonomy, and discuss the challenges of taxonomic and
-nomenclatural synthesis for downstream biodiversity projects.
+Taxonomy and nomenclature data are critical for any project that synthesizes
+biodiversity data, as most biodiveristy data sets use taxonomic names to
+identify taxa. Open Tree of Life is one such project, synthesizing sets of
+published phylogenetic trees into comprehensive supertrees. No single published
+taxonomy met the taxonomic and nomenclatural needs of the project. We therefore
+describe here a system for reproducibly combining several source taxonomies into
+a synthetic taxonomy, and discuss the challenges of taxonomic and nomenclatural
+synthesis for downstream biodiversity projects.
 
 # Introduction
 
@@ -22,17 +20,8 @@ the purposes of data integration, to any given name-string occurrence
 in another.  Solving this equivalence problem requires both
 identifying equivalent occurrences when the name-strings are different
 (synonym detection) and distinguishing occurrences with the same
-name-string (homonym detection).  Equivelance can then be used as a
-basis of taxonomic understanding, or the relationships between taxa.
-
-[KC's prior version: Taxonomy and nomenclature data are critical for almost any
-biodiversity project that aims to synthesize data based on taxonomic
-names. Such projects want to know whether given strings are equivalent
-to known taxonomic names (taxonomic name reconciliation), how to
-distinguish between multiple matches (homonym detection),
-and whether other strings apply to the same taxon (synonym detection).
-In addition, knowledge of the taxonomic hierarchy of names is crucial
-for organizing biodiversity data for downstream use.]
+name-string (homonym detection).  Equivalence can then be used as a
+basis of taxonomic understanding, or of the relationships between taxa.
 
 Open Tree of Life is a system for synthesis of phylogenetic supertrees from
 inputs drawn from a corpus of published phylogenetic trees. Open Tree aims to
@@ -53,23 +42,23 @@ requires an overall taxonomy of life meeting the following requirements:
     that are described in the literature [more than 1.6 million, according to
     http://www.catalogueoflife.org/ retrieved 2016-11-01], so that we
     have the option to 'fill in the gaps' not covered by phylogenetic studies.  
- 1. *Phylogenetically informed backbone*: A higher taxonomic backbone 
+ 1. *Phylogenetically informed backbone*: A higher taxonomic backbone
     allows us to associate
     clades in the tree of life with higher taxa when possible, allows us to
     link otherwise unconnected phylogenies, and provides a
     substitute for missing phylogenetic information.
-    Given Open Tree's emphasis on phylogeny, the backbone taxonomy should 
+    Given Open Tree's emphasis on phylogeny, the backbone taxonomy should
     if possible include phylogenetically sound higher groups, even if
     they do not have designated Linnaean ranks, and exclude groups known
     to be unsound.
  1. *Ongoing update*: New taxa of importance to phylogenetic studies
     are constantly being added to the literature.
     The taxonomy needs to be updated with new information on an ongoing basis.
- 1. *Open data*: The taxonomy must be available to anyone for unrestricted use 
+ 1. *Open data*: The taxonomy must be available to anyone for unrestricted use
     without agreement to any terms of use.
 
-No single available taxonomic source meets all three requirements.
-NCBI taxonomy has good coverage of OTUs, but its taxonomic coverage is
+No single available taxonomic source meets all five requirements.
+The NCBI taxonomy has good coverage of OTUs, but its taxonomic coverage is
 limited to taxa that have sequence data in GenBank. On the other hand,
 traditional all-life taxonomies such as Catalog of Life, GBIF, and
 IRMNG meet the taxonomic coverage requirement, but miss OTUs from our
@@ -77,12 +66,9 @@ input trees matching taxa lacking a proper description and Linnaean
 name, and their higher-level taxonomy is often not phylogenetically
 informed.
 
-We therefore constructed a taxonomy from multiple taxonomic sources
-using a tool created for the purpose.  The taxonomy is called the Open
-Tree Taxonomy (OTT) and the software tool that creates it is called
-'smasher'.
-
-Having decided that we needed a dedicated Open Tree taxonomy, it
+We therefore developed a process for creating a taxonomy from multiple
+taxonomic sources. Having decided that we needed a dedicated Open Tree
+Taxonomy (OTT), it
 became necessary to establish an economical method for keeping it up
 to date.  Rather than create a conventional taxonomy database
 requiring constant maintenance as its sources are updated, the

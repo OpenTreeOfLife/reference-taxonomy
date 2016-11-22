@@ -2,17 +2,17 @@
 
 ## Taxonomy assembly overview
 
-Terminology: 
-  
-  * union taxonomy = data structure for creation of the reference 
+Terminology:
+
+  * union taxonomy = data structure for creation of the reference
     taxonomy
   * source taxonomy = imported taxonomic source (NCBI taxonomy, etc.)
   * node = a taxon record, either from a source taxonomy or the union taxonomy;
     giving name-string, source information,
     parent node, and perhaps other information such as rank
   * polysemy = where a single name-string belongs to multiple nodes
-    (within the same taxonomy); in 
-    nomenclatural terms, either a homonym, hemihomonym, or mistaken 
+    (within the same taxonomy); in
+    nomenclatural terms, either a homonym, hemihomonym, or mistaken
     clerical duplication
 
 The assembly process works, in outline, as follows:
@@ -25,7 +25,7 @@ The assembly process works, in outline, as follows:
      1. Merge S into U
          1. Unaligned subtrees of S (subtrees of S that contain
             no matched nodes other than their root) are grafted onto U
-         1. Where S provides a more resolved classification than U, 
+         1. Where S provides a more resolved classification than U,
             'insert' unmatched nodes of S into U
  1. Apply patches and perform ad hoc postprocessing steps
  1. Assign OTT identifiers to the nodes of U, by aligning (but not merging)
@@ -53,11 +53,11 @@ Details of each step follow.
 
     [JAR: lumping is easy; splitting is anguishing, when source 2 has species that source 1 doesn't.]
 
-3. Complications, 2 - issues that you either handle not to your own satisfaction, or simply cannot handle at all. 
+3. Complications, 2 - issues that you either handle not to your own satisfaction, or simply cannot handle at all.
 
 I guess I am suggesting this because 1 & 2 give you an opportunity to shine first, and somewhat conclusively, for a significant subset of the input trees. At least for the purpose of mounting the narrative. Clearly any complete OTT assembly job will encounter everything. But you may not have to write such that you directly follow what I assume may be real -- every input taxonomy has instances 1, 2, 3 represented to varying degrees, or they arise as the OTT grows. Instead you could pretend that some input taxonomies are clean (1), individually and jointly. Or clean enough (2) - because of your work. And only 3 is the tough stuff - but tough for anybody, etc.
 
-So, I wonder what would happen if you did this kind of thing. "For the sake of making this assembly process accessible to a wide readership, we first illustrate the entire pipeline when acting on two or more input taxonomies that are highly internally consistent, and also pose minimal conflict among them. Here the assembly works well from A to Z, as we show and exemplify. 
+So, I wonder what would happen if you did this kind of thing. "For the sake of making this assembly process accessible to a wide readership, we first illustrate the entire pipeline when acting on two or more input taxonomies that are highly internally consistent, and also pose minimal conflict among them. Here the assembly works well from A to Z, as we show and exemplify.
 
 "A second category are complications that occur frequently but for which we have developed adequate diagnosis and repair/resolution mechanisms. We show how we do this, and also show what else could be done for even better performance".
 
@@ -97,6 +97,13 @@ are performed:
     This is done to avoid an ambiguity when later on a node with name
     N needs to be matched.  [get examples by rerunning]
 
+[KC: need to say something about whether these cases get touched again during
+the process, i.e. do these nodes ever get added back, or are they permanently
+removed?]
+
+[KC: The outline in the previous section refers to this step as 'import,
+normalize and patch' but we don't mention patching here.]
+
 ## Alignment of source taxonomy to union taxonomy
 
 It is important that source taxa be matched with union taxa when and
@@ -113,14 +120,18 @@ The process of matching source nodes with union nodes, or equivalently
 determining the identity of the corresponding taxa, is called
 "alignment" in the following.
 
-Ultimately there is no automatable test to determine whether alignment
-has been done correctly.  There is no oracle for deciding whether node
-A and node B are about the same taxon; and available information
+Ultimately there is no fully automated and foolproof test to determine
+whether two nodes can be aligned - whether node
+A and node B are about the same taxon. Available information
 (names, relationships) from the source taxonomies is often mistaken,
 making positives look like negatives and vice versa. The process is
 necessarily heuristic.  Difficult cases must be investigated manually
 and either repaired manually (patched) or repaired by improvements to
 the heuristics.
+
+[KC: Above paragraph makes it sound like the only reason we can't
+confidently do alignment is because we can't trust the information in the
+source taxonomies, which I don't think is the case. ]
 
 Alignment consists of scripted ad hoc patches followed by an automatic
 alignment procedure.  Scripted patches allow source nodes to be
@@ -292,7 +303,7 @@ make it tricky to turn this truism into an actionable rule.
   since every pair of taxa share some ancestor (name).  We need to
   restrict the assessment to near ancestors.
 
-The rule used is this one: 
+The rule used is this one:
 
 Let the 'quasiparent name' of A (or B) be the name of the nearest
 ancestor Q of A (or B) such that (1) Q's name occurs in both source
@@ -301,7 +312,7 @@ and target, and (2) Q's name is not a prefix of A's name.  If A's
 then B is a preferred match for A.  For example, the quasiparent of a
 species would typically be a family.
 
-[move to discusion] 
+[move to discusion]
 Broadening the search beyond the 'quasiparent' of both nodes is
 necessary because different taxonomies have different resolution: in
 one a family might be divided into subfamilies, where in the other it

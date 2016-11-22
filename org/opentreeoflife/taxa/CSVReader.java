@@ -32,7 +32,7 @@ public class CSVReader implements Closeable {
     }
 
     static final char SEP = ',';
-    static final char QUOTE = '\'';
+    static final char QUOTE = '"';
 
     public String[] readNext() throws IOException {
         if (!scanner.hasNext()) return null;

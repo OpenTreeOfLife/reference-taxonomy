@@ -22,7 +22,7 @@ public class CSVWriter {
     }
 
     static final char SEP = ',';
-    static final char QUOTE = '\'';
+    static final char QUOTE = '"';
     static final String QUOTE_STRING = new String(new char[]{QUOTE});
     static final String QUOTE_QUOTE_STRING = new String(new char[]{QUOTE, QUOTE});
 

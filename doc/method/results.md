@@ -29,11 +29,10 @@ OTT is assembled.  Explanations of the categories follow.
     452  ambiguous internal
   10678  disjoint membership
     921  disjoint membership
-3757548  not aligned
 
+3757548  not aligned
 6244422  total source taxon records
 ```
-
 
 _curated alignment:_ Some alignments are hand-crafted, usually to
 repair mistakes made by automatic alignment.  
@@ -63,6 +62,8 @@ node (has children).
 
 _not aligned_: There were union taxonomy no candidates at all for this
 source taxon.  The source taxon name is new at this point in assembly.
+
+[why is 'not aligned' so much bigger than 'Number of taxon records' below?]
 
 
    * KC: do certain heuristics work better / worse for different types of problems?
@@ -133,7 +134,8 @@ General metrics on OTT:
  * Number of records with rank 'species': 3118191
  * Number of taxa with binomial name-strings: 2337337
  * Number of polysemous name-strings: 8043  
-     of which species 2648, genera 5298
+      * of which any of the taxa is a species: 2648
+      * of which any of the taxa is a genus:   5298
 
 Annotations:
  * Number of taxa marked incertae sedis or equivalent: 318972  
@@ -145,35 +147,22 @@ Annotations:
 Assembly:
  * Contributions from various sources  [older numbers - need to update]
 ```
-       Source   Contrib   Aligned    Merged  Conflict
-        silva     74428         5         -         -
-        h2007       226         1         -         -
-           if    281748      3014        38        16
-        worms    269574     55860       912       472
-     study713       118         1         -         -
-         ncbi   1164001    118893      1721       728
-         gbif   1111758    747237      1126       408
-        irmng    398675   1162528       703       161
-     curation        17         0         -         -
-         misc         2         0         -         -
-        total   3300547   2087539      4500      1785
+       Source     Total   Contrib   Aligned    Merged  Conflict
+        silva     74412     74407         5         -         -
+        h2007       227       226         1         -         -
+           if    284878    281709      3103        42        24
+        worms    327635    268851     57163       992       629
+     study713       119       118         1         -         -
+         ncbi   1320692   1198200    119486      1996      1010
+         gbif   2452674   1637225    812960      1821       668
+        irmng   1563961     89789   1470267      3078       827
+      curated        29        29         0         -         -
+        total   6024627   3550554   2462986      7929      3158
 ```
 
 Topology:
  * Maximum depth of any node in the tree: 38
- * Branching factor: average 13.38 children per internal node
-
-## Comparison with Ruggiero 2015
-
- * Number of taxa in Ruggiero: 2276
- * Ruggiero orders aligned by name to OTT: 1355
- * Disposition of Ruggiero taxa above rank of order:
-     * Taxon contains at least one order aligned by name to OTT: 757
-     * Fully consistent alignment between Ruggiero and OTT: 278
-     * Taxon resolves an OTT polytomy: 123
-     * Taxon supports more than one OTT taxon: 276
-     * Taxon conflicts with one or more OTT taxa: 80
-     * Taxon containing no aligned order: 20
+ * Branching factor: average 13.02 children per internal node
 
 ## Polysemy analysis:
 
@@ -303,35 +292,35 @@ each HHDB polysemy, in the right places]
   meaningfully to NCBI, GBIF, but this would require new syntheses...
   http://files.opentreeoflife.org/synthesis/opentree7.0/output/subproblems/index.html#contested
 
-Comparing the OTT backbone with Ruggiero et al. taxonomy of all life
-to order: (counts are for taxa *above* order.)  (Maybe a 3-way
-comparison, OTT / Ruggiero / synthesis?  We can ask which has fewer
-inconsistencies, Ruggiero or OTT.
+#### Comparison with Ruggiero et al. 2015
 
-Following is the breakdown of Ruggiero taxa in comparison to OTT:
+(goes to characterizing backbone)
 
- * mapped tips: 1357 (R. orders that were found in OTT)
- * unmapped tips: 141 (R. orders that were not found in OTT)
+ * Number of taxa in Ruggiero: 2276  of which orders/tips: 1498
+ * Ruggiero orders aligned by name to OTT: 1378
+ * Disposition of Ruggiero taxa above rank of order:
+     * Taxon contains at least one order aligned by name to OTT: 759
+     * Full topological consistency between Ruggiero and OTT: 281
+     * Taxon resolves an OTT polytomy: 127
+     * Taxon supports more than one OTT taxon: 276
+     * Taxon conflicts with one or more OTT taxa: 75
+     * Taxon containing no aligned order: 18
 
- * supported\_by: 285 (exact matches)
- * resolves: 119  (R. taxa that provide resolution to OTT)
- * partial\_path\_of: 270 (cases where one R. taxa matches multiple OTT taxa i.e. OTT is more highly resolved)
- * conflicts\_with: 83  (R. taxa that are paraphyletic per OTT)
- * other: 21 (higher R. taxa none of whose orders is in OTT)
-
+(Interesting but not clear what lesson to draw from this - are the numbers good or bad?
+Maybe do a 3-way
+comparison, OTT / Ruggiero / synthesis?
 With a bit of work, could get similar numbers for R. vs. synth and OTT
 vs. synth.
-
-[Using the synthetic tree as ground truth seems a bit risky? But the
-numbers could turn out pretty well.]
+The numbers might turn out pretty well.
+OTOH using the synthetic tree as ground truth seems a bit risky? ]
 
 ### Ongoing update
 
-[TBD: do an NCBI update and see what happens - how much manual
-intervention is required.  - The fact that we haven't done any other
-updates would threaten any claim that this goal has been met, but
-maybe talking about NCBI is enough.]
+NCBI update went smoothly - no intervention required.
 
+GBIF update had some issues:
+ * import code needed to be changed because columns in new GBIF backbone distrubtion are changed
+ * lots of taxa are missing, requiring adjustments to patches, and a few new ones.
 
 ### Open data
 

@@ -243,7 +243,8 @@ for taxon in rug.taxa():
 print
 print '<snip>'
 print
-print 'Comparison with Ruggiero et al. 2015 (goes to characterizing backbone):'
+print '## Comparison with Ruggiero et al. 2015 (goes to characterizing backbone):'
+print
 print ' * Number of taxa in Ruggiero: %s  of which orders/tips: %s' % (rug.count(), rug.tipCount())
 
 print ' * Ruggiero orders aligned by name to OTT: %s' % order_match

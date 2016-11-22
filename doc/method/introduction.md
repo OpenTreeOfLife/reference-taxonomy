@@ -25,7 +25,7 @@ basis of taxonomic understanding, or of the relationships between taxa.
 
 Open Tree of Life is a system for synthesis of phylogenetic supertrees from
 inputs drawn from a corpus of published phylogenetic trees. Open Tree aims to
-build a phylogeny of all life, using phylogenies where available and filling
+build a phylogeny of all life, using phylogenetic trees where available and filling
 in gaps using taxonomic data. The system
 requires an overall taxonomy of life meeting the following requirements:
 

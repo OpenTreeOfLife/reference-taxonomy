@@ -32,6 +32,13 @@ Details of sources: [in what order? the rank order is in the table,
 use rank order or something different?  historical? by number of
 taxa?]
 
+*Barrier taxonomy*
+This is a small tree, hand curated, that contains 27 major groups such
+as animals, plants, and fungi.  Its purpose is to establish barriers
+between major groups, as an aid to separating polysemies.  If a genus
+name is found in one of these groups, then it cannot be unified with a
+genus of the same name in a disjoint group.
+
 *NCBI taxonomy*  
 The first requirement of the taxonomy is to align OTUs across
 phylogenetic studies.  This need is largely met by using the NCBI

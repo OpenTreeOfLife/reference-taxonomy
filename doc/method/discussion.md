@@ -27,7 +27,7 @@
 * rank analysis? ... ; number of rank inversions, sampling of reasons for them (hard to figure out)
 * paraphyletic taxa in conventional taxonomies
 
-* skeleton woes: Annelida/Myzostomida, Fungi/Microsporidia
+* barrier woes: Annelida/Myzostomida, Fungi/Microsporidia
 * SILVA 'sample contamination'
 * taxon identity, e.g. Blattodea, Archaea - currently we just use the
   'name' even if the name goes through multiple 'taxon concepts'.
@@ -143,7 +143,7 @@ I guess and make best effort.]
 ## Potential improvements / future work
 
 * Fishbase, world bird names, plant list
-* It would be good to find an alternative to the skeleton.  One thing
+* It would be good to find an alternative to the barrier taxonomy.  One thing
   to try is continuity: we know that taxa cannot be matched only on
   name, but it is possible that pairs of 'nearby' taxa *can* be matched
   by name: if A and B are close in the source, and A maps by

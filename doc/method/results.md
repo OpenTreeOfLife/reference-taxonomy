@@ -4,18 +4,25 @@
 We have described the taxonomic and nomenclatural needs of the Open Tree of
 Life project, and a process for building a taxonomy that meets these needs.
 Now, we present the performance of various stages of the taxonomy build process,
-and how the resulting taxonomy better meets the needs of the Open Tree.  
+and assess how well the resulting taxonomy meets the needs of the Open Tree.  
+
+[performance?]
 
 ## Alignment
 
-The alignment procedure examines every source node.  The following is
-a breakdown of the disposition of source nodes, across all sources, as
-OTT is assembled.  Explanations of the categories follow.
+As OTT is assembled, the alignment procedure examines every source
+node, either choosing an alignment target for it in the union
+taxonomy, or leaving it unaligned.  The following is a breakdown, by
+source node, of how it reached its decisions one way or the other,
+pooled for all sources.
+
+An explanation of each category follows the table.
 
 ```
      49  curated alignment
-    105  align to skeleton taxonomy
+    105  align to barrier taxonomy
 
+Choice between multiple candidates determined using heuristics:
   21584  disjoint divisions
     172  disparate ranks
   25800  by lineage
@@ -23,21 +30,26 @@ OTT is assembled.  Explanations of the categories follow.
     219  same division
   83012  by name
 
+Only one candidate:
 2325870  confirmed
    1767  by elimination
+
+Not aligned:
    8592  ambiguous tip
     452  ambiguous internal
-  10678  disjoint membership
+  10678  rejected
     921  disjoint membership
-
 3757548  not aligned
+
 6244422  total source taxon records
 ```
+
+An explanation of each category follows the table.
 
 _curated alignment:_ Some alignments are hand-crafted, usually to
 repair mistakes made by automatic alignment.  
 
-_align to skeleton taxonomy:_ Alignments to the skeleton (for
+_align to barrier taxonomy:_ Alignments to the barrier taxonomy (for
 'division' calculations) are performed before the main alignment loop
 begins.
 
@@ -60,11 +72,20 @@ _ambiguous tip_: Ambiguous, and the source node is a tip.
 _ambiguous internal_: Ambiguous, and the source node is an internal
 node (has children).
 
-_not aligned_: There were union taxonomy no candidates at all for this
-source taxon.  The source taxon name is new at this point in assembly.
+_rejected_: [to be done]
+
+_disjoint membership_: [to be done]
+
+_not aligned_: The source node was not aligned to any union node.
+There were no union taxonomy candidates at all for this
+source taxon.
+
+[KC not keen on saying 'unaligned' in one place and 'not aligned' in
+another, but 'the taxon was unaligned' doesn't sound right since
+'unalign' is not a verb, while 'copy an not-aligned node' doesn't work
+because 'not-aligned' is an awkward adjective.]
 
 [why is 'not aligned' so much bigger than 'Number of taxon records' below?]
-
 
    * KC: do certain heuristics work better / worse for different types of problems?
      [how would one assess this ?? what are examples of 'types of problems'?]
@@ -169,7 +190,7 @@ Topology:
  * Could we classify the polysemies?  by taxon rank, proximity, etc.  and compare to GBIF / NCBI
      * sibling, cousin, parent/child, within code, between codes
      * how many inherited from source taxonomy, as opposed to created?
-     * could be created via skeleton separation
+     * could be created via barrier taxonomy separation
      * could be created via membership separation
 
 

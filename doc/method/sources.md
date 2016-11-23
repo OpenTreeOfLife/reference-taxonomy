@@ -1,9 +1,9 @@
-# Materials and methods
+# Method
 
-This publication describes a particular version of the Open Tree taxonomy
-(version 2.10), but one should keep in mind that the taxonomy is
-constantly evolving as sources are updated, methods improve, and users request
-additional functionality and patches.
+In the following, any definite claims or measurements apply to the
+Open Tree taxonomy (version 2.11), but keep in mind that the taxonomy
+is constantly evolving as sources are updated, assembly methods
+improve, and errors are fixed.
 
 ## Taxonomic sources
 
@@ -11,44 +11,9 @@ We build the taxonomy from nine sources. Some of these sources are from
 taxonomy projects, while others were manually assembled based on recent
 publications.
 OTT assembly is dependent on the input order of the sources - higher ranked inputs take priority over lower ranked inputs.
-[see table]
 
-[The following should be a table:]
+[see table at the end of this section]
 
- * the ARB-SILVA taxonomy
- * Hibbett 2007
- * Index Fungorum
- * Schaferhoff 2010
- * WoRMS
- * the NCBI taxonomy
- * the GBIF backbone taxonomy
- * IRMNG
- * additional taxa provided by Open Tree study curators
-
-References for all sources could be a column in the table.
-
-The root clade could be a column in the table.
-
-The ranking can be a column in the table (although if the table is in
-rank order, it would just be sequential numbers).
-
-The following information might also go in the table: total number of
-taxa, number of exclusive taxa.
-
-The following information might also go in the table: number of binomials,
-number of exclusive binomials (i.e. coming only from that source).
-
-    irmng,1111550,313261
-    worms,258378,53233
-    silva,13953,44
-    gbif,1629523,486411
-    ncbi,360455,88358
-    if,237482,18291
-    addition,15,15
-
-Maybe some measure of resolution, like maximum depth.
-
-end table]
 
 The choice and ranking of input taxonomies are driven by the three
 requirements listed in the introduction: 1) OTU coverage (mapping OTUs
@@ -66,6 +31,13 @@ for the project.
 Details of sources: [in what order? the rank order is in the table,
 use rank order or something different?  historical? by number of
 taxa?]
+
+*Barrier taxonomy*
+This is a small tree, hand curated, that contains 27 major groups such
+as animals, plants, and fungi.  Its purpose is to establish barriers
+between major groups, as an aid to separating polysemies.  If a genus
+name is found in one of these groups, then it cannot be unified with a
+genus of the same name in a disjoint group.
 
 *NCBI taxonomy*  
 The first requirement of the taxonomy is to align OTUs across
@@ -88,13 +60,13 @@ downloaded from NCBI on [date].  [maybe put dates in table??]
 
 
 *GBIF backbone taxonomy*  
-The GBIF backbone taxonomy provides good taxonomic coverage - 1.6 million
-species (binomials).  The GBIF backbone draws from a number of sources
-(including IRMNG and Index Fungorum), has ongoing institutional
+The GBIF backbone taxonomy provides good taxonomic coverage - 1.6
+million species (binomials).  The GBIF backbone is an automated
+synthesis drawing from 40 sources (including Catalog of Life, IRMNG,
+Index Fungorum), including some that are unavailable without agreement
+to terms of use.  Like the NCBI taxonomy, it has ongoing institutional
 support for maintenance and growth, and provides access without
-agreement to terms of use, making it a good choice for the project. It
-provides much of the content available in Catalog of Life and other
-closed sources, without violating Open Tree's no-terms-of-use requirement.
+agreement to terms of use, making it a good choice for Open Tree.
 
 The GBIF backbone version used in OTT 2.10 was downloaded in July
 2013.  A successor was released on [date], as this report was being
@@ -103,7 +75,7 @@ prepared, and is scheduled for incorporation into OTT.
 
 
 *SILVA taxonomy*  
-The classification of prokaryotes and unicellular Eukaryotes in NCBI and GBIF is
+The classifications of prokaryotes and unicellular eukaryotes in NCBI and GBIF are
 not consistent with current phylogenetic thinking. We therefore imported the
 SILVA taxonomy, which is a curated, phylogenetically informed classification.
 The OTUs in the SILVA  taxonomy are algorithmically-generated clusters of RNA
@@ -124,11 +96,12 @@ on a recent publication [for reference, see release notes].
 The OpenTree Fungi curators provided an order-level
 higher taxonomy of Fungi.  [reference] We gave this
 taxonomy higher priority than other sources of fungal data. This taxonomy
-is deposited in Figshare [reference].
+is based on [ref Hibbett] but adds revisions from the literature.
+It is deposited in Figshare [reference].
 
 
 *Index Fungorum (Fungi)*  
-We incorporated Index Fungorum to improve the coverage and
+We incorporated Index Fungorum in order to improve the coverage and
 classification of Fungi. We obtained database dumps of Index Fungorum
 around [date] (noting that the version of IF in in GBIF was [XXX]).
 
@@ -141,14 +114,13 @@ via its Web API around [date].  [reference]
 
 *IRMNG*  
 Curators requested information about whether taxa were extinct
-vs. extant.  (See elsewhere for discussion of the importance of this
-information.) This was not present in any of our other sources, so we
-imported IRMNG, which logs the extinct / extant status of
-taxa.
+vs. extant.  (See below for the reason this was so important.) This
+was not present in any of our other sources, so we imported IRMNG,
+which logs the extinct / extant status of taxa.
 [reference]
 
 
-*Additions*  
+*Curation*  
 It is not uncommon to have taxa as OTUs in
 phylogenetic studies that do not occur in OTT.  This can be due to a
 delay in curation by NCBI itself, a delay in importing a fresh NCBI

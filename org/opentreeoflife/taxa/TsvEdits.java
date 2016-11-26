@@ -92,7 +92,7 @@ public class TsvEdits {
 				Taxon node = new Taxon(tax, name);
 				node.rank = Rank.getRank(rankname);
 				node.setSourceIds(sourceInfo);
-				parent.addChild(node, 0); // Not incertae sedis
+				parent.addChild(node, 0, "TsvEdit"); // Not incertae sedis
 				node.addFlag(Taxonomy.EDITED);
 			}
         } else if (existing == null) {
@@ -100,14 +100,14 @@ public class TsvEdits {
             tax.taxon(name, contextName, null, true);
 		} else if (command.equals("move")) {
             // TBD: CYCLE PREVENTION!
-            existing.changeParent(parent, 0);
+            existing.changeParent(parent, 0, "TsvEdit move");
             existing.addFlag(Taxonomy.EDITED);
         } else if (command.equals("prune")) {
             existing.prune("edit/prune");
         } else if (command.equals("fold")) {
             if (existing.children != null)
                 for (Taxon child: existing.children)
-                    child.changeParent(parent, 0);
+                    child.changeParent(parent, 0, "TsvEdit fold");
             parent.addSynonym(name, "subsumed_by"); //  ????
             existing.prune("edit/fold");
         } else if (command.equals("flag")) {

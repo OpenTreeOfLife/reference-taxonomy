@@ -166,7 +166,7 @@ public class Addition {
             } else {
                 target = new Taxon(tax, name);
                 target.setId(ott_id);
-                parent.addChild(target);
+                target.setParent(parent, "addition");
                 String rankname = (String)description.get("rank");
                 if (rankname != null) {
                     Rank rank = Rank.getRank(rankname);

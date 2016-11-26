@@ -23,7 +23,7 @@ abstract class Heuristic {
         informative = "used " + this.toString();
     }
 
-	static Heuristic division =
+	static Heuristic disjointDivisions =
 		new Heuristic() {
 			public String toString() { return "disjoint divisions"; }
 			Answer assess(Taxon subject, Taxon target) {
@@ -85,7 +85,7 @@ abstract class Heuristic {
 		};
 
 
-    static Heuristic ranks =
+    static Heuristic disparateRanks =
         new Heuristic() {
             public String toString() { return "disparate ranks"; }
             Answer assess(Taxon subject, Taxon target) {
@@ -273,6 +273,7 @@ abstract class Heuristic {
 		};
 
 	// E.g. Steganina, Tripylina in NCBI - they're distinguishable by their ranks
+    // Not currently used
 	static Heuristic byRank =
 		new Heuristic() {
 			public String toString() { return "same-rank"; }

@@ -30,22 +30,20 @@ import org.opentreeoflife.taxa.Rank;
 import org.opentreeoflife.taxa.Taxonomy;
 import org.opentreeoflife.taxa.Answer;
 import org.opentreeoflife.taxa.QualifiedId;
+import org.opentreeoflife.taxa.TaxonMap;
 
-public class Alignment {
-
-    boolean EXPERIMENTALP = true;
+public class Alignment implements TaxonMap {
 
 	public Taxonomy source;
     public Taxonomy target;
 
-    private Map<Taxon, Answer> mappings;
-    // TBD private Map<Taxon, Answer> targetMrcas;
+    private Map<Taxon, Answer> mappings = new HashMap<Taxon, Answer>();
+    private Map<Taxon, Taxon> comap = new HashMap<Taxon, Taxon>();
     // TBD private Map<Taxon, Answer> sourceMrcas;
 
     Alignment(Taxonomy source, Taxonomy target) {
         this.source = source;
         this.target = target;
-        this.mappings = new HashMap<Taxon, Answer>();
         start();
     }
 
@@ -57,13 +55,18 @@ public class Alignment {
         start();
     }
 
+    public Taxon get(Taxon node) { // for TaxonMap interface
+        return this.getTaxon(node);
+    }
+             
+
     public Set<Taxon> keySet() {
         return mappings.keySet();
     }
 
     private void start() {
         target.eventLogger.resetEvents();
-        this.reset();          // depths, brackets, comapped
+        this.reset();          // depths, brackets
         this.alignWith(source.forest, target.forest, "align-forests");
     }
 
@@ -80,8 +83,15 @@ public class Alignment {
             if (have != null && have != answer.target)
                 System.err.format("** Node %s is already aligned to %s, can't align it to %s\n",
                                   node, have, answer.target);
-            else
+            else {
                 mappings.put(node, answer);
+                if (answer.isYes()) {
+                    Taxon rev = comap.get(answer.target);
+                    if (rev != null && rev != node)
+                        Answer.yes(node, answer.target, "lumped", null).maybeLog();
+                    comap.put(answer.target, node);
+                } 
+            }
         }
     }
 
@@ -92,17 +102,14 @@ public class Alignment {
         else return null;
     }
 
-    // mrca in target of target-mrcas of children of source node,
-    // or else target node corresponding to tip
-    public Taxon getTargetMrca(Taxon node) {
-        return node.lub;
+    public Taxon invert(Taxon unode) {
+        return comap.get(unode);
     }
 
     public final void align() {
-        System.out.println("--- Mapping " + source.getTag() + " to target ---");
+        System.out.println("--- Aligning " + source.getTag() + " to target ---");
         this.reallyAlign();     // calls this.assignBrackets();
 
-        this.computeLubs();
         target.eventLogger.eventsReport("| ");
 
         // Report on how well the merge went.
@@ -162,17 +169,8 @@ public class Alignment {
             System.err.format("** attempt to map %s to pruned node %s\n",
                               node, unode);
             Taxon.backtrace();
-		} else {
+		} else
             this.setAnswer(node, answer);
-            //if (node.name != null && unode.name != null && !node.name.equals(unode.name))
-            //    Answer.yes(node, unode, "synonym-match", node.name).maybeLog();
-            if (unode.comapped != null) {
-                // Target node has already been matched to, but synonyms are OK
-                if (unode.comapped != node)
-                    Answer.yes(node, unode, "lumped", null).maybeLog();
-            } else
-                unode.comapped = node;
-        }
     }
 
 	public boolean same(Taxon node1, Taxon node2) {
@@ -238,83 +236,6 @@ public class Alignment {
                            prevented + " blocked");
     }
 
-    // Compute LUBs (MRCAs) and cache them in Taxon objects
-
-    void computeLubs() {
-
-        // The answers are already stored in the alignment.
-        // Now do the lubs
-        winners = fresh = grafts = outlaws = 0;
-        for (Taxon root : source.roots())
-            computeLubs(root);
-        if (winners + fresh + grafts + outlaws > 0)
-            System.out.format("| LUB match: %s graft: %s differ: %s bad: %s\n",
-                              winners, fresh, grafts, outlaws);
-    }
-
-    private int winners, fresh, grafts, outlaws;
-
-    // An important case is where a target node is incertae sedis and the source node isn't.
-
-    // Input is in source taxonomy, return value is in target taxonomy
-
-    void computeLubs(Taxon node) {
-        if (node.children == null)
-            node.lub = getTaxon(node);
-        else {
-            Taxon mrca = null;  // in target
-            for (Taxon child : node.children) {
-                computeLubs(child);
-                if (child.isPlaced()) {
-                    Taxon a = this.getTaxon(child);
-                    if (a != null) {
-                        if (a.noMrca()) continue;
-                        a = a.parent; // in target
-                        if (a.noMrca()) continue;
-                        if (mrca == null)
-                            mrca = a; // in target
-                        else {
-                            Taxon m = mrca.mrca(a);
-                            if (m.noMrca()) continue;
-                            mrca = m;
-                        }
-                    }
-                }
-            }
-
-            node.lub = mrca;
-
-            if (getTaxon(node) == null)
-                ++fresh;
-            else if (mrca == null)
-                ++grafts;
-            else if (getTaxon(node) == mrca)
-                // Ideal case - mrca of children is the node itself
-                ++winners;
-            else {
-                // Divergence across taxonomies.  MRCA of children can be
-                // ancestor, descendant, or disjoint from target.
-                Taxon[] div = mrca.divergence(getTaxon(node));
-                if (div == null)
-                    // If div == null, then either mrca descends from getTaxon(node) or the other way around.
-                    ++winners;
-                else if (div[0] == mrca || div[1] == getTaxon(node) || div[1].parent == getTaxon(node))
-                    // Hmm... allow siblings (and cousins) to merge.  Blumeria graminis
-                    ++winners;
-                else {
-                    if (outlaws < 10 || node.name.equals("Elaphocordyceps subsessilis") || node.name.equals("Bacillus selenitireducens"))
-                        System.out.format("! %s maps by name to %s which is disjoint from children-mrca %s; they meet at %s\n",
-                                          node, getTaxon(node), mrca, div[0].parent);
-                    ++outlaws;
-                    // OVERRIDE.
-                    Answer answer = Answer.no(node, getTaxon(node), "not-same/disjoint", null);
-                    answer.maybeLog();
-                    setAnswer(node, answer);
-                }
-            }
-        }
-    }
-
     // this = after, other = before
 
     void compareAlignments(Alignment other, String greeting) {
@@ -369,7 +290,6 @@ public class Alignment {
     }
 
     // Map source taxon to nearest available target taxon
-    // Won't this always be the same as getTargetMrca ? Or awfully similar?
     public Taxon bridge(Taxon node) {
         Taxon unode;
         while ((unode = getTaxon(node)) == null) {
@@ -392,10 +312,6 @@ public class Alignment {
 	void reset() {
         this.source.reset();    // depths
         this.target.reset();
-
-        // Flush inverse mappings from previous alignment
-		for (Taxon node: this.target.taxa())
-			node.comapped = null;
     }
 
 	// 'Bracketing' logic.  Every node in the target taxonomy is

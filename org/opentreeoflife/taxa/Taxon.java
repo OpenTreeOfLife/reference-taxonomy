@@ -32,11 +32,9 @@ public class Taxon extends Node implements Comparable<Taxon> {
     public boolean inSynthesis = false; // used only for final annotation
     public boolean unsourced = false;
 	public Taxonomy taxonomy;			// For subsumption checks etc.
+    public String parentReason = null;
 
-	// State during alignment
-	public Taxon comapped = null;		// union node -> example source node
-    public Taxon lub = null;                 // union node that is the lub of node's children
-	// Cf. AlignmentByName.assignBrackets
+	// State during alignment - cf. Alignment.assignBrackets
 	public int seq = 0;		// Self
 	public int start = 0;	// First taxon included not including self
 	public int end = 0;		// Next taxon *not* included
@@ -121,7 +119,7 @@ public class Taxon extends Node implements Comparable<Taxon> {
     }
 
     public boolean isPlaced() {
-        return (this.properFlags & Taxonomy.INCERTAE_SEDIS_ANY) == 0;
+        return !this.prunedp && (this.properFlags & Taxonomy.INCERTAE_SEDIS_ANY) == 0;
     }
 
 	public Node setName(String name) {
@@ -259,57 +257,59 @@ public class Taxon extends Node implements Comparable<Taxon> {
 
     // This is for detached nodes (*not* in roots list)
 
-	public void addChild(Taxon child) {
-		if (child.taxonomy != this.taxonomy) {
-			this.report("Attempt to add child that belongs to a different taxonomy", child);
+	public void setParent(Taxon parent, String reason) {
+        Taxon child = this;
+		if (child.taxonomy != parent.taxonomy) {
+			parent.report("Attempt to add child that belongs to a different taxonomy", child);
 			Taxon.backtrace();
 		} else if (!child.isDetached()) {
-			if (this.report("Attempt to steal child !!??", child))
+			if (parent.report("Attempt to steal child !!??", child))
 				Taxon.backtrace();
-		} else if (child == this) {
-			if (this.report("Attempt to create self-loop !!??", child))
+		} else if (child == parent) {
+			if (parent.report("Attempt to create self-loop !!??", child))
 				Taxon.backtrace();
         } else if (child.noMrca()) {
-			this.report("Attempt to take on the forest !!??", this);
+			parent.report("Attempt to take on the forest !!??", parent);
             Taxon.backtrace();
-        } else if (this.descendsFrom(child)) {
+        } else if (parent.descendsFrom(child)) {
             // you'd think the descendsFrom check would slow things
             // down noticeably, but it doesn't
-			this.report("Attempt to create a cycle !!??", child);
-            this.showLineage(child.parent);
+			parent.report("Attempt to create a cycle !!??", child);
+            parent.showLineage(child.parent);
             System.out.format("%s", child);
             Taxon.backtrace();
-        } else if ((this.properFlags & Taxonomy.FORMER_CONTAINER) != 0 && (this.parent != null)) {
+        } else if ((parent.properFlags & Taxonomy.FORMER_CONTAINER) != 0 && (parent.parent != null)) {
             child.markEvent("move to parent of former container, instead of to container");
-            Taxon target = this.parent;
-            target.addChild(child);
-            if ((this.properFlags & Taxonomy.MERGED) == 0)
+            Taxon target = parent.parent;
+            child.setParent(target, reason + " container");
+            if ((parent.properFlags & Taxonomy.MERGED) == 0)
                 // all the other types want some kind of unplaced, cheat a bit
                 child.addFlag(Taxonomy.UNPLACED);
         } else {
-            if (child.rank != Rank.NO_RANK && this.rank != Rank.NO_RANK &&
-                child.rank.level < this.rank.level &&
+            if (child.rank != Rank.NO_RANK && parent.rank != Rank.NO_RANK &&
+                child.rank.level < parent.rank.level &&
                 child.isPlaced()) {
                 child.markEvent("rank inversion");
 				//Taxon.backtrace();
             }
-			child.parent = this;
-			if (this.children == NO_CHILDREN)
-				this.children = new ArrayList<Taxon>();
-            else if (this.children.contains(child))
-                System.err.format("** Adding child %s redundantly to %s\n", child, this);
-			this.children.add(child);
-			this.resetCount();	//force recalculation
+			child.parent = parent;
+            child.parentReason = reason;
+			if (parent.children == NO_CHILDREN)
+				parent.children = new ArrayList<Taxon>();
+            else if (parent.children.contains(child))
+                System.err.format("** Adding child %s redundantly to %s\n", child, parent);
+			parent.children.add(child);
+			parent.resetCount();	//force recalculation
 		}
 	}
 
-	public void addChild(Taxon child, int flags) {
-        this.addChild(child);
+	public void addChild(Taxon child, int flags, String reason) {
+        child.setParent(this, reason);
         child.properFlags &= ~Taxonomy.INCERTAE_SEDIS_ANY;
         this.addFlag(flags);
     }
 
-    // Removes it from the tree - undoes addChild
+    // Removes it from the tree - undoes setParent
 
 	public void detach() {
 		Taxon p = this.parent;
@@ -324,21 +324,21 @@ public class Taxon extends Node implements Comparable<Taxon> {
         p.resetCount();
 	}
 
-    // Detach followed by addChild
+    // Detach followed by setParent
 
-	public void changeParent(Taxon newparent) {
+	public void changeParent(Taxon newparent, String reason) {
         this.detach();
-        newparent.addChild(this);
+        this.setParent(newparent, reason);
     }
     
     // flags are to be set on the child (this)
 
-	public void changeParent(Taxon newparent, int flags) {
+	public void changeParent(Taxon newparent, int flags, String reason) {
         if (flags == 0
             && !this.isPlaced()
-            && ((this.name.hashCode() % 100) == 17))
+            && ((this.name.hashCode() % 100) == 17)) // sample - full list is too long
             System.out.format("| Placing previously unplaced %s in %s\n", this, newparent);
-        changeParent(newparent);
+        this.changeParent(newparent, reason);
         this.properFlags &= ~Taxonomy.INCERTAE_SEDIS_ANY; // ??? think about this
         this.addFlag(flags);
 	}
@@ -941,7 +941,7 @@ public class Taxon extends Node implements Comparable<Taxon> {
             if (newchild.descendsFrom(this))
                 System.out.format("* Note: moving %s from %s out to %s\n",
                                   newchild, newchild.parent, this);
-            newchild.changeParent(this, 0);
+            newchild.changeParent(this, 0, "take");
 			this.addFlag(Taxonomy.EDITED);
             return true;
 		}
@@ -1072,7 +1072,7 @@ public class Taxon extends Node implements Comparable<Taxon> {
 		if (other.children != NO_CHILDREN)
 			for (Taxon child : new ArrayList<Taxon>(other.children))
 				// beware concurrent modification
-				child.changeParent(this);
+				child.changeParent(this, "absorb");
         // something about extinct flags here - extinct absorbing non-extinct means ... ?
         // Not sure about the order of the following two, but if the
         // synonym comes before the prune, then it might be suppressed
@@ -1217,8 +1217,6 @@ public class Taxon extends Node implements Comparable<Taxon> {
 		}
         for (Synonym syn : this.synonyms)
             System.out.format("Synonym: %s %s %s\n", syn.name, syn.type, syn.getSourceIdsString());
-        if (this.comapped != null)
-            System.out.format("Node %s maps to this node\n", this.comapped);
 	}
 
     // Used to explain why a cycle would be created

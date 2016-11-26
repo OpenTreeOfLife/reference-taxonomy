@@ -220,7 +220,7 @@ public abstract class Taxonomy {
     // If you want to say it's disjoint from some other nodes, create a
     // new taxon, say 'life', and put them both all it.
     public void addRoot(Taxon node) {
-        this.forest.addChild(node);
+        node.setParent(this.forest, "addRoot");
         if (node.name == null || !node.name.equals("life"))
             node.addFlag(Taxonomy.UNPLACED);
     }
@@ -501,7 +501,7 @@ public abstract class Taxonomy {
                     flag = 0;
                 }
                 for (Taxon grandchild : new ArrayList<Taxon>(child.getChildren()))
-                    grandchild.changeParent(node, flag);
+                    grandchild.changeParent(node, flag, "elideContainers");
             }
         }
 	}
@@ -1020,7 +1020,7 @@ public abstract class Taxonomy {
 		if (node.children != null)
 			for (Taxon child : node.children) {
 				Taxon c = select(child, tax);
-				sam.addChild(c);
+				c.setParent(sam, "select");
 			}
 		return sam;
 	}
@@ -1077,7 +1077,7 @@ public abstract class Taxonomy {
 		if (node.children != null && depth > 0)
 			for (Taxon child : node.children) {
 				Taxon c = selectToDepth(child, tax, depth-1);
-				sam.addChild(c);
+				c.setParent(sam, "selectToDepth");
 			}
 		return sam;
 	}
@@ -1106,7 +1106,7 @@ public abstract class Taxonomy {
 				if (c != null) {
 					if (sam == null)
 						sam = tax.dupThoroughly(node, "selectVisible");
-					sam.addChild(c);
+					c.setParent(sam, "selectVisible");
 				}
 			}
 		return sam;
@@ -1184,7 +1184,7 @@ public abstract class Taxonomy {
 
 		Taxon sam = tax.dupThoroughly(node, "sample");
 		for (Taxon c : newChildren)
-			sam.addChild(c);
+			c.setParent(sam, "sample");
 		return sam;
 	}
 
@@ -1222,7 +1222,7 @@ public abstract class Taxonomy {
 		} else if (node.children != null)
 			for (Taxon child : node.children) {
 				Taxon newchild = chop(child, m, n, chopped, tax);
-				newnode.addChild(newchild);
+				newchild.setParent(newnode, "chop");
 			}
 		return newnode;
 	}
@@ -1293,7 +1293,7 @@ public abstract class Taxonomy {
                     if (false)
                         root.prune("deforestate");
                     else
-                        root.changeParent(biggest, Taxonomy.UNPLACED); // removes from roots
+                        root.changeParent(biggest, Taxonomy.UNPLACED, "deforestate"); // removes from roots
                     ++flushed;
                 }
             System.out.format("| Removed %s smaller trees\n", flushed);
@@ -1674,7 +1674,7 @@ public abstract class Taxonomy {
 			if (candidates.size() == 1) {
                 Taxon result = candidates.get(0);
                 if (!result.name.equals(name))
-                    System.out.format("* Warning: taxon %s was referenced using synonym %s (%s)\n", result, name, this.idspace);
+                    System.out.format("| Warning: taxon %s was referenced using synonym %s (%s)\n", result, name, this.idspace);
 				return result;
             }
 

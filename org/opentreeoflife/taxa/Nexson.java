@@ -136,7 +136,7 @@ public class Nexson {
             Taxon src = tax.lookupId(id);
             for (Object edgeObj : ((JSONObject)sources.get(id)).values()) {
                 String targetNodeId = ((String)(((JSONObject)edgeObj).get("@target")));
-                src.addChild(tax.lookupId(targetNodeId));
+                tax.lookupId(targetNodeId).setParent(src, "newick");
             }
         }
 

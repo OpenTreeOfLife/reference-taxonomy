@@ -118,6 +118,10 @@ public enum Flag {
         return toString(node.properFlags, node.inferredFlags);
     }
 
+	public static String toString(int flags) {
+        return toString(flags, 0);
+    }
+
 	public static String toString(int flags, int iflags) {
 		boolean needComma = false;
 

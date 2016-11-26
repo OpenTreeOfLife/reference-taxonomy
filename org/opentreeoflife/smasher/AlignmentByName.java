@@ -65,24 +65,11 @@ public class AlignmentByName extends Alignment {
         }
     }
 
-    // Treat all taxa equally - tips same as internal - random order
-
-    public void alignByName() {
-        if (EXPERIMENTALP) {
-            this.tryThisOut();
-            return;
-        } else {
-            assignBrackets();
-            for (Taxon node : source.taxa())
-                alignTaxon(node);
-        }
-    }
-
     // Map unambiguous tips first(?), then retry ambiguous(?), then internal nodes
 
     int tipMappings = 0;
 
-    void tryThisOut() {
+    public void alignByName() {
         for (Taxon root : source.roots())
             alignTipsOnly(root);
         System.out.format("| %s quasi-tips\n", tipMappings);
@@ -193,13 +180,6 @@ public class AlignmentByName extends Alignment {
 
             // count is positive
 
-            if (count < candidates.size())
-                reason = heuristic.toString();
-
-            // If negative, or unique positive, no point in going further.
-            if (score < Answer.DUNNO || (count == 1 && score > Answer.DUNNO))
-                break;
-
             if (count < candidates.size()) {
                 // This heuristic eliminated some candidates.
                 target.markEvent(heuristic.informative);
@@ -220,15 +200,23 @@ public class AlignmentByName extends Alignment {
                 }
                 candidates = winners;
                 // at this point, count == candidates.size()
+
+                reason = heuristic.toString();
             }
+
+            // If negative, or unique positive, no point in going further.
+            if (score < Answer.DUNNO || (count == 1 && score > Answer.DUNNO))
+                break;
 
             // Loop: Try the next heuristic.
         }
 
+        Answer result;
         if (score < Answer.DUNNO) {
             if (reason == null)
                 reason = "rejected";
         } else if (count == 1) {
+            // reason should be nonnull iff at least one heuristic made a discrimination.
             if (reason == null) {
                 if (score > Answer.DUNNO)
                     reason = "confirmed";
@@ -236,14 +224,18 @@ public class AlignmentByName extends Alignment {
                     reason = "by elimination";
             }
             if (score == Answer.DUNNO) score = Answer.WEAK_YES; // turn noinfo into yes
-        } else {
-            score = Answer.DUNNO;
+        } else {                                                // ambiguous
+            score = Answer.DUNNO; // turn yes into noinfo
             if (!node.hasChildren())
                 reason = "ambiguous tip";
             else
                 reason = "ambiguous internal";
         }
-        Answer result = new Answer(node, anyCandidate, score, reason, null);
+        result = new Answer(node, anyCandidate, score, reason,
+                            String.format("%s/%s %s",
+                                          count,
+                                          initialCandidates.size(),
+                                          candidateMap.get(anyCandidate)));
 
         lg.add(result);
 
@@ -258,7 +250,8 @@ public class AlignmentByName extends Alignment {
     private static boolean allowSynonymSynonymMatches = false;
 
     // Given a source taxonomy return, return a set of target
-    // taxonomy nodes that it might plausibly match
+    // taxonomy nodes that it might plausibly match.
+    // The string tells you the synonym path by which the candidate was found...
 
     Map<Taxon, String> getCandidates(Taxon node) {
         Map<Taxon, String> candidateMap = new HashMap<Taxon, String>();
@@ -309,8 +302,8 @@ public class AlignmentByName extends Alignment {
     }
 
 	static Heuristic[] criteria = {
-		Heuristic.division,               // fail if disjoint divisions
-        Heuristic.ranks,                  // fail if incompatible ranks
+		Heuristic.disjointDivisions,      // fail if disjoint divisions
+        Heuristic.disparateRanks,         // fail if incompatible ranks
 		Heuristic.lineage,                // prefer shared lineage
         Heuristic.subsumption,            // prefer shared membership
         Heuristic.sameDivisionPreferred,  // prefer same division

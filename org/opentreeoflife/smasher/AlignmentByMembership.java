@@ -74,7 +74,6 @@ public class AlignmentByMembership extends Alignment {
         System.out.println("b"); System.out.flush();
         this.alignWith(source.forest, target.forest, "align-forests");
         alignify();                // mutual-mrca
-        computeLubs();
 	}
 
     // Is it important to distinguish the two cases of 

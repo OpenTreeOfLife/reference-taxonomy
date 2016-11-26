@@ -21,10 +21,6 @@ public class Answer {
     private static final boolean alwaysLog = false;
 
 	public Answer(Taxon subject, Taxon target, int value, String reason, String witness) {
-        if (subject != null &&
-            !(subject.taxonomy instanceof SourceTaxonomy))
-            throw new RuntimeException(String.format("Subject %s of new Answer is not in a source taxonomy",
-                                                     subject));
 		this.subject = subject;
         this.target = target;
 		this.value = value;

@@ -220,7 +220,7 @@ class InterimFormat {
                     System.err.format("** Cycle detected in input taxonomy: %s %s\n", node, parent);
                     tax.addRoot(node);
                 } else {
-                    parent.addChild(node);
+                    node.setParent(parent, "load");
                 }
             }
 		}

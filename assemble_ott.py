@@ -32,17 +32,44 @@ def create_ott():
 
     ott = UnionTaxonomy.newTaxonomy('ott')
 
-    # There ought to be tests for all of these...
-
+    # Would be nice if there were tests for all of these...
     for name in names_of_interest:
         ott.eventLogger.namesOfInterest.add(name)
 
     # idspace string 'skel' is magical, see Taxon.addSource
     ott.setSkeleton(Taxonomy.getTaxonomy('tax/skel/', 'skel'))
 
-    # This is a particularly hard case; create alignment targets up front
+    # These are particularly hard cases; create alignment targets up front
     deal_with_polysemies(ott)
 
+    merge_sources(ott)
+
+    # consider try: ... except: print '**** Exception in patch_ott'
+    patch_ott(ott)
+
+    # Remove all trees but the largest (or make them life incertae sedis)
+    ott.deforestate()
+
+    # End of topology changes.  Now assign ids.
+    ids_and_additions(ott)
+
+    # Report counts of source nodes by reason
+    reason_report.report(ott)
+
+    # integrity check
+    ott.check()
+
+    debug_placement(ott, 'Tricellulortus peponiformis')
+
+    # For deprecated id report (dumpDeprecated)
+    ott.loadPreferredIds('ids_that_are_otus.tsv', False)
+    ott.loadPreferredIds('ids_in_synthesis.tsv', True)
+
+    return ott
+
+# Allow GC after sources are merged but before ids are assigned
+
+def merge_sources(ott):
     # SILVA
     silva = taxonomies.load_silva()
     silva_to_ott = align_silva(silva, ott)
@@ -57,6 +84,7 @@ def create_ott():
     fungorum = taxonomies.load_fung()
     (fungi, fungorum_sans_fungi) = split_taxonomy(fungorum, 'Fungi')
     align_and_merge(align_fungi(fungi, ott))
+    debug_placement(ott, 'Tricellulortus peponiformis')
 
     # the non-Fungi from Index Fungorum get absorbed below
 
@@ -122,31 +150,11 @@ def create_ott():
     align_and_merge(a)
 
     # Misc fixups
-    taxonomies.link_to_h2007(ott)
     get_default_extinct_info_from_gbif(gbif, gbif_to_ott)
-
-    # consider try: ... except: print '**** Exception in patch_ott'
-    patch_ott(ott)
-
-    # Remove all trees but the largest (or make them life incertae sedis)
-    ott.deforestate()
-
-    # End of topology changes.  Now assign ids.
-    ids_and_additions(ott)
-
-    # Report counts of source nodes by reason
-    reason_report.report(ott)
-
-    ott.check()
+    taxonomies.link_to_h2007(ott)
 
     # Reporting
     report_on_h2007(h2007, h2007_to_ott)
-
-    # For deprecated id report (dump)
-    ott.loadPreferredIds('ids_that_are_otus.tsv', False)
-    ott.loadPreferredIds('ids_in_synthesis.tsv', True)
-
-    return ott
 
 # utilities
 
@@ -162,6 +170,15 @@ def debug_divisions(name, ncbi, ott):
                 print o, o.getDivision()
                 o = o.parent
     print '##'
+
+from org.opentreeoflife.taxa import Flag
+
+def debug_placement(taxonomy, name):
+    print '## placement of', name
+    taxon = taxonomy.taxon(name)
+    while taxon != None:
+        print taxon.parentReason, taxon, Flag.toString(taxon.properFlags)
+        taxon = taxon.parent
 
 # Splits a taxonomy into two parts: 1. the subtree rooted at taxon_name
 # and 2. everything else
@@ -1046,21 +1063,22 @@ def patch_ott(ott):
 
     # Chris Owen patches 2014-01-30
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/88
-    ott.taxon('Protostomia').take(ott.taxonThatContains('Chaetognatha','Sagittoidea'))
-    ott.taxon('Lophotrochozoa').take(ott.taxon('Platyhelminthes'))
-    ott.taxon('Lophotrochozoa').take(ott.taxon('Gnathostomulida'))
-    ott.taxon('Bilateria').take(ott.taxon('Acoela'))
-    ott.taxon('Bilateria').take(ott.taxon('Xenoturbella'))
-    ott.taxon('Bilateria').take(ott.taxon('Nemertodermatida'))
+    set_parent(ott.taxonThatContains('Chaetognatha','Sagittoidea'),
+               ott.taxon('Protostomia'))
+    set_parent(ott.taxon('Platyhelminthes'), ott.taxon('Lophotrochozoa'))
+    set_parent(ott.taxon('Gnathostomulida'), ott.taxon('Lophotrochozoa'))
+    set_parent(ott.taxon('Acoela'), ott.taxon('Bilateria'))
+    set_parent(ott.taxon('Xenoturbella'), ott.taxon('Bilateria'))
+    set_parent(ott.taxon('Nemertodermatida'), ott.taxon('Bilateria'))
     # Myzostomida no longer in Annelida
     # ott.taxon('Polychaeta','Annelida').take(ott.taxon('Myzostomida'))
     # https://dx.doi.org/10.1007/s13127-011-0044-4
     # Not in deuterostomes
-    ott.taxon('Bilateria').take(ott.taxon('Xenacoelomorpha'))
+    set_parent(ott.taxon('Xenacoelomorpha'), ott.taxon('Bilateria'))
     if ott.maybeTaxon('Staurozoa') != None:
         #  8) Stauromedusae should be a class (Staurozoa; Marques and Collins 2004) and should be removed from Scyphozoa
         ott.taxon('Cnidaria').take(ott.taxon('Stauromedusae'))
-    ott.taxon('Copepoda').take(ott.taxon('Prionodiaptomus'))
+    set_parent(ott.taxon('Prionodiaptomus'), ott.taxon('Copepoda'))
 
     # Bryan Drew patches 2014-01-30
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/89
@@ -1086,13 +1104,13 @@ def patch_ott(ott):
     bora1 = ott.taxonThatContains('Boraginaceae', 'Borago officinalis')
     bora1.absorb(ott.taxon('Hydrophyllaceae'))
     bora2 = ott.taxonThatContains('Boraginales', 'Borago officinalis')
-    bora2.take(bora1)
-    ott.taxon('lamiids').take(bora2)
+    set_parent(bora1, bora2)
+    set_parent(bora2, ott.taxon('lamiids'))
 
     # Bryan Drew 2014-01-30
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/90
     # Vahlia 26024 <- Vahliaceae 23372 <- lammids 596112 (was incertae sedis)
-    ott.taxon('lamiids').take(ott.taxon('Vahliaceae'))
+    set_parent(ott.taxon('Vahliaceae'), ott.taxon('lamiids'))
 
     # Bryan Drew 2014-01-30
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/90
@@ -1120,12 +1138,12 @@ def patch_ott(ott):
 
     # Bryan Drew 2014-01-30
     # http://deepblue.lib.umich.edu/bitstream/handle/2027.42/48219/ID058.pdf
-    ott.taxon('eudicotyledons').take(ott.taxon('Phyllites'))
+    set_parent(ott.taxon('Phyllites'), ott.taxon('eudicotyledons'))
 
     # Bryan Drew 2014-02-13
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/93
     # http://dx.doi.org/10.1007/978-3-540-31051-8_2
-    ott.taxon('Alseuosmiaceae').take(ott.taxon('Platyspermation'))
+    set_parent(ott.taxon('Platyspermation'), ott.taxon('Alseuosmiaceae'))
 
     # JAR 2014-02-24.  We are getting extinctness information for genus
     # and above from IRMNG, but not for species.
@@ -1156,7 +1174,7 @@ def patch_ott(ott):
     # This isn't quite right - we really want to create a new taxon 'eurosides'
     # equal to rosids minus Vitales, and either leave rosids alone or get rid of 
     # it
-    ott.taxon('Pentapetalae').take(ott.taxon('Vitales'))
+    set_parent(ott.taxon('Vitales'), ott.taxon('Pentapetalae'))
 
     # Bryan Drew 2014-03-14 http://dx.doi.org/10.1186/1471-2148-14-23
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/24
@@ -1185,9 +1203,8 @@ def patch_ott(ott):
     # Dail 2014-03-31 https://github.com/OpenTreeOfLife/feedback/issues/4
     # "The parent [of Lentisphaerae] should be Bacteria and not Verrucomicrobia"
     # no evidence given
-    bact = ott.taxonThatContains('Bacteria', 'Lentisphaerae')
-    if bact != None:
-        bact.take(ott.taxon('Lentisphaerae'))
+    set_parent(ott.taxon('Lentisphaerae'),
+               ott.taxonThatContains('Bacteria', 'Lentisphaerae'))
 
     # David Hibbett 2014-04-02 misspelling in h2007 file
     # (Dacrymecetales is 'no rank', Dacrymycetes is a class)
@@ -1198,7 +1215,7 @@ def patch_ott(ott):
     ott.taxon('Telonema').synonym('Teleonema')
 
     # Joseph https://github.com/OpenTreeOfLife/reference-taxonomy/issues/43
-    ott.taxon('Lorisiformes').take(ott.taxon('Lorisidae'))
+    set_parent(ott.taxon('Lorisidae'), ott.taxon('Lorisiformes'))
 
     # Romina https://github.com/OpenTreeOfLife/reference-taxonomy/issues/42
     # As of 2014-04-23 IF synonymizes Cyphellopsis to Merismodes
@@ -1208,9 +1225,9 @@ def patch_ott(ott):
         if ott.maybeTaxon('Cyphellopsis','Niaceae') != None:
             cyph.absorb(ott.taxon('Cyphellopsis','Niaceae'))
 
-    ott.taxon('Diaporthaceae').take(ott.taxon('Phomopsis'))
-    ott.taxon('Valsaceae').take(ott.taxon('Valsa', 'Fungi'))
-    ott.taxon('Agaricaceae').take(ott.taxon('Cystoderma','Fungi'))
+    set_parent(ott.taxon('Phomopsis'), ott.taxon('Diaporthaceae'))
+    set_parent(ott.taxon('Valsa', 'Fungi'), ott.taxon('Valsaceae'))
+    set_parent(ott.taxon('Cystoderma','Fungi'), ott.taxon('Agaricaceae'))
     # Invert the synonym relationship
     ott.taxon('Hypocrea lutea').absorb(ott.taxon('Trichoderma deliquescens'))
 
@@ -1295,7 +1312,7 @@ def patch_ott(ott):
 
     # Bryan Drew 2015-02-17 http://dx.doi.org/10.1016/j.ympev.2014.11.011
     sax = ott.taxon('Saxifragella bicuspidata')
-    ott.taxon('Saxifraga').take(sax)
+    set_parent(sax, ott.taxon('Saxifraga'))
     sax.rename('Saxifraga bicuspidata')
 
     # JAR 2015-07-21 noticed, obviously wrong
@@ -1307,7 +1324,7 @@ def patch_ott(ott):
     ott.taxonThatContains('Rhynchonelloidea', 'Sphenarina').extant() # NCBI
 
     # https://github.com/OpenTreeOfLife/feedback/issues/133
-    ott.taxon('Pipoidea', 'Amphibia').take(ott.taxon('Cordicephalus', 'Amphibia'))
+    set_parent(ott.taxon('Cordicephalus', 'Amphibia'), ott.taxon('Pipoidea', 'Amphibia'))
 
     # This is a randomly chosen bivalve to force Bivalvia to not be extinct
     ott.taxon('Corculum cardissa', 'Bivalvia').extant()
@@ -1323,7 +1340,7 @@ def patch_ott(ott):
     # JAR 2016-06-30 Fixing a warning from 'report_on_h2007'
     # There really ought to be a family (Hyaloraphidiaceae, homonym) in
     # between, but it's not really necessary, so I won't bother
-    ott.taxon('Hyaloraphidiales', 'Fungi').take(ott.taxon('Hyaloraphidium', 'Fungi'))
+    set_parent(ott.taxon('Hyaloraphidium', 'Fungi'), ott.taxon('Hyaloraphidiales', 'Fungi'))
 
     # 2016-07-01 JAR while studying rank inversions.  NCBI has wrong rank.
     if ott.taxon('Vezdaeaceae').getRank() == 'genus':
@@ -1491,6 +1508,9 @@ def patch_ott(ott):
         claim = Whether_extant(name, False, 'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116')
         claim.make_true(ott)
 
+def set_parent(child, parent):
+    if child != None and parent != None:
+        parent.take(child)
 
 
 # -----------------------------------------------------------------------------
@@ -1772,4 +1792,6 @@ names_of_interest = ['Ciliophora',
                      'Pohlia',
                      'Lonicera',
                      'Chromista',
+                     'Protista',
+                     'Protozoa',
                      ]

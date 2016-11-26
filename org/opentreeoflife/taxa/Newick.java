@@ -51,7 +51,7 @@ public class Newick {
 				}
 				for (Taxon child : children)
 					if (child.name == null || !child.name.startsWith("null"))
-						node.addChild(child);
+                        child.setParent(node, "newickToNode");
 				node.rank = (children.size() > 0) ? Rank.NO_RANK : Rank.SPECIES_RANK;
 				return node;
 			} else

@@ -14,7 +14,7 @@ import org.opentreeoflife.taxa.Taxon;
 import org.opentreeoflife.taxa.Taxonomy;
 import org.opentreeoflife.taxa.SourceTaxonomy;
 import org.opentreeoflife.taxa.QualifiedId;
-import org.opentreeoflife.taxa.SimpleMap;
+import org.opentreeoflife.taxa.TaxonMap;
 import org.opentreeoflife.smasher.Alignment;
 import org.opentreeoflife.smasher.AlignmentByName;
 
@@ -25,7 +25,7 @@ public class ConflictAnalysis {
     public Taxonomy ref;
 
     boolean includeSuppressed;
-    SimpleMap<Taxon, Taxon> tipMap;
+    TaxonMap tipMap;
 
     // The Taxonomy class allows multiple roots, but we can only deal with one
     public Taxon inputRoot;
@@ -51,7 +51,7 @@ public class ConflictAnalysis {
             input.idspace.equals(ref.idspace))
             init(input,
                  ref,
-                 new SimpleMap<Taxon, Taxon>() {
+                 new TaxonMap() {
                      public Taxon get(Taxon node) {
                          return ref.lookupId(node.id);
                      }
@@ -60,7 +60,7 @@ public class ConflictAnalysis {
         else
             init(input,
                  ref,
-                 new SimpleMap<Taxon, Taxon>() {
+                 new TaxonMap() {
                      public Taxon get(Taxon node) {
                          if (node.sourceIds != null)
                              for (QualifiedId qid : node.sourceIds)
@@ -76,9 +76,9 @@ public class ConflictAnalysis {
     // Taxon ids in the synthetic tree look like "ott123".
 
     public static ConflictAnalysis againstSynthesis(Taxonomy input, Taxonomy ref, boolean includeSuppressed) {
-        SimpleMap<Taxon, Taxon> tipMap;
+        TaxonMap tipMap;
         if ("ott".equals(input.idspace))
-            tipMap = new SimpleMap<Taxon, Taxon>() {
+            tipMap = new TaxonMap() {
                     public Taxon get(Taxon node) {
                         if (node.id != null)
                             return ref.lookupId("ott" + node.id);
@@ -87,7 +87,7 @@ public class ConflictAnalysis {
                     }
                 };
         else
-            tipMap = new SimpleMap<Taxon, Taxon>() {
+            tipMap = new TaxonMap() {
                     public Taxon get(Taxon node) {
                         if (node.sourceIds != null)
                             for (QualifiedId qid : node.sourceIds)
@@ -105,7 +105,7 @@ public class ConflictAnalysis {
     public ConflictAnalysis(Taxonomy input, Taxonomy ref, final Alignment alignment, boolean includeSuppressed) {
         init(input,
              ref,
-             new SimpleMap<Taxon, Taxon>() {
+             new TaxonMap() {
                  public Taxon get(Taxon node) {
                      Taxon refnode = alignment.getTaxon(node);
                      return refnode;
@@ -114,13 +114,13 @@ public class ConflictAnalysis {
              includeSuppressed);
     }
 
-    public ConflictAnalysis(Taxonomy input, Taxonomy ref, SimpleMap<Taxon, Taxon> tipMap, boolean includeSuppressed) {
+    public ConflictAnalysis(Taxonomy input, Taxonomy ref, TaxonMap tipMap, boolean includeSuppressed) {
         init(input, ref, tipMap, includeSuppressed);
     }
 
     // tipMap maps input node to ref node.  Only used for tips and quasi-tips
 
-    private void init(Taxonomy input, Taxonomy ref, SimpleMap<Taxon, Taxon> tipMap, boolean includeSuppressed) {
+    private void init(Taxonomy input, Taxonomy ref, TaxonMap tipMap, boolean includeSuppressed) {
         this.input = input;
         this.ref = ref;
         this.tipMap = tipMap;
@@ -353,7 +353,7 @@ public class ConflictAnalysis {
             for (Taxon scan = refNode.parent; scan != null; scan = scan.parent) {
                 Taxon p = selected.get(scan);
                 if (p != null) {
-                    p.addChild(node);
+                    node.setParent(p, "induced");
                     rootp = false;
                     break;
                 }

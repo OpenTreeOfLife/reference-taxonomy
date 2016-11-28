@@ -111,6 +111,9 @@ def merge_sources(ott):
     ncbi_to_ott = align_ncbi(ncbi, silva, ott)
     align_and_merge(ncbi_to_ott)
 
+    # temporary, for debugging
+    ott.dumpMergeDetails();
+
     # Reporting
     # Get mapping from NCBI to OTT, derived via SILVA and Genbank.
     mappings = load_ncbi_to_silva(ncbi, silva, silva_to_ott)
@@ -544,13 +547,13 @@ def align_worms(worms, ott):
     # NCBI puts Myzostomida outside of Annelida.  To ensure matches, we have
     # to do so here as well, because Annelida is a barrier node and somewhat
     # difficult to cross.
-    worms.taxon('Animalia').take(worms.taxon('Myzostomida'))
+    set_parent(worms.taxon('Myzostomida'), worms.taxon('Animalia'))
 
     # extinct foram, polyseym risk with extant bryophyte
     # worms.taxon('Pohlia', 'Rhizaria').prune(this_source)
 
     # Annelida is a barrier, need to put Sipuncula inside it
-    worms.taxon('Annelida').take(worms.taxon('Sipuncula'))
+    set_parent(worms.taxon('Sipuncula'), worms.taxon('Annelida'))
 
     return a
 
@@ -582,9 +585,9 @@ def align_gbif(gbif, ott):
     ott.setDivision(gbif.taxon('Foraminifera'), 'SAR')
 
     # GBIF puts this one directly in Animalia, but Annelida is a barrier node
-    gbif.taxon('Annelida').take(gbif.taxon('Echiura'))
+    set_parent(gbif.taxon('Echiura'), gbif.taxon('Annelida'))
     # similarly
-    gbif.taxon('Cnidaria').take(gbif.taxon('Myxozoa'))
+    set_parent(gbif.taxon('Myxozoa'), gbif.taxon('Cnidaria'))
 
     # Fungi suppressed at David Hibbett's request
     gbif.taxon('Fungi').hideDescendantsToRank('species')
@@ -711,11 +714,11 @@ def align_gbif(gbif, ott):
                  'Gaillionella']:
         taxon = gbif.maybeTaxon(name, 'Plantae')
         if taxon != None:
-            target.take(taxon)
+            set_parent(taxon, target)
             taxon.incertaeSedis()
 
     # Noticed while scanning species polysemies
-    gbif.taxon('Euglenales').take(gbif.taxon('Heteronema', 'Rhodophyta'))
+    set_parent(gbif.taxon('Heteronema', 'Rhodophyta'), gbif.taxon('Euglenales'))
 
     # WoRMS says it's not a fungus
     gbif.taxonThatContains('Minchinia', 'Minchinia cadomensis').prune(this_source)
@@ -1134,7 +1137,7 @@ def patch_ott(ott):
 
     # Bryan Drew 2014-01-30
     # http://dx.doi.org/10.1126/science.282.5394.1692
-    ott.taxon('Magnoliophyta').take(ott.taxon('Archaefructus'))
+    set_parent(ott.taxon('Archaefructus'), ott.taxon('Magnoliophyta'))
 
     # Bryan Drew 2014-01-30
     # http://deepblue.lib.umich.edu/bitstream/handle/2027.42/48219/ID058.pdf
@@ -1178,7 +1181,8 @@ def patch_ott(ott):
 
     # Bryan Drew 2014-03-14 http://dx.doi.org/10.1186/1471-2148-14-23
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/24
-    ott.taxon('Streptophytina').elide()
+    strep = ott.taxon('Streptophytina')
+    if strep != None: strep.elide()
 
     # Dail 2014-03-20
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/29
@@ -1195,9 +1199,8 @@ def patch_ott(ott):
             'Iridotriton', # https://en.wikipedia.org/wiki/Iridotriton
             'Baurubatrachus', # https://en.wikipedia.org/wiki/Baurubatrachus
             'Acritarcha', # # JAR 2014-04-26
-
     ]:
-        tax = ott.maybeTaxon(name)
+        tax = ott.taxon(name)
         if tax != None: tax.extinct()
 
     # Dail 2014-03-31 https://github.com/OpenTreeOfLife/feedback/issues/4

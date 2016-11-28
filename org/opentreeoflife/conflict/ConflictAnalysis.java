@@ -24,7 +24,7 @@ public class ConflictAnalysis {
     public Taxonomy input;
     public Taxonomy ref;
 
-    boolean includeSuppressed;
+    boolean includeUnplaced;
     TaxonMap tipMap;
 
     // The Taxonomy class allows multiple roots, but we can only deal with one
@@ -35,8 +35,8 @@ public class ConflictAnalysis {
     public Taxon inducedRoot = null;          // node in ref induced by whole input
     public Taxon inducedIngroup = null;       // node in ref induced by ingroup
 
-    public Map<Taxon, Taxon> map; // input -> ref
-    public Map<Taxon, Taxon> comap; // ref -> input
+    public TaxonMap xmrca;   // input -> ref
+    public TaxonMap coxmrca; // ref -> input
 
     public int conflicting = 0;
     public int opportunities = 0;
@@ -45,102 +45,107 @@ public class ConflictAnalysis {
         this(input, ref, true);
     }
 
-    public ConflictAnalysis(Taxonomy input, Taxonomy ref, boolean includeSuppressed) {
+    public ConflictAnalysis(Taxonomy input, Taxonomy ref, boolean includeUnplaced) {
+        TaxonMap tipMap;
         if (input.idspace == null ?
             (input.idspace == ref.idspace) :
             input.idspace.equals(ref.idspace))
-            init(input,
-                 ref,
-                 new TaxonMap() {
-                     public Taxon get(Taxon node) {
-                         return ref.lookupId(node.id);
-                     }
-                 },
-                 includeSuppressed);
+            // Input uses same idspace as ref.  Just look up using id.
+            tipMap = new TaxonMap() {
+                    public Taxon get(Taxon node) {
+                        return ref.lookupId(node.id);
+                    }
+                };
         else
-            init(input,
-                 ref,
-                 new TaxonMap() {
-                     public Taxon get(Taxon node) {
-                         if (node.sourceIds != null)
-                             for (QualifiedId qid : node.sourceIds)
-                                 if (qid.prefix.equals(ref.idspace))
-                                     return ref.lookupId(qid.id);
-                         return null;
-                     }
-                 },
-                 includeSuppressed);
+            // Source tree (nexson) vs. taxonomy (or similar).
+            tipMap = new TaxonMap() {
+                    public Taxon get(Taxon node) {
+                        if (node.sourceIds != null)
+                            for (QualifiedId qid : node.sourceIds)
+                                if (qid.prefix.equals(ref.idspace))
+                                    return ref.lookupId(qid.id);
+                        return null;
+                    }
+                };
+        init(input, ref, tipMap, includeUnplaced);
     }
 
     // This is used to analyze a study against the synthetic tree.
     // Taxon ids in the synthetic tree look like "ott123".
 
-    public static ConflictAnalysis againstSynthesis(Taxonomy input, Taxonomy ref, boolean includeSuppressed) {
+    public static ConflictAnalysis againstSynthesis(Taxonomy input, Taxonomy synth, boolean includeUnplaced) {
         TaxonMap tipMap;
         if ("ott".equals(input.idspace))
+            // Taxonomy vs. synthetic tree
             tipMap = new TaxonMap() {
                     public Taxon get(Taxon node) {
                         if (node.id != null)
-                            return ref.lookupId("ott" + node.id);
+                            return synth.lookupId("ott" + node.id);
                         else
                             return null;
                     }
                 };
         else
+            // Source tree vs. synthetic tree
             tipMap = new TaxonMap() {
                     public Taxon get(Taxon node) {
                         if (node.sourceIds != null)
                             for (QualifiedId qid : node.sourceIds)
                                 if (qid.prefix.equals("ott"))
-                                    return ref.lookupId("ott" + qid.id);
+                                    return synth.lookupId("ott" + qid.id);
                         return null;
                     }
                 };
         return new ConflictAnalysis(input,
-                                    ref,
+                                    synth,
                                     tipMap,
-                                    includeSuppressed);
+                                    includeUnplaced);
     }
 
-    public ConflictAnalysis(Taxonomy input, Taxonomy ref, final Alignment alignment, boolean includeSuppressed) {
-        init(input,
-             ref,
-             new TaxonMap() {
-                 public Taxon get(Taxon node) {
-                     Taxon refnode = alignment.getTaxon(node);
-                     return refnode;
-                 }
-             },
-             includeSuppressed);
-    }
-
-    public ConflictAnalysis(Taxonomy input, Taxonomy ref, TaxonMap tipMap, boolean includeSuppressed) {
-        init(input, ref, tipMap, includeSuppressed);
+    public ConflictAnalysis(Taxonomy input, Taxonomy ref, TaxonMap tipMap, boolean includeUnplaced) {
+        init(input, ref, tipMap, includeUnplaced);
     }
 
     // tipMap maps input node to ref node.  Only used for tips and quasi-tips
 
-    private void init(Taxonomy input, Taxonomy ref, TaxonMap tipMap, boolean includeSuppressed) {
+    private void init(Taxonomy input, Taxonomy ref, TaxonMap tipMap, boolean includeUnplaced) {
         this.input = input;
         this.ref = ref;
         this.tipMap = tipMap;
-        this.includeSuppressed = includeSuppressed;
+        this.includeUnplaced = includeUnplaced;
 
         this.inputRoot = uniqueRoot(input);
         this.refRoot = uniqueRoot(ref);
 
-        // Populate map and comap
-        map = new HashMap<Taxon, Taxon>();
-        this.mapTips(this.inputRoot);
-        comap = this.invertMap(map);
-        this.induce();
+        // Copy tips from tipMap into map.
+        Map<Taxon, Taxon> map = new HashMap<Taxon, Taxon>();
+        this.mapTips(this.inputRoot, map);
+
+        // Initialize comap with inverse tip map.
+        Map<Taxon, Taxon> comap = this.invertMap(map);
+
+        // Populate map and comap with xmrcas for internal nodes.
+        this.induce(map, comap);
+
+        this.xmrca = taxonMap(map);
+        this.coxmrca = taxonMap(comap);
 
         // Establish ingroups
         this.ingroup = input.ingroup;
         if (this.ingroup == null)
             this.ingroup = inputRoot;
-        this.inducedIngroup = map.get(this.ingroup);
+        this.inducedIngroup = xmrca.get(this.ingroup);
         // inducedIngroup = mrca in ref of all the shared tips in input
+    }
+
+    // Convert Map to TaxonMap
+
+    private TaxonMap taxonMap(Map<Taxon, Taxon> map) {
+        return new TaxonMap() {
+            public Taxon get(Taxon node) {
+                return map.get(node);
+            }
+        };
     }
 
     Taxon uniqueRoot(Taxonomy tax) {
@@ -154,34 +159,6 @@ public class ConflictAnalysis {
         if (root == null)
             System.err.format("** No root for %s\n", tax.getTag());
         return root;
-    }
-
-    // One measure of conflict is #conflicting divided by #opportunities
-    public double conflictivity() {
-        if (opportunities == 0)
-            return 0.0d;
-        else
-            return ((double)conflicting) / ((double)opportunities);
-    }
-
-    public double unmappedness() {
-        if (this.ingroup == null)
-            return 1.0d;
-        else
-            return 1.0d - (((double)countOtus(this.ingroup)) / ((double)this.ingroup.tipCount()));
-    }
-
-    // Apply to a node in input (e.g. ingroup)
-    public int countOtus(Taxon node) {
-        if (node.children != null) {
-            int total = 0;
-            for (Taxon child : node.children)
-                total += countOtus(child);
-            return total;
-        } else if (map.get(node) != null)
-            return 1;
-        else
-            return 0;
     }
 
     // Compute comap from map
@@ -224,18 +201,18 @@ public class ConflictAnalysis {
     // Map tips bidirectionally
     // node is a node in the input tree
 
-    boolean mapTips(Taxon node) {
+    boolean mapTips(Taxon node, Map<Taxon, Taxon> map) {
         boolean anyMapped = false;
         if (node.hasChildren()) {
             for (Taxon child : node.children)
-                anyMapped = mapTips(child) || anyMapped;
+                anyMapped = mapTips(child, map) || anyMapped;
         }
         if (anyMapped)
             return true;
         else {
             Taxon refnode = this.tipMap.get(node);
             if (refnode != null
-                && (includeSuppressed || !refnode.isHidden())) {
+                && (includeUnplaced || refnode.isPlaced())) {
                 map.put(node, refnode);
                 return true;
             } else
@@ -244,7 +221,9 @@ public class ConflictAnalysis {
 
     }
 
-    boolean induce() {
+    // requires mutable maps
+
+    boolean induce(Map<Taxon, Taxon> map, Map<Taxon, Taxon> comap) {
         // Get the two mrca-based maps.  First the input->ref, then
         // (starting at induced root) the ref->input map.
         // Look for cases where mapping A-B-A goes to an ancestor of the start node
@@ -253,53 +232,47 @@ public class ConflictAnalysis {
             // System.err.format("** No tree %s\n", input.getTag());
             return false;
         } else {
-            this.inducedRoot = induce(this.inputRoot, ref, map);
+            this.inducedRoot = induce(this.inputRoot, map);
             //System.out.format("| mapped %s, comapped %s\n", map.size(), comap.size());
             if (this.inducedRoot == null)
                 return false; // System.err.format("** Nothing maps\n");
             else {
-                induce(this.inducedRoot, input, comap);
+                induce(this.inducedRoot, comap);
                 return true;
             }
         }
     }
 
     // This runs twice, once in each direction input->ref / ref->input
-    Taxon induce(Taxon node, Taxonomy other, Map<Taxon, Taxon> map) {
-        if (node.children != null) {
-            Taxon mrca = null;
-            for (Taxon child : node.children) {
-                Taxon a = induce(child, other, map);
-                if (a != null)
+    Taxon induce(Taxon node, Map<Taxon, Taxon> map) {
+        Taxon mrca = map.get(node);
+        if (mrca == null) {
+            for (Taxon child : node.getChildren()) {
+                Taxon x = induce(child, map);
+                if (x != null)
                     if (mrca == null)
-                        mrca = a;
+                        mrca = x;
                     else
-                        mrca = mrca.mrca(a);
+                        mrca = mrca.mrca(x);
             }
-            if (mrca != null) {
+            if (mrca != null)
                 map.put(node, mrca);
-                return mrca;
-            }
-            /* fall through - node is a 'virtual tip' */
         }
-        return map.get(node);
+        return mrca;
     }
+
+    // ----- end of initialization code. -----
 
     // Set the name of any input node that matches up with a node in the reference tree.
     // Also add ott:nnnnn as a source id for any named node, so we can tell which OTT taxon was matched.
-
-    Taxonomy setNames() {
-        setNames(inputRoot);
-        return input;
-    }
 
     void setNames(Taxon conode) {
         if (conode.children != null) {
             conode.name = null;
             conode.sourceIds = null;
-            Taxon node = map.get(conode); // in reference (taxonomy or synth)
+            Taxon node = xmrca.get(conode); // in reference (taxonomy or synth)
             if (node != null) {
-                Taxon cobounce = comap.get(node);
+                Taxon cobounce = coxmrca.get(node);
                 if (cobounce == conode) {
                     conode.name = node.name;
                     conode.addSourceId(new QualifiedId(ref.getIdspace(), node.id));
@@ -310,6 +283,34 @@ public class ConflictAnalysis {
         }
     }
 
+    // One measure of conflict is #conflicting divided by #opportunities
+    public double conflictivity() {
+        if (opportunities == 0)
+            return 0.0d;
+        else
+            return ((double)conflicting) / ((double)opportunities);
+    }
+
+    public double unmappedness() {
+        if (this.ingroup == null)
+            return 1.0d;
+        else
+            return 1.0d - (((double)countOtus(this.ingroup)) / ((double)this.ingroup.tipCount()));
+    }
+
+    // Apply to a node in input (e.g. ingroup)
+    public int countOtus(Taxon node) {
+        if (node.children != null) {
+            int total = 0;
+            for (Taxon child : node.children)
+                total += countOtus(child);
+            return total;
+        } else if (xmrca.get(node) != null)
+            return 1;
+        else
+            return 0;
+    }
+
     // Tree derived from ref with tips from input
     Taxonomy inducedTree() {
         Set<Taxon> seen = new HashSet<Taxon>(); // set of ref nodes
@@ -318,7 +319,7 @@ public class ConflictAnalysis {
         // Create node selection
         for (Taxon node : inputRoot.descendants(true))
             if (node.children == null) {
-                Taxon refNode = map.get(node);
+                Taxon refNode = xmrca.get(node);
                 if (refNode != null && selected.get(refNode) == null) {
                     Taxon tip = new Taxon(induced, refNode.name);    //may be null
                     if (refNode.id != null) tip.setId(refNode.id);
@@ -343,7 +344,7 @@ public class ConflictAnalysis {
                     }
                 }
             }
-        System.out.format("%s nodes in induced tree (%s seen, %s mapped)\n", selected.size(), seen.size(), map.size());
+        System.out.format("%s nodes in induced tree (%s seen)\n", selected.size(), seen.size());
         // Set parent pointers for all nodes
         int nroots = 0;
         for (Taxon refNode : selected.keySet()) {
@@ -373,18 +374,18 @@ public class ConflictAnalysis {
 
     public Articulation articulation(Taxon node) {
         if (node.taxonomy == input)
-            return articulation(node, map, comap);
+            return articulation(node, xmrca, coxmrca);
         else
-            return articulation(node, comap, map);
+            return articulation(node, coxmrca, xmrca);
     }
 
     public static boolean maximizeWitness = true;
 
-    public Articulation articulation(Taxon node, Map<Taxon, Taxon> map, Map<Taxon, Taxon> comap) {
-        Taxon conode = map.get(node); // usually in ref. taxonomy
+    public static Articulation articulation(Taxon node, TaxonMap xmrca, TaxonMap coxmrca) {
+        Taxon conode = xmrca.get(node); // usually in ref. taxonomy
         if (conode == null)
             return null;
-        Taxon bounce = comap.get(conode); // back in original taxonomy
+        Taxon bounce = coxmrca.get(conode); // back in original taxonomy
         if (bounce == null) {
             System.err.format("Shouldn't happen 1 %s\n", node);
             return null; // shouldn't happen
@@ -394,12 +395,12 @@ public class ConflictAnalysis {
             Taxon witness = conode;
             if (maximizeWitness)
                 // Witness should be largest congruent conode, not smallest
-                while (witness.parent != null && (comap.get(witness.parent) == bounce))
+                while (witness.parent != null && (coxmrca.get(witness.parent) == bounce))
                     witness = witness.parent;
 
             // If bounce and its parent both map to conode, then SUPPORTED_BY
             // Otherwise, PARTIAL_PATH_OF
-            if (bounce.parent != null && (map.get(bounce.parent) == conode))
+            if (bounce.parent != null && (xmrca.get(bounce.parent) == conode))
                 return new Articulation(Disposition.PATH_SUPPORTED_BY, witness);
             else
                 return new Articulation(Disposition.SUPPORTED_BY, witness);
@@ -416,12 +417,12 @@ public class ConflictAnalysis {
         // That is, if node either contains or excludes every child of
         // conode, then node resolves conode, otherwise it conflicts.
         for (Taxon cochild : conode.getChildren()) {
-            Taxon back = comap.get(cochild);
+            Taxon back = coxmrca.get(cochild);
             if (back == null)
                 ;
             else if (back.mrca(node) == node)
                 ;               // node includes cochild
-            else if (!intersects(node, cochild, comap))
+            else if (intersects(node, cochild, coxmrca) == null)
                 ;               // node excludes cochild
             else
                 // neither includes nor excludes
@@ -432,10 +433,10 @@ public class ConflictAnalysis {
 
     // Check whether conode shares any tips with node.
 
-    public boolean intersects(Taxon node, Taxon conode, Map<Taxon, Taxon> comap) {
-        Taxon back = comap.get(conode); // image of conode in tree1
+    public static Taxon intersects(Taxon node, Taxon conode, TaxonMap coxmrca) {
+        Taxon back = coxmrca.get(conode); // image of conode in tree1
         if (back == null)
-            return false;
+            return null;
         int hn = node.getDepth();
         int hb = back.getDepth();
         if (hn <= hb) {
@@ -445,9 +446,9 @@ public class ConflictAnalysis {
                 --hb;
             }
             if (b != node)
-                return false;   // node and back are disjoint
+                return null;   // node and back are disjoint
             else
-                return true;    // back descends from node
+                return b;    // back descends from node
         } else {
             Taxon n = node;
             while (hn > hb) {
@@ -455,29 +456,18 @@ public class ConflictAnalysis {
                 --hn;
             }
             if (n != back)
-                return false;    // node and back are disjoint
+                return null;    // node and back are disjoint
             else {
                 // node descends from back.  Uninformative
                 if (conode.children != null)
-                    for (Taxon cochild : conode.children)
-                        if (intersects(node, cochild, comap))
-                            return true;
-                return false;
+                    for (Taxon cochild : conode.children) {
+                        Taxon b = intersects(node, cochild, coxmrca);
+                        if (b != null)
+                            return b;
+                    }
+                return null;
             }
         }
-    }
-
-    public List<Articulation> articulations(boolean flipped) {
-        if (this.inducedIngroup == null)
-            return null;   // throw new BadRequest("No mapped OTUs");
-        List<Articulation> arts = new ArrayList<Articulation>();
-        Taxon start = flipped ? this.inducedRoot : this.ingroup;
-        for (Taxon node : start.descendants(true)) {
-            Articulation a = this.articulation(node);
-            if (a != null)
-                arts.add(a);
-        }
-        return arts;
     }
 
     public static void main(String[] argv) throws Exception {

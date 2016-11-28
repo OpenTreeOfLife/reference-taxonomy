@@ -1856,6 +1856,16 @@ public abstract class Taxonomy {
             } else if (!node.parent.children.contains(node))
                 System.err.format("** check: not in parent's children list: %s %s\n",
                                   node, node.parent);
+            if (node.hasChildren()) {
+                boolean gotit = false;
+                for (Taxon child : node.children)
+                    if (child.isPlaced()) {
+                        gotit = true;
+                        break;
+                    }
+                if (!gotit)
+                    System.err.format("** check: no placed children: %s\n", node);
+            }
         }
     }
 

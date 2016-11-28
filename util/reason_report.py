@@ -8,8 +8,10 @@ def new_report():
 
 def report(taxonomy):
     print
+    print 'Align'
     report_part(taxonomy.alignmentSummary)
     print
+    print 'Merge'
     report_part(taxonomy.mergeSummary)
     print
 
@@ -53,8 +55,8 @@ label_info = {"same/curated":          (02, 'curated alignment'),
               "new/polysemy":          (52, 'new tip (polysemous)'),
               "new/graft":             (54, 'new internal node, part of graft'),
               "new/refinement":        (56, 'refinement'),
-              "reject/merged":         (60, 'absorbed into larger taxon'),
-              "reject/inconsistent":   (62, 'absorbed into larger taxon due to conflict'),
+              "reject/absorbed":       (60, 'absorbed into larger taxon'),
+              "reject/conflict":       (62, 'absorbed into larger taxon due to conflict'),
               "reject/wayward":        (64, 'source parent does not descend from nearest aligned'),
 }
 

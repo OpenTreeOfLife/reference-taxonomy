@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Collection;
 import java.util.Set;
+import java.util.HashSet;
 
 import org.opentreeoflife.taxa.Node;
 import org.opentreeoflife.taxa.Taxon;
@@ -39,6 +40,7 @@ public class Alignment implements TaxonMap {
 
     private Map<Taxon, Answer> mappings = new HashMap<Taxon, Answer>();
     private Map<Taxon, Taxon> comap = new HashMap<Taxon, Taxon>();
+    private HashSet<Taxon> lumped = new HashSet<Taxon>();
     // TBD private Map<Taxon, Answer> sourceMrcas;
 
     Alignment(Taxonomy source, Taxonomy target) {
@@ -84,13 +86,21 @@ public class Alignment implements TaxonMap {
                 System.err.format("** Node %s is already aligned to %s, can't align it to %s\n",
                                   node, have, answer.target);
             else {
-                mappings.put(node, answer);
                 if (answer.isYes()) {
                     Taxon rev = comap.get(answer.target);
-                    if (rev != null && rev != node)
-                        Answer.yes(node, answer.target, "lumped", null).maybeLog();
-                    comap.put(answer.target, node);
-                } 
+                    if (rev != null) {
+                        if (rev != node) {
+                            lumped.add(answer.target);
+                            Answer a = Answer.noinfo(node, answer.target, "lumped", null);
+                            a.maybeLog();
+                            mappings.put(node, a);
+                        }
+                    } else {
+                        mappings.put(node, answer);
+                        comap.put(answer.target, node);
+                    }
+                } else
+                    mappings.put(node, answer);
             }
         }
     }
@@ -103,7 +113,10 @@ public class Alignment implements TaxonMap {
     }
 
     public Taxon invert(Taxon unode) {
-        return comap.get(unode);
+        if (lumped.contains(unode))
+            return null;
+        else
+            return comap.get(unode);
     }
 
     public final void align() {

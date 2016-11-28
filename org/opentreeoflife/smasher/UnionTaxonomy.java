@@ -47,6 +47,7 @@ public class UnionTaxonomy extends Taxonomy {
 
     public Map<String, Integer> alignmentSummary = new HashMap<String, Integer>();
     public Map<String, Integer> mergeSummary = new HashMap<String, Integer>();
+    public List<Answer> mergeDetails = new ArrayList<Answer>();
 
 	UnionTaxonomy(String idspace) {
         super(idspace);
@@ -867,6 +868,18 @@ public class UnionTaxonomy extends Taxonomy {
 
     public void watch(String name) {
         this.eventLogger.namesOfInterest.add(name);
+    }
+
+    public void dumpMergeDetails() {
+        String filename = "merge_details.tsv";
+        try {
+            PrintStream out = Taxonomy.openw(filename);
+            for (Answer a : mergeDetails)
+                out.println(a.dump());
+            out.close();
+        } catch (IOException e) {
+            throw new RuntimeException("rethrowing", e);
+        }
     }
 
 }

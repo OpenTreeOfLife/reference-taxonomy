@@ -259,6 +259,8 @@ public class Taxon extends Node implements Comparable<Taxon> {
 
 	public void setParent(Taxon parent, String reason) {
         Taxon child = this;
+		if (parent == null)
+            throw new RuntimeException(String.format("Attempt to set parent of %s to null", child));
 		if (child.taxonomy != parent.taxonomy) {
 			parent.report("Attempt to add child that belongs to a different taxonomy", child);
 			Taxon.backtrace();
@@ -276,7 +278,7 @@ public class Taxon extends Node implements Comparable<Taxon> {
             // down noticeably, but it doesn't
 			parent.report("Attempt to create a cycle !!??", child);
             parent.showLineage(child.parent);
-            System.out.format("%s", child);
+            System.out.format("** Cycle %s << %s ?< %s\n", parent, child, parent);
             Taxon.backtrace();
         } else if ((parent.properFlags & Taxonomy.FORMER_CONTAINER) != 0 && (parent.parent != null)) {
             child.markEvent("move to parent of former container, instead of to container");
@@ -679,35 +681,44 @@ public class Taxon extends Node implements Comparable<Taxon> {
     // Except, if no way to get to union from source, return null.
 
 	public Taxon[] divergence(Taxon other) {
-        Taxon a = this, b = other;
-        if (a.taxonomy != b.taxonomy) {
-            System.err.format("** Not in the same taxonomy: %s %s\n", a, b);
+        if (other == null) return null;
+        Taxon[] div = this.divergence2(other);
+        if (div[0] == null || div[1] == null)
             return null;
-        }
-        if (a == null || b == null) return null;
+        else
+            return div;
+    }
+
+	public Taxon[] divergence2(Taxon other) {
+        Taxon a = this, b = other;
+        if (a.taxonomy != b.taxonomy)
+            throw new RuntimeException(String.format("Not in the same taxonomy: %s %s\n", a, b));
 		if (a.taxonomy != b.taxonomy)
             throw new RuntimeException(String.format("Can't bridge different union taxonomies %s %s", this, other));
 		int da = a.measureDepth();
 		int db = b.measureDepth();
-		while (db > da) {
-			b = b.parent;
-			--db;
-		}
-        if (a == b) return null;
+        Taxon taila = null, tailb = null;
 		while (da > db) {
+            taila = a;
 			a = a.parent;
 			--da;
 		}
-        if (a == b) return null;
-		while (a.parent != b.parent) {
+        while (db > da) {
+            tailb = b;
+            b = b.parent;
+            --db;
+        }
+		while (a != b) {
+            taila = a;
 			a = a.parent;
+            tailb = b;
 			b = b.parent;
 		}
-        if (a.parent == null) {
+        if (a == null) {
             System.err.format("** %s and %s are in different trees\n", this, other);
             Taxon.backtrace();
         }
-        Taxon[] result = {a, b};
+        Taxon[] result = {taila, tailb};
         return result;
 	}
 
@@ -727,6 +738,10 @@ public class Taxon extends Node implements Comparable<Taxon> {
 
     public int compareTo(Taxon that) {
         int z;
+
+        //z = Boolean.compare(this.id != null, that.id != null);
+        //if (z != 0) return z;
+
         if (this.id != null &&
             that.id != null &&
             ((z = this.id.compareTo(that.id)) != 0))

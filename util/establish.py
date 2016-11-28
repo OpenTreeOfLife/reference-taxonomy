@@ -4,8 +4,10 @@
 def establish(name, taxonomy, rank=None, parent=None, ancestor=None, division=None, ott_id=None, source=None):
     taxon = None
     anc = None
+    placed = False
     if parent != None:
-        if taxonomy.unique(parent) != None: anc = parent
+        anc = taxonomy.unique(parent)
+        placed = True
         taxon2 = taxonomy.maybeTaxon(name, parent)
         if taxon2 != None:
             if taxon != None and taxon2 != taxon:
@@ -13,7 +15,7 @@ def establish(name, taxonomy, rank=None, parent=None, ancestor=None, division=No
             else:
                 taxon = taxon2
     if ancestor != None:
-        if anc == None and taxonomy.unique(ancestor) != None: anc = ancestor
+        if anc == None: anc = taxonomy.unique(ancestor)
         taxon2 = taxonomy.maybeTaxon(name, ancestor)
         if taxon2 != None:
             if taxon != None and taxon2 != taxon:
@@ -21,7 +23,7 @@ def establish(name, taxonomy, rank=None, parent=None, ancestor=None, division=No
             else:
                 taxon = taxon2
     if division != None:
-        if anc == None and taxonomy.unique(division) != None: anc = division
+        if anc == None: anc = taxonomy.unique(division)
         taxon2 = taxonomy.maybeTaxon(name, division)
         if taxon2 != None:
             if taxon != None and taxon2 != taxon:
@@ -45,12 +47,12 @@ def establish(name, taxonomy, rank=None, parent=None, ancestor=None, division=No
     if taxon == None:
         taxon = taxonomy.newTaxon(name, rank, source)
         if anc != None:
-            taxonomy.taxon(anc).take(taxon)
+            anc.take(taxon)
+            if not placed:
+                taxon.incertaeSedis()
         else:
             print '** no ancestor to attach new node to', name
         if ott_id != None:
             taxon.setId(ott_id)
-        if anc != parent:
-            taxon.incertaeSedis()
     return taxon
 

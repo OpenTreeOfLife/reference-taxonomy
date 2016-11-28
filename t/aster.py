@@ -44,6 +44,8 @@ def assemble():
     gbif.analyzeMajorRankConflicts()
     align_and_merge(tax.alignment(gbif))
 
+    tax.dumpMergeDetails()
+
     # "Old" patch system with tab-delimited files
     TsvEdits.edit(tax, 't/edits/')
 
@@ -116,5 +118,6 @@ def align_and_merge(alignment):
     ott = alignment.target
     ott.align(alignment)
     ott.merge(alignment)
+    ott.check()                 # integrity check
 
 assemble()

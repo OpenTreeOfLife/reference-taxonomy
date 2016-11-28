@@ -12,7 +12,7 @@ directory containing a taxonomy.tsv file, i.e.
 
 etc.  except that the '.tsv' is optional.
 
-The output is a lexicographilly ordered set of files in the ott_id_list subdirectory.
+The output is a lexicographically ordered set of files in the ott_id_list subdirectory.
 Each file is a CSV with one row per id.
 The name of the file indicates which OTT version it's associated with, if any.
 The columns are:

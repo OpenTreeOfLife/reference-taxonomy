@@ -33,6 +33,16 @@ class InterimFormat {
 
     Taxonomy tax;
 
+    Integer idcolumn = 0;
+    Integer parentcolumn = null;
+    Integer namecolumn = null;
+    Integer rankcolumn = null;
+
+	Integer sourcecolumn = null;
+	Integer sourceidcolumn = null;
+	Integer infocolumn = null;
+	Integer flagscolumn = null;
+
     InterimFormat(Taxonomy tax) {
         this.tax = tax;
     }
@@ -133,48 +143,49 @@ class InterimFormat {
 			if (parts.length < 3) {
 				System.out.println("Bad row: " + row + " has only " + parts.length + " parts");
 			} else {
-				if (row == 0) {
+				if (namecolumn == null) {
 					if (parts[0].equals("uid")) {
 						Map<String, Integer> headerx = new HashMap<String, Integer>();
 						for (int i = 0; i < parts.length; ++i)
 							headerx.put(parts[i], i);
 						// id | parentid | name | rank | ...
 						tax.header = parts; // Stow it just in case...
-						tax.sourcecolumn = headerx.get("source");
-						tax.sourceidcolumn = headerx.get("sourceid");
-						tax.infocolumn = headerx.get("sourceinfo");
-						tax.flagscolumn = headerx.get("flags");
-						// tax.preottolcolumn = headerx.get("preottol_id");
+                        parentcolumn = headerx.get("parent_uid");
+                        namecolumn = headerx.get("name");
+                        rankcolumn = headerx.get("rank");
+					    sourcecolumn = headerx.get("source");
+						sourceidcolumn = headerx.get("sourceid");
+						infocolumn = headerx.get("sourceinfo");
+						flagscolumn = headerx.get("flags");
+						// preottolcolumn = headerx.get("preottol_id");
+                        if (parentcolumn == null || namecolumn == null)
+                            throw new RuntimeException("taxonomy header row missing parent_uid or name");
 						continue;
-					} else
+                    } else {
 						System.out.println("! No header row - saw " + parts[0]);
+                        parentcolumn = 1;
+                        namecolumn = 2;
+                        rankcolumn = 3;
+                    }
 				}
-				String lastone = parts[parts.length - 1];
-				// The following is residue from an annoying bug that
-				// I never tracked down and that seems to have fixed
-				// itself
-				if (lastone.endsWith("!") && (parts.length < 4 ||
-											  lastone.length() > 1))
-					System.err.println("** I don't get it: [" + lastone + "]");
-
-				String id = parts[0];
+				String id = parts[idcolumn];
 				Taxon oldnode = tax.lookupId(id);
 				if (oldnode != null) {
-					System.err.format("** Duplicate id definition: %s %s\n", id, oldnode.name);
+					System.err.format("** More than one row for this id: %s %s\n", id, oldnode.name);
                 } else if (parts.length <= 4) {
                     System.err.format("** Too few columns in row: id = %s\n", id);
                 } else {
-                    String name = parts[2];
+                    String name = parts[namecolumn];
 					Taxon node = new Taxon(tax, name);
                     initTaxon(node,
                               id,
                               name,
-                              parts[3], // rank
-                              (tax.flagscolumn != null ? parts[tax.flagscolumn] : ""),
+                              (rankcolumn != null ? parts[rankcolumn] : ""),
+                              (flagscolumn != null ? parts[flagscolumn] : ""),
                               parts);
 
                     // Delay until after all ids are defined
-                    String parentId = parts[1];
+                    String parentId = parts[parentcolumn];
                     if (parentId.equals("null") || parentId.equals("not found"))
                         parentId = "";
                     parentMap.put(node, parentId);
@@ -262,21 +273,21 @@ class InterimFormat {
                 node.rank = rank;
         }
 
-		if (tax.infocolumn != null) {
-			if (parts.length <= tax.infocolumn)
+		if (infocolumn != null) {
+			if (parts.length <= infocolumn)
 				System.err.println("** Missing sourceinfo column: " + node.id);
 			else {
-				String info = parts[tax.infocolumn];
+				String info = parts[infocolumn];
 				if (info != null && info.length() > 0)
 					node.setSourceIds(info);
 			}
 		}
 
-		else if (tax.sourcecolumn != null &&
-			tax.sourceidcolumn != null) {
+		else if (sourcecolumn != null &&
+                 sourceidcolumn != null) {
             // Legacy of OTT 1.0 days
-            String sourceTag = parts[tax.sourcecolumn];
-            String idInSource = parts[tax.sourceidcolumn];
+            String sourceTag = parts[sourcecolumn];
+            String idInSource = parts[sourceidcolumn];
             if (sourceTag.length() > 0 && idInSource.length() > 0)
                 node.addSourceId(new QualifiedId(sourceTag, idInSource));
 		}
@@ -488,40 +499,29 @@ class InterimFormat {
 		PrintStream out = Taxonomy.openw(filename);
 		out.format("name\t|\tuid\t|\ttype\t|\tuniqname\t|\tsourceinfo\t|\t\n");
 		String format = "%s\t|\t%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n";
-		for (String name : tax.allNames()) {
-            boolean primaryp = false;
-            boolean synonymp = false;
-			for (Node node : tax.lookup(name)) {
-                if (node instanceof Synonym) {
-                    Synonym syn = (Synonym)node;
-                    Taxon taxon = syn.taxon();
-                    if (taxon.prunedp) {
-                        System.err.format("** Prunedp taxon for synonym: %s %s\n", syn, taxon);
-                        continue;
+        for (Taxon taxon : tax.taxa()) { // deterministic order
+            for (Synonym syn : taxon.getSynonyms()) {
+                if (taxon.prunedp) {
+                    System.err.format("** Prunedp taxon for synonym: %s %s\n", syn, taxon);
+                    continue;
+                }
+                if (taxon.id == null) {
+                    // E.g. Populus tremuloides
+                    if (!taxon.isRoot()) {
+                        System.err.format("** Synonym for node with no id: %s %s %s\n",
+                                          syn.name, taxon, taxon.parent);
+                        //taxon.show();
                     }
-                    if (taxon.id == null) {
-                        // E.g. Populus tremuloides
-                        if (!taxon.isRoot()) {
-                            System.err.format("** Synonym for node with no id: %s %s %s\n",
-                                              syn.name, taxon, taxon.parent);
-                            //taxon.show();
-                        }
-                    } else {
-                        out.format(format,
-                                   name,
-                                   taxon.id,
-                                   syn.type,
-                                   syn.uniqueName(),
-                                   syn.getSourceIdsString());
-                    }
-                    synonymp = true;
                 } else {
-                    primaryp = true;
+                    out.format(format,
+                               syn.name,
+                               taxon.id,
+                               syn.type,
+                               syn.uniqueName(),
+                               syn.getSourceIdsString());
                 }
             }
-            if (false && primaryp && synonymp)
-                System.err.println("** Synonym in parallel with primary: " + name);
-            }
+        }
 		out.close();
 	}
 

@@ -17,7 +17,7 @@ public enum Flag {
     // Emptied containers - these never have children
     WAS_CONTAINER        ("was_container", null, Taxonomy.WAS_CONTAINER), // class incertae sedis, etc.
     INCONSISTENT         ("inconsistent", "inconsistent_inherited", Taxonomy.INCONSISTENT),
-    MERGED               ("merged", "merged_inherited", Taxonomy.INCONSISTENT), // new in 2.9
+    MERGED               ("merged", "merged_inherited", Taxonomy.MERGED), // new in 2.9
 
     // Various kinds of incertae sedis - former children of emptied containers
 	INCERTAE_SEDIS		 ("incertae_sedis", "incertae_sedis_inherited", Taxonomy.INCERTAE_SEDIS),
@@ -28,6 +28,7 @@ public enum Flag {
 						  Taxonomy.MAJOR_RANK_CONFLICT),     // Parent-dependent.  Retain value
     UNPLACED             ("unplaced", "unplaced_inherited", Taxonomy.UNPLACED),
     TATTERED             ("tattered", "tattered_inherited", Taxonomy.TATTERED), // DEPRECATED
+       // don't remove, because it's nice to be able to read old taxonomy files
 
 	// Not suitable for use as OTUs
 	NOT_OTU			     ("not_otu", "not_otu", Taxonomy.NOT_OTU),
@@ -73,10 +74,6 @@ public enum Flag {
         // Renamings - keep old names for legacy taxonomies
         lookupTable.put("major_rank_conflict_direct", MAJOR_RANK_CONFLICT);
         lookupTable.put("extinct_direct",	EXTINCT);
-
-        // 'Tattered' replaced with 'inconsistent' in 2.9
-        // lookupTable.put("tattered",	UNPLACED);
-        // lookupInheritedTable.put("tattered_inherited",	UNPLACED);
 	}
 
 	static Flag lookup(String name) {

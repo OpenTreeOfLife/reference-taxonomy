@@ -1,0 +1,12 @@
+language: java
+jdk:
+    - openjdk8
+
+before_install:
+    - true
+
+install:
+    - make compile
+
+script:
+    - make test

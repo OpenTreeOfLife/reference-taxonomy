@@ -1863,8 +1863,14 @@ public abstract class Taxonomy {
                         gotit = true;
                         break;
                     }
-                if (!gotit)
+                if (!gotit) {
                     System.err.format("** check: no placed children: %s\n", node);
+                    int i = 0;
+                    for (Taxon child : node.getChildren()) {
+                        System.err.format("**   %s\n", child);
+                        if (++i == 10) break;
+                    }
+                }
             }
         }
     }

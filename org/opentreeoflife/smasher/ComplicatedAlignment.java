@@ -33,10 +33,10 @@ public class ComplicatedAlignment extends Alignment {
     // Alignment by name - old method
 
     void reallyAlign() {
-        assignBrackets();
+        AlignmentByName.assignBrackets(this);
 		if (source.rootCount() > 0) {
 
-            Criterion[] criteria = oldCriteria;
+            Heuristic[] criteria = oldCriteria;
 
 			int beforeCount = target.numberOfNames();
 
@@ -125,12 +125,12 @@ public class ComplicatedAlignment extends Alignment {
         }
 
         // Compare every node to every other node, according to a list of criteria.
-        void run(Criterion[] criteria) {
+        void run(Heuristic[] criteria) {
 
             clear();
 
-            for (Criterion criterion : criteria)
-                run(criterion);
+            for (Heuristic heuristic : criteria)
+                run(heuristic);
 
             // see if any source node remains unassigned (ties or blockage)
             postmortem();
@@ -140,7 +140,7 @@ public class ComplicatedAlignment extends Alignment {
         // i, m,  node
         // j, n, unode
 
-        void run(Criterion criterion) {
+        void run(Heuristic heuristic) {
             int m = nodes.size();
             int n = unodes.size();
             int[] uniq = new int[m];	// target nodes uniquely assigned to each source node
@@ -156,7 +156,7 @@ public class ComplicatedAlignment extends Alignment {
                 for (int j = 0; j < n; ++j) {  // Find a target node to map it to...
                     if (suppress_i[j] != null) continue;
                     Taxon y = unodes.get(j).taxon();
-                    Answer z = criterion.assess(x, y);
+                    Answer z = heuristic.assess(x, y);
 
                     if (z.subject == null) continue; // dunno
                     z.maybeLog();
@@ -210,7 +210,7 @@ public class ComplicatedAlignment extends Alignment {
                     // Probably an ad hoc mapping. This case doesn't happen, but could.
                     else if (prior.isYes())
                         if (prior.target == y) {
-                            a = Answer.no(x, y, "lost-race-to-source(" + criterion.toString() + ")",
+                            a = Answer.no(x, y, "lost-race-to-source(" + heuristic.toString() + ")",
                                           (y.getSourceIdsString() + " lost to " +
                                            prior.target.getSourceIdsString()));
                             a.maybeLog();
@@ -317,17 +317,17 @@ public class ComplicatedAlignment extends Alignment {
         }
     }
 
-	static Criterion[] oldCriteria = {
-		Criterion.division,
-		Criterion.lineage,
-        Criterion.subsumption,
-		Criterion.sameSourceId,
-		Criterion.anySourceId,
+	static Heuristic[] oldCriteria = {
+		Heuristic.disjointDivisions,
+		Heuristic.lineage,
+        Heuristic.subsumption,
+		Heuristic.sameSourceId,
+		Heuristic.anySourceId,
 		// knowDivision,
-        Criterion.weakDivision,
-		Criterion.byRank,
-        Criterion.byPrimaryName,
-        Criterion.elimination,
+        Heuristic.weakDivision,
+		Heuristic.byRank,
+        Heuristic.byPrimaryName,
+        Heuristic.elimination,
     };
 
 

@@ -49,6 +49,8 @@ public class UnionTaxonomy extends Taxonomy {
     public Map<String, Integer> mergeSummary = new HashMap<String, Integer>();
     public List<Answer> mergeDetails = new ArrayList<Answer>();
 
+    public int blustery = 1;
+
 	UnionTaxonomy(String idspace) {
         super(idspace);
 		this.setTag("union");
@@ -121,14 +123,16 @@ public class UnionTaxonomy extends Taxonomy {
             setIdspace(source);
         source.setEventLogger(this.eventLogger);
         Alignment a;
-        if (true)
+        if (ALIGN_INTERNAL_NAMES)
             a = new AlignmentByName(source, this);
         else
-            a = new ComplicatedAlignment(source, this);
+            a = new Alignment(source, this);
         source.clearDivisions(); // division determinations are cached in nodes
         // source.forest.setDivision(this.skeletonAlignment.source.forest);
         return a;
     }
+
+    public boolean ALIGN_INTERNAL_NAMES = true;
 
     public void align(Alignment a) {
         this.markDivisions(a);
@@ -153,7 +157,8 @@ public class UnionTaxonomy extends Taxonomy {
 	public void merge(Alignment a) { // called from jython
         Taxonomy source = a.source;
         try {
-            new MergeMachine(source, this, a, mergeSummary).augment();
+            MergeMachine m = new MergeMachine(source, this, a, blustery, mergeSummary);
+            m.augment();
             this.check();
             this.sources.add(source);
         } catch (Exception e) {

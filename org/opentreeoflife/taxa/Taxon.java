@@ -277,9 +277,10 @@ public class Taxon extends Node implements Comparable<Taxon> {
             // you'd think the descendsFrom check would slow things
             // down noticeably, but it doesn't
 			parent.report("Attempt to create a cycle !!??", child);
-            parent.showLineage(child.parent);
             System.out.format("** Cycle %s << %s ?< %s\n", parent, child, parent);
+            parent.showLineage(child.parent);
             Taxon.backtrace();
+            child.taxonomy.addRoot(child);  // maintain integrity at least
         } else if ((parent.properFlags & Taxonomy.FORMER_CONTAINER) != 0 && (parent.parent != null)) {
             child.markEvent("move to parent of former container, instead of to container");
             Taxon target = parent.parent;
@@ -642,7 +643,7 @@ public class Taxon extends Node implements Comparable<Taxon> {
     }
 
     public Taxon mrca(Taxon other) {
-        if (other == null) return null; // Shouldn't happen, but...
+        if (other == null) return null; // Convenient for loops
         return this.mrca(other, this.getDepth(), other.getDepth());
     }
 

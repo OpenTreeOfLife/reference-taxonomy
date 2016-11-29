@@ -3,6 +3,8 @@ package org.opentreeoflife.smasher;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.ArrayList;
 import java.io.PrintStream;
 import java.io.IOException;
@@ -31,13 +33,21 @@ class MergeMachine {
     private Map<Taxon, Op> plan = new HashMap<Taxon, Op>();
     private Map<Taxon, Op> coplan = new HashMap<Taxon, Op>();
     TaxonMap coxmrca;
+    boolean bluster;
 
-    MergeMachine(Taxonomy source, UnionTaxonomy union, Alignment a, Map<String, Integer> summary) {
+    MergeMachine(Taxonomy source, UnionTaxonomy union, Alignment a, int blustery, Map<String, Integer> summary) {
         this.source = source;
         this.union = union;
         this.alignment = a;
         this.summary = summary;
+        this.bluster = blustery > 1;
     }
+
+    TaxonMap inverseAlign = new TaxonMap() {
+            public Taxon get(Taxon unode) {
+                return alignment.invert(unode);
+            }
+        } ;
 
 	void augment() {
 
@@ -56,35 +66,46 @@ class MergeMachine {
         int startroots = union.rootCount();
         int startcount = union.count();
 
-        // For refinementp
-        coplan = this.preparePlan(union,
-                                  source,
-                                  new TaxonMap() {
-                                      public Taxon get(Taxon unode) {
-                                          return alignment.invert(unode);
-                                      }
-                                  },
-                                  null);
+        // Pass 1: create an Op for every in-between node, and set its subproblem.
+        if (bluster) System.out.format("# Pass 1\n");
+        plan = new HashMap<Taxon, Op>();
+        coplan = new HashMap<Taxon, Op>();
+        Taxon coroot = setSubproblems(source.forest, null, alignment, plan);
+        if (coroot != null) {
+            Taxon root = setSubproblems(coroot, null, inverseAlign, coplan);
 
-        coxmrca = new TaxonMap() {
-                public Taxon get(Taxon node) {
-                    Op cop = coplan.get(node);
-                    if (cop != null) return cop.mrca;
-                    else return null;
-                }
-            };
+            if (bluster)
+                System.out.format("# root %s, coroot %s, plan size %s %s\n",
+                                  root, coroot, plan.size(), coplan.size());
 
-        plan = this.preparePlan(source, union, alignment, coxmrca);
+            // Pass 2: do cross-mrcas for all in-between nodes
+            if (bluster) System.out.format("# Pass 2\n");
+            doXmrcas(root, alignment, plan);
+            doXmrcas(coroot, inverseAlign, coplan);
 
-        for (Taxon root : source.roots()) {
-            this.augment(root, root);
-            Taxon newroot = alignment.getTaxon(root);
-            if (newroot != null && newroot.isDetached() && !newroot.noMrca())
-                union.addRoot(newroot);
+            // Pass 3: get articulations
+            // xcomrca is a TaxonMap that takes a union node to its xmrca in the source.
+            if (bluster) System.out.format("# Pass 3\n");
+            coxmrca = new TaxonMap() {
+                    public Taxon get(Taxon node) {
+                        Op chop = coplan.get(node);
+                        if (chop != null)
+                            return chop.xmrca;
+                        else
+                            return inverseAlign.get(node);
+                    }
+                };
+            articulate(root, coxmrca, alignment, plan);
         }
 
-        transferProperties(source);
+        // Pass 4: Edit the union to add copies of nodes from source
+        if (bluster) System.out.format("# Pass 4\n");
+        alignment.setAnswer(source.forest, Answer.yes(source.forest, union.forest, "taxonomy-merge", null));
+        this.augment(source.forest);
 
+        // Passes 5: Finish up
+        if (bluster) System.out.format("# Pass 5\n");
+        transferProperties(source);
         copyMappedSynonyms(); // this = union
 
         if (windyp) {
@@ -99,157 +120,211 @@ class MergeMachine {
             System.out.println(" -> " + union.toNewick());
 	}
 
-	// Propogate synonyms from source taxonomy to union or selection.
-	// Some names that are synonyms in the source might be primary names in the union,
-	//	and vice versa.
-	public void copyMappedSynonyms() {
-		int count = 0;
-        for (Taxon taxon : source.taxa()) {
-            Taxon targetTaxon = alignment.getTaxon(taxon);
-            if (targetTaxon == null) continue;
-            count += taxon.copySynonymsTo(targetTaxon);
-        }
-		if (count > 0)
-			System.out.format("| Added %s synonyms\n", count);
-	}
-
-    // Planning phase - before any mutation occurs that will screw up
-    // cached depth counts
+    // An Op is created for each taxonomy node that has an aligned
+    // node as ancestor, and at least one aligned node as a descendant.
 
     class Op {
-        Taxon target = null;
-        Taxon alice = null, bob = null;
-        Taxon mrca = null;      // mrca of parents of alice, bob, and others
-        Taxon zelda = null;
+        Taxon subproblem = null; // in same taxonomy
         int mapped = 0, unmapped = 0;
-        boolean consistentp = true, monotypic = false;
-        Op(Taxon mrca, Taxon alice, Taxon target) {
-            if (alice != null && mrca.taxonomy != alice.taxonomy)
-                throw new RuntimeException(String.format("mrca %s in %s but alice %s in %s",
-                                                         mrca, mrca.taxonomy,
-                                                         alice, alice.taxonomy));
-            this.mrca = mrca;
-            this.alice = alice;
-            if (target == null)
-                throw new RuntimeException("shouldn't happen");
-            this.target = target;
-        }
-        String comment() {
-            return String.format("%s; %s", mrca.name,
-                                 (zelda == null ? "-" : zelda.name));
-        }
-    }
+        boolean reflectedp = false;
+        boolean consistentp = true;
+        boolean mrcaIsChild = false;
+        Taxon xmrca = null;      // mrca in target of alice, bob, and others
+        Taxon target = null;     // match
 
-    // Compute cross-MRCAs and put them in a Map
-
-    private int winners, smaller, larger;
-
-    Map<Taxon, Op> preparePlan(Taxonomy taxy, Taxonomy target, TaxonMap map, TaxonMap coxmrca) {
-        winners = smaller = larger = 0;
-        Map<Taxon, Op> plan = new HashMap<Taxon, Op>();
-        for (Taxon root : taxy.roots())
-            preparePlan(root, map, plan, coxmrca);
-        if (winners + smaller + larger > 0 && taxy == source)
-            System.out.format("| MRCAs: %s match, %s smaller than aligned, %s larger than aligned\n",
-                              winners, smaller, larger);
-        return plan;
-    }
-
-    // Node is in source taxonomy, return value is in target taxonomy.
-    // Return value is mrca of aligned nodes under node.
-    // Cf. ConflictAnalysis.induce()
-
-    private Op preparePlan(Taxon node,
-                           TaxonMap map,
-                           Map<Taxon, Op> plan,
-                           TaxonMap coxmrca) {
-        // cf. MergeMachine.augment
-        Taxon mrca = null;
+        // Not set up any more
         Taxon alice = null, bob = null, zelda = null;
-        int mapped = 0, unmapped = 0;
-        boolean monotypic = true;
+
+        Op(Taxon subproblem) { this.subproblem = subproblem; }
+        String comment() {
+            return String.format("mrca = %s", xmrca.name);
+        }
+    }
+
+    // Pass 1: cache subproblems and compute virtual roots.
+    // Returns mrca of aligned nodes in partner taxonomy
+    Taxon setSubproblems(Taxon node, Taxon subproblem, TaxonMap align, Map<Taxon, Op> plan) {
+
+        Taxon tnode = align.get(node);
+        if (tnode != null)
+            subproblem = tnode;
+
+        Taxon mrca = tnode;
         for (Taxon child : node.getChildren()) {
-            Op chop = preparePlan(child, map, plan, coxmrca);
-            // Want two things for each child:
-            //   1. The aligned target node, if there is one
-            //   2. The MRCA of {all target nodes under this one} ??
-            if (child.isPlaced()) {
-                if (chop == null) {
-                    zelda = child;
-                    unmapped++;
-                } else {
-                    Taxon x = chop.target;
-                    mapped++;
-                    if (mrca == null) {
-                        mrca = x;
-                        alice = x;
-                    } else {
-                        Taxon mrca2 = mrca.mrca(x);
-                        if (mrca2 != mrca) {
-                            mrca = mrca2;
-                            bob = x;
+            Taxon sub = setSubproblems(child, subproblem, align, plan);
+            if (sub != null)
+                if (mrca == null)
+                    mrca = sub;
+                else
+                    mrca = mrca.mrca(sub);
+        }
+        if (mrca == null) return null;
+
+        if (tnode == null) {
+            Op op = new Op(subproblem);
+            plan.put(node, op);
+        }
+        return mrca;
+    }
+
+    // Pass 2: compute cross-MRCAs and cache them in Op records
+
+    // Node is in source taxonomy.  Cf. ConflictAnalysis.induce()
+
+    private void doXmrcas(Taxon node,
+                          TaxonMap align,
+                          Map<Taxon, Op> plan) {
+        Taxon asub = align.get(node);
+        if (asub != null)
+            for (Taxon child : node.getChildren())
+                doXmrcas2(child, asub, align, plan);
+        else
+            for (Taxon child : node.getChildren())
+                doXmrcas(child, align, plan);
+    }
+
+    private Taxon doXmrcas2(Taxon node, // returns xmrca
+                            Taxon asub,
+                            TaxonMap align,
+                            Map<Taxon, Op> plan) {
+        Taxon aligned = align.get(node);
+        if (aligned != null) {
+            doXmrcas(node, align, plan);
+            if (aligned.mrca(asub) == asub)
+                return aligned;
+            else {
+                if (node.name.hashCode() % 20 == 7)
+                    System.out.format("## Ejecting %s which is outside of %s\n", node, asub);
+                return asub;
+            }
+        } else {
+            Op op = plan.get(node);
+            if (op == null) return null;
+
+            Taxon mrca = null;
+            int mapped = 0, unmapped = 0;
+            boolean mrcaIsChild = false;
+            for (Taxon child : node.getChildren()) {
+                Taxon x = doXmrcas2(child, asub, align, plan);
+                if (child.isPlaced()) {
+                    if (x == null)
+                        op.unmapped++;
+                    else {
+                        op.mapped++;
+                        if (mrca == null) {
+                            mrca = x;
+                            mrcaIsChild = true;
+                        } else {
+                            Taxon mrca2 = mrca.mrca(x);
+                            if (mrca2 != mrca) {
+                                mrca = mrca2;
+                                mrcaIsChild = false;
+                            }
                         }
-                        monotypic = false;
                     }
                 }
             }
-        }
-
-        Taxon tnode = map.get(node);
-
-        if (mrca == null && tnode == null)
-            return null;        // Graft
-
-        Taxon target;           // may get overridden below
-
-        if (mrca == null)
-            mrca = target = tnode;       // Tip
-        else {
-            target = null;  // may get overridden below
-            if (tnode == mrca)
-                ++winners;
-            else if (tnode != null) {
-                Taxon mrca2 = mrca.mrca(tnode);
-                if (mrca2== null) System.err.format("** shouldn't happen %s %s\n", mrca, tnode);
-                if (mrca2 != mrca) {
-                    if (PREFER_ALIGNMENT_TO_MRCA)
-                        // Treat alignment target as an honorary child
-                        target = mrca2;
-                    ++larger;
-                } else
-                    ++smaller;
+            if (mrca == null) {
+                System.out.format("** shouldn't happen: null mrca for %s\n", node);
+                return null;
             }
-            if (target == null)
-                target = mrca;
+            op.xmrca = mrca;    // cache it
+            op.mapped = mapped;
+            op.unmapped = unmapped;
+            op.mrcaIsChild = mrcaIsChild;
+            return mrca;
         }
-
-        Op op = new Op(mrca, alice, target);
-        op.bob = bob;
-        op.unmapped = unmapped;
-        op.mapped = mapped;
-        op.zelda = zelda;
-        op.monotypic = monotypic;
-
-        if (coxmrca != null) {
-            op.consistentp = consistentp(node, mrca, coxmrca);
-            if (false && mrca != tnode && alice != null) {
-                Taxon bounce = coxmrca.get(mrca);
-                if (bounce != null)
-                    System.out.format("# %s -> %s -> %s, %s %s/%s\n", node, mrca, bounce, op.consistentp,
-                                      node.count(), bounce.count());
-            }
-        }
-
-        plan.put(node, op);
-
-        return op;
     }
 
-    static boolean PREFER_ALIGNMENT_TO_MRCA = false;
+    /*private int winners, smaller, larger;
+        winners = smaller = larger = 0;
+        if (winners + smaller + larger > 0 && taxy == source)
+            System.out.format("| MRCAs: %s match, %s smaller than aligned, %s larger than aligned\n",
+                              winners, smaller, larger);
+    */
+
+    // Pass 3 - compute merge-mapping information
+    Set<Taxon> targeted = new HashSet<Taxon>();
+
+    void articulate(Taxon node, TaxonMap coxmrca, TaxonMap align, Map<Taxon, Op> plan) {
+        Taxon tnode = align.get(node);
+        Op op = plan.get(node);
+        if (tnode != null || op != null) {
+            for (Taxon child : node.getChildren())
+                articulate(child, coxmrca, align, plan);
+            if (op != null) {
+                if (op.xmrca == null)
+                    System.err.format("** Null conode 2: %s\n", op.xmrca);
+                op.target = chooseTarget(node, op);    // the place that gets new & unplaced children
+                op.consistentp = consistentp(node, op.xmrca, coxmrca);
+                op.reflectedp = reflectedp(op.target, node);
+                targeted.add(op.target);
+            }
+        }
+    }
+
+    boolean reflectedp(Taxon conode, Taxon node) {
+        Taxon bounce = coxmrca.get(node);
+        if (bounce != null)
+            return bounce.mrca(node) == node;
+        else
+            return false;
+    }
+
+    // Two ways of matching.  Try to match them.
+    Taxon chooseTarget(Taxon node, Op op) {
+        Taxon conode = op.xmrca;
+        if (conode == null)
+            System.err.format("** Null conode 1: %s\n", conode);
+        if (op.mrcaIsChild && conode.parent != null) conode = conode.parent;
+        Taxon target = maybeElevate(node, conode, byname(node));
+        if (target == null)
+            throw new RuntimeException(String.format("** Null target for %s\n", node));
+        return target;
+    }
+
+    // Node could potentially map to an 'equivalent' ancestor
+    //  (node -> conode -> bounce <= node)
+    //      xmrca    coxmrca   descendsFrom
+
+    Taxon maybeElevate(Taxon node, Taxon conode, Taxon stop) {
+        if (conode == null)
+            System.err.format("** Null conode: %s\n", conode);
+        Taxon scan = conode;
+        while (true) {
+            boolean nu = bluster && (scan != conode);
+            if (conode == stop) {
+                if (nu)
+                    System.out.format("# By-name and by-xmrca coincide at %s\n", conode);
+                break;
+            }
+            if (nu)
+                System.out.format("# Trying parent %s of %s... %s\n",
+                                  scan, conode, reflectedp(scan, node));
+            if (!reflectedp(scan, node))
+                break;
+            conode = scan;
+            scan = scan.parent;
+            if (scan == null)
+                return conode;
+        }
+        return conode;
+    }
+
+    Taxon byname(Taxon node) {
+        Answer byname = alignment.findAlignment(node);
+        if (byname != null && byname.isYes())
+            return byname.target;
+        else
+            return null;
+    }
+
 
     // True if disjoint, same, or resolution.  false if conflict.
     // cf. ConflictAnalysis.articulation.
     boolean consistentp(Taxon node, Taxon x, TaxonMap coxmrca) {
+        if (node == null) System.err.format("** Null node checking consistentp with %s\n", x);
+        if (x == null) System.err.format("** Null conode checking consistentp of %s\n", node);
         for (Taxon cochild : x.getChildren()) {
             Taxon back = coxmrca.get(cochild);
             if (back == null)
@@ -264,17 +339,18 @@ class MergeMachine {
         return true;
     }
 
+
 	// 3799 conflicts as of 2014-04-12
 	void reportConflict(Taxon node, Op op) {
-        if (op.mrca.taxonomy == union && op.alice != null) {
-            union.conflicts.add(new Conflict(node, op.alice, op.bob, op.mrca));
+        if (op.xmrca.taxonomy == union && op.alice != null) {
+            union.conflicts.add(new Conflict(node, op.alice, op.bob, op.xmrca));
             if (union.markEvent("reported conflict"))
                 System.out.format("| Conflict %s %s\n", union.conflicts.size(), node);
         }
 	}
 
     void reportWayward(Taxon node, Op op, TaxonMap map) {
-        if (op.mrca.taxonomy == union &&
+        if (op.xmrca.taxonomy == union &&
             (node.count() > 500000 ||
              (op.unmapped > 0 &&
               union.markEvent("wayward")))) {
@@ -284,7 +360,7 @@ class MergeMachine {
                 scan = scan.parent;
             if (scan == null) return;
             Taxon bridge = map.get(scan);
-            Taxon[] div = bridge.divergence2(op.mrca);
+            Taxon[] div = bridge.divergence2(op.xmrca);
 
             Taxon big = null;
             if (div[0] != null) big = div[0].parent;
@@ -292,7 +368,7 @@ class MergeMachine {
 
             String path0 = "-", path1 = "-";
             if (div[0] != null) path0 = String.format("| wayward %s < %s", node, div[0].name);
-            if (div[1] != null) path1 = String.format("| wayward %s < %s", op.mrca, div[1].name);
+            if (div[1] != null) path1 = String.format("| wayward %s < %s", op.xmrca, div[1].name);
 
             System.out.format("| %s < [%s | %s] < %s [%s:%s]\n",
                               op.alice.name,
@@ -308,14 +384,11 @@ class MergeMachine {
        detached, and becomes attached to the target taxonomy when its
        parent node is processed.
        */
-	void augment(Taxon node, Taxon boss) {
-
-        Op op = plan.get(node);
-        if (op != null && !op.monotypic) boss = node;
+	void augment(Taxon node) {
 
         // preorder
         for (Taxon child: node.getChildren())
-            augment(child, boss);
+            augment(child);
 
         // merge answer, not align answer
         Answer m = null;
@@ -343,8 +416,10 @@ class MergeMachine {
                 m = acceptNew(node, "new/polysemy");
             }
 		} else {
+            Op op = plan.get(node);
+
             // Examine aligned parents of the children
-            // Consult merge plan - cf. preparePlan, above
+            // Consult merge plan - cf. doXmrcas, above
             if (op == null) {
                 // graft
                 if (node.children == null)
@@ -353,24 +428,27 @@ class MergeMachine {
                     m = acceptNew(node, "new/graft");
 
             } else {
-                Taxon target = getTarget(op);
+                Taxon target = op.target;
                 if (target == null)
                     System.err.format("** Null target in augment: %s\n", target);
                 if (op.consistentp) {
-                    if (op.unmapped > 0) {
+                    if (op.reflectedp) {
+                        // if some ancestors and/or descendants of node
+                        // are also reflected (with the same target),
+                        // choose which ones are to match.
+                        // descendants will be processed first of course.
+                        m = accept(node, target, "match/by-membership");
+                    } else if (resolvable(target)) {
+                        // resolves target
+                        m = acceptNew(node, "new/resolves");
+                        if (takeOld(m.target, node, target))   // Move from mrca down to new resolution node
+                            // ((Wg,Wj,Wr)W)z + ((Wj)N,(Wr,Wt)W)z = ((Wg,(Wj)N,Wr,Wt)W)z ?
+                            target = target.parent;
+                        setParent(m.target, target, "resolution");
+                    } else {
                         // absorption
                         m = reject(node, "reject/absorbed", op, target, Taxonomy.MERGED);
-                    } else {
-                        // resolves target
-                        m = acceptNew(node, "new/refinement");
-                        takeOld(m.target, node); // Move from mrca down to new refinement node
-                        if (target.descendsFrom(m.target))
-                            // target is already monotypy-maximal, so its parent
-                            // will be strictly larger.
-                            // ((Wg,Wj,Wr)W)z + ((Wj)N,(Wr,Wt)W)z = ((Wj)N,(Wg,Wr,Wt)W)z
-                            target = target.parent;
-                        m.target.setParent(target, "refinement");
-                    }
+                    } 
                 } else {
                     // conflict
                     m = reject(node, "reject/conflict", op, target, Taxonomy.INCONSISTENT);
@@ -381,41 +459,44 @@ class MergeMachine {
         }
         takeOn(node, m.target, flag);
         // try to do more work here. e.g. alignment.setAnswer(node, m);
-        tick(m.reason);
+        // if node has children but m.target doesn't, drop m.target
+        tick(m);
     }
 
-    Taxon getTarget(Op op) {
-        Taxon target = op.target; // union node
-        if (target == null)
-            System.err.format("** Null target: %s\n", target);
-        // Follow parent chain of union nodes
-        Taxon bounce = coxmrca.get(target); // source node
-        if (bounce != null)
-            while (true) {
-                Taxon up = target.parent;
-                if (up == null) break;
-                Taxon over = coxmrca.get(up); // source
-                if (over != bounce)
-                    break;
-                System.out.format("| Going from %s up to %s\n", target, up);
-                target = up;
+    // This is not right at all.
+    // Trying to check whether there are unmatched children of target.
+
+    boolean resolvable(Taxon target) {
+        for (Taxon cochild : target.getChildren()) {
+            if (cochild.isPlaced()) {
+                boolean q = targeted.contains(cochild);
+                if (bluster)
+                    System.out.format("# Targeted check: %s in %s -> %s\n", cochild, target, q);
+                if (!q) return false;
             }
-        return target;
+        }
+        return true;
     }
+
+    // Compare source node to union node
 
     Answer accept(Taxon node, Taxon target, String reason) {
         return Answer.yes(node, target, reason, null);
     }
 
+    public boolean MAKE_FAKES = false;
+
     // Reject an unaligned node because it is merged [absorbed], conflict, or ambiguous
 
     Answer reject(Taxon node, String reason, Op op, Taxon target, int flag) {
         // Could leave lub behind as a forwarding address...
-        Answer fake = acceptNew(node, reason); // does setAnswer
-        fake.witness = op.comment(); // kludge
-        fake.target.addFlag(flag);
-        fake.target.setParent(target, reason);
-        fake.target.rename("??" + node.name);
+        if (MAKE_FAKES) {
+            Answer fake = acceptNew(node, reason); // does setAnswer
+            fake.witness = op.comment(); // kludge
+            fake.target.addFlag(flag);
+            fake.target.setParent(target, reason);
+            fake.target.rename("??" + node.name);
+        }
         return Answer.noinfo(node, target, reason, null);
     }
 
@@ -429,6 +510,9 @@ class MergeMachine {
         // various other properties carry over as well.
         Taxon newnode = union.dupWithoutId(node, reason);
 
+        if (bluster)
+            System.out.format("# acceptNew %s: %s -> %s\n", reason, node, newnode);
+
         Answer answer = Answer.yes(node, newnode, reason, null);
 
         alignment.setAnswer(node, answer);
@@ -438,13 +522,29 @@ class MergeMachine {
         return answer;
 	}
 
-    // implement a refinement
-    void takeOld(Taxon newnode, Taxon node) {
+    // implement a resolution
+    boolean takeOld(Taxon newnode, Taxon node, Taxon target) {
+        boolean any = false;
         for (Taxon child: node.children) {
             Taxon childTarget = alignment.getTaxon(child);
             if (childTarget != null && !childTarget.isDetached() && childTarget.isPlaced())
-                childTarget.changeParent(newnode, "takeOld");
+                changeParent(childTarget, newnode, 0, "takeOld");
+            if (childTarget == target)
+                any = true;
         }
+        return any;
+    }
+
+    void changeParent(Taxon uchild, Taxon target, int flags, String reason) {
+        if (bluster)
+            System.out.format("# %s: change %s parent from %s to %s\n", reason, uchild, uchild.parent, target);
+        uchild.changeParent(target, flags, reason); // if unplaced, stay unplaced
+    }
+
+    void setParent(Taxon uchild, Taxon target, String reason) {
+        if (bluster)
+            System.out.format("# %s: set %s parent to %s\n", reason, uchild, target);
+        uchild.setParent(target, reason); // if unplaced, stay unplaced
     }
 
     // Set parent pointers of aligned targets of children of source to target.
@@ -468,7 +568,7 @@ class MergeMachine {
                     //if (??child??.isRoot())
                     //    child.markEvent("placed-former-root");
                     uchild.addFlag(flags);
-                    uchild.setParent(target, "takeOn"); // if unplaced, stay unplaced
+                    setParent(uchild, target, "takeOn"); // if unplaced, stay unplaced
                 }
             } else if (!uchild.isPlaced()) {
                 // "old" child maybe not well placed in union.  consider moving it
@@ -492,20 +592,35 @@ class MergeMachine {
                 } else if (uchild.isRoot() && child.isPlaced()) {
                     System.out.format("| %s moved from root to %s because %s\n", uchild, target, source);
                     Answer.noinfo(child, null, "promoted/from-root", target.name).maybeLog(union);
-                    uchild.changeParent(target, 0, "moved from root");
+                    changeParent(uchild, target, 0, "moved from root");
                 } else {
                     //System.out.format("| %s moved to %s because %s, was under %s\n", uchild, target, source, uchild.parent);
                     Answer.noinfo(child, null, "promoted/internal", target.name).maybeLog(union);
-                    uchild.changeParent(target, flags | (child.properFlags & Taxonomy.INCERTAE_SEDIS_ANY), "promoted");
+                    changeParent(uchild, target, flags | (child.properFlags & Taxonomy.INCERTAE_SEDIS_ANY), "promoted");
                 }
             }
         }
         return target;
     }
 
+	// Propogate synonyms from source taxonomy to union or selection.
+	// Some names that are synonyms in the source might be primary names in the union,
+	//	and vice versa.
+	public void copyMappedSynonyms() {
+		int count = 0;
+        for (Taxon taxon : source.taxa()) {
+            Taxon targetTaxon = alignment.getTaxon(taxon);
+            if (targetTaxon == null) continue;
+            count += taxon.copySynonymsTo(targetTaxon);
+        }
+		if (count > 0)
+			System.out.format("| Added %s synonyms\n", count);
+	}
+
     // Called on source taxonomy to transfer flags, rank, etc. to union taxonomy
     public void transferProperties(Taxonomy source) {
         for (Taxon node : source.taxa()) {
+            // consider also getting properties from lumped source nodes
             Taxon unode = alignment.getTaxon(node);
             if (unode != null)
                 transferProperties(node, unode);
@@ -547,10 +662,13 @@ class MergeMachine {
 	}
 
     // Should be called exactly once for every node in the source taxonomy
-    void tick(String action) {
+    void tick(Answer m) {
+        String action = m.reason;
         Integer count = summary.get(action);
         if (count == null) count = 0;
         summary.put(action, count + 1);
+        if (bluster)
+            System.out.format("# m %s\n", m);
     }
 
     Map<String, Integer> reasonCounts = new HashMap<String, Integer>();

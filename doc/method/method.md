@@ -157,8 +157,8 @@ means they refer to different taxa, and 'no information' means that
 this rule provides no information as to whether the nodes refer to the
 same taxon.
 
-The answers are assigned numeric scores of -1 for no, 0 for no
-information, and 1 for yes.
+The answers are assigned numeric scores of 1 for yes, 0 for no
+information, and -1 for no.
 
 The method for applying the heuristics is as follows:
 
@@ -166,9 +166,9 @@ The method for applying the heuristics is as follows:
  2. For each heuristic H:
       1. For each candidate Ci, obtain the score H(N, Ci)
       1. Let Z = the highest score from among the scores H(N, Ci)
-      1. If Z = -1, we are done
+      1. If Z < 0, we are done
       1. Let C' = those members of C that have score Z
-      1. If Z = 1 and C' contains only one candidate, we are done (match is that candidate)
+      1. If Z > 0 and C' contains only one candidate, we are done (match is that candidate)
       1. Replace C with C' and proceed to the next heuristic
  4. If C is singleton, its member is taken to be the correct match.
  5. Otherwise, the source node is ambiguous.

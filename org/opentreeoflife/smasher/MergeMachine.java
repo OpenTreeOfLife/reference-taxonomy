@@ -53,13 +53,14 @@ class MergeMachine {
 
         // For refinementp
         coplan = this.preparePlan(union,
+                                  source.forest,
                                   new TaxonMap() {
                                       public Taxon get(Taxon unode) {
                                           return alignment.invert(unode);
                                       }
                                   });
 
-        plan = this.preparePlan(source, alignment);
+        plan = this.preparePlan(source, union.forest, alignment);
 
         for (Taxon root : source.roots()) {
             this.augment(root);
@@ -114,18 +115,17 @@ class MergeMachine {
 
     private int winners, smaller, larger;
 
-    Map<Taxon, Op> preparePlan(Taxonomy taxy, TaxonMap map) {
+    Map<Taxon, Op> preparePlan(Taxonomy taxy, Taxon troot, TaxonMap map) {
         winners = smaller = larger = 0;
         Map<Taxon, Op> plan = new HashMap<Taxon, Op>();
-        for (Taxon root : taxy.roots())
-            preparePlan(root, union.forest, map, plan);
+        preparePlan(taxy.forest, troot, map, plan);
         if (winners + smaller + larger > 0)
             System.out.format("| MRCAs: %s match, %s smaller than sink, %s larger than sink\n",
                               winners, smaller, larger);
         return plan;
     }
 
-    // Input is in source taxonomy, return value is in union taxonomy
+    // Input is in source taxonomy, sink is in target, return value is in target
 
     private Op preparePlan(Taxon node,
                            Taxon sink,
@@ -157,7 +157,7 @@ class MergeMachine {
                     unmapped++;
                 else {
                     mapped++;
-                    Taxon p = childOp.mrca;
+                    Taxon p = childOp.mrca; // in target
                     if (mrca == null) {
                         mrca = p;
                         alice = childOp.alice;
@@ -178,7 +178,7 @@ class MergeMachine {
         op.alice = alice; op.bob = bob;
         op.mapped = mapped;
         op.unmapped = unmapped;
-        op.sink = sink;
+        op.sink = sink;         // in target
 
         if (sink != null && mrca != null)
             op.wayward = (mrca.mrca(sink) != sink);
@@ -317,9 +317,13 @@ class MergeMachine {
             node.markEvent("not-refinement/hidden");
             return false;
         }
+        // Temporary shortcut to force refinements to happen
         if (true) {
             Op cop = coplan.get(sink);
-            return cop.unmapped == 0;
+            if (cop != null)
+                return cop.unmapped == 0;
+            else
+                return false;
         } else if (sink.children != null) {
             for (Taxon child : sink.children)
                 if (child.isPlaced())

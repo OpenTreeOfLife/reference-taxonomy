@@ -36,7 +36,7 @@ public class ComplicatedAlignment extends Alignment {
         assignBrackets();
 		if (source.rootCount() > 0) {
 
-            Criterion[] criteria = oldCriteria;
+            Heuristic[] criteria = oldCriteria;
 
 			int beforeCount = target.numberOfNames();
 
@@ -125,11 +125,11 @@ public class ComplicatedAlignment extends Alignment {
         }
 
         // Compare every node to every other node, according to a list of criteria.
-        void run(Criterion[] criteria) {
+        void run(Heuristic[] criteria) {
 
             clear();
 
-            for (Criterion criterion : criteria)
+            for (Heuristic criterion : criteria)
                 run(criterion);
 
             // see if any source node remains unassigned (ties or blockage)
@@ -140,7 +140,7 @@ public class ComplicatedAlignment extends Alignment {
         // i, m,  node
         // j, n, unode
 
-        void run(Criterion criterion) {
+        void run(Heuristic criterion) {
             int m = nodes.size();
             int n = unodes.size();
             int[] uniq = new int[m];	// target nodes uniquely assigned to each source node
@@ -317,17 +317,17 @@ public class ComplicatedAlignment extends Alignment {
         }
     }
 
-	static Criterion[] oldCriteria = {
-		Criterion.division,
-		Criterion.lineage,
-        Criterion.subsumption,
-		Criterion.sameSourceId,
-		Criterion.anySourceId,
+	static Heuristic[] oldCriteria = {
+		Heuristic.disjointDivisions,
+		Heuristic.lineage,
+        Heuristic.subsumption,
+		Heuristic.sameSourceId,
+		Heuristic.anySourceId,
 		// knowDivision,
-        Criterion.weakDivision,
-		Criterion.byRank,
-        Criterion.byPrimaryName,
-        Criterion.elimination,
+        Heuristic.weakDivision,
+		Heuristic.byRank,
+        Heuristic.byPrimaryName,
+        Heuristic.elimination,
     };
 
 

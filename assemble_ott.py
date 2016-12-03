@@ -328,7 +328,7 @@ def align_fungi(fungi, ott):
     # with it, but the name Trichosporon cellaris has never been published.
     # Cb = ott.taxon('Chlamydotomus beigelii')
     # Cb.rename('Trichosporon beigelii')
-    # ott.taxon('Trichosporon').take(Cb)
+    # set_parent(Cb, ott.taxon('Trichosporon'))
     #
     # Just make it incertae sedis and put off dealing with it until someone cares...
 
@@ -544,13 +544,13 @@ def align_worms(worms, ott):
     # NCBI puts Myzostomida outside of Annelida.  To ensure matches, we have
     # to do so here as well, because Annelida is a barrier node and somewhat
     # difficult to cross.
-    worms.taxon('Animalia').take(worms.taxon('Myzostomida'))
+    set_parent(worms.taxon('Myzostomida'),worms.taxon('Animalia'))
 
     # extinct foram, polyseym risk with extant bryophyte
     # worms.taxon('Pohlia', 'Rhizaria').prune(this_source)
 
     # Annelida is a barrier, need to put Sipuncula inside it
-    worms.taxon('Annelida').take(worms.taxon('Sipuncula'))
+    set_parent(worms.taxon('Sipuncula'), worms.taxon('Annelida'))
 
     return a
 
@@ -582,9 +582,9 @@ def align_gbif(gbif, ott):
     ott.setDivision(gbif.taxon('Foraminifera'), 'SAR')
 
     # GBIF puts this one directly in Animalia, but Annelida is a barrier node
-    gbif.taxon('Annelida').take(gbif.taxon('Echiura'))
+    set_parent(gbif.taxon('Echiura'), gbif.taxon('Annelida'))
     # similarly
-    gbif.taxon('Cnidaria').take(gbif.taxon('Myxozoa'))
+    set_parent(gbif.taxon('Myxozoa'), gbif.taxon('Cnidaria'))
 
     # Fungi suppressed at David Hibbett's request
     gbif.taxon('Fungi').hideDescendantsToRank('species')
@@ -694,7 +694,7 @@ def align_gbif(gbif, ott):
         a.same(bac, ott.taxon('Bacillariophyta', 'SAR'))
 
     # Annelida is a barrier, need to put Sipuncula inside it
-    gbif.taxon('Annelida').take(gbif.taxon('Sipuncula'))
+    set_parent(gbif.taxon('Sipuncula'), gbif.taxon('Annelida'))
 
     # IRMNG has better placement for these things
     target = gbif.taxon('Plantae').parent
@@ -711,11 +711,11 @@ def align_gbif(gbif, ott):
                  'Gaillionella']:
         taxon = gbif.maybeTaxon(name, 'Plantae')
         if taxon != None:
-            target.take(taxon)
+            set_parent(taxon, target)
             taxon.incertaeSedis()
 
     # Noticed while scanning species polysemies
-    gbif.taxon('Euglenales').take(gbif.taxon('Heteronema', 'Rhodophyta'))
+    set_parent(gbif.taxon('Heteronema', 'Rhodophyta'), gbif.taxon('Euglenales'))
 
     # WoRMS says it's not a fungus
     gbif.taxonThatContains('Minchinia', 'Minchinia cadomensis').prune(this_source)
@@ -785,9 +785,9 @@ def align_irmng(irmng, ott):
     irmng.taxonThatContains('Archaea','Halobacteria').hideDescendants()
 
     # Cnidaria is a barrier node
-    irmng.taxon('Cnidaria').take(irmng.taxon('Myxozoa'))
+    set_parent(irmng.taxon('Myxozoa'), irmng.taxon('Cnidaria'))
     # Annelida is a barrier, need to put Sipuncula inside it
-    irmng.taxon('Annelida').take(irmng.taxon('Sipuncula'))
+    set_parent(irmng.taxon('Sipuncula'), irmng.taxon('Annelida'))
 
     a.same(irmng.taxon('1381293'), ott.taxon('Veronica', 'Plantaginaceae'))  # ott:648853
     # genus Tipuloidea (not superfamily) ott:5708808 = gbif:6101461
@@ -852,17 +852,17 @@ def align_irmng(irmng, ott):
     # In IRMNG L. and S. are siblings (children of Actinopterygii), but in NCBI
     # Lepisosteiformes is a synonym of Semionotiformes (in Holostei, etc.).
     irmng.taxon('Semionotiformes').absorb(irmng.taxon('Lepisosteiformes'))
-    irmng.taxon('Semionotiformes').extant()
+    set_extant(irmng.taxon('Semionotiformes'))
 
     # From deprecated.tsv file for OTT 2.10
     irmng.taxon('Plectospira', 'Brachiopoda').prune(this_source)    # extinct, polysemy with SAR
     irmng.taxon('Leptomitus', 'Porifera').prune(this_source)  # extinct, SAR polysemy, =gbif:3251526
 
     # Annelida is a barrier, need to put Sipuncula inside it
-    irmng.taxon('Annelida').take(irmng.taxon('Sipuncula'))
+    set_parent(irmng.taxon('Sipuncula'), irmng.taxon('Annelida'))
 
     # Noticed while scanning species polysemies
-    irmng.taxon('Peranemaceae').take(irmng.maybeTaxon('Heteronema', 'Rhodophyta'))
+    set_parent(irmng.maybeTaxon('Heteronema', 'Rhodophyta'), irmng.taxon('Peranemaceae'))
 
     # 2016-10-28 Noticed Goeppertia wrongly extinct while eyeballing 
     # the deprecated.tsv file
@@ -964,7 +964,7 @@ def patch_ott(ott):
     # 2014-01-27 Joseph: Quiscalus is incorrectly in
     # Fringillidae instead of Icteridae.  NCBI is wrong, GBIF is correct.
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/87
-    ott.taxon('Icteridae').take(ott.taxon('Quiscalus', 'Fringillidae'))
+    set_parent(ott.taxon('Quiscalus', 'Fringillidae'), ott.taxon('Icteridae'))
 
     # Misspelling in GBIF... seems to already be known
     # Stephen email to JAR 2014-01-26
@@ -972,9 +972,9 @@ def patch_ott(ott):
 
 
     # Joseph 2014-01-27 https://code.google.com/p/gbif-ecat/issues/detail?id=104
-    ott.taxon('Parulidae').take(ott.taxon('Myiothlypis', 'Passeriformes'))
+    set_parent(ott.taxon('Myiothlypis', 'Passeriformes'), ott.taxon('Parulidae'))
     # I don't get why this one isn't a major_rank_conflict !? - bug. (so to speak.)
-    ott.taxon('Blattodea').take(ott.taxon('Phyllodromiidae'))
+    set_parent(ott.taxon('Phyllodromiidae'), ott.taxon('Blattodea'))
 
     # See above (occurs in both IF and GBIF).  Also see issue #67
     ott.taxonThatContains('Chlamydotomus', 'Chlamydotomus beigelii').incertaeSedis()
@@ -1055,7 +1055,7 @@ def patch_ott(ott):
     # ott.taxon('Heterolobosea','Discicristata').absorb(ott.taxon('Heterolobosea','Percolozoa'))
     tax = ott.taxonThatContains('Excavata', 'Euglena')
     if tax != None:
-        tax.take(ott.taxon('Oxymonadida','Eukaryota'))
+        set_parent(ott.taxon('Oxymonadida','Eukaryota'), tax)
 
     # There is no Reptilia in OTT 2.9, so this can probably be deleted
     if ott.maybeTaxon('Reptilia') != None:
@@ -1126,15 +1126,15 @@ def patch_ott(ott):
     ott.taxon('Amphorogynaceae').rename('Amphorogyneae')
     ott.taxon('Thesiaceae').rename('Thesieae')
     sant = ott.taxonThatContains('Santalaceae', 'Santalum insulare')
-    sant.take(ott.taxon('Visceae'))
-    sant.take(ott.taxon('Amphorogyneae'))
-    sant.take(ott.taxon('Thesieae'))
+    set_parent(ott.taxon('Visceae'), sant)
+    set_parent(ott.taxon('Amphorogyneae'), sant)
+    set_parent(ott.taxon('Thesieae'), sant)
     sant.absorb(ott.taxon('Cervantesiaceae'))
     sant.absorb(ott.taxon('Comandraceae'))
 
     # Bryan Drew 2014-01-30
     # http://dx.doi.org/10.1126/science.282.5394.1692
-    ott.taxon('Magnoliophyta').take(ott.taxon('Archaefructus'))
+    set_parent(ott.taxon('Archaefructus'), ott.taxon('Magnoliophyta'))
 
     # Bryan Drew 2014-01-30
     # http://deepblue.lib.umich.edu/bitstream/handle/2027.42/48219/ID058.pdf
@@ -1160,7 +1160,7 @@ def patch_ott(ott):
     # I wish I knew what the authority for the H.s.s. name was.
     # (Linnaeus maybe?)
     hss = ott.newTaxon('Homo sapiens sapiens', 'subspecies', 'https://en.wikipedia.org/wiki/Homo_sapiens_sapiens')
-    ott.taxon('Homo sapiens').take(hss)
+    set_parent(hss, ott.taxon('Homo sapiens'))
     hss.hide()
 
     # Raised by Joseph Brown 2014-03-09, solution proposed by JAR
@@ -1168,7 +1168,7 @@ def patch_ott(ott):
     # since it's a model organism.
     # Placement in Tenebrioninae is according to http://bugguide.net/node/view/152 .
     # Is this cheating?
-    ott.taxon('Tenebrioninae').take(ott.taxon('Tribolium','Coleoptera'))
+    set_parent(ott.taxon('Tribolium','Coleoptera'), ott.taxon('Tenebrioninae'))
 
     # Bryan Drew 2014-03-20 http://dx.doi.org/10.1186/1471-2148-14-23
     # This isn't quite right - we really want to create a new taxon 'eurosides'
@@ -1178,7 +1178,8 @@ def patch_ott(ott):
 
     # Bryan Drew 2014-03-14 http://dx.doi.org/10.1186/1471-2148-14-23
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/24
-    ott.taxon('Streptophytina').elide()
+    strep = ott.taxon('Streptophytina')
+    if strep != None: strep.elide()
 
     # Dail 2014-03-20
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/29
@@ -1281,7 +1282,7 @@ def patch_ott(ott):
             tax = ott.maybeTaxon(name)
         else:
             tax = ott.maybeTaxon(name, super)
-        if tax != None: tax.extant()
+        set_extant(tax)
 
     # JAR 2014-05-08 while looking at the deprecated ids file.
     # http://www.theplantlist.org/tpl/record/kew-2674785
@@ -1316,20 +1317,20 @@ def patch_ott(ott):
     sax.rename('Saxifraga bicuspidata')
 
     # JAR 2015-07-21 noticed, obviously wrong
-    ott.taxonThatContains('Ophiurina', 'Acrocnida brachiata').extant()
+    set_extant(ott.taxonThatContains('Ophiurina', 'Acrocnida brachiata'))
 
     # straightening out an awful mess
-    ott.taxon('Saccharomycetes', 'Saccharomycotina').extant()  # foo.  don't know who sets this
+    set_extant(ott.taxon('Saccharomycetes', 'Saccharomycotina'))  # foo.  don't know who sets this
 
-    ott.taxonThatContains('Rhynchonelloidea', 'Sphenarina').extant() # NCBI
+    set_extant(ott.taxonThatContains('Rhynchonelloidea', 'Sphenarina')) # NCBI
 
     # https://github.com/OpenTreeOfLife/feedback/issues/133
     set_parent(ott.taxon('Cordicephalus', 'Amphibia'), ott.taxon('Pipoidea', 'Amphibia'))
 
     # This is a randomly chosen bivalve to force Bivalvia to not be extinct
-    ott.taxon('Corculum cardissa', 'Bivalvia').extant()
+    set_extant(ott.taxon('Corculum cardissa', 'Bivalvia'))
     # Similarly for roaches
-    ott.taxon('Periplaneta americana', 'Blattodea').extant()
+    set_extant(ott.taxon('Periplaneta americana', 'Blattodea'))
 
     # https://github.com/OpenTreeOfLife/feedback/issues/159
     ott.taxon('Nesophontidae').extinct()
@@ -1389,9 +1390,7 @@ def patch_ott(ott):
                  # Rustia	ncbi:86991,gbif:2904559,irmng:1356264	newly-hidden[extinct]	Rustia	=
                  ('Thalassiosira guillardii', 'SAR'),    # mistake in WoRMS
             ]:
-        taxon = ott.maybeTaxon(name, anc)
-        if taxon != None:
-            taxon.extant()
+        set_extant(ott.maybeTaxon(name, anc))
 
     # we were getting extinctness from IRMNG, but now it's suppressed
     din = ott.maybeTaxon('Dinaphis', 'Aphidoidea')
@@ -1485,13 +1484,13 @@ def patch_ott(ott):
         if tax != None: tax.extinct()
 
     # https://github.com/OpenTreeOfLife/feedback/issues/304
-    ott.taxon('Notobalanus', 'Maxillopoda').extant() # IRMNG
+    set_extant(ott.taxon('Notobalanus', 'Maxillopoda')) # IRMNG
 
     # https://github.com/OpenTreeOfLife/feedback/issues/303
-    ott.taxon('Neolepas', 'Maxillopoda').extant() # IRMNG
+    set_extant(ott.taxon('Neolepas', 'Maxillopoda')) # IRMNG
 
     # See NCBI
-    ott.taxon('Millericrinida').extant() # WoRMS
+    set_extant(ott.taxon('Millericrinida')) # WoRMS
 
     # Doug Soltis 2015-02-17 https://github.com/OpenTreeOfLife/feedback/issues/59 
     # http://dx.doi.org/10.1016/0034-6667(95)00105-0
@@ -1508,11 +1507,6 @@ def patch_ott(ott):
         claim = Whether_extant(name, False, 'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116')
         claim.make_true(ott)
 
-def set_parent(child, parent):
-    if child != None and parent != None:
-        parent.take(child)
-
-
 # -----------------------------------------------------------------------------
 # OTT id assignment
 
@@ -1527,7 +1521,7 @@ def ids_and_additions(ott):
         else:
             if im.name != name:
                 print '** ncbi:%s name is %s, but expected %s' % (ncbi_id, im.name, name)
-            im.addId(ott_id)
+            add_id(im, ott_id)
 
     # Force some id assignments... will try to automate this in the future.
     # Most of these come from looking at the deprecated.tsv file after a
@@ -1566,7 +1560,7 @@ def ids_and_additions(ott):
         if tax != None:
             tax.setId(id)
 
-    ott.taxon('452944').addId('5509975')
+    add_id(ott.taxon('452944'), '5509975')
 
     # ott.taxon('474506') ...
 
@@ -1648,6 +1642,19 @@ def assign_ids_from_list(tax, filename):
 
     # Could harvest merges from the id list, as well, and
     # maybe even restore lower-numbered OTT ids.
+
+# -----------------------------------------------------------------------------
+# Patch utilities
+
+def set_parent(child, parent):
+    if child != None and parent != None:
+        parent.take(child)
+
+def set_extant(node):
+    if node != None: node.extant()
+
+def add_id(node, id):
+    if node != None: node.addId(id)
 
 # -----------------------------------------------------------------------------
 # Reports

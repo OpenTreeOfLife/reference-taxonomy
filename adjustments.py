@@ -1,6 +1,7 @@
 # coding=utf-8
 
-from org.opentreeoflife.taxa import Taxonomy
+import csv
+from org.opentreeoflife.taxa import Taxonomy, Rank
 from claim import *
 #from claim import Has_child, Whether_same, With_ancestor, With_descendant, \
 #                  Whether_extant, make_claim, make_claims

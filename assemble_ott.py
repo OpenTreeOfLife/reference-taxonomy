@@ -112,7 +112,7 @@ def merge_sources(ott):
 
     # Reporting
     # Get mapping from NCBI to OTT, derived via SILVA and Genbank.
-    mappings = load_ncbi_to_silva(ncbi, silva, silva_to_ott)
+    mappings = adjustments.load_ncbi_to_silva(ncbi, silva, silva_to_ott)
     compare_ncbi_to_silva(mappings, silva_to_ott)
 
     debug_divisions('Reticularia splendens', ncbi, ott)

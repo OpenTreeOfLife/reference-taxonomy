@@ -23,7 +23,7 @@ identifying equivalent occurrences when the name-strings are different
 name-string (homonym detection).  Equivalence can then be used as a
 basis of taxonomic understanding, or of the relationships between taxa.
 
-## Project goals
+## Taxonomy goals
 
 Open Tree of Life is a system for synthesis of phylogenetic supertrees from
 inputs drawn from a corpus of published phylogenetic trees. Open Tree aims to

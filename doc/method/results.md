@@ -18,31 +18,32 @@ pooled for all sources.
 
 An explanation of each category follows the table.
 
-```
-     49  curated alignment
-    105  align to barrier taxonomy
+         49  curated alignment
+        105  align to barrier taxonomy
 
 Choice between multiple candidates determined using heuristics:
-  21584  disjoint divisions
-    172  disparate ranks
-  25800  by lineage
-   7653  overlapping membership
-    219  same division
-  83012  by name
+
+      21584  disjoint divisions
+        172  disparate ranks
+      25800  by lineage
+       7653  overlapping membership
+        219  same division
+      83012  by name
 
 Only one candidate:
-2325870  confirmed
-   1767  by elimination
+
+    2325870  confirmed
+       1767  by elimination
 
 Not aligned:
-   8592  ambiguous tip
-    452  ambiguous internal
-  10678  rejected
-    921  disjoint membership
-3757548  not aligned
 
-6244422  total source taxon records
-```
+       8592  ambiguous tip
+        452  ambiguous internal
+      10678  rejected
+        921  disjoint membership
+    3757548  not aligned
+
+    6244422  total source taxon records
 
 An explanation of each category follows the table.
 
@@ -97,17 +98,15 @@ The merge phase examines every source node, copying unaligned source
 nodes into the union taxonomy when possible.  The following table
 categorizes the fate of each source node during the merge phase.
 
-```
-2162104  aligned tip
- 304121  aligned internal node
-3482704  new tip
-   6178  new tip (polysemous)
- 267746  new internal node, part of graft
-   1909  refinement
-   7938  merged into larger taxon
-   3158  merged into larger taxon due to conflict
-6235858  total
-```
+    2162104  aligned tip
+     304121  aligned internal node
+    3482704  new tip
+       6178  new tip (polysemous)
+     267746  new internal node, part of graft
+       1909  refinement
+       7938  merged into larger taxon
+       3158  merged into larger taxon due to conflict
+    6235858  total
 
 [why is the merge total different from the alignment total?]
 
@@ -148,6 +147,7 @@ get placed by a lower priority source.]
 [begin automatically generated]
 
 General metrics on OTT:
+
  * Number of taxon records: 3550554
  * Number of synonym records: 2050661
  * Number of internal nodes: 276148
@@ -159,6 +159,7 @@ General metrics on OTT:
       * of which any of the taxa is a genus:   5298
 
 Annotations:
+
  * Number of taxa marked incertae sedis or equivalent: 318972  
      of which leftover children of inconsistent source taxa: 17669
  * Number of extinct taxa: 254929
@@ -166,8 +167,9 @@ Annotations:
  * Number of species-less higher taxa (rank above species but containing no species): 66488
 
 Assembly:
- * Contributions from various sources  [older numbers - need to update]
-```
+
+Contributions from various sources  [older numbers - need to update]
+
        Source     Total   Contrib   Aligned    Merged  Conflict
         silva     74412     74407         5         -         -
         h2007       227       226         1         -         -
@@ -179,9 +181,10 @@ Assembly:
         irmng   1563961     89789   1470267      3078       827
       curated        29        29         0         -         -
         total   6024627   3550554   2462986      7929      3158
-```
+
 
 Topology:
+
  * Maximum depth of any node in the tree: 38
  * Branching factor: average 13.02 children per internal node
 
@@ -230,7 +233,7 @@ from another source.
 one source, and that every piece of information in a source is
 reflected in OTT.  (but this is true by construction?)
 
-1. We can try to verify the assembly program itself.
+1. We can try to mathematically prove the correctness assembly program itself.
 
 [and...]
 
@@ -340,6 +343,7 @@ OTOH using the synthetic tree as ground truth seems a bit risky? ]
 NCBI update went smoothly - no intervention required.
 
 GBIF update had some issues:
+
  * import code needed to be changed because columns in new GBIF backbone distrubtion are changed
  * lots of taxa are missing, requiring adjustments to patches, and a few new ones.
 

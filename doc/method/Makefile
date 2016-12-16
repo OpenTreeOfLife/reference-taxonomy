@@ -14,16 +14,26 @@ out/draft.html: out/draft.md lib/Markdown.pl
 	bin/markdown $< >$@.new
 	mv $@.new $@
 
-out/draft.md: introduction.md sources.md out/sources_table.md method.md results.md discussion.md
+out/draft.md: introduction.md sources.md out/sources_table.md method.md results.md discussion.md conclusions.md
 	@mkdir -p out
-	cat $^ >$@
+	echo 'See also [proposed outline](outline.html)' >$@
+	cat $^ >>$@
 
 out/sources_table.md: sources_table.py
 	@mkdir -p out
 	python $< >$@.new
 	mv $@.new $@
 
-open: out/draft.html
+out/outline.html: out/outline.md
+	bin/markdown $< >$@.new
+	mv $@.new $@
+
+out/outline.md: outline.md
+	@mkdir -p out
+	echo 'Draft is [here](draft.html)' >$@
+	cat $^ >>$@
+
+open: out/draft.html out/outline.html
 	open $<
 
 clean:

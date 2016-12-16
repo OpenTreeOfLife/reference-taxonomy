@@ -82,4 +82,9 @@ public abstract class Node {
 			return "";
 	}
 
+    public void copySourceIdsTo(Node node) {
+        if (this.sourceIds != null)
+            node.sourceIds = new ArrayList<QualifiedId>(this.sourceIds);
+    }
+
 }

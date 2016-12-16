@@ -13,7 +13,7 @@
 JAVAFLAGS=-Xmx14G
 
 # Modify as appropriate
-WHICH=2.11draft1
+WHICH=2.11draft5
 PREV_WHICH=2.10
 
 # ----- Taxonomy source locations -----
@@ -23,15 +23,15 @@ FUNG_URL=http://files.opentreeoflife.org/fung/fung-9/fung-9-ot.tgz
 
 WORMS_URL=http://files.opentreeoflife.org/worms/worms-1/worms-1-ot.tgz
 
-NCBI_URL="http://files.opentreeoflife.org/ncbi/ncbi-20160629/ncbi-20160629.tgz"
+NCBI_URL="http://files.opentreeoflife.org/ncbi/ncbi-20161109/ncbi-20161109.tgz"
 
 # Was http://ecat-dev.gbif.org/repository/export/checklist1.zip
 # Could be http://rs.gbif.org/datasets/backbone/backbone.zip
 # 2016-05-17 purl.org is broken, cannot update this link
 # GBIF_URL=http://purl.org/opentree/gbif-backbone-2013-07-02.zip
-GBIF_URL=http://files.opentreeoflife.org/gbif/gbif-20130702/gbif-20130702.zip
+GBIF_URL=http://files.opentreeoflife.org/gbif/gbif-20160729/gbif-20160729.zip
 
-IRMNG_URL=http://files.opentreeoflife.org/irmng-ot/irmng-ot-20160630/irmng-ot-20160630.tgz
+IRMNG_URL=http://files.opentreeoflife.org/irmng-ot/irmng-ot-20161108/irmng-ot-20161108.tgz
 
 # Silva 115: 206M uncompresses to 817M
 # issue #62 - verify  (is it a tsv file or csv file?)
@@ -109,12 +109,14 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
 		    bin/jython \
 		    inclusions.csv \
 		    feed/amendments/amendments-1/next_ott_id.json \
-		    tax/skel/taxonomy.tsv
+		    tax/skel/taxonomy.tsv \
+		    ott_id_list/by_qid.csv
 	@date
 	@rm -f *py.class
 	@mkdir -p tax/ott
-	@echo Writing transcript to tax/ott/transcript.out
-	time bin/jython make-ott.py 2>&1 | tee tax/ott/transcript.out
+	@echo Writing transcript to tax/ott/transcript.out.new
+	time bin/jython make-ott.py 2>&1 | tee tax/ott/transcript.out.new
+	mv tax/ott/transcript.out.new tax/ott/transcript.out
 	echo $(WHICH) >tax/ott/version.txt
 
 tax/ott/version.txt:
@@ -177,22 +179,35 @@ refresh-ncbi:
 # Formerly, where it says /dev/null, we had ../data/gbif/ignore.txt
 
 gbif: tax/gbif/taxonomy.tsv
-tax/gbif/taxonomy.tsv: feed/gbif/in/taxon.txt feed/gbif/process_gbif_taxonomy.py
+
+feed/gbif/work/projection_2016.tsv: feed/gbif/in/taxon.txt feed/gbif/project_2016.py
+	@mkdir -p feed/gbif/work
+	python feed/gbif/project_2016.py feed/gbif/in/taxon.txt $@.new
+	mv $@.new $@
+
+feed/gbif/work/projection_2013.tsv: feed/gbif/in/2013/taxon.txt feed/gbif/project_2013.py
+	@mkdir -p feed/gbif/work
+	python feed/gbif/project_2013.py feed/gbif/in/2013/taxon.txt $@.new
+	mv $@.new $@
+
+GBIF_VERSION=2016
+
+tax/gbif/taxonomy.tsv: feed/gbif/work/projection_$(GBIF_VERSION).tsv feed/gbif/process_gbif_taxonomy.py
 	@mkdir -p tax/gbif.tmp
 	python feed/gbif/process_gbif_taxonomy.py \
-	       feed/gbif/in/taxon.txt \
-	       /dev/null tax/gbif.tmp
+	       feed/gbif/work/projection_$(GBIF_VERSION).tsv \
+	       tax/gbif.tmp
 	cp -p feed/gbif/about.json tax/gbif.tmp/
 	rm -rf tax/gbif
 	mv -f tax/gbif.tmp tax/gbif
 
 # The '|| true' is because unzip erroneously returns status code 1
 # when there are warnings.
-feed/gbif/in/taxon.txt: feed/gbif/in/checklist1.zip
-	(cd feed/gbif/in && (unzip checklist1.zip || true))
+feed/gbif/in/taxon.txt: feed/gbif/in/gbif-backbone.zip
+	(cd feed/gbif/in && (unzip gbif-backbone.zip || true))
 	touch feed/gbif/in/taxon.txt
 
-feed/gbif/in/checklist1.zip:
+feed/gbif/in/gbif-backbone.zip:
 	@mkdir -p feed/gbif/in
 	wget --output-document=$@.new "$(GBIF_URL)"
 	mv $@.new $@
@@ -202,9 +217,14 @@ GBIF_SOURCE_URL=http://rs.gbif.org/datasets/backbone/backbone-current.zip
 
 refresh-gbif:
 	@mkdir -p feed/gbif/in
-	wget --output-document=$@.new "$(GBIF_SOURCE_URL)"
-	mv $@.new $@
-	@ls -l $@
+	wget --output-document=gbif.new "$(GBIF_SOURCE_URL)"
+	rm -f feed/gbif/in/gbif-backbone.zip
+	mv gbif.new feed/gbif/in/gbif-backbone.zip
+
+# TBD: a publication rule for new GBIF versions.
+# publish-gbif
+#	bin/publish-taxonomy gbif
+
 
 # Input: WoRMS
 # This is assembled by feed/worms/process_worms.py which does a web crawl
@@ -221,13 +241,12 @@ tax/worms/taxonomy.tsv:
 irmng: tax/irmng/taxonomy.tsv
 
 tax/irmng/taxonomy.tsv:
-	@mkdir -p tax/irmng tmp/x
+	@mkdir -p tmp/irmng-ot
 	wget --output-document=tmp/irmng-ot.tgz $(IRMNG_URL)
-	(cd tmp/x; tar xzf ../irmng-ot.tgz)
-	(x=`cd tmp/x; ls` && \
-	 rm -rf tax/irmng tax/$$x && \
-	 mv -f tmp/x/$$x tax/ && \
-	 cd tax; ln -sf $$x irmng)
+	(cd tmp/irmng-ot; tar xzf ../irmng-ot.tgz)
+	(rm -rf tax/irmng && \
+	 mv -f tmp/irmng-ot/* tax/irmng && \
+	 rm -rf tmp/irmng-ot)
 
 # Build IRMNG from Tony's .csv files - these files unfortunately are
 # not public

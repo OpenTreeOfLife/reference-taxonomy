@@ -40,13 +40,13 @@ import org.opentreeoflife.taxa.Addition;
 
 public class UnionTaxonomy extends Taxonomy {
 
-	List<SourceTaxonomy> sources = new ArrayList<SourceTaxonomy>();
+	List<Taxonomy> sources = new ArrayList<Taxonomy>();
 	Alignment idsourceAlignment = null;
 	// One log per name-string
     List<Answer> weakLog = new ArrayList<Answer>();
 
-    // a new Alignment object for each source taxonomy being absorbed
-    Alignment currentAlignment = null;
+    public Map<String, Integer> alignmentSummary = new HashMap<String, Integer>();
+    public Map<String, Integer> mergeSummary = new HashMap<String, Integer>();
 
 	UnionTaxonomy(String idspace) {
         super(idspace);
@@ -61,7 +61,9 @@ public class UnionTaxonomy extends Taxonomy {
 		return new UnionTaxonomy(idspace);
 	}
 
-	// ----- INITIALIZATION FOR EACH SOURCE -----
+	// ----- INITIALIZATION -----
+
+    boolean useCompleteSkeleton = true;
 
 	// The 'division' field of a Taxon is always either null or a
 	// taxon belonging to the skeleton taxonomy...
@@ -74,24 +76,32 @@ public class UnionTaxonomy extends Taxonomy {
 		Alignment a = new AlignmentByName(skel, this);
 		for (Taxon div : skel.taxa())
             div.unsourced = true;
-        this.merge(skel, a);
+        this.merge(a);
 
-        if (false) {
-        // set divisions on union nodes (initially all null)
-        this.forest.setDivision(skel.forest);
-		for (Taxon div : skel.taxa()) {
-            if (div.name == null)
-                System.err.format("## Anonymous division ?! %s in %s\n", div, div.parent);
-            else {
-                Taxon udiv = a.getTaxon(div);
-                udiv.setId(div.id);
-                udiv.setDivision(div);
+        if (useCompleteSkeleton) {
+            // set divisions on union nodes (initially all null)
+            this.forest.setDivision(skel.forest);
+            for (Taxon div : skel.taxa()) {
+                if (div.name == null)
+                    System.err.format("## Anonymous division ?! %s in %s\n", div, div.parent);
+                else {
+                    Taxon udiv = a.getTaxon(div);
+                    udiv.setId(div.id);
+                    udiv.setDivision(div);
+                }
             }
-        }
         }
 
         this.skeletonAlignment = a;
 	}
+
+    public void setDivision(Taxon node, String divname) {
+        Taxon div = skeletonAlignment.source.unique(divname);
+        if (div != null)
+            node.setDivision(div);
+        else
+            System.err.format("** Unrecognized division: %s (for %s)\n", divname, node);
+    }
 
 	// -----
 
@@ -101,7 +111,7 @@ public class UnionTaxonomy extends Taxonomy {
       1. create an alignment with a = .alignment(source)
       2. add ad-hoc node alignments to it with a.same(...)
       3. .align(a) to finish alignment
-      4. .merge(source, a) to merge in new taxa
+      4. .merge(a) to merge in new taxa
       If 2. is empty, then 1+3+4 can be expressed as .absorb(source)
       */
 
@@ -120,24 +130,29 @@ public class UnionTaxonomy extends Taxonomy {
     }
 
     public void align(Alignment a) {
-        Taxonomy source = a.source;
-        if (false)
-            // source.forest.getDivision() should still be null at this point
-        if (source.forest.getDivision() != this.forest.getDivision())
-            System.err.format("## Oops! Forest division mismatch: %s != %s",
-                               source.forest, this.forest);
         this.markDivisions(a);
         a.align();
+        // Reporting
+        for (Taxon node : a.source.taxa()) {
+            Answer answer = a.getAnswer(node);
+            String reason;
+            if (answer == null) reason = "none";
+            else reason = answer.reason;
+            Integer count = alignmentSummary.get(reason);
+            if (count == null) count = 0;
+            alignmentSummary.put(reason, 1 + count);
+        }
     }
 
 	public void absorb(SourceTaxonomy source, Alignment a) { // called from jython
         this.align(a);
-        merge(source, a);
+        merge(a);
 	}
 
-	public void merge(SourceTaxonomy source, Alignment a) { // called from jython
+	public void merge(Alignment a) { // called from jython
+        Taxonomy source = a.source;
         try {
-            new MergeMachine(source, this, a).augment();
+            new MergeMachine(source, this, a, mergeSummary).augment();
             this.check();
             this.sources.add(source);
         } catch (Exception e) {
@@ -157,10 +172,7 @@ public class UnionTaxonomy extends Taxonomy {
     // ----- Align divisions from skeleton taxonomy -----
 
 	public void markDivisions(Alignment a) {
-		if (this.skeletonAlignment == null)
-			this.pin(a);	// Obsolete code, for backward compatibility!
-		else
-            markDivisionsFromSkeleton(a, this.skeletonAlignment);
+        markDivisionsFromSkeleton(a, this.skeletonAlignment);
 	}
 
 	// Before every alignment pass (folding source taxonomy into
@@ -176,14 +188,17 @@ public class UnionTaxonomy extends Taxonomy {
     // a will align source to target
 
     private void markDivisionsFromSkeleton(Alignment a, Alignment skeletonAlignment) {
-        this.clearDivisions();
+        Taxonomy skel = skeletonAlignment.source; // maps skeleton to union
+        if (!useCompleteSkeleton) {
+            this.clearDivisions();
+            this.forest.setDivision(skel.forest);
+        }
 
         Taxonomy source = a.source;
-
-        Taxonomy skel = skeletonAlignment.source; // maps skeleton to union
-
         source.forest.setDivision(skel.forest);
-        this.forest.setDivision(skel.forest);
+
+        // Instead of the following, we could just get an alignment
+        // between the skeleton and the source.
 
         for (String name : skel.allNames()) {
             Taxon node = highest(source, name);
@@ -192,6 +207,8 @@ public class UnionTaxonomy extends Taxonomy {
                 Taxon unode = skeletonAlignment.getTaxon(div);
                 if (unode == null)
                     System.err.format("** Skeleton node %s not mapped to union\n", div);
+                else if (unode.prunedp)
+                    ;           // Viruses
                 else if (node.getDivisionProper() != null && node.getDivisionProper() != div)
                     System.err.format("** Help!  Conflict over division mapping: %s have %s want %s\n",
                                       node, node.getDivisionProper(), div);
@@ -204,67 +221,17 @@ public class UnionTaxonomy extends Taxonomy {
                         a.alignWith(node, unode, "same/by-division-name");
                         // %% this is setting a nonnull div node with a null name
                         node.setDivision(div);
-                        unode.setDivision(div);
-                        // System.out.format("## Division of %s is %s\n", node, div);
+                        if (!useCompleteSkeleton)
+                            unode.setDivision(div);
+                        //System.out.format("## Division of %s is %s\n", node, div);
                     }
                 }
             }
         }
     }
 
-	// List determined manually and empirically
-	// @deprecated
-	private void pin(Alignment a) {
-        Taxonomy source = a.source;
-		String[][] pins = {
-			// Stephen's list
-			{"Fungi"},
-			{"Bacteria"},
-			{"Alveolata"},
-			// {"Rhodophyta"},	creates duplicate of Cyanidiales
-			{"Glaucophyta", "Glaucocystophyceae"},
-			{"Haptophyta", "Haptophyceae"},
-			{"Choanoflagellida"},
-			{"Metazoa", "Animalia"},
-			{"Chloroplastida", "Viridiplantae", "Plantae"},
-			// JAR's list
-			{"Mollusca"},
-			{"Arthropoda"},		// Tetrapoda, Theria
-			{"Chordata"},
-			// {"Eukaryota"},		// doesn't occur in gbif, but useful for ncbi/ncbi test merge
-			// {"Archaea"},			// ambiguous in ncbi
-			{"Viruses"},
-		};
-		int count = 0;
-		for (int i = 0; i < pins.length; ++i) {
-			String names[] = pins[i];
-			Taxon n1 = null, div = null;
-			// The division (div) is in the union taxonomy.
-			// For each pinnable name, look for it in both taxonomies
-			// under all possible synonyms
-			for (int j = 0; j < names.length; ++j) {
-				String name = names[j];
-				Taxon m1 = highest(source, name);
-				if (m1 != null) n1 = m1;
-				Taxon m2 = highest(this, name);
-				if (m2 != null) div = m2;
-			}
-			if (div != null) {
-				div.setDivision(div);
-				if (n1 != null)
-					n1.setDivision(div);
-				if (n1 != null && div != null)
-					a.alignWith(n1, div, "same/pinned"); // hmm.  TBD: move this out of here
-				if (n1 != null || div != null)
-					++count;
-			}
-		}
-		if (count > 0)
-			System.out.println("Pinned " + count + " out of " + pins.length);
-	}
-
 	// Most rootward node in the given taxonomy having a given name
-	private static Taxon highest(Taxonomy tax, String name) { // See pin()
+	private static Taxon highest(Taxonomy tax, String name) {
 		List<Node> l = tax.lookup(name);
 		if (l == null) return null;
 		Taxon best = null, otherbest = null;
@@ -320,11 +287,11 @@ public class UnionTaxonomy extends Taxonomy {
 	public void carryOverIds(SourceTaxonomy idsource) {
         // Align the taxonomies; generates report
 		Alignment a = this.alignment(idsource);
-        this.align(a);
 		this.idsourceAlignment = a;
 
-        // Last ditch effort - attempt to match by qid
-        // alignByQid(idsource, a);
+        // Don't bump alignment type counts
+        this.markDivisions(a);
+        a.align();
 
 		// Copy ids using alignment
 		this.transferIds(idsource, a);
@@ -334,36 +301,6 @@ public class UnionTaxonomy extends Taxonomy {
         // Report event counts
 		this.eventLogger.eventsReport("| ");		// Taxon id clash
 	}
-
-    // This should be moot given new logic in AlignmentByName
-    public void alignByQid(SourceTaxonomy idsource, Alignment a) {
-        int already = 0;
-        int sameName = 0;
-        int differentName = 0;
-        int blocked = 0;
-        for (Taxon taxon : idsource.taxa()) {
-            if (a.getTaxon(taxon) == null && taxon.sourceIds != null)
-                for (QualifiedId qid : taxon.sourceIds) {
-                    Node unode = this.lookupQid(qid);
-                    if (unode != null) {
-                        Taxon utaxon = unode.taxon();
-                        if (!utaxon.prunedp) {
-                            if (taxon.name != null && taxon.name.equals(utaxon.name)) {
-                                a.alignWith(taxon, utaxon, "qid-match-same-name");
-                                ++sameName;
-                            } else {
-                                a.alignWith(taxon, utaxon, "qid-match-different-name");
-                                ++differentName;
-                            }
-                        } else
-                            ++already;
-                        break;
-                    }
-                }
-        }
-        System.out.format("| %s new qid+name matches, %s qid-only, %s prior, %s ambiguous\n",
-                          sameName, differentName, already, blocked);
-    }
 
 	public void assignNewIds(String newTaxaPath) {
         List<Taxon> nodes = new ArrayList<Taxon>();
@@ -416,7 +353,7 @@ public class UnionTaxonomy extends Taxonomy {
 		return maxid;
 	}
 
-	public void transferIds(SourceTaxonomy idsource, Alignment a) {
+	public void transferIds0(SourceTaxonomy idsource, Alignment a) {
 		System.out.println("--- Assigning ids to union starting with " + idsource.getTag() + " ---");
 
         Map<Taxon, Taxon> assignments = new HashMap<Taxon, Taxon>();
@@ -455,6 +392,33 @@ public class UnionTaxonomy extends Taxonomy {
         }
         System.out.format("| %s merged ids transferred\n", forwardsCount);
 	}
+
+	public void transferIds(SourceTaxonomy idsource, Alignment a) {
+        List<String> all = new ArrayList<String>();
+        for (String id : idsource.allIds())
+            all.add(id);
+        Collections.sort(all);
+        int count = 0;
+        int collisions = 0;
+        for (String id : all) {
+            Taxon idnode = idsource.lookupId(id);
+            Taxon unode = a.getTaxon(idnode);
+            if (unode != null) {
+                Taxon collision = this.lookupId(id);
+                if (collision == null) {
+                    this.addId(unode, id);
+                    ++count;
+                } else if (collision != unode) {
+                    System.out.format("| collision: id %s for %s now assigned to %s\n",
+                                      id,
+                                      idnode,
+                                      collision);
+                    ++collisions;
+                }
+            }
+        }
+        System.out.format("| %s ids transferred, %s collisions\n", count, collisions);
+    }
 
     // Return true if node1 is a better node to get id from than node2
     boolean betterIdNode(Taxon node1, Taxon node2, Taxon unode) {
@@ -677,7 +641,10 @@ public class UnionTaxonomy extends Taxonomy {
                     List<Node> unodes = this.lookup(node.name);
                     if (unodes == null) {
                         // 0/55
-                        reason = "id-retired/name-retired";
+                        if (checkGenderChange(node))
+                            reason = "id-retired/gender-change";
+                        else
+                            reason = "id-retired/name-retired";
                     } else {
                         // None of the unodes has the id in question.
 
@@ -743,8 +710,7 @@ public class UnionTaxonomy extends Taxonomy {
                                 replacementId = "<" + unode.parent.id;
                                 witness = unode.parent.name;
                             } else {
-                                Taxon target = node.lub;
-                                if (target == null) target = unode.parent;
+                                Taxon target = unode.parent;
                                 reason = "emptied-container";
                                 replacementId = "<" + target.id;
                                 witness = target.name;
@@ -771,7 +737,7 @@ public class UnionTaxonomy extends Taxonomy {
                     } else
                         this.markEvent("continued-hidden", node);
                 } else if (node.isHidden())
-                    // NOt really a deprecation event!  Nice to know about though.
+                    // NOT really a deprecation event!  Nice to know about though.
                     this.markEvent("not-deprecated/exposed", node);
 
                 if (replacementId == null) {
@@ -784,8 +750,11 @@ public class UnionTaxonomy extends Taxonomy {
             }
             if (replacementId == null) replacementId = "*";
             String serious = "";
-            if (important != null && important.inSynthesis)
-                serious = "synthesis";
+            if (important != null)
+                if (important.inSynthesis)
+                    serious = "synthesis";
+                else
+                    serious = "phylesystem";
 
             if (reason != null) {
                 out.format("%s\t%s\t%s\t%s\t" + "%s\t%s\t%s\t" + "%s\t\n",
@@ -813,6 +782,19 @@ public class UnionTaxonomy extends Taxonomy {
 				}
 		return scrutinize;
 	}
+
+    boolean checkGenderChange(Taxon node) {
+        if (node.rank != Rank.SPECIES_RANK)
+            return false;
+        String alt;
+        if (node.name.endsWith("us"))
+            alt = node.name.substring(0, node.name.length()-2) + "a";
+        else if (node.name.endsWith("a"))
+            alt = node.name.substring(0, node.name.length()-1) + "us";
+        else
+            return false;
+        return this.lookup(alt) != null;
+    }
 
 	// Called on union taxonomy
 	// scrutinize is a set of names of especial interest (e.g. deprecated)

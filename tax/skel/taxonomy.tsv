@@ -5,6 +5,7 @@ uid	parent_uid	name	rank
 844192	93302	Bacteria	domain
 996421	93302	Archaea	domain
 304358	93302	Eukaryota	domain
+5246039	304358	SAR	no rank
 151014	304358	Haptophyta	no rank
 5268475	304358	Archaeplastida	no rank
 878953	5268475	Rhodophyta	no rank

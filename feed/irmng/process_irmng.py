@@ -125,6 +125,7 @@ def read_irmng():
     rows = 0
     source_taxon_count = 0
     source_synonym_count = 0
+    unallocated = 0
 
     with open(irmng_file_name, 'rb') as csvfile:
         csvreader = csv.reader(csvfile)
@@ -145,6 +146,14 @@ def read_irmng():
                 source_synonym_count += 1
             else:
                 source_taxon_count += 1
+
+            # Kludge to get rid of redundancies e.g. Megastoma
+            if tstatus == '':
+                for value in row:
+                    if 'awaiting allocation' in value:
+                        tstatus = 'lose'
+                        unallocated += 1
+                        break
 
             if parent == '':
                 roots.append(taxonid)
@@ -175,6 +184,7 @@ def read_irmng():
                 # break
 
     print >>sys.stderr, 'Source: %s taxa, %s synonyms' % (source_taxon_count, source_synonym_count)
+    print >>sys.stderr, 'Flushing %s unallocated' % unallocated
 
     print >>sys.stderr, 'Processed: %s taxa, %s synonyms' % (len(taxa), len(synonyms))
 
@@ -215,8 +225,8 @@ def fix_irmng():
                taxon.nstatus in nomenclatural_statuses_to_keep)):
             scan = taxon
             while not scan.keep:
-                scan.keep = True
                 if scan.id in grandfathered: print >>sys.stderr, 'Grandfathering', taxon.name
+                scan.keep = True
                 keep_count += 1
                 if scan.parentid == '':
                     break

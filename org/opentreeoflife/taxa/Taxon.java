@@ -15,7 +15,7 @@ import java.io.File;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 
-public class Taxon extends Node {
+public class Taxon extends Node implements Comparable<Taxon> {
     // name and taxonomy are inherited from Node
 	public String id = null;
 	public Rank rank = Rank.NO_RANK;
@@ -125,6 +125,10 @@ public class Taxon extends Node {
     }
 
 	public Node setName(String name) {
+        if (this.prunedp) {
+            System.err.format("** Attempt to set name of a pruned taxon: %s %s\n", this, name);
+            return null;
+        }
         if (name == null) {
             System.err.format("** Null is not a valid name-string: %s\n", this);
             backtrace();
@@ -221,11 +225,25 @@ public class Taxon extends Node {
 	}
 
 	public void setId(String id) {
-		if (id != null && this.id == null)
-            this.taxonomy.addId(this, id);
-        else if (!this.id.equals(id))
-			System.err.println("** Attempt to replace id " + this.id + " with " + id);
+        if (this.prunedp) {
+            System.err.format("** Attempt to set id of a pruned taxon: %s %s\n", this, id);
+            return;
+        }
+		if (id == null)
+            return;
+        if (this.id == null)
+            this.addId(id);
+        else if (!this.id.equals(id)) {
+            String wasid = this.id;
+            this.id = null;
+            this.addId(id);
+            this.addId(wasid);
+        }
 	}
+
+    public void addId(String id) {
+        this.taxonomy.addId(this, id);
+    }
 
 	public Taxon getParent() {
 		return parent;
@@ -313,6 +331,8 @@ public class Taxon extends Node {
         newparent.addChild(this);
     }
     
+    // flags are to be set on the child (this)
+
 	public void changeParent(Taxon newparent, int flags) {
         if (flags == 0
             && !this.isPlaced()
@@ -325,11 +345,10 @@ public class Taxon extends Node {
 
     public void addFlag(int flags) {
         if (flags > 0
-            && ((flags & Taxonomy.HIDDEN_FLAGS) > 0)  // not just 'edited'
+            && ((flags & Taxonomy.SUPPRESSED_FLAGS) > 0)  // not just 'edited'
             && this.name != null
             && ((this.count() > 50000
-                 && flags != Taxonomy.HIDDEN)
-                || (this.name.equals("Blattodea")))) {
+                 && flags != Taxonomy.HIDDEN))) {
             System.out.format("* Setting flags on %s, size %s\nFlags to add: ", this, this.count());
 			Flag.printFlags(flags, 0, System.out);
             System.out.format("\n Preexisting flags: ");
@@ -700,23 +719,35 @@ public class Taxon extends Node {
 		return false;
 	}
 
-	static Comparator<Taxon> compareNodes = new Comparator<Taxon>() {
+	public static Comparator<Taxon> compareNodes = new Comparator<Taxon>() {
 		public int compare(Taxon x, Taxon y) {
-            if (x.id != null || y.id != null) {
-                // sort nodes with ids before ones without
-                if (x.id == null) return 1;
-                if (y.id == null) return -1;
-                return x.id.compareTo(y.id);
-            } else if (x.name != null || y.name != null) {
-                // sort named nodes before unnamed ones
-                if (x.name == null) return 1;
-                if (y.name == null) return -1;
-                return x.name.compareTo(y.name);
-            } else
-                // grasp at straws
-                return x.getChildren().size() - y.getChildren().size();
+            return x.compareTo(y);
 		}
 	};
+
+    public int compareTo(Taxon that) {
+        int z;
+        if (this.id != null &&
+            that.id != null &&
+            ((z = this.id.compareTo(that.id)) != 0))
+            return z;
+        if (this.name != null &&
+            that.name != null &&
+            ((z = this.name.compareTo(that.name)) != 0))
+            return z;
+
+        // sort nodes with ids before ones without
+        if (this.id == null && that.id != null) return 1;
+        if (that.id == null && this.id != null) return -1;
+
+        // sort named nodes before unnamed ones
+        if (this.name == null && that.name != null) return 1;
+        if (that.name == null && this.name != null) return -1;
+
+        // grasp at straws
+        return this.getChildren().size() - that.getChildren().size();
+    }
+
 
 	// Delete all of this node's descendants.
 	public void trim() {
@@ -725,10 +756,13 @@ public class Taxon extends Node {
 				child.prune("trim");
 	}
 
+	public boolean prune() {
+        return this.prune("");
+    }
+
 	// Delete this node and all of its descendants.
 	public boolean prune(String reason) {
         this.detach();
-        this.addFlag(Taxonomy.EDITED);
         return this.setRemoved(reason);
     }
 
@@ -741,8 +775,15 @@ public class Taxon extends Node {
         for (Synonym syn : this.synonyms)
             this.taxonomy.removeFromNameIndex(syn);
         this.taxonomy.removeFromNameIndex(this);
-		if (this.id != null)
+		if (this.id != null) {
             this.taxonomy.removeFromIdIndex(this, this.id);
+            this.id = null;
+        }
+        if (this.sourceIds != null) {
+            for (QualifiedId qid : this.sourceIds)
+                this.taxonomy.removeFromQidIndex(this, qid);
+            this.sourceIds = null;
+        }
         return true;
     }
 
@@ -832,12 +873,12 @@ public class Taxon extends Node {
 
 	public boolean isHidden() {
 		return (((this.properFlags | this.inferredFlags) &
-                 Taxonomy.HIDDEN_FLAGS) != 0 &&
+                 Taxonomy.SUPPRESSED_FLAGS) != 0 &&
                 ((this.properFlags & Taxonomy.FORCED_VISIBLE) == 0));
 	}
 
 	public boolean isDirectlyHidden() {
-		return (((this.properFlags & Taxonomy.HIDDEN_FLAGS) != 0) &&
+		return (((this.properFlags & Taxonomy.SUPPRESSED_FLAGS) != 0) &&
                 ((this.properFlags & Taxonomy.FORCED_VISIBLE) == 0));
 	}
 
@@ -915,11 +956,15 @@ public class Taxon extends Node {
 	public boolean unhide() {
         this.addFlag(Taxonomy.FORCED_VISIBLE);
         boolean success = true;
-        for (Taxon t = this; !t.isRoot(); t = t.parent) {
-            if (t.isDirectlyHidden()) {
-                t.properFlags &= ~Taxonomy.HIDDEN;
-                if (t.isDirectlyHidden()) {
-                    System.err.format("** %s will remain hidden until problems with %s are fixed\n", t, this);
+        for (Taxon a = this; !a.isRoot(); a = a.parent) {
+            if (a.isDirectlyHidden()) {
+                a.properFlags &= ~Taxonomy.HIDDEN;
+                if (a.isDirectlyHidden()) {
+                    if (!a.isExtinct())
+                        System.err.format("** %s will remain hidden until %s [%s] is exposed\n",
+                                          this,
+                                          a,
+                                          Flag.toString(a.properFlags, 0));
                     success = false;
                 }
             }
@@ -962,7 +1007,11 @@ public class Taxon extends Node {
     }
 
 	public void synonym(String name) {
-		if (this.addSynonym(name, "synonym") == null)
+        this.synonym(name, "synonym");
+	}
+
+	public void synonym(String name, String typ) {
+		if (this.addSynonym(name, typ) == null)
 			System.out.format("| Synonym already present: %s %s\n", this, name);
 	}
 
@@ -981,11 +1030,12 @@ public class Taxon extends Node {
                 Taxon taxon = node.taxon();
                 if (taxon == node) {  // only consider non-synonyms
                     if (taxon == this)
-                        // Primary name is already name
+                        // Primary name is already the right name
                         return true;
                     if (taxon.parent == this.parent) {
-                        System.err.format("** rename: there's already a node with name %s in %s\n",
-                                          name, this.parent);
+                        System.err.format("* rename: absorbing %s into %s\n",
+                                          this, taxon);
+                        taxon.absorb(this);
                         return false;
                     }
                 }
@@ -1027,7 +1077,7 @@ public class Taxon extends Node {
         // Not sure about the order of the following two, but if the
         // synonym comes before the prune, then it might be suppressed
         // by the presence in the name index of the deprecated taxon
-		this.addSynonym(other.name, "subsumed_by");	// Not sure this is a good idea
+		this.addSynonym(other.name, "proparte synonym");	// Not sure this is a good idea
 		other.prune("absorb");
         // copy sources from other to syn?
         return true;

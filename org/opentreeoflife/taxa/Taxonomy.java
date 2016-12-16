@@ -42,10 +42,6 @@ public abstract class Taxonomy {
 	public String idspace = null; // "ncbi", "ott", etc.
 	String[] header = null;
 
-	Integer sourcecolumn = null;
-	Integer sourceidcolumn = null;
-	Integer infocolumn = null;
-	Integer flagscolumn = null;
 	public JSONObject properties = new JSONObject();
     public Taxon ingroup = null;    // for trees, not taxonomies
 
@@ -153,6 +149,8 @@ public abstract class Taxonomy {
     }
 
     public void addId(Taxon node, String id) {
+        if (node.prunedp)
+            return;
         if (id != null) {
             Taxon existing = this.lookupId(id);
             if (existing != null) {
@@ -168,10 +166,15 @@ public abstract class Taxonomy {
 
     public void removeFromIdIndex(Taxon node, String id) {
         // could check that lookupId(id) == node
-		if (id != null)
-			this.idIndex.remove(id);
-        if (node.id != null && node.id.equals(id))
-            node.id = null;
+        this.idIndex.remove(id);
+    }
+
+    public void removeFromQidIndex(Taxon node, QualifiedId qid) {
+        // could check that lookupQid(id) == node
+        if (this.qidIndex != null) {
+            this.qidIndex.remove(qid);
+            this.qidAmbiguous.remove(qid);
+        }
     }
 
     // utility
@@ -192,11 +195,9 @@ public abstract class Taxonomy {
         Taxon t = this.idIndex.get(id);
         if (t == null)
             return t;
-        if (t.prunedp) {
+        if (t.prunedp)
             // System.err.format("** Pruned taxon found in id index: %s\n", t);
-            // this.idIndex.remove(id);
             return null;
-        }
         return t;
 	}
 
@@ -253,7 +254,7 @@ public abstract class Taxonomy {
 		if (this.tag == null) {
 			if (this.taxid < 0)
 				this.taxid = globalTaxonomyIdCounter++;
-            this.tag = this.getIdspace() + taxid;
+            this.tag = String.format("%s-%s", this.getIdspace(), taxid);
         }
         return this.tag;
 	}
@@ -274,10 +275,16 @@ public abstract class Taxonomy {
     }
 
     public Node lookupQid(QualifiedId qid) {
-        Node node = this.qidIndex.get(qid);
-        if (node != null && this.qidAmbiguous.contains(qid))
+        if (qidIndex == null)
             return null;
-        return node;
+        else {
+            Node node = this.qidIndex.get(qid);
+            if (node != null) {
+                if (node.taxon().prunedp || this.qidAmbiguous.contains(qid))
+                    return null;
+            }
+            return node;
+        }
     }
 
     // index a single node by one qid
@@ -428,7 +435,7 @@ public abstract class Taxonomy {
                           nroots, nnodes - (ntips + nroots), ntips, nnodes, snodes);
     }
 
-    // Get rid of diacritics and similar marks
+    // Get rid of diacritics and similar marks.
     void normalizeNames() {
         int norm = 0;
         List<String[]> changes = new ArrayList<String[]>();
@@ -474,39 +481,27 @@ public abstract class Taxonomy {
 
 	public static void elideContainers(Taxon node) {
 		// Recursive descent
+        
+        for (Taxon child : node.getChildren())
+            elideContainers(child);
+
         Collection<Taxon> children = node.getChildren();
-
-        if (children.size() > 0) {
-			for (Taxon child : new ArrayList<Taxon>(children))
-				elideContainers(child);
-
+        for (Taxon child : new ArrayList<Taxon>(children)) {
             int flag = 0;
-            if (node.name != null) {
-                if (unclassifiedRegex.matcher(node.name).find()) // Rule 3+5
-                    flag = UNCLASSIFIED;
-                else if (environmentalRegex.matcher(node.name).find()) // Rule 3+5
-                    flag = ENVIRONMENTAL;
-                else if (incertae_sedisRegex.matcher(node.name).find()) // Rule 3+5
+            if (child.name != null) {
+                if (incertae_sedisRegex.matcher(child.name).find()) // Rule 3+5
                     flag = INCERTAE_SEDIS;
+                else if (environmentalRegex.matcher(child.name).find()) // Rule 3+5
+                    flag = ENVIRONMENTAL;
             }
             if (flag != 0) {
-                node.addFlag(flag);
-                // After (compare elide() - why not use elide()?)
-                // Splice the node out of the hierarchy, but leave it as a
-                // residual terminal non-OTU node.
-                if (!node.isRoot()) {
-                    Collection<Taxon> xchildren = node.getChildren();
-                    // https://github.com/OpenTreeOfLife/reference-taxonomy/issues/210
-                    // "If 'incertae sedis' is the only child, elide it"
-                    if (node.parent.children.size() <= 1) {
-                        node.parent.markEvent("eliding only child because it's a container");
-                        flag = 0;
-                    }
-                    for (Taxon child : new ArrayList<Taxon>(xchildren))
-                        // changeParent sets properFlags
-                        child.changeParent(node.parent, flag);
-                    node.addFlag(WAS_CONTAINER);
+                child.addFlag(WAS_CONTAINER); // probably should remove it entirely
+                if (child.getChildren().size() == 1) {
+                    child.markEvent("eliding only child because it's a container");
+                    flag = 0;
                 }
+                for (Taxon grandchild : new ArrayList<Taxon>(child.getChildren()))
+                    grandchild.changeParent(node, flag);
             }
         }
 	}
@@ -608,9 +603,7 @@ public abstract class Taxonomy {
             // Now absorb all the others into the smallest
             for (Taxon other : homs)
                 if (other != smallest) {
-                    if (other.children != Taxon.NO_CHILDREN &&
-                        smallest.children != Taxon.NO_CHILDREN)
-                        System.out.format("| Smushing %s into %s\n", other, smallest);
+                    this.markEvent("smushing");
                     if (other.isExtant()) // should transfer other flags too?
                         smallest.properFlags &= ~Taxonomy.EXTINCT;
                     smallest.absorb(other);
@@ -669,6 +662,7 @@ public abstract class Taxonomy {
     // Should move all these to Flag class
 
     // Former containers
+    public
 	static final int WAS_CONTAINER       = (1 <<  0);  // unclassified, environmental, ic, etc
     public
 	static final int INCONSISTENT		 = (1 <<  1);  // paraphyletic taxa
@@ -689,12 +683,12 @@ public abstract class Taxonomy {
     public
 	static final int INCERTAE_SEDIS_ANY	 = 
         (MAJOR_RANK_CONFLICT | UNCLASSIFIED | ENVIRONMENTAL
-         | INCERTAE_SEDIS | UNPLACED
-         | TATTERED  // deprecated
-         | FORMER_CONTAINER);   // kludge, review
+         | INCERTAE_SEDIS | UNPLACED);
 
 	// Individually troublesome - not sticky - combine using &  ? no, | ?
+    public
 	static final int NOT_OTU			 = (1 <<  9);
+    public
 	static final int HYBRID				 = (1 << 10);
 	static final int VIRAL				 = (1 << 11);
 
@@ -709,17 +703,21 @@ public abstract class Taxonomy {
 	static final int EDITED				 = (1 << 19);			  // combine using |
 
 	// Inferred
+    public
 	static final int INFRASPECIFIC		 = (1 << 21);  // Is below a 'species'
+    public
 	static final int BARREN			     = (1 << 22);  // Does not contain a species?
 
     // Intended to match treemachine's list
-	static final int HIDDEN_FLAGS =
+	static final int SUPPRESSED_FLAGS =
                  (Taxonomy.HIDDEN |
                   Taxonomy.EXTINCT |
                   Taxonomy.BARREN |
                   Taxonomy.NOT_OTU |
                   Taxonomy.HYBRID |
                   Taxonomy.VIRAL |
+                  Taxonomy.TATTERED | // deprecated
+                  Taxonomy.FORMER_CONTAINER |
                   Taxonomy.INCERTAE_SEDIS_ANY);
 
     // ----- Flag inference -----
@@ -739,7 +737,8 @@ public abstract class Taxonomy {
 
         for (Taxon node : this.taxa()) {
             if (!node.isRoot()) {
-                int wrongFlags = node.inferredFlags & ~(node.parent.properFlags | node.parent.inferredFlags);
+                int wrongFlags = (node.inferredFlags &
+                                  ~(node.properFlags | node.parent.properFlags | node.parent.inferredFlags));
                 wrongFlags &= ~inferredOnly;
                 if (wrongFlags != 0) {
                     node.addFlag(wrongFlags); // adds to properFlags
@@ -812,10 +811,10 @@ public abstract class Taxonomy {
 					barren = false;
 			}
 		}
-		if (node.rank == null && node.children == null)
+		if (node.rank == Rank.NO_RANK && !node.hasChildren())
 			// The "no rank - terminal" case
 			barren = false;
-		if (node.children != null) {
+		if (node.hasChildren()) {
 			boolean allextinct = true;	   // Any descendant is extant?
 			for (Taxon child : node.children) {
 				count += analyzeBarren(child);
@@ -834,7 +833,7 @@ public abstract class Taxonomy {
             ++count;
 		} else
 			node.inferredFlags &= ~Taxonomy.BARREN;
-        return 0;
+        return count;
 	}
 	
 	// NCBI only (not SILVA)
@@ -947,6 +946,8 @@ public abstract class Taxonomy {
 
 	static Pattern notOtuRegex =
 		Pattern.compile(
+						"\\buncultured\\b|" +
+						"\\bunclassified\\b|" +
 						"\\bunidentified\\b|" +
 						"\\bunknown\\b|" +
 						"\\bmetagenomes?\\b|" +	 // SILVA has a bunch of these
@@ -962,7 +963,9 @@ public abstract class Taxonomy {
 						"\\bsp\\.$"
 						);
 
-	static Pattern hybridRegex = Pattern.compile(" x |\\bhybrid\\b");
+    // × = U+00D7 MULTIPLICATION SIGN
+
+	static Pattern hybridRegex = Pattern.compile(" x |\u00D7|\\bhybrid\\b");
 
 	static Pattern viralRegex =
 		Pattern.compile(
@@ -972,24 +975,25 @@ public abstract class Taxonomy {
 						"\\bvirus\\b"
 						);
 
-	static Pattern unclassifiedRegex =
+	static Pattern randomRegex =
 		Pattern.compile(
-                        // Always container
-						"\\bmycorrhizal samples\\b|" +
-                        // Sometimes container, sometimes not
-						"\\b[Uu]nclassified\\b|" +
                         // These never occur as containers
 						"\\buncultured\\b|" +       // maybe these aren't OTUs!
 						"\\bendophyte\\b|" +
-						"\\bendophytic\\b"
+						"\\bendophytic\\b" // word delimited
 						);
 
-	static Pattern environmentalRegex = Pattern.compile("\\benvironmental\\b");
+    // Containers
+	static Pattern environmentalRegex = Pattern.compile("\\bmycorrhizal samples\\b|" +
+                                                        "\\benvironmental samples\\b");
 
+    // Containers
 	static Pattern incertae_sedisRegex =
 		Pattern.compile("\\b[Ii]ncertae [Ss]edis\\b|" +
                         "\\b[Ii]ncertae[Ss]edis\\b|" +
-						"[Uu]nallocated|\\b[Mm]itosporic\\b");
+						"\\b[Uu]nallocated\\b|" +
+						"\\b[Uu]nclassified\\b|" +
+                        "\\b[Mm]itosporic\\b");
 
     // ----- SELECTIONS -----
 
@@ -1012,7 +1016,7 @@ public abstract class Taxonomy {
     // Recursion
 	// node is in source taxonomy, tax is the destination taxonomy ('union' or similar)
 	static Taxon select(Taxon node, Taxonomy tax) {
-		Taxon sam = tax.dup(node, "select");
+		Taxon sam = tax.dupThoroughly(node, "select");
 		if (node.children != null)
 			for (Taxon child : node.children) {
 				Taxon c = select(child, tax);
@@ -1069,7 +1073,7 @@ public abstract class Taxonomy {
 	}
 
 	Taxon selectToDepth(Taxon node, Taxonomy tax, int depth) {
-		Taxon sam = tax.dup(node, "selectToDepth");
+		Taxon sam = tax.dupThoroughly(node, "selectToDepth");
 		if (node.children != null && depth > 0)
 			for (Taxon child : node.children) {
 				Taxon c = selectToDepth(child, tax, depth-1);
@@ -1095,13 +1099,13 @@ public abstract class Taxonomy {
 		if (node.isHidden()) return null;
 		Taxon sam = null;
 		if (node.children == null)
-			sam = tax.dup(node, "selectVisible");
+			sam = tax.dupThoroughly(node, "selectVisible");
 		else
 			for (Taxon child : node.children) {
 				Taxon c = selectVisible(child, tax);
 				if (c != null) {
 					if (sam == null)
-						sam = tax.dup(node, "selectVisible");
+						sam = tax.dupThoroughly(node, "selectVisible");
 					sam.addChild(c);
 				}
 			}
@@ -1178,7 +1182,7 @@ public abstract class Taxonomy {
 		if (newChildren.size() == 1)
 			return newChildren.get(0);
 
-		Taxon sam = tax.dup(node, "sample");
+		Taxon sam = tax.dupThoroughly(node, "sample");
 		for (Taxon c : newChildren)
 			sam.addChild(c);
 		return sam;
@@ -1211,7 +1215,7 @@ public abstract class Taxonomy {
 
 	Taxon chop(Taxon node, int m, int n, List<Taxon> chopped, Taxonomy tax) {
 		int c = node.count();
-		Taxon newnode = tax.dup(node, "sample");
+		Taxon newnode = tax.dupThoroughly(node, "sample");
 		if (m < c && c <= n) {
 			newnode.clobberName(newnode.name + " (" + node.count() + ")");
 			chopped.add(node);
@@ -1230,6 +1234,13 @@ public abstract class Taxonomy {
         if (node.id != null)
             newnode.setId(node.id);
         node.copySynonymsTo(newnode);
+        return newnode;
+    }
+
+    Taxon dupThoroughly(Taxon node, String reason) {
+        Taxon newnode = dup(node, reason);
+        node.copySourceIdsTo(newnode);
+        newnode.properFlags = node.properFlags;
         return newnode;
     }
 
@@ -1318,7 +1329,7 @@ public abstract class Taxonomy {
         Taxon biggest = this.unique("life");
         if (biggest == null || !biggest.isRoot())
             biggest = this.normalizeRoots().get(0);  // sort the roots list
-        biggest.properFlags &= ~Taxonomy.HIDDEN_FLAGS;
+        biggest.properFlags &= ~Taxonomy.SUPPRESSED_FLAGS;
     }
 
     // ----- Id assignment -----
@@ -1630,9 +1641,11 @@ public abstract class Taxonomy {
 
     List<Taxon> nodesToTaxa(List<Node> nodes) {
         List<Taxon> taxa = new ArrayList<Taxon>();
-        for (Node node : nodes)
-            if (!taxa.contains(node.taxon()))
-                taxa.add(node.taxon());
+        for (Node node : nodes) {
+            Taxon taxon = node.taxon();
+            if (!taxa.contains(taxon) && ((taxon.properFlags & Taxonomy.FORMER_CONTAINER) == 0))
+                taxa.add(taxon);
+        }
         return taxa;
     }
 
@@ -1640,12 +1653,6 @@ public abstract class Taxonomy {
 		List<Node> nodes = this.lookup(name);
         if (nodes != null) {
             List<Taxon> candidates = nodesToTaxa(nodes);
-            for (Node node : nodes)
-                if (!candidates.contains(node.taxon()))
-                    candidates.add(node.taxon());
-
-            // TBD: Filter by ancestor
-            // TBD: Filter by descendant
 
             if (ancestor != null)
                 candidates = filterByAncestor(candidates, ancestor);
@@ -1655,17 +1662,21 @@ public abstract class Taxonomy {
 			if (candidates == null || candidates.size() == 0) {
                 if (windy) {
                     if (ancestor != null)
-                        System.err.format("** No such taxon: %s in %s\n", name, ancestor);
+                        System.err.format("** No such taxon: %s in %s (%s)\n", name, ancestor, this.idspace);
                     else if (descendant != null)
-                        System.err.format("** No such taxon: %s containing %s\n", name, descendant);
+                        System.err.format("** No such taxon: %s containing %s (%s)\n", name, descendant, this.idspace);
                     else
-                        System.err.format("** No such taxon: %s\n", name);
+                        System.err.format("** No such taxon: %s (in %s)\n", name, this.idspace);
                 }
                 return null;
             }
 
-			if (candidates.size() == 1)
-				return candidates.get(0);
+			if (candidates.size() == 1) {
+                Taxon result = candidates.get(0);
+                if (!result.name.equals(name))
+                    System.out.format("* Warning: taxon %s was referenced using synonym %s (%s)\n", result, name, this.idspace);
+				return result;
+            }
 
             // Try filtering out synonyms
             List<Taxon> candidates2 = new ArrayList<Taxon>();
@@ -1677,7 +1688,7 @@ public abstract class Taxonomy {
 
             // That didn't work.
             if (windy) {
-                System.err.format("** Ambiguous taxon name: %s\n", name);
+                System.err.format("** Ambiguous taxon name: %s (%s)\n", name, this.idspace);
                 for (Taxon taxon : candidates) {
                     String uniq = taxon.uniqueName();
                     if (uniq.equals("")) uniq = taxon.name;
@@ -1693,7 +1704,7 @@ public abstract class Taxonomy {
 		} else {
             Taxon probe = this.lookupId(name);
             if (windy && probe == null)
-                System.err.format("** No taxon found with this name or id: %s\n", name);
+                System.err.format("** No taxon found in %s with this name or id: %s\n", this.idspace, name);
             return probe;
         }
 	}
@@ -1749,7 +1760,8 @@ public abstract class Taxonomy {
 			// Follow ancestor chain to see whether this node is an ancestor
 			for (Taxon chain = smallNode.taxon().parent; chain != null; chain = chain.parent)
 				if (bigTaxa.contains(chain)) {
-					result.add(chain);
+                    if (!result.contains(chain))
+                        result.add(chain);
 					break;
 				}
 		}
@@ -1775,6 +1787,9 @@ public abstract class Taxonomy {
 						  this.rootCount(),
 						  this.nameIndex.size());
 	}
+
+    // Check invariants that are supposed to hold for Taxonomy objects.
+    // Useful for debugging.
 
     public void check() {
         Set<Taxon> all = new HashSet<Taxon>();
@@ -1804,9 +1819,11 @@ public abstract class Taxonomy {
         // Ensure every identified node is reachable...
         for (Taxon taxon : idIndex.values()) {
             if (!all.contains(taxon)) {
-                if (taxon.prunedp)
-                    System.err.format("** check: Pruned taxon is in identifier index: %s\n", taxon);
-                else {
+                if (taxon.prunedp) {
+                    if (taxon.id != null)
+                        // foo. we don't have a list of ids for use in removeFromIdIndex.
+                        System.err.format("** check: Pruned taxon is in identifier index: %s\n", taxon);
+                } else {
                     System.err.format("** check: Identified taxon not in hierarchy: %s\n", taxon);
                     all.add(taxon);
                 }
@@ -1949,7 +1966,7 @@ public abstract class Taxonomy {
 	// This gets overridden in a subclass.
     // Deforestate would have already been called, if it was going to be
 	public void dump(String outprefix, String sep) throws IOException {
-        System.out.format("| dumping to %s\n", outprefix);
+        System.out.format("-- Dumping to %s\n", outprefix);
         this.prepareForDump();
         new InterimFormat(this).dump(outprefix, sep);
 	}

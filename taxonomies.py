@@ -10,28 +10,7 @@ this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/
 def load_silva():
     silva = Taxonomy.getTaxonomy('tax/silva/', 'silva')
 
-    # Used in studies pg_2448,pg_2783,pg_2753, seen deprecated on 2015-07-20
-    # These are probably now obviated by improvements in the way silva is merged
-    if silva.maybeTaxon('AF364847') != None:
-        silva.taxon('AF364847').rename('Pantoea ananatis LMG 20103')    # ncbi:706191
-    if silva.maybeTaxon('EF690403') != None:
-        silva.taxon('EF690403').rename('Pantoea ananatis B1-9')  # ncbi:1048262
-
     patch_silva(silva)
-
-    # JAR 2014-05-13 scrutinizing pin() and BarrierNodes.  Wikipedia
-    # confirms this synonymy.  Dail L. prefers -phyta to -phyceae
-    # but says -phytina would be more correct per code.
-    # Skeleton taxonomy has -phyta (on Dail's advice).
-    silva.taxon('Rhodophyceae').synonym('Rhodophyta')    # moot now?
-
-    silva.taxon('Florideophycidae', 'Rhodophyceae').synonym('Florideophyceae')
-    silva.taxon('Stramenopiles', 'SAR').synonym('Heterokonta') # needed by WoRMS
-
-    # JAR 2016-07-29 I could find no argument supporting the name 'Choanomonada'
-    # as a replacement for 'Choanoflagellida'.
-    silva.taxon('Choanomonada', 'Opisthokonta').rename('Choanoflagellida')
-    silva.taxon('Choanomonada', 'Opisthokonta').synonym('Choanoflagellatea') #wikipedia
 
     for name in ['Metazoa',
                  'Fungi',
@@ -40,59 +19,18 @@ def load_silva():
                  'Herdmania',
                  'Oryza',
                  'Chloroplastida']:
+        print '| trimming', name, silva.taxon(name).count()
         silva.taxon(name).trim()
     return silva
 
-# Sample contamination ?
-# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/201
-silva_bad_names = [
-    ('JX888097', 'Trichoderma harzianum'),
-    ('JU096348', 'Sclerotinia homoeocarpa'),
-    ('JU096305', 'Sclerotinia homoeocarpa'),
-    ('HP451821', 'Puccinia triticina'),
-    ('HP459251', 'Puccinia triticina'),
-    ('ACJG01014252', 'Daphnia pulex'),
-    ('ABAV01034229', 'Nematostella vectensis'),  #Excavata should be Opisth.
-    ('JT491765', 'Ictalurus punctatus'),
-
-    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/104
-    ('JN975069', 'Caenorhabditis elegans'),
-
-    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/100
-    ('AEKE02005637', 'Solanum lycopersicum'),
-    ('BABP01087923', 'Solanum lycopersicum'),    # and 22 others...
-
-    # These were formerly in process_silva.py
-    ('ABEG02010941', 'Caenorhabditis brenneri'),
-    ('ABRM01041397', 'Hydra magnipapillata'),
-    ('ALWT01111512', 'Myotis davidii'),  # bat; SILVA puts this in SAR
-    ('HP641760', 'Alasmidonta varicosa'), # bivalve; SILVA puts it in SAR
-    ('JR876587', 'Embioptera sp. UVienna-2012'),
-
-    # Via compare_ncbi_to_silva
-    ('AEKZ01001951', 'Apis florea'),
-    ('AMGZ01279395', 'Elephantulus edwardii'),
-    ('CACX01001880', 'Strongyloides ratti'),
-    ('EU221512', 'Trachelomonas grandis'),
-    ('ABJB010370606', 'Ixodes scapularis'),
-    ('JU112734', 'Agrostis stolonifera'),
-    ('CU179746', 'Danio rerio'),
-    ('ABKP02007643', 'Anopheles gambiae M'),
-    ('AY833572', 'Bemisia tabaci'),
-    ('ABRR02151433', 'Vicugna pacos'),
-    ('CQ786497', 'Crenarchaeota'),
-    ('ADMH01000290', 'Anopheles darlingi'),
-    ('AAGD02009939', 'Caenorhabditis remanei'),
-    ('JT042258', 'Stegodyphus tentoriicola'),
-    ('JW107284', 'Capsicum annuum'),
-    ('JL594206', 'Ophthalmotilapia ventralis'),
-    ('JV125402', 'Aiptasia pallida'),
-
-    # Phylesystem outlier check
-    ('A16379', 'Trachelomonas grandis'),   # euglenida
-]
-
 def patch_silva(silva):
+
+    # Used in studies pg_2448,pg_2783,pg_2753, seen deprecated on 2015-07-20
+    # These are probably now obviated by improvements in the way silva is merged
+    if silva.maybeTaxon('AF364847') != None:
+        silva.taxon('AF364847').rename('Pantoea ananatis LMG 20103')    # ncbi:706191
+    if silva.maybeTaxon('EF690403') != None:
+        silva.taxon('EF690403').rename('Pantoea ananatis B1-9')  # ncbi:1048262
 
     for (anum, name) in silva_bad_names:
         tax = silva.maybeTaxon(anum)
@@ -126,26 +64,21 @@ def patch_silva(silva):
 
     # SILVA's placement of Rozella as a sibling of Fungi is contradicted
     # by Hibbett 2007, which puts it under Fungi.  Hibbett gets priority.
-    # We make the change to SILVA to prevent Nucletmycea from being
-    # labeled 'tattered'.
+    # We make the change to SILVA to prevent an inconsistency.
     silva.taxon('Fungi').take(silva.taxon('Rozella'))
 
     def fix_name(bad, good):
         b = silva.maybeTaxon(bad)
-        if b != None: b.rename(good)
+        if b != None: b.rename(good, 'spelling variant')
         else:
             g = silva.maybeTaxon(good)
-            if g != None: g.synonym(bad)
+            if g != None: g.synonym(bad, 'spelling variant')
 
     # 2014-04-12 Rick Ree #58 and #48 - make them match NCBI
     fix_name('Arthrobacter Sp. PF2M5', 'Arthrobacter sp. PF2M5')
     fix_name('Halolamina sp. wsy15-h1', 'Halolamina sp. WSY15-H1')
     # RR #55 - this is a silva/ncbi homonym
     fix_name('vesicomya', 'Vesicomya')
-
-    # From Laura and Dail on 5 Feb 2014
-    # https://groups.google.com/forum/#!topic/opentreeoflife/a69fdC-N6pY
-    silva.taxon('Diatomea').rename('Bacillariophyta')
 
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/30
     # https://github.com/OpenTreeOfLife/feedback/issues/5
@@ -198,17 +131,73 @@ def patch_silva(silva):
     silva.taxon('HC510467').clobberName('cluster HC510467')
     silva.taxon('HC510467').hide()
 
+    # JAR 2014-05-13 scrutinizing pin() and BarrierNodes.  Wikipedia
+    # confirms this synonymy.  Dail L. prefers -phyta to -phyceae
+    # but says -phytina would be more correct per code.
+    # Skeleton taxonomy has -phyta (on Dail's advice).
+    silva.taxon('Rhodophyceae').synonym('Rhodophyta')    # moot now?
+
+    silva.taxon('Florideophycidae', 'Rhodophyceae').synonym('Florideophyceae')
+
+    # JAR 2016-07-29 I could find no argument supporting the name 
+    # 'Choanomonada' as a replacement for 'Choanoflagellida'.  I
+    # suggested to the SILVA folks that they change the name.
+    silva.taxon('Choanomonada', 'Opisthokonta').rename('Choanoflagellida')
+    silva.taxon('Choanomonada', 'Opisthokonta').synonym('Choanoflagellatea') #wikipedia
+
+# Sample contamination ?
+# https://github.com/OpenTreeOfLife/reference-taxonomy/issues/201
+silva_bad_names = [
+    ('JX888097', 'Trichoderma harzianum'),
+    ('JU096348', 'Sclerotinia homoeocarpa'),
+    ('JU096305', 'Sclerotinia homoeocarpa'),
+    ('HP451821', 'Puccinia triticina'),
+    ('HP459251', 'Puccinia triticina'),
+    ('ACJG01014252', 'Daphnia pulex'),
+    ('ABAV01034229', 'Nematostella vectensis'),  #Excavata should be Opisth.
+    ('JT491765', 'Ictalurus punctatus'),
+
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/104
+    ('JN975069', 'Caenorhabditis elegans'),
+
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/100
+    ('AEKE02005637', 'Solanum lycopersicum'),
+    ('BABP01087923', 'Solanum lycopersicum'),    # and 22 others...
+
+    # These were formerly in process_silva.py
+    ('ABEG02010941', 'Caenorhabditis brenneri'),
+    ('ABRM01041397', 'Hydra magnipapillata'),
+    ('ALWT01111512', 'Myotis davidii'),  # bat; SILVA puts this in SAR
+    ('HP641760', 'Alasmidonta varicosa'), # bivalve; SILVA puts it in SAR
+    ('JR876587', 'Embioptera sp. UVienna-2012'),
+
+    # Via compare_ncbi_to_silva
+    ('AEKZ01001951', 'Apis florea'),
+    ('AMGZ01279395', 'Elephantulus edwardii'),
+    ('CACX01001880', 'Strongyloides ratti'),
+    ('EU221512', 'Trachelomonas grandis'),
+    ('ABJB010370606', 'Ixodes scapularis'),
+    ('JU112734', 'Agrostis stolonifera'),
+    ('CU179746', 'Danio rerio'),
+    ('ABKP02007643', 'Anopheles gambiae M'),
+    ('AY833572', 'Bemisia tabaci'),
+    ('ABRR02151433', 'Vicugna pacos'),
+    ('CQ786497', 'Crenarchaeota'),
+    ('ADMH01000290', 'Anopheles darlingi'),
+    ('AAGD02009939', 'Caenorhabditis remanei'),
+    ('JT042258', 'Stegodyphus tentoriicola'),
+    ('JW107284', 'Capsicum annuum'),
+    ('JL594206', 'Ophthalmotilapia ventralis'),
+    ('JV125402', 'Aiptasia pallida'),
+
+    # Phylesystem outlier check
+    ('A16379', 'Trachelomonas grandis'),   # euglenida
+]
+
+# Hibbett 2007
+
 def load_h2007():
     h2007 = Taxonomy.getTaxonomy('feed/h2007/tree.tre', 'h2007')
-
-    # 2014-04-08 Misspelling
-    if h2007.maybeTaxon('Chaetothryriomycetidae') != None:
-        h2007.taxon('Chaetothryriomycetidae').rename('Chaetothyriomycetidae')
-
-    if h2007.maybeTaxon('Asteriniales') != None:
-        h2007.taxon('Asteriniales').rename('Asterinales')
-    else:
-        h2007.taxon('Asterinales').synonym('Asteriniales')
 
     # h2007/if synonym https://github.com/OpenTreeOfLife/reference-taxonomy/issues/40
     h2007.taxon('Urocystales').synonym('Urocystidales')
@@ -231,8 +220,6 @@ def load_fung():
     if fung.maybeTaxon('90155') != None:
         print 'Removing Fungi 90155'
         fung.taxon('90155').prune(this_source)
-
-    fix_basal(fung)
 
     # smush folds sibling taxa that have the same name.
     # fung.smush()
@@ -316,7 +303,7 @@ def patch_fung(fung):
             cyph = fung.newTaxon('Cyphellopsis', 'genus', 'if:17439')
         fung.taxon('Niaceae').take(cyph)
 
-    fung.taxon('Asterinales').synonym('Asteriniales')  #backward compatibility
+    fung.taxon('Asterinales').synonym('Asteriniales', 'spelling variant')  #backward compatibility
 
     # ** No taxon found with this name: Nowakowskiellaceae
     # ** No taxon found with this name: Septochytriaceae
@@ -453,10 +440,6 @@ def load_ncbi():
 
     patch_ncbi(ncbi)
 
-    # analyzeOTUs sets flags on questionable taxa ("unclassified",
-    #  hybrids, and so on) to allow the option of suppression downstream
-    ncbi.analyzeOTUs()
-
     return ncbi
 
 def patch_ncbi(ncbi):
@@ -472,48 +455,46 @@ def patch_ncbi(ncbi):
     ncbi.taxon('Glaucocystophyceae').rename('Glaucophyta')
     ncbi.taxon('Haptophyceae').rename('Haptophyta')
 
-    ncbi.taxon('Viruses').hide()
-
     # - Touch-up -
 
     # RR 2014-04-12 #49
-    ncbi.taxon('leotiomyceta').rename('Leotiomyceta')
+    ncbi.taxon('leotiomyceta').rename('Leotiomyceta', 'spelling variant')
 
     # RR #53
-    ncbi.taxon('White-sloanea').synonym('White-Sloanea')
+    ncbi.taxon('White-sloanea').synonym('White-Sloanea', 'spelling variant')
 
     # RR #56
-    ncbi.taxon('sordariomyceta').rename('Sordariomyceta')
+    ncbi.taxon('sordariomyceta').rename('Sordariomyceta', 'spelling variant')
 
     # RR #52
     if ncbi.maybeTaxon('spinocalanus spinosus') != None:
-        ncbi.taxon('spinocalanus spinosus').rename('Spinocalanus spinosus')
+        ncbi.taxon('spinocalanus spinosus').rename('Spinocalanus spinosus', 'spelling variant')
     if ncbi.maybeTaxon('spinocalanus angusticeps') != None:
-        ncbi.taxon('spinocalanus angusticeps').rename('Spinocalanus angusticeps')
+        ncbi.taxon('spinocalanus angusticeps').rename('Spinocalanus angusticeps', 'spelling variant')
 
     # RR #59
-    ncbi.taxon('candidate division SR1').rename('Candidate division SR1')
-    ncbi.taxon('candidate division WS6').rename('Candidate division WS6')
-    ncbi.taxon('candidate division BRC1').rename('Candidate division BRC1')
-    ncbi.taxon('candidate division OP9').rename('Candidate division OP9')
-    ncbi.taxon('candidate division JS1').rename('Candidate division JS1')
+    ncbi.taxon('candidate division SR1').rename('Candidate division SR1', 'spelling variant')
+    ncbi.taxon('candidate division WS6').rename('Candidate division WS6', 'spelling variant')
+    ncbi.taxon('candidate division BRC1').rename('Candidate division BRC1', 'spelling variant')
+    ncbi.taxon('candidate division OP9').rename('Candidate division OP9', 'spelling variant')
+    ncbi.taxon('candidate division JS1').rename('Candidate division JS1', 'spelling variant')
 
     # RR #51
-    ncbi.taxon('Dendro-hypnum').synonym('Dendro-Hypnum')
+    ncbi.taxon('Dendro-hypnum').synonym('Dendro-Hypnum', 'spelling variant')
     # RR #45
-    ncbi.taxon('Cyrto-hypnum').synonym('Cyrto-Hypnum')
+    ncbi.taxon('Cyrto-hypnum').synonym('Cyrto-Hypnum', 'spelling variant')
     # RR #54
-    ncbi.taxon('Sciuro-hypnum').synonym('Sciuro-Hypnum')
+    ncbi.taxon('Sciuro-hypnum').synonym('Sciuro-Hypnum', 'spelling variant')
 
     # RR 2014-04-12 #46
-    ncbi.taxon('Pechuel-loeschea').synonym('Pechuel-Loeschea')
+    ncbi.taxon('Pechuel-loeschea').synonym('Pechuel-Loeschea', 'spelling variant')
 
     # RR #50
-    ncbi.taxon('Saxofridericia').synonym('Saxo-Fridericia')
-    ncbi.taxon('Saxofridericia').synonym('Saxo-fridericia')
+    ncbi.taxon('Saxofridericia').synonym('Saxo-Fridericia', 'spelling variant')
+    ncbi.taxon('Saxofridericia').synonym('Saxo-fridericia', 'spelling variant')
 
     # RR #57
-    ncbi.taxon('Solms-laubachia').synonym('Solms-Laubachia')
+    ncbi.taxon('Solms-laubachia').synonym('Solms-Laubachia', 'spelling variant')
 
     # Mark Holder https://github.com/OpenTreeOfLife/reference-taxonomy/issues/120
     ncbi.taxon('Cetartiodactyla').synonym('Artiodactyla')
@@ -525,7 +506,8 @@ def patch_ncbi(ncbi):
     # From examining the deprecated OTU list.  This one occurs in study pg_188
     # Name got better, old name lost  JAR 2015-06-27
     # This could probably be automated, just by looking up the NCBI id
-    # in the right table.
+    # in the right table.  2016-11-15 This is probably not needed now that
+    # ids are found via source ids.
     for (oldname, ncbiid) in [
             ('Bifidobacterium pseudocatenulatum DSM 20438 = JCM 1200 = LMG 10505', '547043'),
             ('Bifidobacterium catenulatum DSM 16992 = JCM 1194 = LMG 11043', '566552'),
@@ -610,7 +592,7 @@ def patch_ncbi(ncbi):
         if ncbi.maybeTaxon('Hylobates albibarbis') != None:
             ncbi.taxon('Hylobates albibarbis').absorb(h)
         else:
-            h.rename('Hylobates albibarbis')
+            h.rename('Hylobates albibarbis', 'misspelling')
 
     # https://github.com/OpenTreeOfLife/feedback/issues/194
     ncbi.taxon('Euteleostomi').synonym('Osteichthyes')
@@ -626,10 +608,6 @@ def patch_ncbi(ncbi):
     if ncbi.maybeTaxon('Ophion (Platophion)') != None:    # gone at NCBI?
         ncbi.taxon('Ophion (Platophion)').rename('Platophion')
     # TBD: deal with 'Plasmodium (Haemamoeba)' and siblings
-
-    # 2016-07-01 JAR while studying rank inversions
-    if ncbi.taxon('Vezdaeaceae').getRank() == 'genus':
-        ncbi.taxon('Vezdaeaceae').setRank('family')
 
     # JAR 2016-07-29 Researched Choano* taxa a bit.  NCBI has a bogus synonymy with
     # paraphyletic Choanozoa.  SILVA calls this taxon Choanomonada (see above).
@@ -650,10 +628,10 @@ def patch_ncbi(ncbi):
     ncbi.taxon('Selachii').synonym('Selachimorpha')
 
     # https://github.com/OpenTreeOfLife/feedback/issues/142
-    ncbi.taxon('Aotus azarai').rename('Aotus azarae')
-    ncbi.taxon('Aotus azarai azarai').rename('Aotus azarae azarae')
-    ncbi.taxon('Aotus azarai infulatus').rename('Aotus azarae infulatus')
-    ncbi.taxon('Aotus azarai boliviensis').rename('Aotus azarae boliviensis')
+    ncbi.taxon('Aotus azarai').rename('Aotus azarae', 'misspelling')
+    ncbi.taxon('Aotus azarai azarai').rename('Aotus azarae azarae', 'misspelling')
+    ncbi.taxon('Aotus azarai infulatus').rename('Aotus azarae infulatus', 'misspelling')
+    ncbi.taxon('Aotus azarai boliviensis').rename('Aotus azarae boliviensis', 'misspelling')
 
     # 2016-08-31 This matches SILVA, and was breaking Streptophyta.  Cluster EF023721
     capenv = ncbi.taxon('Caprifoliaceae environmental sample')
@@ -665,22 +643,12 @@ def load_worms():
     worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
     worms.smush()
 
-    worms.taxon('Viruses').prune("taxonomies.py")
-
-    worms.taxon('Biota').rename('life')
-    worms.taxon('Animalia').synonym('Metazoa')
-
-    fix_basal(worms)
-
     # 2015-02-17 According to WoRMS web site.  Occurs in pg_1229
     if worms.maybeTaxon('Scenedesmus communis') != None:
         worms.taxon('Scenedesmus communis').synonym('Scenedesmus caudata')
 
     # Species fungorum puts this species in Candida
     worms.taxon('Trichosporon diddensiae').rename('Candida diddensiae')
-
-    # Help to match up with IRMNG
-    worms.taxon('Ochrophyta').synonym('Heterokontophyta')
 
     # https://github.com/OpenTreeOfLife/feedback/issues/194 I think
     worms.taxon('Actinopterygii').notCalled('Osteichthyes')
@@ -693,6 +661,9 @@ def load_worms():
     # 2016-09-02 on gitter: Pisces vs. Mososauridae confusion
     worms.taxon('Tylosurus').notCalled('Tylosaurus')
 
+    bad_ecc = worms.maybeTaxon('Trichomycetes', 'Zygomycota')
+    if bad_ecc != None: bad_ecc.prune()
+
     return worms
 
 def load_gbif():
@@ -703,9 +674,6 @@ def load_gbif():
     # means the rank-skipped children are incertae sedis.  Mark them so.
     gbif.analyzeMajorRankConflicts()
 
-    fix_basal(gbif)  # creates a Eukaryota node
-    gbif.taxon('Animalia').synonym('Metazoa')
-
     patch_gbif(gbif)
     return gbif
 
@@ -714,22 +682,30 @@ def patch_gbif(gbif):
 
     # Rod Page blogged about this one
     # http://iphylo.blogspot.com/2014/03/gbif-liverwort-taxonomy-broken.html
-    gbif.taxon('Jungermanniales','Marchantiophyta').absorb(gbif.taxon('Jungermanniales','Bryophyta'))
+    bad_jung = gbif.maybeTaxon('Jungermanniales','Bryophyta')
+    if bad_jung != None:
+        gbif.taxon('Jungermanniales','Marchantiophyta').absorb(bad_jung)
 
     # Joseph 2013-07-23 https://github.com/OpenTreeOfLife/opentree/issues/62
     # GBIF has two copies of Myospalax
-    gbif.taxon('6006429').absorb(gbif.taxon('2439119'))
+    myo = gbif.maybeTaxon('6006429')
+    if myo != None:
+        myo.absorb(gbif.taxon('2439119'))
 
     # RR 2014-04-12 #47
-    gbif.taxon('Drake-brockmania').absorb(gbif.taxon('Drake-Brockmania'))
+    db = gbif.maybeTaxon('Drake-brockmania')
+    if db == None:
+        gbif.taxon('Drake-Brockmania').rename('Drake-brockmania', 'spelling variant')
+    else:
+        db.absorb(gbif.taxon('Drake-Brockmania'))
     # RR #50 - this one is in NCBI, see above
-    gbif.taxon('Saxofridericia').absorb(gbif.taxon('4930834')) #Saxo-Fridericia
+    gbif.taxon('Saxofridericia').absorb(gbif.maybeTaxon('Saxo-Fridericia'))
     # RR #57 - the genus is in NCBI, see above
-    gbif.taxon('Solms-laubachia').absorb(gbif.taxon('4908941')) #Solms-Laubachia
+    gbif.taxon('Solms-laubachia').absorb(gbif.taxon('Solms-Laubachia'))
     gbif.taxon('Solms-laubachia pulcherrima').absorb(gbif.taxon('Solms-Laubachia pulcherrima'))
 
     # RR #45
-    gbif.taxon('Cyrto-hypnum').absorb(gbif.taxon('4907605'))
+    gbif.taxon('Cyrto-hypnum').absorb(gbif.taxon('Cyrto-Hypnum'))
 
     # 2014-04-13 JAR noticed while grepping
     claims = [
@@ -738,11 +714,6 @@ def patch_gbif(gbif):
         # Whether_same('Drepano-Hypnum', 'Drepano-hypnum', True),
         # Whether_same('Complanato-Hypnum', 'Complanato-hypnum', True),
         # Whether_same('Leptorrhyncho-Hypnum', 'Leptorrhyncho-hypnum', True),
-        
-        # Doug Soltis 2015-02-17 https://github.com/OpenTreeOfLife/feedback/issues/59 
-        # http://dx.doi.org/10.1016/0034-6667(95)00105-0
-        Whether_extant('Timothyia', False, 'https://github.com/OpenTreeOfLife/feedback/issues/59'),
-
     ]
     make_claims(gbif, claims)
     # See new versions above
@@ -771,26 +742,18 @@ def patch_gbif(gbif):
     # JAR 2014-04-23 Noticed while perusing silva/gbif conflicts
     gbif.taxon('Ebriaceae').synonym('Ebriacea')
     gbif.taxon('Acanthocystidae').absorb(gbif.taxon('Acanthocistidae'))
-    gbif.taxon('Dinophyta').synonym('Dinoflagellata')
+    # wrong: gbif.taxon('Dinophyta').synonym('Dinophyceae')  # according to NCBI
+    # these groups are missing from gbif 2016 anyhow
 
     # JAR 2014-06-29 stumbled on this while trying out new alignment
     # methods and examining troublesome homonym Bullacta exarata.
     # GBIF obviously puts it in the wrong place, see description at
     # http://www.gbif.org/species/4599744 (it's a snail, not a shrimp).
-    bex = gbif.taxon('Bullacta exarata', 'Atyidae')
-    bec = gbif.taxon('Bullacta ecarata', 'Atyidae')
+    bex = gbif.maybeTaxon('Bullacta exarata', 'Atyidae')
+    bec = gbif.maybeTaxon('Bullacta ecarata', 'Atyidae')
     if bex != None and bec != None:
         bex.absorb(bec)
         bex.detach()
-
-    # Yan Wong 2014-12-16 https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116
-    for name in ['Griphopithecus', 'Asiadapis',
-                 'Lomorupithecus', 'Marcgodinotius', 'Muangthanhinius',
-                 'Plesiopithecus', 'Suratius', 'Killikaike blakei', 'Rissoina bonneti',
-                 # 'Mycosphaeroides'  - gone
-             ]:
-        claim = Whether_extant(name, False, 'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116')
-        claim.make_true(gbif)
 
     # JAR 2014-07-18  - get rid of Helophorus duplication
     # GBIF 3263442 = Helophorus Fabricius, 1775, from CoL
@@ -798,14 +761,16 @@ def patch_gbif(gbif):
     # GBIF 6757656 = Helophorus Leach, from IRMNG homonym list
     #    in 7829 = Hydraenidae Mulsant, 1844
     #  ('Helophorus', 'Helophoridae') ('Helophorus', 'Hydraenidae')
-    gbif.taxon('3263442').absorb(gbif.taxon('6757656'))
+    gbif.taxon('3263442').absorb(gbif.maybeTaxon('6757656'))
 
     # JAR 2015-06-27  there are two Myospalax myospalax
     # The one in Spalacidae is the right one, Myospalacinae is the wrong one
     # (according to NCBI)
     # Probably should clean up the whole genus
     # 2439121 = Myospalax myospalax (Laxmann, 1773) from CoL
-    gbif.taxon('2439121').absorb(gbif.taxon('6075534'))
+    myo2 = gbif.maybeTaxon('6075534')
+    if myo2 != None:
+        gbif.taxon('2439121').absorb(myo2)
 
     # 4010070	pg_1378	Gelidiellaceae	gbif:8998  -- ok, paraphyletic
 
@@ -818,7 +783,8 @@ def patch_gbif(gbif):
         oph.prune("about:blank#this-homonym-is-causing-too-much-trouble")
 
     # 2015-07-25 Extra Dipteras are confusing new division logic.  Barren genus
-    gbif.taxon('3230674').prune(this_source)
+    bad_dip = gbif.maybeTaxon('3230674')
+    if bad_dip != None: bad_dip.elide()
 
     # JAR 2016-07-01 while studying rank inversions.
     # Ophidiasteridae the genus was an error and has been deleted from GBIF.
@@ -833,25 +799,39 @@ def patch_gbif(gbif):
         print '** setRank failed for Chonetoidea'
 
     # https://github.com/OpenTreeOfLife/feedback/issues/144
-    gbif.taxon('Lepilemur tymerlachsonorum').rename('Lepilemur tymerlachsoni')
+    lepi = gbif.maybeTaxon('Lepilemur tymerlachsonorum')
+    if lepi != None:
+        lepi.rename('Lepilemur tymerlachsoni')
 
     # Related to https://github.com/OpenTreeOfLife/feedback/issues/307
     # This problem is remedied by the 2016 GBIF update.
-    gbif.taxon('Naviculae mesoleiae').rename('Navicula mesoleiae')
-    gbif.taxon('Navicula').absorb(gbif.taxon('Naviculae'))
+    navi = gbif.maybeTaxon('Naviculae mesoleiae')
+    if navi != None:
+        navi.rename('Navicula mesoleiae')
+
+    # Bogus species-rank record in 2016 GBIF making 'Navicula' ambiguous
+    nav_species = gbif.maybeTaxon('8616388')
+    if nav_species != None: nav_species.prune()
+
+    gbif.taxon('Navicula').absorb(gbif.maybeTaxon('Naviculae'))
 
     # GBIF as of 2016-09-01 says "doubtful taxon"
-    gbif.taxon('Foraminifera', 'Granuloreticulosea').prune(this_source)
+    bad_foram = gbif.maybeTaxon('Foraminifera', 'Granuloreticulosea')
+    if bad_foram != None:
+        bad_foram.prune(this_source)
 
     # 2016-09-01 Wrongly in Hymenoptera
-    gbif.taxon('Pieridae', 'Insecta').take(gbif.taxonThatContains('Aporia', 'Aporia agathon'))
+    gbif.taxon('Pieridae', 'Insecta').take(gbif.taxonThatContains('Aporia', 'Aporia gigantea'))
 
-    # 2016-09-01 Wrongly in Platyhelminthes, belongs in mites
-    gbif.taxon('Bdellidae').take(gbif.taxonThatContains('Bdellodes', 'Bdellodes serpentinus'))
+    # The Bdellodes mites were in flatworms in GBIF 2013.  This
+    # has been straightened out.
+    gbif.taxon('Bdellidae').take(gbif.taxonThatContains('Bdellodes', 'Bdellodes robusta'))
 
     # 2016-09-01 These are fossil fungi spores, not plants.  They're in 
     # Index Fungorum, so we don't need wrong info from GBIF.
-    gbif.taxon('Inapertisporites', 'Plantae').prune(this_source)
+    inap = gbif.maybeTaxon('Inapertisporites', 'Plantae')
+    if inap != None:
+        inap.prune(this_source)
 
     # 2016-09-01 This is not a plant.  Checked W. van Hoven 1987, found
     # in pubmed via web search, which says these things are ciliates, 
@@ -862,6 +842,98 @@ def patch_gbif(gbif):
     ty = gbif.taxon('Tylosaurus', 'Belonidae')
     if ty != None: ty.prune(this_source)
 
+    bad_ecc = gbif.maybeTaxon('Eccrinaceae', 'Zygomycota')
+    if bad_ecc != None: bad_ecc.prune()
+
+    # 2016-11-15 Noticed these while perusing the deprecated.tsv after the 
+    # GBIF 2016 update.  GBIF has corrected the gender on many species names.
+    # These are the ones occurring in phylesystem.
+    for (name, wrong_name) in [
+            ('Alopochen mauritiana', 'Alopochen mauritianus'),
+            ('Tchagra minuta', 'Tchagra minutus'),
+            ('Eudynamys melanorhyncha', 'Eudynamys melanorhynchus'),
+            ('Aquila africana', 'Aquila africanus'),
+            ('Alectroenas pulcherrima', 'Alectroenas pulcherrimus'),
+            ('Megaceryle maxima', 'Megaceryle maximus'),
+            ('Coracias naevius', 'Coracias naevia'),
+            ('Myiothlypis coronata', 'Myiothlypis coronatus'),
+            ('Myiothlypis leucoblephara', 'Myiothlypis leucoblepharus'),
+            ('Myiothlypis bivittata', 'Myiothlypis bivittatus'),
+            ('Arizelocichla montana', 'Arizelocichla montanus'),
+            ('Myiothlypis flaveola', 'Myiothlypis flaveolus'),
+            ('Myiothlypis conspicillata', 'Myiothlypis conspicillatus'),
+            ('Myiothlypis signata', 'Myiothlypis signatus'),
+            ('Arizelocichla tephrolaema', 'Arizelocichla tephrolaemus'),
+            ('Monticola erythronotus', 'Monticola erythronota'),
+            ('Sturnia sturninus', 'Sturnia sturnina'),
+            ('Collocalia spodiopygius', 'Collocalia spodiopygia'),
+            ('Ceratogymna subcylindricus', 'Ceratogymna subcylindrica'),
+            ('Amazona mercenaria', 'Amazona mercenarius'),
+            ('Phaethornis aethopygus', 'Phaethornis aethopyga'),
+            ('Chlorestes notatus', 'Chlorestes notata'),
+            ('Mesitornis variegata', 'Mesitornis variegatus'),
+            ('Erethizon dorsatus', 'Erethizon dorsata'),
+            ('Incana incana', 'Incana incanus'),
+            ('Nemapteryx augusta', 'Nemapteryx augustus'),
+            ('Chaetocalyx longiflorus', 'Chaetocalyx longiflora'),
+            ('Monticola imerina', 'Monticola imerinus'),
+    ]:
+        if gbif.maybeTaxon(name) != None:
+            if gbif.maybeTaxon(wrong_name) == None:
+                gbif.taxon(name).synonym(wrong_name, 'gender variant')
+            else:
+                gbif.taxon(name).absorb(gbif.taxon(wrong_name))
+
+    # GBIF changed Chaetocalyx longiflora to -us.
+    # GBIF changed Collocalia spodiopygia to -us.
+
+    # 2016-11-18 These GBIF duplicates show up as ambiguous while processing 
+    # the chromista spreadsheet.
+    for (name, bad_id) in [
+            ('Rhaphidoscene', '7738163'),
+            ('Echinogromia', '8370412'),
+            ('Septammina', '7556572'),
+            ('Dendropela', '7509811'),
+            ('Ceratestina', '8322228'),
+            ('Turriclavula', '7705478'),
+            ('Buccinina', '7655969'),
+            ('Rhaphidohelix', '7431039'),
+            ('Marenda', '8281602'),
+            ('Urnulina', '7457155'),
+            ('Rhaphidodendron', '7957205'),
+            ('Millettella', '7884383'),
+    ]:
+        taxon = gbif.taxon(name, 'Foraminifera')
+        if taxon != None and gbif.maybeTaxon(bad_id) != None:
+            taxon.absorb(gbif.taxon(bad_id))
+    
+    # 2016-11-20 Diaphoropodon showed up as ambiguous in transcript.
+    # There are two Diaphoropodon in new GBIF (4898754 + 8212987).
+    # 4 is a foram, 8 is a 'Sarcomastigophora', which is paraphyletic.
+    # OTT thinks Sarc. is inconsistent.  8 is a child of 
+    # Chlamydophryidae -- which is in SAR!  So these two things are
+    # actually the same.
+    gbif.taxon('Diaphoropodon', 'Foraminifera').absorb(gbif.maybeTaxon('Diaphoropodon', 'Sarcomastigophora'))
+
+    # GBIF has two taxa Rotalites and two synonym Rotalites.  That
+    # seems excessive.
+    # 7966169	|	8376456	|	Rotalites	|	genus	|	 8376456 = Foraminifera
+    # 8101279	|	7	|	Rotalites	|	genus	|	     7 = Protozoa
+    # synonym 8063968	|	Rotalites	|	proparte synonym	|	Rotalia in Foraminifer
+    # synonym 8376456	|	Rotalites	|	proparte synonym	|	8376456 = Foraminifera
+    # I think these are all the same.
+    # Rotalites is also a proparte synonym in worms and irmng.
+    # There's also Rotalia, two of them in gbif, both genera:
+    # 7996474  parent 1 (! Animalia)
+    # 8063968 parent 7475854 = Rotaliidae
+    # Let's make them all the same as 8063968.
+    gbif.taxon('Rotalia', 'Foraminifera').absorb(gbif.taxon('Rotalites', 'Foraminifera'))
+    gbif.taxon('Rotalia', 'Foraminifera').absorb(gbif.maybeTaxon('8101279'))
+    gbif.taxon('Rotalia', 'Foraminifera').absorb(gbif.maybeTaxon('7996474'))
+
+    # Similar cases (probably): (from Chromista spreadsheet ambiguities)
+    # Umbellina, Rotalina
+
     return gbif
 
 def load_irmng():
@@ -870,11 +942,6 @@ def load_irmng():
     irmng.analyzeMajorRankConflicts()
 
     # patch_irmng
-
-    irmng.taxon('Viruses').prune("taxonomies.py")
-
-    fix_basal(irmng)
-    irmng.taxon('Animalia').synonym('Metazoa')
 
     # JAR 2014-04-26 Flush all 'Unaccepted' taxa
     if irmng.maybeTaxon('Unaccepted', 'life') != None:
@@ -977,38 +1044,3 @@ def load_irmng():
     irmng.taxon('Tylosurus').notCalled('Tylosaurus')
 
     return irmng
-
-# Common code for the 'old fashioned' taxonomies IF, GBIF, IRMNG,
-# WoRMS - important for getting divisions in the right place, which is
-# important for homonym separation.
-
-def fix_basal(tax):
-    fix_protists(tax)
-
-# Common code for GBIF, IRMNG, Index Fungorum
-def fix_protists(tax):
-    euk = tax.maybeTaxon('Eukaryota')
-    if euk == None:
-        euk = tax.newTaxon('Eukaryota', 'domain', 'ncbi:2759')
-        euk.unsourced = True
-    co = tax.maybeTaxon('cellular organisms')
-    if co != None: co.take(euk)
-    else:
-        li = tax.maybeTaxon('life')
-        if li != None: li.take(euk)
-        else:
-            print('* No parent "life" for Eukaryota, probably OK')
-
-    for name in ['Animalia', 'Fungi', 'Plantae', 'Haptophyta', 'Metazoa']:
-        node = tax.maybeTaxon(name)
-        if node != None:
-            euk.take(node)
-
-    for name in ['Chromista', 'Protozoa', 'Protista']:
-        bad = tax.maybeTaxon(name)
-        if bad != None:
-            euk.take(bad)
-            bad.hide()   # recursive
-            for child in bad.children:
-                child.incertaeSedis()
-            bad.elide()

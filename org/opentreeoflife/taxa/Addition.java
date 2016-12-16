@@ -44,7 +44,8 @@ public class Addition {
         if (!repo.isDirectory())
             repo.mkdirs();
         for (File doc : Addition.repoAdditionDocuments(repo)) {
-            System.out.format("| Processing %s\n", doc);
+            // don't log, there are now too many files
+            // System.out.format("| Processing %s\n", doc);
             processAdditionDocument(doc, tax);
         }
     }
@@ -185,11 +186,14 @@ public class Addition {
             // For backward references
             tagToTaxon.put(tag, target);
         }
+        if (false) {
+            // too many of these
         int unmatched = taxa.size() - matched;
         System.out.format("| %s matched, %s %s\n",
                           matched,
                           unmatched,
                           (originalp ? "deprecated" : "added"));
+        }
     }
 
     static Taxon getAddedTaxon(String name, Taxon parent, String firstSource, String ott_id, Taxonomy tax) {
@@ -330,23 +334,27 @@ public class Addition {
                 File f = new File(newTaxaDir, String.format("addition-%s-%s.json", firstId, lastId));
                 System.err.format("| Writing %s id assignments to %s\n", fewerNodes.size(), f);
                 emitJSON(r, f);
-                System.err.format("| Deleting id range file %s\n", idRangeFile);
-                idRangeFile.delete();
             } else {
                 System.err.format("** Range [%s, %s] not big enough to provide %s ids\n",
                                   firstId, lastId, fewerNodes.size());
                 assignIds(fewerNodes, fakeFirst, fakeLast);
             }
         } else {
-            System.err.format("** No range of available ids provided (%s not found)\n",
+            File f = new File(newTaxaDir, "need_ids.json");
+            System.err.println();
+            System.err.format("** Did not find %s for id range to use for new ids.\n",
                               idRangeFile);
-            demand(nodes.size(), newTaxaDir);
+            System.err.format("** Please assign a range of at least %s ids and place it in that file.\n",
+                              nodes.size());
+            System.err.format("** File contents should be: {\"first\": mmm, \"last\": nnn}\n");
+            System.err.format("** Number of ids needed has been written to %s\n", f);
+            System.err.println();
+            demand(nodes.size(), f);
             assignIds(fewerNodes, fakeFirst, fakeLast);
         }
     }
 
-    static void demand(long count, File newTaxaDir) {
-        File f = new File(newTaxaDir, "need_ids.json");
+    static void demand(long count, File f) {
         Map<String, Object> blob = new HashMap<String, Object>();
         blob.put("count", count);
         System.out.format("| Requesting %s ids (see %s)\n", count, f);

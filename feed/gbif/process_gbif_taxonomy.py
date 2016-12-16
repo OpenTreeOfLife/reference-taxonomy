@@ -2,17 +2,21 @@
 
 # Command line arguments
 #   1: taxon.txt
-#   2: kill list
-#   3: directory in which to put taxonomy.tsv and synonyms.tsv
+#   2: directory in which to put taxonomy.tsv and synonyms.tsv
 
-# Assumed column order in GBIF dump - this is almost certain to change 
-# should there ever be a new version of GBIF
-# 0:taxonID	1:parentNameUsageID	2:acceptedNameUsageID	3:scientificName
-#	4:canonicalName	5:taxonRank	6:taxonomicStatus	7:nomenclaturalStatus
-#	8:genus	9:specificEpithet	10:infraspecificEpithet	11:namePublishedIn
-#	12:nameAccordingTo	13:kingdom	14:phylum	15:class	16:order	17:family
+col = {"taxonID": 0,
+       "parentNameUsageID": 1,
+       "acceptedNameUsageID": 2,
+       "canonicalName": 3,
+       "taxonRank": 4,
+       "taxonomicStatus": 5,
+       "nameAccordingTo": 6}
 
-import sys,os
+not_doubtful = {
+    8407745: "Hierococcyx"
+}
+
+import sys, os, json
 from collections import Counter
 
 """
@@ -22,20 +26,23 @@ should also be ignored but do not need to be listed
 
 incertae_sedis_kingdom = 0
 
-if __name__ == "__main__":
-    if len(sys.argv) != 4:
-        print "python process_ottol_taxonomy.py taxa.txt ignore.txt outfile"
-        sys.exit(0)
-    
-    ignorefile = open(sys.argv[2],"r")
+def process_gbif(inpath, outdir):
+
+    col_acceptedNameUsageID = col['acceptedNameUsageID']
+    col_taxonID = col['taxonID']
+    col_canonicalName = col['canonicalName']
+    col_nameAccordingTo = col['nameAccordingTo']
+    col_taxonomicStatus = col['taxonomicStatus']
+    col_taxonRank = col['taxonRank']
+    col_parentNameUsageID = col['parentNameUsageID']
+
     to_ignore = []    # stack
-    for i in ignorefile:
-        to_ignore.append(int(i.strip()))
     to_ignore.append(incertae_sedis_kingdom)  #kingdom incertae sedis
 
-    infile = open(sys.argv[1],"r")
-    outfile = open(sys.argv[3]+"/taxonomy.tsv","w")
-    outfilesy = open(sys.argv[3]+"/synonyms.tsv","w")
+    infile = open(inpath,"r")
+    outfile = open(os.path.join(outdir, "taxonomy.tsv"), "w")
+    outfilesy = open(os.path.join(outdir, "synonyms.tsv"), "w")
+
     infile_taxon_count = 0
     infile_synonym_count = 0
     count = 0
@@ -52,14 +59,15 @@ if __name__ == "__main__":
     paleos = []     #ids that come from paleodb
     flushed_because_source = 0
     print "taxa synonyms no_parent"
-    infile.next()
     for row in infile:
-        fields = row.strip().split('\t')
+        fields = row.split('\t')
         # For information on what information is in each column see
         # meta.xml in the gbif distribution.
    
+        if fields[0] == 'taxonID': continue  # header for in 2013
+
         # acceptedNameUsageID
-        syn_target_id_string = fields[2].strip()
+        syn_target_id_string = fields[col_acceptedNameUsageID].strip()
         synonymp = syn_target_id_string.isdigit()
 
         if synonymp:
@@ -67,24 +75,27 @@ if __name__ == "__main__":
         else:
             infile_taxon_count += 1
 
-        id_string = fields[0].strip()
+        id_string = fields[col_taxonID].strip()
         if len(id_string) == 0 or not id_string.isdigit():
             # Header line has "taxonID" here
             bad_id += 1
             continue
         id = int(id_string)
 
-        name = fields[4].strip()
+        name = fields[col_canonicalName].strip()
         if name == '':
             bad_id += 1
             continue
 
-        source = fields[12].strip()
-        tstatus = fields[6].strip()  # taxonomicStatus
+        source = fields[col_nameAccordingTo].strip()
+        tstatus = fields[col_taxonomicStatus].strip()  # taxonomicStatus
 
         # Filter out IRMNG and IPNI tips
-        if (("IRMNG Homonym" in source) or ("Interim Register of Marine" in source) or
-            ("International Plant Names Index" in source)):
+        if (("IRMNG Homonym" in source) or
+            ("Interim Register of Marine" in source) or
+            ("International Plant Names Index" in source) or
+            # Blah.  See http://www.gbif.org/dataset/d9a4eedb-e985-4456-ad46-3df8472e00e8
+            (source == "d9a4eedb-e985-4456-ad46-3df8472e00e8")):
             flushed_because_source += 1
             if synonymp:
                 continue
@@ -95,20 +106,20 @@ if __name__ == "__main__":
             syntargets[id] = int(syn_target_id_string)
             syntypes[id] = tstatus    # heterotypic synonym, etc.
             continue
-        elif "Paleobiology Database" in source:
+        elif ("Paleobiology Database" in source) or (source == "c33ce2f2-c3cc-43a5-a380-fe4526d63650"):
             paleos.append(id)
 
-        if tstatus == 'doubtful' or tstatus == 'synonym':
+        if tstatus == 'synonym' or (tstatus == 'doubtful' and not id in not_doubtful):
             to_remove.append(id)
             continue
-        if tstatus != 'accepted':
+        if tstatus != 'accepted':    # doesn't happen
             print id, name, tstatus, source
 
-        rank = fields[5].strip()
+        rank = fields[col_taxonRank].strip()
         if rank == "form" or rank == "variety" or rank == "subspecies" or rank == "infraspecificname":
             to_ignore.append(id)
 
-        parent_id_string = fields[1].strip()
+        parent_id_string = fields[col_parentNameUsageID].strip()
         if len(parent_id_string) == 0 and rank != 'kingdom':
             no_parent += 1
             continue
@@ -210,7 +221,17 @@ if __name__ == "__main__":
     outfilesy.close()
 
     print 'writing %s paleodb ids' % len(paleos)
-    paleofile = open(sys.argv[3]+'/paleo.tsv', 'w')
+    paleofile = open(os.path.join(outdir, 'paleo.tsv'), 'w')
     for id in paleos:
         paleofile.write(('%s\n' % id))
     paleofile.close()
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print "** Arg count"
+        print "python process_ottol_taxonomy.py taxa.txt ignore.txt outfile"
+        sys.exit(0)
+    inpath = sys.argv[1]
+    outdir = sys.argv[2]
+    process_gbif(inpath, outdir)
+

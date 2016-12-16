@@ -256,6 +256,69 @@ and hope the problem goes away.
 
 ### Byssus phosphorea
 
+Byssus phosphorea
+
+Chlorophyte or fungus?  This one is very confused.
+
+OTT id 5293089 is used in these studies:
+pg_2597,pg_391,pg_1160,pg_438,pg_1744,pg_1065,pg_738,pg_2264,pg_2283
+
+The associated name is Byssus phosphorea.
+
+"Byssus phosphorea" is not in NCBI, CoL, or Wikipedia.
+
+Initially it looked like a chlorophyte (green alga):
+
+  Index Fungorum says it's a chlorophyte, not a fungus
+  The generic name in this combination is not currently considered to apply to an organism within the fungal clade
+  Trentepohliaceae, Trentepohliales, Incertae sedis, Incertae sedis, Incertae sedis, Chlorophyta, Plantae
+
+  Mycobank says:
+  Byssus phosphorea Byssus phosphorea L., Species Plantarum: 1168 (1753) [MB#231380]
+  Classification : Algae, Byssus
+
+  EOL gets its information from Mycobank.
+
+  GBIF doesn't have the species, but it has a genus Byssus
+    Plantae > Chlorophyta > Ulvophyceae > Trentepohliales > Trentepohliaceae > Byssus
+
+But now it looks like it should be a fungus:
+
+  The IRMNG dump (but not the web site) says it's a synonym for Terana
+    caerulea (cobalt crust fungus).  The web site defers to CoL, but I
+    can't find either name there.  
+
+  CoL says "Terana coerulea (Lam.) Kuntze 1891" is an accepted name.
+  That's a fungus in Phanerochaetaceae.  IRMNG says Terana coerulea is
+  a synonym for Terana caerulea.
+
+  TrekNature classifies it as follows:
+    Basidiomycota > Basidiomycetes > Polyporales > Corticiaceae 
+
+  Study pg_391 puts it sister to Phlebiopsis gigantea, in Basidiomycota
+  Study pg_1744 puts it sister to genus Phanerochaete, which is in Basidiomycota.
+  Study pg_1160 puts it close to Phanerochaete and Hyphodermella.
+  Study pg_2597 puts it close to Phanerochaete and Hyphodermella.
+
+So is it Terana coerulea?
+
+  OTT 4935351 = Terana coerulea = if:493426,ncbi:1647800,gbif:5244849
+
+  IF puts it here:
+    Phanerochaetaceae, Polyporales, Incertae sedis, Agaricomycetes, Agaricomycotina, Basidiomycota, Fungi
+    Terana coerulea (Lam.) Kuntze, Revis. gen. pl. (Leipzig) 2: 872 (1891)
+ncb
+  NCBI puts it here:
+    Fungi; Dikarya; Basidiomycota; Agaricomycotina; Agaricomycetes; Agaricomycetes incertae sedis; Polyporales; Phanerochaetaceae; Terana
+    Synonym: Byssus caerulea
+    Authority: Terana caerulea (Schrad. ex Lam.) Kuntze, 1891
+
+Propose to define 5293089 to be the OTT id for Terana coerulea =
+if:493426,ncbi:1647800,gbif:5244849 on the basis of IRMNG.
+
+Define IRMNG 10877277 to be same as NCBI Terana caerulea (or IF Terana
+coerulea) -- that will bring Byssus phosphorea in as a synonym.  This
+will cause 5293089 and 4935351 to be merged... then which id will be assigned?...
 
 ### Neoptera
 
@@ -524,6 +587,13 @@ irmng:1134127 is Protista-Protista (awaiting allocation)
 
 ### Diphylleia
 
+2016 GBIF has:
+3033928	the plant (in Berberidaceae)
+3236805	an unclassified  protozoan (Protozoa > Diphylleidae > Diphylleia)
+  = formerly gbif:2688063
+
+1. The protist
+
 SILVA 117 has a Diphylleia (AF420478/#4) in Palpitomonas < Incertae Sedis < Eukaryota.
   (Better way to identify: it contains Diphylleia rotans.)
 IRMNG 1223253 is Protista-Apusozoa-Diphyllatea-Diphylleida.
@@ -531,8 +601,14 @@ IRMNG 1223253 is Protista-Apusozoa-Diphyllatea-Diphylleida.
 Should be same as ncbi:177250,gbif:2688063,irmng:1223253 = ott:4738987.
 NCBI puts it under Collodictyonidae.
 
-The other one is a eudicot.
+In Collodictyonidae ?  Says who?
+
+2. The plant
+
+The other one is a eudicot (Ranunculales).
 ott:570408 = ncbi:63346,gbif:3033928,irmng:1052707
+
+3. What is this
 
 ### Retaria
 
@@ -807,26 +883,81 @@ does this mean we're discarding *all* merged placeholders?
 
 ## Cyclophora
 
-Diatom genus:
-  ott:678569
+Diatom genus: OTT 678569 = ncbi:216819
   (SILVA something)
   ncbi:216819
   worms:450716
   gbif:2630051
   irmng:1301066
 
-Butterfly genus:  (contains Cyclophora nanaria)
+Moth (Ecdysozoa) genus:  OTT 1030079 = ncbi:190338
+  (contains Cyclophora nanaria)
   ott:1030079 in OTT 2.9
   ncbi:190338
   gbif:3260327
   irmng:1301089
 
-Why didn't these get separated as a result of adding Bacillariophyta
-as a skeleton node?  Then the diatom and the butterfly would have been
-separated (in disjoint divisions).
+Mollusc: Cyclophorus = OTT 370526 = ncbi:75122
+  with synonym Cyclophora
 
-Anyhow why is the taxon id for Bacillariophyta so high (5342311)?
-Id should be 150991.
+Fly: Cyclophorus = OTT 5752875 = irmng:1290130
+  Incertae sedis in Diptera.
+
+Why is gbif:2630051 not unifying with the diatom?  It's in
+Bacillariophyta ... which is in Plantae, but that shouldn't matter...
+
+
+## Adlerocystis
+
+Romina 2014-01-28 said it's not a fungus.
+
+EOL has Adlerocystis Feldm.-Muhs. & Havivi 1963, says IRMNG puts it in Fungi.
+Index Fungorum says it's in Chromista (directly).
+So does GBIF.
+IRMNG puts it in Zygomycota incertae sedis - not a homonym, same authority.
+'originally described as Phycomycete; current tax. position uncertain'
+
+So there's only one taxon here, but nobody knows where to put it.
+
+## Pohlia
+
+414928 = Chloroplastida (Bryophyta) = ncbi:67238
+
+5325989 = Chordata (Amphibia) = irmng:1311321
+
+5325989 ?= Foraminifera = worms:721643
+
+Previous taxonomies merged the ambphibian and the foram.  Time to fix.
+
+5325989 has priority IRMNG.  Need a new id for the foram.
+
+## Tuber
+
+508058 = Fungus (truffles) = if:5629 = ncbi:36048
+
+5352207 = SAR (Sarcomastigophora) = irmng:1292651 extinct
+
+## Chlorella
+
+Problem:
+** Ambiguous taxon name: Chlorella
+**   Chlorella (genus ncbi:3071) = (Chlorella 339002=ncbi:3071+448) in Chloroplastida
+**   Chlorella (genus worms:160576) (inconsistent in Chlorellaceae) = (Chlorella =worms:160576?) in Chloroplastida
+
+There are five of these in 2.11draft5, four in 2.10.
+
+5233809 = ncbi:175242  i.s.
+5233812 = ncbi:114055  i.s.
+5233900 = ncbi:114049  i.s.
+339002 = ncbi:3071
+1588 (synonym)
+
+## Protaspis
+
+OTT 696938 = ncbi:188977 = Protaspis in Thaumatomonadidae in Cercozoa in Rhizaria
+OTT 4918135 = silva:AB252745/#8 = Protaspa in Cercozoa in Rhizaria
+  with a synonym of 'Protaspis'.  So these two are the same (if
+  classified differently).
 
 ## Division problems
 
@@ -848,6 +979,43 @@ Minchinia
 Ellobiopsis - probable SILVA/NCBI clash
 
 Cylindrotheca - homonyms
+
+## Dinophyta
+
+What does this correspond to in GBIF?
+ToLweb has Dinokaryota.
+
+In wikipedia we have phylum Dinoflagellata, class Dinophyceae (in SAR).
+
+GBIF has neither of these.
+
+Dinoflagellata has synonym Dinophyta for Dinoflagellata.
+
+GBIF has Gymnodiniaceae and Warnowiaceae directly in Chromista; it belongs in Dinophyceae.
+Maybe the whole phylum has been blown up.
+
+## Chaetocalyx longiflora/us
+
+NCBI has 'Chaetocalyx longiflora Benth. ex A.Gray' with 'Chaetocalyx
+longiflorus' and 'Chaetocalyx longiflora' as synonyms.
+
+2016 GBIF has Chaetocalyx longiflorus only.
+2013 GBIF has both Chaetocalyx longiflorus (CoL) and Chaetocalyx
+longiflora (GRIN) separately.  So maybe replacing -a with -us is right.
+
+OTT 2.10 has Chaetocalyx longiflora only (-us and -a are synonyms for 
+'Chaetocalyx longiflora Benth. ex A.Gray').
+
+Plant List has  Chaetocalyx longiflorus A.Gray.
+Wait, a different version has -a.
+
+IPNI has -us.
+
+IRMNG has -us.
+
+Wikipedia has -us, but wikispecies has -a.
+
+I think I'm going to go with -us, following GBIF, Wikipedia, and IPNI.
 
 ## Other problems
 

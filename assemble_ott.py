@@ -32,16 +32,39 @@ def create_ott():
 
     ott = UnionTaxonomy.newTaxonomy('ott')
 
-    # There ought to be tests for all of these...
-
+    # Would be nice if there were tests for all of these...
     for name in names_of_interest:
         ott.eventLogger.namesOfInterest.add(name)
 
     # idspace string 'skel' is magical, see Taxon.addSource
     ott.setSkeleton(Taxonomy.getTaxonomy('tax/skel/', 'skel'))
 
-    # This is a particularly hard case; create alignment targets up front
+    # These are particularly hard cases; create alignment targets up front
     deal_with_polysemies(ott)
+
+    merge_sources(ott)
+
+    # consider try: ... except: print '**** Exception in patch_ott'
+    patch_ott(ott)
+
+    # Remove all trees but the largest (or make them life incertae sedis)
+    ott.deforestate()
+
+    # End of topology changes.  Now assign ids.
+    ids_and_additions(ott)
+
+    # Report counts of source nodes by reason
+    reason_report.report(ott)
+
+    ott.check()
+
+    # For deprecated id report (dump)
+    ott.loadPreferredIds('ids_that_are_otus.tsv', False)
+    ott.loadPreferredIds('ids_in_synthesis.tsv', True)
+
+    return ott
+
+def merge_sources(ott):
 
     # SILVA
     silva = taxonomies.load_silva()
@@ -123,30 +146,9 @@ def create_ott():
 
     # Misc fixups
     taxonomies.link_to_h2007(ott)
-    get_default_extinct_info_from_gbif(gbif, gbif_to_ott)
-
-    # consider try: ... except: print '**** Exception in patch_ott'
-    patch_ott(ott)
-
-    # Remove all trees but the largest (or make them life incertae sedis)
-    ott.deforestate()
-
-    # End of topology changes.  Now assign ids.
-    ids_and_additions(ott)
-
-    # Report counts of source nodes by reason
-    reason_report.report(ott)
-
-    ott.check()
-
-    # Reporting
     report_on_h2007(h2007, h2007_to_ott)
 
-    # For deprecated id report (dump)
-    ott.loadPreferredIds('ids_that_are_otus.tsv', False)
-    ott.loadPreferredIds('ids_in_synthesis.tsv', True)
-
-    return ott
+    get_default_extinct_info_from_gbif(gbif, gbif_to_ott)
 
 # utilities
 
@@ -1772,4 +1774,6 @@ names_of_interest = ['Ciliophora',
                      'Pohlia',
                      'Lonicera',
                      'Chromista',
+                     'Protista',
+                     'Protozoa',
                      ]

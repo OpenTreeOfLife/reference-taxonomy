@@ -4,8 +4,67 @@ from org.opentreeoflife.taxa import Taxonomy
 from claim import *
 #from claim import Has_child, Whether_same, With_ancestor, With_descendant, \
 #                  Whether_extant, make_claim, make_claims
+from establish import establish
 
 this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/taxonomies.py'
+
+# ----- Difficult polysemies -----
+
+def deal_with_polysemies(ott):
+    # Ctenophora is seriously messing up the division logic.
+    # ncbi 1003038	|	33856	|	Ctenophora	|	genus	|	= diatom        OTT 103964
+    # ncbi 10197 	|	6072	|	Ctenophora	|	phylum	|	= comb jellies  OTT 641212
+    # ncbi 516519	|	702682	|	Ctenophora	|	genus	|	= cranefly      OTT 1043126
+
+    # The comb jellies are already in the taxonomy at this point (from skeleton).
+
+    # Add the diatom to OTT so that SILVA has something to map its diatom to
+    # that's not the comb jellies.
+
+    # To do this without creating a sibling-could homonym, we have to create
+    # a place to put it.  This will be rederived from SILVA soon enough.
+    establish('Bacillariophyta', ott, division='SAR', ott_id='5342311')
+
+    # Diatom.  Contains e.g. Ctenophora pulchella.
+    establish('Ctenophora', ott, ancestor='Bacillariophyta', ott_id='103964')
+
+    # The comb jelly should already be in skeleton, but include the code for symmetry.
+    # Contains e.g. Leucothea multicornis
+    establish('Ctenophora', ott, parent='Metazoa', ott_id='641212')
+
+    # The fly will be added by NCBI; provide a node to map it to.
+    # Contains e.g. Ctenophora dorsalis
+    establish('Ctenophora', ott, division='Diptera', ott_id='1043126')
+
+    establish('Podocystis', ott, division='Fungi', ott_id='809209')
+    establish('Podocystis', ott, parent='Bacillariophyta', ott_id='357108')
+
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/198
+    establish('Euxinia', ott, division='Metazoa', source='ncbi:100781', ott_id='476941') #flatworm
+    establish('Euxinia', ott, division='Metazoa', source='ncbi:225958', ott_id='329188') #amphipod
+
+    # Discovered via failed inclusion test
+    establish('Campanella', ott, division='SAR', source='ncbi:168241', ott_id='136738') #alveolata
+    establish('Campanella', ott, division='Fungi', source='ncbi:71870', ott_id='5342392')    #basidiomycete
+
+    # Discovered via failed inclusion test
+    establish('Diphylleia', ott, division='Eukaryota',      source='ncbi:177250', ott_id='4738987') #apusozoan
+    establish('Diphylleia', ott, division='Chloroplastida', source='ncbi:63346' , ott_id='570408') #eudicot
+
+    # Discovered via failed inclusion test
+    establish('Epiphloea', ott, division='Fungi',      source='if:1869', ott_id='5342482') #lichinales
+    establish('Epiphloea', ott, division='Rhodophyta', source='ncbi:257604', ott_id='471770')  #florideophycidae
+
+    # Discovered on scrutinizing the log.  There's a third one but it gets 
+    # separated automatically
+    establish('Morganella', ott, division='Bacteria', source='ncbi:581', ott_id='524780') #also in silva
+    establish('Morganella', ott, division='Fungi',    source='if:19222', ott_id='973932')
+
+    # Discovered from inclusions test after tweaking alignment heuristics.
+    establish('Cyclophora', ott, division='SAR',         source='ncbi:216819', ott_id='678569') #diatom
+    establish('Cyclophora', ott, division='Lepidoptera', source='ncbi:190338', ott_id='1030079') #moth
+    # there are two more Cyclophora/us but they take care of themselves
+
 
 def load_silva():
     silva = Taxonomy.getTaxonomy('tax/silva/', 'silva')

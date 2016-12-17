@@ -16,7 +16,7 @@ from java.io import FileReader
 import ncbi_ott_assignments
 sys.path.append("feed/misc/")
 from chromista_spreadsheet import fixChromista
-import taxonomies
+import adjustments
 import check_inclusions
 from establish import establish
 from claim import *
@@ -40,7 +40,7 @@ def create_ott():
     ott.setSkeleton(Taxonomy.getTaxonomy('tax/skel/', 'skel'))
 
     # These are particularly hard cases; create alignment targets up front
-    deal_with_polysemies(ott)
+    adjustments.deal_with_polysemies(ott)
 
     merge_sources(ott)
 
@@ -67,29 +67,29 @@ def create_ott():
 def merge_sources(ott):
 
     # SILVA
-    silva = taxonomies.load_silva()
+    silva = adjustments.load_silva()
     silva_to_ott = align_silva(silva, ott)
     align_and_merge(silva_to_ott)
 
     # Hibbett 2007
-    h2007 = taxonomies.load_h2007()
+    h2007 = adjustments.load_h2007()
     h2007_to_ott = ott.alignment(h2007)
     align_and_merge(h2007_to_ott)
 
     # Index Fungorum
-    fungorum = taxonomies.load_fung()
+    fungorum = adjustments.load_fung()
     (fungi, fungorum_sans_fungi) = split_taxonomy(fungorum, 'Fungi')
     align_and_merge(align_fungi(fungi, ott))
 
     # the non-Fungi from Index Fungorum get absorbed below
 
-    lamiales = taxonomies.load_713()
+    lamiales = adjustments.load_713()
     align_and_merge(align_lamiales(lamiales, ott))
 
     # WoRMS
     # higher priority to Worms for Malacostraca, Cnidaria so we split out
     # those clades from worms and absorb them before NCBI
-    worms = taxonomies.load_worms()
+    worms = adjustments.load_worms()
     # Malacostraca instead of Decapoda because M. is in the skeleton
     (malacostraca, worms_sans_malacostraca) = split_taxonomy(worms, 'Malacostraca')
     align_and_merge(ott.alignment(malacostraca))
@@ -97,7 +97,7 @@ def merge_sources(ott):
     align_and_merge(ott.alignment(cnidaria))
 
     # NCBI
-    ncbi = taxonomies.load_ncbi()
+    ncbi = adjustments.load_ncbi()
 
     # analyzeOTUs sets flags on questionable taxa (hybrid, metagenomes,
     #  etc) to allow the option of suppression downstream
@@ -124,7 +124,7 @@ def merge_sources(ott):
     align_and_merge(align_fungorum_sans_fungi(fungorum_sans_fungi, ott))
 
     # GBIF
-    gbif = taxonomies.load_gbif()
+    gbif = adjustments.load_gbif()
     gbif_to_ott = align_gbif(gbif, ott)
     align_and_merge(gbif_to_ott)
 
@@ -139,13 +139,13 @@ def merge_sources(ott):
         cyl.setId('51754')
 
     # IRMNG
-    irmng = taxonomies.load_irmng()
+    irmng = adjustments.load_irmng()
     hide_irmng(irmng)
     a = align_irmng(irmng, ott)
     align_and_merge(a)
 
     # Misc fixups
-    taxonomies.link_to_h2007(ott)
+    adjustments.link_to_h2007(ott)
     report_on_h2007(h2007, h2007_to_ott)
 
     get_default_extinct_info_from_gbif(gbif, gbif_to_ott)
@@ -176,64 +176,6 @@ def split_taxonomy(taxy, taxon_name):
     t.trim()
     taxy_sans_subtree = taxy
     return (subtree, taxy_sans_subtree)
-
-
-# ----- Ctenophora polysemy -----
-
-def deal_with_polysemies(ott):
-    # Ctenophora is seriously messing up the division logic.
-    # ncbi 1003038	|	33856	|	Ctenophora	|	genus	|	= diatom        OTT 103964
-    # ncbi 10197 	|	6072	|	Ctenophora	|	phylum	|	= comb jellies  OTT 641212
-    # ncbi 516519	|	702682	|	Ctenophora	|	genus	|	= cranefly      OTT 1043126
-
-    # The comb jellies are already in the taxonomy at this point (from skeleton).
-
-    # Add the diatom to OTT so that SILVA has something to map its diatom to
-    # that's not the comb jellies.
-
-    # To do this without creating a sibling-could homonym, we have to create
-    # a place to put it.  This will be rederived from SILVA soon enough.
-    establish('Bacillariophyta', ott, division='SAR', ott_id='5342311')
-
-    # Diatom.  Contains e.g. Ctenophora pulchella.
-    establish('Ctenophora', ott, ancestor='Bacillariophyta', ott_id='103964')
-
-    # The comb jelly should already be in skeleton, but include the code for symmetry.
-    # Contains e.g. Leucothea multicornis
-    establish('Ctenophora', ott, parent='Metazoa', ott_id='641212')
-
-    # The fly will be added by NCBI; provide a node to map it to.
-    # Contains e.g. Ctenophora dorsalis
-    establish('Ctenophora', ott, division='Diptera', ott_id='1043126')
-
-    establish('Podocystis', ott, division='Fungi', ott_id='809209')
-    establish('Podocystis', ott, parent='Bacillariophyta', ott_id='357108')
-
-    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/198
-    establish('Euxinia', ott, division='Metazoa', source='ncbi:100781', ott_id='476941') #flatworm
-    establish('Euxinia', ott, division='Metazoa', source='ncbi:225958', ott_id='329188') #amphipod
-
-    # Discovered via failed inclusion test
-    establish('Campanella', ott, division='SAR', source='ncbi:168241', ott_id='136738') #alveolata
-    establish('Campanella', ott, division='Fungi', source='ncbi:71870', ott_id='5342392')    #basidiomycete
-
-    # Discovered via failed inclusion test
-    establish('Diphylleia', ott, division='Eukaryota',      source='ncbi:177250', ott_id='4738987') #apusozoan
-    establish('Diphylleia', ott, division='Chloroplastida', source='ncbi:63346' , ott_id='570408') #eudicot
-
-    # Discovered via failed inclusion test
-    establish('Epiphloea', ott, division='Fungi',      source='if:1869', ott_id='5342482') #lichinales
-    establish('Epiphloea', ott, division='Rhodophyta', source='ncbi:257604', ott_id='471770')  #florideophycidae
-
-    # Discovered on scrutinizing the log.  There's a third one but it gets 
-    # separated automatically
-    establish('Morganella', ott, division='Bacteria', source='ncbi:581', ott_id='524780') #also in silva
-    establish('Morganella', ott, division='Fungi',    source='if:19222', ott_id='973932')
-
-    # Discovered from inclusions test after tweaking alignment heuristics.
-    establish('Cyclophora', ott, division='SAR',         source='ncbi:216819', ott_id='678569') #diatom
-    establish('Cyclophora', ott, division='Lepidoptera', source='ncbi:190338', ott_id='1030079') #moth
-    # there are two more Cyclophora/us but they take care of themselves
 
 
 # ----- SILVA -----
@@ -608,7 +550,7 @@ def align_gbif(gbif, ott):
     # a.notSame(ott.taxon('Labyrinthomorpha', 'Stramenopiles'), gbif.taxon('Labyrinthomorpha'))
 
     # a.notSame(ott.taxon('Ophiurina', 'Echinodermata'), gbif.taxon('Ophiurina','Ophiurinidae'))
-    #  taken care of in taxonomies.py
+    #  taken care of in adjustments.py
 
     # There is a test for this.  The GBIF taxon no longer exists.
     # a.notSame(ott.taxon('Rhynchonelloidea', 'Brachiopoda'), gbif.taxon('Rhynchonelloidea'))
@@ -616,7 +558,7 @@ def align_gbif(gbif, ott):
     # Neoptera - there are tests.  Seems OK
 
     # a.notSame(gbif.taxon('Tipuloidea', 'Chiliocyclidae'), ott.taxon('Tipuloidea', 'Diptera')) # genus Tipuloidea
-    #  taken care of in taxonomies.py
+    #  taken care of in adjustments.py
     # ### CHECK: was silva.taxon
     # SILVA = GN013951 = Tetrasphaera (bacteria)
 

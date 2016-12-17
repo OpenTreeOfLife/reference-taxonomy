@@ -934,6 +934,10 @@ def patch_gbif(gbif):
     # Similar cases (probably): (from Chromista spreadsheet ambiguities)
     # Umbellina, Rotalina
 
+    # 2016-11-23 Unseparated homonym found while trying to use Holozoa
+    # as an example of something
+    gbif.taxon('Distaplia', 'Chordata').notCalled('Holozoa')
+
     return gbif
 
 def load_irmng():

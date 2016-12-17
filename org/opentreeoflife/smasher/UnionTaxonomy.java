@@ -48,6 +48,8 @@ public class UnionTaxonomy extends Taxonomy {
     public Map<String, Integer> alignmentSummary = new HashMap<String, Integer>();
     public Map<String, Integer> mergeSummary = new HashMap<String, Integer>();
 
+    public int blustery = 1;
+
 	UnionTaxonomy(String idspace) {
         super(idspace);
 		this.setTag("union");

@@ -94,7 +94,7 @@ public class AlignmentByName extends Alignment {
     }
 
     // Find answer for a single node, and put it in table
-    Answer alignTaxon(Taxon node) {
+    public Answer alignTaxon(Taxon node) {
         Answer a = getAnswer(node);
         if (a == null) {
             a = findAlignment(node);

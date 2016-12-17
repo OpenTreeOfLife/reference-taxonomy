@@ -13,6 +13,7 @@ def project_2016_gbif(inpath, outpath):
                 row = line.split('\t')
                 scientific = row[6].decode('utf-8')
                 canonical = canonical_name(scientific)
+                canenc = canonical.encode('utf-8')
                 outfile.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
                               (row[1], # taxonID
                                row[3], # parentNameUsageID
@@ -22,7 +23,7 @@ def project_2016_gbif(inpath, outpath):
                                row[10], # taxonomicStatus
                                row[2], # nameAccordingTo / datasetID
                                ))
-                if i % 500000 == 0: print i, scientific, '=>', canonical
+                if i % 500000 == 0: print i, scientific.encode('utf-8'), '=>', canenc
                 i += 1
 
 

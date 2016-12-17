@@ -13,42 +13,72 @@ def project_2016_gbif(inpath, outpath):
                 row = line.split('\t')
                 scientific = row[6].decode('utf-8')
                 canonical = canonical_name(scientific)
+                canenc = canonical.encode('utf-8')
                 outfile.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
                               (row[1], # taxonID
                                row[3], # parentNameUsageID
                                row[4], # acceptedNameUsageID
-                               canonical.encode('utf-8'), # canonicalName
+                               canenc, # canonicalName
                                row[7], # taxonRank
                                row[10], # taxonomicStatus
                                row[2], # nameAccordingTo / datasetID
                                ))
-                if row[1] == '8395045':
-                    print row[6]
-                    print 'raw utf-8 ', list(row[6])
-                    print 'sci uni   ', list(scientific)
-                    print 'can uni   ', list(canonical)
-                    print 'can utf-8 ', list(canonical.encode('utf-8'))
-                    want = u'Navicula allorgei É.Manguin, 1952'
-                    print 'want uni  ', list(want)
-                    print 'want utf-8', list(want.encode('utf-8'))
-                if i % 500000 == 0: print i, scientific, '=>', canonical
+                if i % 500000 == 0: print i, scientific.encode('utf-8'), '=>', canenc
                 i += 1
 
 
-epi = u" +[a-záåäëèéïóöü'×0-9.-]+"
+# Cases to deal with:
+#  Foo bar
+#  Foo bar Putnam
+#  Foo bar Putnam, 1972
+#  Foo bar Putnam, 4723     no authority
+#  Foo bar Putnam 1972      no authority (in GBIF)
+#  Enterobacteria phage PA-2
+#  Ajuga pyramidalis L.	
 
-canon = u"[A-Za-zÖäåàáãçéèëïíøöóü×?-]+(|%s|%s%s|%s%s%s)" % (epi, epi, epi, epi, epi, epi)
 
-auth1 = u" +(d'|von |van |de |dem |der |da |del |di |le |[A-ZÄÁÅÁÁÇÐÉÉÎİŠŚÔØÖÔÓÜÚŽĎĐŁŞČŘȘ(]).*"
+lower = u"a-záåäàãçëéèïíøöóü'×?"
+upper = u"A-ZÄÁÅÁÁÇČÐĎĐÉÉÎİŁŘŠŚŞȘÔØÖÔÓÜÚŽ"
 
-auth2 = u"%s, [12][0-9][0-9][0-9]" % epi
+epithet = u" +[%s0-9.-]+" % lower
 
-trimmer = re.compile(u"(%s)((%s)|(%s))" % (canon, auth1, auth2))
+# Matches a canonical name
+canon_re = u"[A-ZÖ%s-]+(|%s|%s%s|%s%s%s)" % (lower, epithet, epithet, epithet, epithet, epithet, epithet)
+
+auth_re = u" +(d'|von |van |de |dem |der |da |del |di |le |f\\. |[%s(])(..|\\.).*" % (upper)
+
+trimmer = re.compile(u"(%s)(%s)" % (canon_re, auth_re))
+
+year_re = re.compile(u".*, [12][0-9][0-9][0-9?]\\)?")
+
+has_digit = re.compile(u".*[0-9].*")
+
+count = 0
 
 def canonical_name(name):
+    global count
+    if ' phage ' in name or name.endswith(' phage'): return name
+    if ' virus ' in name or name.endswith(' virus'): return name
     m = trimmer.match(name)
-    if m:
-        return m.group(1)
+    if m != None:
+        canon = m.group(1)
+        # group 1 = canonical name
+        # group 2 = epithet(s)
+        # group 3 = authority
+        # group 4 = capital letter or prefix
+        if has_digit.match(name):
+            haz = year_re.match(name) != None
+        else:
+            haz = True
+        if count < 30 and not haz:
+            print "%s '%s' '%s'" % (('+' if haz else '-'), name, canon)
+            count += 1
+        if haz:
+            if canon == 'Enterobacteria phage':
+                print '! %s => %s' % (name, canon)
+            return canon
+        else:
+            return name
     else:
         return name
 

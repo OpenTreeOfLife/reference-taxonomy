@@ -200,7 +200,7 @@ public class AlignmentByMembership extends Alignment {
         else if (candidates.size() == 0)
             return null;
         else
-            for (Criterion c : criteria) {
+            for (Heuristic c : criteria) {
                 List<Taxon> filtered = new ArrayList<Taxon>();
                 for (Taxon unode : candidates)
                     if (c.metBy(node, unode))
@@ -216,11 +216,11 @@ public class AlignmentByMembership extends Alignment {
         return AMBIGUOUS;
     }
 
-    static Criterion[] criteria = {
-		Criterion.lineage,
-		Criterion.sameSourceId,
-		Criterion.anySourceId,
-		Criterion.byRank
+    static Heuristic[] criteria = {
+		Heuristic.lineage,
+		Heuristic.sameSourceId,
+		Heuristic.anySourceId,
+		Heuristic.byRank
     };
 
     static boolean differentDivisions(Taxon node, Taxon unode) {

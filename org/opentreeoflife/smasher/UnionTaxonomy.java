@@ -119,11 +119,7 @@ public class UnionTaxonomy extends Taxonomy {
         if (source.idspace == null)
             setIdspace(source);
         source.setEventLogger(this.eventLogger);
-        Alignment a;
-        if (true)
-            a = new AlignmentByName(source, this);
-        else
-            a = new ComplicatedAlignment(source, this);
+        Alignment a = new AlignmentByName(source, this);
         source.clearDivisions(); // division determinations are cached in nodes
         // source.forest.setDivision(this.skeletonAlignment.source.forest);
         return a;

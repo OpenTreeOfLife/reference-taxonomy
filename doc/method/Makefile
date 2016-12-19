@@ -14,7 +14,11 @@ out/draft.html: out/draft.md lib/Markdown.pl
 	bin/markdown $< >$@.new
 	mv $@.new $@
 
-out/draft.md: introduction.md sources.md out/sources_table.md method.md results.md discussion.md conclusions.md
+MARKDOWNS=introduction.md method-intro.md method-sources.md \
+  out/sources_table.md method-details.md \
+  results.md discussion.md conclusions.md
+
+out/draft.md: $(MARKDOWNS)
 	@mkdir -p out
 	echo 'See also [proposed outline](outline.html)' >$@
 	cat $^ >>$@

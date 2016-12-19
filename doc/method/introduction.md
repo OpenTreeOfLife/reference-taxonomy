@@ -85,14 +85,14 @@ requirements:
     or observe terms of use.
 
 No single available taxonomic source meets all five requirements.  The
-NCBI taxonomy has good coverage of OTUs, but its taxonomic coverage is
-limited to taxa that have sequence data in GenBank. On the other hand,
-traditional all-life taxonomies such as Catalogue of Life, IRMNG, and
-GBIF meet the taxonomic coverage requirement, but miss OTUs from our
-input trees matching taxa lacking a proper description and Linnaean
-name, and their higher-level taxonomy is often not phylogenetically
-informed.  At the very least, Open Tree needs to combine an NCBI-like
-sequence-aware taxonomy with a traditional broad taxonomy.
+NCBI taxonomy has good coverage of OTUs, and is open, but its
+taxonomic coverage is limited to taxa that have sequence data in
+GenBank.  Traditional all-life taxonomies such as Catalogue of Life,
+IRMNG, and GBIF meet the taxonomic coverage requirement, but miss many
+OTUs from our input trees, and their higher-level taxonomies are often
+not as phylogenetically informed or resolved as the NCBI taxonomy.  At
+the very least, Open Tree needs to combine an NCBI-like sequence-aware
+taxonomy with a traditional broad taxonomy that is also open.
 
 These requirements cannot be met in an absolute sense; each is a 'best
 effort' requirement subject to availability of project resources.

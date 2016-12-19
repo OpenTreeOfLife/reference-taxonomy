@@ -23,7 +23,7 @@ improve, and errors are fixed.
 
 ## Taxonomy assembly
 
-The conventional approach to meeting these requirements would have
+The conventional approach to meeting the requirements stated above would have
 been to create a database, copy the NCBI taxonomy into it, then
 somehow merge the second taxonomy into that.  This has several
 drawbacks, the main one being meeting the ongoing update requirement.

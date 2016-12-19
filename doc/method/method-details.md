@@ -2,19 +2,6 @@
 
 ## Taxonomy assembly overview
 
-Terminology:
-
-  * union taxonomy = data structure for creation of the reference
-    taxonomy
-  * source taxonomy = imported taxonomic source (NCBI taxonomy, etc.)
-  * node = a taxon record, either from a source taxonomy or the union taxonomy;
-    giving name-string, source information,
-    parent node, and perhaps other information such as rank
-  * polysemy = where a single name-string belongs to multiple nodes
-    (within the same taxonomy); in
-    nomenclatural terms, either a homonym, hemihomonym, or mistaken
-    clerical duplication
-
 The assembly process works, in outline, as follows:
 
  1. Start with an ordered list of imported source taxonomies S1, S2, ... (see above)

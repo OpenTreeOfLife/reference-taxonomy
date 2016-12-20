@@ -9,11 +9,11 @@ Open Tree reference taxonomy version 2.11.
 
   * source taxonomy = imported taxonomic source (NCBI taxonomy, etc.)
   * union taxonomy = data structure for creation of the reference
-    taxonomy [change to 'workspace']
+    taxonomy [change to 'workspace'?]
   * node = a taxon record, either from a source taxonomy or the union taxonomy;
     giving name-string, source information,
     parent node, optional rank, optional annotations
-  * tip - a node that is not the parent of any node
+  * tip = a node that is not the parent of any node
   * polysemy [homonymy] = where a single name-string belongs to multiple nodes
     (within the same taxonomy); in
     nomenclatural terms, either a homonym, hemihomonym, or
@@ -104,14 +104,18 @@ taxonomies, but containing different species in the two:
 > [this would be a figure]   S = (c,d,e)a,  S' = (d,e,f)a
 
 S and S' each have four nodes.  Suppose d, e, and a in S' are aligned
-to d, e, and a in S.  The only unaligned node is f, and it can be
-attached to S as a child of a, or equivalently as a sibling of d and e.
+to d, e, and a in S.  The only unaligned node is f, and it can be as a
+sibling of d and e.  (f is also a child of a, which is aligned, giving
+a different way to attach, with the same result in this case, but not
+always.)
 This yields
 
 > [figure] S + S' = (c,d,e,f)a
 
-One might call this merge heuristic 'my sibling's sibling is a
+One might call this merge heuristic 'my sibling's sibling is my
 sibling' or 'transitivity of siblinghood'.
+
+[what happened to b?]
 
 [Real example: a = Bufo, c,d,e = Bufo bufo / spinosis / japonicus
 (etc.) in NCBI, d,e,f = Bufo bufo / japonicus / luchunnicus (etc.) in
@@ -125,7 +129,7 @@ as a graft (as in the previous example), and as an 'insertion', where
 it has some nodes in S among its descendants.  As an example of the
 latter, consider
 
-> (M,C,S,P)F + ((M,C)H,(S,P)E)F = ((M,C)H,(S,P)E)F
+> [figure] (M,C,S,P)F + ((M,C)H,(S,P)E)F = ((M,C)H,(S,P)E)F
 
 This is a real example in which S' (part of WoRMS) provides greater
 resolution than S (NCBI taxonomy): it divides the family F into

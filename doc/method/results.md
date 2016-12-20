@@ -244,7 +244,7 @@ reflected in OTT.  (but this is true by construction?)
 [and...]
 
 
-## Evaluating the taxonomy relative to goals
+## Evaluating the taxonomy relative to requirements
 
 The introduction sets out requirements for an Open Tree taxonomy.
 How well are these requirements met?
@@ -299,14 +299,14 @@ because OTT has many names that are either not valid or not currently
 accepted.
 
 Since the GBIF source we used includes the 2011 edition of CoL [2011],
-OTT's coverage includes everything in that edition of CoL.
+OTT includes everything in that edition of CoL.  [did it get updated
+for 2016 GBIF?]
 
 This level of coverage would seem to meet Open Tree's taxonomic
-coverage goal. [hmm, hard to make a definite statement since the goal
-is 'best effort' rather than quantitative]
+coverage requirement as well as any other available taxonomic source.
 
 [As another coverage check, and test of alignment, consider evaluating
-against HHDB (hemihomonyms) - ideally we would have all senses of
+against HHDB (hemihomonym database) - ideally we would have all senses of
 each HHDB polysemy, in the right places]
 
 ### Backbone quality
@@ -355,13 +355,16 @@ GBIF update had some issues:
 
 ### Open data
 
-As the Open Tree project did not have to enter into data use
-agreements in order to obtain OTT's taxonomic sources, it is not
-obliged to require any such agreement from users of OTT.  Therefore,
-users are not restricted by any contract (terms of use).  In addition,
-the taxonomy is not creative expression, so copyright limitations do
-not apply either.  Therefore use of OTT is unrestricted.
+As the Open Tree project did not enter into any data use agreements
+in order to obtain OTT's
+taxonomic sources, it is not obliged to require any such agreement
+from users of OTT.  (A data use agreement is sometimes called 'terms 
+of use'.  Legally, a DUA is a kind of contract.)
+Therefore, users are not restricted in this way.
+In addition, the taxonomy is not creative expression, so copyright
+controls do not apply.  Therefore use of OTT is
+unrestricted.
 
-Certainly the taxonomy could be improved by incorporating closed
+Certainly the taxonomy could be improved by incorporating DUA-encumbered
 sources such the IUCN Red List, but doing so would conflict with the
-project's goal of providing open data.
+project's open data requirement.

@@ -1,7 +1,7 @@
 # Introduction
 
 Any large biodiversity data project requires one or more taxonomies
-for discovery and data integration purposes, as in "find me records
+for discovery and data integration purposes, as in "find occurrence records
 for primates" or "find the IRMNG taxon record for this sequence".  For
 example, the GBIF occurrence record database and the NCBI Genbank
 sequence both have dedicated taxonomy efforts, while Encyclopedia of
@@ -27,7 +27,7 @@ name-strings are different (synonym detection), as well as
 distinguishing occurrences that only coincidentally have the same
 name-string (homonym detection).
 
-## Open Tree of Life
+## The Open Tree of Life project
 
 The Open Tree of Life project consists of a set of tools for
 
@@ -103,7 +103,7 @@ taxonomy with a traditional broad taxonomy that is also open.
 These requirements cannot be met in an absolute sense; each is a 'best
 effort' requirement subject to availability of project resources.
 
-We note that the Open Tree Taxonomy is *not* supposed to be 1) a
+Note that the Open Tree Taxonomy is *not* supposed to be 1) a
 reference for nomenclature (we can link to other sources for that); 2)
 a well-formed or complete taxonomic hypothesis; or 3) a place to
 deposit curated taxonomic information.

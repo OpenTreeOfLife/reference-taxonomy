@@ -16,6 +16,8 @@ taxonomy, or leaving it unaligned.  The following is a breakdown, by
 source node, of how it reached its decisions one way or the other,
 pooled for all sources.
 
+[combine this table with description of each row]
+
 An explanation of each category follows the table.
 
          49  curated alignment
@@ -83,7 +85,7 @@ source taxon.
 
 [KC not keen on saying 'unaligned' in one place and 'not aligned' in
 another, but 'the taxon was unaligned' doesn't sound right since
-'unalign' is not a verb, while 'copy an not-aligned node' doesn't work
+'unalign' is not a verb, while 'copy a not-aligned node' doesn't work
 because 'not-aligned' is an awkward adjective.]
 
 [why is 'not aligned' so much bigger than 'Number of taxon records' below?]
@@ -190,6 +192,8 @@ Topology:
 
 ## Polysemy analysis:
 
+7360 of them [on a recent run]. That's too many.
+
  * Could we classify the polysemies?  by taxon rank, proximity, etc.  and compare to GBIF / NCBI
      * sibling, cousin, parent/child, within code, between codes
      * how many inherited from source taxonomy, as opposed to created?
@@ -199,12 +203,14 @@ Topology:
 
 ## Evaluating the product
 
+[I think this section does not make a contribution and should be flushed]
+
 The outcome of the assembly method is a new version of OTT.  There are
 various ways to evaluate a taxonomy.
 
 1. The ultimate determinant of correctness is scientific and
 bibliographic: are these all the taxa, are they given the right names,
-and do the stand in the correct relationship to one another?  - Nobody
+and do they stand in the correct relationship to one another?  - Nobody
 has the answers to all of these questions; without original taxonomic
 research, the best we can do is compare to the best available
 understanding, as reflected in the current scientific literature.

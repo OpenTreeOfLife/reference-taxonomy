@@ -10,10 +10,10 @@
     * Terminology
     * Simple intro, with examples, without details
     * Details of assembly not covered in simple intro
-        * Overview of assembly method
         * The source taxonomies
         * Source taxonomy ingest
         * Taxon alignment
+            * Ad hoc alignment adjustments
             * Candidate identification
             * Heuristics
                 * Separate taxa that are in disjoint divisions
@@ -21,7 +21,6 @@
                 * Prefer taxon with overlapping membership
                 * Prefer taxon in same division
                 * Prefer non-synonym
-            * Ambiguities
         * Merge unaligned taxa
             * Copy grafts over; alignments tell you the attachment points
             * Insert some internal nodes for more resolution

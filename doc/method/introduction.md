@@ -84,6 +84,9 @@ requirements:
     Users should not have to ask permission to copy and use the taxonomy, 
     or observe terms of use.
 
+[would this be a place to 'highlight' transparency as theme or goal? -
+not just taxa, but process - NMF]
+
 No single available taxonomic source meets all five requirements.  The
 NCBI taxonomy has good coverage of OTUs, and is open, but its
 taxonomic coverage is limited to taxa that have sequence data in

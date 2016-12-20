@@ -99,7 +99,7 @@ public class Alignment {
     }
 
     public final void align() {
-        System.out.println("--- Mapping " + source.getTag() + " to target ---");
+        System.out.println("--- Aligning " + source.getTag() + " to target ---");
         this.reallyAlign();     // calls this.assignBrackets();
 
         this.computeLubs();

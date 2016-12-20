@@ -96,7 +96,7 @@ bin/smasher:
 # The open tree taxonomy
 
 ott: tax/ott/log.tsv tax/ott/version.txt
-tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py taxonomies.py \
+tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py adjustments.py \
                     tax/silva/taxonomy.tsv \
 		    tax/fung/taxonomy.tsv tax/713/taxonomy.tsv \
 		    tax/ncbi/taxonomy.tsv tax/gbif/taxonomy.tsv \

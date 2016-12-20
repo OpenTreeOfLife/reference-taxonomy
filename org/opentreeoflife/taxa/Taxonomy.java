@@ -963,7 +963,7 @@ public abstract class Taxonomy {
 						"\\bsp\\.$"
 						);
 
-    // × = U+00D7 MULTIPLICATION SIGN
+    // U+00D7 MULTIPLICATION SIGN
 
 	static Pattern hybridRegex = Pattern.compile(" x |\u00D7|\\bhybrid\\b");
 

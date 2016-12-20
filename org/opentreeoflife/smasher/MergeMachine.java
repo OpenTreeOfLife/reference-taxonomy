@@ -44,7 +44,7 @@ class MergeMachine {
 
         // Add heretofore unmapped nodes to union
         if (windyp)
-            System.out.println("--- Augmenting union with new nodes from " + source.getTag() + " ---");
+            System.out.format("--- Merging nodes from %s into %s ---\n", source.getTag(), union.getTag());
         int startroots = union.rootCount();
         int startcount = union.count();
 

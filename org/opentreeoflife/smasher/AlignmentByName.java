@@ -37,32 +37,7 @@ public class AlignmentByName extends Alignment {
     // method is invoked from python.
 
     public void reallyAlign() {
-
-        Alignment old = null;
-        AlignmentByName neu2 = null;
-
-        if (debug >= 1) {
-            Alignment basis = new Alignment(this);    // copy ad-hoc mappings
-            System.out.format("| Basis: %s mappings\n", basis.size());
-            old = new ComplicatedAlignment(basis);
-            old.align();
-            if (debug >= 2) {
-                Alignment old2 = new ComplicatedAlignment(basis);
-                old2.align();
-                old2.compareAlignments(old, "comparing old to old");
-                neu2 = new AlignmentByName(basis);
-            }
-        }
-
         this.alignByName();
-
-        if (debug >= 1) {
-            this.compareAlignments(old, "comparing old to new");
-            if (debug >= 2) {
-                neu2.alignByName();
-                neu2.compareAlignments(this, "comparing new to new");
-            }
-        }
     }
 
     // Treat all taxa equally - tips same as internal - random order
@@ -119,7 +94,7 @@ public class AlignmentByName extends Alignment {
     }
 
     // Find answer for a single node, and put it in table
-    Answer alignTaxon(Taxon node) {
+    public Answer alignTaxon(Taxon node) {
         Answer a = getAnswer(node);
         if (a == null) {
             a = findAlignment(node);

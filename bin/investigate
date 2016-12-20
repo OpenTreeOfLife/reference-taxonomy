@@ -1,0 +1,9 @@
+#!/bin/bash
+
+for tax in fung worms 713 silva ncbi gbif irmng prev_ott ott; do
+    grep "	$1	" tax/$tax/taxonomy.tsv  /dev/null
+    if [ -e tax/$tax/synonyms.tsv ]; then
+        (grep "^$1	" tax/$tax/synonyms.tsv  /dev/null ||
+         grep "	$1	" tax/$tax/synonyms.tsv  /dev/null)
+    fi
+done

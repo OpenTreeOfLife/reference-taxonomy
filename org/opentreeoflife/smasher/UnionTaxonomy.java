@@ -48,6 +48,8 @@ public class UnionTaxonomy extends Taxonomy {
     public Map<String, Integer> alignmentSummary = new HashMap<String, Integer>();
     public Map<String, Integer> mergeSummary = new HashMap<String, Integer>();
 
+    public int blustery = 1;
+
 	UnionTaxonomy(String idspace) {
         super(idspace);
 		this.setTag("union");
@@ -119,11 +121,7 @@ public class UnionTaxonomy extends Taxonomy {
         if (source.idspace == null)
             setIdspace(source);
         source.setEventLogger(this.eventLogger);
-        Alignment a;
-        if (true)
-            a = new AlignmentByName(source, this);
-        else
-            a = new ComplicatedAlignment(source, this);
+        Alignment a = new AlignmentByName(source, this);
         source.clearDivisions(); // division determinations are cached in nodes
         // source.forest.setDivision(this.skeletonAlignment.source.forest);
         return a;

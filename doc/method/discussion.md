@@ -69,6 +69,8 @@ taxonomy has no such node, both source nodes will end up being copied
 into the union.  This is an error in the method which needs to be
 fixed.
 
+### Rationale for various parts of the method
+
 (Explaining the perverted lineage rule)
 
   There are several factors that

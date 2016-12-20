@@ -14,7 +14,7 @@ out/draft.html: out/draft.md lib/Markdown.pl
 	bin/markdown $< >$@.new
 	mv $@.new $@
 
-MARKDOWNS=introduction.md method-intro.md method-sources.md \
+MARKDOWNS=abstract.md introduction.md method-intro.md method-sources.md \
   out/sources_table.md method-details.md \
   results.md discussion.md conclusions.md
 

@@ -46,14 +46,25 @@ and to loss of unification opportunities in phylogeny synthesis.
 
 ### Ad hoc alignment adjustments
 
-Automated alignment is preceded by scripted ad hoc 'adjustments'
-that address known issues that are beyond the capabilities of the
-automated process to fix.  Adjustments include
-capitalization and spelling repairs, addition of synonyms
-(e.g. 'Heterokonta' as synonym for 'Stramenopiles'), name changes
-(e.g. 'Choanomonada' to 'Choanoflagellida'), and deletions
-(e.g. removing synonym 'Eucarya' for 'Eukaryota' to avoid confusing
-eukaryotes with genus Eucarya in Magnoliopsida).
+Automated alignment is preceded by scripted ad hoc 'adjustments' that
+address known issues that are beyond the capabilities of the automated
+process to fix.  Following are some examples of adjustments.
+
+1. capitalization and spelling repairs (e.g. change 'sordariomyceta' to 'Sordariomyceta')
+1. addition of synonyms to facilitate later matching (e.g. 'Florideophyceae' as synonym for 'Florideophycidae')
+1. name changes (e.g. 'Choanomonada' to 'Choanoflagellida')
+1. deletions (e.g. removing synonym 'Eucarya' for 'Eukaryota' to avoid
+   confusing eukaryotes with genus Eucarya in Magnoliopsida; or removing
+   unaccepted genus Tipuloidea in Hemiptera to avoid confusion with 
+   the Diptera superfamily)
+1. merges to repair redundancies in the source (e.g. Pinidae, Coniferophyta, Coniferopsida)
+1. rename taxa to avoid confusing homonym (e.g. there are two Cyanobacterias in SILVA, one 
+   a parent of the other; the parent is renamed to its NCBI name 'Cyanobacteria/Melainabacteria group')
+1. alignments when name differs (Diatomea is Bacillariophyta)
+1. alignments as exceptions to automated rules (Eccrinales not in Fungi,
+   Myzostomatida not in Annelida)
+
+
 
 For the reference taxonomy, there are 284 ad hoc adjustments in
 preparation for alignment. [check]
@@ -71,8 +82,8 @@ node B also has synonym name-string C, then B is a candidate for being
 an alignment target for A.
 
 It follows, for example, that if the union taxonomy has multiple nodes
-with the same name-string (homonyms), all of these nodes can become
-candidates for every source node that has that name-string.
+with the same name-string (homonyms), all of these nodes will become
+candidates for every source node that also has that name-string.
 
 ### Complications in alignment
 
@@ -165,63 +176,6 @@ during alignment.  Very briefly, they are:
 If there is a single candidate and it passes all heuristics, it is
 aligned to that candidate.
 
-### Heuristics application, in detail
-
-The automated alignment process proceeds one source node at a time.
-First, a list of candidate union matches, based on names and synonyms,
-is prepared for the source node.  Then, a set of heuristics is applied
-to find a unique best union node match, if any, for that source node.
-
-A heuristic is a rule that, when presented with a source node and a
-union node, answers 'yes', 'no', or 'no information'.  'Yes' means
-that according to the rule the two nodes refer to the same taxon, 'no'
-means they refer to different taxa, and 'no information' means that
-this rule provides no information as to whether the nodes refer to the
-same taxon.
-
-The answers are assigned numeric scores of 1 for yes, 0 for no
-information, and -1 for no.  Roughly speaking, a candidate that a
-heuristic gives a no is eliminated; one that is unique in getting a
-yes is selected, and if there are no yeses or no unique yes, more
-heuristics are consulted.
-
-More specifically, the method for applying the heuristics is as
-follows:
-
- 1. Start with a source node N and its set C of union node candidates C1 ... Cn (see above).
- 2. For each heuristic H:
-      1. For each candidate Ci currently in C, use H to obtain the score H(N, Ci)
-      1. Let Z = the highest score from among the scores H(N, Ci)
-      1. If Z < 0, we are done
-      1. Let C' = those members of C that have score Z
-      1. If Z > 0 and C' contains only one candidate, we are done (match is that candidate)
-      1. Replace C with C' and proceed to the next heuristic
- 4. If C is singleton, its member is taken to be the correct match.
- 5. Otherwise, the source node is ambiguous.
-
-[NMF: Again, depending on target audience, a brief worked example may
-help communicate what's being achieved here.  JAR: easy to find
-examples - the log.tsv file is full of them, e.g. Conocybe siliginea.  But hard to find
-illuminating examples since in most cases only one aspect of the method
-is being used, and the answer almost always looks obvious to the human eye.  I will try though.]
-
-If the process ends with multiple candidates, an unresolvable
-ambiguity is declared.  If the ambiguous source node has no children,
-it is dropped - which is OK because it probably corresponds to one of
-the existing candidates and therefore would make no new contribution
-to the union taxonomy.  If the ambiguous source node has children, it
-is treated as a potentially new node, possibly turning an N-way
-polysemy into an N+1-way polysemy, which is almost certainly wrong.
-Usually, subsequent analysis determines that the grouping is inconsistent
-with the union taxonomy and it is dropped.  If it is not dropped, then
-this is a rare and troublesome situation that requires manual
-intervention.
-
-The heuristics are applied in the order in which they are listed
-below.  The outcome is sensitive to the ordering.  The ordering is
-forced to some extent by internal logic [discuss after the reader
-knows what the heuristics are].
-
 ### The heuristics
 
 #### Separate taxa if in disjoint 'divisions'
@@ -291,8 +245,17 @@ higher taxa from the lower priority taxonomy to be "broken".]
 
 #### Disparate ranks implies different taxa
 
-[recover description from older commit of method.md.  this happens 172
-times.]
+We assume that a taxon with rank above the level of genus (family,
+class, etc.) cannot be the same as a taxon with rank genus or below
+(tribe, species, etc.).  A candidate that matches the source node in
+this regard will be preferred to one that doesn't.  (That is, in
+regard to whether it is genus or below; not in regard to its
+particular rank.)
+
+For example, for genus Ascophora in GBIF (which is in
+Platyhelminthes), candidate Ascophora from WoRMS, a genus, is
+preferred to candidate Ascophora from NCBI, an infraorder.
+
 
 #### Prefer taxa with shared lineage
 
@@ -350,6 +313,64 @@ A's.
 particular workflow step, then say what may go wrong, then try to
 discuss that. And this repeats for each paragraph / workflow step. I
 will suggest a different arrangement.. [SEE BELOW]]
+
+
+### Heuristics application, in detail
+
+The automated alignment process proceeds one source node at a time.
+First, a list of candidate union matches, based on names and synonyms,
+is prepared for the source node.  Then, a set of heuristics is applied
+to find a unique best union node match, if any, for that source node.
+
+A heuristic is a rule that, when presented with a source node and a
+union node, answers 'yes', 'no', or 'no information'.  'Yes' means
+that according to the rule the two nodes refer to the same taxon, 'no'
+means they refer to different taxa, and 'no information' means that
+this rule provides no information as to whether the nodes refer to the
+same taxon.
+
+The answers are assigned numeric scores of 1 for yes, 0 for no
+information, and -1 for no.  Roughly speaking, a candidate that a
+heuristic gives a no is eliminated; one that is unique in getting a
+yes is selected, and if there are no yeses or no unique yes, more
+heuristics are consulted.
+
+More specifically, the method for applying the heuristics is as
+follows:
+
+ 1. Start with a source node N and its set C of union node candidates C1 ... Cn (see above).
+ 2. For each heuristic H:
+      1. For each candidate Ci currently in C, use H to obtain the score H(N, Ci)
+      1. Let Z = the highest score from among the scores H(N, Ci)
+      1. If Z < 0, we are done
+      1. Let C' = those members of C that have score Z
+      1. If Z > 0 and C' contains only one candidate, we are done (match is that candidate)
+      1. Replace C with C' and proceed to the next heuristic
+ 4. If C is singleton, its member is taken to be the correct match.
+ 5. Otherwise, the source node is ambiguous.
+
+[NMF: Again, depending on target audience, a brief worked example may
+help communicate what's being achieved here.  JAR: easy to find
+examples - the log.tsv file is full of them, e.g. Conocybe siliginea.  But hard to find
+illuminating examples since in most cases only one aspect of the method
+is being used, and the answer almost always looks obvious to the human eye.  I will try though.]
+
+If the process ends with multiple candidates, an unresolvable
+ambiguity is declared.  If the ambiguous source node has no children,
+it is dropped - which is OK because it probably corresponds to one of
+the existing candidates and therefore would make no new contribution
+to the union taxonomy.  If the ambiguous source node has children, it
+is treated as a potentially new node, possibly turning an N-way
+polysemy into an N+1-way polysemy, which is almost certainly wrong.
+Usually, subsequent analysis determines that the grouping is inconsistent
+with the union taxonomy and it is dropped.  If it is not dropped, then
+this is a rare and troublesome situation that requires manual
+intervention.
+
+The heuristics are applied in the order in which they are listed
+below.  The outcome is sensitive to the ordering.  The ordering is
+forced to some extent by internal logic [discuss after the reader
+knows what the heuristics are].
 
 ### Failure to choose
 

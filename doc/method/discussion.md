@@ -39,6 +39,69 @@
 
 * talk about inclusions.csv ?
 
+
+[text excised from methods section]
+
+Ultimately there is no fully automated and foolproof test to determine
+whether two nodes can be aligned - whether node A and node B are about
+the same taxon. The information to do this is out there in the
+literature and in databases on the Internet, but often it is
+(understandably) missing from the source taxonomies.
+
+The heuristics do not work in all cases.  Sometimes more than one
+candidate passes all heuristics, in which case the node is left
+unaligned.
+
+### Collisions
+
+[move to discussion?]
+There are often false polysemies within a source taxonomy - that is, a
+name belongs to more than one node in the source taxonomy, when on
+inspection it is clear that this is a mistake in the source taxonomy, and there
+is really only one taxon in question.  Example: _Aricidea rubra_
+occurs twice in WoRMS, but the two nodes are very close in the
+taxonomy and one of them appears to be a duplication.
+
+If the union taxonomy has an appropriate node with that name, then
+multiple source taxonomy nodes can match it, the collision will be
+allowed, and the polysemy will go away.  However, if the union
+taxonomy has no such node, both source nodes will end up being copied
+into the union.  This is an error in the method which needs to be
+fixed.
+
+### Rationale for various parts of the method
+
+(Explaining the perverted lineage rule)
+
+  There are several factors that
+make it tricky to turn this truism into an actionable rule.
+
+* At the time that alignment is being done, we do not know the
+  alignments of the ancestors, so we cannot compare ancestors very well.
+  We use ancestor name as a proxy for ancestor identity.
+* Sometimes having ancestors of the same name is not informative, as
+  with species that are true polysemies, which have ancestors (genera)
+  that are also true polysemies.  Ancestors whose names are string
+  prefixes of the given taxon's name are skipped over.
+* It is not enough that *some* ancestor (or ancestor name) is shared,
+  since every pair of taxa share some ancestor (name).  We need to
+  restrict the assessment to near ancestors.
+
+[move to discusion]
+Broadening the search beyond the 'quasiparent' of both nodes is
+necessary because different taxonomies have different resolution: in
+one a family might be divided into subfamilies, where in the other it
+is not.  But by ensuring that one of the two nodes being compared is a
+quasiparent, we avoid vacuous positives due to both being descendants
+of 'life'.
+
+
+[move to discusion] This heuristic [overlapping membership] has both
+false negatives (taxa that should be combined but aren't) and false
+positives (cases where merging taxa does not lead to the best
+results).
+
+
 ## File formats
 
 Every source taxonomy we imported is provided in a different format,
@@ -91,7 +154,7 @@ common cases but simple enough for non-programmers to understand has
 been a challenge.
 
 [NMF: Transparency as theme - not just taxa, but process - highlight
-somewhere]
+somewhere (intro?)]
 
 [NMF: And it's good to point out how many parts that used to be
 "manual" are now automated, compared to other synthesis projects
@@ -127,6 +190,8 @@ NCBI, IRMNG, IPNI, etc. are databases.  They probably have scripts for
 updating an imported source but I don't understand how an update fails
 to overwrite manual record changes that have been made since the last
 import?
+
+[Mention CoL]
 
 [GBIF is the biggy, but difficult because (1) it's not documented very
 well - just the two blog posts (2) to the extent it's documented, it's

@@ -1,0 +1,207 @@
+Text copied from TDWG poster
+
+A REFERENCE TAXONOMY FOR PHYLOGENETIC DATA AGGREGATION
+
+----
+
+Abstract
+
+Any large biodiversity data project requires one or more taxonomies
+for discovery and data integration purposes, as in "find me records
+for primates" or "follow this record's link to IRMNG".  For example,
+the GBIF occurrence record database and the NCBI Genbank sequence both
+have dedicated taxonomy efforts, while Encyclopedia of Life is
+taxonomy-agnostic, supporting multiple taxonomies.  We present the
+design and application of the Open Tree Taxonomy, which serves a store
+of phylogenetic trees (from currently about 3,500 published studies)
+called 'Phylesystem'.  In order to obtain the greatest possible number
+of resolved taxa for names occurring in the phylogenetic trees, the
+taxonomy is a synthesis of seven different source taxonomies, each
+with different strengths.  Automatic taxonomy synthesis gives a
+unified view of the tree store, and in addition has allowed creation
+(in conjunction with a phylogenetic supertree) of a comprehensive
+summary "tree of life".  The synthesis process is repeatable so that
+updates to source taxonomies can be incorporated easily.
+
+Taxonomy synthesis has been technically challenging in unexpected
+ways. The taxonomy contains a number of unfortunate artifacts, and
+making it transparent for users has been a struggle.  I will report on
+experience that may help others considering this kind of synthetic
+taxonomy project.
+
+----
+
+  Objectives
+
+	•	Coverage - maximize inclusion of taxa that might occur as an OTU in a phylogenetic study
+	•	Phylogenetic fidelity - higher taxa should anticipate agreement with phylogenetic trees
+	•	Ongoing update - so it doesn't go stale over time
+	•	Open data - access product on web without data use agreement
+	•	Linked provenance - you can figure out where information comes from
+	•	Reasonable effort
+
+----
+
+   Strategy
+
+	•	An automated synthesis of existing taxonomic sources, to extent possible
+	•	Be inclusive, at risk of including duplicate or uncertain names
+	•	Priority order i.e. monotonicity
+	•	Rank free
+	•	Weak on nomenclature (authorities not required or
+	•	used; available from linked external sources)
+
+----
+
+  Prior art
+
+	•	Catalogue of Life: a set of individually curated sub-taxonomies (or checklists) grafted into a curated backbone at assigned places
+	•	GBIF taxonomy: coincides with CoL down to family; below that a synthesis of many sources of genera and species. Sophisticated use of authorities. Discovery of synonyms when epithets are same in nearby genera.
+	•	Literature on phylogenetic supertree methods is	relevant
+
+----
+
+  Method
+
+	•	No persistent database. Every assembly is de novo
+	•	Preprocess: 'adjust' to prepare for alignment
+	•	Start with W = empty workspace
+	•	For each source: apply 'smasher' i.e.
+      Align source to W
+      Merge source to W
+	•	Postprocess: curated edits
+	•	Reuse legacy identifiers & assign new ones
+
+----
+
+W := empty
+W := W + silva
+W := W + ncbi
+W: = W + worms
+...
+W := W + source
+...
+W == OTT
+read out
+
+----
+
+list of sources with taxon & synonym counts
+
+----
+
+Not your usual taxonomic data:
+
+Chavania sp. BMNH20100255 -- often no conventional authority
+Only 30% of species names in NCBI are binomials. 
+Many non-binomials are used in phylogenetic studies. We cannot rely on authority information.
+
+Osteoglossocephalai -- often no rank
+Not all taxa are assigned Linnaean ranks. The deepest NCBI record
+(Tropheops tropheops romandi) is 37 levels deep and many of its
+ancestors are unranked. Many phylogenetically important records,
+e.g. eudicots and African Cichlids, are unranked and have informal
+names used by the source.
+
+----
+
+Preprocessing in preparation for alignment:
+
+Tipuloidea in Hemiptera ?
+Some source taxonomies need to be 'adjusted' in preparation for alignment, to forestall mistakes that will be made by automated aligner. If we don't delete certain unaccepted names, they will match nearby valid groups with the same name.
+
+Pinidae, Coniferophyta, Coniferopsida ?
+Source taxonomies include clerical errors such as duplicates, which can confuse the alignment logic. Merging duplicates ahead of time can prevent problems downstream.
+
+Eccrinales in Fungi or not?
+Although many disagreements over placement are handled by priority, those that straddle barrier nodes (e.g. Eccrinales, Myzostomatida) require manual intervention.
+
+Diatomea or Bacillariophyta ?
+Sometimes an important taxon is given different names in different sources. Since alignment relies heavily on names (for now), these alignments need to be made 'by hand' (i.e. by an Open Tree curator).
+
+So far about 280 curated adjustments and explicit alignments are
+applied before sources are processed.
+
+
+----
+
+1. Align a source to the workspace
+
+[figures: Bufo, Aporia, Haliciona]
+
+Single node alignment procedure:
+
+To find matching node in workspace W for a single node in source
+1. find candidates (workspace nodes that share a name-string, whether synonym or not, with any 
+name-string of source node)
+2. apply yes/no heuristics in sequence to winnow the set. Heuristics are:
+    H1. do not align to candidate if in disjoint regions of barrier taxonomy
+    H2. prefer candidate with overlapping membership to one without 
+           (for internal nodes only)
+    H3. prefer candidate with common near lineage to one without 
+           (e.g. in same family)
+    H4. prefer candidate with same name-string to one with a synonym
+
+Taxonomy alignment procedure:
+
+1. Align terminal nodes as above. Use single node alignment as above 
+to find and align the 'terminals.' A terminal is an alignable node that 
+has no descendant alignable node.
+
+2. Align internal nodes as above; membership tests (in H2) are in terms of internal nodes. 
+A more principled use of membership, giving membership priority over
+name-related alignment heuristics, is work in progress. 
+
+----
+
+2. Merge a source into the workspace
+
+[figures: Bufo, Fissurellidae, Turdidae]
+
+Conflict: cannot resolve because multiple parents are possible. 
+Label edges incertae sedis
+
+Taxonomy merge procedure:
+
+Preorder traversal of source tree.
+For each unaligned node t, choose a strategy:
+1. graft - copy subtree and attach it
+2. equivalent - source node has same members as workspace node
+3. resolution - source node resolves (refines) classification of some workspace node
+4. absorb - failed resolution because workspace node contains children that aren't alignment targets
+5. conflict - do not copy, attach leftovers to mrca
+For nodes that are not to be added to W (already there, or it conflicts with W), choose a target = attachment point for grafts and resolutions.
+Attach 'new' workspace nodes at the appropriate place.
+
+----
+
+Postprocessing:
+
+1. Apply patches requested by curators: currently about 130 of them
+(parent changes, synonymies, renamings, extinct/extant, merges, deletions)
+2. Assign identifiers to taxon records by reusing ids in previous version of OTT (found via alignment without merge!)
+3. Run regression tests - currently about 100 of them
+4. Quality control - review reports of non-transferred ids, homonyms, and conflicts. Fix as needed and repeat entire assembly.
+
+----
+
+There are many things we can do with either the tool (smasher) or the taxonomy (OTT).
+
+Tree of life: Phylogenetic supertree+ taxonomic background = draft total 'tree of life' with its own applications, such as OnZoom viewer and a 'make me a tree given a selection of species' web service.
+
+Phylogenetic fidelity: We can compare OTT to any tree registered to OTT tips. E.g. for a phylogenetic supertree from 500+ studies with broad coverage of life we learn that there is 65% of taxa (4824/7875) agree with phylogenetic groupings (among the taxa relevant to this question).
+
+Note on sources of OTUs: Of the OTUs in the Open Tree corpus that are mapped to OTT, more than 99% come from NCBI. Admittedly the corpus does not include very many studies not based on sequences. The non-NCBI part of OTT is provided for a better "whole tree of life" not limited to phylogenetic synthesis.
+
+
+----
+
+Thanks!
+Markus Döring, Paul Kirk, Tony Rees for help with sources;
+Cody Hinchliff for making the first version of OTT;
+Romina Gazis and the rest of the Open Tree team;
+Yan Wong for OneZoom and copious bug reports;
+the many other submitters of bug reports;
+Alan Ruttenberg;
+NSF AVAToL for award 1208809
+

@@ -12,40 +12,46 @@
 header = ['name', 'reference', 'version', 'taxa', 'synonyms', 'priority']
 
 table = [
+    {'name': 'Barriers',
+     'reference': '',
+     'version': '',
+     'priority': 1,
+     'taxa': 28,
+     'synonyms': 8},
     {'name': 'ARB-SILVA',
      'reference': '10.1093/nar/gks1219',
      'version' : '2016-06-29',
-     'priority': 1,
+     'priority': 2,
      'taxa': 78687,
      'synonyms': 0},
     {'name': 'Hibbett 2007',
      'reference': '10.6084/m9.figshare.1465038.v4',
      'version' : 'v4',
-     'priority': 2,
+     'priority': 3,
      'taxa': 227,
      'synonyms': 0},
     {'name': 'Index Fungorum',
      'reference': 'x',
      'version' : '2014-04-07',
-     'priority': 3,
+     'priority': 4,
      'taxa': 284973,
      'synonyms': 157734},
     {'name': 'Sch&auml;ferhoff 2010',
      'reference': 'x',
      'version' : '2013-11-23',
-     'priority': 4,
+     'priority': 5,
      'taxa': 119,
      'synonyms': 0},
     {'name': 'WoRMS',
      'reference': 'x',
      'version' : '2015-10-01',
-     'priority': 5,
+     'priority': 6,
      'taxa': 330412,
      'synonyms': 223196},
     {'name': 'NCBI',
      'reference': 'x',
      'version' : '2016-06-29',
-     'priority': 6,
+     'priority': 7,
      # These numbers come from running process_ncbi_taxonomy.py.
      # Need to review - names.dmp seems to have 2207998 rows, much bigger
      # (some of those will be authorities, etc.)
@@ -54,22 +60,22 @@ table = [
      'synonyms': 719526},  # Careful about how to count.
     {'name': 'GBIF',
      'reference': 'x',
-     'version' : '2013-07-02',
-     'priority': 7,
+     'version' : '2013-07-02 [update]',
+     'priority': 8,
      # These numbers come from running process_gbif_taxonomy.py
      'taxa': 3273321,     # Boils down to 1863834
      'synonyms': 1143026},  # Boils down to 879745
     {'name': 'IRMNG',
      'reference': 'x',
      'version' : '2014-01-31',
-     'priority': 8,
+     'priority': 9,
      # These numbers come from running process_irmng.py, I believe
      'taxa': 1706655,    # Boils down to 1685134
      'synonyms': 685983}, # Boils down to 659851
     {'name': 'curation',
      'reference': 'github',
-     'version': '4b3ba1afdf1fd650b41d520486cdf1bbfba7f36c',
-     'priority': 9,
+     'version': '4b3ba1a',
+     'priority': 10,
      'taxa': 'xx',
      'synonyms': 0}
 ]

@@ -1,3 +1,9 @@
+# Given a set of files that already contain OTT id / qualified id
+# associations, create two indexes: one from OTT id to qualified ids,
+# the other from qualified id to OTT ids.
+# The indexes are represented as csv files, with multiple values 
+# separated by ';'.
+
 import csv, os, sys
 
 dirname = sys.argv[1]

@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# This is the script that was used, just one time, to create OTT
+# 2.10draft12 from OTT 2.10draft11.  There are two corrections:
+#  1. redundant synonym records removed,
+#  2. bogus sources for Eukaryota and SAR records removed.
+
 if [ -d tax/ott -a ! -e tax/ott/.incomplete ]; then
     echo saving old tax/ott
     mv tax/ott tax/ott.save

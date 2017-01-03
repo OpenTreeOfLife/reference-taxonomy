@@ -192,17 +192,17 @@ _Pteridium_ is a land plant, and WoRMS says its _Pteridium_ is a
 rhodophyte, then it follows that NCBI _Pteridium_ and WoRMS
 _Pteridium_ are different taxa.
 
-Drawing a 'polysemy barrier' between plants and rhodophytes
-resembles the use of nomenclatural codes to separate polysemies,
+Drawing a 'homonym barrier' between plants and rhodophytes
+resembles the use of nomenclatural codes to separate (hemi)homonyms,
 but the codes are not fine grained enough to capture distinctions that
-actually arise.  For example, there are many [how many? dozens?
-hundreds?] of fungus/plant polysemies, even though the two groups are
+arise in practice.  For example, there are many [how many? dozens?
+hundreds?] of fungus/plant homonyms, even though the two groups are
 governed by the same nomenclatural code.
 
 [NMF: Check [here](https://doi.org/10.3897/BDJ.4.e8080) for harder data (names
 management sections and refs. therein).]
 
-Some cases of apparent polysemy might be differences of scientific opinion
+Some cases of apparent homonymy might be differences of scientific opinion
 concerning whether or not a taxon possesses a diagnostic apomorphy, or
 belongs phylogenetically in some designated clade (the MRCA of some
 other taxa).  Different placement of a name in two source taxonomies
@@ -215,7 +215,7 @@ Metazoa, etc.).  Before the main alignment process starts, every
 source taxonomy is aligned - manually, if necessary - to the barrier
 taxonomy.  (Usually this initial mini-alignment is by simply by name,
 although there are a few troublesome cases, such as Bacteria, where
-higher taxon names are polysemies.)  For any node/taxon A, the
+higher taxon names are homonyms.)  For any node/taxon A, the
 smallest barrier taxon containing A is called its _division_.  If
 taxa A and B with the same name N have divisions C and D, and C and D
 are disjoint in the barrier taxonomy, then A and B are taken to be distinct.
@@ -232,14 +232,14 @@ and preventing animals from being plants.
 JAR continuing in response to NMF:
 The problem is not placing everything; that's not hard. The only purpose of
 the barrier (whose taxa are called 'divisions') is to prevent incorrect
-collapse of what ought to be polysemies. If you have record A with name Mus
+collapse of what ought to be homonyms. If you have record A with name Mus
 bos, and record B with name Mus bos, then you generally want them to be
 unified if they're both chordates, but if one is a chordate and the other
 is a mollusc, you'd rather they not unify.
 
-It's hard to find real examples of species-level polysemies where one
+It's hard to find real examples of species-level homonyms where one
 can be sure it's not an artifact or mistake, but one of them (from my
-polysemy list) is probably Porella capensis. I have about 180 at the
+homonym list) is probably Porella capensis. OTT has about 180 homonyms at the
 species level, many of which look like mistakes (since sometimes two
 or three have the same genus name). Most are plant/animal or
 plant/fungus or animal/fungus, but some cases, like Ctenella aurantia,
@@ -303,7 +303,7 @@ unplaced in the source (e.g. is in Eukaryota but not in Metazoa) and
 ought to be matched with a placed taxon in the workspace (in both
 Eukaryota and Metazoa).  In OTT 2.9, [??  figure out what happens -
 not sure], but the number of affected names is quite high, so many
-false polysemies are created.  Example: the barrier taxonomy does not
+false homonyms are created.  Example: the barrier taxonomy does not
 separate _Brightonia_ the mollusc (from IRMNG) from _Brightonia_ the
 echinoderm (from higher priority WoRMS), because there is no division
 for echinoderms, so [whatever happens].  [example no good in OTT
@@ -366,7 +366,7 @@ it is dropped - which is OK because it probably corresponds to one of
 the existing candidates and therefore would make no new contribution
 to the workspace.  If the ambiguous source node has children, it
 is treated as a potentially new node, possibly turning an N-way
-polysemy into an N+1-way polysemy, which is almost certainly wrong.
+homonym into an N+1-way homonym, which is almost certainly wrong.
 Usually, subsequent analysis determines that the grouping is inconsistent
 with the workspace and it is dropped.  If it is not dropped, then
 this is a rare and troublesome situation that requires manual

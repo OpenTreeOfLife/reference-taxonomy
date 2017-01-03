@@ -102,7 +102,7 @@ categorizes the fate of each source node during the merge phase.
     2162104  aligned tip
      304121  aligned internal node
     3482704  new tip
-       6178  new tip (polysemous)
+       6178  new tip (homonym)
      267746  new internal node, part of graft
        1909  refinement
        7938  merged into larger taxon
@@ -120,8 +120,8 @@ _aligned internal node_: Similarly.
 _new tip_: There were no candidates for aligning the source node, so a
 new node (a tip) is added to the workspace.
 
-_new tip (polysemous)_: Same as _new tip_ but in copying the node, a
-polysemy is created.
+_new tip (homonym)_: Same as _new tip_ but in copying the node, a
+homonym is created.
 
 _new internal node_: No descendant of the source node is aligned, so
 this node is simply copied, finishing up a copy of its subtree.
@@ -155,7 +155,7 @@ General metrics on OTT:
  * Number of tips: 3274406
  * Number of records with rank 'species': 3118191
  * Number of taxa with binomial name-strings: 2337337
- * Number of polysemous name-strings: 8043  
+ * Number of homonym name-strings: 8043  
       * of which any of the taxa is a species: 2648
       * of which any of the taxa is a genus:   5298
 
@@ -189,11 +189,11 @@ Topology:
  * Maximum depth of any node in the tree: 38
  * Branching factor: average 13.02 children per internal node
 
-## Polysemy analysis:
+## Homonym analysis:
 
 7360 of them [on a recent run]. That's too many.
 
- * Could we classify the polysemies?  by taxon rank, proximity, etc.  and compare to GBIF / NCBI
+ * Could we classify the homonyms?  by taxon rank, proximity, etc.  and compare to GBIF / NCBI
      * sibling, cousin, parent/child, within code, between codes
      * how many inherited from source taxonomy, as opposed to created?
      * could be created via barrier taxonomy separation
@@ -306,7 +306,7 @@ coverage requirement as well as any other available taxonomic source.
 
 [As another coverage check, and test of alignment, consider evaluating
 against HHDB (hemihomonym database) - ideally we would have all senses of
-each HHDB polysemy, in the right places]
+each HHDB hemihomonym, in the right places]
 
 ### Backbone quality
 

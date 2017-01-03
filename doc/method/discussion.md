@@ -55,16 +55,16 @@ unaligned.
 ### Collisions
 
 [move to discussion?]
-There are often false polysemies within a source taxonomy - that is, a
+There are often false homonyms within a source taxonomy - that is, a
 name belongs to more than one node in the source taxonomy, when on
-inspection it is clear that this is a mistake in the source taxonomy, and there
+manual inspection it is clear that this is a mistake in the source taxonomy, and there
 is really only one taxon in question.  Example: _Aricidea rubra_
 occurs twice in WoRMS, but the two nodes are very close in the
 taxonomy and one of them appears to be a duplication.
 
 If the workspace has an appropriate node with that name, then
 multiple source taxonomy nodes can match it, the collision will be
-allowed, and the polysemy will go away.  However, if the workspace
+allowed, and the homonym will go away.  However, if the workspace
 has no such node, both source nodes will end up being copied
 into the workspace.  This is an error in the method which needs to be
 fixed.
@@ -80,8 +80,8 @@ make it tricky to turn this truism into an actionable rule.
   alignments of the ancestors, so we cannot compare ancestors very well.
   We use ancestor name as a proxy for ancestor identity.
 * Sometimes having ancestors of the same name is not informative, as
-  with species that are true polysemies, which have ancestors (genera)
-  that are also true polysemies.  Ancestors whose names are string
+  with species that are true homonyms, which have ancestors (genera)
+  that are also true homonyms.  Ancestors whose names are string
   prefixes of the given taxon's name are skipped over.
 * It is not enough that *some* ancestor (or ancestor name) is shared,
   since every pair of taxa share some ancestor (name).  We need to

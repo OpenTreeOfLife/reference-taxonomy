@@ -522,9 +522,8 @@ lost during merge, either.
 After all source taxonomies are aligned and merged, general ad hoc
 patches are applied to the union taxonomy, in a manner similar to that
 employed with the source taxonomies.  Patches are represented in a
-variety of formats representing historical accidents of curation.  For
-example, a set of patches for microbial Eukaryotes was prepared by the
-Katz lab as a table of their own design.  Rather than convert it to
+variety of formats representing historical accidents of curation.  Rather
+than convert all patches to
 some form already known to the system, we kept it in the original form,
 which facilitates further editing.
 

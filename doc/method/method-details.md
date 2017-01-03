@@ -14,8 +14,8 @@ are performed:
 
  1. Child taxa of "containers" in the source taxonomy are made to be
     children of the container's parent.  "Containers" are
-    groupings in the tree that don't represent taxa, for example
-    "incertae sedis" or "environmental samples" nodes.  The members of
+    groupings in the tree that don't represent taxa, for example nodes
+    named "incertae sedis" or "environmental samples".  The members of
     a container aren't more closely related to one another than they
     are to the container's siblings; the container is only present as
     a way to say something about the members.  The fact that a node
@@ -23,8 +23,8 @@ are performed:
     child node.
  1. Monotypic homonym removal - when node with name N has as its
     only child another node with the same name N, the parent is removed.
-    This is done to avoid an ambiguity when later on a node with name
-    N needs to be matched.  [get examples by rerunning]
+    This is done to avoid ambiguities when aligning taxonomies.
+    [get examples by rerunning]
 
 [KC: need to say something about whether these cases get touched again during
 the process, i.e. do these nodes ever get added back, or are they permanently
@@ -55,10 +55,10 @@ process to fix.  Following are some examples of adjustments.
 1. name changes (e.g. 'Choanomonada' to 'Choanoflagellida')
 1. deletions (e.g. removing synonym 'Eucarya' for 'Eukaryota' to avoid
    confusing eukaryotes with genus Eucarya in Magnoliopsida; or removing
-   unaccepted genus Tipuloidea in Hemiptera to avoid confusion with 
+   unaccepted genus Tipuloidea in Hemiptera to avoid confusion with
    the Diptera superfamily)
 1. merges to repair redundancies in the source (e.g. Pinidae, Coniferophyta, Coniferopsida)
-1. rename taxa to avoid confusing homonym (e.g. there are two Cyanobacterias in SILVA, one 
+1. rename taxa to avoid confusing homonym (e.g. there are two Cyanobacterias in SILVA, one
    a parent of the other; the parent is renamed to its NCBI name 'Cyanobacteria/Melainabacteria group')
 1. alignments when name differs (Diatomea is Bacillariophyta)
 1. alignments as exceptions to automated rules (Eccrinales not in Fungi,
@@ -66,7 +66,8 @@ process to fix.  Following are some examples of adjustments.
 
 
 
-For the reference taxonomy, there are 284 ad hoc adjustments in
+For the reference taxonomy [KC: reference taxonomy? aren't these applied to the
+individual sources?], there are 284 ad hoc adjustments in
 preparation for alignment. [check]
 
 ### Candidate identification
@@ -135,39 +136,40 @@ To combat these situations, a set of heuristics is brought to bear
 during alignment.  Very briefly, they are:
 
  1. If node a in S' is an animal and node a in S is a plant, do not
-    align the former to the latter.  This generalizes to other pairs 
-    of disjoint major taxa.  
+    align the former to the latter.  This generalizes to other pairs
+    of disjoint major taxa. [KC: is this where the barrier taxonomy
+    comes into play?]
 
     (Example: the _Aporia_ cases above.)
 
  1. Prefer to align species or genus n' to n if they are in the same
     family.  Put a bit more carefully prefer n if the name-string of
-    the family node of n' is the same as the name-string of the 
-    family node of n. 
+    the family node of n' is the same as the name-string of the
+    family node of n.
 
     (Example: _Hyphodontia quercina_ irmng:11021089
     aligns with Hyphodontia quercina in Index Fungorum [if:298799],
     not Malacodon candidus [if:505193].  [Not a great example because
     a later heuristic would have gotten it.]  The synonymy is via GBIF.)
-    (Example: IRMNG Pulicomorpha, a genus, matches NCBI 
+    (Example: IRMNG Pulicomorpha, a genus, matches NCBI
     Pulicomorpha, a genus, not GBIF Pulicomorpha, a suborder.
     Both taxa are insects.)
 
  1. Prefer to align n' to n if they overlap in at least one taxon.
-    A bit more carefully: if n' has a descendant aligned to 
+    A bit more carefully: if n' has a descendant aligned to
     a descendant of n.  
 
     (Example: need example. Scyphocoronis goes to Millotia instead of Scyphocoronis ?)
 
  1. Suppose the barrier taxonomy has B contained in A.
-    If node n' is in B, and there are candidates in both A and B, 
+    If node n' is in B, and there are candidates in both A and B,
     prefer the one in B.  Similarly, if n' is in A, prefer the
     candidate in A.
 
     (Example: IRMNG Macbrideola indica goes to Macbrideola coprophila,
     not Utharomyces epallocaulus.  [get more info])
 
- 1. All other things being equal, prefer a candidate that has the 
+ 1. All other things being equal, prefer a candidate that has the
     same (non-synonym) name.
 
     (Example: Zabelia tyaihyoni preferred to Zabelia mosanensis for
@@ -288,6 +290,7 @@ we consider A and B to be incompatible, and prevent a match between
 them.
 
 #### Prefer same division
+[KC: is our use of 'division' always referring to the barrier taxonomy?]
 
 There are many cases (about 4,000? will need to instrument and re-run
 to count) where A's division (say, C) is properly contained in B's
@@ -440,11 +443,11 @@ treatment of internal S'-nodes:
 
    If the S' topology is inconsistent with the S topology,
    we throw away the internal nodes from S'.  Any leftover taxa
-   are made incertae sedis in the common ancestor of their 
+   are made incertae sedis in the common ancestor of their
    siblings, which in this case is z.
 
    [example of inconsistency: gbif:7919320 = Helotium, contains
-   Helotium lonicerae and Helotium infarciens, but IF knows Helotium infarciens as a synonym for 
+   Helotium lonicerae and Helotium infarciens, but IF knows Helotium infarciens as a synonym for
    Hymenoscyphus infarciens, which isn't in OTT Helotium]
 
    [another random example: GBIF (S') Paludomidae has children
@@ -452,7 +455,7 @@ treatment of internal S'-nodes:
    in S]
 
 
-*Absorption:* Hmm... 
+*Absorption:* Hmm...
 
 Example: (a few thousand of the last case)
 

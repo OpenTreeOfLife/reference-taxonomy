@@ -5,11 +5,11 @@
 
 Each source taxonomy has its own import procedure, usually a file
 download from the provider's web site followed by application of a
-script that converts the source to a exchange format for import.  Given
+script that converts the source to a common format for import.  Given
 the converted source files, the taxonomy can be read by the assembly
 procedure.
 
-After each source taxonomy is loaded, the following two normalizations
+After each source taxonomy is loaded, the following normalizations
 are performed:
 
  1. Child taxa of "containers" in the source taxonomy are made to be
@@ -21,22 +21,27 @@ are performed:
     a way to say something about the members.  The fact that a node
     had originally been in a container is recorded as a flag on the
     child node.
- 1. Monotypic homonym removal - when node with name N has as its
+ 1. Monotypic homonym removal - when a node with name N has as its
     only child another node with the same name N, the parent is removed.
     This is done to avoid an ambiguity when later on a node with name
     N needs to be matched.  [get examples by rerunning]
+ 1. Diacritic removal - accents and umlauts are removed, in order to improve 
+    matching as well as to follow the nomenclatural codes, which prohibit them.
+    The original name-string is left behind as a synonym.
 
-[KC: need to say something about whether these cases get touched again during
-the process, i.e. do these nodes ever get added back, or are they permanently
-removed?]
+[KC: need to say something about whether these cases get touched again
+during the process, i.e. do these nodes ever get added back, or are
+they permanently removed?  JAR: something like "the normalized
+versions of the taxonomies then become the input to subsequent
+processing phases"?]
 
 
 
 ## Aligning nodes across taxonomies
 
-It is important that source nodes be matched with union nodes when and
+It is important that source taxonomy nodes be matched with workspace nodes when and
 only when this is appropriate.  A mistaken identity between a source
-taxon and a union taxon can be disastrous, leading not just to an
+node and a workspace node can be disastrous, leading not just to an
 incorrect tree but to downstream curation errors in OTU matching
 (e.g. putting a snail in flatworms).  A mistaken non-identity
 (separation) can also be a problem, since taxon duplication
@@ -72,16 +77,16 @@ preparation for alignment. [check]
 ### Candidate identification
 
 Given a source node, the alignment procedure begins by finding the
-nodes in the union taxonomy that it could _possibly_ align with.
-These union nodes are called _candidates._ The candidates are simply
+nodes in the workspace that it could _possibly_ align with.
+These workspace nodes are called _candidates._ The candidates are simply
 the nodes that have a name-string (either primary or synonym) that
 matches any name-string (primary or synonym) of the source node.
 
-For example, if source node A has synonym name-string C, and union
+For example, if source node A has synonym name-string C, and workspace
 node B also has synonym name-string C, then B is a candidate for being
 an alignment target for A.
 
-It follows, for example, that if the union taxonomy has multiple nodes
+It follows, for example, that if the workspace has multiple nodes
 with the same name-string (homonyms), all of these nodes will become
 candidates for every source node that also has that name-string.
 
@@ -153,8 +158,8 @@ during alignment.  Very briefly, they are:
     Pulicomorpha, a genus, not GBIF Pulicomorpha, a suborder.
     Both taxa are insects.)
 
- 1. Prefer to align n' to n if they overlap in at least one taxon.
-    A bit more carefully: if n' has a descendant aligned to 
+ 1. Prefer to align n' to n if they overlap.
+    Stated a bit more carefully: if n' has a descendant aligned to 
     a descendant of n.  
 
     (Example: need example. Scyphocoronis goes to Millotia instead of Scyphocoronis ?)
@@ -278,7 +283,7 @@ species would typically be a family.
 aligned tips, rather than names.  And I believe it's a preference, not
 a separation.]
 
-For each source or union node A, we define its 'membership proxy' to
+For each source or workspace node A, we define its 'membership proxy' to
 be the set of aligned nodes under it that do not have any aligned node
 as a descendant (that is, as aligned nodes, they are tip-like).
 
@@ -295,7 +300,7 @@ nearest division (say, D) or vice versa.  A and B are therefore not
 separated by the division separation heuristic.  It is not clear what
 to do in these cases.  In many situations the taxon in question is
 unplaced in the source (e.g. is in Eukaryota but not in Metazoa) and
-ought to be matched with a placed taxon in the union (in both
+ought to be matched with a placed taxon in the workspace (in both
 Eukaryota and Metazoa).  In OTT 2.9, [??  figure out what happens -
 not sure], but the number of affected names is quite high, so many
 false polysemies are created.  Example: the barrier taxonomy does not
@@ -318,12 +323,12 @@ will suggest a different arrangement.. [SEE BELOW]]
 ### Heuristics application, in detail
 
 The automated alignment process proceeds one source node at a time.
-First, a list of candidate union matches, based on names and synonyms,
+First, a list of candidate matches, based on names and synonyms,
 is prepared for the source node.  Then, a set of heuristics is applied
-to find a unique best union node match, if any, for that source node.
+to find a unique best candidate, if any, for that source node.
 
 A heuristic is a rule that, when presented with a source node and a
-union node, answers 'yes', 'no', or 'no information'.  'Yes' means
+candidate (workspace node), answers 'yes', 'no', or 'no information'.  'Yes' means
 that according to the rule the two nodes refer to the same taxon, 'no'
 means they refer to different taxa, and 'no information' means that
 this rule provides no information as to whether the nodes refer to the
@@ -338,7 +343,7 @@ heuristics are consulted.
 More specifically, the method for applying the heuristics is as
 follows:
 
- 1. Start with a source node N and its set C of union node candidates C1 ... Cn (see above).
+ 1. Start with a source node N and its set C of workspace node candidates C1 ... Cn (see above).
  2. For each heuristic H:
       1. For each candidate Ci currently in C, use H to obtain the score H(N, Ci)
       1. Let Z = the highest score from among the scores H(N, Ci)
@@ -359,11 +364,11 @@ If the process ends with multiple candidates, an unresolvable
 ambiguity is declared.  If the ambiguous source node has no children,
 it is dropped - which is OK because it probably corresponds to one of
 the existing candidates and therefore would make no new contribution
-to the union taxonomy.  If the ambiguous source node has children, it
+to the workspace.  If the ambiguous source node has children, it
 is treated as a potentially new node, possibly turning an N-way
 polysemy into an N+1-way polysemy, which is almost certainly wrong.
 Usually, subsequent analysis determines that the grouping is inconsistent
-with the union taxonomy and it is dropped.  If it is not dropped, then
+with the workspace and it is dropped.  If it is not dropped, then
 this is a rare and troublesome situation that requires manual
 intervention.
 
@@ -378,7 +383,7 @@ There are cases where the automated alignment procedure can't figure
 out what the correct alignment target should be, among multiple
 candidates.  If the node is a tip (that usually means a species), then
 it is safe to just discard the node, i.e. exempt it from participation
-in the construction of the union U; it cannot provide much new
+in the construction of the workspace U; it cannot provide much new
 information in any case.  If the node is internal, however, there may
 be many useful (unaligned) taxa beneath it whose placement in U only
 comes via the placement of the internal node in S'.  In this case
@@ -388,7 +393,7 @@ make turn a two-way ambiguity into a three-way one.
 [Example: ...]
 
 
-## Merging unaligned source nodes into the union taxonomy
+## Merging unaligned source nodes into the workspace
 
 ### Complications in merge
 
@@ -460,30 +465,30 @@ Example: (a few thousand of the last case)
 ### different, older text
 
 Following alignment, taxa from the source taxonomy are merged into the
-union taxonomy.  This is performed via bottom-up traversal of the
+workspace.  This is performed via bottom-up traversal of the
 source.  A parameter 'sink' is passed down to recursive calls, and is
 simply the nearest (most tipward) alignment target seen so far on the descent.
 It is called 'sink' because it's the node to which orphan nodes will
 be attached when a source taxon is dropped due to inconsistency with
-the union.
+the workspace.
 
 The following cases arise during the merge process:
 
  * Source taxonomy tip:
-     * If the source node is matched to a union node,
+     * If the source node is matched to a workspace node,
        there is nothing to do - the taxon is already present.
      * If it's ambiguous - could equally match
-       more than one union node, even after all alignment heuristics come
+       more than one workspace node, even after all alignment heuristics come
        to bear - then there is also nothing to do; it is effectively
        blocked and ignored.
-     * If unmatched and not ambiguous, then create a corresponding tip node in the union, to be
-       attached higher up in the recursion.  The source tip is then matched to the new union
+     * If unmatched and not ambiguous, then create a corresponding tip node in the workspace, to be
+       attached higher up in the recursion.  The source tip is then matched to the new
        tip.
  * Source taxonomy internal node: the source node's children have already been
    processed (recursively), and are all matched to targets in the
-   union (or, rarely, blocked, see above).  The targets are either
-   'old' (they were already in the union before the merge started) or
-   'new' (copied from source to union during this round of the merge
+   workspace (or, occasionally, blocked, see above).  The targets are either
+   'old' (they were already in the workspace before the merge started) or
+   'new' (copied from source to workspace during this round of the merge
    process).  One of the
    following rules then applies (assuming in each case that none of
    the previous rules apply):
@@ -491,15 +496,16 @@ The following cases arise during the merge process:
      * Matched internal node: Attach any new targets to the internal
        node's alignment target.
 
-     * Graft: all targets are new.  Create a new union node, and attach
+     * Graft: all targets are new.  Create a new workspace node, and attach
        the new targets to it.
 
      * Inconsistent: if the old target nodes do not all have the same parent,
        attach the new target nodes to the sink, and flag them as 'unplaced'.
 
-     * Refinement: if every child of the sink (in the union taxonomy)
+     * Refinement: if every child of the sink (in the workspace)
        is the match of some source node, we say the source
-       node 'refines' the union taxonomy.  Create a new union node to
+       node 'refines' the developing taxonomy in the workspace.
+       Create a new workspace node to
        match the source node, and attach both old and new targets to it.
 
      * Merge: some child of the sink is _not_ the match of any source
@@ -517,7 +523,7 @@ lost during merge, either.
 ## Finishing the assembly
 
 After all source taxonomies are aligned and merged, general ad hoc
-patches are applied to the union taxonomy, in a manner similar to that
+patches are applied to the workspace, in a manner similar to that
 employed with the source taxonomies.  Patches are represented in a
 variety of formats representing historical accidents of curation.  For
 example, a set of patches for microbial Eukaryotes was prepared by the
@@ -537,14 +543,14 @@ extinct.
 The final step is to assign unique, stable identifiers to nodes.  As
 before, some identifiers are assigned on an ad hoc basis.  Then,
 automated identifier assignment is done by aligning the previous
-version of OTT to the new union taxonomy.  Additional candidates are
+version of OTT to the new taxonomy.  Additional candidates are
 found by comparing node identifiers used in source taxonomies to
 source taxonomy node identifiers stored in the previous OTT version.
-After transferring identifiers of aligned nodes, any remaining union
+After transferring identifiers of aligned nodes, any remaining workspace
 nodes are given newly 'minted' identifiers.
 
 The previous OTT version is not merged into the new version; the
 alignment is only for the purpose of assigning identifiers.
-Therefore, if every taxon record giving rise to a particular union
-node is deleted from the sources, the union node is automatically
+Therefore, if every taxon record giving rise to a particular workspace
+node is deleted from the sources, the workspace node is automatically
 omitted from OTT.

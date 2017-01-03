@@ -11,10 +11,10 @@ and assess how well the resulting taxonomy meets the needs of the Open Tree.
 ## Alignment
 
 As OTT is assembled, the alignment procedure examines every source
-node, either choosing an alignment target for it in the union
-taxonomy, or leaving it unaligned.  The following is a breakdown, by
-source node, of how it reached its decisions one way or the other,
-pooled for all sources.
+node, either choosing an alignment target for it in the workspace, or
+leaving it unaligned.  The following is a breakdown, by source node,
+of how it reached its decisions one way or the other, pooled for all
+sources.
 
 [combine this table with description of each row]
 
@@ -59,7 +59,7 @@ begins.
 _disjoint divisions_, ..., _by name_:
 Automated source record alignments, broken down according to which
 heuristic (see methods) was responsible for narrowing the candidate
-set down to a single union record.
+set down to a single workspace node.
 
 _confirmed_: There was only a single candidate, and it was confirmed
 by a 'yes' answer from one of the heuristics (usually same name).
@@ -79,9 +79,8 @@ _rejected_: [to be done]
 
 _disjoint membership_: [to be done]
 
-_not aligned_: The source node was not aligned to any union node.
-There were no union taxonomy candidates at all for this
-source taxon.
+_not aligned_: The source node was not aligned to any workspace node.
+There were no candidates at all for this source taxon.
 
 [KC not keen on saying 'unaligned' in one place and 'not aligned' in
 another, but 'the taxon was unaligned' doesn't sound right since
@@ -97,7 +96,7 @@ because 'not-aligned' is an awkward adjective.]
 ## Merge
 
 The merge phase examines every source node, copying unaligned source
-nodes into the union taxonomy when possible.  The following table
+nodes into the workspace when possible.  The following table
 categorizes the fate of each source node during the merge phase.
 
     2162104  aligned tip
@@ -112,14 +111,14 @@ categorizes the fate of each source node during the merge phase.
 
 [why is the merge total different from the alignment total?]
 
-_aligned tip_: There is already a union node for the given source
+_aligned tip_: There is already a workspace node for the given source
 node, so the source node is not copied.  The only action is to record
-an additional source for the union node, and to copy any extinct flag.
+an additional source for the workspace node, and to copy any extinct flag.
 
 _aligned internal node_: Similarly.
 
 _new tip_: There were no candidates for aligning the source node, so a
-new node (a tip) is added to the union taxonomy.
+new node (a tip) is added to the workspace.
 
 _new tip (polysemous)_: Same as _new tip_ but in copying the node, a
 polysemy is created.
@@ -128,7 +127,7 @@ _new internal node_: No descendant of the source node is aligned, so
 this node is simply copied, finishing up a copy of its subtree.
 
 _refinement_: The source node refines a classification already present
-in the union.
+in the workspace.
 
 _merged into larger taxon_: [should be described in methods section]
 

@@ -62,11 +62,11 @@ is really only one taxon in question.  Example: _Aricidea rubra_
 occurs twice in WoRMS, but the two nodes are very close in the
 taxonomy and one of them appears to be a duplication.
 
-If the union taxonomy has an appropriate node with that name, then
+If the workspace has an appropriate node with that name, then
 multiple source taxonomy nodes can match it, the collision will be
-allowed, and the polysemy will go away.  However, if the union
-taxonomy has no such node, both source nodes will end up being copied
-into the union.  This is an error in the method which needs to be
+allowed, and the polysemy will go away.  However, if the workspace
+has no such node, both source nodes will end up being copied
+into the workspace.  This is an error in the method which needs to be
 fixed.
 
 ### Rationale for various parts of the method
@@ -101,6 +101,27 @@ false negatives (taxa that should be combined but aren't) and false
 positives (cases where merging taxa does not lead to the best
 results).
 
+[from method section intro]
+The conventional approach to meeting the requirements stated above
+would have been to create a database, copy the first taxonomy into it,
+then somehow merge the second taxonomy into that, repeating for
+further sources if necessary.  However, it is not clear how to meet
+the the ongoing update requirement under this approach.  As the source
+taxonomies change, we would like for the combined taxonomy to contain
+only information derived from the latest versions of the sources, no
+residual information from previous versions.  Many changes to the
+sources are corrections, and we do not want to hang on to or even be
+influenced by information known to be incorrect.  Properly updating a
+database that is populated with old information is something we don't
+know how to do.
+
+  There are additional benefits [to an automated tool] as well, such as the ability to
+add additional sources relatively easily, and to use the tool for
+other purposes.
+
+[Priority judgments] are sometimes made
+in ignorance of the quality of the sources, since we do not have the
+resources to evaluate the quality of every source in detail.
 
 ## File formats
 

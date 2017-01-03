@@ -71,9 +71,8 @@ We start with a sequence of source taxonomies S1, S2, ..., Sn, ordered
 by priority.  Priority means that if S is judged more accurate or
 otherwise "better" than S', then S occurs earlier in the sequence than
 S' and its information supersedes that from later sources.  Priority
-judgements are made by curators on the project, and are sometimes made
-in ignorance of the quality of the sources, since we do not have the
-resources to evaluate source quality in detail.
+judgements are made by curators on the project based on their taxonomic
+expertise.
 
 We define an operator for combining taxonomies pairwise, written
 schematically as U = S + S', and apply it from left to right:

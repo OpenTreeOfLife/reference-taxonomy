@@ -31,6 +31,8 @@ as animals, plants, and fungi.  Its purpose is to establish barriers
 between major groups, as an aid to separating polysemies.  If a node
 is found in one of these barrier groups, then it cannot be unified with a
 node in a disjoint barrier group, even if the name matches.
+[KC: should include the barrier taxonomy either as a table, figure, or as
+part of data supplement]
 
 **NCBI taxonomy**  
 The first requirement of the taxonomy is to align OTUs across
@@ -48,7 +50,7 @@ information, it is relatively small, containing only 360455 records
 with standard binomial species
 names. It therefore does not meet the taxonomic coverage requirement.
 
-The particular version of NCBI taxonomy used in OTT 2.10 was
+The particular version of NCBI taxonomy used in OTT 2.11 was
 downloaded from NCBI on [date].  [maybe put dates in table??]
 
 
@@ -61,7 +63,7 @@ to terms of use.  Like the NCBI taxonomy, it has ongoing institutional
 support for maintenance and growth, and provides access without
 agreement to terms of use, making it a good choice for Open Tree.
 
-The GBIF backbone version used in OTT 2.10 was downloaded in July
+The GBIF backbone version used in OTT 2.11 was downloaded in July
 2013.  A successor was released on [date], as this report was being
 prepared, and is scheduled for incorporation into OTT.
 
@@ -74,7 +76,7 @@ SILVA taxonomy, which is a curated, phylogenetically informed classification.
 The OTUs in the SILVA  taxonomy are algorithmically-generated clusters of RNA
 sequences derived from GenBank.
 
-We incorporated SILVA version 115 into OTT 2.10, downloaded on [xxxx].
+We incorporated SILVA version 115 into OTT 2.11, downloaded on [xxxx].
 We did not include SILVA's plant, animal, or fungal branches in OTT
 [references]. SILVA has higher priority than NCBI or GBIF in order to
 capture the deep relationships in the tree.

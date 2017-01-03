@@ -1,7 +1,7 @@
 [preceded by sources subsection]
 
 
-## Source taxonomy import and normalization
+### Import and normalization
 
 Each source taxonomy has its own import procedure, usually a file
 download from the provider's web site followed by application of a
@@ -25,9 +25,9 @@ are performed:
     only child another node with the same name N, the parent is removed.
     This is done to avoid an ambiguity when later on a node with name
     N needs to be matched.  [get examples by rerunning]
- 1. Diacritic removal - accents and umlauts are removed, in order to improve 
-    matching as well as to follow the nomenclatural codes, which prohibit them.
-    The original name-string is left behind as a synonym.
+ 1. Diacritics removal - accents and umlauts are removed in order to improve 
+    name matching, as well as to follow the nomenclatural codes, which prohibit them.
+    The original name-string is kept, as a synonym.
 
 [KC: need to say something about whether these cases get touched again
 during the process, i.e. do these nodes ever get added back, or are
@@ -51,9 +51,11 @@ and to loss of unification opportunities in phylogeny synthesis.
 
 ### Ad hoc alignment adjustments
 
-Automated alignment is preceded by scripted ad hoc 'adjustments' that
-address known issues that are beyond the capabilities of the automated
-process to fix.  Following are some examples of adjustments.
+Automated alignment is preceded by ad hoc 'adjustments' that address
+known issues that are beyond the capabilities of the automated process
+to fix.  Although each individual adjustment is ad hoc, i.e. not the
+result of automation, the adjustments are recorded in a file that can
+be run as a script.  Following are some examples of adjustments.
 
 1. capitalization and spelling repairs (e.g. change 'sordariomyceta' to 'Sordariomyceta')
 1. addition of synonyms to facilitate later matching (e.g. 'Florideophyceae' as synonym for 'Florideophycidae')
@@ -61,14 +63,13 @@ process to fix.  Following are some examples of adjustments.
 1. deletions (e.g. removing synonym 'Eucarya' for 'Eukaryota' to avoid
    confusing eukaryotes with genus Eucarya in Magnoliopsida; or removing
    unaccepted genus Tipuloidea in Hemiptera to avoid confusion with 
-   the Diptera superfamily)
+   the superfamily in Diptera)
 1. merges to repair redundancies in the source (e.g. Pinidae, Coniferophyta, Coniferopsida)
-1. rename taxa to avoid confusing homonym (e.g. there are two Cyanobacterias in SILVA, one 
+1. rename taxa to avoid confusing homonyms (e.g. there are two Cyanobacterias in SILVA, one 
    a parent of the other; the parent is renamed to its NCBI name 'Cyanobacteria/Melainabacteria group')
-1. alignments when name differs (Diatomea is Bacillariophyta)
-1. alignments as exceptions to automated rules (Eccrinales not in Fungi,
+1. alignments when names differs (Diatomea is Bacillariophyta)
+1. alignments to override automated alignment rules (Eccrinales not in Fungi,
    Myzostomatida not in Annelida)
-
 
 
 For the reference taxonomy, there are 284 ad hoc adjustments in
@@ -82,62 +83,39 @@ These workspace nodes are called _candidates._ The candidates are simply
 the nodes that have a name-string (either primary or synonym) that
 matches any name-string (primary or synonym) of the source node.
 
-For example, if source node A has synonym name-string C, and workspace
-node B also has synonym name-string C, then B is a candidate for being
-an alignment target for A.
+Example: GBIF _Nakazawaea pomicola_ has NCBI _Candida pomiphila_ as
+a candidate by way of a record found in NCBI that says that
+_Nakazawaea pomicola_ is a synonym of _Candida pomiphila_.
 
-It follows, for example, that if the workspace has multiple nodes
-with the same name-string (homonyms), all of these nodes will become
-candidates for every source node that also has that name-string.
+It follows that if the workspace has multiple nodes with the same
+name-string (homonyms), all of these nodes will become candidates for
+every source node that also has that name-string.
 
-### Complications in alignment
+### Candidate selection
 
-**WORK IN PROGRESS - new text followed by old text**
-
-Following are a few of the things that can go wrong during alignment.
-
-*Known synonyms:* Each taxonomy comes with a set of synonyms, or extra
-name-strings that apply to nodes, in addition to the 'primary'
-name-string (in most cases, what the source taxonomy takes to be the
-accepted name-string).  It is important to make use of these in
-alignments, since otherwise a single taxon will have two nodes (taxon
-records) under different name-strings.
-
-Example: GBIF _Nakazawaea pomicola_ is aligned with NCBI _Candida
-pomiphila_ by way of a synonymy found in NCBI.
-
-*Multiple candidates:* For a given node in S', there may be multiple
-nodes in S with the same name-string, making determination of the
-correct mapping unclear.
+The purpose of the alignment phase is to choose a single correct
+candidate for each source node, or to reject all candidates if none is
+correct.
 
 Example: There are two nodes named _Aporia lemoulti_ in the GBIF
 backbone taxonomy; one is a plant and the other is an insect.  (One of
 these two is an erroneous duplication, but the automated system has to
 be able to cope with this situation because we don't have the
 resources to correct all source taxonomy errors!)  It is necessary to
-choose the right one for the IRMNG node with name _Aporia lemoulti_.
-Consequences of incorrect placement might include putting
+choose the right candidate for the IRMNG node with name _Aporia
+lemoulti_.  Consequences of incorrect placement might include putting
 siblings of IRMNG _Aporia lemoulti_ in the wrong kingdom as well.
 
-*Candidate is wrong:* For a given node n in S', it might be that the
-node (or nodes) in S with n's name-string would be an incorrect match.
-
-Example: the unique node with name-string _Buchnera_ in the
-Lamiales taxonomy is a plant, while the unique node with name-string
-_Buchnera_ in SILVA is a bacteria.  [a species example would be
-better...]
-
-Another example: _Fritillaria messanensis_ in WoRMS must not map to
+Example: _Fritillaria messanensis_ in WoRMS must not map to
 _Fritillaria messanensis_ in NCBI Taxonomy because the taxon in WoRMS
 is an animal (tunicate) while the taxon in NCBI is a flowering plant.
 This is a case where there is a unique candidate that is the wrong one.
 
 Similarly, _Aporia sordida_ is a plant in GBIF, an insect in IRMNG.
 
-### What to do about the complications
-
-To combat these situations, a set of heuristics is brought to bear
-during alignment.  Very briefly, they are:
+To choose a candidate, and thereby align a source node with a
+workspace node, a set of heuristics is brought to bear.  They are
+described in brief, followed by more detail.
 
  1. If node a in S' is an animal and node a in S is a plant, do not
     align the former to the latter.  This generalizes to other pairs 
@@ -145,8 +123,16 @@ during alignment.  Very briefly, they are:
 
     (Example: the _Aporia_ cases above.)
 
+ 1. Prohibit alignment where one taxon is at the rank of genus or
+    below (species, etc.) and the other is at the rank of family or above
+    (order, etc.).
+
+    (Example: IRMNG Pulicomorpha, a genus, matches NCBI 
+    Pulicomorpha, a genus, not GBIF Pulicomorpha, a suborder.
+    Both taxa are insects.)
+
  1. Prefer to align species or genus n' to n if they are in the same
-    family.  Put a bit more carefully prefer n if the name-string of
+    family.  Put a bit more carefully: prefer n if the name-string of
     the family node of n' is the same as the name-string of the 
     family node of n. 
 
@@ -154,9 +140,6 @@ during alignment.  Very briefly, they are:
     aligns with Hyphodontia quercina in Index Fungorum [if:298799],
     not Malacodon candidus [if:505193].  [Not a great example because
     a later heuristic would have gotten it.]  The synonymy is via GBIF.)
-    (Example: IRMNG Pulicomorpha, a genus, matches NCBI 
-    Pulicomorpha, a genus, not GBIF Pulicomorpha, a suborder.
-    Both taxa are insects.)
 
  1. Prefer to align n' to n if they overlap.
     Stated a bit more carefully: if n' has a descendant aligned to 
@@ -181,7 +164,7 @@ during alignment.  Very briefly, they are:
 If there is a single candidate and it passes all heuristics, it is
 aligned to that candidate.
 
-### The heuristics
+### Alignment heuristics
 
 #### Separate taxa if in disjoint 'divisions'
 
@@ -320,7 +303,7 @@ discuss that. And this repeats for each paragraph / workflow step. I
 will suggest a different arrangement.. [SEE BELOW]]
 
 
-### Heuristics application, in detail
+### Method for applying Heuristics
 
 The automated alignment process proceeds one source node at a time.
 First, a list of candidate matches, based on names and synonyms,

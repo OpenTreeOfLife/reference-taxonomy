@@ -34,6 +34,17 @@ TAGS
 feed/amendments/amendments-1
 t/feed/amendments/amendments-0
 feed/silva/work
+feed/gbif/work
 tarballs
 *-tmp
 doc/method/out/*
+new_taxa/need_ids.json
+t/new_taxa
+t/feed/amendments
+service/*.tre
+ott_id_list/*.csv
+old
+tax/gbif.2013
+ott_id_list/ott_id_list
+ott_id_list/test_otts
+feed/gbif/in_2013

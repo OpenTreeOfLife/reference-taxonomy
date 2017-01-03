@@ -102,7 +102,7 @@ around [date] (noting that the version of IF in in GBIF was [XXX]).
 
 
 **WoRMS (Decapoda)**  
-We incorporated WoRMS in order to improve classificatio and coverage of
+We incorporated WoRMS in order to improve classification and coverage of
 decapods.  We obtained the WoRMS taxonomy
 via its Web API around [date].  [reference]
 
@@ -116,16 +116,14 @@ which logs the extinct / extant status of taxa.
 
 
 **Curation**  
-It is not uncommon to have taxa as OTUs in
-phylogenetic studies that do not occur in OTT.  This can be due to a
-delay in curation by NCBI itself, a delay in importing a fresh NCBI
-version into OTT, a morphological study with otherwise unknown
-species, or other causes.  To handle this situation, we developed
-a user interface that allows curators to create new taxon records along with relevant
-documentation (publications, databases, and so on).  New taxon records
-are saved into a specific GitHub repository, and these records are then
-linked from the OTT taxonomy files and user interfaces so that
-provenance is always available.
+It is not uncommon to have taxa as OTUs in phylogenetic studies that do not
+occur in OTT.  This can happen when OTT does not contain the latest version of a
+source taxonomy, or when none of the source taxonomies contain the taxon. To
+handle this situation, we developed a user interface that allows curators to
+create new taxon records along with relevant documentation (publications,
+databases, and so on).  New taxon records are saved into a specific GitHub
+repository, and these records are then linked from the OTT taxonomy files and
+user interfaces so that provenance is always available.
 
 
 ### Characterization of sources

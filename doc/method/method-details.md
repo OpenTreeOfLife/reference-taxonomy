@@ -66,9 +66,9 @@ process to fix.  Following are some examples of adjustments.
 
 
 
-For the reference taxonomy [KC: reference taxonomy? aren't these applied to the
-individual sources?], there are 284 ad hoc adjustments in
-preparation for alignment. [check]
+In the process of assembling the reference taxonomy, 284 ad hoc
+adjustments are made to the source taxonomies before they are
+aligned to the workspace. [check]
 
 ### Candidate identification
 
@@ -138,7 +138,7 @@ during alignment.  Very briefly, they are:
  1. If node a in S' is an animal and node a in S is a plant, do not
     align the former to the latter.  This generalizes to other pairs
     of disjoint major taxa. [KC: is this where the barrier taxonomy
-    comes into play?]
+    comes into play? JR: yes, will fix later]
 
     (Example: the _Aporia_ cases above.)
 
@@ -290,7 +290,7 @@ we consider A and B to be incompatible, and prevent a match between
 them.
 
 #### Prefer same division
-[KC: is our use of 'division' always referring to the barrier taxonomy?]
+[KC: is our use of 'division' always referring to the barrier taxonomy? JR: yes, considering different term, will apply it consistently]
 
 There are many cases (about 4,000? will need to instrument and re-run
 to count) where A's division (say, C) is properly contained in B's

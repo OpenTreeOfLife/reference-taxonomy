@@ -89,7 +89,7 @@ The combination S + S' is formed in two steps:
     in S' that cannot be aligned to S.
  2. A _merge_ step that creates the union, U = S + S', by adding to S the unaligned
     taxa from S'. The attachment position of unaligned nodes from step 1 is
-    is determined from nearby aligned nodes, most often either as an _graft_
+    is determined from nearby aligned nodes, either as a _graft_
     or a _insertion_. Examples of these two cases are given in
     [point to figure(s)].
 
@@ -117,8 +117,8 @@ grafting events (hard to count).  I think the figures would be harder
 to read with real taxon names compared with schematic names (letters),
 but will take advice.]
 
-The other common merge method is an _insertion_, where the unaligned
-node has descendants that are in S. This [KC: usually? almost always?]
+The other merge method is an _insertion_, where the unaligned
+node has descendants that are in S. This [KC: usually? almost always? JR: always.]
 occurs when S' has greater resolution than S. For example, this case
 inserts the unaligned nodes E and H:
 
@@ -133,8 +133,8 @@ the insertion event.
 
 [F = Fissurellidae, M = Montfortula, etc.]
 
-The vast majority of alignment and merge situations are simple grafts and
-insertions. However, a few cause serious problems.  Ambiguities
+The vast majority of alignment and merge situations simple, similar to the 
+above. However, a few cause serious problems.  Ambiguities
 caused by synonyms and homonyms create most of the difficulties, with
 inconsistent or unclear higher taxon membership creating the rest.
 

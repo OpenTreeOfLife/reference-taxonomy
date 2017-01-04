@@ -13,7 +13,8 @@ and assess how well the resulting taxonomy meets the needs of the Open Tree.
 As OTT is assembled, the alignment procedure examines every source
 node, either choosing an alignment target for it in the union
 taxonomy, or leaving it unaligned.  The following is a breakdown on the use frequency of the various alignment heuristics, pooled across all source
-taxonomies.
+taxonomies.  [JR: actually the heuristics only come into play when there is a choice to be made, so that is only part of what is reported, just six rows out of 15 in the table.
+In other situations something else happens.]
 
 [combine this table with description of each row]
 

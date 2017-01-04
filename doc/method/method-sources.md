@@ -64,8 +64,7 @@ support for maintenance and growth, and provides access without
 agreement to terms of use, making it a good choice for Open Tree.
 
 The GBIF backbone version used in OTT 2.11 was downloaded in July
-2013.  A successor was released on [date], as this report was being
-prepared, and is scheduled for incorporation into OTT.
+2016.
 
 
 

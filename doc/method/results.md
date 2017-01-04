@@ -12,9 +12,9 @@ and assess how well the resulting taxonomy meets the needs of the Open Tree.
 
 As OTT is assembled, the alignment procedure examines every source
 node, either choosing an alignment target for it in the union
-taxonomy, or leaving it unaligned.  The following is a breakdown, by
-source node, of how it reached its decisions one way or the other,
-pooled for all sources.
+taxonomy, or leaving it unaligned.  The following is a breakdown on the use frequency of the various alignment heuristics, pooled across all source
+taxonomies.  [JR: actually the heuristics only come into play when there is a choice to be made, so that is only part of what is reported, just six rows out of 15 in the table.
+In other situations something else happens.]
 
 [combine this table with description of each row]
 
@@ -82,11 +82,6 @@ _disjoint membership_: [to be done]
 _not aligned_: The source node was not aligned to any union node.
 There were no union taxonomy candidates at all for this
 source taxon.
-
-[KC not keen on saying 'unaligned' in one place and 'not aligned' in
-another, but 'the taxon was unaligned' doesn't sound right since
-'unalign' is not a verb, while 'copy a not-aligned node' doesn't work
-because 'not-aligned' is an awkward adjective.]
 
 [why is 'not aligned' so much bigger than 'Number of taxon records' below?]
 
@@ -204,6 +199,7 @@ Topology:
 ## Evaluating the product
 
 [I think this section does not make a contribution and should be flushed]
+[KC: agreed]
 
 The outcome of the assembly method is a new version of OTT.  There are
 various ways to evaluate a taxonomy.
@@ -358,7 +354,7 @@ GBIF update had some issues:
 As the Open Tree project did not enter into any data use agreements
 in order to obtain OTT's
 taxonomic sources, it is not obliged to require any such agreement
-from users of OTT.  (A data use agreement is sometimes called 'terms 
+from users of OTT.  (A data use agreement is sometimes called 'terms
 of use'.  Legally, a DUA is a kind of contract.)
 Therefore, users are not restricted in this way.
 In addition, the taxonomy is not creative expression, so copyright

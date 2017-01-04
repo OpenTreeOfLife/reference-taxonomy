@@ -31,6 +31,8 @@ as animals, plants, and fungi.  Its purpose is to establish barriers
 between major groups, as an aid to separating polysemies.  If a node
 is found in one of these barrier groups, then it cannot be unified with a
 node in a disjoint barrier group, even if the name matches.
+[KC: should include the barrier taxonomy either as a table, figure, or as
+part of data supplement]
 
 **NCBI taxonomy**  
 The first requirement of the taxonomy is to align OTUs across
@@ -48,7 +50,7 @@ information, it is relatively small, containing only 360455 records
 with standard binomial species
 names. It therefore does not meet the taxonomic coverage requirement.
 
-The particular version of NCBI taxonomy used in OTT 2.10 was
+The particular version of NCBI taxonomy used in OTT 2.11 was
 downloaded from NCBI on [date].  [maybe put dates in table??]
 
 
@@ -61,9 +63,8 @@ to terms of use.  Like the NCBI taxonomy, it has ongoing institutional
 support for maintenance and growth, and provides access without
 agreement to terms of use, making it a good choice for Open Tree.
 
-The GBIF backbone version used in OTT 2.10 was downloaded in July
-2013.  A successor was released on [date], as this report was being
-prepared, and is scheduled for incorporation into OTT.
+The GBIF backbone version used in OTT 2.11 was downloaded in July
+2016.
 
 
 
@@ -74,7 +75,7 @@ SILVA taxonomy, which is a curated, phylogenetically informed classification.
 The OTUs in the SILVA  taxonomy are algorithmically-generated clusters of RNA
 sequences derived from GenBank.
 
-We incorporated SILVA version 115 into OTT 2.10, downloaded on [xxxx].
+We incorporated SILVA version 115 into OTT 2.11, downloaded on [xxxx].
 We did not include SILVA's plant, animal, or fungal branches in OTT
 [references]. SILVA has higher priority than NCBI or GBIF in order to
 capture the deep relationships in the tree.
@@ -100,7 +101,7 @@ around [date] (noting that the version of IF in in GBIF was [XXX]).
 
 
 **WoRMS (Decapoda)**  
-We incorporated WoRMS in order to improve classificatio and coverage of
+We incorporated WoRMS in order to improve classification and coverage of
 decapods.  We obtained the WoRMS taxonomy
 via its Web API around [date].  [reference]
 
@@ -114,16 +115,14 @@ which logs the extinct / extant status of taxa.
 
 
 **Curation**  
-It is not uncommon to have taxa as OTUs in
-phylogenetic studies that do not occur in OTT.  This can be due to a
-delay in curation by NCBI itself, a delay in importing a fresh NCBI
-version into OTT, a morphological study with otherwise unknown
-species, or other causes.  To handle this situation, we developed
-a user interface that allows curators to create new taxon records along with relevant
-documentation (publications, databases, and so on).  New taxon records
-are saved into a specific GitHub repository, and these records are then
-linked from the OTT taxonomy files and user interfaces so that
-provenance is always available.
+It is not uncommon to have taxa as OTUs in phylogenetic studies that do not
+occur in OTT.  This can happen when OTT does not contain the latest version of a
+source taxonomy, or when none of the source taxonomies contain the taxon. To
+handle this situation, we developed a user interface that allows curators to
+create new taxon records along with relevant documentation (publications,
+databases, and so on).  New taxon records are saved into a specific GitHub
+repository, and these records are then linked from the OTT taxonomy files and
+user interfaces so that provenance is always available.
 
 
 ### Characterization of sources

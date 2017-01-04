@@ -90,7 +90,7 @@ The combination S + S' is formed in two steps:
  2. A _merge_ step that creates the union, U = S + S', by adding to S the unaligned
     taxa from S'. The attachment position of unaligned nodes from step 1 is
     is determined from nearby aligned nodes, either as a _graft_
-    or a _insertion_. Examples of these two cases are given in
+    or an _insertion_. Examples of these two cases are given in
     [point to figure(s)].
 
 As a simple example, consider a genus represented in both

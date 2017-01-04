@@ -1,9 +1,25 @@
 
 # Method
 
+The conventional approach to meeting the requirements stated in the introduction
+would have been to create a database, copy the first taxonomy into it, then
+somehow merge the second taxonomy into that, repeating for further sources if
+necessary.  However, it is not clear how to meet the the ongoing update
+requirement under this approach.  As the source taxonomies change, we would like
+for the combined taxonomy to contain only information derived from the latest
+versions of the sources, without residual information from previous versions.  Many
+changes to the sources are corrections, and we do not want to hang on to or even
+be influenced by information known to be incorrect.  
+
+Rather than maintain a database of taxonomic information, we instead developed a
+process assembling a taxonomy from two or more taxonomic sources.  With a
+repeatable process, we can generate a new combined taxonomy version from new
+source taxonomy versions de novo, and do so frequently.  There are additional
+benefits as well, such as the ability to add additional sources relatively
+easily, and to use the tool for other purposes.
+
 In the following, any definite claims or measurements apply to the
 Open Tree reference taxonomy version 2.11.
-
 
 ## Terminology
 
@@ -48,12 +64,13 @@ So, I wonder what would happen if you did this kind of thing. "For the sake of m
 
 ## Assembly overview
 
-We developed a tool for assembling a taxonomy from two or more
+To produce the Open Tree reference taxonomy, 
+we developed a tool for assembling taxonomies from two or more
 taxonomic sources.  By using an automated process, we can generate a
 new combined taxonomy version from new source taxonomy versions at any
 point.
 
-Following is a simplified description of the method. Several
+This section is an overview of the method. Several
 generalities stated here are simplifications; the actual method used
 is a bit more involved, as described later on.
 
@@ -61,7 +78,8 @@ We start with a sequence of source taxonomies S1, S2, ..., Sn, ordered
 by priority.  Priority means that if S is judged more accurate or
 otherwise "better" than S', then S occurs earlier in the sequence than
 S' and its information supersedes that from later sources.  Priority
-judgements are made by curators on the project.
+judgements are made by curators on the project based on their taxonomic
+expertise.
 
 We define an operator for combining taxonomies pairwise, written
 schematically as U = S + S', and apply it from left to right:
@@ -71,27 +89,26 @@ schematically as U = S + S', and apply it from left to right:
 > U3 = U2 + S3  
 > ...
 
-The combination S + S' is formed in two steps (details below).
+The combination S + S' is formed in two steps:
 
- 1. A mapping or _alignment_ from S' to S is found, identifying all
-    nodes in S' that can be equated with nodes in S.  Not all nodes in S' 
-    are mapped; the unaligned nodes are the ones that will enlarge S
-    yielding U = S + S'.
- 2. The result U = S + S' is formed by _merging_ S' into
-    S, i.e. by starting with S and adding unaligned taxa from S' to it.
-    The positions in S where the unaligned nodes are to be attached
-    is determined from nearby aligned nodes.
+ 1. A mapping or _alignment_ step that identifies all
+    nodes in S' that can be equated with nodes in S. There will often be nodes
+    in S' that cannot be aligned to S.
+ 2. A _merge_ step that creates the union, U = S + S', by adding to S the unaligned
+    taxa from S'. The attachment position of unaligned nodes from step 1 is
+    is determined from nearby aligned nodes, either as a _graft_
+    or an _insertion_. Examples of these two cases are given in
+    [point to figure(s)].
 
 As a simple example, consider a genus represented in both
 taxonomies, but containing different species in the two:
 
 > [this would be a figure]   S = (b,c,d)a,  S' = (c,d,e)a
 
-Taxonomies S and S' each have four nodes.  Suppose c, d, and a in S'
-are aligned to c, d, and a in S.  The only unaligned node in S' is e,
-and it can be placed as a sibling of c and d.  (e is also a child of a, which
-is aligned, giving a different way to place it.  The result is the same in
-this case, but isn't always.)  This yields
+S and S' each have four nodes.  Suppose c, d, and a in S' are aligned
+to c, d, and a in S.  The only unaligned node is e, which is a
+sibling of c and d and therefore grafted as a child of a.  After the merge
+step, we have:
 
 > [figure] S + S' = (b,c,d,e)a
 
@@ -112,10 +129,10 @@ etc. in favor of the concrete example.  I think the figures would be
 harder to read with real taxon names compared with schematic names
 (letters), but will take advice.]
 
-There are two ways in which an unaligned node from S' gets added to S:
-as a graft (as in the previous example), and as an 'insertion', where
-it has some descendants (in S') aligned to nodes in S.  As an example of the
-latter, consider
+The other merge method is an _insertion_, where the unaligned
+node has descendants that are in S. This [KC: usually? almost always? JR: always.]
+occurs when S' has greater resolution than S. For example, this case
+inserts the unaligned nodes E and H:
 
 > [figure] (M,C,S,P)F + ((M,C)H,(S,P)E)F = ((M,C)H,(S,P)E)F
 
@@ -128,8 +145,8 @@ is contained in F both before and after the insertion event.
 (Key: F = Fissurellidae, M = Montfortula, C = Clypidina, S = Scutus, P
 = Puncturella, H = Hemotominae, E = Emarginulinae)
 
-The vast majority of alignment and merge situations are just like the
-above examples.  However, a few cause serious problems.  Ambiguities
+The vast majority of alignment and merge situations simple, similar to the 
+above. However, a few cause serious problems.  Ambiguities
 caused by synonyms and homonyms create most of the difficulties, with
 inconsistent or unclear higher taxon membership creating the rest.
 

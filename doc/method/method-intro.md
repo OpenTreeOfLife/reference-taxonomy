@@ -26,15 +26,17 @@ Open Tree reference taxonomy version 2.11.
   * source taxonomy = imported taxonomic source (NCBI taxonomy, etc.)
   * workspace = data structure for creation of the reference
     taxonomy
-  * node = a taxon record, either from a source taxonomy or the workspace;
-    giving name-string, source information,
+  * node = a taxon record, either from a source taxonomy or the workspace.
+    records primary name-string, provenance,
     parent node, optional rank, optional annotations
+  * parent (node) = the nearest enclosing node within a given node's taxonomy
   * tip = a node that is not the parent of any node
-  * homonymy = where a single name-string belongs to multiple nodes
+  * homonym = where a single name-string belongs to multiple nodes
     (within the same taxonomy).  This is the nontechnical meaning of 'homonym'
     and is not to be confused with 'homonym' in the nomenclatural sense, 
     which only applies within a single nomenclatural code.
     Nomenclatural homonyms, hemihomonyms, misspellings are all homonyms in this sense.
+  * primary = the non-synonym name-string of a node, as opposed to one of the synonyms.
 
 
 ## Assembly overview

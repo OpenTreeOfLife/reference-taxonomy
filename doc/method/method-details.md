@@ -113,195 +113,80 @@ This is a case where there is a unique candidate, but it is wrong.
 
 Similarly, _Aporia sordida_ is a plant in GBIF, but an insect in IRMNG.
 
-To choose a candidate, and thereby align a source node with a
-workspace node, a set of heuristics is brought to bear.  They are
-described in brief, followed by more detail.
+To choose a candidate, and thereby align a source node n' with a
+workspace node n, a set of heuristics is brought to bear.  The
+heuristics are as follows:
 
- 1. If node a in S' is an animal and node a in S is a plant, do not
-    align the former to the latter.  This generalizes to other pairs
-    of disjoint major taxa. [KC: is this where the separation taxa
-    come into play? JR: yes, will fix later]
+ 1. **Separation**: If n and n' are contained in "obviously different" major groups
+    such as animals and plants, do not align n' to n.  Two major
+    groups (or "separation taxa") are "obviously different" if they
+    are disjoint as determined by the separation taxonomy and the alignments 
+    of the source taxonomy and workspace to it.
 
-    (Example: the _Aporia_ cases above.)
+    (Examples: (1) the _Aporia_ cases above; (2) 
+    NCBI says n = _Pteridium_ is a land plant, WoRMS says n' = _Pteridium_ is a
+    rhodophyte, and the separation taxonomy says land plants and rhodophytes 
+    are disjoint, so n and n' are different taxa; (3) [some example where the heuristic 
+    is used for disambiguation instead of homonym creation].  
+    [Also look for good species-level examples as genera are so fraught anyhow.])
 
- 1. Prohibit alignment where one taxon is at the rank of genus or
-    below (species, etc.) and the other is at the rank of family or above
-    (order, etc.).
+ 1. **Disparate ranks**: Prohibit alignment where n and n' have "obviously 
+    incompatible" (disparate) ranks.
+    A rank is "obviously incompatible" with another if one is genus or
+    a rank inferior to genus (species, etc.) and the other is family or
+    a rank superior to family (order, etc.).
 
-    (Example: IRMNG Pulicomorpha, a genus, matches NCBI 
-    Pulicomorpha, a genus, not GBIF Pulicomorpha, a suborder.
-    Both taxa are insects.)
+    (Examples: (1) IRMNG _Pulicomorpha_, a genus, matches NCBI 
+    _Pulicomorpha_, a genus, not GBIF Pulicomorpha, a suborder.
+    Note that both candidates are insects. (2) For genus _Ascophora_ in 
+    GBIF (which is in
+    Platyhelminthes), candidate _Ascophora_ from WoRMS, a genus, is
+    preferred to candidate Ascophora from NCBI, an infraorder.)
 
- 1. Prefer to align species or genus n' to n if they are in the same
-    family.  Put a bit more carefully: prefer n if the name-string of
-    the family node of n' is the same as the name-string of the
-    family node of n.
+ 1. **Lineage**: Prefer to align species or genus n' to n if they have 
+    common near lineage.
+    For example, prefer n to other candidates if the name-string of
+    the family-rank ancestor node of n' is the same as the name-string of the
+    family-rank ancestor node of n.
 
     (Example: _Hyphodontia quercina_ irmng:11021089
     aligns with Hyphodontia quercina in Index Fungorum [if:298799],
     not Malacodon candidus [if:505193].  [Not a great example because
     a later heuristic would have gotten it.]  The synonymy is via GBIF.)
- 1. Prefer to align n' to n if they overlap.
+
+    The details are complicated because (a) all pairs of nodes share
+    at least _some_ of their lineage, and (b) the genus names do not
+    provide any information when comparing species nodes with the same
+    name-string.  The exact rule used is the following:
+
+    Define the 'quasiparent name' of n, q(n), to be the
+    name-string of the nearest ancestor of n whose name-string is not
+    a prefix of n's name-string.  (For example, the quasiparent of a species would typically be
+    a family.)
+    If q(n) is the name-string of
+    an ancestor of n', or vice versa, then n' is a preferred match to candidate n
+    (i.e. candidates with this property are preferred to those that don't).
+
+ 1. **Overlap**: Prefer to align n' to n if they are higher level groupings that overlap.
     Stated a bit more carefully: if n' has a descendant aligned to 
     a descendant of n.  
 
     (Example: need example. Scyphocoronis goes to Millotia instead of Scyphocoronis ?)
 
- 1. Suppose the separation taxa include A and B, with B contained in A.
-    If node n' is in B, and there are candidates in both A and B,
-    prefer the one in B.  Similarly, if n' is in A, prefer the
-    candidate in A.
+ 1. **Proximity**: Suppose the separation taxonomy includes A and B, with B contained in A.
+    If node n' is in B, then prefer candidates that are in B to those that are in A but not in B.
 
-    (Example: IRMNG Macbrideola indica goes to Macbrideola coprophila,
-    not Utharomyces epallocaulus.  [get more info])
+    (Example: IRMNG _Macbrideola indica_ goes to _Macbrideola coprophila_,
+    not _Utharomyces epallocaulus_.  [get more info])
 
- 1. All other things being equal, prefer a candidate that has the
-    same (non-synonym) name.
+ 1. **Same name-string**: Prefer candidates whose primary name-string
+    is the same as the primary name-string of n'.
 
-    (Example: Zabelia tyaihyoni preferred to Zabelia mosanensis for
-    GBIF Zabelia tyaihyoni.)
+    (Example: candidate _Zabelia tyaihyoni_ preferred to candidate _Zabelia mosanensis_ for
+    n' = GBIF _Zabelia tyaihyoni_.)
 
-If there is a single candidate and it passes all heuristics, it is
-aligned to that candidate.
-
-### Alignment heuristics
-
-#### Separate taxa if contained in disjoint separation taxa
-
-If taxa A and B belong to taxa C and D (respectively), and C and D are
-known to be disjoint, then it follows that A and B are distinct.  For
-example, land plants and rhodophytes are disjoint, so if NCBI says its
-_Pteridium_ is a land plant, and WoRMS says its _Pteridium_ is a
-rhodophyte, then it follows that NCBI _Pteridium_ and WoRMS
-_Pteridium_ are different taxa.
-
-Separating plants from rhodophytes
-resembles the use of nomenclatural codes to separate (hemi)homonyms,
-but the codes are not fine grained enough to capture distinctions that
-arise in practice.  For example, there are many [how many? dozens?
-hundreds?] of fungus/plant homonyms, even though the two groups are
-governed by the same nomenclatural code.
-
-[NMF: Check [here](https://doi.org/10.3897/BDJ.4.e8080) for harder data (names
-management sections and refs. therein).]
-
-Some cases of apparent homonymy might be differences of scientific opinion
-concerning whether or not a taxon possesses a diagnostic apomorphy, or
-belongs phylogenetically in some designated clade (the MRCA of some
-other taxa).  Different placement of a name in two source taxonomies
-does not necessarily mean that the name denotes different taxa in the
-two taxonomies.
-
-The separation heuristic used here works as follows.  We establish a
-set of separation taxa, containing about 25 higher taxa (Bacteria, Fungi,
-Metazoa, etc.).  Before the main alignment process starts, every
-source taxonomy is aligned - manually, if necessary - to the separation
-taxonomy.  (Usually this initial mini-alignment is by simply by name,
-although there are a few troublesome cases, such as Bacteria, where
-higher taxon names are homonyms.)  If
-taxa A and B with the same name N are in separation taxa C and D, and C and D
-are disjoint in the separation taxonomy, then A and B are taken to be distinct.
-The heuristic does not apply if C is an ancestor of D (or vice versa); see below.
-
-[JAR in response to NMF: The separation taxonomy is not just the
-top of the tree; it omits many intermediate layers (ranks) and only
-includes big, well-known taxa. E.g. Opisthokonta is omitted from the separation taxonomy 
-because so
-few sources have it, even though there are separation nodes both above
-and below it. A separation taxon must be "found" in at least two source taxonomies
-in order to be useful for the purpose of aligning and dividing up the namespace
-and preventing animals from being plants (etc.).
-
-JAR continuing in response to NMF:
-The problem is not placing everything; that's not hard. The only purpose of
-the separation taxon is to prevent incorrect
-collapse of what ought to be homonyms. If you have record A with name Mus
-bos, and record B with name Mus bos, then you generally want them to be
-unified if they're both chordates, but if one is a chordate and the other
-is a mollusc, you'd rather they not unify.
-
-It's hard to find real examples of species-level homonyms where one
-can be sure it's not an artifact or mistake, but one of them (from my
-homonym list) is probably Porella capensis. OTT has about 180 homonyms at the
-species level, many of which look like mistakes (since sometimes two
-or three have the same genus name). Most are plant/animal or
-plant/fungus or animal/fungus, but some cases, like Ctenella aurantia,
-have distinct records within the same code (Cnidaria / Ctenophora in
-this case). I can't analyze every one, so we need to err on the side
-of creating redundant records, rather than unifying, which would cause
-higher taxa from the lower priority taxonomy to be "broken".]
-
-#### Disparate ranks implies different taxa
-
-We assume that a taxon with rank above the level of genus (family,
-class, etc.) cannot be the same as a taxon with rank genus or below
-(tribe, species, etc.).  A candidate that matches the source node in
-this regard will be preferred to one that doesn't.  (That is, in
-regard to whether it is genus or below; not in regard to its
-particular rank.)
-
-For example, for genus Ascophora in GBIF (which is in
-Platyhelminthes), candidate Ascophora from WoRMS, a genus, is
-preferred to candidate Ascophora from NCBI, an infraorder.
-
-
-#### Prefer taxa with shared lineage
-
-A taxon that's in the "same place" in the taxonomy as a source is
-preferred to one that's not; for example we would rather match a
-weasel to a weasel than to a fish.
-
-The rule used is this one:
-
-Let the 'quasiparent name' of A (or B) be the name of the nearest
-ancestor Q of A (or B) such that (1) Q's name occurs in both source
-and target, and (2) Q's name is not a prefix of A's name.  If A's
-'quasiparent name' is the name of an ancestor of B, or vice versa,
-then B is a preferred match for A.  For example, the quasiparent of a
-species would typically be a family.
-
-#### Separate taxa that have incompatible membership
-
-[This section needs to be rewritten!  This heuristic now makes use of
-aligned tips, rather than names.  And I believe it's a preference, not
-a separation.]
-
-For each source or workspace node A, we define its 'membership proxy' to
-be the set of aligned nodes under it that do not have any aligned node
-as a descendant (that is, as aligned nodes, they are tip-like).
-
-If A and B both have nonempty membership proxies, and the proxies are
-disjoint (supposing one considers aligned nodes to be unified), then
-we consider A and B to be incompatible, and prevent a match between
-them.
-
-#### Prefer same separation taxon
-
-There are many cases (about 4,000? will need to instrument and re-run
-to count) where A's nearest enclosing separation taxon (say, C) is properly contained in B's
-(say, D) or vice versa.  A and B are therefore not
-separated by the separation heuristic.  It is not clear what
-to do in these cases.  In many situations the taxon in question is
-unplaced in the source (e.g. is in Eukaryota but not in Metazoa) and
-ought to be matched with a placed taxon in the workspace (in both
-Eukaryota and Metazoa).  In OTT 2.9, [??  figure out what happens -
-not sure], but the number of affected names is quite high, so many
-false homonyms are created.  Example: the separation taxonomy does not
-separate _Brightonia_ the mollusc (from IRMNG) from _Brightonia_ the
-echinoderm (from higher priority WoRMS), because echinoderms is not a
-separation taxon, so [whatever happens].  [example no good in OTT
-2.11 - get another.]  [need example going the other way.]
-
-#### Prefer matches not involving synonyms
-
-B is preferred to other candidates if its primary name is the same as
-A's.
-
-[NMF: What you do here is follow a general pattern of introducing a
-particular workflow step, then say what may go wrong, then try to
-discuss that. And this repeats for each paragraph / workflow step. I
-will suggest a different arrangement.. [SEE BELOW]]
-
+If there is a single candidate that is not rejected by any heuristic,
+it is aligned to that candidate.
 
 ### Method for applying Heuristics
 

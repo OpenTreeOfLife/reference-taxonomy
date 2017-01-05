@@ -16,10 +16,10 @@
             * Ad hoc alignment adjustments
             * Candidate identification
             * Heuristics
-                * Separate taxa that are in disjoint divisions
+                * Separate taxa that are in disjoint separation taxa
                 * Prefer taxon with shared lineage
                 * Prefer taxon with overlapping membership
-                * Prefer taxon in same division
+                * Prefer taxon in same separation taxon
                 * Prefer non-synonym
         * Merge unaligned taxa
             * Copy grafts over; alignments tell you the attachment points

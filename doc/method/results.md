@@ -21,15 +21,15 @@ In other situations something else happens.  Maybe two different tables?]
 An explanation of each category follows the table.
 
          49  curated alignment
-        105  align to barrier taxonomy
+        105  align to separation taxonomy
 
 Choice between multiple candidates determined using heuristics:
 
-      21584  disjoint divisions
+      21584  in disjoint separation taxa
         172  disparate ranks
       25800  by lineage
        7653  overlapping membership
-        219  same division
+        219  in same separation taxon
       83012  by name
 
 Only one candidate:
@@ -52,11 +52,11 @@ An explanation of each category follows the table.
 _curated alignment:_ Some alignments are hand-crafted, usually to
 repair mistakes made by automatic alignment.  
 
-_align to barrier taxonomy:_ Alignments to the barrier taxonomy (for
-'division' calculations) are performed before the main alignment loop
+_align to separation taxonomy:_ Alignments to the separation taxonomy (for
+separation calculations) are performed before the main alignment loop
 begins.
 
-_disjoint divisions_, ..., _by name_:
+_disjoint separation taxa_, ..., _by name_:
 Automated source record alignments, broken down according to which
 heuristic (see methods) was responsible for narrowing the candidate
 set down to a single workspace node.
@@ -191,7 +191,7 @@ Topology:
  * Could we classify the homonyms?  by taxon rank, proximity, etc.  and compare to GBIF / NCBI
      * sibling, cousin, parent/child, within code, between codes
      * how many inherited from source taxonomy, as opposed to created?
-     * could be created via barrier taxonomy separation
+     * could be created via separation taxonomy
      * could be created via membership separation
 
 

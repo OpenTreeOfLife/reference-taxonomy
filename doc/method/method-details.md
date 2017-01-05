@@ -109,9 +109,9 @@ siblings of IRMNG _Aporia lemoulti_ in the wrong kingdom as well.
 Example: _Fritillaria messanensis_ in WoRMS must not map to
 _Fritillaria messanensis_ in NCBI Taxonomy because the taxon in WoRMS
 is an animal (tunicate) while the taxon in NCBI is a flowering plant.
-This is a case where there is a unique candidate that is the wrong one.
+This is a case where there is a unique candidate, but it is wrong.
 
-Similarly, _Aporia sordida_ is a plant in GBIF, an insect in IRMNG.
+Similarly, _Aporia sordida_ is a plant in GBIF, but an insect in IRMNG.
 
 To choose a candidate, and thereby align a source node with a
 workspace node, a set of heuristics is brought to bear.  They are
@@ -119,8 +119,8 @@ described in brief, followed by more detail.
 
  1. If node a in S' is an animal and node a in S is a plant, do not
     align the former to the latter.  This generalizes to other pairs
-    of disjoint major taxa. [KC: is this where the barrier taxonomy
-    comes into play? JR: yes, will fix later]
+    of disjoint major taxa. [KC: is this where the separation taxa
+    come into play? JR: yes, will fix later]
 
     (Example: the _Aporia_ cases above.)
 
@@ -147,7 +147,7 @@ described in brief, followed by more detail.
 
     (Example: need example. Scyphocoronis goes to Millotia instead of Scyphocoronis ?)
 
- 1. Suppose the barrier taxonomy has B contained in A.
+ 1. Suppose the separation taxa include A and B, with B contained in A.
     If node n' is in B, and there are candidates in both A and B,
     prefer the one in B.  Similarly, if n' is in A, prefer the
     candidate in A.
@@ -166,7 +166,7 @@ aligned to that candidate.
 
 ### Alignment heuristics
 
-#### Separate taxa if in disjoint 'divisions'
+#### Separate taxa if contained in disjoint separation taxa
 
 If taxa A and B belong to taxa C and D (respectively), and C and D are
 known to be disjoint, then it follows that A and B are distinct.  For
@@ -175,7 +175,7 @@ _Pteridium_ is a land plant, and WoRMS says its _Pteridium_ is a
 rhodophyte, then it follows that NCBI _Pteridium_ and WoRMS
 _Pteridium_ are different taxa.
 
-Drawing a 'homonym barrier' between plants and rhodophytes
+Separating plants from rhodophytes
 resembles the use of nomenclatural codes to separate (hemi)homonyms,
 but the codes are not fine grained enough to capture distinctions that
 arise in practice.  For example, there are many [how many? dozens?
@@ -193,28 +193,28 @@ does not necessarily mean that the name denotes different taxa in the
 two taxonomies.
 
 The separation heuristic used here works as follows.  We establish a
-"barrier" taxonomy, containing about 25 higher taxa (Bacteria, Fungi,
+set of separation taxa, containing about 25 higher taxa (Bacteria, Fungi,
 Metazoa, etc.).  Before the main alignment process starts, every
-source taxonomy is aligned - manually, if necessary - to the barrier
+source taxonomy is aligned - manually, if necessary - to the separation
 taxonomy.  (Usually this initial mini-alignment is by simply by name,
 although there are a few troublesome cases, such as Bacteria, where
-higher taxon names are homonyms.)  For any node/taxon A, the
-smallest barrier taxon containing A is called its _division_.  If
-taxa A and B with the same name N have divisions C and D, and C and D
-are disjoint in the barrier taxonomy, then A and B are taken to be distinct.
+higher taxon names are homonyms.)  If
+taxa A and B with the same name N are in separation taxa C and D, and C and D
+are disjoint in the separation taxonomy, then A and B are taken to be distinct.
 The heuristic does not apply if C is an ancestor of D (or vice versa); see below.
 
-[JAR in response to NMF: The barrier taxonomy is not just the
+[JAR in response to NMF: The separation taxonomy is not just the
 top of the tree; it omits many intermediate layers (ranks) and only
-includes big, well-known taxa. E.g. Opisthokonta is omitted because so
-few sources have it, even though there are barrier nodes both above
-and below it. The barrier is "found" in as many source taxonomies as
-possible, for the purpose of aligning and dividing up the namespace
-and preventing animals from being plants.
+includes big, well-known taxa. E.g. Opisthokonta is omitted from the separation taxonomy 
+because so
+few sources have it, even though there are separation nodes both above
+and below it. A separation taxon must be "found" in at least two source taxonomies
+in order to be useful for the purpose of aligning and dividing up the namespace
+and preventing animals from being plants (etc.).
 
 JAR continuing in response to NMF:
 The problem is not placing everything; that's not hard. The only purpose of
-the barrier (whose taxa are called 'divisions') is to prevent incorrect
+the separation taxon is to prevent incorrect
 collapse of what ought to be homonyms. If you have record A with name Mus
 bos, and record B with name Mus bos, then you generally want them to be
 unified if they're both chordates, but if one is a chordate and the other
@@ -275,22 +275,21 @@ disjoint (supposing one considers aligned nodes to be unified), then
 we consider A and B to be incompatible, and prevent a match between
 them.
 
-#### Prefer same division
-[KC: is our use of 'division' always referring to the barrier taxonomy? JR: yes, considering different term, will apply it consistently]
+#### Prefer same separation taxon
 
 There are many cases (about 4,000? will need to instrument and re-run
-to count) where A's division (say, C) is properly contained in B's
-nearest division (say, D) or vice versa.  A and B are therefore not
-separated by the division separation heuristic.  It is not clear what
+to count) where A's nearest enclosing separation taxon (say, C) is properly contained in B's
+(say, D) or vice versa.  A and B are therefore not
+separated by the separation heuristic.  It is not clear what
 to do in these cases.  In many situations the taxon in question is
 unplaced in the source (e.g. is in Eukaryota but not in Metazoa) and
 ought to be matched with a placed taxon in the workspace (in both
 Eukaryota and Metazoa).  In OTT 2.9, [??  figure out what happens -
 not sure], but the number of affected names is quite high, so many
-false homonyms are created.  Example: the barrier taxonomy does not
+false homonyms are created.  Example: the separation taxonomy does not
 separate _Brightonia_ the mollusc (from IRMNG) from _Brightonia_ the
-echinoderm (from higher priority WoRMS), because there is no division
-for echinoderms, so [whatever happens].  [example no good in OTT
+echinoderm (from higher priority WoRMS), because echinoderms is not a
+separation taxon, so [whatever happens].  [example no good in OTT
 2.11 - get another.]  [need example going the other way.]
 
 #### Prefer matches not involving synonyms

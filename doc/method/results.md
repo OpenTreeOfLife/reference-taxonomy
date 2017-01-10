@@ -184,6 +184,8 @@ Topology:
  * Maximum depth of any node in the tree: 38
  * Branching factor: average 13.02 children per internal node
 
+[end automatically generated]
+
 ## Homonym analysis:
 
 7360 of them [on a recent run]. That's too many.
@@ -193,50 +195,6 @@ Topology:
      * how many inherited from source taxonomy, as opposed to created?
      * could be created via separation taxonomy
      * could be created via membership separation
-
-
-## Evaluating the product
-
-[I think this section does not make a contribution and should be flushed]
-[KC: agreed]
-
-The outcome of the assembly method is a new version of OTT.  There are
-various ways to evaluate a taxonomy.
-
-1. The ultimate determinant of correctness is scientific and
-bibliographic: are these all the taxa, are they given the right names,
-and do they stand in the correct relationship to one another?  - Nobody
-has the answers to all of these questions; without original taxonomic
-research, the best we can do is compare to the best available
-understanding, as reflected in the current scientific literature.
-Doing this would be a mammoth undertaking, but (as with many options
-below) one could consider samples, especially samples at particularly
-suspect points.
-
-1. We can check to see whether the tests run.  Each test has been
-vetted by a curator.  However, there is a relatively small number of
-tests (107).
-
-1. We can try to figure out whether the new version is 'better' than
-the new one.  What would be the measure of that?  Not size, since a
-better quality taxonomy might have fewer 'junk' taxon records.
-
-1. We can check for internal logical consistency.  But it is easy for
-a taxonomy to be both consistent and wrong, or inconsistent and right.
-(really?  example: rank inversion?  need to look at these?  any other
-such checks?)
-
-1. We can check whether the sources are reflected properly - but this
-is not reliable, since in many cases OTT will use better information
-from another source.
-
-1. We can check that all information in OTT is justified by at least
-one source, and that every piece of information in a source is
-reflected in OTT.  (but this is true by construction?)
-
-1. We can try to mathematically prove the correctness assembly program itself.
-
-[and...]
 
 
 ## Evaluating the taxonomy relative to requirements

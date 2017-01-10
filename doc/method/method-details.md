@@ -113,6 +113,8 @@ This is a case where there is a unique candidate, but it is wrong.
 
 Similarly, _Aporia sordida_ is a plant in GBIF, but an insect in IRMNG.
 
+### Alignment heuristics
+
 To choose a candidate, and thereby align a source node n' with a
 workspace node n, a set of heuristics is brought to bear.  The
 heuristics are as follows:
@@ -144,8 +146,8 @@ heuristics are as follows:
     preferred to candidate Ascophora from NCBI, an infraorder.)
 
  1. **Lineage**: Prefer to align species or genus n' to n if they have 
-    common near lineage.
-    For example, prefer n to other candidates if the name-string of
+    common lineage.
+    For example, if n' is a species, prefer candidates n where the name-string of
     the family-rank ancestor node of n' is the same as the name-string of the
     family-rank ancestor node of n.
 
@@ -154,30 +156,34 @@ heuristics are as follows:
     not Malacodon candidus [if:505193].  [Not a great example because
     a later heuristic would have gotten it.]  The synonymy is via GBIF.)
 
-    The details are complicated because (a) all pairs of nodes share
-    at least _some_ of their lineage, and (b) the genus names do not
+    The details are complicated because (a) every pair of nodes have
+    at least _some_ of their lineage in common, and (b) genus names do not
     provide any information when comparing species nodes with the same
-    name-string.  The exact rule used is the following:
+    name-string, so we can't always just look at the parent taxon.  The exact 
+    rule used is the following:
 
     Define the 'quasiparent name' of n, q(n), to be the
     name-string of the nearest ancestor of n whose name-string is not
     a prefix of n's name-string.  (For example, the quasiparent of a species would typically be
     a family.)
     If q(n) is the name-string of
-    an ancestor of n', or vice versa, then n' is a preferred match to candidate n
-    (i.e. candidates with this property are preferred to those that don't).
+    an ancestor of n', or q(n') is the name-string of an ancestor of n, 
+    then prefer n to candidates that lack these properties.
 
  1. **Overlap**: Prefer to align n' to n if they are higher level groupings that overlap.
     Stated a bit more carefully: if n' has a descendant aligned to 
     a descendant of n.  
 
-    (Example: need example. Scyphocoronis goes to Millotia instead of Scyphocoronis ?)
+    (Example: need example. From OTT 2.10: if n' = Scyphocoronis, Millotia is preferred 
+    to Scyphocoronis. - seems to be gone from OTT 2.11)
 
- 1. **Proximity**: Suppose the separation taxonomy includes A and B, with B contained in A.
+ 1. **Proximity** [opposite of "separation"; not a great name]:
+    Suppose the separation taxonomy includes A and B, 
+    with B contained in A.
     If node n' is in B, then prefer candidates that are in B to those that are in A but not in B.
 
-    (Example: IRMNG _Macbrideola indica_ goes to _Macbrideola coprophila_,
-    not _Utharomyces epallocaulus_.  [get more info])
+    (Example: for IRMNG _Macbrideola indica_, prefer _Macbrideola coprophila_
+    to _Utharomyces epallocaulus_.  [get more info])
 
  1. **Same name-string**: Prefer candidates whose primary name-string
     is the same as the primary name-string of n'.
@@ -188,7 +194,7 @@ heuristics are as follows:
 If there is a single candidate that is not rejected by any heuristic,
 it is aligned to that candidate.
 
-### Method for applying Heuristics
+### Control flow for applying heuristics
 
 The automated alignment process proceeds one source node at a time.
 First, a list of candidate matches, based on names and synonyms,
@@ -212,15 +218,15 @@ More specifically, the method for applying the heuristics is as
 follows:
 
  1. Start with a source node N and its set C of workspace node candidates C1 ... Cn (see above).
- 2. For each heuristic H:
+ 2. For each heuristic H as listed above:
       1. For each candidate Ci currently in C, use H to obtain the score H(N, Ci)
       1. Let Z = the highest score from among the scores H(N, Ci)
-      1. If Z < 0, we are done
+      1. If Z < 0, we are done - no candidate is suitable
       1. Let C' = those members of C that have score Z
       1. If Z > 0 and C' contains only one candidate, we are done (match is that candidate)
-      1. Replace C with C' and proceed to the next heuristic
+      1. Otherwise, replace C with C' and proceed to the next heuristic
  4. If C is singleton, its member is taken to be the correct match.
- 5. Otherwise, the source node is ambiguous.
+ 5. Otherwise, the source node does not match unambiguously.
 
 [NMF: Again, depending on target audience, a brief worked example may
 help communicate what's being achieved here.  JAR: easy to find
@@ -241,7 +247,7 @@ this is a rare and troublesome situation that requires manual
 intervention.
 
 The heuristics are applied in the order in which they are listed
-below.  The outcome is sensitive to the ordering.  The ordering is
+above.  The outcome is sensitive to the ordering.  The ordering is
 forced to some extent by internal logic [discuss after the reader
 knows what the heuristics are].
 
@@ -263,58 +269,76 @@ make turn a two-way ambiguity into a three-way one.
 
 ## Merging unaligned source nodes into the workspace
 
-### Complications in merge
-
-WORK IN PROGRESS, FOLD INTO FOLLOWING SECTION
-
-The combined taxonomy U is constructed by adding copies of nodes from
-S' one at a time to a copy of S.  Nodes of S' therefore map to U in
+The combined taxonomy U is constructed by adding copies of unaligned 
+nodes from the
+source taxonomy S' one at a time to the workspace, which initially 
+contains a copy of S.  Nodes of S' therefore correspond to workspace nodes in
 either of two ways: by mapping to a copy of an S-node (via the S'-S
 alignment), or by mapping to a copy of an S'-node (when there is no
 S'-S alignment for the S'-node).
 
-The following schematic examples illustrate four cases for the
-treatment of internal S'-nodes:
+As described above, each copied S'-node is part of either a graft or
+an insertion.  A graft or insertion rooted at r' is attached to the workspace as
+a child of the
+nearest common ancestor node of r''s siblings' images.  A graft is 
+flagged _incertae
+sedis_ if that NCA is a node other than the parent of the sibling
+images.  Insertions by construction never have this property, so an insertion is never 
+flagged _incertae sedis_.
+
+The following schematic examples illustrate each of the cases that come
+up while merging taxonomies.
+
+1. ((a,b)x,(c,d)y)z + ((c,d)y,(e,f)w)z = ((a,b)x,(c,d)y,(e,f)w)z
+
+   This is a simple graft.  The taxon w does not occur in the workspace,
+   so it and its children are copied.  The workspace copy of w is
+   attached as a sibling of its siblings' images: its sibling is y in S',
+   which is aligned to y in the workspace, so the copy becomes a child 
+   of y's parent, or z (in the workspace).
 
 1. ((a,b)x,(c,d)y)z + (a,b,c,d)z = ((a,b)x,(c,d)y)z
 
-   Not a problem.  S' simply has less resolution than S.
+   No nodes are copied from S' to the workspace because
+   every node in S' is aligned to some node in S - there are no nodes 
+   that _could_ be copied.
 
-1. (a,b,c,d)z + ((a,b)x,(c,d)y)z = ((a,b)x,(c,d)y)z is fine - S' refines S
+1. (a,b,c,d)z + ((a,b)x,(c,d)y)z = ((a,b)x,(c,d)y)z
 
    Not a problem.  Supposing x and y are unaligned, then x and y from
-   S' refine the classification of z.
+   S' insert into the classification of z.  The workspace gets copies of these 
+   two S'-nodes.
 
-   Example: superfamily Chitonoidea, which is in WoRMS but not in NCBI
-   Taxonomy, refines NCBI Taxonomy. Its parent is suborder Chitonina,
-   which is in NCBI (which is higher priority than WoRMS for this part
-   of the tree), and its children are six families that are all in
-   NCBI.
+   Example: superfamily Chitonoidea, which is in WoRMS (S') but not in
+   NCBI Taxonomy (S), inserts into NCBI Taxonomy. Its parent is suborder
+   Chitonina, which is in NCBI (i.e. aligned to the workspace), and
+   its children are six families that are all in NCBI (aligned).
 
 1. ((a,b)x,(c,d)y)z + (a,b,c,d,e)z = ((a,b)x,(c,d)y,?e)z
 
-   In this situation, we don't where to put the unaligned taxon e from
+   In this situation, we don't know where to put the unaligned taxon e from
    S': in x, in y, or in z (sibling to x and y).  The solution used
-   here is to add e to z and mark it as 'incertae sedis', which means
-   that e is not a proper child of z: e is somewhere in z but not
-   necessarily disjoint from z's other children.
+   here is to add e to z and mark it as _incertae sedis_ (indicated above 
+   by the question mark).
 
 1. (a,b,c,d,e)z + ((a,b)x,(c,d)y)z = (a,b,c,d,e)z
 
    We don't want to lose the fact from the higher priority taxonomy S
-   that e is a proper child of z (i.e. not incertae sedis), so we
-   discard the taxa x and y from S', ignoring what would otherwise
-   have been a refinement.
+   that e is a proper child of z (i.e. not _incertae sedis_), so we
+   discard nodes x and y, ignoring what would otherwise
+   have been an insertion.
 
-   [not such a great technical term: 'absorption' - but code currently
-   says 'merged' and that would be too confusing]
+   So that we have a term for this situation, say that x is _absorbed_ into z.
 
-1. ((a,b)x,(c,d)y)z + ((a,c,e)xx,(b,d)yy)z = ((a,b)x,(c,d)y,?e)
+   [not such a great technical term: 'absorption' - but we need a term. The code currently
+   says 'merged' and that would be way too confusing]
 
-   If the S' topology is inconsistent with the S topology,
-   we throw away the internal nodes from S'.  Any leftover taxa
-   are made incertae sedis in the common ancestor of their
-   siblings, which in this case is z.
+1. ((a,b)x,(c,d)y)z + ((a,c,e)u,(b,d)v)z = ((a,b)x,(c,d)y,?e)
+
+   If the S' topology is incompatible with the S topology,
+   we throw away the conflicting internal nodes from S' (u and v).
+   Any leftover taxa (e)
+   are flagged _incertae sedis_ in the attachment point, which in this case is z.
 
    [example of inconsistency: gbif:7919320 = Helotium, contains
    Helotium lonicerae and Helotium infarciens, but IF knows Helotium infarciens as a synonym for
@@ -323,70 +347,6 @@ treatment of internal S'-nodes:
    [another random example: GBIF (S') Paludomidae has children
    Tiphobia and Bridouxia, but the two children have different parents
    in S]
-
-
-*Absorption:* Hmm...
-
-Example: (a few thousand of the last case)
-
-
-### different, older text
-
-Following alignment, taxa from the source taxonomy are merged into the
-workspace.  This is performed via bottom-up traversal of the
-source.  A parameter 'sink' is passed down to recursive calls, and is
-simply the nearest (most tipward) alignment target seen so far on the descent.
-It is called 'sink' because it's the node to which orphan nodes will
-be attached when a source taxon is dropped due to inconsistency with
-the workspace.
-
-The following cases arise during the merge process:
-
- * Source taxonomy tip:
-     * If the source node is matched to a workspace node,
-       there is nothing to do - the taxon is already present.
-     * If it's ambiguous - could equally match
-       more than one workspace node, even after all alignment heuristics come
-       to bear - then there is also nothing to do; it is effectively
-       blocked and ignored.
-     * If unmatched and not ambiguous, then create a corresponding tip node in the workspace, to be
-       attached higher up in the recursion.  The source tip is then matched to the new
-       tip.
- * Source taxonomy internal node: the source node's children have already been
-   processed (recursively), and are all matched to targets in the
-   workspace (or, occasionally, blocked, see above).  The targets are either
-   'old' (they were already in the workspace before the merge started) or
-   'new' (copied from source to workspace during this round of the merge
-   process).  One of the
-   following rules then applies (assuming in each case that none of
-   the previous rules apply):
-
-     * Matched internal node: Attach any new targets to the internal
-       node's alignment target.
-
-     * Graft: all targets are new.  Create a new workspace node, and attach
-       the new targets to it.
-
-     * Inconsistent: if the old target nodes do not all have the same parent,
-       attach the new target nodes to the sink, and flag them as 'unplaced'.
-
-     * Refinement: if every child of the sink (in the workspace)
-       is the match of some source node, we say the source
-       node 'refines' the developing taxonomy in the workspace.
-       Create a new workspace node to
-       match the source node, and attach both old and new targets to it.
-
-     * Merge: some child of the sink is _not_ the match of any source
-       node.  Attach the new targets to the common parent of the old
-       targets, discarding the source internal node.
-
-The actual logic is more complicated than this due to the need to
-properly handle unplaced (incertae sedis) taxa.  Generally speaking,
-unplaced taxa are ignored in the calculations of inconsistency and
-refinement.  The source taxonomy might provide a better position for
-an unplaced taxon (more resolved, or resolved), or not.  Unplaced taxa
-should not inhibit the application of any rule, but they shouldn't get
-lost during merge, either.
 
 ## Finishing the assembly
 
@@ -398,14 +358,8 @@ than convert all patches to
 some form already known to the system, we kept it in the original form,
 which facilitates further editing.
 
-* give the number of patches [at least 123 - not clear how to count], give breakdown by type?
-or is that a result?
-
-There is a step to mark as extinct those taxa whose only source
-taxonomy is GBIF and that come to GBIF via PaleoDB [reference].  This
-is a heuristic, as PaleoDB can (rarely) contain extant taxa, but the
-alternative is failing to recognize a much larger number of taxa as
-extinct.
+* give the number of patches [at least 123 - not clear how to count],
+give breakdown by type?  or is that a result?
 
 The final step is to assign unique, stable identifiers to nodes.  As
 before, some identifiers are assigned on an ad hoc basis.  Then,
@@ -417,7 +371,9 @@ After transferring identifiers of aligned nodes, any remaining workspace
 nodes are given newly 'minted' identifiers.
 
 The previous OTT version is not merged into the new version; the
-alignment is only for the purpose of assigning identifiers.
-Therefore, if every taxon record giving rise to a particular workspace
-node is deleted from the sources, the workspace node is automatically
-omitted from OTT.
+alignment is computed only for the purpose of assigning identifiers.  A node
+can only persist from one OTT version to the next if it continues to
+occur in some source taxonomy.  I.e. if every taxon record giving rise
+to a particular workspace node disappears from the sources, no
+workspace is created, and the taxon doesn't appear in the next OTT
+version.

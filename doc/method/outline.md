@@ -17,9 +17,10 @@
             * Candidate identification
             * Heuristics
                 * Separate taxa that are in disjoint separation taxa
+                * Separate taxa with disparate ranks
                 * Prefer taxon with shared lineage
                 * Prefer taxon with overlapping membership
-                * Prefer taxon in same separation taxon
+                * Prefer taxon in same division
                 * Prefer non-synonym
         * Merge unaligned taxa
             * Copy grafts over; alignments tell you the attachment points

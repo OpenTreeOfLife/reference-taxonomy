@@ -1,5 +1,3 @@
-[preceded by sources subsection]
-
 
 ### Import and normalization
 
@@ -234,18 +232,6 @@ examples - the log.tsv file is full of them, e.g. Conocybe siliginea.  But hard 
 illuminating examples since in most cases only one aspect of the method
 is being used, and the answer almost always looks obvious to the human eye.  I will try though.]
 
-If the process ends with multiple candidates, an unresolvable
-ambiguity is declared.  If the ambiguous source node has no children,
-it is dropped - which is OK because it probably corresponds to one of
-the existing candidates and therefore would make no new contribution
-to the workspace.  If the ambiguous source node has children, it
-is treated as a potentially new node, possibly turning an N-way
-homonym into an N+1-way homonym, which is almost certainly wrong.
-Usually, subsequent analysis determines that the grouping is inconsistent
-with the workspace and it is dropped.  If it is not dropped, then
-this is a rare and troublesome situation that requires manual
-intervention.
-
 The heuristics are applied in the order in which they are listed
 above.  The outcome is sensitive to the ordering.  The ordering is
 forced to some extent by internal logic [discuss after the reader
@@ -253,16 +239,17 @@ knows what the heuristics are].
 
 ### Failure to choose
 
-There are cases where the automated alignment procedure can't figure
-out what the correct alignment target should be, among multiple
-candidates.  If the node is a tip (that usually means a species), then
-it is safe to just discard the node, i.e. exempt it from participation
-in the construction of the workspace U; it cannot provide much new
-information in any case.  If the node is internal, however, there may
-be many useful (unaligned) taxa beneath it whose placement in U only
-comes via the placement of the internal node in S'.  In this case
-(which is rare? see numbers) the node is considered unaligned and may
-make turn a two-way ambiguity into a three-way one.
+If the alignment process ends with multiple candidates, there is an
+unresolvable ambiguity.  If the ambiguous source node has no children,
+it is dropped, which is OK because it probably corresponds to one of
+the existing candidates and therefore would make no new contribution
+to the workspace.  If the ambiguous source node has children, it is
+treated as unaligned and therefore new, possibly turning an N-way
+homonym into an N+1-way homonym, which could easily be wrong.
+Usually, the subsequent merge phase determines that the grouping is
+not needed because it inconsistent or can be 'absorbed', and it is
+dropped.  If it is not dropped, then there is a troublesome situation
+that calls for manual review.
 
 [Example: ...]
 
@@ -287,7 +274,7 @@ images.  Insertions by construction never have this property, so an insertion is
 flagged _incertae sedis_.
 
 The following schematic examples illustrate each of the cases that come
-up while merging taxonomies.
+up while merging taxonomies.  [tbd: turn the newicks into a multi-part figure]
 
 1. ((a,b)x,(c,d)y)z + ((c,d)y,(e,f)w)z = ((a,b)x,(c,d)y,(e,f)w)z
 

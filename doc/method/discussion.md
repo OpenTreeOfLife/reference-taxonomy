@@ -214,15 +214,15 @@ import?
 
 [Mention CoL]
 
-[GBIF is the biggy, but difficult because (1) it's not documented very
-well - just the two blog posts (2) to the extent it's documented, it's
-the new version that is, not the one we used in assembly.  Cynical
-view: engineers are not scientists - they want to make things that
-work, not understand them or teach them.  Look at Markus's blog posts
-I guess and make best effort.]
+The GBIF backbone is the closest and best point of comparison.  But
+comparing to GBIF is difficult because it's not documented very well -
+just two blog posts and the source code.  Infrastructure work such as
+the GBIF backbone is generally viewed as a means to some other end and
+not a research output.  This is understandable given the GBIF's
+mission and the pressures it faces.
 
 * maybe discuss global names architecture, bionames, bioguid ... GNA
-  doesn't deal with synonyms, for example; does bionames?  what about
+  doesn't deal with synonyms (yet), for example; does bionames?  what about
   misspellings?
 
 

@@ -2,6 +2,9 @@
 #  $< = first prerequisite
 #  $@ = file name of target
 
+REF_HOME=../..
+JYTHON=$(REF_HOME)/bin/jython
+
 all: draft.html
 
 # use --html4tags flag?
@@ -28,6 +31,17 @@ out/sources_table.md: sources_table.py
 	python $< >$@.new
 	mv $@.new $@
 
+# Need to manually insert the output into results.py
+
+out/taxonomy_metrics.md: taxonomy_metrics.py $(REF_HOME)/tax/ott/taxonomy.tsv \
+			 ruggiero/ruggiero/taxonomy.tsv
+	$(JYTHON) $< $(REF_HOME)/tax/ott/ $(REF_HOME)/tax/skel/ | tee $@.new
+	mv $@.new $@
+
+ruggiero/ruggiero/taxonomy.tsv: ruggiero/ruggiero.csv
+	python ruggiero/import_ruggiero.py $< ruggiero/ruggiero.new
+	mv ruggiero/ruggiero.new ruggiero/ruggiero
+
 out/outline.html: out/outline.md
 	bin/markdown $< >$@.new
 	mv $@.new $@
@@ -50,12 +64,6 @@ lib/Markdown.pl:
 	unzip Markdown_1.0.1.zip
 	mv Markdown_1.0.1/Markdown.pl $@
 	rm -r Markdown_1.0.1 Markdown_1.0.1.zip
-
-REF_HOME=../../../../repo/reference-taxonomy
-JYTHON=$(REF_HOME)/bin/jython
-
-results: results.py
-	$(JYTHON) $< $(REF_HOME)/tax/ott/
 
 # Use this to test that results.py works before siccing it on OTT
 test-results: results.py

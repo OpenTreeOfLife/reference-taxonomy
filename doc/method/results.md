@@ -1,12 +1,115 @@
 
 # Results
 
-We have described the taxonomic and nomenclatural needs of the Open Tree of
-Life project, and a process for building a taxonomy that meets these needs.
-Now, we present the performance of various stages of the taxonomy build process,
-and assess how well the resulting taxonomy meets the needs of the Open Tree.  
+The assembly method described above yields the reference taxonomy that
+is used by the Open Tree of Life project.  The taxonomy itself, the
+details of how the assembly method unrolls to generate the taxonomy,
+and the degree to which the taxonomy meets the goals set out for it
+are all of interest.  We will address each of these three aspects of
+the method in turn.
 
-[performance?]
+
+## Characterizing the overall assembly product
+
+[begin automatically generated]
+
+[Excluding 46104 non-taxa from analysis]
+
+Following are some general metrics on the reference taxonomy.  [should be a table]
+
+ * Number of taxon records:                   3550043
+ * Number of synonym records:                 2027143
+ * Number of internal nodes:                   276141
+ * Number of tips:                            3273902
+ * Number of records with rank 'species':     3117677
+ * Number of nodes with binomial name-strings: 2336603
+ * Number of polysemous name-strings:          8040
+      * of which any of the nodes is a species: 2646
+      * of which any of the nodes is a genus:   5297
+      * of which neither of the above:           97
+ * Maximum depth of any node in the tree: 38
+ * Branching factor: average 13.02 children per internal node
+
+The number of taxa with binomial name-strings (i.e. Genus epithet) is 
+given as a proxy for the number of described species in the taxonomy.
+Many records with rank 'species' have nonstandard or temporary names.  Most 
+of these are from NCBI and represent either undescribed species, or
+genetic samples that have not been identified to species.
+
+[Description / motivations of flags should go to the methods section!]
+
+Some taxa are marked with special annotations, or 'flags'.  The important flags are:
+
+ * Flagged _incertae sedis_ or equivalent: 319083  
+     number of these that are leftover children of inconsistent source nodes: 17776
+ * Flagged extinct: 254921
+ * Flagged infraspecific (below the rank of species): 70873
+ * Flagged species-less (rank is above species, but contains no species): 66490
+
+Following is a breakdown of how each source taxonomy contributes to the reference taxonomy.
+
+        source     total    copied   aligned  absorbed  conflict
+    separation        26        26         0         -         -
+         silva     74401     74396         5         -         -
+         h2007       227       226         1         -         -
+            if    284878    281709      3103        42        24
+         worms    327633    268847     57163       992       631
+      study713       119       118         1         -         -
+          ncbi   1320679   1198186    119485      1997      1011
+          gbif   2452614   1636666    813455      1822       671
+         irmng   1563804     89840   1470048      3083       833
+       curated        29        29         0         -         -
+         total   6024410   3550043   2463261      7936      3170
+
+* source = name of source taxonomy
+* total = total number of nodes in source
+* copied = total number of nodes originating from this source (copied)
+* aligned = number of source nodes aligned and copied
+* absorbed = number of source nodes absorbed
+* conflict = number of inconsistent source nodes
+
+For possible discussion:
+
+ * Number of taxa suppressed for supertree synthesis purposes: 696041
+
+Appendix: Some extreme polysemies.
+
+ * 5 Gordonia
+ * 5 Haenkea
+ * 5 Heringia
+ * 5 Proboscidea
+ * 5 Lobularia
+ * 6 FamilyI
+ * 7 Lampetia
+ * 237 uncultured
+
+<snip>
+
+## Comparison with Ruggiero et al. 2015 (goes to characterizing backbone):
+
+ * Number of taxa in Ruggiero: 2276  of which orders/tips: 1498
+ * Ruggiero orders aligned by name to OTT: 1379
+ * Disposition of Ruggiero taxa above rank of order:
+     * Taxon contains at least one order aligned by name to OTT: 759
+     * Full topological consistency between Ruggiero and OTT: 281
+     * Taxon resolves an OTT polytomy: 127
+     * Taxon supports more than one OTT taxon: 275
+     * Taxon conflicts with one or more OTT taxa: 76
+     * Taxon containing no aligned order: 18
+
+[end automatically generated]
+
+## Homonym analysis:
+
+8043 of them [from above]. That's too many.
+
+ * Could we classify the homonyms?  by taxon rank, proximity, etc.  and compare to GBIF / NCBI
+     * sibling, cousin, parent/child, within code, between codes
+     * how many inherited from source taxonomy, as opposed to created?
+     * could be created via separation taxonomy
+     * could be created via membership separation
+
+
 
 ## Alignment
 
@@ -136,65 +239,6 @@ _merged into larger taxon due to conflict_: [should be described in methods sect
 
 [Interesting?:  57 taxa that were unplaced in a higher priority source
 get placed by a lower priority source.]
-
-
-## Characterizing the overall assembly product
-
-[begin automatically generated]
-
-General metrics on OTT:
-
- * Number of taxon records: 3550554
- * Number of synonym records: 2050661
- * Number of internal nodes: 276148
- * Number of tips: 3274406
- * Number of records with rank 'species': 3118191
- * Number of taxa with binomial name-strings: 2337337
- * Number of homonym name-strings: 8043  
-      * of which any of the taxa is a species: 2648
-      * of which any of the taxa is a genus:   5298
-
-Annotations:
-
- * Number of taxa marked incertae sedis or equivalent: 318972  
-     of which leftover children of inconsistent source taxa: 17669
- * Number of extinct taxa: 254929
- * Number of infraspecific taxa (below the rank of species): 70873
- * Number of species-less higher taxa (rank above species but containing no species): 66488
-
-Assembly:
-
-Contributions from various sources  [older numbers - need to update]
-
-       Source     Total   Contrib   Aligned    Merged  Conflict
-        silva     74412     74407         5         -         -
-        h2007       227       226         1         -         -
-           if    284878    281709      3103        42        24
-        worms    327635    268851     57163       992       629
-     study713       119       118         1         -         -
-         ncbi   1320692   1198200    119486      1996      1010
-         gbif   2452674   1637225    812960      1821       668
-        irmng   1563961     89789   1470267      3078       827
-      curated        29        29         0         -         -
-        total   6024627   3550554   2462986      7929      3158
-
-
-Topology:
-
- * Maximum depth of any node in the tree: 38
- * Branching factor: average 13.02 children per internal node
-
-[end automatically generated]
-
-## Homonym analysis:
-
-7360 of them [on a recent run]. That's too many.
-
- * Could we classify the homonyms?  by taxon rank, proximity, etc.  and compare to GBIF / NCBI
-     * sibling, cousin, parent/child, within code, between codes
-     * how many inherited from source taxonomy, as opposed to created?
-     * could be created via separation taxonomy
-     * could be created via membership separation
 
 
 ## Evaluating the taxonomy relative to requirements

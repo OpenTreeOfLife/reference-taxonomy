@@ -8,6 +8,9 @@ from org.opentreeoflife.smasher import AlignmentByName
 import os, sys, csv
 
 taxpath = sys.argv[1]
+seppath = sys.argv[2]
+
+sep = Taxonomy.getRawTaxonomy(seppath, 'ott')
 
 ott = Taxonomy.getRawTaxonomy(taxpath, 'ott')
 ott.inferFlags()
@@ -65,7 +68,7 @@ for taxon in ott.taxa():
 
 rug = Taxonomy.getRawTaxonomy('ruggiero/ruggiero/', 'rug')
 # Prepare for conflict analysis
-# oh no, we really need a skeleton.
+# oh no, we really need a separation taxonomy to do that.
 rug_alignment = AlignmentByName(rug, ott)
 rug_alignment.align()
 rug_conflict = ConflictAnalysis(rug, ott, rug_alignment, True)
@@ -99,31 +102,6 @@ for name in names:
             poly_list.append((semies, name))
 
 
-# Report
-
-print
-print '(Excluding %s non-taxa from analysis)' % excluded
-print
-print 'General metrics on OTT:'
-print ' * Number of taxon records:', ott.count()-excluded
-print ' * Number of synonym records:', syn_count
-print ' * Number of internal nodes:', internals
-print ' * Number of tips:', tip_count
-print " * Number of records with rank 'species':", species
-print ' * Number of taxa with binomial name-strings:', binomials
-print ' * Number of polysemous name-strings: %s  ' % poly
-print '      * of which any of the taxa is a species: %s' % (poly_species)
-print '      * of which any of the taxa is a genus:   %s' % (poly_genera)
-
-print
-print 'Annotations:'
-print " * Number of taxa marked incertae sedis or equivalent: %s  " % incertae
-print '     of which leftover children of inconsistent source taxa: %s' % unplaced
-print ' * Number of extinct taxa: %s' % extinct
-# hidden at curator request ? - that's a synthesis thing.
-print ' * Number of infraspecific taxa (below the rank of species): %s' % infra
-print ' * Number of species-less higher taxa (rank above species but containing no species): %s' % barren
-
 def fix_prefix(qid):
     prefix = qid.prefix
     if prefix.startswith('http'): prefix = 'curated'
@@ -146,7 +124,10 @@ for taxon in ott.taxa():
                 prefix = fix_prefix(qid)
                 aligned[prefix] = aligned.get(prefix, 0) + 1
 
-        prefix = fix_prefix(taxon.sourceIds[0])
+        if sep.lookupId(taxon.id) != None:
+            prefix = 'separation'
+        else:
+            prefix = fix_prefix(taxon.sourceIds[0])
     else:
         prefix = 'curated'
 
@@ -159,7 +140,7 @@ for taxon in ott.taxa():
     else:
         contributed[prefix] = contributed.get(prefix, 0) + 1
 
-source_order = {'skeleton': -1,
+source_order = {'separation': -1,
                 'silva': 0,
                 'h2007': 1,
                 'if': 2,
@@ -171,34 +152,37 @@ source_order = {'skeleton': -1,
                 'curated': 8}
 sources = sorted(contributed.keys(), key=lambda(src): source_order.get(src, 99))
 
-print
-print 'Assembly:'
-print ' * Contributions from various sources'
-
 def dashify(x): return x if x != 0 else '-'
 
-total_first = 0
-total_merged = 0
-total_inconsistent = 0
-total_aligned = 0
-total_total = 0
-format_string = '%13s %9s %9s %9s %9s %9s'
-print '```'
-print format_string % ('Source', 'Total', 'Contrib', 'Aligned', 'Merged', 'Conflict')
-for source in sources:
-    con = contributed.get(source, 0)
-    al = aligned.get(source, 0)
-    mer = merged.get(source, 0)
-    inc = inconsistent.get(source, 0)
-    tot = con + al + mer + inc
-    print format_string % (source, tot, con, al, dashify(mer), dashify(inc))
-    total_first += con
-    total_aligned += al
-    total_merged += mer
-    total_inconsistent += inc
-    total_total += tot
-print format_string % ('total', total_total, total_first, total_aligned, dashify(total_merged), dashify(total_inconsistent))
-print '```'
+def source_breakdown_table():
+    total_first = 0
+    total_merged = 0
+    total_inconsistent = 0
+    total_aligned = 0
+    total_total = 0
+    format_string = '    %10s %9s %9s %9s %9s %9s'
+    print format_string % ('source', 'total', 'copied', 'aligned', 'absorbed', 'conflict')
+    for source in sources:
+        con = contributed.get(source, 0)
+        al = aligned.get(source, 0)
+        mer = merged.get(source, 0)
+        inc = inconsistent.get(source, 0)
+        tot = con + al + mer + inc
+        print format_string % (source, tot, con, al, dashify(mer), dashify(inc))
+        total_first += con
+        total_aligned += al
+        total_merged += mer
+        total_inconsistent += inc
+        total_total += tot
+    print format_string % ('total', total_total, total_first, total_aligned, dashify(total_merged), dashify(total_inconsistent))
+    print """
+* source = name of source taxonomy
+* total = total number of nodes in source
+* copied = total number of nodes originating from this source (copied)
+* aligned = number of source nodes aligned and copied
+* absorbed = number of source nodes absorbed (not copied)
+* conflict = number of inconsistent source nodes (not copied)
+"""
 
 
 def max_depth(node):
@@ -208,10 +192,69 @@ def max_depth(node):
         if d > m: m = d
     return m
 
+
+# --- The report ---
+
 print
-print 'Topology:'
+print '[begin automatically generated]'
+print
+print '[Excluding %s non-taxa from analysis]' % excluded
+print
+print 'Following are some general metrics on the reference taxonomy.  [should be a table]'
+print
+print ' * Number of taxon records:                   %7d' % (ott.count()-excluded)
+print ' * Number of synonym records:                 %7d' % syn_count
+print ' * Number of internal nodes:                  %7d' % internals
+print ' * Number of tips:                            %7d' % tip_count
+print " * Number of records with rank 'species':     %7d" % species
+print ' * Number of nodes with binomial name-strings: %7d' % binomials
+print ' * Number of polysemous name-strings:          %4d' % poly
+print '      * of which any of the nodes is a species: %4d' % (poly_species)
+print '      * of which any of the nodes is a genus:   %4d' % (poly_genera)
+print '      * of which neither of the above:         %4d' % (poly - (poly_species + poly_genera))
 print ' * Maximum depth of any node in the tree: %s' % (max_depth(ott.forest) - 1)
 print ' * Branching factor: average %.2f children per internal node' % ((ott.count() - 1.0) / internals)
+
+print """
+The number of taxa with binomial name-strings (i.e. Genus epithet) is 
+given as a proxy for the number of described species in the taxonomy.
+Many records with rank 'species' have nonstandard or temporary names.  Most 
+of these are from NCBI and represent either undescribed species, or
+genetic samples that have not been identified to species.
+
+[Description / motivations of flags should go to the methods section!]
+
+Some taxa are marked with special annotations, or 'flags'.  The important flags are:
+"""
+
+print " * Flagged _incertae sedis_ or equivalent: %s  " % incertae
+print '     number of these that are leftover children of inconsistent source nodes: %s' % unplaced
+print ' * Flagged extinct: %s' % extinct
+# hidden at curator request ? - that's a synthesis thing.
+print ' * Flagged infraspecific (below the rank of species): %s' % infra
+print ' * Flagged species-less (rank is above species, but contains no species): %s' % barren
+
+print
+print 'Following is a breakdown of how each source taxonomy contributes to the reference taxonomy.'
+print
+
+source_breakdown_table()
+
+print
+print 'For possible discussion:'
+print
+print ' * Number of taxa suppressed for supertree synthesis purposes: %s' % suppressed
+
+print
+print 'Appendix: Some extreme polysemies.'
+print
+
+for (semies, name) in sorted(poly_list, key=lambda(semies, name):semies):
+    print ' * %s %s' % (semies, name)
+
+print
+
+# --- End report ---
 
 # Ruggiero comparison
 
@@ -258,11 +301,5 @@ print '     * Taxon supports more than one OTT taxon: %s' % partial_path_of
 print '     * Taxon conflicts with one or more OTT taxa: %s' % conflicts_with
 print '     * Taxon containing no aligned order: %s' % other
 
-print 'For possible discussion:'
-print ' * Number of taxa suppressed for supertree synthesis purposes: %s' % suppressed
-
 print
-print 'Appendix: Some extreme polysemies.'
-
-for (semies, name) in sorted(poly_list, key=lambda(semies, name):semies):
-    print ' * %s %s' % (semies, name)
+print '[end automatically generated]'

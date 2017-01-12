@@ -32,10 +32,11 @@ Open Tree reference taxonomy version 2.11.
   * parent (node) = the nearest enclosing node within a given node's taxonomy
   * tip = a node that is not the parent of any node
   * homonym = where a single name-string belongs to multiple nodes
-    (within the same taxonomy).  This is the nontechnical meaning of 'homonym'
+    within the same taxonomy.  This is close to the nontechnical meaning of 'homonym'
     and is not to be confused with 'homonym' in the nomenclatural sense, 
     which only applies within a single nomenclatural code.
-    Nomenclatural homonyms, hemihomonyms, misspellings are all homonyms in this sense.
+    Nomenclatural homonyms, hemihomonyms, and misspellings are all homonyms in this sense,
+    when recorded in a given taxonomy.
   * primary = the non-synonym name-string of a node, as opposed to one of the synonyms.
   * image (of a node n') = the workspace node corresponding to n'
   * _incertae sedis_: taxon A is _incertae sedis_ in taxon B if A is in B

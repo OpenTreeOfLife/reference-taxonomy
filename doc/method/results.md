@@ -85,7 +85,7 @@ Appendix: Some extreme polysemies.
 
 <snip>
 
-## Comparison with Ruggiero et al. 2015 (goes to characterizing backbone):
+### Comparison with Ruggiero et al. 2015 (goes to characterizing backbone):
 
  * Number of taxa in Ruggiero: 2276  of which orders/tips: 1498
  * Ruggiero orders aligned by name to OTT: 1379
@@ -99,7 +99,7 @@ Appendix: Some extreme polysemies.
 
 [end automatically generated]
 
-## Homonym analysis:
+### Homonym analysis:
 
 8043 of them [from above]. That's too many.
 
@@ -111,7 +111,7 @@ Appendix: Some extreme polysemies.
 
 
 
-## Alignment
+## Fate of source nodes in alignment phase
 
 As OTT is assembled, the alignment procedure examines every source
 node, either choosing an alignment target for it in the workspace, or
@@ -124,7 +124,11 @@ In other situations something else happens.  Maybe two different tables?]
 An explanation of each category follows the table.
 
          49  curated alignment
-        105  align to separation taxonomy
+        105  aligned to separation taxonomy
+    3757548  no candidates, not aligned
+    2325870  single candidate confirmed by some heuristic
+       1767  single candidate not confirmed by any heuristic
+      10678  all candidates rejected by heuristics
 
 Choice between multiple candidates determined using heuristics:
 
@@ -135,18 +139,13 @@ Choice between multiple candidates determined using heuristics:
         219  in same separation taxon
       83012  by name
 
-Only one candidate:
-
-    2325870  confirmed
-       1767  by elimination
-
-Not aligned:
+At least one candidate:
 
        8592  ambiguous tip
         452  ambiguous internal
-      10678  rejected
-        921  disjoint membership
-    3757548  not aligned
+        921  disjoint membership [this hack needs to be described or flushed!!]
+
+Total:
 
     6244422  total source taxon records
 
@@ -191,7 +190,7 @@ There were no candidates at all for this source taxon.
      [how would one assess this ?? what are examples of 'types of problems'?]
 
 
-## Merge
+## Fate of source nodes in merge phase
 
 The merge phase examines every source node, copying unaligned source
 nodes into the workspace when possible.  The following table
@@ -203,8 +202,8 @@ categorizes the fate of each source node during the merge phase.
        6178  new tip (homonym)
      267746  new internal node, part of graft
        1909  refinement
-       7938  merged into larger taxon
-       3158  merged into larger taxon due to conflict
+       7938  absorbed into larger taxon
+       3158  absorbed into larger taxon due to conflict
     6235858  total
 
 [why is the merge total different from the alignment total?]
@@ -227,9 +226,9 @@ this node is simply copied, finishing up a copy of its subtree.
 _refinement_: The source node refines a classification already present
 in the workspace.
 
-_merged into larger taxon_: [should be described in methods section]
+_absorbed into larger taxon_: [should be described in methods section]
 
-_merged into larger taxon due to conflict_: [should be described in methods section]
+_absorbed into larger taxon due to conflict_: [should be described in methods section]
 
 
 

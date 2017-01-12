@@ -67,7 +67,8 @@ expertise.
 We define an operator for combining taxonomies pairwise, written
 schematically as U = S + S', and apply it from left to right:
 
-> U1 = S1  
+> U0 = empty  
+> U1 = U0 + S1  
 > U2 = U1 + S2  
 > U3 = U2 + S3  
 > ...
@@ -80,8 +81,14 @@ The combination S + S' is formed in two steps:
  2. A _merge_ step that creates the combination U = S + S', by adding to S the unaligned
     taxa from S'. The attachment position of unaligned nodes from step 1
     is determined from nearby aligned nodes, either as a _graft_
-    or an _insertion_. Examples of these two cases are given in
-    [point to figure(s)].
+    or an _insertion_.
+
+Examples of these two cases are given in [point to figure(s)].
+
+The merge step is performed by modifying the workspace.  If the
+workspace starts out empty, it holds intermediate taxonomy U1 after S1
+is combined, then intermediate taxonomy U2, and so on.  At the end we
+read out the reference taxonomy.
 
 As a simple example, consider a genus represented in both
 taxonomies, but containing different species in the two:

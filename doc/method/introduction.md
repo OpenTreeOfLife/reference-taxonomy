@@ -46,11 +46,14 @@ reference taxonomy for each of these functions.
 In 1, the taxonomy is used for converting OTUs (operational taxonomic
 units, or 'tips') to a canonical form.  Supertree construction
 requires that a source tree OTU be matched with an OTU from another
-tree whenever possible.  This is a nontrivial task because a single
-taxon can be designated as an OTU in different source trees in
-different ways.  The approach taken is to map OTUs to the reference
-taxonomy, so that OTUs in different source trees are compared by
-comparing the taxa to which they map.
+tree whenever possible.  This is a nontrivial task because a taxon can
+have very different OTU labels in the various source trees
+in which the taxon occurs due to synonymies, abbreviations,
+misspellings, notational differences, and so on.  In addition, which
+taxon is named by a given label can vary across trees (homonymy).  The
+approach taken is to map OTUs to the reference taxonomy, so that OTUs
+in different source trees are compared by comparing the taxa to which
+they map.
 
 In 2, the groupings in the supertree are compared to those in the
 taxonomy.

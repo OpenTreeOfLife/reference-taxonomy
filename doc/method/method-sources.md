@@ -22,12 +22,12 @@ are saved into a specific GitHub repository, and these records are then
 linked from the OTT taxonomy files and user interfaces so that
 provenance is always available.
 
-**Barrier taxonomy**  
+**Separation taxa**  
 This is a small curated tree containing 27 major groups such
-as animals, plants, and fungi.  Its purpose is to establish barriers
-between taxa as an aid to separating homonyms.  If a node
-is found in one of these barrier groups, then it will not match a
-node in a disjoint barrier group, even if the name matches.
+as animals, plants, and fungi.  Its purpose is to assist
+in separating homonyms.  If a node
+is found in one of these separation groups, then it will not match a
+node in a disjoint separation group, even if the name matches.
 
 **ARB-SILVA taxonomy processing**  
 The terminal taxa in the SILVA taxonomy are algorithmically-generated

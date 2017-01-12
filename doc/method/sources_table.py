@@ -10,7 +10,7 @@
 # Maximum depth
 
 table = [
-    {'name': 'barriers',
+    {'name': 'for separation',
      'reference': '',
      'version': '',
      'priority': 1,

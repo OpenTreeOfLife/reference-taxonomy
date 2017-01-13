@@ -16,7 +16,11 @@ the algorithm.
 The Open Tree Taxonomy is most similar to the GBIF taxonomy, in the sense that
 both are a synthesis of existing taxonomies rather than a curated taxonomy. The
 GBIF method is yet unpublished, save for a few blog posts. Once the GBIF method
-is available, it would be interesting to compare the two approaches.  
+is available, it would be interesting to compare the two approaches.
+
+In addition to taxonomy synthesis, the methods described here could also be used
+as as a sanity check when curating and publishing taxonomies. Could detect
+logical erros, duplications, etc.  
 
 * general remarks on the method
     * artifacts, e.g. (a,b,c,d,e)f + ((a,b)g,(c,e)h)f, you can't win

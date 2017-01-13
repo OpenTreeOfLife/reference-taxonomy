@@ -60,6 +60,6 @@ Not all source taxonomy records are used.  The following are ignored:
 * GBIF backbone records for infraspecific taxa (subspecies, variety, form)
 * IRMNG records whose nomenclatural status is 'nudum', 'invalid', or any of
   about 25 similar designations
-* NCBI Taxonomy records that cannot correspond to natural groupings:
+* NCBI Taxonomy records that cannot correspond to taxa:
   those with names containing 'uncultured', 'unidentified', 'insertion
   sequences', or any of about 15 similar designations

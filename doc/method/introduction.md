@@ -31,7 +31,8 @@ name-string (homonym detection).
 
 The Open Tree of Life project consists of a set of tools for
 
-1. synthesizing phylogenetic supertrees from phylogenetic tree inputs
+1. synthesizing phylogenetic supertrees from a corpus of 
+   phylogenetic tree inputs
    (source trees)
 2. matching groupings in supertrees with higher taxa (such as Mammalia)
 3. supplementing supertrees with taxa obtained only from 
@@ -46,19 +47,24 @@ reference taxonomy for each of these functions.
 In 1, the taxonomy is used for converting OTUs (operational taxonomic
 units, or 'tips') to a canonical form.  Supertree construction
 requires that a source tree OTU be matched with an OTU from another
-tree whenever possible.  This is a nontrivial task because a single
-taxon can be designated as an OTU in different source trees in
-different ways.  The approach taken is to map OTUs to the reference
-taxonomy, so that OTUs in different source trees are compared by
-comparing the taxa to which they map.
+tree whenever possible.  This is a nontrivial task because a taxon can
+have very different OTU labels in the various source trees
+in which the taxon occurs due to synonymies, abbreviations,
+misspellings, notational differences, and so on.  In addition, which
+taxon is named by a given label can vary across trees (homonymy).  The
+approach taken is to map OTUs to the reference taxonomy, so that OTUs
+in different source trees are compared by comparing the taxa to which
+they map.
 
 In 2, the groupings in the supertree are compared to those in the
 taxonomy.
 
-In 3, the taxonomy provides supplemental taxa beyond the ones that are
-in the source trees, using the higher taxon mappings from step 2 to
-determine where supplemental taxa are to be 'grafted' onto the
-supertree.
+In 3, only a relatively small number of described taxa are represented
+in source trees (currently about than 200,000 in the corpus out of two
+million or more known), so the taxonomy covers those that are not.
+The large complement of taxonomy-only taxa can be 'grafted' onto a
+supertree in phylogenetically plausible locations based on how they
+relate taxonomically to taxa that are known from source trees.
 
 ## Reference taxonomy requirements
 

@@ -32,10 +32,11 @@ Open Tree reference taxonomy version 2.11.
   * parent (node) = the nearest enclosing node within a given node's taxonomy
   * tip = a node that is not the parent of any node
   * homonym = where a single name-string belongs to multiple nodes
-    (within the same taxonomy).  This is the nontechnical meaning of 'homonym'
+    within the same taxonomy.  This is close to the nontechnical meaning of 'homonym'
     and is not to be confused with 'homonym' in the nomenclatural sense, 
     which only applies within a single nomenclatural code.
-    Nomenclatural homonyms, hemihomonyms, misspellings are all homonyms in this sense.
+    Nomenclatural homonyms, hemihomonyms, and misspellings are all homonyms in this sense,
+    when recorded in a given taxonomy.
   * primary = the non-synonym name-string of a node, as opposed to one of the synonyms.
   * image (of a node n') = the workspace node corresponding to n'
   * _incertae sedis_: taxon A is _incertae sedis_ in taxon B if A is in B
@@ -66,7 +67,8 @@ expertise.
 We define an operator for combining taxonomies pairwise, written
 schematically as U = S + S', and apply it from left to right:
 
-> U1 = S1  
+> U0 = empty  
+> U1 = U0 + S1  
 > U2 = U1 + S2  
 > U3 = U2 + S3  
 > ...
@@ -79,8 +81,14 @@ The combination S + S' is formed in two steps:
  2. A _merge_ step that creates the combination U = S + S', by adding to S the unaligned
     taxa from S'. The attachment position of unaligned nodes from step 1
     is determined from nearby aligned nodes, either as a _graft_
-    or an _insertion_. Examples of these two cases are given in
-    [point to figure(s)].
+    or an _insertion_.
+
+Examples of these two cases are given in [point to figure(s)].
+
+The merge step is performed by modifying the workspace.  If the
+workspace starts out empty, it holds intermediate taxonomy U1 after S1
+is combined, then intermediate taxonomy U2, and so on.  At the end we
+read out the reference taxonomy.
 
 As a simple example, consider a genus represented in both
 taxonomies, but containing different species in the two:

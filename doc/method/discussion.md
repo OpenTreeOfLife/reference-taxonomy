@@ -27,7 +27,7 @@
 * rank analysis? ... ; number of rank inversions, sampling of reasons for them (hard to figure out)
 * paraphyletic taxa in conventional taxonomies
 
-* barrier woes: Annelida/Myzostomida, Fungi/Microsporidia
+* separation woes: Annelida/Myzostomida, Fungi/Microsporidia
 * SILVA 'sample contamination'
 * taxon identity, e.g. Blattodea, Archaea - currently we just use the
   'name' even if the name goes through multiple 'taxon concepts'.
@@ -55,18 +55,18 @@ unaligned.
 ### Collisions
 
 [move to discussion?]
-There are often false polysemies within a source taxonomy - that is, a
+There are often false homonyms within a source taxonomy - that is, a
 name belongs to more than one node in the source taxonomy, when on
-inspection it is clear that this is a mistake in the source taxonomy, and there
+manual inspection it is clear that this is a mistake in the source taxonomy, and there
 is really only one taxon in question.  Example: _Aricidea rubra_
 occurs twice in WoRMS, but the two nodes are very close in the
 taxonomy and one of them appears to be a duplication.
 
-If the union taxonomy has an appropriate node with that name, then
+If the workspace has an appropriate node with that name, then
 multiple source taxonomy nodes can match it, the collision will be
-allowed, and the polysemy will go away.  However, if the union
-taxonomy has no such node, both source nodes will end up being copied
-into the union.  This is an error in the method which needs to be
+allowed, and the homonym will go away.  However, if the workspace
+has no such node, both source nodes will end up being copied
+into the workspace.  This is an error in the method which needs to be
 fixed.
 
 ### Rationale for various parts of the method
@@ -80,8 +80,8 @@ make it tricky to turn this truism into an actionable rule.
   alignments of the ancestors, so we cannot compare ancestors very well.
   We use ancestor name as a proxy for ancestor identity.
 * Sometimes having ancestors of the same name is not informative, as
-  with species that are true polysemies, which have ancestors (genera)
-  that are also true polysemies.  Ancestors whose names are string
+  with species that are true homonyms, which have ancestors (genera)
+  that are also true homonyms.  Ancestors whose names are string
   prefixes of the given taxon's name are skipped over.
 * It is not enough that *some* ancestor (or ancestor name) is shared,
   since every pair of taxa share some ancestor (name).  We need to
@@ -101,6 +101,27 @@ false negatives (taxa that should be combined but aren't) and false
 positives (cases where merging taxa does not lead to the best
 results).
 
+[from method section intro]
+The conventional approach to meeting the requirements stated above
+would have been to create a database, copy the first taxonomy into it,
+then somehow merge the second taxonomy into that, repeating for
+further sources if necessary.  However, it is not clear how to meet
+the the ongoing update requirement under this approach.  As the source
+taxonomies change, we would like for the combined taxonomy to contain
+only information derived from the latest versions of the sources, no
+residual information from previous versions.  Many changes to the
+sources are corrections, and we do not want to hang on to or even be
+influenced by information known to be incorrect.  Properly updating a
+database that is populated with old information is something we don't
+know how to do.
+
+  There are additional benefits [to an automated tool] as well, such as the ability to
+add additional sources relatively easily, and to use the tool for
+other purposes.
+
+[Priority judgments] are sometimes made
+in ignorance of the quality of the sources, since we do not have the
+resources to evaluate the quality of every source in detail.
 
 ## File formats
 
@@ -193,22 +214,22 @@ import?
 
 [Mention CoL]
 
-[GBIF is the biggy, but difficult because (1) it's not documented very
-well - just the two blog posts (2) to the extent it's documented, it's
-the new version that is, not the one we used in assembly.  Cynical
-view: engineers are not scientists - they want to make things that
-work, not understand them or teach them.  Look at Markus's blog posts
-I guess and make best effort.]
+The GBIF backbone is the closest and best point of comparison.  But
+comparing to GBIF is difficult because it's not documented very well -
+just two blog posts and the source code.  Infrastructure work such as
+the GBIF backbone is generally viewed as a means to some other end and
+not a research output.  This is understandable given the GBIF's
+mission and the pressures it faces.
 
 * maybe discuss global names architecture, bionames, bioguid ... GNA
-  doesn't deal with synonyms, for example; does bionames?  what about
+  doesn't deal with synonyms (yet), for example; does bionames?  what about
   misspellings?
 
 
 ## Potential improvements / future work
 
 * Fishbase, world bird names, plant list
-* It would be good to find an alternative to the barrier taxonomy.  One thing
+* It would be good to find an alternative to the separation taxonomy.  One thing
   to try is continuity: we know that taxa cannot be matched only on
   name, but it is possible that pairs of 'nearby' taxa *can* be matched
   by name: if A and B are close in the source, and A maps by

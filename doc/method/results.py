@@ -1,3 +1,5 @@
+# How many species in GBIF?
+# grep species ../../feed/gbif/in/taxon.txt | grep -v synonym | wc
 
 from org.opentreeoflife.taxa import Taxonomy, Taxon, Rank
 from org.opentreeoflife.conflict import ConflictAnalysis, Disposition

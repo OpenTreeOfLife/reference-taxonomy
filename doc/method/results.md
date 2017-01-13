@@ -11,25 +11,25 @@ and assess how well the resulting taxonomy meets the needs of the Open Tree.
 ## Alignment
 
 As OTT is assembled, the alignment procedure examines every source
-node, either choosing an alignment target for it in the union
-taxonomy, or leaving it unaligned.  The following is a breakdown on the use frequency of the various alignment heuristics, pooled across all source
+node, either choosing an alignment target for it in the workspace, or
+leaving it unaligned.  The following is a breakdown on the use frequency of the various alignment heuristics, pooled across all source
 taxonomies.  [JR: actually the heuristics only come into play when there is a choice to be made, so that is only part of what is reported, just six rows out of 15 in the table.
-In other situations something else happens.]
+In other situations something else happens.  Maybe two different tables?]
 
 [combine this table with description of each row]
 
 An explanation of each category follows the table.
 
          49  curated alignment
-        105  align to barrier taxonomy
+        105  align to separation taxonomy
 
 Choice between multiple candidates determined using heuristics:
 
-      21584  disjoint divisions
+      21584  in disjoint separation taxa
         172  disparate ranks
       25800  by lineage
        7653  overlapping membership
-        219  same division
+        219  in same separation taxon
       83012  by name
 
 Only one candidate:
@@ -52,14 +52,14 @@ An explanation of each category follows the table.
 _curated alignment:_ Some alignments are hand-crafted, usually to
 repair mistakes made by automatic alignment.  
 
-_align to barrier taxonomy:_ Alignments to the barrier taxonomy (for
-'division' calculations) are performed before the main alignment loop
+_align to separation taxonomy:_ Alignments to the separation taxonomy (for
+separation calculations) are performed before the main alignment loop
 begins.
 
-_disjoint divisions_, ..., _by name_:
+_disjoint separation taxa_, ..., _by name_:
 Automated source record alignments, broken down according to which
 heuristic (see methods) was responsible for narrowing the candidate
-set down to a single union record.
+set down to a single workspace node.
 
 _confirmed_: There was only a single candidate, and it was confirmed
 by a 'yes' answer from one of the heuristics (usually same name).
@@ -79,9 +79,8 @@ _rejected_: [to be done]
 
 _disjoint membership_: [to be done]
 
-_not aligned_: The source node was not aligned to any union node.
-There were no union taxonomy candidates at all for this
-source taxon.
+_not aligned_: The source node was not aligned to any workspace node.
+There were no candidates at all for this source taxon.
 
 [why is 'not aligned' so much bigger than 'Number of taxon records' below?]
 
@@ -92,13 +91,13 @@ source taxon.
 ## Merge
 
 The merge phase examines every source node, copying unaligned source
-nodes into the union taxonomy when possible.  The following table
+nodes into the workspace when possible.  The following table
 categorizes the fate of each source node during the merge phase.
 
     2162104  aligned tip
      304121  aligned internal node
     3482704  new tip
-       6178  new tip (polysemous)
+       6178  new tip (homonym)
      267746  new internal node, part of graft
        1909  refinement
        7938  merged into larger taxon
@@ -107,23 +106,23 @@ categorizes the fate of each source node during the merge phase.
 
 [why is the merge total different from the alignment total?]
 
-_aligned tip_: There is already a union node for the given source
+_aligned tip_: There is already a workspace node for the given source
 node, so the source node is not copied.  The only action is to record
-an additional source for the union node, and to copy any extinct flag.
+an additional source for the workspace node, and to copy any extinct flag.
 
 _aligned internal node_: Similarly.
 
 _new tip_: There were no candidates for aligning the source node, so a
-new node (a tip) is added to the union taxonomy.
+new node (a tip) is added to the workspace.
 
-_new tip (polysemous)_: Same as _new tip_ but in copying the node, a
-polysemy is created.
+_new tip (homonym)_: Same as _new tip_ but in copying the node, a
+homonym is created.
 
 _new internal node_: No descendant of the source node is aligned, so
 this node is simply copied, finishing up a copy of its subtree.
 
 _refinement_: The source node refines a classification already present
-in the union.
+in the workspace.
 
 _merged into larger taxon_: [should be described in methods section]
 
@@ -151,7 +150,7 @@ General metrics on OTT:
  * Number of tips: 3274406
  * Number of records with rank 'species': 3118191
  * Number of taxa with binomial name-strings: 2337337
- * Number of polysemous name-strings: 8043  
+ * Number of homonym name-strings: 8043  
       * of which any of the taxa is a species: 2648
       * of which any of the taxa is a genus:   5298
 
@@ -185,59 +184,17 @@ Topology:
  * Maximum depth of any node in the tree: 38
  * Branching factor: average 13.02 children per internal node
 
-## Polysemy analysis:
+[end automatically generated]
+
+## Homonym analysis:
 
 7360 of them [on a recent run]. That's too many.
 
- * Could we classify the polysemies?  by taxon rank, proximity, etc.  and compare to GBIF / NCBI
+ * Could we classify the homonyms?  by taxon rank, proximity, etc.  and compare to GBIF / NCBI
      * sibling, cousin, parent/child, within code, between codes
      * how many inherited from source taxonomy, as opposed to created?
-     * could be created via barrier taxonomy separation
+     * could be created via separation taxonomy
      * could be created via membership separation
-
-
-## Evaluating the product
-
-[I think this section does not make a contribution and should be flushed]
-[KC: agreed]
-
-The outcome of the assembly method is a new version of OTT.  There are
-various ways to evaluate a taxonomy.
-
-1. The ultimate determinant of correctness is scientific and
-bibliographic: are these all the taxa, are they given the right names,
-and do they stand in the correct relationship to one another?  - Nobody
-has the answers to all of these questions; without original taxonomic
-research, the best we can do is compare to the best available
-understanding, as reflected in the current scientific literature.
-Doing this would be a mammoth undertaking, but (as with many options
-below) one could consider samples, especially samples at particularly
-suspect points.
-
-1. We can check to see whether the tests run.  Each test has been
-vetted by a curator.  However, there is a relatively small number of
-tests (107).
-
-1. We can try to figure out whether the new version is 'better' than
-the new one.  What would be the measure of that?  Not size, since a
-better quality taxonomy might have fewer 'junk' taxon records.
-
-1. We can check for internal logical consistency.  But it is easy for
-a taxonomy to be both consistent and wrong, or inconsistent and right.
-(really?  example: rank inversion?  need to look at these?  any other
-such checks?)
-
-1. We can check whether the sources are reflected properly - but this
-is not reliable, since in many cases OTT will use better information
-from another source.
-
-1. We can check that all information in OTT is justified by at least
-one source, and that every piece of information in a source is
-reflected in OTT.  (but this is true by construction?)
-
-1. We can try to mathematically prove the correctness assembly program itself.
-
-[and...]
 
 
 ## Evaluating the taxonomy relative to requirements
@@ -303,7 +260,7 @@ coverage requirement as well as any other available taxonomic source.
 
 [As another coverage check, and test of alignment, consider evaluating
 against HHDB (hemihomonym database) - ideally we would have all senses of
-each HHDB polysemy, in the right places]
+each HHDB hemihomonym, in the right places]
 
 ### Backbone quality
 

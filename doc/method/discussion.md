@@ -1,6 +1,23 @@
 
 # Discussion
 
+We have presented a method for merging multiple taxonomies into a single
+synthetic taxonomy. The individual items in a taxonomy are name strings, and
+therefore our method is a set of heuristics that can handle the common
+problems encountered when comparing hierarchies of name-strings - synonyms,
+homonyms, differences in placement. The method is designed to produce a
+taxonomy optimized for the Open Tree of Life phylogeny synthesis project.
+Most taxonomy projects are databases of taxonomy information that are
+continuously updated by curators as new information is published in the
+taxonomic literature. In contrast, the Open Tree Taxonomy takes several of these
+curated taxonomies and produces a synthetic taxonomy de novo each time you run
+the algorithm.
+
+The Open Tree Taxonomy is most similar to the GBIF taxonomy, in the sense that
+both are a synthesis of existing taxonomies rather than a curated taxonomy. The
+GBIF method is yet unpublished, save for a few blog posts. Once the GBIF method
+is available, it would be interesting to compare the two approaches.  
+
 * general remarks on the method
     * artifacts, e.g. (a,b,c,d,e)f + ((a,b)g,(c,e)h)f, you can't win
       e.g. g = Homininae
@@ -212,7 +229,7 @@ I guess and make best effort.]
   to try is continuity: we know that taxa cannot be matched only on
   name, but it is possible that pairs of 'nearby' taxa *can* be matched
   by name: if A and B are close in the source, and A maps by
-  name to A' and B to B', and A' and B' are close in the target, 
+  name to A' and B to B', and A' and B' are close in the target,
   then it is very likely that A and B map to A' and B', respectively.
   [Probably a subject for another paper.]
 * Would be good to try membership based alignment of internal nodes.
@@ -220,10 +237,10 @@ I guess and make best effort.]
   (heuristic) alignments conflict.
 * Should deal with the large number of higher-taxon ambiguities due to
   equivocal disjointness - probably most could be merged
-* More work on *removing* names - e.g. can use IRMNG annotations 
+* More work on *removing* names - e.g. can use IRMNG annotations
   to remove names from GBIF
 * Rank inversions are probably errors and should be fixed somehow.
 * Anchoring OTT ids to source taxonomy records (particular version).
   (this is sort of done.  have list but not implemented in smasher.)
-* microbes (SILVA tips) - add all clusters for assembly, then remove 
+* microbes (SILVA tips) - add all clusters for assembly, then remove
   or hide clusters we don't want at the very end

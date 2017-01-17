@@ -16,7 +16,8 @@
             * Ad hoc alignment adjustments
             * Candidate identification
             * Heuristics
-                * Separate taxa that are in disjoint divisions
+                * Separate taxa that are in disjoint separation taxa
+                * Separate taxa with disparate ranks
                 * Prefer taxon with shared lineage
                 * Prefer taxon with overlapping membership
                 * Prefer taxon in same division

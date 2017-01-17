@@ -31,11 +31,11 @@ name-string (homonym detection).
 
 The Open Tree of Life project consists of a set of tools for
 
-1. synthesizing phylogenetic supertrees from phylogenetic tree inputs
+1. synthesizing phylogenetic supertrees from a corpus of 
+   phylogenetic tree inputs
    (source trees)
 2. matching groupings in supertrees with higher taxa (such as Mammalia)
-   to assist understanding the relationship between phylogeny and taxonomy
-3. supplementing the supertrees with taxa obtained only from 
+3. supplementing supertrees with taxa obtained only from 
    taxonomy
 
 The outcome is one or more summary trees combining phylogenetic and
@@ -44,19 +44,27 @@ taxonomic knowledge.
 Although it is primarily a phylogenetics effort, Open Tree requires a
 reference taxonomy for each of these functions.
 
-In 1, the taxonomy is used for converting OTUs (operational
-taxonomic units, or 'tips') to a canonical form.  Supertree
-construction requires that a source tree OTU be matched with an OTU
-from another tree whenever possible.  This is a nontrivial task.  The
+In 1, the taxonomy is used for converting OTUs (operational taxonomic
+units, or 'tips') to a canonical form.  Supertree construction
+requires that a source tree OTU be matched with an OTU from another
+tree whenever possible.  This is a nontrivial task because a taxon can
+have very different OTU labels in the various source trees
+in which the taxon occurs due to synonymies, abbreviations,
+misspellings, notational differences, and so on.  In addition, which
+taxon is named by a given label can vary across trees (homonymy).  The
 approach taken is to map OTUs to the reference taxonomy, so that OTUs
-are compared by comparing the taxa to which they map.
+in different source trees are compared by comparing the taxa to which
+they map.
 
 In 2, the groupings in the supertree are compared to those in the
 taxonomy.
 
-In 3, the taxonomy provides supplemental taxa beyond the ones
-that are in the source trees, using the outcome of step 2 to determine
-where they are to be 'grafted'.
+In 3, only a relatively small number of described taxa are represented
+in source trees (currently about than 200,000 in the corpus out of two
+million or more known), so the taxonomy covers those that are not.
+The large complement of taxonomy-only taxa can be 'grafted' onto a
+supertree in phylogenetically plausible locations based on how they
+relate taxonomically to taxa that are known from source trees.
 
 ## Reference taxonomy requirements
 
@@ -64,8 +72,8 @@ This overall program dictates what we should be looking for in a
 reference taxonomy.  In addition to the technical requirements derived
 from the above, we have two additional requirements coming from a
 desire to situate Open Tree as ongoing infrastructure for the
-phylogenetic community, rather than as a one-off study.  Following are
-all five requirements:
+evolutionary biology community, rather than as a one-off study.
+Following are all five requirements:
 
  1. *OTU coverage:* The reference taxonomy should have a taxon for
     every OTU that has the potential to occur in more than one study.
@@ -91,13 +99,15 @@ all five requirements:
 not just taxa, but process - NMF]
 
 No single available taxonomic source meets all five requirements.  The
-NCBI taxonomy has good coverage of OTUs, and is open, but its
-taxonomic coverage is limited to taxa that have sequence data in
-GenBank.  Traditional all-life taxonomies such as Catalogue of Life,
-IRMNG, and GBIF meet the taxonomic coverage requirement, but miss many
-OTUs from our input trees, and their higher-level taxonomies are often
-not as phylogenetically informed or resolved as the NCBI taxonomy.  At
-the very least, Open Tree needs to combine an NCBI-like sequence-aware
+NCBI taxonomy has good coverage of OTUs, provides a rich source of
+phyogenetically informed higher taxa, and is open, but its taxonomic
+coverage is limited to taxa that have sequence data in GenBank (about
+360455 species having standard binomial names).  Traditional all-life
+taxonomies such as Catalogue of Life, IRMNG, and GBIF meet the
+taxonomic coverage requirement, but miss many OTUs from our input
+trees, and their higher-level taxonomies are often not as
+phylogenetically informed or resolved as the NCBI taxonomy.  At the
+very least, Open Tree needs to combine an NCBI-like sequence-aware
 taxonomy with a traditional broad taxonomy that is also open.
 
 These requirements cannot be met in an absolute sense; each is a 'best

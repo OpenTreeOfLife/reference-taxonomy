@@ -4,7 +4,7 @@
 # Unless specified otherwise issues are in the reference-taxonomy repo:
 # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/...
 
-import sys
+import sys, os, csv
 
 from org.opentreeoflife.taxa import Taxonomy, SourceTaxonomy, TsvEdits, Addition, Taxon
 from org.opentreeoflife.smasher import UnionTaxonomy
@@ -20,8 +20,7 @@ import adjustments
 import check_inclusions
 from establish import establish
 from claim import *
-import reason_report
-import csv
+#import reason_report
 
 this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/make-ott.py'
 inclusions_path = 'inclusions.csv'
@@ -52,9 +51,6 @@ def create_ott():
 
     # End of topology changes.  Now assign ids.
     ids_and_additions(ott)
-
-    # Report counts of source nodes by reason
-    reason_report.report(ott)
 
     # data structure integrity checks
     ott.check()
@@ -1015,6 +1011,10 @@ def report(ott):
     #  Campanella,Holozoa,5343447,""
     #  Hessea,Holozoa,5295839,""
     #  Neoptera,Tachinidae,5340261,"test of genus"
+
+
+# -----------------------------------------------------------------------------
+# Things to keep an eye on
 
 names_of_interest = ['Ciliophora',
                      'Phaeosphaeria',

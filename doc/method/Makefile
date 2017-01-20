@@ -19,6 +19,7 @@ out/draft.html: out/draft.md lib/Markdown.pl
 
 MARKDOWNS=abstract.md introduction.md method-intro.md \
   out/sources_table.md method-sources.md method-details.md \
+  out/results_tables.md \
   results.md discussion.md conclusions.md
 
 out/draft.md: $(MARKDOWNS)
@@ -33,14 +34,28 @@ out/sources_table.md: sources_table.py
 
 # Need to manually insert the output into results.py
 
-out/taxonomy_metrics.md: taxonomy_metrics.py $(REF_HOME)/tax/ott/taxonomy.tsv \
-			 ruggiero/ruggiero/taxonomy.tsv
-	$(JYTHON) $< $(REF_HOME)/tax/ott/ $(REF_HOME)/tax/skel/ | tee $@.new
+out/taxonomy_metrics.md: taxonomy_metrics.py cache/taxonomy_metrics.json
+	$(JYTHON) $< cache/taxonomy_metrics.json > $@.new
 	mv $@.new $@
 
-ruggiero/ruggiero/taxonomy.tsv: ruggiero/ruggiero.csv
-	python ruggiero/import_ruggiero.py $< ruggiero/ruggiero.new
-	mv ruggiero/ruggiero.new ruggiero/ruggiero
+out/results_tables.md: $(REF_HOME)/util/reason_report.py \
+		       cache/alignment_summary.json \
+		       cache/merge_summary.json \
+		       cache/taxonomy_metrics.json
+	python $< cache/ cache/taxonomy_metrics.json > $@.new
+	mv $@.new $@
+
+refresh: taxonomy_metrics.py \
+	     $(REF_HOME)/tax/ott/taxonomy.tsv \
+	     out/ruggiero/taxonomy.tsv
+	$(JYTHON) $< $(REF_HOME)/tax/ott/ $(REF_HOME)/tax/skel/ $@.new
+	mv $@.new $@
+	cp -p $(REF_HOME)/tax/ott/alignment_summary.json $@
+	cp -p $(REF_HOME)/tax/ott/merge_summary.json $@
+
+out/ruggiero/taxonomy.tsv: ruggiero/ruggiero.csv
+	python ruggiero/import_ruggiero.py $< out/ruggiero.new
+	mv out/ruggiero.new out/ruggiero
 
 out/outline.html: out/outline.md
 	bin/markdown $< >$@.new

@@ -1,8 +1,8 @@
 
-## results - some notes -
+## Contributions of source taxonomies to the assembly
 
 Following is a breakdown of how each source taxonomy contributes to
-the reference taxonomy.  [some document-generation automation needed here]
+the reference taxonomy.  [should be a proper table]
 
         source     total    copied   aligned  absorbed  conflict
     separation        26        26         0         -         -
@@ -17,6 +17,8 @@ the reference taxonomy.  [some document-generation automation needed here]
        curated        29        29         0         -         -
          total   6024410   3550043   2463261      7936      3170
 
+Key:
+
 * source = name of source taxonomy
 * total = total number of nodes in source
 * copied = total number of nodes originating from this source (copied)
@@ -24,59 +26,12 @@ the reference taxonomy.  [some document-generation automation needed here]
 * absorbed = number of source nodes absorbed
 * conflict = number of inconsistent source nodes
 
-For possible discussion:
-
- * Number of taxa suppressed for supertree synthesis purposes: 696041
-
 ### Homonym analysis:
 
-8043 of them [from above]. Compare 1440 in GBIF. Many of these are
-artifacts of the alignment method, especially the rule that says
-genera that do not share species are presumed disjoint.
-
- * Could we classify the homonyms?  by taxon rank, proximity, etc.  and compare to GBIF / NCBI
-     * sibling, cousin, parent/child, within code, between codes
-     * how many inherited from source taxonomy, as opposed to created?
-     * could be created via separation taxonomy
-     * could be created via membership separation
-
-Following are the homonyms naming five or more nodes.
-
- * 5 Gordonia
- * 5 Haenkea
- * 5 Heringia
- * 5 Proboscidea
- * 5 Lobularia
- * 6 FamilyI
- * 7 Lampetia
- * 237 uncultured
-
-'FamilyI' and 'uncultured' refer to phylogenetically supported groups
-from SILVA for which the SILVA curators have not yet assigned more
-descriptive names.
-
-
-[why is 'not aligned' so much bigger than 'Number of taxon records'?]
-
-
-   * KC: do certain heuristics work better / worse for different types of problems?
-     [how would one assess this ?? what are examples of 'types of problems'?]
-
-
-_absorbed into larger taxon_: [should be described in methods section]
-
-_absorbed into larger taxon due to conflict_: [should be described in methods section]
-
-
-[example of absorption: ...?]
-
-[example of a conflict: Zygomycota (if:90405) is not included because
-  ... paraphyletic w.r.t. Hibbett 2007.  get proof?  not a great
-  example, ncbi/gbif would be better.]
-
-[Interesting?:  57 taxa that were unplaced in a higher priority source
-get placed by a lower priority source.]
-
+There are 8043 name-strings in the taxonomy for which there are
+multiple nodes.  By comparison, there are only 1440 in GBIF. Many of
+the homonyms are artifacts of the alignment method, especially the
+rule that says genera that do not share species are presumed disjoint.
 
 ## Evaluating the taxonomy relative to requirements
 
@@ -95,7 +50,7 @@ from these studies to OTT taxa, or 95.5%.
 To assess the reason for the remaining 4.5% of OTUs being unmapped, we
 investigated a random sample of 10 OTUs.  In three cases, the label
 was a genus name in OTT followed by "sp" (e.g. "Euglena sp"),
-suggesting the curator's unwillingness to make use of an OTU not
+ suggesting the curator's unwillingness to make use of an OTU not
 classified to species.  In the remaining seven cases, the taxon was
 already in OTT, and additional curator effort would have found it.
 Two of these were misspellings in the phylogeny source; one was

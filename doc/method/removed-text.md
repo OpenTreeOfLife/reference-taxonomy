@@ -380,3 +380,53 @@ reflected in OTT.  (but this is true by construction?)
 
 [and...]
 
+
+---- FROM RESULTS 2017-01-24 ----
+
+For possible discussion:
+
+ * Number of taxa suppressed for supertree synthesis purposes: 696041
+
+ * Could we classify the homonyms?  by taxon rank, proximity, etc.  and compare to GBIF / NCBI
+     * sibling, cousin, parent/child, within code, between codes
+     * how many inherited from source taxonomy, as opposed to created?
+     * could be created via separation taxonomy
+     * could be created via membership separation
+
+Following are the homonyms naming five or more nodes.
+
+ * 5 Gordonia
+ * 5 Haenkea
+ * 5 Heringia
+ * 5 Proboscidea
+ * 5 Lobularia
+ * 6 FamilyI
+ * 7 Lampetia
+ * 237 uncultured
+
+'FamilyI' and 'uncultured' refer to phylogenetically supported groups
+from SILVA for which the SILVA curators have not yet assigned more
+descriptive names.
+
+
+[why is 'not aligned' so much bigger than 'Number of taxon records'?]
+
+
+   * KC: do certain heuristics work better / worse for different types of problems?
+     [how would one assess this ?? what are examples of 'types of problems'?]
+
+
+_absorbed into larger taxon_: [should be described in methods section]
+
+_absorbed into larger taxon due to conflict_: [should be described in methods section]
+
+
+[example of absorption: ...?]
+
+[example of a conflict: Zygomycota (if:90405) is not included because
+  ... paraphyletic w.r.t. Hibbett 2007.  get proof?  not a great
+  example, ncbi/gbif would be better.]
+
+[Interesting?:  57 taxa that were unplaced in a higher priority source
+get placed by a lower priority source.]
+

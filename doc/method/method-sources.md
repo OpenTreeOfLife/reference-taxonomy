@@ -63,3 +63,12 @@ Not all source taxonomy records are used.  The following are ignored:
 * NCBI Taxonomy records that cannot correspond to taxa:
   those with names containing 'uncultured', 'unidentified', 'insertion
   sequences', or any of about 15 similar designations
+
+The IPNI and IRMNG records are suppressed because they include many
+invalid names.  Although the original taxonomic sources indicate which
+names are known to be invalid, this information is not preserved when
+the records are exported by GBIF, since Darwin Core does not provide a
+standard way to express it.  Note that the GBIF taxonomy might import
+the same name from more than one source, but its export file only
+lists one of the sources.  We suppress the record if that source is
+IPNI or IRMNG, but not if it's some other source.

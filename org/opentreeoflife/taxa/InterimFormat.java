@@ -20,13 +20,17 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
+import java.io.FileOutputStream;
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 
 import org.json.simple.JSONObject; 
 import org.json.simple.parser.JSONParser; 
 import org.json.simple.parser.ParseException;
 
 
-class InterimFormat {
+public class InterimFormat {
 
 	static Pattern tabVbarTab = Pattern.compile("\t\\|\t?");
 	static Pattern tabOnly = Pattern.compile("\t");
@@ -115,6 +119,14 @@ class InterimFormat {
 		out.println(tax.properties);
 		out.close();
 	}
+
+    public static void writeAsJson(Map m, File file) throws IOException {
+        FileOutputStream stream = new FileOutputStream(file);
+        Writer out
+            = new BufferedWriter(new OutputStreamWriter(stream, "UTF-8"));
+        JSONObject.writeJSONString(m, out);
+        out.close();
+    }
 
 	// load | dump taxonomy file
 

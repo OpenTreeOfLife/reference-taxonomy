@@ -2,6 +2,9 @@
 #  $< = first prerequisite
 #  $@ = file name of target
 
+REF_HOME=../..
+JYTHON=$(REF_HOME)/bin/jython
+
 all: draft.html
 
 # use --html4tags flag?
@@ -16,6 +19,7 @@ out/draft.html: out/draft.md lib/Markdown.pl
 
 MARKDOWNS=abstract.md introduction.md method-intro.md \
   out/sources_table.md method-sources.md method-details.md \
+  out/results_tables.md \
   results.md discussion.md conclusions.md
 
 out/draft.md: $(MARKDOWNS)
@@ -27,6 +31,31 @@ out/sources_table.md: sources_table.py
 	@mkdir -p out
 	python $< >$@.new
 	mv $@.new $@
+
+# Need to manually insert the output into results.py
+
+out/taxonomy_metrics.md: taxonomy_metrics.py cache/taxonomy_metrics.json
+	$(JYTHON) $< cache/taxonomy_metrics.json > $@.new
+	mv $@.new $@
+
+out/results_tables.md: $(REF_HOME)/util/reason_report.py \
+		       cache/alignment_summary.json \
+		       cache/merge_summary.json \
+		       cache/taxonomy_metrics.json
+	python $< cache/ cache/taxonomy_metrics.json > $@.new
+	mv $@.new $@
+
+refresh: taxonomy_metrics.py \
+	     $(REF_HOME)/tax/ott/taxonomy.tsv \
+	     out/ruggiero/taxonomy.tsv
+	$(JYTHON) $< $(REF_HOME)/tax/ott/ $(REF_HOME)/tax/skel/ $@.new
+	mv $@.new $@
+	cp -p $(REF_HOME)/tax/ott/alignment_summary.json $@
+	cp -p $(REF_HOME)/tax/ott/merge_summary.json $@
+
+out/ruggiero/taxonomy.tsv: ruggiero/ruggiero.csv
+	python ruggiero/import_ruggiero.py $< out/ruggiero.new
+	mv out/ruggiero.new out/ruggiero
 
 out/outline.html: out/outline.md
 	bin/markdown $< >$@.new
@@ -50,12 +79,6 @@ lib/Markdown.pl:
 	unzip Markdown_1.0.1.zip
 	mv Markdown_1.0.1/Markdown.pl $@
 	rm -r Markdown_1.0.1 Markdown_1.0.1.zip
-
-REF_HOME=../../../../repo/reference-taxonomy
-JYTHON=$(REF_HOME)/bin/jython
-
-results: results.py
-	$(JYTHON) $< $(REF_HOME)/tax/ott/
 
 # Use this to test that results.py works before siccing it on OTT
 test-results: results.py

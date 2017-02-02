@@ -1,201 +1,37 @@
 
-# Results
+## Contributions of source taxonomies to the assembly
 
-We have described the taxonomic and nomenclatural needs of the Open Tree of
-Life project, and a process for building a taxonomy that meets these needs.
-Now, we present the performance of various stages of the taxonomy build process,
-and assess how well the resulting taxonomy meets the needs of the Open Tree.  
+Following is a breakdown of how each source taxonomy contributes to
+the reference taxonomy.  [should be a proper table]
 
-[performance?]
+        source     total    copied   aligned  absorbed  conflict
+    separation        26        26         0         -         -
+         silva     74401     74396         5         -         -
+         h2007       227       226         1         -         -
+            if    284878    281709      3103        42        24
+         worms    327633    268847     57163       992       631
+      study713       119       118         1         -         -
+          ncbi   1320679   1198186    119485      1997      1011
+          gbif   2452614   1636666    813455      1822       671
+         irmng   1563804     89840   1470048      3083       833
+       curated        29        29         0         -         -
+         total   6024410   3550043   2463261      7936      3170
 
-## Alignment
+Key:
 
-As OTT is assembled, the alignment procedure examines every source
-node, either choosing an alignment target for it in the workspace, or
-leaving it unaligned.  The following is a breakdown on the use frequency of the various alignment heuristics, pooled across all source
-taxonomies.  [JR: actually the heuristics only come into play when there is a choice to be made, so that is only part of what is reported, just six rows out of 15 in the table.
-In other situations something else happens.  Maybe two different tables?]
+* source = name of source taxonomy
+* total = total number of nodes in source
+* copied = total number of nodes originating from this source (copied)
+* aligned = number of source nodes aligned and copied
+* absorbed = number of source nodes absorbed
+* conflict = number of inconsistent source nodes
 
-[combine this table with description of each row]
+### Homonym analysis:
 
-An explanation of each category follows the table.
-
-         49  curated alignment
-        105  align to separation taxonomy
-
-Choice between multiple candidates determined using heuristics:
-
-      21584  in disjoint separation taxa
-        172  disparate ranks
-      25800  by lineage
-       7653  overlapping membership
-        219  in same separation taxon
-      83012  by name
-
-Only one candidate:
-
-    2325870  confirmed
-       1767  by elimination
-
-Not aligned:
-
-       8592  ambiguous tip
-        452  ambiguous internal
-      10678  rejected
-        921  disjoint membership
-    3757548  not aligned
-
-    6244422  total source taxon records
-
-An explanation of each category follows the table.
-
-_curated alignment:_ Some alignments are hand-crafted, usually to
-repair mistakes made by automatic alignment.  
-
-_align to separation taxonomy:_ Alignments to the separation taxonomy (for
-separation calculations) are performed before the main alignment loop
-begins.
-
-_disjoint separation taxa_, ..., _by name_:
-Automated source record alignments, broken down according to which
-heuristic (see methods) was responsible for narrowing the candidate
-set down to a single workspace node.
-
-_confirmed_: There was only a single candidate, and it was confirmed
-by a 'yes' answer from one of the heuristics (usually same name).
-
-_by elimination_: Only a single candidate, but not confirmed by any
-heuristic (match involved a synonym).
-
-_ambiguous_: The heuristics were unable to choose from among multiple
-candidates; no alignment is recorded for the source node.
-
-_ambiguous tip_: Ambiguous, and the source node is a tip.
-
-_ambiguous internal_: Ambiguous, and the source node is an internal
-node (has children).
-
-_rejected_: [to be done]
-
-_disjoint membership_: [to be done]
-
-_not aligned_: The source node was not aligned to any workspace node.
-There were no candidates at all for this source taxon.
-
-[why is 'not aligned' so much bigger than 'Number of taxon records' below?]
-
-   * KC: do certain heuristics work better / worse for different types of problems?
-     [how would one assess this ?? what are examples of 'types of problems'?]
-
-
-## Merge
-
-The merge phase examines every source node, copying unaligned source
-nodes into the workspace when possible.  The following table
-categorizes the fate of each source node during the merge phase.
-
-    2162104  aligned tip
-     304121  aligned internal node
-    3482704  new tip
-       6178  new tip (homonym)
-     267746  new internal node, part of graft
-       1909  refinement
-       7938  merged into larger taxon
-       3158  merged into larger taxon due to conflict
-    6235858  total
-
-[why is the merge total different from the alignment total?]
-
-_aligned tip_: There is already a workspace node for the given source
-node, so the source node is not copied.  The only action is to record
-an additional source for the workspace node, and to copy any extinct flag.
-
-_aligned internal node_: Similarly.
-
-_new tip_: There were no candidates for aligning the source node, so a
-new node (a tip) is added to the workspace.
-
-_new tip (homonym)_: Same as _new tip_ but in copying the node, a
-homonym is created.
-
-_new internal node_: No descendant of the source node is aligned, so
-this node is simply copied, finishing up a copy of its subtree.
-
-_refinement_: The source node refines a classification already present
-in the workspace.
-
-_merged into larger taxon_: [should be described in methods section]
-
-_merged into larger taxon due to conflict_: [should be described in methods section]
-
-
-
-[example of a conflict: Zygomycota (if:90405) is not included because
-  ... paraphyletic w.r.t. Hibbett 2007.  get proof?  not a great
-  example, ncbi/gbif would be better.]
-
-[Interesting?:  57 taxa that were unplaced in a higher priority source
-get placed by a lower priority source.]
-
-
-## Characterizing the overall assembly product
-
-[begin automatically generated]
-
-General metrics on OTT:
-
- * Number of taxon records: 3550554
- * Number of synonym records: 2050661
- * Number of internal nodes: 276148
- * Number of tips: 3274406
- * Number of records with rank 'species': 3118191
- * Number of taxa with binomial name-strings: 2337337
- * Number of homonym name-strings: 8043  
-      * of which any of the taxa is a species: 2648
-      * of which any of the taxa is a genus:   5298
-
-Annotations:
-
- * Number of taxa marked incertae sedis or equivalent: 318972  
-     of which leftover children of inconsistent source taxa: 17669
- * Number of extinct taxa: 254929
- * Number of infraspecific taxa (below the rank of species): 70873
- * Number of species-less higher taxa (rank above species but containing no species): 66488
-
-Assembly:
-
-Contributions from various sources  [older numbers - need to update]
-
-       Source     Total   Contrib   Aligned    Merged  Conflict
-        silva     74412     74407         5         -         -
-        h2007       227       226         1         -         -
-           if    284878    281709      3103        42        24
-        worms    327635    268851     57163       992       629
-     study713       119       118         1         -         -
-         ncbi   1320692   1198200    119486      1996      1010
-         gbif   2452674   1637225    812960      1821       668
-        irmng   1563961     89789   1470267      3078       827
-      curated        29        29         0         -         -
-        total   6024627   3550554   2462986      7929      3158
-
-
-Topology:
-
- * Maximum depth of any node in the tree: 38
- * Branching factor: average 13.02 children per internal node
-
-[end automatically generated]
-
-## Homonym analysis:
-
-7360 of them [on a recent run]. That's too many.
-
- * Could we classify the homonyms?  by taxon rank, proximity, etc.  and compare to GBIF / NCBI
-     * sibling, cousin, parent/child, within code, between codes
-     * how many inherited from source taxonomy, as opposed to created?
-     * could be created via separation taxonomy
-     * could be created via membership separation
-
+There are 8043 name-strings in the taxonomy for which there are
+multiple nodes.  By comparison, there are only 1440 in GBIF. Many of
+the homonyms are artifacts of the alignment method, especially the
+rule that says genera that do not share species are presumed disjoint.
 
 ## Evaluating the taxonomy relative to requirements
 
@@ -214,7 +50,7 @@ from these studies to OTT taxa, or 95.5%.
 To assess the reason for the remaining 4.5% of OTUs being unmapped, we
 investigated a random sample of 10 OTUs.  In three cases, the label
 was a genus name in OTT followed by "sp" (e.g. "Euglena sp"),
-suggesting the curator's unwillingness to make use of an OTU not
+ suggesting the curator's unwillingness to make use of an OTU not
 classified to species.  In the remaining seven cases, the taxon was
 already in OTT, and additional curator effort would have found it.
 Two of these were misspellings in the phylogeny source; one was
@@ -245,7 +81,7 @@ rather difficult.  this is what the curation feature was for.]
 
 ### Taxonomic coverage
 
-OTT has 2.1M binomials (presumptive valid names), vs. 1.6M for
+OTT has 2.3M binomials (presumptive valid species names), vs. 1.6M for
 Catalogue of Life (CoL).  The number is larger in part because the
 combination of the inputs has greater coverage than CoL, and in part
 because OTT has many names that are either not valid or not currently
@@ -275,35 +111,13 @@ each HHDB hemihomonym, in the right places]
   meaningfully to NCBI, GBIF, but this would require new syntheses...
   http://files.opentreeoflife.org/synthesis/opentree7.0/output/subproblems/index.html#contested
 
-#### Comparison with Ruggiero et al. 2015
-
-(goes to characterizing backbone)
-
- * Number of taxa in Ruggiero: 2276  of which orders/tips: 1498
- * Ruggiero orders aligned by name to OTT: 1378
- * Disposition of Ruggiero taxa above rank of order:
-     * Taxon contains at least one order aligned by name to OTT: 759
-     * Full topological consistency between Ruggiero and OTT: 281
-     * Taxon resolves an OTT polytomy: 127
-     * Taxon supports more than one OTT taxon: 276
-     * Taxon conflicts with one or more OTT taxa: 75
-     * Taxon containing no aligned order: 18
-
-(Interesting but not clear what lesson to draw from this - are the numbers good or bad?
-Maybe do a 3-way
-comparison, OTT / Ruggiero / synthesis?
-With a bit of work, could get similar numbers for R. vs. synth and OTT
-vs. synth.
-The numbers might turn out pretty well.
-OTOH using the synthetic tree as ground truth seems a bit risky? ]
-
 ### Ongoing update
 
 NCBI update went smoothly - no intervention required.
 
 GBIF update had some issues:
 
- * import code needed to be changed because columns in new GBIF backbone distrubtion are changed
+ * import code needed to be changed because columns in new GBIF backbone distribution are changed
  * lots of taxa are missing, requiring adjustments to patches, and a few new ones.
 
 ### Open data

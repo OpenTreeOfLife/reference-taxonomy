@@ -36,6 +36,7 @@ import org.opentreeoflife.taxa.Flag;
 import org.opentreeoflife.taxa.Rank;
 import org.opentreeoflife.taxa.EventLogger;
 import org.opentreeoflife.taxa.Addition;
+import org.opentreeoflife.taxa.InterimFormat; // for writeAsJson
 
 
 public class UnionTaxonomy extends Taxonomy {
@@ -547,6 +548,10 @@ public class UnionTaxonomy extends Taxonomy {
             this.dumpLog(outprefix + "log.tsv", scrutinize);
         // this.dumpWeakLog(outprefix + "weaklog.csv");
 		this.dumpConflicts(outprefix + "conflicts.tsv");
+
+ 	    InterimFormat.writeAsJson(this.alignmentSummary, new File(outprefix, "alignment_summary.json"));
+ 	    InterimFormat.writeAsJson(this.mergeSummary, new File(outprefix, "merge_summary.json"));
+
     }
 
     /*

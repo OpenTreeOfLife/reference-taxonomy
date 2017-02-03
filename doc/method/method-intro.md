@@ -8,8 +8,8 @@ necessary.  However, it is not clear how to meet the the ongoing update
 requirement under this approach.  As the source taxonomies change, we would like
 for the combined taxonomy to contain only information derived from the latest
 versions of the sources, without residual information from previous versions.  Many
-changes to the sources are corrections, and we do not want to hang on to or even
-be influenced by information known to be incorrect.  
+changes to the sources are corrections, and we do not want to rely on
+information known to be incorrect.  
 
 Rather than maintain a database of taxonomic information, we instead developed a
 process assembling a taxonomy from two or more taxonomic sources.  With a
@@ -27,7 +27,7 @@ Open Tree reference taxonomy version 2.11.
   * workspace = data structure for creation of the reference
     taxonomy
   * node = a taxon record, either from a source taxonomy or the workspace.
-    records primary name-string, provenance,
+    Records primary name-string, provenance,
     parent node, optional rank, optional annotations
   * parent (node) = the nearest enclosing node within a given node's taxonomy
   * tip = a node that is not the parent of any node
@@ -43,7 +43,9 @@ Open Tree reference taxonomy version 2.11.
     but is not known to be outside of A's non-_incertae-sedis_ children.  That is,
     if we had more information, it might turn out that B is a
     member of one of the other children of A.
-
+    [MTH: I found this confusing. Is B the taxon that is flagged as _incertae sedis_?
+    It seems odd to say "A is _incertae sedis_ in taxon B" if B is the 
+    _incertae sedis_ taxon (and B is in A).]
 
 ## Assembly overview
 

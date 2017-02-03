@@ -15,13 +15,12 @@ synthesis of ten different source taxonomies with different strengths.
 The synthesis process is repeatable so that updates to source
 taxonomies can be incorporated easily.
 
-Like other biodiversity projects, Open Tree aggregates and reasons
-over information about taxa.  Information about taxa is typically
+Information about taxa is typically
 expressed in databases and files in terms of taxon names or
 'name-strings' [cite darwin core?].  To combine data sets it is
 necessary to be able to determine name equivalence: whether or not an
 occurrence of a name-string in one data source refers to the same
-thing (taxon) as a given name-string occurrence in another.  Solving
+taxon as ag iven name-string occurrence in another.  Solving
 this equivalence problem requires detecting equivalence when the
 name-strings are different (synonym detection), as well as
 distinguishing occurrences that only coincidentally have the same
@@ -102,7 +101,7 @@ No single available taxonomic source meets all five requirements.  The
 NCBI taxonomy has good coverage of OTUs, provides a rich source of
 phyogenetically informed higher taxa, and is open, but its taxonomic
 coverage is limited to taxa that have sequence data in GenBank (about
-360455 species having standard binomial names).  Traditional all-life
+360,455 species having standard binomial names).  Traditional all-life
 taxonomies such as Catalogue of Life, IRMNG, and GBIF meet the
 taxonomic coverage requirement, but miss many OTUs from our input
 trees, and their higher-level taxonomies are often not as
@@ -115,5 +114,6 @@ effort' requirement subject to availability of project resources.
 
 Note that the Open Tree Taxonomy is *not* supposed to be 1) a
 reference for nomenclature (we can link to other sources for that); 2)
-a well-formed or complete taxonomic hypothesis; or 3) a place to
+a well-formed or complete taxonomic hypothesis; [MTH: need some clarification
+on point 2, as it sounds like a contradiction of requirements 2 and 3 above] or 3) a place to
 deposit curated taxonomic information.

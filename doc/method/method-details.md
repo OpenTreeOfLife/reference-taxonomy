@@ -96,10 +96,10 @@ candidate for each source node, or to reject all candidates if none is
 correct.
 
 Example: There are two nodes named _Aporia lemoulti_ in the GBIF
-backbone taxonomy; one is a plant and the other is an insect.  (One of
+backbone taxonomy; one is a plant and the other is an insect.  One of
 these two is an erroneous duplication, but the automated system has to
 be able to cope with this situation because we don't have the
-resources to correct all source taxonomy errors!)  It is necessary to
+resources to correct all source taxonomy errors.  It is necessary to
 choose the right candidate for the IRMNG node with name _Aporia
 lemoulti_.  Consequences of incorrect placement might include putting
 siblings of IRMNG _Aporia lemoulti_ in the wrong kingdom as well.
@@ -168,12 +168,17 @@ heuristics are as follows:
     an ancestor of n', or q(n') is the name-string of an ancestor of n, 
     then prefer n to candidates that lack these properties.
 
+    [MTH: this section is clear, but it is not clear to the reader what 
+    order nodes in the source are aligned. That seems to make a difference here.]
+
  1. **Overlap**: Prefer to align n' to n if they are higher level groupings that overlap.
     Stated a bit more carefully: if n' has a descendant aligned to 
     a descendant of n.  
 
     (Example: need example. From OTT 2.10: if n' = Scyphocoronis, Millotia is preferred 
     to Scyphocoronis. - seems to be gone from OTT 2.11)
+
+    [MTH: this example is not helpful.]
 
  1. **Proximity** [opposite of "separation"; not a great name]:
     Suppose the separation taxonomy includes A and B, 
@@ -188,6 +193,8 @@ heuristics are as follows:
 
     (Example: candidate _Zabelia tyaihyoni_ preferred to candidate _Zabelia mosanensis_ for
     n' = GBIF _Zabelia tyaihyoni_.)
+
+    [MTH: is there a synonym in this example? seems obvious as stated.]
 
 If there is a single candidate that is not rejected by any heuristic,
 it is aligned to that candidate.
@@ -319,6 +326,9 @@ up while merging taxonomies.  [tbd: turn the newicks into a multi-part figure]
 
    [not such a great technical term: 'absorption' - but we need a term. The code currently
    says 'merged' and that would be way too confusing]
+
+   [MTH: wouldn't the previous answer: ((a,b)x,(c,d)y,?e)z also mean
+   that e is a proper child of z, but is just uncertain wrt x and y?]
 
 1. ((a,b)x,(c,d)y)z + ((a,c,e)u,(b,d)v)z = ((a,b)x,(c,d)y,?e)
 

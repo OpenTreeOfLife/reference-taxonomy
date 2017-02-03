@@ -33,6 +33,8 @@ multiple nodes.  By comparison, there are only 1440 in GBIF. Many of
 the homonyms are artifacts of the alignment method, especially the
 rule that says genera that do not share species are presumed disjoint.
 
+[MTH: I missed this rule, which one was it?]
+
 ## Evaluating the taxonomy relative to requirements
 
 The introduction sets out requirements for an Open Tree taxonomy.

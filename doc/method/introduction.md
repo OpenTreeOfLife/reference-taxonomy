@@ -20,7 +20,7 @@ expressed in databases and files in terms of taxon names or
 'name-strings' [cite darwin core?].  To combine data sets it is
 necessary to be able to determine name equivalence: whether or not an
 occurrence of a name-string in one data source refers to the same
-taxon as ag iven name-string occurrence in another.  Solving
+taxon as a given name-string occurrence in another.  Solving
 this equivalence problem requires detecting equivalence when the
 name-strings are different (synonym detection), as well as
 distinguishing occurrences that only coincidentally have the same
@@ -30,11 +30,11 @@ name-string (homonym detection).
 
 The Open Tree of Life project consists of a set of tools for
 
-1. synthesizing phylogenetic supertrees from a corpus of 
+1. synthesizing phylogenetic supertrees from a corpus of
    phylogenetic tree inputs
    (source trees)
 2. matching groupings in supertrees with higher taxa (such as Mammalia)
-3. supplementing supertrees with taxa obtained only from 
+3. supplementing supertrees with taxa obtained only from
    taxonomy
 
 The outcome is one or more summary trees combining phylogenetic and
@@ -78,9 +78,9 @@ Following are all five requirements:
     every OTU that has the potential to occur in more than one study.
  1. *Phylogenetically informed classification:* Higher taxa should be
     provided with as much resolution and phylogenetic fidelity as is
-    reasonable.  Ranks and nomenclatural structure should not be 
-    required (since many well-established groups do not have proper 
-    Linnaean names or ranks) and groups at odds with phylogenetic 
+    reasonable.  Ranks and nomenclatural structure should not be
+    required (since many well-established groups do not have proper
+    Linnaean names or ranks) and groups at odds with phylogenetic
     understanding (such as Protozoa) should be avoided.
  1. *Taxonomic coverage:* The taxonomy should cover as many as possible of
     the species
@@ -91,7 +91,7 @@ Following are all five requirements:
     are constantly being added to the literature.
     The taxonomy needs to be updated with new information on an ongoing basis.
  1. *Open data:* The taxonomy must be available to anyone for unrestricted use.
-    Users should not have to ask permission to copy and use the taxonomy, 
+    Users should not have to ask permission to copy and use the taxonomy,
     nor should they be bound by terms of use that interfere with further reuse.
 
 [would this be a place to 'highlight' transparency as theme or goal? -

@@ -47,6 +47,14 @@ incorrect tree but to downstream curation errors in OTU matching
 annotation (information about one copy not propagating to the other)
 and to loss of unification opportunities in phylogeny synthesis.
 
+As described above, source taxonomies are processed (aligned and
+merged) in priority order.  For each source taxonomy, ad hoc
+adjustments are applied before automatic alignments.  For automatic
+alignment, alignments closest to the tips of the source taxonomy are
+found in a first pass, and all others in a second pass.  The two-pass
+structure permits first-pass alignments to be used during the second
+pass (see Overlap, below).
+
 ### Ad hoc alignment adjustments
 
 Automated alignment is preceded by ad hoc 'adjustments' that address
@@ -93,7 +101,9 @@ every source node that also has that name-string.
 
 The purpose of the alignment phase is to choose a single correct
 candidate for each source node, or to reject all candidates if none is
-correct.
+correct.  For 97% of source nodes, there is only one candidate, and
+selection is fairly simple, but the remaining nodes require special
+treatment.
 
 Example: There are two nodes named _Aporia lemoulti_ in the GBIF
 backbone taxonomy; one is a plant and the other is an insect.  One of

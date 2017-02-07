@@ -75,7 +75,8 @@ evolutionary biology community, rather than as a one-off study.
 Following are all five requirements:
 
  1. *OTU coverage:* The reference taxonomy should have a taxon for
-    every OTU that has the potential to occur in more than one study.
+    every OTU that has the potential to occur in more than one study,
+    over the intended scope of all cellular organisms.
  1. *Phylogenetically informed classification:* Higher taxa should be
     provided with as much resolution and phylogenetic fidelity as is
     reasonable.  Ranks and nomenclatural structure should not be
@@ -101,7 +102,7 @@ No single available taxonomic source meets all five requirements.  The
 NCBI taxonomy has good coverage of OTUs, provides a rich source of
 phyogenetically informed higher taxa, and is open, but its taxonomic
 coverage is limited to taxa that have sequence data in GenBank (about
-360,455 species having standard binomial names).  Traditional all-life
+360,000 species having standard binomial names at the time of this writing).  Traditional all-life
 taxonomies such as Catalogue of Life, IRMNG, and GBIF meet the
 taxonomic coverage requirement, but miss many OTUs from our input
 trees, and their higher-level taxonomies are often not as
@@ -112,8 +113,11 @@ taxonomy with a traditional broad taxonomy that is also open.
 These requirements cannot be met in an absolute sense; each is a 'best
 effort' requirement subject to availability of project resources.
 
-Note that the Open Tree Taxonomy is *not* supposed to be 1) a
-reference for nomenclature (we can link to other sources for that); 2)
-a well-formed or complete taxonomic hypothesis; [MTH: need some clarification
-on point 2, as it sounds like a contradiction of requirements 2 and 3 above] or 3) a place to
-deposit curated taxonomic information.
+Note that the Open Tree Taxonomy is *not* supposed to be a
+reference for nomenclature; it links to other sources for nomenclatural and other information.
+Nor is it a place to deposit curated taxonomic information.
+The taxonomy has not been vetted in detail, as that would be beyond
+the capacity and focus of the Open Tree project.
+It is known to contain many taxon duplications and technical artifacts.
+Tolerating these shortcomings is a necessary tradeoff in 
+attempting to meet the above requirements.

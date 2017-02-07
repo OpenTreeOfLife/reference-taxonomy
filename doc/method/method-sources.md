@@ -10,7 +10,7 @@ terms of depth (# of levels, breadth (overlap? are they
 
 [add a column to the table for number of binomials?]
 
-**Open Tree curated taxa**  
+**Open Tree curation**  
 It is not uncommon to have taxa as OTUs in
 phylogenetic studies that do not occur in OTT.  This can be due to a
 delay in curation by NCBI itself, a delay in importing a fresh NCBI

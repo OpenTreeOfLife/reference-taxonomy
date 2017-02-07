@@ -10,7 +10,7 @@
 # Maximum depth
 
 table = [
-    {'name': 'for separation',
+    {'name': 'separation taxa',
      'reference': '',
      'version': '',
      'priority': 1,
@@ -88,7 +88,7 @@ table = [
      'taxa': 1706655,    # Boils down to 1685134
      'synonyms': 685983,
      'goals': 'T'}, # Boils down to 659851
-    {'name': 'curation',
+    {'name': 'OpenTree curation',
      'reference': 'github',
      'version': '4b3ba1a',
      'priority': 10,

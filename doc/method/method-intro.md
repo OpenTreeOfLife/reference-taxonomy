@@ -39,13 +39,10 @@ Open Tree reference taxonomy version 2.11.
     when recorded in a given taxonomy.
   * primary = the non-synonym name-string of a node, as opposed to one of the synonyms.
   * image (of a node n') = the workspace node corresponding to n'
-  * _incertae sedis_: taxon A is _incertae sedis_ in taxon B if A is in B
-    but is not known to be outside of A's non-_incertae-sedis_ children.  That is,
-    if we had more information, it might turn out that B is a
-    member of one of the other children of A.
-    [MTH: I found this confusing. Is B the taxon that is flagged as _incertae sedis_?
-    It seems odd to say "A is _incertae sedis_ in taxon B" if B is the 
-    _incertae sedis_ taxon (and B is in A).]
+  * _incertae sedis_: taxon A is _incertae sedis_ in taxon B if A is a child of B
+    but is not known to be outside of B's non-_incertae-sedis_ children.  That is,
+    if we had more information, it might turn out that A is a
+    member of one of the other children of B.
 
 ## Assembly overview
 

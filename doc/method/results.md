@@ -32,8 +32,10 @@ There are 8043 name-strings in the taxonomy for which there are
 multiple nodes.  By comparison, there are only 1440 in GBIF. Many of
 the homonyms are artifacts of the alignment method, especially the
 rule that says genera that do not share species are presumed disjoint.
-
-[MTH: I missed this rule, which one was it?]
+[MTH: I missed this rule, which one was it?
+JAR: big TBD - this kludge has to be described - I didn't even notice
+it until recently.  Perhaps it can even be
+removed so that it doesn't need to be described.]
 
 ## Evaluating the taxonomy relative to requirements
 

@@ -101,9 +101,9 @@ every source node that also has that name-string.
 
 The purpose of the alignment phase is to choose a single correct
 candidate for each source node, or to reject all candidates if none is
-correct.  For 97% of source nodes, there is only one candidate, and
-selection is fairly simple, but the remaining nodes require special
-treatment.
+correct.  For 97% of source nodes, there are no candidates or only one
+candidate, and selection is fairly simple, but the remaining nodes
+require special treatment.
 
 Example: There are two nodes named _Aporia lemoulti_ in the GBIF
 backbone taxonomy; one is a plant and the other is an insect.  One of
@@ -159,15 +159,16 @@ heuristics are as follows:
     the family-rank ancestor node of n' is the same as the name-string of the
     family-rank ancestor node of n.
 
-    (Example: _Hyphodontia quercina_ irmng:11021089
-    aligns with Hyphodontia quercina in Index Fungorum [if:298799],
-    not Malacodon candidus [if:505193].  [Not a great example because
-    a later heuristic would have gotten it.]  The synonymy is via GBIF.)
+    (Example: Source node _Plasmodiophora diplantherae_ from Index
+    Fungorum, in Protozoa, has one workspace candidate derived from
+    NCBI and another from WoRMS.  Because the source node and the NCBI
+    candidate are both in Phytomyxea, while the WoRMS candidate has no
+    applicable lineage in common, the NCBI candidate is chosen.)
 
     The details are complicated because (a) every pair of nodes have
     at least _some_ of their lineage in common, and (b) genus names do not
     provide any information when comparing species nodes with the same
-    name-string, so we can't always just look at the parent taxon.  The exact 
+    name-string, so for species we can't just look at the parent taxon.  The exact 
     rule used is the following:
 
     Define the 'quasiparent name' of n, q(n), to be the

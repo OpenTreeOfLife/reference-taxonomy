@@ -213,7 +213,7 @@ heuristics are as follows:
     (Example: For source node n' = GBIF _Zabelia tyaihyoni_,
     candidate _Zabelia tyaihyoni_ from NCBI is preferred to candidate 
     _Zabelia mosanensis_, also from NCBI.  NCBI _Z. mosanensis_ is a 
-    candidate for n' because GBIF declares that Z. mosanensis is a synonym
+    candidate for n' because GBIF declares that _Z. mosanensis_ is a synonym
     for GBIF _Z. tyaihyoni_.)
 
 If there is a single candidate that is not rejected by any heuristic,

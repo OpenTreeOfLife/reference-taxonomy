@@ -94,10 +94,11 @@ Following are all five requirements:
     Users should not have to ask permission to copy and use the taxonomy,
     nor should they be bound by terms of use that interfere with further reuse.
 
-[would this be a place to 'highlight' transparency as theme or goal? -
-not just taxa, but process - NMF]
+An additional goal is that the process is reproducible and transparent - given
+the inputs, we can both re-generate the taxonomy and see sufficient detail in
+the output to understand the source of the information in the taxonomy.
 
-No single available taxonomic source meets all five requirements.  The
+No single available taxonomic source meets all requirements.  The
 NCBI taxonomy has good coverage of OTUs, provides a rich source of
 phyogenetically informed higher taxa, and is open, but its taxonomic
 coverage is limited to taxa that have sequence data in GenBank (about

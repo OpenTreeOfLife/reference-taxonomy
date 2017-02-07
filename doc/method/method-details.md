@@ -162,8 +162,9 @@ heuristics are as follows:
     (Example: Source node _Plasmodiophora diplantherae_ from Index
     Fungorum, in Protozoa, has one workspace candidate derived from
     NCBI and another from WoRMS.  Because the source node and the NCBI
-    candidate are both in Phytomyxea, while the WoRMS candidate has no
-    applicable lineage in common, the NCBI candidate is chosen.)
+    candidate both claim to be in a taxon with name 'Phytomyxea', while the
+    WoRMS candidate has no applicable lineage in common, the NCBI 
+    candidate is chosen.)
 
     The details are complicated because (a) every pair of nodes have
     at least _some_ of their lineage in common, and (b) genus names do not
@@ -180,7 +181,11 @@ heuristics are as follows:
     then prefer n to candidates that lack these properties.
 
     [MTH: this section is clear, but it is not clear to the reader what 
-    order nodes in the source are aligned. That seems to make a difference here.]
+    order nodes in the source are aligned. That seems to make a difference here.
+    JAR: there is no order dependence, because the
+    heuristic is comparing names, not checking for nodes alignment.
+    I think that is implied by the detailed description, but
+    I've tried to make the example text reinforce this fact.]
 
  1. **Overlap**: Prefer to align n' to n if they are higher level groupings that overlap.
     Stated a bit more carefully: if n' has a descendant aligned to 
@@ -192,20 +197,24 @@ heuristics are as follows:
     The source is therefore aligned to the one with the shared descendant.)
 
  1. **Proximity** [opposite of "separation"; not a great name]:
-    Suppose the separation taxonomy includes A and B, 
-    with B contained in A.
-    If node n' is in B, then prefer candidates that are in B to those that are in A but not in B.
+    Prefer candidates n with the property that
+    the smallest separation taxon containing the source node n'
+    is also the smallest separation taxon containing a candidate n.
 
-    (Example: for IRMNG _Macbrideola indica_, prefer _Macbrideola coprophila_
-    to _Utharomyces epallocaulus_.  [get more info])
+    (Example: for source node Heterocheilidae in IRMNG (a nematode family) whose smallest 
+    separation ancestor is Metazoa, prefer
+    the NCBI Taxonomy candidate with smallest separation ancestor
+    Metazoa (also a nematode family) to the one with smallest separation 
+    ancestor Diptera (a fly family).)
 
  1. **Same name-string**: Prefer candidates whose primary name-string
     is the same as the primary name-string of n'.
 
-    (Example: candidate _Zabelia tyaihyoni_ preferred to candidate _Zabelia mosanensis_ for
-    n' = GBIF _Zabelia tyaihyoni_.)
-
-    [MTH: is there a synonym in this example? seems obvious as stated.]
+    (Example: For source node n' = GBIF _Zabelia tyaihyoni_,
+    candidate _Zabelia tyaihyoni_ from NCBI is preferred to candidate 
+    _Zabelia mosanensis_, also from NCBI.  NCBI _Z. mosanensis_ is a 
+    candidate for n' because GBIF declares that Z. mosanensis is a synonym
+    for GBIF _Z. tyaihyoni_.)
 
 If there is a single candidate that is not rejected by any heuristic,
 it is aligned to that candidate.

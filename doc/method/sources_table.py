@@ -54,7 +54,7 @@ table = [
      'reference': 'x',
      'version' : '2015-10-01',
      'priority': 6,
-     'focus': 'Malacostraca',
+     'focus': 'Malacostraca, Cnidaria',
      'taxa': 330412,
      'synonyms': 223196,
      'goals': 'P,T'},

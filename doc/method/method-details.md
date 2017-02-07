@@ -186,10 +186,10 @@ heuristics are as follows:
     Stated a bit more carefully: if n' has a descendant aligned to 
     a descendant of n.  
 
-    (Example: need example. From OTT 2.10: if n' = Scyphocoronis, Millotia is preferred 
-    to Scyphocoronis. - seems to be gone from OTT 2.11)
-
-    [MTH: this example is not helpful.]
+    (Example: Source node _Peranema_ from GBIF has two candidates from NCBI.
+    One candidate shares descendant _Peranema cryptocercum_ with the source taxon,
+    while the other shares no descendants with the source taxon.
+    The source is therefore aligned to the one with the shared descendant.)
 
  1. **Proximity** [opposite of "separation"; not a great name]:
     Suppose the separation taxonomy includes A and B, 

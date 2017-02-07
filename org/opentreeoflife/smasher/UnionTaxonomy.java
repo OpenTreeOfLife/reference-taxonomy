@@ -48,6 +48,7 @@ public class UnionTaxonomy extends Taxonomy {
 
     public Map<String, Integer> alignmentSummary = new HashMap<String, Integer>();
     public Map<String, Integer> mergeSummary = new HashMap<String, Integer>();
+    public List<Answer[]> choicesMade = new ArrayList<Answer[]>();
 
     public int blustery = 1;
 
@@ -546,12 +547,34 @@ public class UnionTaxonomy extends Taxonomy {
 			scrutinize.addAll(this.dumpDeprecated(this.idsourceAlignment, outprefix + "deprecated.tsv"));
         if (this.eventLogger.namesOfInterest.size() > 0)
             this.dumpLog(outprefix + "log.tsv", scrutinize);
+        if (this.choicesMade.size() > 0)
+            this.dumpChoices(outprefix + "choices.tsv");
         // this.dumpWeakLog(outprefix + "weaklog.csv");
 		this.dumpConflicts(outprefix + "conflicts.tsv");
 
  	    InterimFormat.writeAsJson(this.alignmentSummary, new File(outprefix, "alignment_summary.json"));
  	    InterimFormat.writeAsJson(this.mergeSummary, new File(outprefix, "merge_summary.json"));
 
+    }
+
+    public void dumpChoices(String filename) throws IOException {
+        System.out.format("| %s choice reports\n", this.choicesMade.size());
+        PrintStream out = Taxonomy.openw(filename);
+
+		// Strongylidae	nem:3600	yes	same-parent/direct	3600	Strongyloidea	false
+		out.println("source_name\t" +
+					"source_qualified_id\t" +
+					"parity\t" +
+					"target_name\t" +
+                    "target_uid\t" +
+					"reason\t" +
+					"witness\t");
+        for (Answer[] choice : this.choicesMade) {
+            out.println(choice[0].dump());
+            out.println(choice[1].dump());
+            out.println();
+        }
+        out.close();
     }
 
     /*

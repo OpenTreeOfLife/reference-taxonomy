@@ -47,6 +47,14 @@ incorrect tree but to downstream curation errors in OTU matching
 annotation (information about one copy not propagating to the other)
 and to loss of unification opportunities in phylogeny synthesis.
 
+As described above, source taxonomies are processed (aligned and
+merged) in priority order.  For each source taxonomy, ad hoc
+adjustments are applied before automatic alignments.  For automatic
+alignment, alignments closest to the tips of the source taxonomy are
+found in a first pass, and all others in a second pass.  The two-pass
+structure permits first-pass alignments to be used during the second
+pass (see Overlap, below).
+
 ### Ad hoc alignment adjustments
 
 Automated alignment is preceded by ad hoc 'adjustments' that address
@@ -93,13 +101,15 @@ every source node that also has that name-string.
 
 The purpose of the alignment phase is to choose a single correct
 candidate for each source node, or to reject all candidates if none is
-correct.
+correct.  For 97% of source nodes, there are no candidates or only one
+candidate, and selection is fairly simple, but the remaining nodes
+require special treatment.
 
 Example: There are two nodes named _Aporia lemoulti_ in the GBIF
-backbone taxonomy; one is a plant and the other is an insect.  (One of
+backbone taxonomy; one is a plant and the other is an insect.  One of
 these two is an erroneous duplication, but the automated system has to
 be able to cope with this situation because we don't have the
-resources to correct all source taxonomy errors!)  It is necessary to
+resources to correct all source taxonomy errors.  It is necessary to
 choose the right candidate for the IRMNG node with name _Aporia
 lemoulti_.  Consequences of incorrect placement might include putting
 siblings of IRMNG _Aporia lemoulti_ in the wrong kingdom as well.
@@ -149,15 +159,17 @@ heuristics are as follows:
     the family-rank ancestor node of n' is the same as the name-string of the
     family-rank ancestor node of n.
 
-    (Example: _Hyphodontia quercina_ irmng:11021089
-    aligns with Hyphodontia quercina in Index Fungorum [if:298799],
-    not Malacodon candidus [if:505193].  [Not a great example because
-    a later heuristic would have gotten it.]  The synonymy is via GBIF.)
+    (Example: Source node _Plasmodiophora diplantherae_ from Index
+    Fungorum, in Protozoa, has one workspace candidate derived from
+    NCBI and another from WoRMS.  Because the source node and the NCBI
+    candidate both claim to be in a taxon with name 'Phytomyxea', while the
+    WoRMS candidate has no applicable lineage in common, the NCBI 
+    candidate is chosen.)
 
     The details are complicated because (a) every pair of nodes have
     at least _some_ of their lineage in common, and (b) genus names do not
     provide any information when comparing species nodes with the same
-    name-string, so we can't always just look at the parent taxon.  The exact 
+    name-string, so for species we can't just look at the parent taxon.  The exact 
     rule used is the following:
 
     Define the 'quasiparent name' of n, q(n), to be the
@@ -168,26 +180,41 @@ heuristics are as follows:
     an ancestor of n', or q(n') is the name-string of an ancestor of n, 
     then prefer n to candidates that lack these properties.
 
+    [MTH: this section is clear, but it is not clear to the reader what 
+    order nodes in the source are aligned. That seems to make a difference here.
+    JAR: there is no order dependence, because the
+    heuristic is comparing names, not checking for nodes alignment.
+    I think that is implied by the detailed description, but
+    I've tried to make the example text reinforce this fact.]
+
  1. **Overlap**: Prefer to align n' to n if they are higher level groupings that overlap.
     Stated a bit more carefully: if n' has a descendant aligned to 
     a descendant of n.  
 
-    (Example: need example. From OTT 2.10: if n' = Scyphocoronis, Millotia is preferred 
-    to Scyphocoronis. - seems to be gone from OTT 2.11)
+    (Example: Source node _Peranema_ from GBIF has two candidates from NCBI.
+    One candidate shares descendant _Peranema cryptocercum_ with the source taxon,
+    while the other shares no descendants with the source taxon.
+    The source is therefore aligned to the one with the shared descendant.)
 
  1. **Proximity** [opposite of "separation"; not a great name]:
-    Suppose the separation taxonomy includes A and B, 
-    with B contained in A.
-    If node n' is in B, then prefer candidates that are in B to those that are in A but not in B.
+    Prefer candidates n with the property that
+    the smallest separation taxon containing the source node n'
+    is also the smallest separation taxon containing a candidate n.
 
-    (Example: for IRMNG _Macbrideola indica_, prefer _Macbrideola coprophila_
-    to _Utharomyces epallocaulus_.  [get more info])
+    (Example: for source node Heterocheilidae in IRMNG (a nematode family) whose smallest 
+    separation ancestor is Metazoa, prefer
+    the NCBI Taxonomy candidate with smallest separation ancestor
+    Metazoa (also a nematode family) to the one with smallest separation 
+    ancestor Diptera (a fly family).)
 
  1. **Same name-string**: Prefer candidates whose primary name-string
     is the same as the primary name-string of n'.
 
-    (Example: candidate _Zabelia tyaihyoni_ preferred to candidate _Zabelia mosanensis_ for
-    n' = GBIF _Zabelia tyaihyoni_.)
+    (Example: For source node n' = GBIF _Zabelia tyaihyoni_,
+    candidate _Zabelia tyaihyoni_ from NCBI is preferred to candidate 
+    _Zabelia mosanensis_, also from NCBI.  NCBI _Z. mosanensis_ is a 
+    candidate for n' because GBIF declares that _Z. mosanensis_ is a synonym
+    for GBIF _Z. tyaihyoni_.)
 
 If there is a single candidate that is not rejected by any heuristic,
 it is aligned to that candidate.
@@ -319,6 +346,9 @@ up while merging taxonomies.  [tbd: turn the newicks into a multi-part figure]
 
    [not such a great technical term: 'absorption' - but we need a term. The code currently
    says 'merged' and that would be way too confusing]
+
+   [MTH: wouldn't the previous answer: ((a,b)x,(c,d)y,?e)z also mean
+   that e is a proper child of z, but is just uncertain wrt x and y?]
 
 1. ((a,b)x,(c,d)y)z + ((a,c,e)u,(b,d)v)z = ((a,b)x,(c,d)y,?e)
 

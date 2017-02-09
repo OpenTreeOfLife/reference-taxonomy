@@ -85,11 +85,15 @@ public class AlignmentByName extends Alignment {
         return false;
     }
 
-    // align internal nodes (above quasi-tips)
+    // align internal nodes (above quasi-tips).
+    // If it's an aligned quasi-tip, there is no need to descend,
+    // but we have no way to check for this.
+    // (Remember that some internal nodes may be aligned by ad hoc alignments.)
     void alignInternal(Taxon node) {
         for (Taxon child : node.getChildren())
             alignInternal(child);
         // Cf. computeLubs
+        // computeLub(node);
         alignTaxon(node);
     }
 

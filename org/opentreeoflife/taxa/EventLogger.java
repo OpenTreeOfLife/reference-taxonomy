@@ -145,13 +145,7 @@ public class EventLogger {
 		PrintStream out = Taxonomy.openw(filename);
 
 		// Strongylidae	nem:3600	yes	same-parent/direct	3600	Strongyloidea	false
-		out.println("source_name\t" +
-					"source_qualified_id\t" +
-					"parity\t" +
-					"target_name\t" +
-                    "target_uid\t" +
-					"reason\t" +
-					"witness\t");
+		out.println(Answer.header);
 
 		// this.sublogs is indexed by taxon name
 		if (false)

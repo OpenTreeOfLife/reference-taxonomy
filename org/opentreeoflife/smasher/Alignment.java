@@ -307,8 +307,8 @@ public class Alignment {
                 else if (div[0] == mrca || div[1] == getTaxon(node) || div[1].parent == getTaxon(node))
                     // Hmm... allow siblings (and cousins) to merge.  Blumeria graminis
                     ++winners;
-                else {
-                    if (outlaws < 10 || node.name.equals("Elaphocordyceps subsessilis") || node.name.equals("Bacillus selenitireducens"))
+                else if (FORCE_APART) {
+                    if (outlaws < 10)
                         System.out.format("! %s aligns to %s which is disjoint from children-mrca %s; they meet at %s\n",
                                           node, getTaxon(node), mrca, div[0].parent);
                     ++outlaws;
@@ -320,6 +320,10 @@ public class Alignment {
             }
         }
     }
+
+    // Turns out this is a bad idea.  there were 59 cases.  I checked 6 and they were all
+    // cases where the taxa should be identified, not forced apart.
+    private static boolean FORCE_APART = false;
 
     // this = after, other = before
 

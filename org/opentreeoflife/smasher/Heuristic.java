@@ -171,7 +171,10 @@ abstract class Heuristic {
 				if (b == null) {   // no overlap
                     // we don't need this, but useful for reporting
                     Taxon a = AlignmentByName.antiwitness(x, target);// in x but not target
-                    return Answer.noinfo(x, target, "noinfo/no-overlap", b, a);
+                    if (a == null)
+                        return Answer.noinfo(x, target, "noinfo/unknown-overlap", b, a);
+                    else
+                        return Answer.noinfo(x, target, "noinfo/disjoint", b, a);
 
                     /*
                     if (x.rank != null && x.rank.level >= Rank.SPECIES_RANK.level)

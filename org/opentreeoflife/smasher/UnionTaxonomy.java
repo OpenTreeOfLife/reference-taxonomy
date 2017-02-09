@@ -562,13 +562,7 @@ public class UnionTaxonomy extends Taxonomy {
         PrintStream out = Taxonomy.openw(filename);
 
 		// Strongylidae	nem:3600	yes	same-parent/direct	3600	Strongyloidea	false
-		out.println("source_name\t" +
-					"source_qualified_id\t" +
-					"parity\t" +
-					"target_name\t" +
-                    "target_uid\t" +
-					"reason\t" +
-					"witness\t");
+		out.println(Answer.header);
         for (Answer[] choice : this.choicesMade) {
             out.println(choice[0].dump());
             out.println(choice[1].dump());

@@ -28,7 +28,7 @@ Key:
 
 ### Homonym analysis:
 
-There are 8043 name-strings in the taxonomy for which there are
+There are 8043 name-strings in the final version of the taxonomy for which there are
 multiple nodes.  By comparison, there are only 1440 in GBIF. Many of
 the homonyms are artifacts of the alignment method, especially the
 rule that says genera that do not share species are presumed disjoint.
@@ -40,12 +40,14 @@ How well are these requirements met?
 
 ### OTU coverage
 
-We set out to cover the OTUs in the Open Tree corpus of phylogenetic
-trees.  To assess this, we looked at the 2871 curated studies having
-at least 50% of OTUs mapped to OTT (excluding 371 from the total set).
-A low mapping rate usually indicates incomplete curation, not an
-inability to map to OTT.  Curators have mapped 514346 of 538728 OTUs
-from these studies to OTT taxa, or 95.5%.
+We set out to cover the OTUs in the Open Tree corpus of phylogenetic trees. The
+corpus contains published studies (each study with one or more phylogenetic
+trees) that are manually uploaded and annotated by Open Tree curators. The use
+interface contains tools that help curators map the OTUs in a study to taxa in
+OTT. Of the 3242 studies in the Open Tree database, 2871 have at least 50% of
+OTUs mapped to OTT.  (A lower overall mapping rate usually indicates incomplete
+curation, not an inability to map to OTT.)  These 2871 studies contain 538728
+OTUs, and curators have mapped 514346 to OTT taxa, or 95.5%.
 
 To assess the reason for the remaining 4.5% of OTUs being unmapped, we
 investigated a random sample of 10 OTUs.  In three cases, the label
@@ -59,8 +61,6 @@ species in study, the study reflecting a very recent
 reclassification); and in the remaining four cases, either the taxon
 was added to OTT after the study was curated, or the curation task was
 left incomplete.
-
-[do we need to explain what curation has to do with it?...]
 
 * compare OTT's coverage of phylesystem with coverage by NCBI, GBIF
   (i.e. how well does OTT do what it's supposed to do, compared to
@@ -113,12 +113,11 @@ each HHDB hemihomonym, in the right places]
 
 ### Ongoing update
 
-NCBI update went smoothly - no intervention required.
+Building OTT version 2.11 from sources requires 11 minutes 42 second of real time [KC: and memory?].
 
-GBIF update had some issues:
+In the upgrade from 2.10 to 2.11, we added new versions of both NCBI and GBIF. NCBI updates frequently, so changes tend to be minimal and incorporating the new version was trivial. In contrast, the version from GBIF represented a major change in their taxonomy synthesis method. The file format changed, requiring changes in our import code. In addition, many taxa disappeared, requiring changes to our ad hoc patches during the normalization stage.  
 
- * import code needed to be changed because columns in new GBIF backbone distribution are changed
- * lots of taxa are missing, requiring adjustments to patches, and a few new ones.
+* [KC: estimate on number of curation hours required for 2.10 -> 2.11 update?]
 
 ### Open data
 

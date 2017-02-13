@@ -15,13 +15,12 @@ synthesis of ten different source taxonomies with different strengths. The
 synthesis process is repeatable so that updates to source taxonomies can be
 incorporated easily.
 
-Like other biodiversity projects, Open Tree aggregates and reasons
-over information about taxa.  Information about taxa is typically
+Information about taxa is typically
 expressed in databases and files in terms of taxon names or
 'name-strings' [cite darwin core?].  To combine data sets it is
 necessary to be able to determine name equivalence: whether or not an
 occurrence of a name-string in one data source refers to the same
-thing (taxon) as a given name-string occurrence in another.  Solving
+taxon as a given name-string occurrence in another.  Solving
 this equivalence problem requires detecting equivalence when the
 name-strings are different (synonym detection), as well as
 distinguishing occurrences that only coincidentally have the same
@@ -75,7 +74,8 @@ evolutionary biology community, rather than as a one-off study.
 Following are all five requirements:
 
  1. *OTU coverage:* The reference taxonomy should have a taxon for
-    every OTU that has the potential to occur in more than one study.
+    every OTU that has the potential to occur in more than one study,
+    over the intended scope of all cellular organisms.
  1. *Phylogenetically informed classification:* Higher taxa should be
     provided with as much resolution and phylogenetic fidelity as is
     reasonable.  Ranks and nomenclatural structure should not be
@@ -102,7 +102,7 @@ No single available taxonomic source meets all requirements.  The
 NCBI taxonomy has good coverage of OTUs, provides a rich source of
 phyogenetically informed higher taxa, and is open, but its taxonomic
 coverage is limited to taxa that have sequence data in GenBank (about
-360455 species having standard binomial names).  Traditional all-life
+360,000 species having standard binomial names at the time of this writing).  Traditional all-life
 taxonomies such as Catalogue of Life, IRMNG, and GBIF meet the
 taxonomic coverage requirement, but miss many OTUs from our input
 trees, and their higher-level taxonomies are often not as
@@ -113,8 +113,11 @@ taxonomy with a traditional broad taxonomy that is also open.
 These requirements cannot be met in an absolute sense; each is a 'best
 effort' requirement subject to availability of project resources.
 
-Note that the Open Tree Taxonomy is *not* supposed to be 1) a
-reference for nomenclature (we can link to other sources for that); 2)
-a well-formed or complete taxonomic hypothesis; or 3) a place to
-deposit curated taxonomic information (this should ideally happen at the
-source taxonomies).
+Note that the Open Tree Taxonomy is *not* supposed to be a
+reference for nomenclature; it links to other sources for nomenclatural and other information.
+Nor is it a place to deposit curated taxonomic information.
+The taxonomy has not been vetted in detail, as that would be beyond
+the capacity and focus of the Open Tree project.
+It is known to contain many taxon duplications and technical artifacts.
+Tolerating these shortcomings is a necessary tradeoff in
+attempting to meet the above requirements.

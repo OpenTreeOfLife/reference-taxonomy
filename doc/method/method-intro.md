@@ -8,8 +8,8 @@ necessary.  However, it is not clear how to meet the the ongoing update
 requirement under this approach.  As the source taxonomies change, we would like
 for the combined taxonomy to contain only information derived from the latest
 versions of the sources, without residual information from previous versions.  Many
-changes to the sources are corrections, and we do not want to hang on to or even
-be influenced by information known to be incorrect.  
+changes to the sources are corrections, and we do not want to rely on
+information known to be incorrect.  
 
 Rather than maintain a database of taxonomic information, we instead developed a
 process for assembling a taxonomy from two or more taxonomic sources.  With a
@@ -26,8 +26,8 @@ Open Tree reference taxonomy version 2.11.
   * source taxonomy = imported taxonomic source (NCBI taxonomy, etc.)
   * workspace = data structure for creation of the reference
     taxonomy
-  * node = a taxon record, either from a source taxonomy or the workspace;
-    records primary name-string, provenance,
+  * node = a taxon record, either from a source taxonomy or the workspace.
+    Records primary name-string, provenance,
     parent node, optional rank, optional annotations
   * parent (node) = the nearest enclosing node within a given node's taxonomy
   * tip = a node that is not the parent of any node
@@ -39,11 +39,10 @@ Open Tree reference taxonomy version 2.11.
     when recorded in a given taxonomy.
   * primary = the non-synonym name-string of a node, as opposed to one of the synonyms.
   * image (of a node n') = the workspace node corresponding to n'
-  * _incertae sedis_: taxon A is _incertae sedis_ in taxon B if A is in B
-    but is not known to be outside of A's non-_incertae-sedis_ children.  That is,
-    if we had more information, it might turn out that B is a
-    member of one of the other children of A.
-
+  * _incertae sedis_: taxon A is _incertae sedis_ in taxon B if A is a child of B
+    but is not known to be outside of B's non-_incertae-sedis_ children.  That is,
+    if we had more information, it might turn out that A is a
+    member of one of the other children of B.
 
 ## Assembly overview
 
@@ -139,7 +138,7 @@ create most of the difficulties, with inconsistent or unclear higher taxon
 membership creating the rest. The development of the assembly process described
 here has been a driven by trial and error - finding cases that fail and then
 adding / modifying heuristics to address the underlying cause, or adding an ad
-hoc adjustment for cases that are rare or overly complex. 
+hoc adjustment for cases that are rare or overly complex.
 
 The following sections describe the source taxonomies, and then detail the
 taxonomy combination method.

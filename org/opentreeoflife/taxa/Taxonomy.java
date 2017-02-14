@@ -254,7 +254,10 @@ public abstract class Taxonomy {
 		if (this.tag == null) {
 			if (this.taxid < 0)
 				this.taxid = globalTaxonomyIdCounter++;
-            this.tag = String.format("%s-%s", this.getIdspace(), taxid);
+            if (this.idspace != null)
+                this.tag = String.format("%s-%s", this.idspace, taxid);
+            else
+                this.tag = String.format("%s", taxid);
         }
         return this.tag;
 	}
@@ -266,7 +269,10 @@ public abstract class Taxonomy {
     // The 'idspace' string will show up as a prefix in QualifiedNames
 
 	public String getIdspace() {
-        return this.idspace;
+        if (this.idspace == null)
+            return this.getTag();
+        else
+            return this.idspace;
 	}
 
     public void startQidIndex() {

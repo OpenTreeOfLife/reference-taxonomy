@@ -86,7 +86,7 @@ public class Answer {
         this.subject = null;
         this.target = null;
         this.value = DUNNO;
-        this.reason = "no-info";
+        this.reason = "noinfo";
     }
 
 	static final int HECK_YES = 3;
@@ -176,17 +176,12 @@ public class Answer {
 	public String dump() {
         String w = this.witness;
         if (w == null) {
-            String b = ((this.bert != null) ?
-                        ((this.bert.name != null) ?
-                         this.bert.name :
-                         this.bert.getQualifiedId().toString()) :
-                        "");
-            String e = ((this.ernie != null) ?
-                        ("|" + ((this.ernie.name != null) ?
-                                this.ernie.name :
-                                this.ernie.getQualifiedId().toString())) :
-                        "");
-            w = b + e;
+            String b = blurb(this.bert);
+            String e = blurb(this.ernie);
+            if (e.length() > 0)
+                w = b + "|" + e;
+            else
+                e = b;
         }
         String targetId = null;
         if (this.target != null && this.target.sourceIds != null)
@@ -206,7 +201,15 @@ public class Answer {
                              w);
 	}
 
-
+    String blurb(Taxon node) {
+        return ((node != null) ?
+                ((node.name != null) ?
+                 node.name :
+                 (node.noMrca() ?
+                  "" :
+                  node.getQualifiedId().toString())) :
+                "");
+    }
 
     public String toString() {
         return String.format("(%s %s %s %s)",

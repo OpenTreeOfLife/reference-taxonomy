@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -119,37 +120,44 @@ public class AlignmentByName extends Alignment {
                               node, xdiv.name, ydiv.name, unode, a.reason);
     }
 
+	static Comparator<Answer> compareAnswers = new Comparator<Answer>() {
+		public int compare(Answer x, Answer y) {
+            return x.target.compareTo(y.target);
+		}
+	};
+
     // Alignment - single source taxon -> target taxon or 'no'
 
     public Answer findAlignment(Taxon node) {
         Map<Taxon, String> candidateMap = getCandidates(node);
-        List<Taxon> initialCandidates = new ArrayList<Taxon>(candidateMap.keySet());
-        if (initialCandidates.size() == 0)
+        if (candidateMap.size() == 0)
             return null;
 
-        Collections.sort(initialCandidates);
+        ArrayList<Answer> initialCandidates = new ArrayList<Answer>();
+        for (Taxon cand : candidateMap.keySet())
+            initialCandidates.add(Answer.noinfo(node, cand, candidateMap.get(cand), null));
+
+        Collections.sort(initialCandidates, compareAnswers);
 
         // For logging.  Ugly names, redundant data structures, needs cleaning up.
-        Map<Taxon, Answer> answerx = new HashMap<Taxon, Answer>();
-        List<Taxon> order = new ArrayList<Taxon>();
-        for (Taxon cand : initialCandidates) order.add(cand);
+        List<Answer> order = new ArrayList<Answer>();
 
         // Loop state
-        Taxon anyCandidate = null;  // kludge for by-elimination
+        Answer anyCandidate = null;  // kludge for by-elimination
         int count = 0;  // number of candidates that have the max value
         Answer result = null;
-        Heuristic decider = null;
         int score = -100;
-        ArrayList<Taxon> candidates = initialCandidates;
+        List<Answer> candidates = initialCandidates;
 
         // Precondition: at least one candidate
 
         for (Heuristic heuristic : criteria) {
             List<Answer> answers = new ArrayList<Answer>(candidates.size());
             score = -100;
-            for (Taxon cand : candidates) {
-                Answer a = heuristic.assess(node, cand);
-                if (a.target != cand) a = new Answer(node, cand, a.value, a.reason, a.witness);
+            for (Answer cand : candidates) {
+                Answer a = heuristic.assess(node, cand.target);
+                if (a.target != cand.target) // a is Answer.NOINFO
+                    a = new Answer(node, cand.target, a.value, a.reason, a.witness);
                 answers.add(a); // in parallel with candidates
                 if (a.value > score) {
                     score = a.value;
@@ -157,30 +165,33 @@ public class AlignmentByName extends Alignment {
                     anyCandidate = cand;
                 } else if (a.value == score) {
                     count++;
-                    if (cand.compareTo(anyCandidate) < 0)
-                        anyCandidate = cand;
                 }
             }
 
-            List<Taxon> winners = new ArrayList<Taxon>();
-            Iterator<Answer> aiter = answers.iterator();
-            for (Taxon cand : candidates) {
-                Answer a = aiter.next();
-                if (a.value == score && score >= Answer.DUNNO)
-                    winners.add(cand);
+            List<Answer> winners = new ArrayList<Answer>();
+            for (Answer a : answers) {
+                if (a.value >= score && score >= Answer.DUNNO)
+                    winners.add(a);
                 else
-                    order.add(cand);
+                    order.add(a);
             }
 
             if (winners.size() == 0) {
                 result = new Answer(node, null, score, "rejected", null);
-                order.add(winners);
                 break;
             }
 
             if (score > Answer.DUNNO && winners.size() == 1) {
-                result = new Answer(node, anyCandidate, score, heuristic.toString(), null);
-                order.add(winners);
+                // could just anyCandidate, but stats code likes normalization
+                order.add(anyCandidate);
+                if (candidates.size() > 1)
+                    result = new Answer(node, anyCandidate.target, score,
+                                        heuristic.toString(),
+                                        anyCandidate.witness);
+                else
+                    result = new Answer(node, anyCandidate.target, score,
+                                        "confirmed",
+                                        anyCandidate.reason);
                 break;
             }
 
@@ -189,66 +200,14 @@ public class AlignmentByName extends Alignment {
 
         if (result == null) {
             // fell through with all noinfo or multiple yes
-
-            if (candidates.size() == 1)
-                result = Answer.yes(node, anyCandidate, "by elimination", null);
-            else {
-                String r = node.hasChildren() ? "ambiguous internal" : "ambiguous tip";
-                result = Answer.noinfo(node, anyCandidate, r, null);
-            }
-            order.add(winners);
-        }
-
-            // count is positive
-
-            if (count < candidates.size()) {
-                // This heuristic eliminated some candidates.
-                target.markEvent(heuristic.informative);
-
-                // Winnow the candidate set for the next heuristic.
-                // Iterate over candidates and answers in parallel.
-                Set<Taxon> winners = new HashSet<Taxon>();
-                Iterator<Answer> aiter = answers.iterator();
-                for (Taxon cand : candidates) {
-                    Answer a = aiter.next();
-                    answerx.put(cand, a); // can overwrite
-                    if (a.value == score && score >= Answer.DUNNO)
-                        winners.add(cand);
-                    else
-                        order.add(cand);
-                }
-                candidates = winners;
-                decider = heuristic;
-                // at this point, count == candidates.size()
-            }
-
-            // Tangled logic.  Needs rewriting
-
-            // If narrowed to a single yes, no point in going further.
-            if (score > Answer.DUNNO && count == 1) {
-                result = answerx.get(anyCandidate);
-                if (result == null) {
-                    String r = (decider != null) ? decider.toString() : "confirmed";
-                    result = new Answer(node, anyCandidate, score, r, null);
-                }
-                break;
-            }
-
-            // If all candidates are disqualified, no point in going further.
-            if (score < Answer.DUNNO) {
-                result = new Answer(node, anyCandidate, score, "rejected", null);
-                break;
-            }
-
-            // Loop: Try the next heuristic.
-        }
-
-        if (result == null) {
-            if (count == 1) {
-                result = Answer.yes(node, anyCandidate, "by elimination", null);
+            if (candidates.size() == 1) {
+                result = Answer.yes(node, anyCandidate.target, "by elimination", null);
+                order.add(result);
             } else {
+                order.addAll(candidates);
                 String r = node.hasChildren() ? "ambiguous internal" : "ambiguous tip";
-                result = Answer.noinfo(node, anyCandidate, r, null);
+                result = Answer.noinfo(node, null, r, Integer.toString(candidates.size()));
+                order.add(result);
             }
         }
 
@@ -258,18 +217,7 @@ public class AlignmentByName extends Alignment {
             target.eventLogger.namesOfInterest.contains(node.name)) {
 
             target.eventLogger.namesOfInterest.add(node.name);
-
-            List<Answer> tolog = new ArrayList<Answer>();
-            for (Taxon cand : order) {
-                Answer a = answerx.get(cand);
-                if (a == null)
-                    // elimination or ambiguous
-                    a = Answer.noinfo(node, cand, "noinfo/left-over", null);
-                else if (a.subject == null)
-                    a = Answer.noinfo(node, cand, "noinfo", null);
-                tolog.add(a);
-            }
-            target.eventLogger.log(tolog);
+            target.eventLogger.log(order);
         }
         return result;
     }

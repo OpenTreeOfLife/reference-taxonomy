@@ -26,16 +26,12 @@ Key:
 * absorbed = number of source nodes absorbed
 * conflict = number of inconsistent source nodes
 
-### Homonym analysis:
+## Homonym analysis
 
 There are 8043 name-strings in the final version of the taxonomy for which there are
 multiple nodes.  By comparison, there are only 1440 in GBIF. Many of
-the homonyms are artifacts of the alignment method, especially the
-rule that says genera that do not share species are presumed disjoint.
-[MTH: I missed this rule, which one was it?
-JAR: big TBD - this kludge has to be described - I didn't even notice
-it until recently.  Perhaps it can even be
-removed so that it doesn't need to be described.]
+the homonyms either are artifacts of the alignment method, or reflect
+misclassifications or errors in the source taxonomies.
 
 ## Evaluating the taxonomy relative to requirements
 
@@ -55,8 +51,8 @@ OTUs, and curators have mapped 514346 to OTT taxa, or 95.5%.
 
 To assess the reason for the remaining 4.5% of OTUs being unmapped, we
 investigated a random sample of 10 OTUs.  In three cases, the label
-was a genus name in OTT followed by "sp" (e.g. "Euglena sp"),
- suggesting the curator's unwillingness to make use of an OTU not
+was a genus name in OTT followed by "sp" (e.g. "_Euglena sp_"),
+suggesting the curator's unwillingness to make use of an OTU not
 classified to species.  In the remaining seven cases, the taxon was
 already in OTT, and additional curator effort would have found it.
 Two of these were misspellings in the phylogeny source; one was

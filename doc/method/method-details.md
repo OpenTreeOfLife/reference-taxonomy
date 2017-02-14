@@ -98,7 +98,7 @@ every source node that also has that name-string.
 
 The purpose of the alignment phase is to choose a single correct
 candidate for each source node, or to reject all candidates if none is
-correct.  For 97% of source nodes, there are no candidates or only one
+correct.  For over 97% of source nodes, there are no candidates or only one
 candidate, and selection is fairly simple, but the remaining nodes
 require special treatment.
 

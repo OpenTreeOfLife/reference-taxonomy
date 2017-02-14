@@ -85,11 +85,15 @@ public class AlignmentByName extends Alignment {
         return false;
     }
 
-    // align internal nodes (above quasi-tips)
+    // align internal nodes (above quasi-tips).
+    // If it's an aligned quasi-tip, there is no need to descend,
+    // but we have no way to check for this.
+    // (Remember that some internal nodes may be aligned by ad hoc alignments.)
     void alignInternal(Taxon node) {
         for (Taxon child : node.getChildren())
             alignInternal(child);
         // Cf. computeLubs
+        // computeLub(node);
         alignTaxon(node);
     }
 
@@ -124,6 +128,7 @@ public class AlignmentByName extends Alignment {
     public Answer findAlignment(Taxon node) {
         List<Answer> lg = new ArrayList<Answer>();
 
+        // maps to string giving info about whether synonyms were followed
         Map<Taxon, String> candidateMap = getCandidates(node);
         Set<Taxon> initialCandidates = new HashSet<Taxon>(candidateMap.keySet());
         Set<Taxon> candidates = initialCandidates;
@@ -172,7 +177,7 @@ public class AlignmentByName extends Alignment {
                 reason = heuristic.toString();
 
             // If negative, or unique positive, no point in going further.
-            if (score < Answer.DUNNO || (count == 1 && score > Answer.DUNNO))
+            if (score < Answer.DUNNO)
                 break;
 
             if (count < candidates.size()) {
@@ -183,19 +188,33 @@ public class AlignmentByName extends Alignment {
                 // Iterate over candidates and answers in parallel.
                 Set<Taxon> winners = new HashSet<Taxon>();
                 Iterator<Answer> aiter = answers.iterator();
+                Answer winner = null, loser = null;
                 for (Taxon cand : candidates) {
                     Answer a = aiter.next();
                     if (a.value == score) {
                         winners.add(cand);
-                    } else
+                        winner = a;
+                    } else {
                         if (a.subject == null)
                             lg.add(Answer.noinfo(node, cand, heuristic.toString(), null));
                         else
                             lg.add(a);
+                        loser = a;
+                    }
+                    a.routing = candidateMap.get(cand);
                 }
                 candidates = winners;
                 // at this point, count == candidates.size()
+                if (count == 1 && target instanceof UnionTaxonomy &&
+                    node.name != null &&
+                    (loser.target == null ||
+                     node.name.equals(loser.target.name))) {
+                    ((UnionTaxonomy)target).choicesMade.add(new Answer[]{winner, loser});
+                }
             }
+
+            if (count == 1 && score > Answer.DUNNO)
+                break;
 
             // Loop: Try the next heuristic.
         }

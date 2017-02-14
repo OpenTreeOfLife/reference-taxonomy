@@ -29,6 +29,15 @@ accepted."
 * * importance of provenance for debugging (e.g. recent rosids example).  [implicit criticism of other taxonomies?]
 * paraphyletic taxa in conventional taxonomies
 
+## Allowing community curation
+We have also developed a system for curators to directly add new taxon records to the
+taxonomy from published phylogenies. These taxon additions include provenance
+information, including evidence for the taxon and identity of the curator. We
+expose this provenance information through the website and the taxonomy API.
+Most of the feedback on the synthetic tree of life has been about taxonomy, and expanding this
+feature to other types of taxonomic information allows users to directly
+contribute expertise and allows projects to easily share that information.
+
 ## Extinct/extant annotations
 
 One important taxon annotation is 'extinct'.  The OTT backbone

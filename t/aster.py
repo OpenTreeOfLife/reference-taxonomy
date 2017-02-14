@@ -6,7 +6,6 @@ from org.opentreeoflife.taxa import TsvEdits, Addition, CSVReader, QualifiedId
 from org.opentreeoflife.smasher import UnionTaxonomy
 from java.io import FileReader
 from claim import Has_child
-import reason_report
 
 def assemble():
 
@@ -81,8 +80,6 @@ def assemble():
     tax.carryOverIds(ids)    # performs alignment
 
     Addition.processAdditions(additions_repo_path, tax)
-
-    reason_report.report(tax)
 
     if False:  # too slow for everyday testing purposes.
         print '-- Checking id list'

@@ -22,11 +22,11 @@ of the heuristics) to guide synthesis. Using other information contains in the
 taxonomies (such as authority or nomenclatural information) could be possible in
 the future.
 
-We have also developed a system for curators to directly add new taxa to the
+We have also developed a system for curators to directly add new taxon records to the
 taxonomy from published phylogenies. These taxon additions include provenance
 information, including evidence for the taxon and identity of the curator. We
 expose this provenance information through the website and the taxonomy API.
-Most of the OpenTree feedback has been about taxonomy, and expanding this
+Most of the feedback on the synthetic tree of life has been about taxonomy, and expanding this
 feature to other types of taxonomic information allows users to directly
 contribute expertise and allows projects to easily share that information.
 

@@ -259,12 +259,18 @@ public class Alignment {
     // Input is in source taxonomy, return value is in target taxonomy
 
     void computeLubs(Taxon node) {
+        for (Taxon child : node.getChildren()) {
+            computeLubs(child);
+        }
+        computeLub(node);
+    }
+
+    void computeLub(Taxon node) {
         if (node.children == null)
             node.lub = getTaxon(node);
         else {
             Taxon mrca = null;  // in target
             for (Taxon child : node.children) {
-                computeLubs(child);
                 if (child.isPlaced()) {
                     Taxon a = this.getTaxon(child);
                     if (a != null) {
@@ -301,9 +307,9 @@ public class Alignment {
                 else if (div[0] == mrca || div[1] == getTaxon(node) || div[1].parent == getTaxon(node))
                     // Hmm... allow siblings (and cousins) to merge.  Blumeria graminis
                     ++winners;
-                else {
-                    if (outlaws < 10 || node.name.equals("Elaphocordyceps subsessilis") || node.name.equals("Bacillus selenitireducens"))
-                        System.out.format("! %s maps by name to %s which is disjoint from children-mrca %s; they meet at %s\n",
+                else if (FORCE_APART) {
+                    if (outlaws < 10)
+                        System.out.format("! %s aligns to %s which is disjoint from children-mrca %s; they meet at %s\n",
                                           node, getTaxon(node), mrca, div[0].parent);
                     ++outlaws;
                     // OVERRIDE.
@@ -314,6 +320,10 @@ public class Alignment {
             }
         }
     }
+
+    // Turns out this is a bad idea.  there were 59 cases.  I checked 6 and they were all
+    // cases where the taxa should be identified, not forced apart.
+    private static boolean FORCE_APART = false;
 
     // this = after, other = before
 

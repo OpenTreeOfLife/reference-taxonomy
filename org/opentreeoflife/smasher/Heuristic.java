@@ -23,6 +23,7 @@ abstract class Heuristic {
         informative = "used " + this.toString();
     }
 
+    // Called 'separation' in the writeup
 	static Heuristic division =
 		new Heuristic() {
 			public String toString() { return "disjoint divisions"; }
@@ -33,15 +34,14 @@ abstract class Heuristic {
 				if (xdiv == ydiv)
 					return Answer.NOINFO;
 				else if (xdiv == null)
-                    return Answer.noinfo(subject, target, "note/weak-null-source-division", null);
+                    return Answer.noinfo(subject, target, "note/weak-null-source-division", xdiv, ydiv);
 				else if (ydiv == null)
-                    return Answer.noinfo(subject, target, "note/weak-null-target-division", xdiv.name);
+                    return Answer.noinfo(subject, target, "note/weak-null-target-division", xdiv, ydiv);
 				else if (xdiv.divergence(ydiv) == null)
-                    return Answer.noinfo(subject, target, "note/weak-division",
-                                         String.format("%s|%s", xdiv.name, ydiv.name));
+                    return Answer.noinfo(subject, target, "note/weak-division", xdiv, ydiv);
                 else
                     return Answer.heckNo(subject, target, "not-same/division",
-                                         String.format("%s|%s", xdiv.name, ydiv.name));
+                                         xdiv, ydiv);
 			}
 		};
 
@@ -55,19 +55,19 @@ abstract class Heuristic {
 				if (xdiv == ydiv)
 					return Answer.NOINFO;
                 else if (xdiv == null)
-                    return Answer.noinfo(subject, target, "note/null-source-division", null);
+                    return Answer.noinfo(subject, target, "note/null-source-division", xdiv, ydiv);
 				else if (ydiv == null)
-                    return Answer.noinfo(subject, target, "note/null-target-division", xdiv.name);
+                    return Answer.noinfo(subject, target, "note/null-target-division", xdiv, ydiv);
 				else if (xdiv.noMrca() || ydiv.noMrca())
 					return Answer.NOINFO;
 				else
                     // about 17,000 of these... that's too many
                     // 2016-06-26 down to about 900 now.
-                    return Answer.weakNo(subject, target, "not-same/weak-division",
-                                         String.format("%s|%s", xdiv.name, ydiv.name));
+                    return Answer.weakNo(subject, target, "not-same/weak-division", xdiv, ydiv);
 			}
 		};
 
+    // Called 'proximity' in the writeup
 	static Heuristic sameDivisionPreferred =
 		new Heuristic() {
 			public String toString() { return "same division"; }
@@ -78,9 +78,12 @@ abstract class Heuristic {
 					return Answer.yes(subject,
                                       target,
                                       "same/division",
-                                      (xdiv == null ? null : xdiv.name));
+                                      xdiv, ydiv);
 				else
-					return Answer.NOINFO;
+					return Answer.noinfo(subject,
+                                         target,
+                                         "noinfo/division",
+                                         xdiv, ydiv);
 			}
 		};
 
@@ -117,16 +120,16 @@ abstract class Heuristic {
 				if (y0.name == null)
 					return Answer.NOINFO;
 				if (x0.name.equals(y0.name))
-					return Answer.heckYes(x, target, "same/parent+parent", x0.name);
+					return Answer.heckYes(x, target, "same/parent+parent", x0, y0);
 				else if (online(x0.name, y0))
 					// differentiating the two levels
 					// helps to deal with the Nitrospira situation (7 instances)
-					return Answer.heckYes(x, target, "same/ancestor+parent", x0.name);
+					return Answer.heckYes(x, target, "same/ancestor+parent", x0, y0);
 				else if (online(y0.name, x0))
-					return Answer.heckYes(x, target, "same/parent+ancestor", y0.name);
+					return Answer.heckYes(x, target, "same/parent+ancestor", x0, y0);
 				else
 					// Incompatible parents.  Who knows what to do.
-					return Answer.NOINFO;
+					return Answer.noinfo(x, target, "noinfo/lineage", x0, y0);
 			}
 		};
 
@@ -158,13 +161,20 @@ abstract class Heuristic {
 		new Heuristic() {
 			public String toString() { return "overlapping membership"; }
 			Answer assess(Taxon x, Taxon target) {
-                if (x.children == null || target.children == null)
+                if (x.children == null)
                     return Answer.NOINFO;                         // possible attachment point
+                if (target.children == null)
+                    return Answer.noinfo(x, target, "noinfo/target-no-children", null, null);  // possible attachment point
 
                 // Higher taxa must share at least one descendant in order to match
 				Taxon b = AlignmentByName.witness(x, target);    // in both
 				if (b == null) {   // no overlap
-                    return Answer.NOINFO;
+                    // we don't need this, but useful for reporting
+                    Taxon a = AlignmentByName.antiwitness(x, target);// in x but not target
+                    if (a == null)
+                        return Answer.noinfo(x, target, "noinfo/unknown-overlap", b, a);
+                    else
+                        return Answer.noinfo(x, target, "noinfo/disjoint", b, a);
 
                     /*
                     if (x.rank != null && x.rank.level >= Rank.SPECIES_RANK.level)
@@ -184,10 +194,10 @@ abstract class Heuristic {
 				Taxon a = AlignmentByName.antiwitness(x, target);// in x but not target
                 if (a == null)	// good
                     // 2859
-                    return Answer.heckYes(x, target, "same/is-subsumed-by", b.name);
+                    return Answer.heckYes(x, target, "same/is-subsumed-by", b, a);
                 else
                     // 94
-                    return Answer.yes(x, target, "same/overlaps", b.name);
+                    return Answer.yes(x, target, "same/overlaps", b, a);
 			}
 		};
 

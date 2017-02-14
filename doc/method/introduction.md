@@ -4,7 +4,7 @@ Any large biodiversity data project requires one or more taxonomies
 for discovery and data integration purposes, as in "find occurrence records
 for primates" or "find the IRMNG taxon record for this sequence".  For
 example, the GBIF occurrence record database and the NCBI Genbank
-sequence both have dedicated taxonomy efforts, while Encyclopedia of
+sequence database both have dedicated taxonomy efforts, while Encyclopedia of
 Life is indexed by multiple taxonomies.  We present the design and
 application of the Open Tree Taxonomy, which serves the Open Tree of
 Life project, an aggregation of phylogenetic trees with tools for
@@ -17,7 +17,7 @@ taxonomies can be incorporated easily.
 
 Information about taxa is typically
 expressed in databases and files in terms of taxon names or
-'name-strings' [cite darwin core?].  To combine data sets it is
+'name-strings'.  To combine data sets it is
 necessary to be able to determine name equivalence: whether or not an
 occurrence of a name-string in one data source refers to the same
 taxon as a given name-string occurrence in another.  Solving

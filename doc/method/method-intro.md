@@ -26,6 +26,8 @@ Open Tree reference taxonomy version 2.11.
   * source taxonomy = imported taxonomic source (NCBI taxonomy, etc.)
   * workspace = data structure for creation of the reference
     taxonomy
+  * name-string = taxonomic name considered textually, without association 
+    with any particular taxon or nomenclatural code
   * node = a taxon record, either from a source taxonomy or the workspace.
     Records primary name-string, provenance,
     parent node, optional rank, optional annotations
@@ -35,7 +37,7 @@ Open Tree reference taxonomy version 2.11.
     within the same taxonomy.  This is close to the nontechnical meaning of 'homonym'
     and is not to be confused with 'homonym' in the nomenclatural sense, 
     which only applies within a single nomenclatural code.
-    Nomenclatural homonyms and hemihomonyms [reference] are all homonyms in this sense.
+    Nomenclatural homonyms and hemihomonyms [ref 10.11646/bionomina.4.1.3] are all homonyms in this sense.
   * primary = the non-synonym name-string of a node, as opposed to one of the synonyms.
   * image (of a node n') = the workspace node corresponding to n'
   * _incertae sedis_: taxon A is _incertae sedis_ in taxon B if A is a child of B

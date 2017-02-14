@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Comparator;
+import java.util.Collection;
 import java.util.Collections;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -56,7 +57,7 @@ public class EventLogger {
         }
     }
 
-    void log(Answer answer) {
+    public void log(Answer answer) {
         List<Answer> answers = new ArrayList<Answer>(1);
         answers.add(answer);
         log(answers);
@@ -71,7 +72,7 @@ public class EventLogger {
     // sequence, if there is one.  Otherwise, create a sublog for the
     // first name occurring in the answer sequence, and use it.
 
-    public void log(List<Answer> answers) {
+    public void log(Collection<Answer> answers) {
         List<Answer> lg = null;
         for (Answer answer : answers) {
             lg = getLog(answer);

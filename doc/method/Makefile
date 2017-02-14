@@ -45,14 +45,6 @@ out/results_tables.md: $(REF_HOME)/util/reason_report.py \
 	python $< cache/ cache/taxonomy_metrics.json > $@.new
 	mv $@.new $@
 
-refresh: taxonomy_metrics.py \
-	     $(REF_HOME)/tax/ott/taxonomy.tsv \
-	     out/ruggiero/taxonomy.tsv
-	$(JYTHON) $< $(REF_HOME)/tax/ott/ $(REF_HOME)/tax/skel/ $@.new
-	mv $@.new $@
-	cp -p $(REF_HOME)/tax/ott/alignment_summary.json $@
-	cp -p $(REF_HOME)/tax/ott/merge_summary.json $@
-
 out/ruggiero/taxonomy.tsv: ruggiero/ruggiero.csv
 	python ruggiero/import_ruggiero.py $< out/ruggiero.new
 	mv out/ruggiero.new out/ruggiero
@@ -90,3 +82,18 @@ test-results: results.py
 #	  >draft.html
 #	echo '<link crossorigin="anonymous" href="https://assets-cdn.github.com/assets/github-907704789dc9e0c1cd78c2f3adfc91e42ed23a0a97b2790c4171d9d8959f7cdc.css" integrity="sha256-kHcEeJ3J4MHNeMLzrfyR5C7SOgqXsnkMQXHZ2JWffNw=" media="all" rel="stylesheet" />' \
 #	  >>draft.html
+
+
+# This overwrites whatever is in cache.  Cache is checked in to the
+# repository so that people can make the manuscript .HTML file without
+# having a copy of the taxonomy on hand.  But it's necessary to do
+# 'make refresh' after a taxonomy build.
+
+refresh: taxonomy_metrics.py \
+	     $(REF_HOME)/tax/ott/taxonomy.tsv \
+	     out/ruggiero/taxonomy.tsv
+	$(JYTHON) $< $(REF_HOME)/tax/ott/ $(REF_HOME)/tax/skel/ $@.new
+	mv $@.new $@
+	cp -p $(REF_HOME)/tax/ott/alignment_summary.json $@
+	cp -p $(REF_HOME)/tax/ott/merge_summary.json $@
+

@@ -130,7 +130,7 @@ public class UnionTaxonomy extends Taxonomy {
 
     public void align(Alignment a) {
         this.markDivisions(a);
-        a.align();
+        a.align(); // no reporting
         // Reporting
         for (Taxon node : a.source.taxa()) {
             Answer answer = a.getAnswer(node);

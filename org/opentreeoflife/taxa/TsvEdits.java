@@ -10,7 +10,7 @@ import java.io.IOException;
 
 public class TsvEdits {
 
-	// ----- PATCH SYSTEM -----
+	// ----- ORIGINAL PATCH SYSTEM -----
 
 	static Pattern tabPattern = Pattern.compile("\t");
 

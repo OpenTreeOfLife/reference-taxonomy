@@ -117,8 +117,9 @@ def merge_sources(ott):
     a = adjustments.align_worms(low_priority_worms, ott)
     align_and_merge(a)
 
-    # The rest of Index Fungorum (maybe not a good idea)
-    align_and_merge(adjustments.align_fungorum_sans_fungi(fungorum_sans_fungi, ott))
+    # The rest of Index Fungorum.  (Maybe not a good idea to use this.
+    # These taxa are all in GBIF.)
+    # align_and_merge(adjustments.align_fungorum_sans_fungi(fungorum_sans_fungi, ott))
 
     # GBIF
     gbif = adjustments.load_gbif()
@@ -305,7 +306,8 @@ def patch_ott(ott):
     ott.taxon('Blattodea').take(ott.taxon('Phyllodromiidae'))
 
     # See above (occurs in both IF and GBIF).  Also see issue #67
-    ott.taxonThatContains('Chlamydotomus', 'Chlamydotomus beigelii').incertaeSedis()
+    chlam = ott.taxonThatContains('Chlamydotomus', 'Chlamydotomus beigelii')
+    if chlam != None: chlam.incertaeSedis()
 
     # Joseph Brown 2014-01-27
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/87
@@ -836,6 +838,9 @@ def patch_ott(ott):
         claim = Whether_extant(name, False, 'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116')
         claim.make_true(ott)
 
+    # MTH 2016-01-05 https://github.com/OpenTreeOfLife/reference-taxonomy/issues/182
+    h2 = ott.maybeTaxon('Homarus', 'Coleoptera')
+    if h2 != None and not h2.hasChildren(): h2.prune()
 
 
 # -----------------------------------------------------------------------------

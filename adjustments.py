@@ -65,6 +65,9 @@ def deal_with_polysemies(ott):
     establish('Cyclophora', ott, division='Lepidoptera', source='ncbi:190338', ott_id='1030079') #moth
     # there are two more Cyclophora/us but they take care of themselves
 
+    # Discovered after update to GBIF 2016, which introduced an orthoptera genus by this name
+    establish('Lutheria', ott, division='Platyhelminthes', source='worms:479527', ott_id='5131356')  # flatworm
+    establish('Lutheria', ott, division='Insecta', source='gbif:7978890')  # orthopteran
 
 def load_silva():
     silva = Taxonomy.getTaxonomy('tax/silva/', 'silva')
@@ -447,6 +450,9 @@ def patch_fung(fung):
     # Nudge to alignment with IRMNG (unclassified fossil Fungi)
     # IF 585158 = IRMNG 1090915
     fung.taxon('Fungi').take(fung.taxon('Majasphaeridium'))
+
+    # 2017-02-13 https://github.com/OpenTreeOfLife/opentree/issues/773
+    fung.taxon('Dactylella ambrosia').notCalled('Fusarium ambrosium')
 
     print "Fungi in Index Fungorum has %s nodes"%fung.taxon('Fungi').count()
 
@@ -942,6 +948,9 @@ def load_worms():
 
     # 2016-09-02 on gitter: Pisces vs. Mososauridae confusion
     worms.taxon('Tylosurus').notCalled('Tylosaurus')
+
+    pl = worms.maybeTaxon('Pleuromamma abdominalis abyssalis natio hypothermophil')
+    if pl != None: pl.prune()
 
     bad_ecc = worms.maybeTaxon('Trichomycetes', 'Zygomycota')
     if bad_ecc != None: bad_ecc.prune()
@@ -1544,6 +1553,12 @@ def load_irmng():
 
     # 2016-09-02 on gitter: Pisces vs. Mososauridae confusion
     irmng.taxon('Tylosurus').notCalled('Tylosaurus')
+
+    # 2016-02-13 Fallout from IRMNG update - confusion with the flatworm.
+    # No species records for this genus.
+    luth_girault = irmng.maybeTaxon('1427241')
+    if luth_girault != None and luth_girault.hasChildren():
+        luth_girault.prune()
 
     return irmng
 

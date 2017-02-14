@@ -82,8 +82,6 @@ def assemble():
 
     Addition.processAdditions(additions_repo_path, tax)
 
-    reason_report.report(tax)
-
     if False:  # too slow for everyday testing purposes.
         print '-- Checking id list'
         assign_ids_from_list(tax, 'ott_id_list/by_qid.csv')

@@ -1017,6 +1017,35 @@ Wikipedia has -us, but wikispecies has -a.
 
 I think I'm going to go with -us, following GBIF, Wikipedia, and IPNI.
 
+## Lutheria
+
+OTT 2.10 has only one Lutheria:
+
+5131356	|	4710928	|	Lutheria	|	genus	|	worms:479527,gbif:3268652,irmng:1427278
+
+a flatworm.  But 3.0 is in trouble.
+
+bash-3.2$ grep Lutheria tax/ott/choices.tsv
+Lutheria	gbif:7978890	-	Lutheria	worms:479527	5337154	note/weak-division	Insecta|Metazoa
+Lutheria	gbif:7978890	not=>	Lutheria	ncbi:1908703	9041248	not-same/division	Insecta|Chloroplastida
+Lutheria	irmng:1427278	not=>	Lutheria	ncbi:1908703	9041248	not-same/division	Metazoa|Chloroplastida
+Lutheria	irmng:1427241	-	Lutheria	worms:479527	5337154	note/weak-division	Hymenoptera|Metazoa
+Lutheria	irmng:1427241	not=>	Lutheria	ncbi:1908703	9041248	not-same/division	Hymenoptera|Chloroplastida
+Lutheria	ott:5131356	not=>	Lutheria	ncbi:1908703	9041248	not-same/division	Metazoa|Chloroplastida
+
+gbif:7978890 is in Orthoptera (Insecta).
+irmng:1427241 is an encyrtid (Hymenoptera), no species records.
+  --> prune it.
+irmng:1427278 is the flatworm.
+
+Platyhelminthes is a separation taxon, why didn't worms:479527 fall
+under it?  Wait, what is OTT 5337154 and why isn't it in taxonomy.tsv??
+
+5131356,gbif:3268652   - the flatworm.
+5337154,irmng:1427241  - the flatworm.
+
+
+
 ## Other problems
 
 ** No unique taxon found with name Crepidula in context Microsporidia

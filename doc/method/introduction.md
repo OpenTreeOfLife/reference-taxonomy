@@ -10,10 +10,10 @@ application of the Open Tree Taxonomy, which serves the Open Tree of
 Life project, an aggregation of phylogenetic trees with tools for
 operating on them.
 
-In order to meet Open Tree's project requirements, the taxonomy is a
-synthesis of ten different source taxonomies with different strengths.
-The synthesis process is repeatable so that updates to source
-taxonomies can be incorporated easily.
+In order to meet Open Tree's project requirements, the taxonomy is an automated
+synthesis of ten different source taxonomies with different strengths. The
+synthesis process is repeatable so that updates to source taxonomies can be
+incorporated easily.
 
 Information about taxa is typically
 expressed in databases and files in terms of taxon names or
@@ -24,7 +24,8 @@ taxon as a given name-string occurrence in another.  Solving
 this equivalence problem requires detecting equivalence when the
 name-strings are different (synonym detection), as well as
 distinguishing occurrences that only coincidentally have the same
-name-string (homonym detection).
+name-string (homonym detection). We have developed a set of heuristics
+that scalably address this equivalence problem.
 
 ## The Open Tree of Life project
 
@@ -43,24 +44,22 @@ taxonomic knowledge.
 Although it is primarily a phylogenetics effort, Open Tree requires a
 reference taxonomy for each of these functions.
 
-In 1, the taxonomy is used for converting OTUs (operational taxonomic
-units, or 'tips') to a canonical form.  Supertree construction
-requires that a source tree OTU be matched with an OTU from another
-tree whenever possible.  This is a nontrivial task because a taxon can
-have very different OTU labels in the various source trees
-in which the taxon occurs due to synonymies, abbreviations,
-misspellings, notational differences, and so on.  In addition, which
-taxon is named by a given label can vary across trees (homonymy).  The
-approach taken is to map OTUs to the reference taxonomy, so that OTUs
-in different source trees are compared by comparing the taxa to which
-they map.
+In 1, we use the taxonomy for converting OTUs (operational taxonomic units, or
+'tips') on source trees to a canonical form.  Supertree construction requires
+that a source tree OTU be matched with an OTU from another tree whenever
+possible.  This is a nontrivial task because a taxon can have very different OTU
+labels in different source trees due to synonymies, abbreviations, misspellings,
+notational differences, and so on.  In addition, which taxon is named by a given
+label can vary across trees (homonymy).  The approach we take is to map OTUs to
+the reference taxonomy, so that OTUs in different source trees are compared by
+comparing the taxa to which they map.
 
-In 2, the groupings in the supertree are compared to those in the
+In 2, we compare the groupings in the supertree to those in the
 taxonomy.
 
 In 3, only a relatively small number of described taxa are represented
-in source trees (currently about than 200,000 in the corpus out of two
-million or more known), so the taxonomy covers those that are not.
+in source trees (currently about 200,000 in the corpus out of two
+million or more known taxa), so the taxonomy covers those that are not.
 The large complement of taxonomy-only taxa can be 'grafted' onto a
 supertree in phylogenetically plausible locations based on how they
 relate taxonomically to taxa that are known from source trees.
@@ -95,10 +94,11 @@ Following are all five requirements:
     Users should not have to ask permission to copy and use the taxonomy,
     nor should they be bound by terms of use that interfere with further reuse.
 
-[would this be a place to 'highlight' transparency as theme or goal? -
-not just taxa, but process - NMF]
+An additional goal is that the process is reproducible and transparent - given
+the inputs, we can both re-generate the taxonomy and see sufficient detail in
+the output to understand the source of the information in the taxonomy.
 
-No single available taxonomic source meets all five requirements.  The
+No single available taxonomic source meets all requirements.  The
 NCBI taxonomy has good coverage of OTUs, provides a rich source of
 phyogenetically informed higher taxa, and is open, but its taxonomic
 coverage is limited to taxa that have sequence data in GenBank (about
@@ -119,5 +119,5 @@ Nor is it a place to deposit curated taxonomic information.
 The taxonomy has not been vetted in detail, as that would be beyond
 the capacity and focus of the Open Tree project.
 It is known to contain many taxon duplications and technical artifacts.
-Tolerating these shortcomings is a necessary tradeoff in 
+Tolerating these shortcomings is a necessary tradeoff in
 attempting to meet the above requirements.

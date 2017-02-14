@@ -2,7 +2,7 @@
 # Method
 
 The conventional approach to meeting the requirements stated in the introduction
-would have been to create a database, copy the first taxonomy into it, then
+would be to create a database, copy the first taxonomy into it, then
 somehow merge the second taxonomy into that, repeating for further sources if
 necessary.  However, it is not clear how to meet the the ongoing update
 requirement under this approach.  As the source taxonomies change, we would like
@@ -12,7 +12,7 @@ changes to the sources are corrections, and we do not want to rely on
 information known to be incorrect.  
 
 Rather than maintain a database of taxonomic information, we instead developed a
-process assembling a taxonomy from two or more taxonomic sources.  With a
+process for assembling a taxonomy from two or more taxonomic sources.  With a
 repeatable process, we can generate a new combined taxonomy version from new
 source taxonomy versions de novo, and do so frequently.  There are additional
 benefits as well, such as the ability to add additional sources relatively
@@ -35,7 +35,7 @@ Open Tree reference taxonomy version 2.11.
   * tip = a node that is not the parent of any node
   * homonym = where a single name-string belongs to multiple nodes
     within the same taxonomy.  This is close to the nontechnical meaning of 'homonym'
-    and is not to be confused with 'homonym' in the nomenclatural sense, 
+    and is not to be confused with 'homonym' in the nomenclatural sense,
     which only applies within a single nomenclatural code.
     Nomenclatural homonyms and hemihomonyms [ref 10.11646/bionomina.4.1.3] are all homonyms in this sense.
   * primary = the non-synonym name-string of a node, as opposed to one of the synonyms.
@@ -47,21 +47,22 @@ Open Tree reference taxonomy version 2.11.
 
 ## Assembly overview
 
-To produce the Open Tree reference taxonomy, 
+To produce the Open Tree reference taxonomy,
 we developed a tool for assembling taxonomies from two or more
 taxonomic sources.  By using an automated process, we can generate a
 new combined taxonomy version from new source taxonomy versions at any
 point.
 
 This section is an overview of the method. Several
-generalities stated here are simplifications; the actual method used
-is a bit more involved, as described later on.
+generalities stated here are simplifications; the actual method (described later)
+is significantly more involved.
 
 We start with a sequence of source taxonomies S1, S2, ..., Sn, ordered
 by priority.  Priority means that if S is judged more accurate or
 otherwise "better" than S', then S occurs earlier in the sequence than
 S' and its information supersedes that from later sources.  Priority
-judgements are made by curators on the project based on their taxonomic
+judgements are made by curators (either project personnel or participants
+in OpenTree workshops or online forums) based on their taxonomic
 expertise.
 
 We define an operator for combining taxonomies pairwise, written
@@ -111,16 +112,10 @@ in GBIF take a = _Bufo_, c = _B. bufo_, d = _B. japonicus_, e =
 _B. luchunnicus_.  There is no _B. spinosis_ in GBIF and no
 _B. luchunnicus_ in NCBI.  The _Bufo_ in the combined taxonomy has as
 its children copies of species records from both sources.  There are
-probably hundreds of thousands of similar simple grafting events (hard
-to count).
-
-[In the presentation we could forego the schematic letters a, b,
-etc. in favor of the concrete _Bufo_ example.  I think the figures would be
-harder to read with real taxon names compared with schematic names
-(letters), but will take advice.]
+hundreds of thousands of similar simple grafting events.
 
 The other merge method is an _insertion_, where the unaligned
-node has descendants that are in S. This [KC: usually? almost always? JR: always.]
+node has descendants that are in S. This always
 occurs when S' has greater resolution than S. For example, this case
 inserts the unaligned nodes E and H:
 
@@ -135,13 +130,19 @@ is contained in F both before and after the insertion event.
 (Key: F = Fissurellidae, M = Montfortula, C = Clypidina, S = Scutus, P
 = Puncturella, H = Hemotominae, E = Emarginulinae)
 
-The vast majority of alignment and merge situations simple, similar to the 
-above. However, a few cause serious problems.  Ambiguities
-caused by synonyms and homonyms create most of the difficulties, with
-inconsistent or unclear higher taxon membership creating the rest.
+The vast majority of alignment and merge situations are simple, similar to the
+examples above. However, a few [KC: "a few" makes this sound like a small
+number. I suspect it is a small fraction but still a rather large number of
+special cases. In this discussion, we say there are 'thousands' of special
+cases.] cause serious problems.  Ambiguities caused by synonyms and homonyms
+create most of the difficulties, with inconsistent or unclear higher taxon
+membership creating the rest. The development of the assembly process described
+here has been a driven by trial and error - finding cases that fail and then
+adding / modifying heuristics to address the underlying cause, or adding an ad
+hoc adjustment for cases that are rare or overly complex.
 
-The following sections describe the source taxonomies, and then go
-into the taxonomy combination method in detail.
+The following sections describe the source taxonomies, and then detail the
+taxonomy combination method.
 
 
 ## Taxonomic sources

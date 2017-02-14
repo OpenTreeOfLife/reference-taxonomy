@@ -10,7 +10,7 @@
 # Maximum depth
 
 table = [
-    {'name': 'for separation',
+    {'name': 'separation taxa',
      'reference': 'see code',
      'version': '4b3ba1a',
      'priority': 1,
@@ -54,7 +54,7 @@ table = [
      'reference': '[ref worms2015]',
      'version' : '2015-10-01',
      'priority': 6,
-     'focus': 'Malacostraca',
+     'focus': 'Malacostraca, Cnidaria',
      'taxa': 330412,
      'synonyms': 223196,
      'goals': 'P,T'},
@@ -88,7 +88,7 @@ table = [
      'taxa': 1706655,    # Boils down to 1685134
      'synonyms': 685983,
      'goals': 'T'}, # Boils down to 659851
-    {'name': 'curation',
+    {'name': 'OpenTree curation',
      'reference': 'see code',
      'version': '4b3ba1a',
      'priority': 10,

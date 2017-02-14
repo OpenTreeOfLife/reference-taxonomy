@@ -6,7 +6,6 @@ from org.opentreeoflife.taxa import TsvEdits, Addition, CSVReader, QualifiedId
 from org.opentreeoflife.smasher import UnionTaxonomy
 from java.io import FileReader
 from claim import Has_child
-import reason_report
 
 def assemble():
 

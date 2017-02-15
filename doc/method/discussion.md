@@ -11,23 +11,21 @@ and misplaced taxa.
 
 Ultimately there is no fully automated and foolproof test to determine
 whether two nodes can be aligned - whether node A and node B are about
-the same taxon. The information to do this is out there in the
+the same taxon. The information to do this is in the
 literature and in databases on the Internet, but often it is
 (understandably) missing from the source taxonomies.
 
-It is not feasible to curate such problem individually, so
-the taxonomy synthesis methods identify and handle thousands of 'special cases'
-in an automated way. We currently use only the name-strings (and ranks, in some
-of the heuristics) to guide synthesis. Using other information contains in the
+It is not feasible to curate such problem individually, so the taxonomy
+synthesis methods identify and handle thousands of 'special cases' in an
+automated way. We currently use only the name-strings (and ranks, in some of the
+heuristics) to guide synthesis. Using other information contained in the source
 taxonomies (such as authority or nomenclatural information) could be possible in
 the future.
 
-* something about how messy the inputs are
-* discuss "OTT has many names that are either not valid or not currently
-accepted."
-* discuss number of homonyms in OTT as compared to sources. Artifacts of heuristics
-* * importance of provenance for debugging (e.g. recent rosids example).  [implicit criticism of other taxonomies?]
-* paraphyletic taxa in conventional taxonomies
+* [JAR: something about how messy the inputs are]
+
+## Open Tree Taxonomy as a taxonomy
+We have developed the Open Tree Taxonomy (OTT) for the very specific purpose of aligning and synthesizing phylogenetic trees. We do not intend it to be a reference for nomenclature, or to fill the role of expert-curated taxonomic databases. Several features of OTT make it not suitable for taxonomic and nomenclatural purposes. It contains many names that are either not valid or not currently accepted. Some of these come from DNA sequencing via NCBI, which is also not a taxonomic reference, while others come directly from phylogenies submitted to OpenTree curators via our taxonomy curation features. OTT also contains more homonyms as compared to its sources. Many of these duplicated names are artifacts of the synthesis heuristics. For our purposes, these are not of great concern - when mapping OTUs in trees to taxa in OTT, we generally restrict mapping to a specific taxonomic context, and if there are multiple matches to OTT taxa with the same name, a curator can clearly see this situation and choose the taxa with the correct lineage. [JAR: anything else here?]
 
 ## Allowing community curation
 We have also developed a system for curators to directly add new taxon records to the
@@ -46,10 +44,7 @@ taxa to put them into [JAR: figure out a better way to explain this]. This had a
 We therefore removing from synthesis those taxa in the
 taxonomy that are annotated as extinct, leading to a cleaner synthesis.
 
-example?: Bovidae, where the placement of extinct genera (from GBIF)
-into subfamilies (from NCBI) is unknown.  Fungi? but that had other
-problems.  Examples in primates?  umm, may need to measure
-distribution of extinct taxa.
+Incorporating extinct taxa into OTT would be better accomplished by adding a source that explicitly focuses on extinct taxa. 
 
 ## Comparison to other taxonomies
 Given the very different goals of Open Tree Taxonomy in comparison to most other taxonomy project, it is difficult to compare OTT to other taxonomies in a meaningful way. The Open Tree Taxonomy is most similar to the GBIF taxonomy, in the sense that

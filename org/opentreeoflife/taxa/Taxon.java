@@ -731,6 +731,11 @@ public class Taxon extends Node implements Comparable<Taxon> {
             that.id != null &&
             ((z = this.id.compareTo(that.id)) != 0))
             return z;
+        if (this.sourceIds != null &&
+            that.sourceIds != null &&
+            (this.sourceIds.get(0).prefix == that.sourceIds.get(0).prefix) &&
+            ((z = this.sourceIds.get(0).id.compareTo(that.sourceIds.get(0).id)) != 0))
+            return z;
         if (this.name != null &&
             that.name != null &&
             ((z = this.name.compareTo(that.name)) != 0))
@@ -1078,6 +1083,11 @@ public class Taxon extends Node implements Comparable<Taxon> {
         // synonym comes before the prune, then it might be suppressed
         // by the presence in the name index of the deprecated taxon
 		this.addSynonym(other.name, "proparte synonym");	// Not sure this is a good idea
+        // If an extinct taxon absorbs an extant one, it becomes extant
+        if (other.isExtant() && this.isExtinct()) {
+            System.out.format("| Extant contagion from %s to %s\n", other, this);
+            this.properFlags &= ~Taxonomy.EXTINCT;
+        }
 		other.prune("absorb");
         // copy sources from other to syn?
         return true;

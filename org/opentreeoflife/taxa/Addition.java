@@ -250,7 +250,7 @@ public class Addition {
                     for (Taxon node : candidates)
                         if (target == null)
                             target = node;
-                        else if (Taxonomy.compareTaxa(node, target) < 0)
+                        else if (node.compareTo(target) < 0)
                             target = node;
                     if (candidates.size() > 1)
                         System.err.format("** Ambiguous; choosing %s over homonym(s) for %s in %s\n%s\n",

@@ -320,41 +320,6 @@ public abstract class Taxonomy {
     }
 
 
-    /* Nodes with more children come before nodes with fewer children.
-       Nodes with shorter ids come before nodes with longer ids.
-       */
-
-	public static int compareTaxa(Taxon n1, Taxon n2) {
-		int q1 = (n1.children == null ? 0 : n1.children.size());
-		int q2 = (n2.children == null ? 0 : n2.children.size());
-		if (q1 != q2) return q2 - q1;
-
-        if (n1.id != null) {
-            if (n2.id != null) {
-                // id might or might not look like an integer
-                int z = n1.id.length() - n2.id.length();
-                if (z != 0) return z;
-                else return n1.id.compareTo(n2.id);
-            } else
-                // sort nodes with ids before nodes without ids
-                return -1;
-        } else if (n2.id != null)
-            // sort nodes without ids after nodes with ids
-            return 1;
-        // Neither has an id
-        else if (n1.name != null) {
-            if (n2.name != null)
-                // Both have names
-                return n1.name.compareTo(n2.name);
-            else
-                return -1;
-        } else if (n2.name != null)
-            return 1;
-        else
-            // TBD: compare source list
-            return 0;
-	}
-
 	// DWIMmish - taxonomy can be specified in any of the following ways:
     //   1. interim taxonomy format, if argument ends with '/'
     //   2. literal Newick string, if argument starts with '(',
@@ -602,15 +567,13 @@ public abstract class Taxonomy {
             // Get smallest... that will become the 'right' one
             Taxon smallest = homs.get(0);
             for (Taxon other : homs)
-                if (compareTaxa(other, smallest) < 0)
+                if (other.compareTo(smallest) < 0)
                     smallest = other;
 
             // Now absorb all the others into the smallest
             for (Taxon other : homs)
                 if (other != smallest) {
                     this.markEvent("smushing");
-                    if (other.isExtant()) // should transfer other flags too?
-                        smallest.properFlags &= ~Taxonomy.EXTINCT;
                     smallest.absorb(other);
                     this.addId(smallest, other.id);
                 }
@@ -1406,7 +1369,7 @@ public abstract class Taxonomy {
                 for (Node n2node: nodes) {
                     if (n2node instanceof Synonym) continue;
                     Taxon n2 = n2node.taxon();
-                    if (compareTaxa(n1, n2) < 0) {
+                    if (n1.compareTo(n2) < 0) {
                         ++homs;
                         if (n1.parent == n2.parent) {
                             ++sibhoms;

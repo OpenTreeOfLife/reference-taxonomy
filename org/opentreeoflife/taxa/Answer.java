@@ -212,7 +212,7 @@ public class Answer {
     }
 
     public String toString() {
-        return String.format("(%s %s %s %s)",
+        return String.format("(Answer %s %s %s %s)",
                              this.subject != null ? this.subject : "-",
                              this.target != null ? this.target : "-",
                              this.value,

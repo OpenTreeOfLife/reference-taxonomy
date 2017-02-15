@@ -169,11 +169,14 @@ public class AlignmentByName extends Alignment {
             }
 
             List<Answer> winners = new ArrayList<Answer>();
+            Answer anyLoser = null;
             for (Answer a : answers) {
                 if (a.value >= score && score >= Answer.DUNNO)
                     winners.add(a);
-                else
+                else {
                     order.add(a);
+                    anyLoser = a;
+                }
             }
 
             if (winners.size() == 0) {
@@ -183,15 +186,19 @@ public class AlignmentByName extends Alignment {
 
             if (score > Answer.DUNNO && winners.size() == 1) {
                 // could just anyCandidate, but stats code likes normalization
-                order.add(anyCandidate);
-                if (candidates.size() > 1)
+                if (candidates.size() > 1) {
                     result = new Answer(node, anyCandidate.target, score,
                                         heuristic.toString(),
                                         anyCandidate.witness);
-                else
+                    // Hack for debugging / example selection
+                    Answer winner = winners.get(0);
+                    ((UnionTaxonomy)target).choicesMade.add(new Answer[]{winner, anyLoser});
+                } else {
                     result = new Answer(node, anyCandidate.target, score,
                                         "confirmed",
                                         anyCandidate.reason);
+                }
+                order.add(anyCandidate);
                 break;
             }
 
@@ -264,6 +271,7 @@ public class AlignmentByName extends Alignment {
 
     void addCandidate(Map<Taxon, String> candidateMap, Node unode, String mode) {
         Taxon utaxon = unode.taxon();
+        if (utaxon.prunedp) return;
 
         mode = mode + (unode instanceof Taxon ? "C" : "S");
 

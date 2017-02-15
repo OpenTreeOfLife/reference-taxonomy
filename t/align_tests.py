@@ -12,13 +12,17 @@ blustery = 0
 # Test alignment heuristics in simple cases.
 
 def tst(noise, target, source):
-    print noise
+    print '##', noise
     sep = Taxonomy.getRawTaxonomy('tax/skel/', 'ott')
     t = Taxonomy.getRawTaxonomy(target, 'target')
     s = Taxonomy.getRawTaxonomy(source, 'source')
     u = combine(sep, t, s, blustery)
-    u.dumpChoices('align_tests_choices.tsv')
-    subprocess.call(['cat', 'align_tests_choices.tsv'])
+    u.dumpChoices('/tmp/align_tests_choices.tsv')
+    subprocess.call(['cat', '/tmp/align_tests_choices.tsv'])
+    if False:
+        u.dumpLog('/tmp/align_tests_log.tsv')
+        subprocess.call(['cat', '/tmp/align_tests_log.tsv'])
+    print
 
 # Copied from merge_tests.py
 

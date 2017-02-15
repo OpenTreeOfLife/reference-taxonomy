@@ -84,8 +84,7 @@ Following are all five requirements:
     understanding (such as Protozoa) should be avoided.
  1. *Taxonomic coverage:* The taxonomy should cover as many as possible of
     the species
-    that are described in the literature [more than 1.6 million, according to
-    http://www.catalogueoflife.org/ retrieved 2016-11-01], so that we
+    that are described in the literature, so that we
     can supplement generated supertrees as described in step 3 above.
  1. *Ongoing update:* New taxa of importance to phylogenetic studies
     are constantly being added to the literature.

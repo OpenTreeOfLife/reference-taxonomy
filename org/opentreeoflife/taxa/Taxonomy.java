@@ -1606,16 +1606,6 @@ public abstract class Taxonomy {
         return taxon(name, null, descendant, false);
     }
 
-    List<Taxon> nodesToTaxa(List<Node> nodes) {
-        List<Taxon> taxa = new ArrayList<Taxon>();
-        for (Node node : nodes) {
-            Taxon taxon = node.taxon();
-            if (!taxa.contains(taxon) && ((taxon.properFlags & Taxonomy.FORMER_CONTAINER) == 0))
-                taxa.add(taxon);
-        }
-        return taxa;
-    }
-
 	public Taxon taxon(String name, String ancestor, String descendant, boolean windy) {
 		List<Node> nodes = this.lookup(name);
         if (nodes != null) {
@@ -1683,6 +1673,16 @@ public abstract class Taxonomy {
 	public Taxon maybeTaxon(String name, String context) {
         return taxon(name, context, null, false);
 	}
+
+    List<Taxon> nodesToTaxa(List<Node> nodes) {
+        List<Taxon> taxa = new ArrayList<Taxon>();
+        for (Node node : nodes) {
+            Taxon taxon = node.taxon();
+            if (!taxa.contains(taxon) && ((taxon.properFlags & Taxonomy.FORMER_CONTAINER) == 0))
+                taxa.add(taxon);
+        }
+        return taxa;
+    }
 
 	// Test case: Valsa
 	public List<Taxon> filterByAncestor(String taxonName, String ancestorName) {

@@ -319,14 +319,14 @@ public class Addition {
 
         File idRangeFile = new File(newTaxaDir, "range.json");
         if (idRangeFile.canRead()) {
-            JSONArray idRanges = null;
+            JSONObject idRange = null;
             try {
-                idRanges = (JSONArray)loadJSON(idRangeFile);
+                idRange = (JSONObject)loadJSON(idRangeFile);
             } catch (Exception e) {
                 System.err.format("** Lose %s\n", e);
             }
 
-            Map <?, ?> range = (Map<?, ?>)idRanges.get(0);
+            Map <?, ?> range = (Map<?, ?>)idRange;
             Long firstId = (Long)range.get("first");
             Long lastId = (Long)range.get("last");
             if (assignIds(fewerNodes, firstId, lastId)) {
@@ -371,7 +371,7 @@ public class Addition {
                 String sid;
                 while (node.taxonomy.lookupId(sid = Long.toString(id)) != null)
                     ++id;
-                if (id > lastId)
+                if (id >= lastId)
                     return false;
                 node.taxonomy.addId(node, sid);
                 node.markEvent("addition");

@@ -13,7 +13,7 @@
 JAVAFLAGS=-Xmx14G
 
 # Modify as appropriate
-WHICH=3.0draft0
+WHICH=3.0draft1
 PREV_WHICH=2.10
 
 # ----- Taxonomy source locations -----
@@ -96,7 +96,7 @@ bin/smasher:
 # The open tree taxonomy
 
 ott: tax/ott/log.tsv tax/ott/version.txt
-tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py adjustments.py \
+tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py adjustments.py amendments.py \
                     tax/silva/taxonomy.tsv \
 		    tax/fung/taxonomy.tsv tax/713/taxonomy.tsv \
 		    tax/ncbi/taxonomy.tsv tax/gbif/taxonomy.tsv \

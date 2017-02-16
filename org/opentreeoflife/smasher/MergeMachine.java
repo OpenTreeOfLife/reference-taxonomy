@@ -160,6 +160,7 @@ class MergeMachine {
                 // Examine mapped parents of the children
                 boolean consistentp = true;
                 Taxon commonParent = null;    // should end up being targetMrca(node)
+                Taxon child1 = null, child2 = null; // for inconsistency reporting
                 int count = 0;
                 for (Taxon child : node.children) {
                     if (child.isPlaced()) {
@@ -167,10 +168,12 @@ class MergeMachine {
                         if (childTarget != null &&
                             !childTarget.isDetached() &&
                             childTarget.isPlaced()) {
-                            if (commonParent == null)
+                            if (commonParent == null) {
                                 commonParent = childTarget.parent;
-                            else if (childTarget.parent != commonParent) {
+                                child1 = child;
+                            } else if (childTarget.parent != commonParent) {
                                 consistentp = false;
+                                child2 = child;
                             }
                             ++count;
                         }
@@ -181,14 +184,14 @@ class MergeMachine {
                     Taxon newnode = acceptNew(node, "new/graft");
                     takeOn(node, newnode, 0);
                 } else if (!consistentp) {
-                    inconsistent(node, sink);
+                    inconsistent(node, child1, child2, sink);
                 } else if (!commonParent.descendsFrom(sink)) {
                     // This is the philosophically troublesome case.
                     // Could be either an outlier/mistake, or something serious.
                     if (node.markEvent("sibling-sink mismatch"))
                         System.out.format("* Parent of %s's children's images, %s, is not a descendant of %s\n",
                                           node, commonParent, sink);
-                    inconsistent(node, sink);
+                    inconsistent(node, child1, child2, sink);
                 } else if (refinementp(node, sink)) {
                     Taxon newnode = acceptNew(node, "new/refinement");
                     takeOld(node, newnode);
@@ -210,10 +213,10 @@ class MergeMachine {
         }
     }
 
-    void inconsistent(Taxon node, Taxon sink) {
+    void inconsistent(Taxon node, Taxon child1, Taxon child2, Taxon sink) {
         // Paraphyletic / conflicted.
         // Put the new children unplaced under the mrca of the placed children.
-        reportConflict(node);
+        reportConflict(node, child1, child2);
         // Tighten it if possible... does this always make sense?
         Taxon unode = alignment.getTargetMrca(node);
         if (unode != null && unode.descendsFrom(sink))
@@ -420,65 +423,12 @@ class MergeMachine {
 	}
 
 	// 3799 conflicts as of 2014-04-12
-	void reportConflict(Taxon node) {
-        Taxon alice = null, bob = null, mrca = null;
-        boolean foundit = false;
-        // unode is mrca of the children's map targets and/or lubs ...
-        Taxon unode = alignment.getTargetMrca(node);
-        for (Taxon child: node.children) {
-
-            // This was a particulary hard-to-debug problem... the solution ended up
-            // breaking a false merge for Euxinia (a sibling of the offender) #198
-            // Keeping the code in case it needs to be used again.
-            if (child.name != null && child.name.equals("Pseudostomum"))
-                foundit = true;
-
-            Taxon uchild = alignment.getTaxon(child);
-            if (uchild != null && !uchild.isDetached() && uchild.isPlaced()) {
-                // This method of finding fighting children is
-                // heuristic... cf. AlignmentByName
-                if (alice == null)
-                    alice = mrca = uchild;
-                else {
-                    bob = uchild;
-                    // We're called deep inside of augment(), so tree may have been edited.
-                    // ergo, .carefulMrca instead of .mrca
-                    Taxon newmrca = mrca.carefulMrca(bob);
-                    if (newmrca != null)
-                        mrca = newmrca;
-                    if (mrca == unode)
-                        break;
-                }
-            }
-        }
-
-        if (foundit) {
-            System.err.format("** Pseudostomum is in inconsistent taxon %s, moving to %s\n",
-                              node, unode);
-            for (Taxon child : node.children) {
-                System.err.format("**   Child: %s\n", child);
-                Taxon uchild = alignment.getTaxon(child);
-                if (uchild != null && !uchild.isDetached())
-                    uchild.show();
-            }
-        }
-
-        if (alice == null || bob == null || alice == bob)
-            //System.err.format("** Can't find two children %s %s\n", alice, bob);
-            union.markEvent("incomplete conflict");
-        else {
-            if (alice.taxonomy != bob.taxonomy)
-                System.err.format("** taxonomy mismatch - shouldn't happen %s %s\n", alice, bob);
-            if (alice.prunedp || bob.prunedp) {
-                System.err.format("** pruned node in reportConflict - shouldn't happen %s %s %s\n",
-                                  node, alice, bob);
-                return;
-            }
-            union.conflicts.add(new Conflict(node, alice, bob, node.isHidden()));
-            if (union.markEvent("reported conflict"))
-                System.out.format("| conflict %s %s\n", union.conflicts.size(), node);
-        }
-	}
+    // alice and bob are children of node
+	void reportConflict(Taxon node, Taxon alice, Taxon bob) {
+        union.conflicts.add(new Conflict(node, alice, bob, alignment, node.isHidden()));
+        if (union.markEvent("reported conflict"))
+            System.out.format("| conflict %s %s\n", union.conflicts.size(), node);
+    }
 
     void tick(String action) {
         Integer count = summary.get(action);
@@ -487,15 +437,26 @@ class MergeMachine {
     }
 }
 
+// How to read this:
+// alice and bob are two of node's children.
+// They align to nodes with different parents, which means we a have conflict.
+// (Well, one could be an ancestor of the other, and that 
+// wouldn't be a conflict.  But that situation isn't handled yet.)
+
 class Conflict {
 	Taxon node;				// in source taxonomy
 	Taxon alice, bob;				// children, in union taxonomy
     boolean isHidden;
-	Conflict(Taxon node, Taxon alice, Taxon bob, boolean isHidden) {
+    Taxon aliceTarget;
+    Taxon bobTarget;
+
+	Conflict(Taxon node, Taxon alice, Taxon bob, Alignment al, boolean isHidden) {
 		this.node = node;
         this.alice = alice;
         this.bob = bob;
         this.isHidden = isHidden;
+        aliceTarget = al.getTaxon(alice);
+        bobTarget = al.getTaxon(bob);
 	}
     static String formatString = ("%s\t%s\t" + // id, name
                                   "%s\t%s\t" + // a, aname
@@ -517,8 +478,9 @@ class Conflict {
 		// cf. Taxon.mrca
         try {
             Taxon[] div = null;
-            if (!alice.prunedp && !bob.prunedp)
-                div = alice.divergence(bob);
+            if (aliceTarget != null && bobTarget != null &&
+                !aliceTarget.prunedp && !bobTarget.prunedp)
+                div = aliceTarget.divergence(bobTarget);
             if (div != null) {
                 Taxon a = div[0];
                 Taxon b = div[1];
@@ -537,7 +499,7 @@ class Conflict {
                                      node.getQualifiedId(),
                                      node.name, 
                                      alice.name, "",
-                                     bob.name, "",
+                                     (bob != null ? bob.name : ""), "",
                                      "",
                                      "?",
                                      (isHidden ? 0 : 1));

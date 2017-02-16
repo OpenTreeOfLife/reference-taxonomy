@@ -129,9 +129,9 @@ public class AlignmentByName extends Alignment {
     // Alignment - single source taxon -> target taxon or 'no'
 
     public Answer findAlignment(Taxon node) {
+        if (node.prunedp) return null;
         Map<Taxon, String> candidateMap = getCandidates(node);
-        if (candidateMap.size() == 0)
-            return null;
+        if (candidateMap.size() == 0) return null;
 
         ArrayList<Answer> initialCandidates = new ArrayList<Answer>();
         for (Taxon cand : candidateMap.keySet())

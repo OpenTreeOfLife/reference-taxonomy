@@ -10,7 +10,7 @@ terms of depth (# of levels, breadth (overlap? are they
 
 [add a column to the table for number of binomials?]
 
-**Open Tree curated taxa**  
+**Open Tree curation**  
 It is not uncommon to have taxa as OTUs in
 phylogenetic studies that do not occur in OTT.  This can be due to a
 delay in curation by NCBI itself, a delay in importing a fresh NCBI
@@ -52,7 +52,7 @@ PaleoDB, and do not come from any other taxonomic source, are
 annotated extinct.  This is not completely reliable, as some PaleoDB taxa are extant.
 
 **Suppressed records**  
-Not all source taxonomy records are used.  The following are ignored:
+We suppress the following source taxonomy records:
 
 * GBIF backbone records that originate from IRMNG (IRMNG is imported separately)
 * GBIF backbone records that originate from IPNI
@@ -71,4 +71,4 @@ the records are exported by GBIF, since Darwin Core does not provide a
 standard way to express it.  Note that the GBIF taxonomy might import
 the same name from more than one source, but its export file only
 lists one of the sources.  We suppress the record if that source is
-IPNI or IRMNG, but not if it's some other source.
+IPNI or IRMNG, but not if it is some other source.

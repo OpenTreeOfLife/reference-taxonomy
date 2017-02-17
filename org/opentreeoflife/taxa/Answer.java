@@ -17,8 +17,19 @@ public class Answer {
 	public String reason;
 	public String witness = null;
 	//gate c14
+    public Taxon bert = null, ernie = null;
+    public String routing = null;
 
     private static final boolean alwaysLog = false;
+
+	public Answer(Taxon subject, Taxon target, int value, String reason, Taxon bert, Taxon ernie) {
+		this.subject = subject;
+        this.target = target;
+		this.value = value;
+		this.reason = reason;
+		this.bert = bert;
+		this.ernie = ernie;
+    }
 
 	public Answer(Taxon subject, Taxon target, int value, String reason, String witness) {
         if (subject != null &&
@@ -93,6 +104,8 @@ public class Answer {
     public boolean isYes() { return value > DUNNO; }
     public boolean isNo() { return value < DUNNO; }
 
+	public static Answer NOINFO = new Answer();
+
 	public static Answer heckYes(Taxon subject, Taxon target, String reason, String witness) { // Uninteresting
 		return new Answer(subject, target, HECK_YES, reason, witness);
 	}
@@ -121,7 +134,27 @@ public class Answer {
 		return new Answer(subject, target, HECK_NO, reason, witness);
 	}
 
-	public static Answer NOINFO = new Answer();
+    // Bert/Ernie versions
+
+	public static Answer yes(Taxon subject, Taxon target, String reason, Taxon bert, Taxon ernie) {
+		return new Answer(subject, target, YES, reason, bert, ernie);
+	}
+
+	public static Answer heckYes(Taxon subject, Taxon target, String reason, Taxon bert, Taxon ernie) {
+		return new Answer(subject, target, HECK_YES, reason, bert, ernie);
+	}
+
+	public static Answer noinfo(Taxon subject, Taxon target, String reason, Taxon bert, Taxon ernie) {
+		return new Answer(subject, target, DUNNO, reason, bert, ernie);
+	}
+
+	public static Answer heckNo(Taxon subject, Taxon target, String reason, Taxon bert, Taxon ernie) {
+		return new Answer(subject, target, HECK_NO, reason, bert, ernie);
+	}
+
+	public static Answer weakNo(Taxon subject, Taxon target, String reason, Taxon bert, Taxon ernie) {
+		return new Answer(subject, target, WEAK_NO, reason, bert, ernie);
+	}
 
 	// Does this determination warrant the display of the log entries
 	// for this name?
@@ -129,9 +162,36 @@ public class Answer {
 		return (this.value < HECK_YES) && (this.value > HECK_NO) && (this.value != DUNNO);
 	}
 
+    static public String header =
+        ("source_name\t" +
+         "source_qid\t" +
+         "parity\t" +
+         "target_name\t" +
+         "target_qid\t" +
+         "target_uid\t" +
+         "reason\t" +
+         "witness\t");
+
 	// Cf. smasher dumpLog()
 	public String dump() {
-		return String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s",
+        String w = this.witness;
+        if (w == null) {
+            String b = ((this.bert != null) ?
+                        ((this.bert.name != null) ?
+                         this.bert.name :
+                         this.bert.getQualifiedId().toString()) :
+                        "");
+            String e = ((this.ernie != null) ?
+                        ("|" + ((this.ernie.name != null) ?
+                                this.ernie.name :
+                                this.ernie.getQualifiedId().toString())) :
+                        "");
+            w = b + e;
+        }
+        String targetId = null;
+        if (this.target != null && this.target.sourceIds != null)
+            targetId = this.target.sourceIds.get(0).toString();
+		return String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
                              (this.subject != null ? this.subject.name : ""),
                              (this.subject != null ? 
                               this.subject.getQualifiedId().toString() :
@@ -140,10 +200,12 @@ public class Answer {
                               "=>" :
                               (this.value < DUNNO ? "not=>" : "-")),
                              (this.target != null ? this.target.name : ""),
+                             targetId,
                              (this.target == null ? "-" : this.target.id),
                              this.reason,
-                             (this.witness == null ? "" : this.witness) );
+                             w);
 	}
+
 
 
     public String toString() {

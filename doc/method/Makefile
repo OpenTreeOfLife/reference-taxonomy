@@ -24,8 +24,7 @@ MARKDOWNS=abstract.md introduction.md method-intro.md \
 
 out/draft.md: $(MARKDOWNS)
 	@mkdir -p out
-	echo 'See also [proposed outline](outline.html)' >$@
-	cat $^ >>$@
+	cat $^ >$@
 
 out/sources_table.md: sources_table.py
 	@mkdir -p out

@@ -1,3 +1,6 @@
+## Summary of Open Tree Taxonomy
+
+The methods and results presented here are for version 3.0 of the Open Tree Taxonomy (which follows five previous releases using the automated assembly method). The taxonomy contains 3,592,725 total taxa, X tips and Y internal nodes. There are 2,031,519 synonym records and 8043 homonyms (name-strings for which there are multiple nodes).
 
 ## Contributions of source taxonomies to the assembly
 
@@ -26,12 +29,6 @@ Key:
 * absorbed = number of source nodes absorbed
 * conflict = number of inconsistent source nodes
 
-## Homonym analysis
-
-There are 8043 name-strings in the final version of the taxonomy for which there are
-multiple nodes.  By comparison, there are only 1440 in GBIF. Many of
-the homonyms either are artifacts of the alignment method, or reflect
-misclassifications or errors in the source taxonomies.
 
 ## Evaluating the taxonomy relative to requirements
 

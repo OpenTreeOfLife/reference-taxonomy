@@ -27,5 +27,6 @@ if __name__ == '__main__':
             counter += 1
             # if counter > 100:
             #     break
+    print "flag\tcount"
     for k in flagdict:
-        print "{flag}: {count}".format(flag=k,count=flagdict[k])
+        print "{flag}\t{count}".format(flag=k,count=flagdict[k])

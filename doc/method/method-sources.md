@@ -1,14 +1,8 @@
 <!-- follows table -->
 
-Key to 'reasons' column: O = added in order to improve OTU coverage; P
+Table 1: List of sources used in synthesis of Open Tree Taxonomy v3.0. See text for explanation of 'Open Tree curation' and 'separation taxa'. Detailed provenance information for each source can be found in the accompanying data package. Key to 'reasons' column: O = added in order to improve OTU coverage; P
 = added in order to improve phylogenetic classification; T = added in
 order to improve taxonomic coverage.
-
-[NMF asks: What do the source taxonomies look like ("sampling", in
-terms of depth (# of levels, breadth (overlap? are they
-"comprehensive?"), homogeneity)?]
-
-[add a column to the table for number of binomials?]
 
 **Open Tree curation**  
 It is not uncommon to have taxa as OTUs in
@@ -18,7 +12,7 @@ version into OTT, a morphological study with otherwise unknown
 species, or other causes.  To handle this situation, we developed
 a user interface that allows curators to create new taxon records along with relevant
 documentation (publications, databases, and so on).  New taxon records
-are saved into a specific GitHub repository, and these records are then
+are saved into a public GitHub repository, and these records are then
 linked from the OTT taxonomy files and user interfaces so that
 provenance is always available.
 

@@ -216,7 +216,7 @@ class MergeMachine {
     void inconsistent(Taxon node, Taxon child1, Taxon child2, Taxon sink) {
         // Paraphyletic / conflicted.
         // Put the new children unplaced under the mrca of the placed children.
-        reportConflict(node, child1, child2);
+        reportConflict(node, child1, child2, sink);
         // Tighten it if possible... does this always make sense?
         Taxon unode = alignment.getTargetMrca(node);
         if (unode != null && unode.descendsFrom(sink))
@@ -424,8 +424,8 @@ class MergeMachine {
 
 	// 3799 conflicts as of 2014-04-12
     // alice and bob are children of node
-	void reportConflict(Taxon node, Taxon alice, Taxon bob) {
-        union.conflicts.add(new Conflict(node, alice, bob, alignment, node.isHidden()));
+	void reportConflict(Taxon node, Taxon alice, Taxon bob, Taxon sink) {
+        union.conflicts.add(new Conflict(node, alice, bob, sink, alignment, node.isHidden()));
         if (union.markEvent("reported conflict"))
             System.out.format("| conflict %s %s\n", union.conflicts.size(), node);
     }
@@ -449,28 +449,28 @@ class Conflict {
     boolean isHidden;
     Taxon aliceTarget;
     Taxon bobTarget;
+    Taxon sink;
 
-	Conflict(Taxon node, Taxon alice, Taxon bob, Alignment al, boolean isHidden) {
+	Conflict(Taxon node, Taxon alice, Taxon bob, Taxon sink, Alignment al, boolean isHidden) {
 		this.node = node;
         this.alice = alice;
         this.bob = bob;
+        this.sink = sink;
         this.isHidden = isHidden;
         aliceTarget = al.getTaxon(alice);
         bobTarget = al.getTaxon(bob);
 	}
-    static String formatString = ("%s\t%s\t" + // id, name
-                                  "%s\t%s\t" + // a, aname
-                                  "%s\t%s\t" + // b, bname
-                                  "%s\t%s\t%s"); // mrca, depth, visible
+    static String formatString = ("%s\t" + // node
+                                  "%s\t%s\t%s\t" + // alice, aliceTarget, a
+                                  "%s\t%s\t%s\t" + // bob, bobTarget, b
+                                  "%s\t%s\t%s\t%s"); // mrca, sink, depth, visible
     static void printHeader(PrintStream out) throws IOException {
 		out.format(Conflict.formatString,
-                   "para_id",
-                   "para", 
-                   "a", "a_ancestor",
-                   "b", "b_ancestor",
-				   "mrca",
-				   "depth",
-                   "visible");
+                   "parent",
+                   "alice", "alice_target", "alice_ancestor",
+                   "bob", "bob_target", "bob_ancestor",
+				   "mrca", "sink",
+				   "depth", "visible");
         out.println();
     }
 
@@ -486,23 +486,20 @@ class Conflict {
                 Taxon b = div[1];
                 int da = a.getDepth() - 1;
                 String m = (a.parent == null ? "-" : a.parent.name);
+                // node, alice, aliceTarget, a, bob, b, bobTarget, a.parent, mrca, sink
                 return String.format(formatString,
-                                     node.getQualifiedId(),
-                                     node.name, 
-                                     alice.name, a.name,
-                                     bob.name, b.name,
-                                     m,
-                                     da,
-                                     (isHidden ? 0 : 1));
+                                     node,
+                                     alice, aliceTarget, a,
+                                     bob, bobTarget, b,
+                                     a.parent, sink,
+                                     da, (isHidden ? 0 : 1));
             } else
                 return String.format(formatString,
-                                     node.getQualifiedId(),
-                                     node.name, 
-                                     alice.name, "",
-                                     (bob != null ? bob.name : ""), "",
-                                     "",
-                                     "?",
-                                     (isHidden ? 0 : 1));
+                                     node,
+                                     alice, aliceTarget, "",
+                                     bob, bobTarget, "",
+                                     "", sink,
+                                     "?", (isHidden ? 0 : 1));
         } catch (Exception e) {
             e.printStackTrace();
             System.err.format("*** Conflict info: %s %s %s\n", node, alice, bob);

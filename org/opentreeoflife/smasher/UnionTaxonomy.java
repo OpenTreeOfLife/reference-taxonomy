@@ -131,7 +131,7 @@ public class UnionTaxonomy extends Taxonomy {
 
     public void align(Alignment a) {
         this.markDivisions(a);
-        a.align();
+        a.align(); // no reporting
         // Reporting
         for (Taxon node : a.source.taxa()) {
             Answer answer = a.getAnswer(node);
@@ -818,6 +818,10 @@ public class UnionTaxonomy extends Taxonomy {
 
 	// Called on union taxonomy
 	// scrutinize is a set of names of especial interest (e.g. deprecated)
+
+	public void dumpLog(String filename) throws IOException {
+        dumpLog(filename, new HashSet<String>());
+    }
 
 	void dumpLog(String filename, Set<String> scrutinize) throws IOException {
         this.eventLogger.dumpLog(filename, scrutinize);

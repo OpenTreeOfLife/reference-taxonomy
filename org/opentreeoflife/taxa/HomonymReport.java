@@ -55,7 +55,7 @@ public class HomonymReport {
                 for (Node n2node : nodes) {
                     Taxon n2 = n2node.taxon();
                     if (n1 != n2
-                        && Taxonomy.compareTaxa(n1, n2) < 0
+                        && n1.compareTo(n2) < 0
                         && n1.name.equals(name)
                         && n2.name.equals(name)
                         && (n1.children == null || n2.children == null)
@@ -135,7 +135,7 @@ public class HomonymReport {
 			for (Node homnode : nodes) {
                 Taxon hom = homnode.taxon();
 				if (!hom.isHidden() &&
-					Taxonomy.compareTaxa(node, hom) < 0) {
+					node.compareTo(hom) < 0) {
 					Taxon mrca = node.mrca(hom);
 					Taxon div[] = node.divergence(hom);
 					if (div != null && div[0].parent != null) {
@@ -186,7 +186,7 @@ public class HomonymReport {
 			for (Node homnode : nodes) {
                 Taxon hom = homnode.taxon();
 				if (!hom.isHidden() &&
-					Taxonomy.compareTaxa(node, hom) < 0) {
+					node.compareTo(hom) < 0) {
 					Taxon div[] = node.divergence(hom);
 					if (div != null && div[0].parent != null) {
 						Taxon mrca = div[0].parent;

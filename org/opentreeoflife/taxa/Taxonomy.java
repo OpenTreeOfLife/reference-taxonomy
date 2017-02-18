@@ -254,7 +254,10 @@ public abstract class Taxonomy {
 		if (this.tag == null) {
 			if (this.taxid < 0)
 				this.taxid = globalTaxonomyIdCounter++;
-            this.tag = String.format("%s-%s", this.getIdspace(), taxid);
+            if (this.idspace != null)
+                this.tag = String.format("%s-%s", this.idspace, taxid);
+            else
+                this.tag = String.format("%s", taxid);
         }
         return this.tag;
 	}
@@ -266,7 +269,10 @@ public abstract class Taxonomy {
     // The 'idspace' string will show up as a prefix in QualifiedNames
 
 	public String getIdspace() {
-        return this.idspace;
+        if (this.idspace == null)
+            return this.getTag();
+        else
+            return this.idspace;
 	}
 
     public void startQidIndex() {
@@ -313,41 +319,6 @@ public abstract class Taxonomy {
         }
     }
 
-
-    /* Nodes with more children come before nodes with fewer children.
-       Nodes with shorter ids come before nodes with longer ids.
-       */
-
-	public static int compareTaxa(Taxon n1, Taxon n2) {
-		int q1 = (n1.children == null ? 0 : n1.children.size());
-		int q2 = (n2.children == null ? 0 : n2.children.size());
-		if (q1 != q2) return q2 - q1;
-
-        if (n1.id != null) {
-            if (n2.id != null) {
-                // id might or might not look like an integer
-                int z = n1.id.length() - n2.id.length();
-                if (z != 0) return z;
-                else return n1.id.compareTo(n2.id);
-            } else
-                // sort nodes with ids before nodes without ids
-                return -1;
-        } else if (n2.id != null)
-            // sort nodes without ids after nodes with ids
-            return 1;
-        // Neither has an id
-        else if (n1.name != null) {
-            if (n2.name != null)
-                // Both have names
-                return n1.name.compareTo(n2.name);
-            else
-                return -1;
-        } else if (n2.name != null)
-            return 1;
-        else
-            // TBD: compare source list
-            return 0;
-	}
 
 	// DWIMmish - taxonomy can be specified in any of the following ways:
     //   1. interim taxonomy format, if argument ends with '/'
@@ -526,7 +497,7 @@ public abstract class Taxonomy {
 
             // If node is the only child, we can get rid of the parent.
             if (node.parent.children.size() == 1) {
-                if (!node.isPlaced()) { // ???? why this conditiion ?
+                if (!node.isPlaced()) { // ???? why this condition ?
                     // could also test for same rank.
                     if (++elisions < 10)
                         System.out.format("| Eliding %s in %s, %s children\n",
@@ -539,11 +510,10 @@ public abstract class Taxonomy {
                     else if (elisions == 10)
                         System.out.format("| ...\n");
 
-                    // We can elide either the child or the parent.
-
-                    if (node.rank == Rank.NO_RANK)
-                        node.rank = node.parent.rank;
-                    node.parent.elide();
+                    // Keep parent, absorb child.
+                    node.parent.absorb(node);
+                    if (node.rank != node.parent.rank)
+                        node.rank = Rank.NO_RANK;
                 }
 
             } else if (node.rank == subgenus) {
@@ -561,7 +531,7 @@ public abstract class Taxonomy {
         }
         if (elisions + subgenusCount + nohope > 0)
             System.out.format("| %s: elided %s nodes, fixed %s subgenus names, %s p/c homs not addressed\n",
-                              this.tag, elisions, subgenusCount, nohope);
+                              this.getTag(), elisions, subgenusCount, nohope);
 	}
 
 	// Fold sibling homonyms together into single taxa.
@@ -597,15 +567,13 @@ public abstract class Taxonomy {
             // Get smallest... that will become the 'right' one
             Taxon smallest = homs.get(0);
             for (Taxon other : homs)
-                if (compareTaxa(other, smallest) < 0)
+                if (other.compareTo(smallest) < 0)
                     smallest = other;
 
             // Now absorb all the others into the smallest
             for (Taxon other : homs)
                 if (other != smallest) {
                     this.markEvent("smushing");
-                    if (other.isExtant()) // should transfer other flags too?
-                        smallest.properFlags &= ~Taxonomy.EXTINCT;
                     smallest.absorb(other);
                     this.addId(smallest, other.id);
                 }
@@ -1389,45 +1357,44 @@ public abstract class Taxonomy {
 		int homs = 0;
 		int sibhoms = 0;
 		int cousinhoms = 0;
+		int pchoms = 0;
+		int anhoms = 0;
 		for (String name : this.allNames()) {
 			List<Node> nodes = this.lookup(name);
             if (nodes == null)
                 throw new RuntimeException(String.format("bug %s %s", name, this));
-			if (nodes.size() > 1) {
-				boolean homsp = false;
-				boolean sibhomsp = false;
-				boolean cuzhomsp = false;
-				for (Node n1node: nodes) {
-                    Taxon n1 = n1node.taxon();
-					for (Node n2node: nodes) {
-                        Taxon n2 = n2node.taxon();
-						if (compareTaxa(n1, n2) < 0 &&
-                            n1.name != null &&
-                            n2.name != null &&
-							n1.name.equals(name) &&
-							n2.name.equals(name)) {
-							homsp = true;
-							if (n1.parent == n2.parent)
-								sibhomsp = true;
-							else if (!n1.isRoot() && !n2.isRoot() &&
-                                     n1.parent != null &&
-                                     n2.parent != null &&
-									 n1.parent.parent == n2.parent.parent)
-								cuzhomsp = true;
-							break;
-						}
-					}
+            for (Node n1node: nodes) {
+                if (n1node instanceof Synonym) continue;
+                Taxon n1 = n1node.taxon();
+                for (Node n2node: nodes) {
+                    if (n2node instanceof Synonym) continue;
+                    Taxon n2 = n2node.taxon();
+                    if (n1.compareTo(n2) < 0) {
+                        ++homs;
+                        if (n1.parent == n2.parent) {
+                            ++sibhoms;
+                        } else if (n1 == n2.parent || n2 == n1.parent) {
+                            ++pchoms;
+                            if (pchoms <= 10) System.out.format("# homonym parent/child %s %s\n", n1, n2);
+                        } else if (n1.isRoot() || n2.isRoot() ||
+                                 n1.parent == null || n2.parent != null) {
+                            ;
+                        } else if (n1.parent.parent == n2.parent ||
+                                 n1.parent == n2.parent.parent) {
+                            ++anhoms;
+                            if (anhoms <= 10) System.out.format("# homonym aunt/niece %s %s\n", n1, n2);
+                        } else if (n1.parent.parent == n2.parent.parent) {
+                            ++cousinhoms;
+                            if (cousinhoms <= 10) System.out.format("# homonym cousins %s %s\n", n1, n2);
+                        }
+                        break;
+                    }
                 }
-				if (sibhomsp) ++sibhoms;
-				if (cuzhomsp) ++cousinhoms;
-				if (homsp) ++homs;
-			}
+            }
 		}
-		if (homs > 0) {
-			System.out.println("| " + homs + " homonyms, of which " +
-							   cousinhoms + " name cousin taxa, " +
-							   sibhoms + " name sibling taxa");
-		}
+		if (homs > 0)
+			System.out.format("| %s homonym pairs, of which %s siblings, %s cousins, %s parent/child, %s aunt/niece\n",
+                              homs, sibhoms, cousinhoms, pchoms, anhoms);
 	}
 
 	public void parentChildHomonymReport() {
@@ -1639,16 +1606,6 @@ public abstract class Taxonomy {
         return taxon(name, null, descendant, false);
     }
 
-    List<Taxon> nodesToTaxa(List<Node> nodes) {
-        List<Taxon> taxa = new ArrayList<Taxon>();
-        for (Node node : nodes) {
-            Taxon taxon = node.taxon();
-            if (!taxa.contains(taxon) && ((taxon.properFlags & Taxonomy.FORMER_CONTAINER) == 0))
-                taxa.add(taxon);
-        }
-        return taxa;
-    }
-
 	public Taxon taxon(String name, String ancestor, String descendant, boolean windy) {
 		List<Node> nodes = this.lookup(name);
         if (nodes != null) {
@@ -1716,6 +1673,16 @@ public abstract class Taxonomy {
 	public Taxon maybeTaxon(String name, String context) {
         return taxon(name, context, null, false);
 	}
+
+    List<Taxon> nodesToTaxa(List<Node> nodes) {
+        List<Taxon> taxa = new ArrayList<Taxon>();
+        for (Node node : nodes) {
+            Taxon taxon = node.taxon();
+            if (!taxa.contains(taxon) && ((taxon.properFlags & Taxonomy.FORMER_CONTAINER) == 0))
+                taxa.add(taxon);
+        }
+        return taxa;
+    }
 
 	// Test case: Valsa
 	public List<Taxon> filterByAncestor(String taxonName, String ancestorName) {

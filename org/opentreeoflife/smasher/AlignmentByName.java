@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -85,15 +86,11 @@ public class AlignmentByName extends Alignment {
         return false;
     }
 
-    // align internal nodes (above quasi-tips).
-    // If it's an aligned quasi-tip, there is no need to descend,
-    // but we have no way to check for this.
-    // (Remember that some internal nodes may be aligned by ad hoc alignments.)
+    // align internal nodes (above quasi-tips)
     void alignInternal(Taxon node) {
         for (Taxon child : node.getChildren())
             alignInternal(child);
         // Cf. computeLubs
-        // computeLub(node);
         alignTaxon(node);
     }
 
@@ -123,42 +120,44 @@ public class AlignmentByName extends Alignment {
                               node, xdiv.name, ydiv.name, unode, a.reason);
     }
 
+	static Comparator<Answer> compareAnswers = new Comparator<Answer>() {
+		public int compare(Answer x, Answer y) {
+            return x.target.compareTo(y.target);
+		}
+	};
+
     // Alignment - single source taxon -> target taxon or 'no'
 
     public Answer findAlignment(Taxon node) {
-        List<Answer> lg = new ArrayList<Answer>();
-
-        // maps to string giving info about whether synonyms were followed
+        if (node.prunedp) return null;
         Map<Taxon, String> candidateMap = getCandidates(node);
-        Set<Taxon> initialCandidates = new HashSet<Taxon>(candidateMap.keySet());
-        Set<Taxon> candidates = initialCandidates;
+        if (candidateMap.size() == 0) return null;
 
-        if (candidates.size() == 0) {
-            return null;
-        } else if (candidates.size() > 1)
-            target.eventLogger.namesOfInterest.add(node.name);
-        for (Taxon candidate : candidates) {
-            if (candidate == null)
-                System.err.format("** No taxon !? %s\n", node);
-            /*
-            Answer start = Answer.noinfo(node, candidate, "candidate", candidateMap.get(candidate));
-            lg.add(start);
-            */
-        }
+        ArrayList<Answer> initialCandidates = new ArrayList<Answer>();
+        for (Taxon cand : candidateMap.keySet())
+            initialCandidates.add(Answer.noinfo(node, cand, candidateMap.get(cand), null));
 
-        Taxon anyCandidate = null;  // kludge for by-elimination
+        Collections.sort(initialCandidates, compareAnswers);
+
+        // For logging.  Ugly names, redundant data structures, needs cleaning up.
+        List<Answer> order = new ArrayList<Answer>();
+
+        // Loop state
+        Answer anyCandidate = null;  // kludge for by-elimination
         int count = 0;  // number of candidates that have the max value
-        String reason = null;
+        Answer result = null;
         int score = -100;
+        List<Answer> candidates = initialCandidates;
 
-        // Second loop variable: candidates
+        // Precondition: at least one candidate
 
         for (Heuristic heuristic : criteria) {
             List<Answer> answers = new ArrayList<Answer>(candidates.size());
             score = -100;
-            for (Taxon cand : candidates) {
-                Answer a = heuristic.assess(node, cand);
-                // if (a.subject != null) lg.add(a);
+            for (Answer cand : candidates) {
+                Answer a = heuristic.assess(node, cand.target);
+                if (a.target != cand.target) // a is Answer.NOINFO
+                    a = new Answer(node, cand.target, a.value, a.reason, a.witness);
                 answers.add(a); // in parallel with candidates
                 if (a.value > score) {
                     score = a.value;
@@ -166,86 +165,67 @@ public class AlignmentByName extends Alignment {
                     anyCandidate = cand;
                 } else if (a.value == score) {
                     count++;
-                    if (cand.compareTo(anyCandidate) < 0)
-                        anyCandidate = cand;
                 }
             }
 
-            // count is positive
-
-            if (count < candidates.size())
-                reason = heuristic.toString();
-
-            // If negative, or unique positive, no point in going further.
-            if (score < Answer.DUNNO)
-                break;
-
-            if (count < candidates.size()) {
-                // This heuristic eliminated some candidates.
-                target.markEvent(heuristic.informative);
-
-                // Winnow the candidate set for the next heuristic.
-                // Iterate over candidates and answers in parallel.
-                Set<Taxon> winners = new HashSet<Taxon>();
-                Iterator<Answer> aiter = answers.iterator();
-                Answer winner = null, loser = null;
-                for (Taxon cand : candidates) {
-                    Answer a = aiter.next();
-                    if (a.value == score) {
-                        winners.add(cand);
-                        winner = a;
-                    } else {
-                        if (a.subject == null)
-                            lg.add(Answer.noinfo(node, cand, heuristic.toString(), null));
-                        else
-                            lg.add(a);
-                        loser = a;
-                    }
-                    a.routing = candidateMap.get(cand);
-                }
-                candidates = winners;
-                // at this point, count == candidates.size()
-                if (count == 1 && target instanceof UnionTaxonomy &&
-                    node.name != null &&
-                    (loser.target == null ||
-                     node.name.equals(loser.target.name))) {
-                    ((UnionTaxonomy)target).choicesMade.add(new Answer[]{winner, loser});
+            List<Answer> winners = new ArrayList<Answer>();
+            Answer anyLoser = null;
+            for (Answer a : answers) {
+                if (a.value >= score && score >= Answer.DUNNO)
+                    winners.add(a);
+                else {
+                    order.add(a);
+                    anyLoser = a;
                 }
             }
 
-            if (count == 1 && score > Answer.DUNNO)
+            if (winners.size() == 0) {
+                result = new Answer(node, null, score, "rejected", null);
                 break;
+            }
 
-            // Loop: Try the next heuristic.
+            if (score > Answer.DUNNO && winners.size() == 1) {
+                // could just anyCandidate, but stats code likes normalization
+                if (candidates.size() > 1) {
+                    result = new Answer(node, anyCandidate.target, score,
+                                        heuristic.toString(),
+                                        anyCandidate.witness);
+                    // Hack for debugging / example selection
+                    Answer winner = winners.get(0);
+                    ((UnionTaxonomy)target).choicesMade.add(new Answer[]{winner, anyLoser});
+                } else {
+                    result = new Answer(node, anyCandidate.target, score,
+                                        "confirmed",
+                                        anyCandidate.reason);
+                }
+                order.add(anyCandidate);
+                break;
+            }
+
+            candidates = winners;
         }
 
-        if (score < Answer.DUNNO) {
-            if (reason == null)
-                reason = "rejected";
-        } else if (count == 1) {
-            if (reason == null) {
-                if (score > Answer.DUNNO)
-                    reason = "confirmed";
-                else
-                    reason = "by elimination";
+        if (result == null) {
+            // fell through with all noinfo or multiple yes
+            if (candidates.size() == 1) {
+                result = Answer.yes(node, anyCandidate.target, "by elimination", null);
+                order.add(result);
+            } else {
+                order.addAll(candidates);
+                String r = node.hasChildren() ? "ambiguous internal" : "ambiguous tip";
+                result = Answer.noinfo(node, null, r, Integer.toString(candidates.size()));
+                order.add(result);
             }
-            if (score == Answer.DUNNO) score = Answer.WEAK_YES; // turn noinfo into yes
-        } else {
-            score = Answer.DUNNO;
-            if (!node.hasChildren())
-                reason = "ambiguous tip";
-            else
-                reason = "ambiguous internal";
         }
-        Answer result = new Answer(node, anyCandidate, score, reason, null);
-
-        lg.add(result);
 
         // Decide after the fact whether the dance was interesting enough to log
         if (initialCandidates.size() > 1 ||
             result.isNo() ||
-            target.eventLogger.namesOfInterest.contains(node.name))
-            target.eventLogger.log(lg);
+            target.eventLogger.namesOfInterest.contains(node.name)) {
+
+            target.eventLogger.namesOfInterest.add(node.name);
+            target.eventLogger.log(order);
+        }
         return result;
     }
 
@@ -291,6 +271,7 @@ public class AlignmentByName extends Alignment {
 
     void addCandidate(Map<Taxon, String> candidateMap, Node unode, String mode) {
         Taxon utaxon = unode.taxon();
+        if (utaxon.prunedp) return;
 
         mode = mode + (unode instanceof Taxon ? "C" : "S");
 

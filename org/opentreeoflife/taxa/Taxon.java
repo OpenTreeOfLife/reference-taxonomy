@@ -725,26 +725,28 @@ public class Taxon extends Node implements Comparable<Taxon> {
 		}
 	};
 
+    static String MAX_STRING = "zzzzz";   // this is kind of stupid
+
     public int compareTo(Taxon that) {
         int z;
-        if (this.id != null &&
-            that.id != null &&
-            ((z = this.id.compareTo(that.id)) != 0))
-            return z;
-        if (this.name != null &&
-            that.name != null &&
-            ((z = this.name.compareTo(that.name)) != 0))
+        String id1 = (this.id == null ? MAX_STRING : this.id);
+        String id2 = (that.id == null ? MAX_STRING : that.id);
+        if ((z = id1.compareTo(id2)) != 0)
             return z;
 
-        // sort nodes with ids before ones without
-        if (this.id == null && that.id != null) return 1;
-        if (that.id == null && this.id != null) return -1;
+        String q1 = (this.sourceIds == null ? MAX_STRING : this.sourceIds.get(0).id);
+        if (q1 == null) q1 = MAX_STRING;
+        String q2 = (that.sourceIds == null ? MAX_STRING : that.sourceIds.get(0).id);
+        if (q2 == null) q2 = MAX_STRING;
+        if ((z = q1.compareTo(q2)) != 0)
+            return z;
 
-        // sort named nodes before unnamed ones
-        if (this.name == null && that.name != null) return 1;
-        if (that.name == null && this.name != null) return -1;
+        String name1 = (this.name == null ? MAX_STRING : this.name);
+        String name2 = (that.name == null ? MAX_STRING : that.name);
+        if ((z = name1.compareTo(name2)) != 0)
+            return z;
 
-        // grasp at straws
+        // grasp at straws in an attempt to get determinism
         return this.getChildren().size() - that.getChildren().size();
     }
 
@@ -1078,6 +1080,11 @@ public class Taxon extends Node implements Comparable<Taxon> {
         // synonym comes before the prune, then it might be suppressed
         // by the presence in the name index of the deprecated taxon
 		this.addSynonym(other.name, "proparte synonym");	// Not sure this is a good idea
+        // If an extinct taxon absorbs an extant one, it becomes extant
+        if (other.isExtant() && this.isExtinct()) {
+            System.out.format("| Extant contagion from %s to %s\n", other, this);
+            this.properFlags &= ~Taxonomy.EXTINCT;
+        }
 		other.prune("absorb");
         // copy sources from other to syn?
         return true;

@@ -62,22 +62,7 @@ reclassification); and in the remaining four cases, either the taxon
 was added to OTT after the study was curated, or the curation task was
 left incomplete.
 
-* compare OTT's coverage of phylesystem with coverage by NCBI, GBIF
-  (i.e. how well does OTT do what it's supposed to do, compared to
-  ready-made taxonomies?  OTT gets 95% of OTUs, NCBI only gets ??92%??
-  (besides just being interesting, this will tell us whether we could
-   have gotten away with just NCBI, or if GBIF and the rest were really
-   needed.)
-  (how about GNI?? trying to think of an independent name source
-  to compare to, as a control?)
-* number of OTUs that are mapped, that come from NCBI - I previously
-  measured this as about 97% of OTUs in phylesystem (actually 97%
-  of taxon names, not OTUs)
-* what about unmapped OTUs?  of those, how many are binomials (and
-  presumably mappable)?
-
-[can we find *any* OTUs that do not have a taxon in OTT?
-rather difficult.  this is what the curation feature was for.]
+[JAR: measure of how many mapped OTUs come from NCBI, i.e. how close NCBI gets us to the mapping requirement]
 
 ### Taxonomic coverage
 
@@ -87,16 +72,12 @@ combination of the inputs has greater coverage than CoL, and in part
 because OTT has many names that are either not valid or not currently
 accepted.
 
-Since the GBIF source we used includes the 2011 edition of CoL [2011],
-OTT includes everything in that edition of CoL.  [did it get updated
+Since the GBIF source we used includes the 2011 edition of CoL [JAR: 2011],
+OTT includes everything in that edition of CoL.  [JAR: did it get updated
 for 2016 GBIF?]
 
 This level of coverage would seem to meet Open Tree's taxonomic
 coverage requirement as well as any other available taxonomic source.
-
-[As another coverage check, and test of alignment, consider evaluating
-against HHDB (hemihomonym database) - ideally we would have all senses of
-each HHDB hemihomonym, in the right places]
 
 ### Backbone quality
 
@@ -113,11 +94,11 @@ each HHDB hemihomonym, in the right places]
 
 ### Ongoing update
 
-Building OTT version 2.11 from sources requires 11 minutes 42 second of real time [KC: and memory?].
+Building OTT version 2.11 from sources requires 11 minutes 42 second of real time. Our process currently runs on a machine with 16GB of memory, and 8GB is not sufficient.
 
-In the upgrade from 2.10 to 2.11, we added new versions of both NCBI and GBIF. NCBI updates frequently, so changes tend to be minimal and incorporating the new version was trivial. In contrast, the version from GBIF represented a major change in their taxonomy synthesis method. The file format changed, requiring changes in our import code. In addition, many taxa disappeared, requiring changes to our ad hoc patches during the normalization stage.  
+In the upgrade from 2.10 to 2.11, we added new versions of both NCBI and GBIF. NCBI updates frequently, so changes tend to be minimal and incorporating the new version was trivial. In contrast, the version from GBIF represented both a major change in their taxonomy synthesis method. Many taxa disappeared, requiring changes to our ad hoc patches during the normalization stage. In addition, the new version of GBIF used a different taxonomy file format, which requires extensive changes to our import code (most notably, handling taxon name-strings that now included authority information).
 
-* [KC: estimate on number of curation hours required for 2.10 -> 2.11 update?]
+We estimate the the update from OTT v2.10 to OTT v3.0 required approximately 3 days of development time. This was much greater than previous updates due to the changes required to handle the major changes in GBIF content and format.  
 
 ### Open data
 

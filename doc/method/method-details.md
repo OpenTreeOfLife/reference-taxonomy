@@ -22,7 +22,7 @@ are performed:
  1. Monotypic homonym removal - when a node with name N has as its
     only child another node with the same name N, the parent is removed.
     This is done to avoid ambiguities when aligning taxonomies.
-    [get examples by rerunning]
+    [JAR: get examples by rerunning]
  1. Diacritics removal - accents and umlauts are removed in order to improve
     name matching, as well as to follow the nomenclatural codes, which prohibit them.
     The original name-string is kept, as a synonym.
@@ -76,7 +76,7 @@ be run as a script.  Following are some examples of adjustments.
 
 In the process of assembling the reference taxonomy, 284 ad hoc
 adjustments are made to the source taxonomies before they are
-aligned to the workspace. [check]
+aligned to the workspace. [JAR: check numbers for v3.0]
 
 ### Candidate identification
 
@@ -134,9 +134,7 @@ them in the alignment process:
     (Examples: (1) the _Aporia_ cases above; (2)
     NCBI says n = _Pteridium_ is a land plant, WoRMS says n' = _Pteridium_ is a
     rhodophyte, and the separation taxonomy says land plants and rhodophytes
-    are disjoint, so n and n' are different taxa; (3) [some example where the heuristic
-    is used for disambiguation instead of homonym creation].  
-    [Also look for good species-level examples as genera are so fraught anyhow.])
+    are disjoint, so n and n' are different taxa.
 
  1. **Disparate ranks**: Prohibit alignment where n and n' have "obviously
     incompatible" (disparate) ranks.
@@ -178,13 +176,6 @@ them in the alignment process:
     an ancestor of n', or q(n') is the name-string of an ancestor of n,
     then prefer n to candidates that lack these properties.
 
-    [MTH: this section is clear, but it is not clear to the reader what
-    order nodes in the source are aligned. That seems to make a difference here.
-    JAR: there is no order dependence, because the
-    heuristic is comparing names, not checking for nodes alignment.
-    I think that is implied by the detailed description, but
-    I've tried to make the example text reinforce this fact.]
-
  1. **Overlap**: Prefer to align n' to n if they are higher level groupings that overlap.
     Stated a bit more carefully: if n' has a descendant aligned to
     a descendant of n.  
@@ -194,7 +185,7 @@ them in the alignment process:
     while the other shares no descendants with the source taxon.
     The source is therefore aligned to the one with the shared descendant.)
 
- 1. **Proximity** [opposite of "separation"; not a great name]:
+ 1. **Proximity**:
     Prefer candidates n with the property that
     the smallest separation taxon containing the source node n'
     is also the smallest separation taxon containing a candidate n.
@@ -231,8 +222,8 @@ heuristics are consulted.
 
 The heuristics are applied in the order in which they are listed
 above.  The outcome is sensitive to the ordering.  The ordering is
-forced to some extent by internal logic [JAR: discuss after the reader
-knows what the heuristics are. KC: can be addressed at this point].
+forced to some extent by internal logic, and the final ordering
+was determined by extensive trial and error.
 
 If there is a single candidate that is not rejected by any heuristic,
 it is aligned to that candidate.
@@ -265,7 +256,7 @@ not needed because it inconsistent or can be 'absorbed', and it is
 dropped.  If it is not dropped, then there is a troublesome situation
 that calls for manual review.
 
-[Example: ...]
+[JAR: Need example here ...]
 
 
 ## Merging unaligned source nodes into the workspace
@@ -336,12 +327,6 @@ and the new source, we retain the workspace.
 
    So that we have a term for this situation, say that x is _absorbed_ into z.
 
-   [not such a great technical term: 'absorption' - but we need a term. The code currently
-   says 'merged' and that would be way too confusing]
-
-   [MTH: wouldn't the previous answer: ((a,b)x,(c,d)y,?e)z also mean
-   that e is a proper child of z, but is just uncertain wrt x and y?]
-
 1. ((a,b)x,(c,d)y)z + ((a,c,e)u,(b,d)v)z = ((a,b)x,(c,d)y,?e)
 
    If the S' topology is incompatible with the S topology,
@@ -349,13 +334,13 @@ and the new source, we retain the workspace.
    Any leftover taxa (e)
    are flagged _incertae sedis_ in the attachment point, which in this case is z.
 
-   [example of inconsistency: gbif:7919320 = Helotium, contains
+   [JAR: need better example that doesn't involve synonyms] An example of inconsistency: gbif:7919320 = Helotium, contains
    Helotium lonicerae and Helotium infarciens, but IF knows Helotium infarciens as a synonym for
-   Hymenoscyphus infarciens, which isn't in OTT Helotium]
+   Hymenoscyphus infarciens, which isn't in OTT Helotium
 
-   [another random example: GBIF (S') Paludomidae has children
+   [JAR: need better example that doesn't involve synonyms]: GBIF (S') Paludomidae has children
    Tiphobia and Bridouxia, but the two children have different parents
-   in S]
+   in S
 
 ## Finishing the assembly
 
@@ -368,14 +353,13 @@ than convert all patches to
 some form already known to the system, we kept it in the original form,
 which facilitates further editing.
 
-* give the number of patches [at least 123 - not clear how to count],
-give breakdown by type?  or is that a result?
+* give the number of patches [JAR: get number from v3.0; at least 123 - not clear how to count].
 
 The final step is to assign unique, stable identifiers to nodes.  As
-before [KC: not sure what "as before" refers to], some identifiers are assigned on an ad hoc basis [KC: which nodes get ad hoc identifiers?].  Then,
+before [JAR: define what "as before" refers to], some identifiers are assigned on an ad hoc basis [JAR: define which nodes get ad hoc identifiers].  Then,
 automated identifier assignment is done by aligning the previous
 version of OTT to the new taxonomy. Additional candidates are
-found by comparing node identifiers used in source taxonomies to
+found [JAR: clarify that 'are found by' is automated, not manual] by comparing node identifiers used in source taxonomies to
 source taxonomy node identifiers stored in the previous OTT version.
 After transferring identifiers of aligned nodes, any remaining workspace
 nodes are given newly 'minted' identifiers.

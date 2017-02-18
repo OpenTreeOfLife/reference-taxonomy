@@ -26,7 +26,7 @@ Open Tree reference taxonomy version 2.11.
   * source taxonomy = imported taxonomic source (NCBI taxonomy, etc.)
   * workspace = data structure for creation of the reference
     taxonomy
-  * name-string = taxonomic name considered textually, without association 
+  * name-string = taxonomic name considered textually, without association
     with any particular taxon or nomenclatural code
   * node = a taxon record, either from a source taxonomy or the workspace.
     Records primary name-string, provenance,
@@ -131,15 +131,15 @@ is contained in F both before and after the insertion event.
 = Puncturella, H = Hemotominae, E = Emarginulinae)
 
 The vast majority of alignment and merge situations are simple, similar to the
-examples above. However, a few [KC: "a few" makes this sound like a small
-number. I suspect it is a small fraction but still a rather large number of
-special cases. In this discussion, we say there are 'thousands' of special
-cases.] cause serious problems.  Ambiguities caused by synonyms and homonyms
-create most of the difficulties, with inconsistent or unclear higher taxon
-membership creating the rest. The development of the assembly process described
-here has been a driven by trial and error - finding cases that fail and then
-adding / modifying heuristics to address the underlying cause, or adding an ad
-hoc adjustment for cases that are rare or overly complex.
+examples above. However, even a small fraction of special cases can add up to
+thousands when the total number of alignments and merges measures in the
+millions, so we have worked to develop heuristics that handle most common
+special cases. Ambiguities caused by synonyms and homonyms create most of the
+difficulties, with inconsistent or unclear higher taxon membership creating the
+rest. The development of the assembly process described here has been a driven
+by trial and error - finding cases that fail and then adding / modifying
+heuristics to address the underlying cause, or adding an ad hoc adjustment for
+cases that are rare or overly complex.
 
 The following sections describe the source taxonomies, and then detail the
 taxonomy combination method.

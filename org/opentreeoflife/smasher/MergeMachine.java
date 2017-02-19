@@ -461,16 +461,17 @@ class Conflict {
         bobTarget = al.getTaxon(bob);
 	}
     static String formatString = ("%s\t" + // node
-                                  "%s\t%s\t%s\t" + // alice, aliceTarget, a
-                                  "%s\t%s\t%s\t" + // bob, bobTarget, b
-                                  "%s\t%s\t%s\t%s"); // mrca, sink, depth, visible
+                                  "%s\t%s\t%s\t%s\t" + // alice, aliceTarget, a,
+                                  "%s\t%s\t%s\t%s\t" + // bob, bobTarget, b,
+                                  "%s\t%s\t" +     // mrca, sink, 
+                                  "%s\t%s\t%s"); // unplaced, depth, visible
     static void printHeader(PrintStream out) throws IOException {
 		out.format(Conflict.formatString,
                    "parent",
-                   "alice", "alice_target", "alice_ancestor",
-                   "bob", "bob_target", "bob_ancestor",
+                   "alice", "alice_target", "alice_parent", "alice_ancestor",
+                   "bob", "bob_target", "bob_parent", "bob_ancestor",
 				   "mrca", "sink",
-				   "depth", "visible");
+				   "unplaced", "depth", "visible");
         out.println();
     }
 
@@ -481,6 +482,10 @@ class Conflict {
             if (aliceTarget != null && bobTarget != null &&
                 !aliceTarget.prunedp && !bobTarget.prunedp)
                 div = aliceTarget.divergence(bobTarget);
+            int unplaced = 0;
+            for (Taxon child : sink.getChildren())
+                if ((child.properFlags & Taxonomy.UNPLACED) != 0)
+                    ++unplaced;
             if (div != null) {
                 Taxon a = div[0];
                 Taxon b = div[1];
@@ -489,17 +494,17 @@ class Conflict {
                 // node, alice, aliceTarget, a, bob, b, bobTarget, a.parent, mrca, sink
                 return String.format(formatString,
                                      node,
-                                     alice, aliceTarget, a,
-                                     bob, bobTarget, b,
+                                     alice, aliceTarget, aliceTarget.parent, a,
+                                     bob, bobTarget, bobTarget.parent, b,
                                      a.parent, sink,
-                                     da, (isHidden ? 0 : 1));
+                                     unplaced, da, (isHidden ? 0 : 1));
             } else
                 return String.format(formatString,
                                      node,
-                                     alice, aliceTarget, "",
-                                     bob, bobTarget, "",
+                                     alice, aliceTarget, aliceTarget.parent, "",
+                                     bob, bobTarget, (bobTarget != null ? bobTarget.parent : ""), "",
                                      "", sink,
-                                     "?", (isHidden ? 0 : 1));
+                                     unplaced, "?", (isHidden ? 0 : 1));
         } catch (Exception e) {
             e.printStackTrace();
             System.err.format("*** Conflict info: %s %s %s\n", node, alice, bob);

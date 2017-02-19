@@ -139,7 +139,7 @@ public abstract class Taxonomy {
             if (nodes.size() == 0)
                 this.nameIndex.remove(node.name);
         }
-        node.name = null;       // maintain invariant.
+        node.name = null;
 	}
 
     // Similar, there is an idspace, but not every node has an id.
@@ -489,49 +489,40 @@ public abstract class Taxonomy {
                 losers.add(node);
 
         Rank subgenus = Rank.getRank("subgenus");
-        int elisions = 0, subgenusCount = 0, nohope = 0;
+        int elisions = 0, subgenusCount = 0, monotypic = 0, nohope = 0;
 
 		for (Taxon node : losers) {
 
+            if (node.prunedp) continue;
             if (!node.name.equals(node.parent.name)) continue;  // race condition
 
-            // If node is the only child, we can get rid of the parent.
-            if (node.parent.children.size() == 1) {
-                if (!node.isPlaced()) { // ???? why this condition ?
-                    // could also test for same rank.
-                    if (++elisions < 10)
-                        System.out.format("| Eliding %s in %s, %s children\n",
-                                          node.name,
-                                          node.parent.name,
-                                          (node.children == null ?
-                                           "no" :
-                                           node.children.size())
-                                          );
-                    else if (elisions == 10)
-                        System.out.format("| ...\n");
-
-                    // Keep parent, absorb child.
-                    node.parent.absorb(node);
-                    if (node.rank != node.parent.rank)
-                        node.rank = Rank.NO_RANK;
-                }
-
-            } else if (node.rank == subgenus) {
+            if (node.rank == subgenus) {
 
                 String newname = String.format("%s %s %s", node.name, node.rank.name, node.name);
                 Taxon existing = this.unique(newname);
-                if (existing != null && existing.parent == node.parent)
+                if (existing != null && existing.parent == node.parent) {
                     // May want to absorb recursively... cf. smush()
+                    if (subgenusCount <= 10)
+                        System.out.format("| Absorbing %s into %s\n", node, existing);
                     existing.absorb(node);
-                else
+                } else {
                     node.clobberName(newname);
+                    if (subgenusCount <= 10)
+                        System.out.format("| Set name of %s (was %s)\n", node, node.parent.name);
+                }
                 ++subgenusCount;
+            } else if (node.parent.getChildren().size() == 1) {
+                if (monotypic <= 10)
+                    System.out.format("| Monotypic parent/child %s %s\n", node.parent, node);
+                ++monotypic;
             } else
                 ++nohope;
         }
         if (elisions + subgenusCount + nohope > 0)
-            System.out.format("| %s: elided %s nodes, fixed %s subgenus names, %s p/c homs not addressed\n",
-                              this.getTag(), elisions, subgenusCount, nohope);
+            System.out.format("| %s: elided %s nodes, fixed %s subgenus names, %s monotypic p/c homs, %s nonmonotypic\n",
+                              this.getTag(), elisions, subgenusCount,
+                              monotypic,
+                              nohope);
 	}
 
 	// Fold sibling homonyms together into single taxa.

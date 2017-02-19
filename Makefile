@@ -379,6 +379,18 @@ ids_that_are_otus.tsv:
 	mv $@.new $@
 	wc $@
 
+# Synthetic tree OTT id list (this rule assumes you're part of the
+# Open Tree project and can use scp; could be modified to use
+# curl. this doesn't matter much since the list is checked into the
+# repo.)
+ids_in_synthesis.tsv:
+	rm -rf synth-nexson-tmp
+	mkdir -p synth-nexson-tmp
+	scp -p files:"files.opentreeoflife.org/synthesis/current/output/phylo_snapshot/*@*.json" synth-nexson-tmp/
+	time bin/jython util/ids_in_synthesis.py --dir synth-nexson-tmp --outfile $@.new
+	mv $@.new $@
+
+
 # ----- Preottol - for filling in the preottol id column
 # No longer used
 # PreOTToL is here if you're interested:

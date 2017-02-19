@@ -2,7 +2,7 @@
 
 from org.opentreeoflife.taxa import TsvEdits
 from claim import *
-from chromista_spreadsheet import fixChromista
+#from chromista_spreadsheet import fixChromista
 
 # ----- Final patches -----
 
@@ -101,8 +101,12 @@ def patch_ott(ott):
 
     # Patches from the Katz lab to give decent parents to taxa classified
     # as Chromista or Protozoa
-    print '-- Chromista/Protozoa spreadsheet from Katz lab --'
-    fixChromista(ott)
+    # DISABLED: as of 2017-02-19, all but one of the changes listed on the spreadsheet
+    # either were already there, or else the taxon was missing.  So it doesn't
+    # make much sense to continue using it.
+    #
+    # print '-- Chromista/Protozoa spreadsheet from Katz lab --'
+    # fixChromista(ott)
     # 2016-06-30 deleted from spreadsheet because ambiguous:
     #   Enigma,Protozoa,Polychaeta ,,,,, -
     #   Acantharia,Protozoa,Radiozoa,,,,,

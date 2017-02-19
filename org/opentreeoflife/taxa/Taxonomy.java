@@ -32,6 +32,10 @@ import java.util.Comparator;
 import java.util.Collections;
 import java.util.Collection;
 import java.io.PrintStream;
+import java.io.BufferedWriter;
+import java.io.PrintWriter;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.io.File;
 import org.json.simple.JSONObject; 
 
@@ -52,6 +56,8 @@ public abstract class Taxonomy {
 
     Map<QualifiedId, Node> qidIndex = null;
     Set<QualifiedId> qidAmbiguous = null;
+
+    public String version = null;
 
 	public Taxonomy() {
     }
@@ -737,10 +743,6 @@ public abstract class Taxonomy {
             node.inferredFlags = inferredFlags;
             ++count;
         }
-        if (node.name != null
-            && node.name.equals("Ephedra gerardiana"))
-            if (before != node.isHidden())
-                System.out.format("* %s hidden %s -> %s\n", node, before, node.isHidden());
 
         int bequest = inferredFlags | node.properFlags;		// What the children inherit
 
@@ -840,7 +842,7 @@ public abstract class Taxonomy {
 	// value should be >= parentRank, but occasionally ranks get out
 	// of order when combinings taxonomies.
 
-    // We need to do this for GBIF and IRMNG, but not for NCBI or SILVA.
+    // We need to find major rank conflicts in GBIF and IRMNG, but not NCBI or SILVA.
 
 	public static int analyzeRankConflicts(Taxon node, boolean majorp) {
 		Integer m = -1;			// "no rank" = -1
@@ -857,6 +859,7 @@ public abstract class Taxonomy {
 			// Preorder traversal
 			// In the process, calculate rank of highest child
 			for (Taxon child : node.children) {
+                if (!child.isPlaced()) continue;
 				int rank = analyzeRankConflicts(child, majorp);
 				if (rank >= 0) {  //  && !child.isHidden()  ??
 					if (rank < high) { high = rank; highchild = child; }
@@ -875,6 +878,7 @@ public abstract class Taxonomy {
 					// Suppose the parent is a class. We're looking at relative ranks of the children...
 					// Two cases: order/family (minor), order/genus (major)
 					for (Taxon child : node.children) {
+                        if (!child.isPlaced()) continue;
 						int chrank = child.rank.level;	   //e.g. family or genus
 						if (chrank < 0) continue;		   // skip "no rank" children
 						// we know chrank >= high
@@ -933,6 +937,9 @@ public abstract class Taxonomy {
 						"\\b[Vv]iruses\\b|" +
 						"\\bvirus\\b"
 						);
+
+    // These are no longer processed specially.  They show up as incertae sedis
+    // automatically, when appropriate.
 
 	static Pattern randomRegex =
 		Pattern.compile(
@@ -1842,13 +1849,17 @@ public abstract class Taxonomy {
 			out = new java.io.PrintStream(new java.io.BufferedOutputStream(new java.io.FileOutputStream(filename)),
 										  false,
 										  "UTF-8");
-
-			// PrintStream(OutputStream out, boolean autoFlush, String encoding)
-
-			// PrintStream(new OutputStream(new FileOutputStream(filename, "UTF-8")))
-
 			System.out.println("Writing " + filename);
 		}
+		return out;
+	}
+
+    // Intended to replace openw some day
+	public static PrintWriter openWriter(String filename) throws IOException {
+        FileOutputStream stream = new FileOutputStream(filename);
+        PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(stream, "UTF-8")),
+                                          false);
+        System.out.println("Writing " + filename);
 		return out;
 	}
 

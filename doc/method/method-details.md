@@ -236,8 +236,9 @@ follows:
       1. Let C' = those members of C that have score Z
       1. If Z > 0 and C' contains only one candidate, we are done (match is that candidate)
       1. Otherwise, replace C with C' and proceed to the next heuristic
- 4. If C is singleton, its member is taken to be the correct match.
- 5. Otherwise, the source node does not match unambiguously.
+ 4. If C is singleton after all heuristics are exhausted, its
+    member is taken to be the correct match.
+ 5. Otherwise, the source node does not match unambiguously; alignment fails.
 
 ### Failure to choose
 
@@ -247,16 +248,18 @@ it is dropped, which is OK because it probably corresponds to one of
 the existing candidates and therefore would make no new contribution
 to the workspace.  If the ambiguous source node has children, it is
 treated as unaligned and therefore new, possibly turning an N-way
-homonym into an N+1-way homonym, which could easily be wrong.
+homonym into an N+1-way homonym.  This could easily be wrong because 
+it is so unlikely that the source node really represents a distinct taxon.
 Usually, the subsequent merge phase determines that the grouping is
 not needed because it inconsistent or can be 'absorbed', and it is
 dropped.  If it is not dropped, then there is a troublesome situation
 that calls for manual review.
 
-For example, for GBIF _Katoella pulchra_, the candidates are NCBI
+As an example of an unaligned tip, consider GBIF _Katoella pulchra_.  
+The candidates are NCBI
 _Davallodes pulchra_ and _Davallodes yunnanensis_.  (There is no
-_Katoella pulchra_ in the workspace at the time of the alignment and
-the two candidates come from synonymies with _Katoella pulchra_
+_Katoella pulchra_ in the workspace at the time of alignment.
+The two candidates come from synonymies with _Katoella pulchra_
 declared by GBIF.)  
 Neither candidate is preferable to the other, so
 _Katoella pulchra_ is left unaligned and
@@ -337,6 +340,11 @@ and the new source, we retain the workspace.
    have been an insertion.
 
    So that we have a term for this situation, say that x is _absorbed_ into z.
+
+[KC: I couldn't find an example that looked like case number 6.  We could replace
+what was there with a new tree showing conflict, but it would have to
+be very simple.  The only two cases I've found so far (Pisces and 
+Archaeognatha) have the form ((a,b)c) + (a,(b,c)).  Thoughts?]
 
 ## Finishing the assembly
 

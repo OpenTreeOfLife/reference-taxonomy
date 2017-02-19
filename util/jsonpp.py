@@ -1,3 +1,4 @@
+#!/usr/bin/python
 
 # Pretty-print json - a filter
 

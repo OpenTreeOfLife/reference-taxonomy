@@ -133,6 +133,7 @@ class MergeMachine {
        that has one.
        */
 	void augment(Taxon node, Taxon sink) {
+        if (node.prunedp) return;
         Taxon unode = alignment.getTaxon(node);
 
 		if (node.children == null) {
@@ -147,7 +148,9 @@ class MergeMachine {
                     // (weak no) or ambiguous (noinfo)
                     // YES > NOINFO > NO > HECK_NO  (sorry)
                     acceptNew(node, "new/polysemy");
-                }
+                else
+                    tick("ambiguous/redundant");
+            }
 		} else {
             if (unode != null) {
                 for (Taxon child: node.children)
@@ -159,7 +162,7 @@ class MergeMachine {
                     augment(child, sink);
                 // Examine mapped parents of the children
                 boolean consistentp = true;
-                Taxon commonParent = null;    // should end up being targetMrca(node)
+                Taxon commonParent = null;
                 Taxon child1 = null, child2 = null; // for inconsistency reporting
                 int count = 0;
                 for (Taxon child : node.children) {
@@ -186,18 +189,12 @@ class MergeMachine {
                 } else if (!consistentp) {
                     inconsistent(node, child1, child2, sink);
                 } else if (!commonParent.descendsFrom(sink)) {
-                    // This is the philosophically troublesome case.
-                    // Could be either an outlier/mistake, or something serious.
-                    if (node.markEvent("sibling-sink mismatch"))
-                        System.out.format("* Parent of %s's children's images, %s, is not a descendant of %s\n",
-                                          node, commonParent, sink);
-                    inconsistent(node, child1, child2, sink);
+                    overtake(node, commonParent, sink);
                 } else if (refinementp(node, sink)) {
                     Taxon newnode = acceptNew(node, "new/refinement");
                     takeOld(node, newnode);
                     takeOn(node, newnode, 0); // augmentation
                 } else {
-                    // 'trouble' = paraphyly risk - plain merge.
                     takeOn(node, commonParent, 0);
                     // should include a witness for debugging purposes - merged to/from what?
                     reject(node, "reject/merged", commonParent, Taxonomy.MERGED);
@@ -215,7 +212,8 @@ class MergeMachine {
 
     void inconsistent(Taxon node, Taxon child1, Taxon child2, Taxon sink) {
         // Paraphyletic / conflicted.
-        // Put the new children unplaced under the mrca of the placed children.
+        // Put the new children unplaced under the sink, or the mrca of the
+        // placed children, whichever is smaller.
         reportConflict(node, child1, child2, sink);
         // Tighten it if possible... does this always make sense?
         Taxon unode = alignment.getTargetMrca(node);
@@ -225,6 +223,35 @@ class MergeMachine {
         reject(node, "reject/inconsistent", sink, Taxonomy.INCONSISTENT);
     }
     
+    private final static boolean MORE_SENSIBLE_BUT_DOESNT_WORK = false;
+
+    // The symptom of getting this wrong is the creation of a cycle.
+
+    void overtake(Taxon node, Taxon commonParent, Taxon sink) {
+        // This is a troublesome case.
+        // Workspace says children are under sink, but source says they're not.
+        if (node.markEvent("sibling-sink mismatch"))
+            System.out.format("* Parent of %s's children's images, %s, is an ancestor of %s\n",
+                              node,
+                              commonParent,
+                              sink);
+
+        if (MORE_SENSIBLE_BUT_DOESNT_WORK) {
+            takeOn(node, commonParent, 0);
+            reject(node, "reject/overtaken", commonParent, Taxonomy.MERGED);
+        } else {
+            // was: inconsistent(node, child1, child2, sink);
+            Taxon point;
+            Taxon unode = alignment.getTargetMrca(node);
+            if (unode != null && unode.descendsFrom(sink))
+                point = unode;
+            else
+                point = sink;
+            takeOn(node, point, Taxonomy.UNPLACED);
+            reject(node, "reject/overtaken", point, Taxonomy.MERGED);
+        }
+    }
+
     /* Refinement: feature necessary for merging Silva into the
        skeleton and NCBI into Silva.  This lets an internal "new" node
        (in the "new" taxonomy) be inserted in between internal "old"

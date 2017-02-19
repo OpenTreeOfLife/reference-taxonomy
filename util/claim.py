@@ -396,7 +396,7 @@ def stringify(term):
         return '%s(%s)' % (operator, ', '.join([stringify(arg) for arg in args]))
 
 
-test()
+# test()
 
 # x such that P(x)
 # x such that P(x) and Q(x)

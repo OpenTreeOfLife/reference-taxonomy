@@ -25,9 +25,10 @@ inclusions_path = 'inclusions.csv'
 additions_clone_path = 'feed/amendments/amendments-1'
 new_taxa_path = 'new_taxa'
 
-def create_ott():
+def create_ott(version):
 
     ott = UnionTaxonomy.newTaxonomy('ott')
+    ott.version = version;
 
     # Would be nice if there were tests for all of these...
     for name in names_of_interest:
@@ -245,6 +246,8 @@ def get_default_extinct_info_from_gbif(gbif, gbif_to_ott):
                     # It's OK if it's also in IRMNG
                     flagged += 1
                     taxon.extinct()
+                else:
+                    print '| PaleoDB taxon %s appears to be extant' % taxon
     infile.close()
     print '| Flagged %s of %s taxa from paleodb\n' % (flagged, paleos)
 

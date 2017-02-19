@@ -17,7 +17,7 @@ linked from the OTT taxonomy files and user interfaces so that
 provenance is always available.
 
 **Separation taxa**  
-This is a small curated tree containing 27 major groups such
+This is a small curated tree containing 29 major groups such
 as animals, plants, and fungi.  Its purpose is to assist
 in separating homonyms.  If a node
 is found in one of these separation groups, then it will not match a
@@ -37,8 +37,8 @@ Metazoa, compared with over 500,000 taxa under Metazoa in NCBI Taxonomy.
 
 **Extinct / extant annotations**  
 Curators requested information about whether taxa were extinct
-vs. extant.  (See below for the reason this was so important.) This
-information was not explicitly present in any of our other sources, so we imported IRMNG,
+vs. extant.  With the exception of limited data from WoRMS and Index Fungorum, this
+information was not explicitly present in our other sources, so we imported IRMNG,
 which logs the extinct / extant status of taxa.
 
 As a secondary heuristic, records from GBIF that originate from
@@ -59,10 +59,11 @@ We suppress the following source taxonomy records:
   sequences', or any of about 15 similar designations
 
 The IPNI and IRMNG records are suppressed because they include many
-invalid names.  Although the original taxonomic sources indicate which
-names are known to be invalid, this information is not preserved when
-the records are exported by GBIF, since Darwin Core does not provide a
-standard way to express it.  Note that the GBIF taxonomy might import
-the same name from more than one source, but its export file only
-lists one of the sources.  We suppress the record if that source is
-IPNI or IRMNG, but not if it is some other source.
+invalid names.  We pick up most of the valid names from other sources,
+such as direct from IRMNG, so this is not a great loss.  Although
+the original taxonomic sources indicate which names are known to be
+invalid, this information is not preserved when the records are
+exported by the GBIF backbone.  Note that the GBIF backbone might
+import the same name from more than one source, but its provenance
+information only lists one of the sources.  We suppress the record if
+that source is IPNI or IRMNG, but not if it is some other source.

@@ -95,7 +95,7 @@ bin/smasher:
 
 # The open tree taxonomy
 
-ott: tax/ott/log.tsv tax/ott/version.txt
+ott: tax/ott/log.tsv tax/ott/version.txt tax/ott/README.html
 tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py adjustments.py amendments.py \
                     tax/silva/taxonomy.tsv \
 		    tax/fung/taxonomy.tsv tax/713/taxonomy.tsv \
@@ -114,13 +114,16 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py adjustments.py amendments.
 	@date
 	@rm -f *py.class
 	@mkdir -p tax/ott
-	@echo Writing transcript to tax/ott/transcript.out.new
-	time bin/jython make-ott.py 2>&1 | tee tax/ott/transcript.out.new
+	@echo Writing transcript to tax/ott/transcript.out
+	time bin/jython make-ott.py $(WHICH) 2>&1 | tee tax/ott/transcript.out.new
 	mv tax/ott/transcript.out.new tax/ott/transcript.out
 	echo $(WHICH) >tax/ott/version.txt
 
 tax/ott/version.txt:
 	echo $(WHICH) >tax/ott/version.txt
+
+tax/ott/README.html: tax/ott/about.json util/make_readme.py
+	python util/make_readme.py tax/ott/ >$@
 
 # ----- Taxonomy inputs
 
@@ -536,8 +539,11 @@ t/tax/aster/taxonomy.tsv: compile t/aster.py \
 	@mkdir -p `dirname $@`
 	bin/jython t/aster.py
 
+t/tax/aster/README.html: t/tax/aster/about.json util/make_readme.py
+	python util/make_readme.py t/tax/aster/ >$@
+
 test: aster
-aster: t/tax/aster/taxonomy.tsv
+aster: t/tax/aster/taxonomy.tsv t/tax/aster/README.html
 
 aster-tarball: t/tax/aster/taxonomy.tsv
 	(mkdir -p $(TARDIR) && \

@@ -192,7 +192,8 @@ public class AlignmentByName extends Alignment {
                                         anyCandidate.witness);
                     // Hack for debugging / example selection
                     Answer winner = winners.get(0);
-                    ((UnionTaxonomy)target).choicesMade.add(new Answer[]{winner, anyLoser});
+                    if (target instanceof UnionTaxonomy)
+                        ((UnionTaxonomy)target).choicesMade.add(new Answer[]{winner, anyLoser});
                 } else {
                     result = new Answer(node, anyCandidate.target, score,
                                         "confirmed",

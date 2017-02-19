@@ -9,7 +9,7 @@ import os, sys, csv, json
 
 def doit(ott, sep, outpath):
 
-    do_rug = os.path.isdir('out/ruggiero')
+    do_rug = False  #os.path.isdir('out/ruggiero')
 
     if do_rug:
         rug = Taxonomy.getRawTaxonomy('out/ruggiero/', 'rug')

@@ -62,7 +62,9 @@ reclassification); and in the remaining four cases, either the taxon
 was added to OTT after the study was curated, or the curation task was
 left incomplete.
 
-[JAR: measure of how many mapped OTUs come from NCBI, i.e. how close NCBI gets us to the mapping requirement]
+[JAR: measure of how many mapped OTUs come from NCBI, i.e. how close NCBI 
+gets us to the mapping requirement: `python doc/method/otus_in_ncbi.py` = 
+'172440 out of 195675 OTUs are in NCBI' (88%)]
 
 ### Taxonomic coverage
 
@@ -72,9 +74,8 @@ combination of the inputs has greater coverage than CoL, and in part
 because OTT has many names that are either not valid or not currently
 accepted.
 
-Since the GBIF source we used includes the 2011 edition of CoL [JAR: 2011],
-OTT includes everything in that edition of CoL.  [JAR: did it get updated
-for 2016 GBIF?]
+Since the GBIF source we used includes the Catalogue of Life [ref],
+OTT includes everything in CoL.
 
 This level of coverage would seem to meet Open Tree's taxonomic
 coverage requirement as well as any other available taxonomic source.
@@ -94,9 +95,9 @@ coverage requirement as well as any other available taxonomic source.
 
 ### Ongoing update
 
-Building OTT version 2.11 from sources requires 11 minutes 42 second of real time. Our process currently runs on a machine with 16GB of memory, and 8GB is not sufficient.
+Building OTT version 3.0 from sources requires 15 minutes of real time. Our process currently runs on a machine with 16GB of memory; 8GB is not sufficient.
 
-In the upgrade from 2.10 to 2.11, we added new versions of both NCBI and GBIF. NCBI updates frequently, so changes tend to be minimal and incorporating the new version was trivial. In contrast, the version from GBIF represented both a major change in their taxonomy synthesis method. Many taxa disappeared, requiring changes to our ad hoc patches during the normalization stage. In addition, the new version of GBIF used a different taxonomy file format, which requires extensive changes to our import code (most notably, handling taxon name-strings that now included authority information).
+In the upgrade from 2.10 to 3.0, we added new versions of both NCBI and GBIF. NCBI updates frequently, so changes tend to be minimal and incorporating the new version was trivial. In contrast, the version from GBIF represented both a major change in their taxonomy synthesis method. Many taxa disappeared, requiring changes to our ad hoc patches during the normalization stage. In addition, the new version of GBIF used a different taxonomy file format, which requires extensive changes to our import code (most notably, handling taxon name-strings that now included authority information).
 
 We estimate the the update from OTT v2.10 to OTT v3.0 required approximately 3 days of development time. This was much greater than previous updates due to the changes required to handle the major changes in GBIF content and format.  
 

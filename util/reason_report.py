@@ -1,6 +1,6 @@
 # Metrics for taxonomy writeup.
 
-import sys, os, json
+import sys, os, json, csv
 
 def format_report(taxo_path, metrics_path):
     print """# Results
@@ -63,11 +63,21 @@ def show_table(table, description):
     print
     # show_table_ascii(table)
     show_table_html(table)
+    show_table_csv(table)
+
+def show_table_csv(table):
+    print '-----'
+    writer = csv.writer(sys.stdout)
+    for (count, label) in table:
+        writer.writerow([count, label])
+    print '-----'
 
 def show_table_ascii(table):
     for (count, label) in table:
         print fmt % (count, label)
     print
+
+# returns (list of (rank, label, count), total)
 
 def prepare_table(summary, label_info, totalize):
     for key in summary:
@@ -219,8 +229,8 @@ source's extinctness flag, if any, is copied to the workspace node."""), #was al
     (80, 'Source node absorbed into larger workspace taxon'),
     "reject/inconsistent":
     (82, 'Source node absorbed into larger taxon due to conflict [fix me]'),
-    "reject/wayward":
-    (84, 'Source parent does not descend from nearest aligned [fix me]'),
+    # "reject/wayward":
+    # (84, 'Source parent does not descend from nearest aligned [fix me]'),
 }
 
 all_keys = {}

@@ -19,7 +19,7 @@ benefits as well, such as the ability to add additional sources relatively
 easily, and to use the tool for other purposes.
 
 In the following, any definite claims or measurements apply to the
-Open Tree reference taxonomy version 2.11.
+Open Tree reference taxonomy version 3.0.
 
 ## Terminology
 

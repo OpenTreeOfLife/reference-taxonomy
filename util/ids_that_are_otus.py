@@ -54,7 +54,9 @@ def doit():
 
         s = requests.get('https://api.opentreeoflife.org/v3/study/%s/otus'%(studyid))
 
-        s.raise_for_status()
+        if s.status_code != 200: 
+            print '** %s %s' % (studyid, s.status_code)
+            continue
 
         # {"otus137":
         #  {"otuById":

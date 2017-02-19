@@ -1,0 +1,22 @@
+#!/usr/bin/python
+
+import os, sys, subprocess, argparse
+
+argparser = argparse.ArgumentParser(description='Show lineage of a taxon.')
+argparser.add_argument('id')
+argparser.add_argument('tax', default='tax/ott/')
+
+args = argparser.parse_args()
+id = args.id
+tax = os.path.join(args.tax, 'taxonomy.tsv')
+
+while True:
+  output = subprocess.check_output(['grep', '--max-count', '1', '^%s\t' % id, tax])
+  row = output.split('\t|\t')
+  pid = row[1]
+  if pid == '':
+    break
+  print '\t'.join([field.strip() for field in row])
+  sys.stdout.flush()
+  id = pid
+

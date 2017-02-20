@@ -11,20 +11,19 @@ Life project, an aggregation of phylogenetic trees with tools for
 operating on them.
 
 In order to meet Open Tree's project requirements, the taxonomy is an automated
-synthesis of ten different source taxonomies with different strengths. The
-synthesis process is repeatable so that updates to source taxonomies can be
-incorporated easily.
+synthesis of ten different source taxonomies. The
+synthesis process is repeatable so that we can easily incorporate updates to source taxonomies.
 
 Information about taxa is typically
 expressed in databases and files in terms of taxon names or
-'name-strings'.  To combine data sets it is
+'name-strings'.  To combine taxonomies it is therefore
 necessary to be able to determine name equivalence: whether or not an
 occurrence of a name-string in one data source refers to the same
 taxon as a given name-string occurrence in another.  Solving
 this equivalence problem requires detecting equivalence when the
 name-strings are different (synonym detection), as well as
 distinguishing occurrences that only coincidentally have the same
-name-string (homonym detection). We have developed a set of heuristics
+name-string (homonym sense detection). We have developed a set of heuristics
 that scalably address this equivalence problem.
 
 ## The Open Tree of Life project
@@ -39,7 +38,7 @@ The Open Tree of Life project consists of a set of tools for
    taxonomy
 
 The outcome is one or more summary trees combining phylogenetic and
-taxonomic knowledge.
+taxonomic knowledge. Figure 1 illustrates an overview of the process of combining phylogeny and taxonomy, while the details are described in a separate publication [ref Redelings & Holder 2017].
 
 Although it is primarily a phylogenetics effort, Open Tree requires a
 reference taxonomy for each of these functions.
@@ -84,8 +83,7 @@ Following are all five requirements:
     understanding (such as Protozoa) should be avoided.
  1. *Taxonomic coverage:* The taxonomy should cover as many as possible of
     the species
-    that are described in the literature [more than 1.6 million, according to
-    http://www.catalogueoflife.org/ retrieved 2016-11-01], so that we
+    that are described in the literature, so that we
     can supplement generated supertrees as described in step 3 above.
  1. *Ongoing update:* New taxa of importance to phylogenetic studies
     are constantly being added to the literature.
@@ -99,11 +97,11 @@ the inputs, we can both re-generate the taxonomy and see sufficient detail in
 the output to understand the source of the information in the taxonomy.
 
 No single available taxonomic source meets all requirements.  The
-NCBI taxonomy has good coverage of OTUs, provides a rich source of
+NCBI taxonomy [ref NCBI] has good coverage of OTUs, provides a rich source of
 phyogenetically informed higher taxa, and is open, but its taxonomic
 coverage is limited to taxa that have sequence data in GenBank (about
 360,000 species having standard binomial names at the time of this writing).  Traditional all-life
-taxonomies such as Catalogue of Life, IRMNG, and GBIF meet the
+taxonomies such as Catalogue of Life [ref CoL], IRMNG [ref irmng], and GBIF [ref GBIF]  meet the
 taxonomic coverage requirement, but miss many OTUs from our input
 trees, and their higher-level taxonomies are often not as
 phylogenetically informed or resolved as the NCBI taxonomy.  At the

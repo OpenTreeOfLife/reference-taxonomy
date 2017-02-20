@@ -1,6 +1,6 @@
 ## Summary of Open Tree Taxonomy
 
-The methods and results presented here are for version 3.0 of the Open Tree Taxonomy (which follows five previous releases using the automated assembly method). The taxonomy contains 3,592,725 total taxa, X tips and Y internal nodes. There are 2,031,519 synonym records and 8043 homonyms (name-strings for which there are multiple nodes). Table X gives a list of taxon flags that annotate more 10000 taxa in OTT 3.0 (noting that taxa can have more than one flag). 
+The methods and results presented here are for version 3.0 of the Open Tree Taxonomy (which follows five previous releases using the automated assembly method). The taxonomy contains 3,592,725 total taxa, X tips and Y internal nodes. There are 2,031,519 synonym records and 8043 homonyms (name-strings for which there are multiple nodes). Table X gives a list of taxon flags that annotate more 10000 taxa in OTT 3.0 (noting that taxa can have more than one flag).
 
 flag  taxa
 sibling_higher  911673
@@ -18,33 +18,13 @@ extinct_inherited 19053
 unplaced_inherited  18790
 unplaced  17274
 
-## Contributions of source taxonomies to the assembly
+## Homonym analysis
 
-Following is a breakdown of how each source taxonomy contributes to
-the reference taxonomy.  [should be a proper table]
-
-        source     total    copied   aligned  absorbed  conflict
-    separation        26        26         0         -         -
-         silva     74401     74396         5         -         -
-         h2007       227       226         1         -         -
-            if    284878    281709      3103        42        24
-         worms    327633    268847     57163       992       631
-      study713       119       118         1         -         -
-          ncbi   1320679   1198186    119485      1997      1011
-          gbif   2452614   1636666    813455      1822       671
-         irmng   1563804     89840   1470048      3083       833
-       curated        29        29         0         -         -
-         total   6024410   3550043   2463261      7936      3170
-
-Key:
-
-* source = name of source taxonomy
-* total = total number of nodes in source
-* copied = total number of nodes originating from this source (copied)
-* aligned = number of source nodes aligned and copied
-* absorbed = number of source nodes absorbed
-* conflict = number of inconsistent source nodes
-
+There are 8043 name-strings in the final version of the taxonomy for which there are
+multiple nodes.  [JAR: update number when 3.0 is final]
+By comparison, there are only 1440 in GBIF. Many of
+the homonyms either are artifacts of the alignment method, or reflect
+misclassifications or errors in the source taxonomies.
 
 ## Evaluating the taxonomy relative to requirements
 
@@ -75,22 +55,9 @@ reclassification); and in the remaining four cases, either the taxon
 was added to OTT after the study was curated, or the curation task was
 left incomplete.
 
-* compare OTT's coverage of phylesystem with coverage by NCBI, GBIF
-  (i.e. how well does OTT do what it's supposed to do, compared to
-  ready-made taxonomies?  OTT gets 95% of OTUs, NCBI only gets ??92%??
-  (besides just being interesting, this will tell us whether we could
-   have gotten away with just NCBI, or if GBIF and the rest were really
-   needed.)
-  (how about GNI?? trying to think of an independent name source
-  to compare to, as a control?)
-* number of OTUs that are mapped, that come from NCBI - I previously
-  measured this as about 97% of OTUs in phylesystem (actually 97%
-  of taxon names, not OTUs)
-* what about unmapped OTUs?  of those, how many are binomials (and
-  presumably mappable)?
-
-[can we find *any* OTUs that do not have a taxon in OTT?
-rather difficult.  this is what the curation feature was for.]
+[JAR: measure of how many mapped OTUs come from NCBI, i.e. how close NCBI
+gets us to the mapping requirement: `python doc/method/otus_in_ncbi.py` =
+'172440 out of 195675 OTUs mapped to OTT are in NCBI' (88%)]
 
 ### Taxonomic coverage
 
@@ -100,16 +67,11 @@ combination of the inputs has greater coverage than CoL, and in part
 because OTT has many names that are either not valid or not currently
 accepted.
 
-Since the GBIF source we used includes the 2011 edition of CoL [2011],
-OTT includes everything in that edition of CoL.  [did it get updated
-for 2016 GBIF?]
+Since the GBIF source we used includes the Catalogue of Life [ref],
+OTT includes everything in CoL.
 
 This level of coverage would seem to meet Open Tree's taxonomic
 coverage requirement as well as any other available taxonomic source.
-
-[As another coverage check, and test of alignment, consider evaluating
-against HHDB (hemihomonym database) - ideally we would have all senses of
-each HHDB hemihomonym, in the right places]
 
 ### Backbone quality
 
@@ -126,11 +88,19 @@ each HHDB hemihomonym, in the right places]
 
 ### Ongoing update
 
-Building OTT version 2.11 from sources requires 11 minutes 42 second of real time [KC: and memory?].
+Building OTT version 3.0 from sources requires 15 minutes of real time. Our process currently runs on a machine with 16GB of memory; 8GB is not sufficient.
 
-In the upgrade from 2.10 to 2.11, we added new versions of both NCBI and GBIF. NCBI updates frequently, so changes tend to be minimal and incorporating the new version was trivial. In contrast, the version from GBIF represented a major change in their taxonomy synthesis method. The file format changed, requiring changes in our import code. In addition, many taxa disappeared, requiring changes to our ad hoc patches during the normalization stage.  
+In the upgrade from 2.10 to 3.0, we added new versions of both NCBI
+and GBIF. NCBI updates frequently, so changes tend to be manageable
+and incorporating the new version was simple. In contrast, the
+version from GBIF represented both a major change in their taxonomy
+synthesis method. Many taxa disappeared, requiring changes to our ad
+hoc patches during the normalization stage. In addition, the new
+version of GBIF used a different taxonomy file format, which requires
+extensive changes to our import code (most notably, handling taxon
+name-strings that now included authority information).
 
-* [KC: estimate on number of curation hours required for 2.10 -> 2.11 update?]
+We estimate the the update from OTT v2.10 to OTT v3.0 required approximately 3 days of development time. This was greater than previous updates due to the changes required to handle the major changes in GBIF content and format.  
 
 ### Open data
 

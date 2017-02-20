@@ -10,7 +10,7 @@ import java.io.IOException;
 
 public class TsvEdits {
 
-	// ----- PATCH SYSTEM -----
+	// ----- ORIGINAL PATCH SYSTEM -----
 
 	static Pattern tabPattern = Pattern.compile("\t");
 
@@ -64,19 +64,7 @@ public class TsvEdits {
 		String contextName = row[4].trim();
 		String sourceInfo = row[5].trim();
 
-		List<Taxon> parents = tax.filterByAncestor(parentName, contextName);
-		if (parents == null) {
-			System.err.format("** Parent name %s missing in context %s (for %s)\n",
-                              parentName, contextName, name);
-			return;
-		}
-		if (parents.size() > 1)
-			System.err.format("** Ambiguous parent name %s for %s\n", parentName, name);
-		Taxon parent = parents.get(0);	  //tax.taxon(parentName, contextName)
-
-		if (!parent.name.equals(parentName))
-			System.err.println("! Warning: parent taxon name is a synonym: " + parentName);
-
+		Taxon parent = tax.taxon(parentName, contextName, null, true);
 
 		Taxon existing = tax.taxon(name, contextName, null, false);
 
@@ -95,29 +83,32 @@ public class TsvEdits {
 				parent.addChild(node, 0); // Not incertae sedis
 				node.addFlag(Taxonomy.EDITED);
 			}
+        } else if (command.equals("synonym")) {
+            if (parent != null)
+                parent.addSynonym(name, "synonym");
         } else if (existing == null) {
             // Generate diagnostic message
             tax.taxon(name, contextName, null, true);
+        } else if (command.equals("flag")) {
+            existing.addFlag(Taxonomy.FORCED_VISIBLE);
+        } else if (command.equals("incertae_sedis")) {
+            existing.addFlag(Taxonomy.INCERTAE_SEDIS);
+        } else if (command.equals("prune")) {
+            existing.prune("edit/prune");
+        } else if (parent == null) {
+            ;
 		} else if (command.equals("move")) {
             // TBD: CYCLE PREVENTION!
             existing.changeParent(parent, 0);
             existing.addFlag(Taxonomy.EDITED);
-        } else if (command.equals("prune")) {
-            existing.prune("edit/prune");
         } else if (command.equals("fold")) {
             if (existing.children != null)
                 for (Taxon child: existing.children)
                     child.changeParent(parent, 0);
             parent.addSynonym(name, "subsumed_by"); //  ????
             existing.prune("edit/fold");
-        } else if (command.equals("flag")) {
-            existing.addFlag(Taxonomy.FORCED_VISIBLE);
-        } else if (command.equals("incertae_sedis")) {
-            existing.addFlag(Taxonomy.INCERTAE_SEDIS);
-        } else if (command.equals("synonym")) {
-            parent.addSynonym(name, "synonym");
         } else
-            System.err.println("Unrecognized edit command: " + command);
+            System.err.println("** Unrecognized edit command: " + command);
     }
 
 }

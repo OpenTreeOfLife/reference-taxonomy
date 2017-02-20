@@ -116,6 +116,7 @@ public class InterimFormat {
 
 	public void dumpMetadata(String filename)	throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
+        tax.properties.put("version", tax.version);
 		out.println(tax.properties);
 		out.close();
 	}

@@ -50,10 +50,10 @@ public enum Flag {
 	String name, inheritedName;
 	int bit;
 
-	Flag(String name, String inheritedName, int bit) {
+	Flag(String name, String inheritedName, int mask) {
 		this.name = name;
 		this.inheritedName = inheritedName;
-		this.bit = bit;
+		this.bit = mask;
 	}
 
 	static final Map<String, Flag> lookupTable = new HashMap<String, Flag>();
@@ -223,16 +223,6 @@ public enum Flag {
             out.append("extinct_inherited");
         }
 
-        // Good annotations - not meaningfully heritable
-        if ((flags & Taxonomy.EDITED) != 0) {
-            if (needComma) out.append(","); else needComma = true;
-            out.append("edited");
-        }
-        if ((flags & Taxonomy.FORCED_VISIBLE) != 0) {
-            if (needComma) out.append(","); else needComma = true;
-            out.append("forced_visible");
-        }
-
         // Inferred based on actual content
         if (((flags | iflags) & Taxonomy.INFRASPECIFIC) != 0) {
             if (needComma) out.append(","); else needComma = true;
@@ -248,6 +238,8 @@ public enum Flag {
 
 
 	/*
+       Original email from Cody follows:
+
 	   flags are:
 
 	   nototu # these are non-taxonomic entities that will never be made available for mapping to input tree nodes. we retain them so we can inform users if a tip is matched to one of these names

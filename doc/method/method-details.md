@@ -12,20 +12,16 @@ are performed:
 
  1. Child taxa of "containers" in the source taxonomy are made to be
     children of the container's parent.  "Containers" are
-    groupings in the tree that don't represent taxa, for example nodes
+    groupings in the source that don't represent taxa, for example nodes
     named "incertae sedis" or "environmental samples".  The members of
     a container aren't more closely related to one another than they
     are to the container's siblings; the container is only present as
     a way to say something about the members.  The fact that a node
     had originally been in a container is recorded as a flag on the
     child node.
- 1. Monotypic homonym removal - when a node with name N has as its
-    only child another node with the same name N, the parent is removed.
-    This is done to avoid ambiguities when aligning taxonomies.
-    [get examples by rerunning]
  1. Diacritics removal - accents and umlauts are removed in order to improve
     name matching, as well as to follow the nomenclatural codes, which prohibit them.
-    The original name-string is kept, as a synonym.
+    The original name-string is kept as a synonym.
 
 The normalized versions of the taxonomies then become the input to subsequent
 processing phases.
@@ -76,7 +72,8 @@ be run as a script.  Following are some examples of adjustments.
 
 In the process of assembling the reference taxonomy, 284 ad hoc
 adjustments are made to the source taxonomies before they are
-aligned to the workspace. [check]
+aligned to the workspace.
+[JAR: check numbers when v3.0 is final: `python util/count_patches.py adjustments.py` ~= 289]
 
 ### Candidate identification
 
@@ -134,9 +131,7 @@ them in the alignment process:
     (Examples: (1) the _Aporia_ cases above; (2)
     NCBI says n = _Pteridium_ is a land plant, WoRMS says n' = _Pteridium_ is a
     rhodophyte, and the separation taxonomy says land plants and rhodophytes
-    are disjoint, so n and n' are different taxa; (3) [some example where the heuristic
-    is used for disambiguation instead of homonym creation].  
-    [Also look for good species-level examples as genera are so fraught anyhow.])
+    are disjoint, so n and n' are different taxa.
 
  1. **Disparate ranks**: Prohibit alignment where n and n' have "obviously
     incompatible" (disparate) ranks.
@@ -178,13 +173,6 @@ them in the alignment process:
     an ancestor of n', or q(n') is the name-string of an ancestor of n,
     then prefer n to candidates that lack these properties.
 
-    [MTH: this section is clear, but it is not clear to the reader what
-    order nodes in the source are aligned. That seems to make a difference here.
-    JAR: there is no order dependence, because the
-    heuristic is comparing names, not checking for nodes alignment.
-    I think that is implied by the detailed description, but
-    I've tried to make the example text reinforce this fact.]
-
  1. **Overlap**: Prefer to align n' to n if they are higher level groupings that overlap.
     Stated a bit more carefully: if n' has a descendant aligned to
     a descendant of n.  
@@ -194,7 +182,7 @@ them in the alignment process:
     while the other shares no descendants with the source taxon.
     The source is therefore aligned to the one with the shared descendant.)
 
- 1. **Proximity** [opposite of "separation"; not a great name]:
+ 1. **Proximity**:
     Prefer candidates n with the property that
     the smallest separation taxon containing the source node n'
     is also the smallest separation taxon containing a candidate n.
@@ -231,8 +219,8 @@ heuristics are consulted.
 
 The heuristics are applied in the order in which they are listed
 above.  The outcome is sensitive to the ordering.  The ordering is
-forced to some extent by internal logic [JAR: discuss after the reader
-knows what the heuristics are. KC: can be addressed at this point].
+forced to some extent by internal logic, and the final ordering
+was determined by extensive trial and error.
 
 If there is a single candidate that is not rejected by any heuristic,
 it is aligned to that candidate.
@@ -248,8 +236,9 @@ follows:
       1. Let C' = those members of C that have score Z
       1. If Z > 0 and C' contains only one candidate, we are done (match is that candidate)
       1. Otherwise, replace C with C' and proceed to the next heuristic
- 4. If C is singleton, its member is taken to be the correct match.
- 5. Otherwise, the source node does not match unambiguously.
+ 4. If C is singleton after all heuristics are exhausted, its
+    member is taken to be the correct match.
+ 5. Otherwise, the source node does not match unambiguously; alignment fails.
 
 ### Failure to choose
 
@@ -259,13 +248,22 @@ it is dropped, which is OK because it probably corresponds to one of
 the existing candidates and therefore would make no new contribution
 to the workspace.  If the ambiguous source node has children, it is
 treated as unaligned and therefore new, possibly turning an N-way
-homonym into an N+1-way homonym, which could easily be wrong.
+homonym into an N+1-way homonym.  This could easily be wrong because 
+it is so unlikely that the source node really represents a distinct taxon.
 Usually, the subsequent merge phase determines that the grouping is
 not needed because it inconsistent or can be 'absorbed', and it is
 dropped.  If it is not dropped, then there is a troublesome situation
 that calls for manual review.
 
-[Example: ...]
+As an example of an unaligned tip, consider GBIF _Katoella pulchra_.  
+The candidates are NCBI
+_Davallodes pulchra_ and _Davallodes yunnanensis_.  (There is no
+_Katoella pulchra_ in the workspace at the time of alignment.
+The two candidates come from synonymies with _Katoella pulchra_
+declared by GBIF.)  
+Neither candidate is preferable to the other, so
+_Katoella pulchra_ is left unaligned and
+is omitted from the assembly.
 
 
 ## Merging unaligned source nodes into the workspace
@@ -327,6 +325,13 @@ and the new source, we retain the workspace.
    here is to add e to z and mark it as _incertae sedis_ (indicated above
    by the question mark).
 
+   For example, family Melyridae from GBIF has five genera, of which two
+   (_Trichoceble_, _Danacaea_) are not found in the workspace,
+   and the other three do not all have the same parent after alignment
+   - they are in three different subfamilies.  _Trichoceble_ and _Danacaea_
+   are made to be _incertae sedis_ children of Melyridae, because
+   there is no telling which NCBI subfamily they are supposed to go in.
+
 1. (a,b,c,d,e)z + ((a,b)x,(c,d)y)z = (a,b,c,d,e)z
 
    We don't want to lose the fact from the higher priority taxonomy S
@@ -336,26 +341,10 @@ and the new source, we retain the workspace.
 
    So that we have a term for this situation, say that x is _absorbed_ into z.
 
-   [not such a great technical term: 'absorption' - but we need a term. The code currently
-   says 'merged' and that would be way too confusing]
-
-   [MTH: wouldn't the previous answer: ((a,b)x,(c,d)y,?e)z also mean
-   that e is a proper child of z, but is just uncertain wrt x and y?]
-
-1. ((a,b)x,(c,d)y)z + ((a,c,e)u,(b,d)v)z = ((a,b)x,(c,d)y,?e)
-
-   If the S' topology is incompatible with the S topology,
-   we throw away the conflicting internal nodes from S' (u and v).
-   Any leftover taxa (e)
-   are flagged _incertae sedis_ in the attachment point, which in this case is z.
-
-   [example of inconsistency: gbif:7919320 = Helotium, contains
-   Helotium lonicerae and Helotium infarciens, but IF knows Helotium infarciens as a synonym for
-   Hymenoscyphus infarciens, which isn't in OTT Helotium]
-
-   [another random example: GBIF (S') Paludomidae has children
-   Tiphobia and Bridouxia, but the two children have different parents
-   in S]
+[KC: I couldn't find an example that looked like case number 6.  We could replace
+what was there with a new tree showing conflict, but it would have to
+be very simple.  The only two cases I've found so far (Pisces and 
+Archaeognatha) have the form ((a,b)c) + (a,(b,c)).  Thoughts?]
 
 ## Handling containers
 
@@ -403,20 +392,24 @@ employed with the source taxonomies.  Patches are represented in a
 variety of formats representing historical accidents of curation (i.e. we
 have updated our patch system over time in response to curator feedback).  Rather
 than convert all patches to
-some form already known to the system, we kept it in the original form,
-which facilitates further editing.
+some form already known to the system, we kept them in their original form.
+This practice facilitates further editing.
 
-* give the number of patches [at least 123 - not clear how to count],
-give breakdown by type?  or is that a result?
+* give the number of patches [JAR: get number from v3.0 when final; 
+`python util/count_patches.py amendments.py` ~= 121,
+`tail +2 feed/misc/chromista-spreadsheet.csv | wc` = 239,
+`cat amendments/*.json | grep original_label | wc` ~= 106]
 
-The final step is to assign unique, stable identifiers to nodes.  As
-before [KC: not sure what "as before" refers to], some identifiers are assigned on an ad hoc basis [KC: which nodes get ad hoc identifiers?].  Then,
-automated identifier assignment is done by aligning the previous
-version of OTT to the new taxonomy. Additional candidates are
-found by comparing node identifiers used in source taxonomies to
-source taxonomy node identifiers stored in the previous OTT version.
-After transferring identifiers of aligned nodes, any remaining workspace
-nodes are given newly 'minted' identifiers.
+The final step is to assign unique, stable identifiers to nodes.  
+
+Identifier assignment is done by aligning the previous version of OTT
+to the new taxonomy.  As with the other alignments, there are scripted
+_ad hoc_ adjustments to correct for some errors that would otherwise
+be made by automated assignment.  For this alignment, the set of
+heuristics is extended by adding rules to prefer candidates that have
+the same source taxonomy node id as the previous version node being
+aligned.  After transferring identifiers of aligned nodes, any
+remaining workspace nodes are given newly 'minted' identifiers.
 
 The previous OTT version is not merged into the new version; the alignment is
 computed only for the purpose of assigning identifiers.  A node can only persist

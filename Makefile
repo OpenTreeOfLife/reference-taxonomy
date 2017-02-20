@@ -13,7 +13,7 @@
 JAVAFLAGS=-Xmx14G
 
 # Modify as appropriate
-WHICH=2.11draft5
+WHICH=3.0draft2
 PREV_WHICH=2.10
 
 # ----- Taxonomy source locations -----
@@ -95,8 +95,8 @@ bin/smasher:
 
 # The open tree taxonomy
 
-ott: tax/ott/log.tsv tax/ott/version.txt
-tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py adjustments.py \
+ott: tax/ott/log.tsv tax/ott/version.txt tax/ott/README.html
+tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py adjustments.py amendments.py \
                     tax/silva/taxonomy.tsv \
 		    tax/fung/taxonomy.tsv tax/713/taxonomy.tsv \
 		    tax/ncbi/taxonomy.tsv tax/gbif/taxonomy.tsv \
@@ -114,13 +114,16 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py adjustments.py \
 	@date
 	@rm -f *py.class
 	@mkdir -p tax/ott
-	@echo Writing transcript to tax/ott/transcript.out.new
-	time bin/jython make-ott.py 2>&1 | tee tax/ott/transcript.out.new
+	@echo Writing transcript to tax/ott/transcript.out
+	time bin/jython make-ott.py $(WHICH) 2>&1 | tee tax/ott/transcript.out.new
 	mv tax/ott/transcript.out.new tax/ott/transcript.out
 	echo $(WHICH) >tax/ott/version.txt
 
 tax/ott/version.txt:
 	echo $(WHICH) >tax/ott/version.txt
+
+tax/ott/README.html: tax/ott/about.json util/make_readme.py
+	python util/make_readme.py tax/ott/ >$@
 
 # ----- Taxonomy inputs
 
@@ -379,6 +382,18 @@ ids_that_are_otus.tsv:
 	mv $@.new $@
 	wc $@
 
+# Synthetic tree OTT id list (this rule assumes you're part of the
+# Open Tree project and can use scp; could be modified to use
+# curl. this doesn't matter much since the list is checked into the
+# repo.)
+ids_in_synthesis.tsv:
+	rm -rf synth-nexson-tmp
+	mkdir -p synth-nexson-tmp
+	scp -p files:"files.opentreeoflife.org/synthesis/current/output/phylo_snapshot/*@*.json" synth-nexson-tmp/
+	time bin/jython util/ids_in_synthesis.py --dir synth-nexson-tmp --outfile $@.new
+	mv $@.new $@
+
+
 # ----- Preottol - for filling in the preottol id column
 # No longer used
 # PreOTToL is here if you're interested:
@@ -524,8 +539,11 @@ t/tax/aster/taxonomy.tsv: compile t/aster.py \
 	@mkdir -p `dirname $@`
 	bin/jython t/aster.py
 
+t/tax/aster/README.html: t/tax/aster/about.json util/make_readme.py
+	python util/make_readme.py t/tax/aster/ >$@
+
 test: aster
-aster: t/tax/aster/taxonomy.tsv
+aster: t/tax/aster/taxonomy.tsv t/tax/aster/README.html
 
 aster-tarball: t/tax/aster/taxonomy.tsv
 	(mkdir -p $(TARDIR) && \

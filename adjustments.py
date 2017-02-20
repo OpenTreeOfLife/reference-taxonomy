@@ -65,6 +65,9 @@ def deal_with_polysemies(ott):
     establish('Cyclophora', ott, division='Lepidoptera', source='ncbi:190338', ott_id='1030079') #moth
     # there are two more Cyclophora/us but they take care of themselves
 
+    # Discovered after update to GBIF 2016, which introduced an orthoptera genus by this name
+    establish('Lutheria', ott, division='Platyhelminthes', source='worms:479527', ott_id='5131356')  # flatworm
+    establish('Lutheria', ott, division='Insecta', source='gbif:7978890')  # orthopteran
 
 def load_silva():
     silva = Taxonomy.getTaxonomy('tax/silva/', 'silva')
@@ -447,6 +450,9 @@ def patch_fung(fung):
     # Nudge to alignment with IRMNG (unclassified fossil Fungi)
     # IF 585158 = IRMNG 1090915
     fung.taxon('Fungi').take(fung.taxon('Majasphaeridium'))
+
+    # 2017-02-13 https://github.com/OpenTreeOfLife/opentree/issues/773
+    fung.taxon('Dactylella ambrosia').notCalled('Fusarium ambrosium')
 
     print "Fungi in Index Fungorum has %s nodes"%fung.taxon('Fungi').count()
 
@@ -943,6 +949,9 @@ def load_worms():
     # 2016-09-02 on gitter: Pisces vs. Mososauridae confusion
     worms.taxon('Tylosurus').notCalled('Tylosaurus')
 
+    pl = worms.maybeTaxon('Pleuromamma abdominalis abyssalis natio hypothermophil')
+    if pl != None: pl.prune()
+
     bad_ecc = worms.maybeTaxon('Trichomycetes', 'Zygomycota')
     if bad_ecc != None: bad_ecc.prune()
 
@@ -965,26 +974,30 @@ def align_gbif(gbif, ott):
 
     a = ott.alignment(gbif)
 
-    a.same(gbif.taxon('Animalia'), ott.taxon('Metazoa'))
-
-    # Get rid of diatoms, they do not belong here
-    bac = gbif.maybeTaxon('Bacillariophyta', 'Plantae')
-    if bac != None:
-        a.same(bac, ott.taxon('Bacillariophyta', 'SAR'))
-        ott.setDivision(bac, 'SAR')
-
-    # cant figure out why this is here.  maybe in wrong place.
-    a.same(gbif.taxon('Cyclophora', 'Bacillariophyta'),
-           ott.taxon('Cyclophora', 'SAR'))
+    ott.setDivision(gbif.taxon('Chromista'), 'Eukaryota')
+    ott.setDivision(gbif.taxon('Protozoa'), 'Eukaryota')
 
     plants = set_divisions(gbif, ott)
     a.same(plants, ott.taxon('Archaeplastida'))
 
-    ott.setDivision(gbif.taxon('Chromista'), 'Eukaryota')
-    ott.setDivision(gbif.taxon('Protozoa'), 'Eukaryota')
-
     # http://dev.gbif.org/issues/browse/POR-3073
-    ott.setDivision(gbif.taxon('Foraminifera'), 'SAR')
+    # 2016 GBIF seems to have Fragillariophyceae in a class Bacillariophyceae.
+    # In NCBI (and everywhere else) the taxon called 'Bacillariophyceae'
+    # is a sibling of Fragillariophyceae in Bacillariophyta.
+    # This loop seems to be unnecessary, but not worrying about it for now.
+    for (in_sar, ott_name) in [('Bacillariophyceae', 'Bacillariophyta'),
+                               ('Foraminifera', 'Foraminifera'),
+                               ('Ochrophyta', 'Stramenopiles')]:
+        taxon = gbif.taxon(in_sar)
+        if taxon != None:
+            ott.setDivision(taxon, 'SAR')
+            a.same(taxon, ott.taxon(ott_name, 'SAR'))
+
+    a.same(gbif.taxon('Animalia'), ott.taxon('Metazoa'))
+
+    # can't figure out why this is here.  maybe in wrong place.
+    a.same(gbif.taxon('Cyclophora', 'Bacillariophyceae'),
+           ott.taxon('Cyclophora', 'SAR'))
 
     # GBIF puts this one directly in Animalia, but Annelida is a barrier node
     gbif.taxon('Annelida').take(gbif.taxon('Echiura'))
@@ -1091,13 +1104,6 @@ def align_gbif(gbif, ott):
     # gbif:5430295 seems to be gone from 2016 GBIF.  Hmmph.
     a.same(gbif.maybeTaxon('Phragmophora', 'Brachiopoda'), ott.taxon('Phragmophora', 'Brachiopoda'))
 
-    # 2016 GBIF seems to have Fragillariophyceae in a class Bacillariophyceae.
-    # In NCBI (and everywhere else) the taxon called 'Bacillariophyceae'
-    # is a sibling of Fragillariophyceae in Bacillariophyta.
-    bac = gbif.maybeTaxon('Bacillariophyceae')
-    if bac != None:
-        a.same(bac, ott.taxon('Bacillariophyta', 'SAR'))
-
     # Annelida is a barrier, need to put Sipuncula inside it
     gbif.taxon('Annelida').take(gbif.taxon('Sipuncula'))
 
@@ -1138,38 +1144,8 @@ def align_gbif(gbif, ott):
     # (gbif is in Agaricomycotina, ncbi is in Ustilaginomycotina)
     a.same(gbif.taxon('Moniliellaceae', 'Fungi'), ott.taxon('Moniliellaceae', 'Fungi'))
 
-    return a
-
-# Align low-priority WoRMS
-def align_worms(worms, ott):
-    a = ott.alignment(worms)
-    a.same(worms.taxon('Biota'), ott.taxon('life'))
-    a.same(worms.taxon('Animalia'), ott.taxon('Metazoa'))
-
-    a.same(worms.taxon('Harosa'), ott.taxon('SAR'))
-    a.same(worms.taxon('Heterokonta'), ott.taxon('Stramenopiles'))
-
-    plants = set_divisions(worms, ott)
-    a.same(plants, ott.taxon('Archaeplastida'))
-
-    ott.setDivision(worms.taxon('Chromista'), 'Eukaryota')
-    ott.setDivision(worms.taxon('Protozoa'), 'Eukaryota')
-
-    a.same(worms.taxonThatContains('Trichosporon', 'Trichosporon lodderae'),
-           ott.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
-    a.same(worms.taxonThatContains('Trichoderma', 'Trichoderma koningii'),
-           ott.taxonThatContains('Trichoderma', 'Trichoderma koningii'))
-    # 2016-07-28 Noticed this in deprecated.tsv:
-    # NCBI puts Myzostomida outside of Annelida.  To ensure matches, we have
-    # to do so here as well, because Annelida is a barrier node and somewhat
-    # difficult to cross.
-    worms.taxon('Animalia').take(worms.taxon('Myzostomida'))
-
-    # extinct foram, polyseym risk with extant bryophyte
-    # worms.taxon('Pohlia', 'Rhizaria').prune(this_source)
-
-    # Annelida is a barrier, need to put Sipuncula inside it
-    worms.taxon('Annelida').take(worms.taxon('Sipuncula'))
+    # 2017-02-15 Noticed during 3.0 build
+    a.same(gbif.maybeTaxon('Ochrophyta'), ott.taxon('Stramenopiles'))
 
     return a
 
@@ -1434,7 +1410,45 @@ def patch_gbif(gbif):
     # as an example of something
     gbif.taxon('Distaplia', 'Chordata').notCalled('Holozoa')
 
+    # 2017-02-15 JAR Noted as suspicious during 3.0 build
+    gbif.taxon('Ochrophyta').notCalled('Chrysophyceae')
+
     return gbif
+
+# Align low-priority WoRMS
+def align_worms(worms, ott):
+    ott.setDivision(worms.taxon('Chromista'), 'Eukaryota')
+    ott.setDivision(worms.taxon('Protozoa'), 'Eukaryota')
+
+    worms.taxon('Glaucophyta').absorb(worms.taxon('Glaucophyceae'))
+
+    a = ott.alignment(worms)
+    a.same(worms.taxon('Biota'), ott.taxon('life'))
+    a.same(worms.taxon('Animalia'), ott.taxon('Metazoa'))
+
+    a.same(worms.taxon('Harosa'), ott.taxon('SAR'))
+    a.same(worms.taxon('Heterokonta'), ott.taxon('Stramenopiles'))
+
+    plants = set_divisions(worms, ott)
+    a.same(plants, ott.taxon('Archaeplastida'))
+
+    a.same(worms.taxonThatContains('Trichosporon', 'Trichosporon lodderae'),
+           ott.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
+    a.same(worms.taxonThatContains('Trichoderma', 'Trichoderma koningii'),
+           ott.taxonThatContains('Trichoderma', 'Trichoderma koningii'))
+    # 2016-07-28 Noticed this in deprecated.tsv:
+    # NCBI puts Myzostomida outside of Annelida.  To ensure matches, we have
+    # to do so here as well, because Annelida is a barrier node and somewhat
+    # difficult to cross.
+    worms.taxon('Animalia').take(worms.taxon('Myzostomida'))
+
+    # extinct foram, polyseym risk with extant bryophyte
+    # worms.taxon('Pohlia', 'Rhizaria').prune(this_source)
+
+    # Annelida is a barrier, need to put Sipuncula inside it
+    worms.taxon('Annelida').take(worms.taxon('Sipuncula'))
+
+    return a
 
 # ----- Interim Register of Marine and Nonmarine Genera (IRMNG) -----
 
@@ -1545,20 +1559,24 @@ def load_irmng():
     # 2016-09-02 on gitter: Pisces vs. Mososauridae confusion
     irmng.taxon('Tylosurus').notCalled('Tylosaurus')
 
+    # 2016-02-13 Fallout from IRMNG update - confusion with the flatworm.
+    # No species records for this genus.
+    luth_girault = irmng.maybeTaxon('1427241')
+    if luth_girault != None and luth_girault.hasChildren():
+        luth_girault.prune()
+
     return irmng
 
 def align_irmng(irmng, ott):
 
     a = ott.alignment(irmng)
 
-    a.same(irmng.taxon('Heterokontophyta'), ott.taxon('Stramenopiles'))
+    ott.setDivision(irmng.taxon('Protista'), 'Eukaryota')
 
     a.same(irmng.taxon('Animalia'), ott.taxon('Metazoa'))
 
     plants = set_divisions(irmng, ott)
     a.same(plants, ott.taxon('Archaeplastida'))
-
-    ott.setDivision(irmng.taxon('Protista'), 'Eukaryota')
 
     # Fungi suppressed at David Hibbett's request
     irmng.taxon('Fungi').hideDescendantsToRank('species')
@@ -1672,6 +1690,9 @@ def align_irmng(irmng, ott):
 
     for sad in ['Xanthophyta', 'Chrysophyta', 'Phaeophyta', 'Raphidophyta', 'Bacillariophyta']:
         irmng.taxon('Heterokontophyta').notCalled(sad)
+
+    # 2017-02-15 Noticed during 3.0 build
+    a.same(irmng.taxon('Heterokontophyta'), ott.taxon('Stramenopiles'))
 
     return a
 

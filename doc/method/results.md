@@ -1,6 +1,22 @@
 ## Summary of Open Tree Taxonomy
 
-The methods and results presented here are for version 3.0 of the Open Tree Taxonomy (which follows five previous releases using the automated assembly method). The taxonomy contains 3,592,725 total taxa, X tips and Y internal nodes. There are 2,031,519 synonym records and 8043 homonyms (name-strings for which there are multiple nodes).
+The methods and results presented here are for version 3.0 of the Open Tree Taxonomy (which follows five previous releases using the automated assembly method). The taxonomy contains 3,592,725 total taxa, X tips and Y internal nodes. There are 2,031,519 synonym records and 8043 homonyms (name-strings for which there are multiple nodes). Table X gives a list of taxon flags that annotate more 10000 taxa in OTT 3.0 (noting that taxa can have more than one flag). 
+
+flag  taxa
+sibling_higher  911673
+incertae_sedis  253835
+extinct 236448
+hidden  109894
+major_rank_conflict_inherited 855570
+barren  76038
+infraspecific 71099
+environmental 44184
+incertae_sedis_inherited  43445
+not_otu 28916
+major_rank_conflict 27178
+extinct_inherited 19053
+unplaced_inherited  18790
+unplaced  17274
 
 ## Contributions of source taxonomies to the assembly
 

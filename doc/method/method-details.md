@@ -357,6 +357,44 @@ and the new source, we retain the workspace.
    Tiphobia and Bridouxia, but the two children have different parents
    in S]
 
+## Handling containers
+
+Details on how we handle incertae sedis and other containers. Provides details about the incertae_sedis, was_container, inconsistent, merged, unplaced and related 'inherited' flags.
+
+Taxonomies often contain nodes that do not represent taxa (in the sense of an evolutionary grouping) but instead are placeholders to group taxa that either share some property or whose relationships are uncertain. For example, the 'Fungi' node in NCBI contains descendent nodes with the name-strings "environmental samples". 
+
+## Taxon flags
+
+During the normalization and assembly process, we 'flag' taxa with labels that
+describe properties of the taxon (either inherent properties, or results of
+assembly). In OTT v3.0, there are 23 such flags, listed below. Some of these flags are simply informational, while other allow filtering during phylogenetic synthesis (i.e. removing taxa that are simply containers, not evolutionary groupings).
+
+barren : there are only higher taxa above this node (no descendent species)
+edited : the taxon has been subject to an ad hoc edit ("patch")
+environmental :child of an NCBI node whose name contains the word "environmental"
+environmental_inherited : descends from node flagged "environmental"
+extinct : annotated as extinct in one of our source taxonomies
+extinct_inherited : descends from a node flagged "extinct", or a node that only has extinct children
+forced_visible : [JAR]
+hidden : an Open Tree curators has chosen to hide this node from synthesis
+hidden_inherited : descends from node flagged "hidden"
+hybrid : taxon name contains "hybrid" or "x"; also, any node descended from a "hybrid" node
+incertae_sedis : in source taxonomy, was a member of an "incertae sedis" container
+incertae_sedis_inherited : descends from a node flagged "incertae_sedis"
+inconsistent : [JAR]
+infraspecific : descends from a node with rank "species"
+major_rank_conflict : a taxon that has a sibling at different rank (e.g. a family with a sibling that is an order) [JAR: applies only to what ranks?]
+major_rank_conflict_inherited : descends from a node flagged "major_rank_conflict"
+merged : [JAR, will be easier to explain with a clearer definition of inconsistent]
+not_otu : likely not a taxon, based on name-string (e.g. "unidentified", "unknown", "metagenome", "other sequences", "artificial", "libraries", "tranposons", also "sp." when at the end of a name); also, any node descended from such a node.
+sibling_higher : a taxon that has a sibling at different rank (but ranks lower than major_rank_conflict)
+unplaced_inherited
+unplaced
+viral
+was_container : taxon that is a container (e.g. incertae sedis, unclassified, environmental samples)
+
+
+
 ## Finishing the assembly
 
 After all source taxonomies are aligned and merged, we apply general ad hoc

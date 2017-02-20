@@ -581,3 +581,26 @@ def patch_ott(ott):
     h2 = ott.maybeTaxon('Homarus', 'Coleoptera')
     if h2 != None and not h2.hasChildren(): h2.prune()
 
+    # https://github.com/OpenTreeOfLife/feedback/issues/294
+    # There are four Heterodons in IRMNG, and we picked the wrong one.
+    ott.taxonThatContains('Heterodon', 'Heterodon platirhinos').extant()
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/258
+    ott.taxon('Hippopotamus madgascariensis').rename('Hippopotamus madagascariensis')
+
+    for (bad, good) in [('Naultinus gemmeus', 'Heteropholis genneus'), #249
+                        ('Raphus ineptus', 'Raphus cucullatus'), #187
+                        ('Cephalorhyncus hectori', 'Cephalorhynchus hectori'), #145
+                        ('Cephalorhyncus eutropia', 'Cephalorhynchus eutropia'), #145
+                        ('Pristophorus lanceolatus', 'Pristiophorus lanceolatus'), #136
+                        ('Galeolerdo vouncus', 'Galeocerdo vouncus')] #138
+        if ott.maybeTaxon(bad) != None:
+            if ott.taxon(good) != None:
+                ott.taxon(good).absorb(ott.taxon(bad))
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/138
+    if ott.maybeTaxon('Galeocerdo', 'Vertebrata'):
+        gal = ott.taxon('Galeocerdo', 'Vertebrata')
+        for child in gal.getChildren():
+            if not child.name.endsWith(' cuvier'):
+                child.extinct()

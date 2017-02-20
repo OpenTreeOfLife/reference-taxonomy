@@ -1,8 +1,8 @@
 
 ## Homonym analysis
 
-There are 8043 name-strings in the final version of the taxonomy for which there are
-multiple nodes.  [JAR: update number when 3.0 is final]
+There are 8154 name-strings in the final version of the taxonomy for which there are
+multiple nodes.  <!-- [JAR: update number when 3.0 is final] -->
 By comparison, there are only 1440 in GBIF. Many of
 the homonyms either are artifacts of the alignment method, or reflect
 misclassifications or errors in the source taxonomies.
@@ -18,16 +18,16 @@ We set out to cover the OTUs in the Open Tree corpus of phylogenetic trees. The
 corpus contains published studies (each study with one or more phylogenetic
 trees) that are manually uploaded and annotated by Open Tree curators. The use
 interface contains tools that help curators map the OTUs in a study to taxa in
-OTT. Of the 3242 studies in the Open Tree database, 2871 have at least 50% of
+OTT. Of the 3,242 studies in the Open Tree database, 2,871 have at least 50% of
 OTUs mapped to OTT.  (A lower overall mapping rate usually indicates incomplete
-curation, not an inability to map to OTT.)  These 2871 studies contain 538728
+curation, not an inability to map to OTT.)  These 2,871 studies contain 538,728
 OTUs, and curators have mapped 514346 to OTT taxa, or 95.5%.
 
 To assess the reason for the remaining 4.5% of OTUs being unmapped, we
-investigated a random sample of 10 OTUs.  In three cases, the label
+investigated a random sample of ten OTUs.  In three cases, the label
 was a genus name in OTT followed by "sp" (e.g. "_Euglena sp_"),
-suggesting the curator's unwillingness to make use of an OTU not
-classified to species.  In the remaining seven cases, the taxon was
+suggesting the curator's unwillingness to take the genus as the correct mapping for the OTU.
+In the remaining seven cases, the taxon was
 already in OTT, and additional curator effort would have found it.
 Two of these were misspellings in the phylogeny source; one was
 present under a slightly different name-string (subspecies in OTT,
@@ -36,9 +36,18 @@ reclassification); and in the remaining four cases, either the taxon
 was added to OTT after the study was curated, or the curation task was
 left incomplete.
 
+Of the 195,355 OTT records that are the targets of OTUs, 190,084
+(97.3%) are represented in NCBI Taxonomy.  If the Open Tree project
+had simply adopted NCBI Taxonomy instead of OTT, it would have met its
+OTU coverage requirement (but not the taxonomic coverage requirement).
+This reflects a preference among our curators for molecular
+phylogenetic evidence over other kinds.
+
+<!--
 [JAR: measure of how many mapped OTUs come from NCBI, i.e. how close NCBI 
-gets us to the mapping requirement: `python doc/method/otus_in_ncbi.py` = 
-'172440 out of 195675 OTUs mapped to OTT are in NCBI' (88%)]
+gets us to the mapping requirement: `../../bin/jython measure_coverage.py` = 
+NCBI 190084, OTT 195355 = 0.9730
+-->
 
 ### Taxonomic coverage
 

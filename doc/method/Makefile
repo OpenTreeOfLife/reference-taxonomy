@@ -33,15 +33,17 @@ out/sources_table.md: sources_table.py
 
 # Need to manually insert the output into results.py
 
-out/taxonomy_metrics.md: taxonomy_metrics.py cache/taxonomy_metrics.json
-	$(JYTHON) $< cache/taxonomy_metrics.json > $@.new
+out/taxonomy_summary.md: taxonomy_metrics.py cache/taxonomy_summary.json
+	$(JYTHON) $< cache/taxonomy_summary.json > $@.new
 	mv $@.new $@
 
-out/results_tables.md: $(REF_HOME)/util/reason_report.py \
+# there are pathnames in the code, should match prereq list
+out/results_tables.md: make_table_markdown.py \
 		       cache/alignment_summary.json \
 		       cache/merge_summary.json \
-		       cache/taxonomy_metrics.json
-	python $< cache/ cache/taxonomy_metrics.json > $@.new
+		       cache/taxonomy_summary.json \
+		       cache/contributions_summary.csv
+	python $< cache > $@.new
 	mv $@.new $@
 
 out/ruggiero/taxonomy.tsv: ruggiero/ruggiero.csv
@@ -72,7 +74,8 @@ lib/Markdown.pl:
 	rm -r Markdown_1.0.1 Markdown_1.0.1.zip
 
 # Use this to test that results.py works before siccing it on OTT
-test-results: results.py
+# NEEDS TO BE FIXED
+test-results: make_table_markdown.py
 	$(JYTHON) $< $(REF_HOME)/t/tax/aster/
 
 
@@ -88,11 +91,12 @@ test-results: results.py
 # having a copy of the taxonomy on hand.  But it's necessary to do
 # 'make refresh' after a taxonomy build.
 
-refresh: taxonomy_metrics.py \
-	     $(REF_HOME)/tax/ott/taxonomy.tsv \
-	     out/ruggiero/taxonomy.tsv
-	$(JYTHON) $< $(REF_HOME)/tax/ott/ $(REF_HOME)/tax/skel/ $@.new
-	mv $@.new $@
-	cp -p $(REF_HOME)/tax/ott/alignment_summary.json $@
-	cp -p $(REF_HOME)/tax/ott/merge_summary.json $@
+refresh: taxonomy_metrics.py
+	cp -p $(REF_HOME)/tax/ott/alignment_summary.json cache/
+	cp -p $(REF_HOME)/tax/ott/merge_summary.json cache/
+	$(JYTHON) $< $(REF_HOME)/tax/ott/ $(REF_HOME)/tax/skel/ \
+	   taxonomy_summary.json.new \
+	   contributions_summary.csv.new
+	mv taxonomy_summary.json.new cache/taxonomy_summary.json
+	mv contributions_summary.csv.new cache/contributions_summary.csv
 

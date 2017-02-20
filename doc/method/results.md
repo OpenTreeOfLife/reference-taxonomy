@@ -29,7 +29,8 @@ Key:
 ## Homonym analysis
 
 There are 8043 name-strings in the final version of the taxonomy for which there are
-multiple nodes.  By comparison, there are only 1440 in GBIF. Many of
+multiple nodes.  [JAR: update number when 3.0 is final]
+By comparison, there are only 1440 in GBIF. Many of
 the homonyms either are artifacts of the alignment method, or reflect
 misclassifications or errors in the source taxonomies.
 
@@ -64,7 +65,7 @@ left incomplete.
 
 [JAR: measure of how many mapped OTUs come from NCBI, i.e. how close NCBI 
 gets us to the mapping requirement: `python doc/method/otus_in_ncbi.py` = 
-'172440 out of 195675 OTUs are in NCBI' (88%)]
+'172440 out of 195675 OTUs mapped to OTT are in NCBI' (88%)]
 
 ### Taxonomic coverage
 

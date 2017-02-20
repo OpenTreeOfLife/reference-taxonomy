@@ -595,12 +595,14 @@ def patch_ott(ott):
                         ('Pristophorus lanceolatus', 'Pristiophorus lanceolatus'), #136
                         ('Galeolerdo vouncus', 'Galeocerdo vouncus')]: #138
         if ott.maybeTaxon(bad) != None:
-            if ott.taxon(good) != None:
+            if ott.maybeTaxon(good) != None:
                 ott.taxon(good).absorb(ott.taxon(bad))
+            else:
+                ott.taxon(bad).rename(good)
 
     # https://github.com/OpenTreeOfLife/feedback/issues/138
     if ott.maybeTaxon('Galeocerdo', 'Vertebrata'):
         gal = ott.taxon('Galeocerdo', 'Vertebrata')
         for child in gal.getChildren():
-            if not child.name.endsWith(' cuvier'):
+            if not child.name.endswith(' cuvier'):
                 child.extinct()

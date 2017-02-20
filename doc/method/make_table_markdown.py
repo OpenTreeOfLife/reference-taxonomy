@@ -64,10 +64,7 @@ one candidate to a single candidate.""")
     gpath = os.path.join(summaries_path, 'merge_summary.json')
     with open(gpath, 'r') as infile:
         s = json.load(infile)
-        s["reject/merged"] += s["reject/overtaken"]
-        del s["reject/overtaken"]
-        report_part(s,
-                    """## Fate of source nodes in merge phase
+        report_part(s, """## Fate of source nodes in merge phase
 
 The merge phase examines every source node, copying unaligned source
 nodes into the workspace when possible.  The following table
@@ -272,12 +269,10 @@ source's extinctness flag, if any, is copied to the workspace node."""), #was al
     (74, 'New internal node, part of graft.'),
     "new/refinement":
     (76, 'Source node inserted into the hierarchy above one workspace node and below another.'),
-    "reject/merged":
+    "reject/absorbed":
     (80, 'Source node absorbed into larger workspace taxon; no conflict with classification.'),
     "reject/inconsistent":
     (82, 'Source node absorbed into larger workspace taxon; conflicts with classification.'),
-    "reject/overtaken":
-    (84, '[script should have suppressed this one]'),
     "ambiguous/redundant":
     (86, 'Ambiguous source node, not aligned and not merged.')
 }

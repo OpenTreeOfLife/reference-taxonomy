@@ -145,9 +145,9 @@ public class AlignmentByName extends Alignment {
         // Loop state
         Answer anyCandidate = null;  // kludge for by-elimination
         int count = 0;  // number of candidates that have the max value
-        Answer result = null;
         int score = -100;
         List<Answer> candidates = initialCandidates;
+        Heuristic decider = null;
 
         // Precondition: at least one candidate
 
@@ -168,6 +168,7 @@ public class AlignmentByName extends Alignment {
                 }
             }
 
+            // Filter out non-high-scoring and negative candidates
             List<Answer> winners = new ArrayList<Answer>();
             Answer anyLoser = null;
             for (Answer a : answers) {
@@ -179,44 +180,43 @@ public class AlignmentByName extends Alignment {
                 }
             }
 
-            if (winners.size() == 0) {
-                result = new Answer(node, null, score, "rejected", null);
-                break;
-            }
-
-            if (score > Answer.DUNNO && winners.size() == 1) {
-                // could just anyCandidate, but stats code likes normalization
-                if (candidates.size() > 1) {
-                    result = new Answer(node, anyCandidate.target, score,
-                                        heuristic.toString(),
-                                        anyCandidate.witness);
-                    // Hack for debugging / example selection
-                    Answer winner = winners.get(0);
-                    if (target instanceof UnionTaxonomy)
-                        ((UnionTaxonomy)target).choicesMade.add(new Answer[]{winner, anyLoser});
-                } else {
-                    result = new Answer(node, anyCandidate.target, score,
-                                        "confirmed",
-                                        anyCandidate.reason);
-                }
-                order.add(anyCandidate);
-                break;
+            // Log which heuristic made the choice
+            if (winners.size() == 1 && candidates.size() > 1) {
+                // Hack for debugging / example selection
+                Answer winner = winners.get(0);
+                if (target instanceof UnionTaxonomy)
+                    ((UnionTaxonomy)target).choicesMade.add(new Answer[]{winner, anyLoser});
+                decider = heuristic; // ugh
             }
 
             candidates = winners;
+
+            // Cases in which we can stop after only some of the heuristics
+            if (winners.size() == 0 || (winners.size() == 1 && score > Answer.DUNNO))
+                break;
         }
 
-        if (result == null) {
-            // fell through with all noinfo or multiple yes
-            if (candidates.size() == 1) {
+        order.addAll(candidates);
+
+        // Make an Answer to store in the alignment
+        Answer result;
+        if (candidates.size() == 0)
+            result = new Answer(node, null, score, "rejected", null);
+        else if (candidates.size() == 1) {
+            if (decider != null)
+                result = new Answer(node, anyCandidate.target, score,
+                                    decider.toString(),
+                                    anyCandidate.witness);
+            else if (score > Answer.DUNNO)
+                result = new Answer(node, anyCandidate.target, score,
+                                    "confirmed",
+                                    anyCandidate.reason);
+            else
                 result = Answer.yes(node, anyCandidate.target, "by elimination", null);
-                order.add(result);
-            } else {
-                order.addAll(candidates);
-                String r = node.hasChildren() ? "ambiguous internal" : "ambiguous tip";
-                result = Answer.noinfo(node, null, r, Integer.toString(candidates.size()));
-                order.add(result);
-            }
+        } else {
+            String r = node.hasChildren() ? "ambiguous internal" : "ambiguous tip";
+            result = Answer.noinfo(node, null, r, Integer.toString(candidates.size()));
+            order.add(result);
         }
 
         // Decide after the fact whether the dance was interesting enough to log

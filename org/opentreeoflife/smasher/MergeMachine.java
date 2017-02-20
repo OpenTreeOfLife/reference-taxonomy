@@ -197,7 +197,8 @@ class MergeMachine {
                 } else {
                     takeOn(node, commonParent, 0);
                     // should include a witness for debugging purposes - merged to/from what?
-                    reject(node, "reject/merged", commonParent, Taxonomy.MERGED);
+                    // 2017-02-19 happens 7586 times
+                    reject(node, "reject/absorbed", commonParent, Taxonomy.MERGED);
                 }
             }
             // the following is just a sanity check
@@ -248,7 +249,8 @@ class MergeMachine {
             else
                 point = sink;
             takeOn(node, point, Taxonomy.UNPLACED);
-            reject(node, "reject/overtaken", point, Taxonomy.MERGED);
+            // 2017-02-19 happens 1310 times
+            reject(node, "reject/absorbed", point, Taxonomy.MERGED);
         }
     }
 

@@ -1,31 +1,4 @@
 
-## Contributions of source taxonomies to the assembly
-
-Following is a breakdown of how each source taxonomy contributes to
-the reference taxonomy.  [should be a proper table]
-
-        source     total    copied   aligned  absorbed  conflict
-    separation        26        26         0         -         -
-         silva     74401     74396         5         -         -
-         h2007       227       226         1         -         -
-            if    284878    281709      3103        42        24
-         worms    327633    268847     57163       992       631
-      study713       119       118         1         -         -
-          ncbi   1320679   1198186    119485      1997      1011
-          gbif   2452614   1636666    813455      1822       671
-         irmng   1563804     89840   1470048      3083       833
-       curated        29        29         0         -         -
-         total   6024410   3550043   2463261      7936      3170
-
-Key:
-
-* source = name of source taxonomy
-* total = total number of nodes in source
-* copied = total number of nodes originating from this source (copied)
-* aligned = number of source nodes aligned and copied
-* absorbed = number of source nodes absorbed
-* conflict = number of inconsistent source nodes
-
 ## Homonym analysis
 
 There are 8043 name-strings in the final version of the taxonomy for which there are

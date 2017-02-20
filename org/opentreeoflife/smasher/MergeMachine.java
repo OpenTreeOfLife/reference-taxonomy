@@ -134,29 +134,30 @@ class MergeMachine {
        */
 	void augment(Taxon node, Taxon sink) {
         if (node.prunedp) return;
+        String reason;
         Taxon unode = alignment.getTaxon(node);
 
 		if (node.children == null) {
             if (unode != null)
-                accept(node, "mapped/tip");
+                reason = accept(node, "mapped/tip");
 			else {
                 Answer a = alignment.getAnswer(node);
                 if (a == null)
-                    acceptNew(node, "new/tip");
+                    reason = acceptNew(node, "new/tip");
                 else if (a.value <= Answer.HECK_NO)
                     // Don't create homonym if it's too close a match
                     // (weak no) or ambiguous (noinfo)
                     // YES > NOINFO > NO > HECK_NO  (sorry)
-                    acceptNew(node, "new/polysemy");
+                    reason = acceptNew(node, "new/polysemy");
                 else
-                    tick("ambiguous/redundant");
+                    reason = "ambiguous/redundant";
             }
 		} else {
             if (unode != null) {
                 for (Taxon child: node.children)
                     augment(child, unode);
                 takeOn(node, unode, 0);
-                accept(node, "mapped/internal");
+                reason = accept(node, "mapped/internal");
             } else {
                 for (Taxon child: node.children)
                     augment(child, sink);
@@ -186,19 +187,21 @@ class MergeMachine {
                     // new & unplaced old children only... copying stuff over to union.
                     Taxon newnode = acceptNew(node, "new/graft");
                     takeOn(node, newnode, 0);
+                    reason = "new/graft";
                 } else if (!consistentp) {
-                    inconsistent(node, child1, child2, sink);
+                    reason = inconsistent(node, child1, child2, sink);
                 } else if (!commonParent.descendsFrom(sink)) {
-                    overtake(node, commonParent, sink);
+                    reason = overtake(node, commonParent, sink);
                 } else if (refinementp(node, sink)) {
                     Taxon newnode = acceptNew(node, "new/refinement");
                     takeOld(node, newnode);
                     takeOn(node, newnode, 0); // augmentation
+                    reason = "new/refinement"
                 } else {
                     takeOn(node, commonParent, 0);
                     // should include a witness for debugging purposes - merged to/from what?
                     // 2017-02-19 happens 7586 times
-                    reject(node, "reject/absorbed", commonParent, Taxonomy.MERGED);
+                    reason = reject(node, "reject/absorbed", commonParent, Taxonomy.MERGED);
                 }
             }
             // the following is just a sanity check
@@ -209,9 +212,15 @@ class MergeMachine {
                     System.err.format("** Unattached child %s %s %s\n", child, node, uchild);
             }
         }
+
+        Integer count = summary.get(reason);
+        if (count == null) count = 0;
+        summary.put(reason, count + 1);
+
+        return reason;
     }
 
-    void inconsistent(Taxon node, Taxon child1, Taxon child2, Taxon sink) {
+    String inconsistent(Taxon node, Taxon child1, Taxon child2, Taxon sink) {
         // Paraphyletic / conflicted.
         // Put the new children unplaced under the sink, or the mrca of the
         // placed children, whichever is smaller.
@@ -221,14 +230,14 @@ class MergeMachine {
         if (unode != null && unode.descendsFrom(sink))
             sink = unode;
         takeOn(node, sink, Taxonomy.UNPLACED);
-        reject(node, "reject/inconsistent", sink, Taxonomy.INCONSISTENT);
+        return reject(node, "reject/inconsistent", sink, Taxonomy.INCONSISTENT);
     }
     
     private final static boolean MORE_SENSIBLE_BUT_DOESNT_WORK = false;
 
     // The symptom of getting this wrong is the creation of a cycle.
 
-    void overtake(Taxon node, Taxon commonParent, Taxon sink) {
+    String overtake(Taxon node, Taxon commonParent, Taxon sink) {
         // This is a troublesome case.
         // Workspace says children are under sink, but source says they're not.
         if (node.markEvent("sibling-sink mismatch"))
@@ -239,7 +248,7 @@ class MergeMachine {
 
         if (MORE_SENSIBLE_BUT_DOESNT_WORK) {
             takeOn(node, commonParent, 0);
-            reject(node, "reject/overtaken", commonParent, Taxonomy.MERGED);
+            return reject(node, "reject/overtaken", commonParent, Taxonomy.MERGED);
         } else {
             // was: inconsistent(node, child1, child2, sink);
             Taxon point;
@@ -250,7 +259,7 @@ class MergeMachine {
                 point = sink;
             takeOn(node, point, Taxonomy.UNPLACED);
             // 2017-02-19 happens 1310 times
-            reject(node, "reject/absorbed", point, Taxonomy.MERGED);
+            return reject(node, "reject/absorbed", point, Taxonomy.MERGED);
         }
     }
 
@@ -301,20 +310,20 @@ class MergeMachine {
 
     // Reject an unmapped node because it is merged or inconsistent.
 
-    void reject(Taxon node, String reason, Taxon replacement, int flag) {
+    String reject(Taxon node, String reason, Taxon replacement, int flag) {
         // Could leave lub behind as a forwarding address...
         Taxon newnode = acceptNew(node, reason); // does setAnswer
         newnode.addFlag(flag);
         replacement.addChild(newnode);
+        return reason;
     }
 
     // Node is mapped; accept mapping
 
-    void accept(Taxon node, String reason) {
+    String accept(Taxon node, String reason) {
         if (alignment.getTaxon(node) == null)
             System.err.format("** Shouldn't happen - accept %s %s\n", node, reason);
-        tick(reason);
-        return;
+        return reason;
     }
 
     // Node is not mapped; copy it over
@@ -457,12 +466,6 @@ class MergeMachine {
         union.conflicts.add(new Conflict(node, alice, bob, sink, alignment, node.isHidden()));
         if (union.markEvent("reported conflict"))
             System.out.format("| conflict %s %s\n", union.conflicts.size(), node);
-    }
-
-    void tick(String action) {
-        Integer count = summary.get(action);
-        if (count == null) count = 0;
-        summary.put(action, count + 1);
     }
 }
 

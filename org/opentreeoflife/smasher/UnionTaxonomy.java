@@ -137,8 +137,10 @@ public class UnionTaxonomy extends Taxonomy {
             if (node.prunedp) continue;
             Answer answer = a.getAnswer(node);
             String reason;
-            if (answer == null) reason = "none";
-            else reason = answer.reason;
+            if (answer == null)
+                reason = "none";
+            else
+                reason = answer.reason;
             Integer count = alignmentSummary.get(reason);
             if (count == null) count = 0;
             alignmentSummary.put(reason, 1 + count);

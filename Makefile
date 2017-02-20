@@ -13,7 +13,7 @@
 JAVAFLAGS=-Xmx14G
 
 # Modify as appropriate
-WHICH=3.0draft2
+WHICH=3.0draft3
 PREV_WHICH=2.10
 
 # ----- Taxonomy source locations -----
@@ -24,6 +24,8 @@ FUNG_URL=http://files.opentreeoflife.org/fung/fung-9/fung-9-ot.tgz
 WORMS_URL=http://files.opentreeoflife.org/worms/worms-1/worms-1-ot.tgz
 
 NCBI_URL="http://files.opentreeoflife.org/ncbi/ncbi-20161109/ncbi-20161109.tgz"
+
+IDLIST_URL="http://files.opentreeoflife.org/ott_id_list/idlist-20161118/by_qid.csv.gz"
 
 # Was http://ecat-dev.gbif.org/repository/export/checklist1.zip
 # Could be http://rs.gbif.org/datasets/backbone/backbone.zip
@@ -110,7 +112,7 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py adjustments.py amendments.
 		    inclusions.csv \
 		    feed/amendments/amendments-1/next_ott_id.json \
 		    tax/skel/taxonomy.tsv \
-		    ott_id_list/by_qid.csv
+		    feed/ott_id_list/by_qid.csv
 	@date
 	@rm -f *py.class
 	@mkdir -p tax/ott
@@ -127,15 +129,25 @@ tax/ott/README.html: tax/ott/about.json util/make_readme.py
 
 # ----- Taxonomy inputs
 
+feed/ott_id_list/by_qid.csv:
+	@mkdir -p feed/ott_id_list
+
+	@mkdir -p tmp
+	@mkdir -p `dirname $@`
+	wget --output-document=tmp/by_qid.csv.gz $(IDLIST_URL)
+	(cd tmp; gunzip by_qid.csv.gz)
+	mv tmp/by_qid.csv `dirname $@`/
+	@ls -l $@
+
 # Input: Index Fungorum
 
 fung: tax/fung/taxonomy.tsv tax/fung/synonyms.tsv
 
 tax/fung/taxonomy.tsv: 
 	@mkdir -p tmp
+	@mkdir -p `dirname $@`
 	wget --output-document=tmp/fung-ot.tgz $(FUNG_URL)
 	(cd tmp; tar xzf fung-ot.tgz)
-	@mkdir -p `dirname $@`
 	mv tmp/fung*/* `dirname $@`/
 	@ls -l $@
 

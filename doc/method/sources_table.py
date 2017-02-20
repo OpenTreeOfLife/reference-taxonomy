@@ -13,7 +13,7 @@ import sys, csv
 
 properties = [
     {'name': 'separation taxa',
-     'reference': 'see code',
+     'reference': '',
      'version': '4b3ba1a',
      'priority': 1,
      'focus': 'life',
@@ -91,7 +91,7 @@ properties = [
      'synonyms': 685983,
      'goals': 'T'}, # Boils down to 659851
     {'name': 'Open Tree curation',
-     'reference': 'see code',
+     'reference': '',
      'version': '4b3ba1a',
      'priority': 10,
      'focus': '',

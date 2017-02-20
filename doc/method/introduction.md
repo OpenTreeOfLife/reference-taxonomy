@@ -24,7 +24,7 @@ taxon as a given name-string occurrence in another.  Solving
 this equivalence problem requires detecting equivalence when the
 name-strings are different (synonym detection), as well as
 distinguishing occurrences that only coincidentally have the same
-name-string (homonym detection). We have developed a set of heuristics
+name-string (homonym sense detection). We have developed a set of heuristics
 that scalably address this equivalence problem.
 
 ## The Open Tree of Life project

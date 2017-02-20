@@ -25,9 +25,10 @@ inclusions_path = 'inclusions.csv'
 additions_clone_path = 'feed/amendments/amendments-1'
 new_taxa_path = 'new_taxa'
 
-def create_ott():
+def create_ott(version):
 
     ott = UnionTaxonomy.newTaxonomy('ott')
+    ott.version = version;
 
     # Would be nice if there were tests for all of these...
     for name in names_of_interest:
@@ -240,11 +241,14 @@ def get_default_extinct_info_from_gbif(gbif, gbif_to_ott):
         if gtaxon != None:
             taxon = gbif_to_ott.image(gtaxon)
             if taxon != None:
-                if taxon.sourceIds[0].prefix == 'gbif':
+                prefix = taxon.sourceIds[0].prefix
+                if prefix == 'gbif':
                     # See https://github.com/OpenTreeOfLife/feedback/issues/43
                     # It's OK if it's also in IRMNG
                     flagged += 1
                     taxon.extinct()
+                else:
+                    print "| PaleoDB taxon %s may be extant; it's in %s" % (taxon, prefix)
     infile.close()
     print '| Flagged %s of %s taxa from paleodb\n' % (flagged, paleos)
 

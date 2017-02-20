@@ -134,6 +134,7 @@ public class UnionTaxonomy extends Taxonomy {
         a.align(); // no reporting
         // Reporting
         for (Taxon node : a.source.taxa()) {
+            if (node.prunedp) continue;
             Answer answer = a.getAnswer(node);
             String reason;
             if (answer == null) reason = "none";

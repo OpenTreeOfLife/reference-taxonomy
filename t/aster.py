@@ -11,6 +11,7 @@ def assemble():
 
     # Create model taxonomy
     tax = UnionTaxonomy.newTaxonomy('ott')
+    tax.version = "this is a test"
 
     for name in ['Pentaphragma ellipticum',
                  'Lachnophyllum',

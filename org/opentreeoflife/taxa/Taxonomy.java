@@ -32,6 +32,10 @@ import java.util.Comparator;
 import java.util.Collections;
 import java.util.Collection;
 import java.io.PrintStream;
+import java.io.BufferedWriter;
+import java.io.PrintWriter;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.io.File;
 import org.json.simple.JSONObject; 
 
@@ -52,6 +56,8 @@ public abstract class Taxonomy {
 
     Map<QualifiedId, Node> qidIndex = null;
     Set<QualifiedId> qidAmbiguous = null;
+
+    public String version = null;
 
 	public Taxonomy() {
     }
@@ -139,7 +145,7 @@ public abstract class Taxonomy {
             if (nodes.size() == 0)
                 this.nameIndex.remove(node.name);
         }
-        node.name = null;       // maintain invariant.
+        node.name = null;
 	}
 
     // Similar, there is an idspace, but not every node has an id.
@@ -489,49 +495,40 @@ public abstract class Taxonomy {
                 losers.add(node);
 
         Rank subgenus = Rank.getRank("subgenus");
-        int elisions = 0, subgenusCount = 0, nohope = 0;
+        int elisions = 0, subgenusCount = 0, monotypic = 0, nohope = 0;
 
 		for (Taxon node : losers) {
 
+            if (node.prunedp) continue;
             if (!node.name.equals(node.parent.name)) continue;  // race condition
 
-            // If node is the only child, we can get rid of the parent.
-            if (node.parent.children.size() == 1) {
-                if (!node.isPlaced()) { // ???? why this condition ?
-                    // could also test for same rank.
-                    if (++elisions < 10)
-                        System.out.format("| Eliding %s in %s, %s children\n",
-                                          node.name,
-                                          node.parent.name,
-                                          (node.children == null ?
-                                           "no" :
-                                           node.children.size())
-                                          );
-                    else if (elisions == 10)
-                        System.out.format("| ...\n");
-
-                    // Keep parent, absorb child.
-                    node.parent.absorb(node);
-                    if (node.rank != node.parent.rank)
-                        node.rank = Rank.NO_RANK;
-                }
-
-            } else if (node.rank == subgenus) {
+            if (node.rank == subgenus) {
 
                 String newname = String.format("%s %s %s", node.name, node.rank.name, node.name);
                 Taxon existing = this.unique(newname);
-                if (existing != null && existing.parent == node.parent)
+                if (existing != null && existing.parent == node.parent) {
                     // May want to absorb recursively... cf. smush()
+                    if (subgenusCount <= 10)
+                        System.out.format("| Absorbing %s into %s\n", node, existing);
                     existing.absorb(node);
-                else
+                } else {
                     node.clobberName(newname);
+                    if (subgenusCount <= 10)
+                        System.out.format("| Set name of %s (was %s)\n", node, node.parent.name);
+                }
                 ++subgenusCount;
+            } else if (node.parent.getChildren().size() == 1) {
+                if (monotypic <= 10)
+                    System.out.format("| Monotypic parent/child %s %s\n", node.parent, node);
+                ++monotypic;
             } else
                 ++nohope;
         }
         if (elisions + subgenusCount + nohope > 0)
-            System.out.format("| %s: elided %s nodes, fixed %s subgenus names, %s p/c homs not addressed\n",
-                              this.getTag(), elisions, subgenusCount, nohope);
+            System.out.format("| %s: elided %s nodes, fixed %s subgenus names, %s monotypic p/c homs, %s nonmonotypic\n",
+                              this.getTag(), elisions, subgenusCount,
+                              monotypic,
+                              nohope);
 	}
 
 	// Fold sibling homonyms together into single taxa.
@@ -746,10 +743,6 @@ public abstract class Taxonomy {
             node.inferredFlags = inferredFlags;
             ++count;
         }
-        if (node.name != null
-            && node.name.equals("Ephedra gerardiana"))
-            if (before != node.isHidden())
-                System.out.format("* %s hidden %s -> %s\n", node, before, node.isHidden());
 
         int bequest = inferredFlags | node.properFlags;		// What the children inherit
 
@@ -849,7 +842,7 @@ public abstract class Taxonomy {
 	// value should be >= parentRank, but occasionally ranks get out
 	// of order when combinings taxonomies.
 
-    // We need to do this for GBIF and IRMNG, but not for NCBI or SILVA.
+    // We need to find major rank conflicts in GBIF and IRMNG, but not NCBI or SILVA.
 
 	public static int analyzeRankConflicts(Taxon node, boolean majorp) {
 		Integer m = -1;			// "no rank" = -1
@@ -866,6 +859,7 @@ public abstract class Taxonomy {
 			// Preorder traversal
 			// In the process, calculate rank of highest child
 			for (Taxon child : node.children) {
+                if (!child.isPlaced()) continue;
 				int rank = analyzeRankConflicts(child, majorp);
 				if (rank >= 0) {  //  && !child.isHidden()  ??
 					if (rank < high) { high = rank; highchild = child; }
@@ -884,6 +878,7 @@ public abstract class Taxonomy {
 					// Suppose the parent is a class. We're looking at relative ranks of the children...
 					// Two cases: order/family (minor), order/genus (major)
 					for (Taxon child : node.children) {
+                        if (!child.isPlaced()) continue;
 						int chrank = child.rank.level;	   //e.g. family or genus
 						if (chrank < 0) continue;		   // skip "no rank" children
 						// we know chrank >= high
@@ -942,6 +937,9 @@ public abstract class Taxonomy {
 						"\\b[Vv]iruses\\b|" +
 						"\\bvirus\\b"
 						);
+
+    // These are no longer processed specially.  They show up as incertae sedis
+    // automatically, when appropriate.
 
 	static Pattern randomRegex =
 		Pattern.compile(
@@ -1851,13 +1849,17 @@ public abstract class Taxonomy {
 			out = new java.io.PrintStream(new java.io.BufferedOutputStream(new java.io.FileOutputStream(filename)),
 										  false,
 										  "UTF-8");
-
-			// PrintStream(OutputStream out, boolean autoFlush, String encoding)
-
-			// PrintStream(new OutputStream(new FileOutputStream(filename, "UTF-8")))
-
 			System.out.println("Writing " + filename);
 		}
+		return out;
+	}
+
+    // Intended to replace openw some day
+	public static PrintWriter openWriter(String filename) throws IOException {
+        FileOutputStream stream = new FileOutputStream(filename);
+        PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(stream, "UTF-8")),
+                                          false);
+        System.out.println("Writing " + filename);
 		return out;
 	}
 

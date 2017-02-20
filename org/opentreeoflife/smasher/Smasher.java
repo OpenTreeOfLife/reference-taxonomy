@@ -61,8 +61,8 @@ public class Smasher {
 						String name1 = argv[++i];
 						String name2 = argv[++i];
 						String filename = argv[++i];
-						Taxonomy t1 = Taxonomy.getTaxonomy(name1, null);
-						Taxonomy t2 = Taxonomy.getTaxonomy(name2, null);
+						Taxonomy t1 = Taxonomy.getRawTaxonomy(name1, null);
+						Taxonomy t2 = Taxonomy.getRawTaxonomy(name2, null);
 						t2.dumpDifferences(t1, filename);
 					}
 
@@ -77,7 +77,7 @@ public class Smasher {
 					else if (argv[i].equals("--ids")) {
 						// To smush or not to smush?
 						UnionTaxonomy union = promote(tax); tax = union;
-						SourceTaxonomy idsource = Taxonomy.getTaxonomy(argv[++i], defaultIdspace);
+						SourceTaxonomy idsource = Taxonomy.getRawTaxonomy(argv[++i], defaultIdspace);
 						union.additionsAndIds(idsource, "feed/additions", "new_taxa");
 					}
 

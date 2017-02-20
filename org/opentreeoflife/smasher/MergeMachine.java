@@ -133,6 +133,7 @@ class MergeMachine {
        that has one.
        */
 	void augment(Taxon node, Taxon sink) {
+        if (node.prunedp) return;
         Taxon unode = alignment.getTaxon(node);
 
 		if (node.children == null) {
@@ -147,7 +148,9 @@ class MergeMachine {
                     // (weak no) or ambiguous (noinfo)
                     // YES > NOINFO > NO > HECK_NO  (sorry)
                     acceptNew(node, "new/polysemy");
-                }
+                else
+                    tick("ambiguous/redundant");
+            }
 		} else {
             if (unode != null) {
                 for (Taxon child: node.children)
@@ -159,7 +162,7 @@ class MergeMachine {
                     augment(child, sink);
                 // Examine mapped parents of the children
                 boolean consistentp = true;
-                Taxon commonParent = null;    // should end up being targetMrca(node)
+                Taxon commonParent = null;
                 Taxon child1 = null, child2 = null; // for inconsistency reporting
                 int count = 0;
                 for (Taxon child : node.children) {
@@ -186,21 +189,16 @@ class MergeMachine {
                 } else if (!consistentp) {
                     inconsistent(node, child1, child2, sink);
                 } else if (!commonParent.descendsFrom(sink)) {
-                    // This is the philosophically troublesome case.
-                    // Could be either an outlier/mistake, or something serious.
-                    if (node.markEvent("sibling-sink mismatch"))
-                        System.out.format("* Parent of %s's children's images, %s, is not a descendant of %s\n",
-                                          node, commonParent, sink);
-                    inconsistent(node, child1, child2, sink);
+                    overtake(node, commonParent, sink);
                 } else if (refinementp(node, sink)) {
                     Taxon newnode = acceptNew(node, "new/refinement");
                     takeOld(node, newnode);
                     takeOn(node, newnode, 0); // augmentation
                 } else {
-                    // 'trouble' = paraphyly risk - plain merge.
                     takeOn(node, commonParent, 0);
                     // should include a witness for debugging purposes - merged to/from what?
-                    reject(node, "reject/merged", commonParent, Taxonomy.MERGED);
+                    // 2017-02-19 happens 7586 times
+                    reject(node, "reject/absorbed", commonParent, Taxonomy.MERGED);
                 }
             }
             // the following is just a sanity check
@@ -215,8 +213,9 @@ class MergeMachine {
 
     void inconsistent(Taxon node, Taxon child1, Taxon child2, Taxon sink) {
         // Paraphyletic / conflicted.
-        // Put the new children unplaced under the mrca of the placed children.
-        reportConflict(node, child1, child2);
+        // Put the new children unplaced under the sink, or the mrca of the
+        // placed children, whichever is smaller.
+        reportConflict(node, child1, child2, sink);
         // Tighten it if possible... does this always make sense?
         Taxon unode = alignment.getTargetMrca(node);
         if (unode != null && unode.descendsFrom(sink))
@@ -225,6 +224,36 @@ class MergeMachine {
         reject(node, "reject/inconsistent", sink, Taxonomy.INCONSISTENT);
     }
     
+    private final static boolean MORE_SENSIBLE_BUT_DOESNT_WORK = false;
+
+    // The symptom of getting this wrong is the creation of a cycle.
+
+    void overtake(Taxon node, Taxon commonParent, Taxon sink) {
+        // This is a troublesome case.
+        // Workspace says children are under sink, but source says they're not.
+        if (node.markEvent("sibling-sink mismatch"))
+            System.out.format("* Parent of %s's children's images, %s, is an ancestor of %s\n",
+                              node,
+                              commonParent,
+                              sink);
+
+        if (MORE_SENSIBLE_BUT_DOESNT_WORK) {
+            takeOn(node, commonParent, 0);
+            reject(node, "reject/overtaken", commonParent, Taxonomy.MERGED);
+        } else {
+            // was: inconsistent(node, child1, child2, sink);
+            Taxon point;
+            Taxon unode = alignment.getTargetMrca(node);
+            if (unode != null && unode.descendsFrom(sink))
+                point = unode;
+            else
+                point = sink;
+            takeOn(node, point, Taxonomy.UNPLACED);
+            // 2017-02-19 happens 1310 times
+            reject(node, "reject/absorbed", point, Taxonomy.MERGED);
+        }
+    }
+
     /* Refinement: feature necessary for merging Silva into the
        skeleton and NCBI into Silva.  This lets an internal "new" node
        (in the "new" taxonomy) be inserted in between internal "old"
@@ -424,8 +453,8 @@ class MergeMachine {
 
 	// 3799 conflicts as of 2014-04-12
     // alice and bob are children of node
-	void reportConflict(Taxon node, Taxon alice, Taxon bob) {
-        union.conflicts.add(new Conflict(node, alice, bob, alignment, node.isHidden()));
+	void reportConflict(Taxon node, Taxon alice, Taxon bob, Taxon sink) {
+        union.conflicts.add(new Conflict(node, alice, bob, sink, alignment, node.isHidden()));
         if (union.markEvent("reported conflict"))
             System.out.format("| conflict %s %s\n", union.conflicts.size(), node);
     }
@@ -449,28 +478,29 @@ class Conflict {
     boolean isHidden;
     Taxon aliceTarget;
     Taxon bobTarget;
+    Taxon sink;
 
-	Conflict(Taxon node, Taxon alice, Taxon bob, Alignment al, boolean isHidden) {
+	Conflict(Taxon node, Taxon alice, Taxon bob, Taxon sink, Alignment al, boolean isHidden) {
 		this.node = node;
         this.alice = alice;
         this.bob = bob;
+        this.sink = sink;
         this.isHidden = isHidden;
         aliceTarget = al.getTaxon(alice);
         bobTarget = al.getTaxon(bob);
 	}
-    static String formatString = ("%s\t%s\t" + // id, name
-                                  "%s\t%s\t" + // a, aname
-                                  "%s\t%s\t" + // b, bname
-                                  "%s\t%s\t%s"); // mrca, depth, visible
+    static String formatString = ("%s\t" + // node
+                                  "%s\t%s\t%s\t%s\t" + // alice, aliceTarget, a,
+                                  "%s\t%s\t%s\t%s\t" + // bob, bobTarget, b,
+                                  "%s\t%s\t" +     // mrca, sink, 
+                                  "%s\t%s\t%s"); // unplaced, depth, visible
     static void printHeader(PrintStream out) throws IOException {
 		out.format(Conflict.formatString,
-                   "para_id",
-                   "para", 
-                   "a", "a_ancestor",
-                   "b", "b_ancestor",
-				   "mrca",
-				   "depth",
-                   "visible");
+                   "parent",
+                   "alice", "alice_target", "alice_parent", "alice_ancestor",
+                   "bob", "bob_target", "bob_parent", "bob_ancestor",
+				   "mrca", "sink",
+				   "unplaced", "depth", "visible");
         out.println();
     }
 
@@ -481,28 +511,29 @@ class Conflict {
             if (aliceTarget != null && bobTarget != null &&
                 !aliceTarget.prunedp && !bobTarget.prunedp)
                 div = aliceTarget.divergence(bobTarget);
+            int unplaced = 0;
+            for (Taxon child : sink.getChildren())
+                if ((child.properFlags & Taxonomy.UNPLACED) != 0)
+                    ++unplaced;
             if (div != null) {
                 Taxon a = div[0];
                 Taxon b = div[1];
                 int da = a.getDepth() - 1;
                 String m = (a.parent == null ? "-" : a.parent.name);
+                // node, alice, aliceTarget, a, bob, b, bobTarget, a.parent, mrca, sink
                 return String.format(formatString,
-                                     node.getQualifiedId(),
-                                     node.name, 
-                                     alice.name, a.name,
-                                     bob.name, b.name,
-                                     m,
-                                     da,
-                                     (isHidden ? 0 : 1));
+                                     node,
+                                     alice, aliceTarget, aliceTarget.parent, a,
+                                     bob, bobTarget, bobTarget.parent, b,
+                                     a.parent, sink,
+                                     unplaced, da, (isHidden ? 0 : 1));
             } else
                 return String.format(formatString,
-                                     node.getQualifiedId(),
-                                     node.name, 
-                                     alice.name, "",
-                                     (bob != null ? bob.name : ""), "",
-                                     "",
-                                     "?",
-                                     (isHidden ? 0 : 1));
+                                     node,
+                                     alice, aliceTarget, aliceTarget.parent, "",
+                                     bob, bobTarget, (bobTarget != null ? bobTarget.parent : ""), "",
+                                     "", sink,
+                                     unplaced, "?", (isHidden ? 0 : 1));
         } catch (Exception e) {
             e.printStackTrace();
             System.err.format("*** Conflict info: %s %s %s\n", node, alice, bob);

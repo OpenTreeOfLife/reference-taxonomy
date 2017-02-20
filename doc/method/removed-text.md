@@ -681,3 +681,17 @@ _absorbed into larger taxon due to conflict_: [should be described in methods se
 [Interesting?:  57 taxa that were unplaced in a higher priority source
 get placed by a lower priority source.]
 
+
+
+2017-02-18
+
+Removing this case because I cannot find an example of it!
+
+1. ((a,b)x,(c,d)y)z + ((a,c,e)u,(b,d)v)z = ((a,b)x,(c,d)y,?e)
+
+   If sibling nodes in S' have different parents in S, we throw away their parent node.
+   In the example, a and c, which are siblings under u, have different parents x and y
+   in S, and similarly for b and d.
+   Any unaligned children (e in this case)
+   are flagged _incertae sedis_ in the attachment point, which in this case is z.
+

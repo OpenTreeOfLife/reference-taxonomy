@@ -98,9 +98,17 @@ coverage requirement as well as any other available taxonomic source.
 
 Building OTT version 3.0 from sources requires 15 minutes of real time. Our process currently runs on a machine with 16GB of memory; 8GB is not sufficient.
 
-In the upgrade from 2.10 to 3.0, we added new versions of both NCBI and GBIF. NCBI updates frequently, so changes tend to be minimal and incorporating the new version was trivial. In contrast, the version from GBIF represented both a major change in their taxonomy synthesis method. Many taxa disappeared, requiring changes to our ad hoc patches during the normalization stage. In addition, the new version of GBIF used a different taxonomy file format, which requires extensive changes to our import code (most notably, handling taxon name-strings that now included authority information).
+In the upgrade from 2.10 to 3.0, we added new versions of both NCBI
+and GBIF. NCBI updates frequently, so changes tend to be manageable
+and incorporating the new version was simple. In contrast, the
+version from GBIF represented both a major change in their taxonomy
+synthesis method. Many taxa disappeared, requiring changes to our ad
+hoc patches during the normalization stage. In addition, the new
+version of GBIF used a different taxonomy file format, which requires
+extensive changes to our import code (most notably, handling taxon
+name-strings that now included authority information).
 
-We estimate the the update from OTT v2.10 to OTT v3.0 required approximately 3 days of development time. This was much greater than previous updates due to the changes required to handle the major changes in GBIF content and format.  
+We estimate the the update from OTT v2.10 to OTT v3.0 required approximately 3 days of development time. This was greater than previous updates due to the changes required to handle the major changes in GBIF content and format.  
 
 ### Open data
 

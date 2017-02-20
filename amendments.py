@@ -593,7 +593,7 @@ def patch_ott(ott):
                         ('Cephalorhyncus hectori', 'Cephalorhynchus hectori'), #145
                         ('Cephalorhyncus eutropia', 'Cephalorhynchus eutropia'), #145
                         ('Pristophorus lanceolatus', 'Pristiophorus lanceolatus'), #136
-                        ('Galeolerdo vouncus', 'Galeocerdo vouncus')] #138
+                        ('Galeolerdo vouncus', 'Galeocerdo vouncus')]: #138
         if ott.maybeTaxon(bad) != None:
             if ott.taxon(good) != None:
                 ott.taxon(good).absorb(ott.taxon(bad))

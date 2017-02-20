@@ -291,7 +291,7 @@ flagged _incertae sedis_.
 
 The following schematic examples illustrate each of the cases that come
 up while merging taxonomies. Note that, because the source taxonomies are added in order of priority, if there is a conflict between the workspace
-and the new source, we retain the workspace.
+and the new source, we retain what's in the workspace.
 
 1. ((a,b)x,(c,d)y)z + ((c,d)y,(e,f)w)z = ((a,b)x,(c,d)y,(e,f)w)z
 
@@ -341,10 +341,25 @@ and the new source, we retain the workspace.
 
    So that we have a term for this situation, say that x is _absorbed_ into z.
 
-[KC: I couldn't find an example that looked like case number 6.  We could replace
-what was there with a new tree showing conflict, but it would have to
-be very simple.  The only two cases I've found so far (Pisces and 
-Archaeognatha) have the form ((a,b)c) + (a,(b,c)).  Thoughts?]
+1. ((a,b)x,(c,d)y)z + ((a,c)p,(b,d,e)q)z = ((a,b)x,(c,d)y,?e)z
+
+   If the source has a hierarchy that is incompatible with the one in
+   the workspace, the conflicting source nodes are ignored, and any
+   unaligned nodes (e) become _incertae sedis_ nodes under an ancestor
+   containing the incompatible node's children.
+
+   For example, NCBI contributes Insecta = Dicondylia + Monocondylia
+   to the workspace, with Dicondylia = Pterygota + Zygentoma.  WoRMS
+   as a source has Insecta = Apterygota + Pterygota, where Apterygota
+   = Thysanura + Archaeognatha, and Thysanura has Zygentoma as a
+   synonym.  That is, NCBI groups Thysanura (Zygentoma) with
+   Pterygota, while WoRMS groups it with Archaeognatha.  The WoRMS
+   hierarchy is ignored in favor of the higher priority NCBI
+   hierarchy.
+
+   The test for compatibility is very simple: a source node is
+   incompatible with the workspace if the nodes that its aligned
+   children align with do not all have the same parent.
 
 ## Finishing the assembly
 

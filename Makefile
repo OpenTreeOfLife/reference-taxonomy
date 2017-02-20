@@ -124,7 +124,7 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py adjustments.py amendments.
 tax/ott/version.txt:
 	echo $(WHICH) >tax/ott/version.txt
 
-tax/ott/README.html: tax/ott/about.json util/make_readme.py
+tax/ott/README.html: tax/ott/log.tsv util/make_readme.py
 	python util/make_readme.py tax/ott/ >$@
 
 # ----- Taxonomy inputs

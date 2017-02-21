@@ -95,7 +95,7 @@ properties = [
      'version': '4b3ba1a',
      'priority': 10,
      'focus': '',
-     'taxa': 'xx',
+     'taxa': '163',
      'synonyms': 0,
      'goals': 'O'}
 ]
@@ -145,8 +145,10 @@ print '### (Table 1)'
 show_table_html(table)
 show_table_csv(table)
 
-print
-print """[JAR: get final curation counts.  `cat amendments/*.json | grep original_label | wc` plus `grep "^add" feed/ott/edits/*.tsv | wc`]"""
+if False:
+    print
+    print """[JAR: get final curation counts.  `cat ../../../amendments-1/amendments/*.json | grep original_label | wc` plus `grep "^add" ../../feed/ott/edits/*.tsv | wc`]"""
+    print '106 + 57 = 163'
 
 """
 

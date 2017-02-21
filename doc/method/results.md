@@ -90,7 +90,8 @@ version of GBIF used a different taxonomy file format, which requires
 extensive changes to our import code (most notably, handling taxon
 name-strings that now included authority information).
 
-We estimate the the update from OTT v2.10 to OTT v3.0 required approximately 3 days of development time. This was greater than previous updates due to the changes required to handle the major changes in GBIF content and format.  
+We estimate the update from OTT v2.10 to OTT v3.0 required approximately three days of development time 
+related to source taxonomy changes. This was greater than previous updates due to the changes required to handle the major changes in GBIF content and format.  
 
 ### Open data
 

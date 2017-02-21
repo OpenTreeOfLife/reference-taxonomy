@@ -10,6 +10,10 @@ procedure.
 After each source taxonomy is loaded, the following normalizations
 are performed:
 
+ 1. Diacritics removal - accents, umlauts, and other diacritic 
+    marks are removed in order to improve
+    name matching, as well as to follow the nomenclatural codes, which prohibit them.
+    The original name-string is kept as a synonym.
  1. Child taxa of "containers" in the source taxonomy are made to be
     children of the container's parent.  "Containers" are
     groupings in the source that don't represent taxa, for example nodes
@@ -19,9 +23,10 @@ are performed:
     a way to say something about the members.  The fact that a node
     had originally been in a container is recorded as a flag on the
     child node.
- 1. Diacritics removal - accents and umlauts are removed in order to improve
-    name matching, as well as to follow the nomenclatural codes, which prohibit them.
-    The original name-string is kept as a synonym.
+ 1. When a subgenus X has the same name-string as its containing genus,
+    its name-string is changed to "X subgenus X".  This follows a convention
+    used by NCBI Taxonomy and helps distinguish the two taxa later in
+    assembly.
 
 The normalized versions of the taxonomies then become the input to subsequent
 processing phases.

@@ -18,9 +18,9 @@ literature and in databases on the Internet, but often it is
 (understandably) missing from the source taxonomies.
 
 It is not feasible to curate such problem individually, so the
-taxonomy synthesis methods identify and handle thousands of 'special
-cases' in an automated way. We currently use only the name-strings
-(and ranks, in some of the heuristics) to guide synthesis. Using other
+taxonomy assembly methods identify and handle thousands of 'special
+cases' in an automated way. We currently use only name-strings,
+topology, and ranks to guide assembly. Using other
 information contained in the source taxonomies, such as the structure
 of species names, authority strings, and other nomenclatural information,
 could be very helpful.
@@ -39,7 +39,7 @@ of these come from DNA sequencing via NCBI Taxonomy, which is also not a
 taxonomic reference, while others come directly from phylogenies
 submitted to Open Tree curators via our taxonomy curation features. OTT
 also contains more homonyms as compared to its sources. Many of these
-duplicated names are artifacts of the synthesis heuristics. For our
+duplicated names are artifacts of the assembly heuristics. For our
 purposes, these are not of great concern - when mapping OTUs in trees
 to taxa in OTT, we generally restrict mapping to a specific taxonomic
 context, and if there are multiple matches to OTT taxa with the same

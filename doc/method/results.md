@@ -1,30 +1,19 @@
 ## Summary of Open Tree Taxonomy
 
-The methods and results presented here are for version 3.0 of the Open Tree Taxonomy (which follows five previous releases using the automated assembly method). The taxonomy contains 3,592,725 total taxa, X tips and Y internal nodes. There are 2,031,519 synonym records and 8043 homonyms (name-strings for which there are multiple nodes). Table X gives a list of taxon flags that annotate more 10000 taxa in OTT 3.0 (noting that taxa can have more than one flag).
+The methods and results presented here are for version 3.0 of the Open Tree Taxonomy (which follows five previous releases using the automated assembly method). The taxonomy contains 3,592,832 total taxa, 3,271,408 tips and 276,375 internal nodes. 2,335,148 of the nodes have a Linnean binomial of the form Genus epithet. There are 2,031,519 synonym records and 8154 homonyms (name-strings for which there are multiple nodes). A longer list of metrics is in supplementary data.
 
-flag  taxa
-sibling_higher  911673
-incertae_sedis  253835
-extinct 236448
-hidden  109894
-major_rank_conflict_inherited 855570
-barren  76038
-infraspecific 71099
-environmental 44184
-incertae_sedis_inherited  43445
-not_otu 28916
-major_rank_conflict 27178
-extinct_inherited 19053
-unplaced_inherited  18790
-unplaced  17274
+## Results of assembly procedure
 
-## Homonym analysis
+As OTT is assembled, the alignment procedure examines every source node, either choosing an alignment target for it in the workspace, or leaving it unaligned. The following table categorizes source nodes according to how they are processed in the alignment phase.
 
-There are 8043 name-strings in the final version of the taxonomy for which there are
-multiple nodes.  [JAR: update number when 3.0 is final]
-By comparison, there are only 1440 in GBIF. Many of
-the homonyms either are artifacts of the alignment method, or reflect
-misclassifications or errors in the source taxonomies.
+For the 139790 cases where there were multiple candidates, we use the heuristics described in Methods to try and align a source node to a single node in the workspace. Here is the frequency of use of each heuristic:
+
+21898 (15.7%) : Separation
+164 (0.1%) : Disparate ranks"
+25424 (18.2%) : Lineage
+7429 (5.3%) : Overlap
+177,Proximity
+84698,"Same name-string"
 
 ## Evaluating the taxonomy relative to requirements
 

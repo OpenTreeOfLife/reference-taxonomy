@@ -248,7 +248,7 @@ it is dropped, which is OK because it probably corresponds to one of
 the existing candidates and therefore would make no new contribution
 to the workspace.  If the ambiguous source node has children, it is
 treated as unaligned and therefore new, possibly turning an N-way
-homonym into an N+1-way homonym.  This could easily be wrong because 
+homonym into an N+1-way homonym.  This could easily be wrong because
 it is so unlikely that the source node really represents a distinct taxon.
 Usually, the subsequent merge phase determines that the grouping is
 not needed because it inconsistent or can be 'absorbed', and it is
@@ -291,7 +291,7 @@ flagged _incertae sedis_.
 
 The following schematic examples illustrate each of the cases that come
 up while merging taxonomies. Note that, because the source taxonomies are added in order of priority, if there is a conflict between the workspace
-and the new source, we retain the workspace.
+and the new source, we retain the workspace. Figure 3 illustrates each of these six cases.
 
 1. ((a,b)x,(c,d)y)z + ((c,d)y,(e,f)w)z = ((a,b)x,(c,d)y,(e,f)w)z
 
@@ -343,48 +343,10 @@ and the new source, we retain the workspace.
 
 [KC: I couldn't find an example that looked like case number 6.  We could replace
 what was there with a new tree showing conflict, but it would have to
-be very simple.  The only two cases I've found so far (Pisces and 
+be very simple.  The only two cases I've found so far (Pisces and
 Archaeognatha) have the form ((a,b)c) + (a,(b,c)).  Thoughts?]
 
-## Handling containers
-
-Details on how we handle incertae sedis and other containers. Provides details about the incertae_sedis, was_container, inconsistent, merged, unplaced and related 'inherited' flags.
-
-Taxonomies often contain nodes that do not represent taxa (in the sense of an evolutionary grouping) but instead are placeholders to group taxa that either share some property or whose relationships are uncertain. For example, the 'Fungi' node in NCBI contains descendent nodes with the name-strings "environmental samples". 
-
-## Taxon flags
-
-During the normalization and assembly process, we 'flag' taxa with labels that
-describe properties of the taxon (either inherent properties, or results of
-assembly). In OTT v3.0, there are 23 such flags, listed below. Some of these flags are simply informational, while other allow filtering during phylogenetic synthesis (i.e. removing taxa that are simply containers, not evolutionary groupings).
-
-barren : there are only higher taxa above this node (no descendent species)
-edited : the taxon has been subject to an ad hoc edit ("patch")
-environmental :child of an NCBI node whose name contains the word "environmental"
-environmental_inherited : descends from node flagged "environmental"
-extinct : annotated as extinct in one of our source taxonomies
-extinct_inherited : descends from a node flagged "extinct", or a node that only has extinct children
-forced_visible : [JAR]
-hidden : an Open Tree curators has chosen to hide this node from synthesis
-hidden_inherited : descends from node flagged "hidden"
-hybrid : taxon name contains "hybrid" or "x"; also, any node descended from a "hybrid" node
-incertae_sedis : in source taxonomy, was a member of an "incertae sedis" container
-incertae_sedis_inherited : descends from a node flagged "incertae_sedis"
-inconsistent : [JAR]
-infraspecific : descends from a node with rank "species"
-major_rank_conflict : a taxon that has a sibling at different rank (e.g. a family with a sibling that is an order) [JAR: applies only to what ranks?]
-major_rank_conflict_inherited : descends from a node flagged "major_rank_conflict"
-merged : [JAR, will be easier to explain with a clearer definition of inconsistent]
-not_otu : likely not a taxon, based on name-string (e.g. "unidentified", "unknown", "metagenome", "other sequences", "artificial", "libraries", "tranposons", also "sp." when at the end of a name); also, any node descended from such a node.
-sibling_higher : a taxon that has a sibling at different rank (but ranks lower than major_rank_conflict)
-unplaced_inherited
-unplaced
-viral
-was_container : taxon that is a container (e.g. incertae sedis, unclassified, environmental samples)
-
-
-
-## Finishing the assembly
+## Final patches
 
 After all source taxonomies are aligned and merged, we apply general ad hoc
 patches to the workspace, in a manner similar to that
@@ -395,10 +357,12 @@ than convert all patches to
 some form already known to the system, we kept them in their original form.
 This practice facilitates further editing.
 
-* give the number of patches [JAR: get number from v3.0 when final; 
+* give the number of patches [JAR: get number from v3.0 when final;
 `python util/count_patches.py amendments.py` ~= 121,
 `tail +2 feed/misc/chromista-spreadsheet.csv | wc` = 239,
 `cat amendments/*.json | grep original_label | wc` ~= 106]
+
+## Assigning identifiers
 
 The final step is to assign unique, stable identifiers to nodes.  
 

@@ -53,7 +53,7 @@ These taxon additions include provenance
 information, including evidence for the taxon and the identity of the curator. We
 expose this provenance information through the web site and the taxonomy API.
 
-We also provide a feedback mechanism on the synthetic tree browser, and find that most of the comments left are about taxonomy. Expanding this feature to capture this feedback in more structured, and therefore machine-readable, format would allow users to directly contribute taxonomic patches to the system.
+We also provide a feedback mechanism on the synthetic tree browser, and find that most of the comments left are about taxonomy. Expanding this feature to capture this feedback in a more structured, and therefore machine-readable, format would allow users to directly contribute taxonomic patches to the system.
 
 ## Comparison to other taxonomies
 

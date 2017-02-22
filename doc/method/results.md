@@ -6,11 +6,11 @@ The methods and results presented here are for version 3.0 of the Open Tree Taxo
 
 As OTT is assembled, the alignment procedure processes every source node, either choosing an alignment target for it in the workspace based on the results of the heuristics, or leaving it unaligned. Figure 4 illustrates the results of the alignment phase. We note that presence of a single candidate node does not automatically align the two nodes - we still apply the heuristics to ensure a match (and occasionally reject the single candidate).  
 
-When reducing a candidate set from multiple nodes to one node, we counted the frequency of success for each heuristic, i.e. the number of times that a particular heuristic was the one that accepted a single candidate. Table X shows these results. Separation (do not align taxa in different groups, according to the separation taxonomy; used first), Lineage (align taxa with shared lineage; used midway through) and Same-name-string (prefer candidates who primary name string matches; used last) were by far the most frequent.
+When reducing a candidate set from multiple nodes to one node, we counted the frequency of success for each heuristic, i.e. the number of times that a particular heuristic was the one that accepted the winning candidate from among two or more candidates. Table X shows these results. Separation (do not align taxa in different groups, according to the separation taxonomy; used first), Lineage (align taxa with shared lineage; used midway through) and Same-name-string (prefer candidates who primary name string matches; used last) were by far the most frequent.
 
 ## Results of merge procedure
 
-After assembly, we merge the unaligned nodes into the workspace taxonomy. Of the 3,774,509 unaligned nodes, the vast majority (92%) are inserted into the workspace. Grafting accounts for 7% of the merge operations, and less than 1% are either absorptions or remain unmerged due to ambiguities.  
+After assembly, the next step in the method is to merge the unaligned nodes into the workspace taxonomy. Of the 3,774,509 unaligned nodes, the vast majority (92%) are inserted into the workspace. Grafting accounts for 7% of the merge operations, and less than 1% are either absorptions or remain unmerged due to ambiguities.  
 
 ## Evaluating the taxonomy relative to requirements
 
@@ -57,7 +57,7 @@ NCBI 190084, OTT 195355 = 0.9730
 ### Taxonomic coverage
 
 OTT has 2.3M binomials (presumptive valid species names), vs. 1.6M for
-Catalogue of Life (CoL).  Since the GBIF source we used includes the Catalogue of Life [ref], OTT includes everything in CoL.The number is larger in part because the
+Catalogue of Life (CoL).  Since the GBIF source we used includes the Catalogue of Life [ref], OTT includes all species in CoL.The number is larger in part because the
 combination of the inputs has greater coverage than CoL, and in part
 because OTT has many names that are either not valid or not currently
 accepted.

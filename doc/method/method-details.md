@@ -388,7 +388,7 @@ form, and approximately 121 in Python form.
 
 ## Assigning identifiers
 
-The final step is to assign unique, stable identifiers to nodes.  
+The final step is to assign unique, stable identifiers to nodes so that external links to OTT nodes will continue to functional correctly after the previous OTT version is replaced by the new one.
 
 Identifier assignment is done by aligning the previous version of OTT
 to the new taxonomy.  As with the other alignments, there are scripted

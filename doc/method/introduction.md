@@ -12,7 +12,7 @@ operating on them.
 
 In order to meet Open Tree's project requirements, the taxonomy is an automated
 synthesis of ten different source taxonomies. The
-synthesis process is repeatable so that we can easily incorporate updates to source taxonomies.
+synthesis process is repeatable so that we can easily incorporate updates to source taxonomies. Repeatability also allows us to test potential improvements to the synthesis method. 
 
 Information about taxa is typically
 expressed in databases and files in terms of taxon names or

@@ -84,7 +84,7 @@ The combination S + S' is formed in two steps:
     is determined from nearby aligned nodes, either as a _graft_
     or an _insertion_.
 
-Examples of these two cases are given in [point to figure(s)].
+Examples of these two cases are given in Figure 2.
 
 The merge step is performed by modifying the workspace.  If the
 workspace starts out empty, it holds intermediate taxonomy U1 after S1
@@ -94,44 +94,27 @@ read out the reference taxonomy.
 As a simple example, consider a genus represented in both
 taxonomies, but containing different species in the two:
 
-> [this would be a figure]   S = (b,c,d)a,  S' = (c,d,e)a
+> S = (b,c,d)a,  S' = (c,d,e)a
 
 S and S' each have four nodes.  Suppose c, d, and a in S' are aligned
 to c, d, and a in S.  The only unaligned node is e, which is a
 sibling of c and d and therefore grafted as a child of a.  After the merge
 step, we have:
 
-> [figure] S + S' = (b,c,d,e)a
+> S + S' = (b,c,d,e)a
 
 One might call this merge heuristic 'my sibling's sibling is my
 sibling' or 'transitivity of siblinghood'.
 
-This is a very common pattern.  For example: in NCBI taxonomy, take a
-= _Bufo_, b = _B. spinosis_, c = _B. bufo_, d = _B. japonicus_, and
-in GBIF take a = _Bufo_, c = _B. bufo_, d = _B. japonicus_, e =
-_B. luchunnicus_.  There is no _B. spinosis_ in GBIF and no
-_B. luchunnicus_ in NCBI.  The _Bufo_ in the combined taxonomy has as
-its children copies of species records from both sources.  There are
+This is a very common pattern.  Figure 2a illustrates a real life-example when combining the genus _Bufo_ across NCBI and GBIF. There are
 hundreds of thousands of similar simple grafting events.
 
 The other merge method is an _insertion_, where the unaligned
 node has descendants that are in S. This always
-occurs when S' has greater resolution than S. For example, this case
-inserts the unaligned nodes E and H:
-
-> [figure] (M,C,S,P)F + ((M,C)H,(S,P)E)F = ((M,C)H,(S,P)E)F
-
-This is a case in which S' (part of WoRMS) provides greater resolution
-than S (NCBI taxonomy): it divides the family F into subfamilies H and
-E, where S doesn't.  H and E are 'inserted' into S in a way that adds
-information without disrupting existing relationships.  For example, C
-is contained in F both before and after the insertion event.
-
-(Key: F = Fissurellidae, M = Montfortula, C = Clypidina, S = Scutus, P
-= Puncturella, H = Hemotominae, E = Emarginulinae)
+occurs when S' has greater resolution than S. For example, see Figure 2b, where GBIF provides greater resolution than NCBI.
 
 The vast majority of alignment and merge situations are simple, similar to the
-examples above. However, even a small fraction of special cases can add up to
+examples shown in Figure 2. However, even a small fraction of special cases can add up to
 thousands when the total number of alignments and merges measures in the
 millions, so we have worked to develop heuristics that handle the most common
 special cases. Ambiguities caused by synonyms and homonyms create most of the

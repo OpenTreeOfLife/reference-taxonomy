@@ -10,7 +10,7 @@ procedure.
 After each source taxonomy is loaded, the following normalizations
 are performed:
 
- 1. Diacritics removal - accents, umlauts, and other diacritic 
+ 1. Diacritics removal - accents, umlauts, and other diacritic
     marks are removed in order to improve
     name matching, as well as to follow the nomenclatural codes, which prohibit them.
     The original name-string is kept as a synonym.
@@ -255,7 +255,7 @@ it is dropped, which is OK because it probably corresponds to one of
 the existing candidates and therefore would make no new contribution
 to the workspace.  If the ambiguous source node has children, it is
 treated as unaligned and therefore new, possibly turning an N-way
-homonym into an N+1-way homonym.  This could easily be wrong because 
+homonym into an N+1-way homonym.  This could easily be wrong because
 it is so unlikely that the source node really represents a distinct taxon.
 Usually, the subsequent merge phase determines that the grouping is
 not needed because it inconsistent or can be 'absorbed', and it is
@@ -298,7 +298,7 @@ flagged _incertae sedis_.
 
 The following schematic examples illustrate each of the cases that come
 up while merging taxonomies. Note that, because the source taxonomies are added in order of priority, if there is a conflict between the workspace
-and the new source, we retain what's in the workspace.
+and the new source, we retain what's in the workspace. Figure 3 illustrates each of these six cases.
 
 1. ((a,b)x,(c,d)y)z + ((c,d)y,(e,f)w)z = ((a,b)x,(c,d)y,(e,f)w)z
 
@@ -368,7 +368,7 @@ and the new source, we retain what's in the workspace.
    incompatible with the workspace if the nodes that its aligned
    children align with do not all have the same parent.
 
-## Finishing the assembly
+## Final patches
 
 After all source taxonomies are aligned and merged, we apply general
 ad hoc additions and patches to the workspace, in a manner similar to
@@ -380,13 +380,15 @@ are 106 additions in JSON form, 97 additions and patches in tabular
 form, and approximately 121 in Python form.
 
 <!--
-[JAR: get numbers from v3.0 when final; 
+[JAR: get numbers from v3.0 when final;
 `grep "^[a-z]" ../../feed/ott/edits/*.tsv | wc` = 97
 `cat amendments/*.json | grep original_label | wc` = 106
 `python util/count_patches.py amendments.py` = 121 ]
 -->
 
-The final step is to assign unique, stable identifiers to nodes.  
+## Assigning identifiers
+
+The final step is to assign unique, stable identifiers to nodes so that external links to OTT nodes will continue to functional correctly after the previous OTT version is replaced by the new one.
 
 Identifier assignment is done by aligning the previous version of OTT
 to the new taxonomy.  As with the other alignments, there are scripted

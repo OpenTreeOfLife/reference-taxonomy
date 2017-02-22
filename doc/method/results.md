@@ -4,16 +4,13 @@ The methods and results presented here are for version 3.0 of the Open Tree Taxo
 
 ## Results of assembly procedure
 
-As OTT is assembled, the alignment procedure processes every source node, either choosing an alignment target for it in the workspace based on the results of the heuristics, or leaving it unaligned. Of the 6,236,185 source nodes, 3,754,547 (60%) had no candidate nodes (i.e. they appear to be unique in the source). Of the remaining nodes with one or more candidates, application of the heuristics resulted in a single candidate 2,458,157 times, and rejected all candidates 10,593 times. These summary stats do not take into account special cases requiring ad hoc intervention. Table X describes the detailed results of the alignment phase. We note that presence of a single candidate node does not automatically align the two nodes - we still apply the heuristics to ensure a match (and occasionally reject the single candidate).  
+As OTT is assembled, the alignment procedure processes every source node, either choosing an alignment target for it in the workspace based on the results of the heuristics, or leaving it unaligned. Figure 4 illustrates the results of the alignment phase. We note that presence of a single candidate node does not automatically align the two nodes - we still apply the heuristics to ensure a match (and occasionally reject the single candidate).  
 
-When reducing a candidate set from multiple nodes to one node, we counted the frequency of success for each heuristic, i.e. the number of times that a particular heuristic was the one that resulted in a single candidate. Table X shows these results. Separation (do not align taxa in different groups, according to the separation taxonomy; used first), Lineage (align taxa with shared lineage; used midway through) and Same-name-string (prefer candidates who primary name string matches; used last) were by far the most frequent. 
+When reducing a candidate set from multiple nodes to one node, we counted the frequency of success for each heuristic, i.e. the number of times that a particular heuristic was the one that accepted a single candidate. Table X shows these results. Separation (do not align taxa in different groups, according to the separation taxonomy; used first), Lineage (align taxa with shared lineage; used midway through) and Same-name-string (prefer candidates who primary name string matches; used last) were by far the most frequent.
 
-21898 (15.7%) : Separation
-164 (0.1%) : Disparate ranks"
-25424 (18.2%) : Lineage
-7429 (5.3%) : Overlap
-177,Proximity
-84698,"Same name-string"
+## Results of merge procedure
+
+After assembly, we merge the unaligned nodes into the workspace taxonomy. Of the 3,774,509 unaligned nodes, the vast majority (92%) are inserted into the workspace. Grafting accounts for 7% of the merge operations, and less than 1% are either absorptions or remain unmerged due to ambiguities.  
 
 ## Evaluating the taxonomy relative to requirements
 
@@ -60,18 +57,17 @@ NCBI 190084, OTT 195355 = 0.9730
 ### Taxonomic coverage
 
 OTT has 2.3M binomials (presumptive valid species names), vs. 1.6M for
-Catalogue of Life (CoL).  The number is larger in part because the
+Catalogue of Life (CoL).  Since the GBIF source we used includes the Catalogue of Life [ref], OTT includes everything in CoL.The number is larger in part because the
 combination of the inputs has greater coverage than CoL, and in part
 because OTT has many names that are either not valid or not currently
 accepted.
-
-Since the GBIF source we used includes the Catalogue of Life [ref],
-OTT includes everything in CoL.
 
 This level of coverage would seem to meet Open Tree's taxonomic
 coverage requirement as well as any other available taxonomic source.
 
 ### Backbone quality
+
+Assessing the quality of the backbone is a challenge, and to do this thoroughly would require manual assessment against the scientific literature in taxonomy and phylogenetics. The ranking of inputs into the process allows curators with taxonomic expertise to elevate the rank of either whole input taxonomies (for example, NCBI at higher priority than GBIF) or specific clades (e.g. Cnidaria in WoRMS outranks NCBI Cnidaria).
 
 * We can check for resolution compared to other taxonomies, e.g. NCBI, GBIF,
   IRMNG.  Crude measure is ratio of
@@ -86,7 +82,7 @@ coverage requirement as well as any other available taxonomic source.
 
 ### Ongoing update
 
-Building OTT version 3.0 from sources requires 15 minutes of real time. Our process currently runs on a machine with 16GB of memory; 8GB is not sufficient.
+We aimed for a procedure that would allow simple re-building from sources, and also easy incorporation of new versions of sources. Re-building OTT version 3.0 from sources requires 15 minutes of real time. Our process currently runs on a machine with 16GB of memory; 8GB is not sufficient.
 
 In the upgrade from 2.10 to 3.0, we added new versions of both NCBI
 and GBIF. NCBI updates frequently, so changes tend to be manageable
@@ -110,9 +106,5 @@ from users of OTT.  (A data use agreement is sometimes called 'terms
 of use'.  Legally, a DUA is a kind of contract.)
 Therefore, users are not restricted in this way.
 In addition, the taxonomy is not creative expression, so copyright
-controls do not apply.  Therefore use of OTT is
+controls do not apply [ref Patterson2014].  Therefore use of OTT is
 unrestricted.
-
-Certainly the taxonomy could be improved by incorporating DUA-encumbered
-sources such the IUCN Red List, but doing so would conflict with the
-project's open data requirement.

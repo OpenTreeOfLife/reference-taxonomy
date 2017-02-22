@@ -64,3 +64,7 @@ described, it will be extremely useful to compare the two approaches and identif
 common and unique heuristics to automated, scalable name-string matching.
 
 ## Potential improvements and future work
+
+Certainly the taxonomy could be improved by incorporating DUA-encumbered
+sources such the IUCN Red List, but doing so would conflict with the
+project's open data requirement.

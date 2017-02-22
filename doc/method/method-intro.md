@@ -116,7 +116,7 @@ occurs when S' has greater resolution than S. For example, see Figure 2b, where 
 The vast majority of alignment and merge situations are simple, similar to the
 examples shown in Figure 2. However, even a small fraction of special cases can add up to
 thousands when the total number of alignments and merges measures in the
-millions, so we have worked to develop heuristics that handle most common
+millions, so we have worked to develop heuristics that handle the most common
 special cases. Ambiguities caused by synonyms and homonyms create most of the
 difficulties, with inconsistent or unclear higher taxon membership creating the
 rest. The development of the assembly process described here has been a driven

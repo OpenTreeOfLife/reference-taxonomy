@@ -2,9 +2,9 @@ from org.opentreeoflife.taxa import Taxonomy
 
 import os, csv
 
-home = '../../repo/reference-taxonomy'
+home = '../..'
 
-ott = Taxonomy.getTaxonomy(os.path.join(home, 'tax/ott/'), 'ott')
+ott = Taxonomy.getRawTaxonomy(os.path.join(home, 'tax/ott/'), 'ott')
 # for faster testing:
 #ott = Taxonomy.getTaxonomy(os.path.join(home, 't/tax/aster/'), 'ott')
 

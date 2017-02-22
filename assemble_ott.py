@@ -365,7 +365,7 @@ def ids_and_additions(ott):
     Addition.processAdditions(additions_clone_path, ott)
 
     print '-- Checking id list'
-    assign_ids_from_list(ott, 'ott_id_list/by_qid.csv')
+    assign_ids_from_list(ott, 'feed/ott_id_list/by_qid.csv')
 
     # Mint ids for new nodes
     ott.assignNewIds(new_taxa_path)

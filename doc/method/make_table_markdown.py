@@ -39,7 +39,9 @@ Following are some general metrics on the reference taxonomy.
     with open(apath, 'r') as infile:
         summary = json.load(infile)
         (h_table, h_count) = prepare_table(summary, heuristic_label_info, None)
-        summary['by-heuristic'] = h_count
+        h_total = table_total(h_table)
+        print >>sys.stderr, '| total choices made:', h_total
+        summary['by-heuristic'] = h_total
         report_part(summary,
                     """## Fate of source nodes in alignment phase
 
@@ -48,7 +50,7 @@ node, either choosing an alignment target for it in the workspace, or
 leaving it unaligned.  The following table categorizes source nodes 
 according to how they are processed in the alignment phase.""",
                     alignment_label_info,
-                    "Total number of source nodes.")
+                    "Total number of source nodes (other than separation taxonomy).")
         print
 
         # Use of heuristics in choice-making
@@ -112,7 +114,7 @@ def prepare_table(summary, label_info, total_description):
              sorted(data, key=lambda((r,l,c)): r)]
     total = 0
     if total_description != None:
-        (table, total) = include_total(table, total_description)
+        return include_total(table, total_description)
     return (table, total)
 
 def include_total(table, total_description):
@@ -219,13 +221,13 @@ opposed to ad hoc names (e.g. <em>bacterium 7A7</em>) assigned by NCBI."""),
 }
 
 alignment_label_info = {
-    "same/by-division-name":
+    "same/curated":
     (01, """Alignment particularly established by a curator, usually to
             repair a mistake made by automatic alignment."""),
+    "same/by-division-name":
+    (03, """Aligned to separation taxonomy, to establish locations of separation taxa in the source taxonomy."""),
     "none":
-    (02, """There were no candidates for this source taxon."""),
-    "same/curated":
-    (04, """Aligned to separation taxonomy, to establish source taxonomy nodes for the separation taxa."""),
+    (05, """There were no candidates for this source taxon."""),
     "by-heuristic":
     (10, """A choice was made between two or more candidates using heuristics (for breakdown see below)."""),
     "confirmed":
@@ -241,7 +243,7 @@ candidates; no alignment is recorded for the source node, which is a tip."""),
     (38, """The heuristics were unable to choose from among multiple
 candidates; no alignment is recorded for the source node, which is internal."""),
     "rejected":
-    (39, """Every candidate was rejected by some heuristic."""),
+    (39, """Every candidate was rejected by a 'no' from one of the heuristics."""),
 }
 
 # names to agree with those in method-details.md

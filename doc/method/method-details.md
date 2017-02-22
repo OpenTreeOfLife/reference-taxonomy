@@ -10,6 +10,10 @@ procedure.
 After each source taxonomy is loaded, the following normalizations
 are performed:
 
+ 1. Diacritics removal - accents, umlauts, and other diacritic
+    marks are removed in order to improve
+    name matching, as well as to follow the nomenclatural codes, which prohibit them.
+    The original name-string is kept as a synonym.
  1. Child taxa of "containers" in the source taxonomy are made to be
     children of the container's parent.  "Containers" are
     groupings in the source that don't represent taxa, for example nodes
@@ -19,9 +23,10 @@ are performed:
     a way to say something about the members.  The fact that a node
     had originally been in a container is recorded as a flag on the
     child node.
- 1. Diacritics removal - accents and umlauts are removed in order to improve
-    name matching, as well as to follow the nomenclatural codes, which prohibit them.
-    The original name-string is kept as a synonym.
+ 1. When a subgenus X has the same name-string as its containing genus,
+    its name-string is changed to "X subgenus X".  This follows a convention
+    used by NCBI Taxonomy and helps distinguish the two taxa later in
+    assembly.
 
 The normalized versions of the taxonomies then become the input to subsequent
 processing phases.
@@ -70,10 +75,12 @@ be run as a script.  Following are some examples of adjustments.
 1. alignments to override automated alignment rules (Eccrinales not in Fungi,
    Myzostomatida not in Annelida)
 
-In the process of assembling the reference taxonomy, 284 ad hoc
+In the process of assembling the reference taxonomy, 289 ad hoc
 adjustments are made to the source taxonomies before they are
 aligned to the workspace.
+<!--
 [JAR: check numbers when v3.0 is final: `python util/count_patches.py adjustments.py` ~= 289]
+-->
 
 ### Candidate identification
 
@@ -291,7 +298,7 @@ flagged _incertae sedis_.
 
 The following schematic examples illustrate each of the cases that come
 up while merging taxonomies. Note that, because the source taxonomies are added in order of priority, if there is a conflict between the workspace
-and the new source, we retain the workspace. Figure 3 illustrates each of these six cases.
+and the new source, we retain what's in the workspace. Figure 3 illustrates each of these six cases.
 
 1. ((a,b)x,(c,d)y)z + ((c,d)y,(e,f)w)z = ((a,b)x,(c,d)y,(e,f)w)z
 
@@ -341,26 +348,43 @@ and the new source, we retain the workspace. Figure 3 illustrates each of these 
 
    So that we have a term for this situation, say that x is _absorbed_ into z.
 
-[KC: I couldn't find an example that looked like case number 6.  We could replace
-what was there with a new tree showing conflict, but it would have to
-be very simple.  The only two cases I've found so far (Pisces and
-Archaeognatha) have the form ((a,b)c) + (a,(b,c)).  Thoughts?]
+1. ((a,b)x,(c,d)y)z + ((a,c)p,(b,d,e)q)z = ((a,b)x,(c,d)y,?e)z
+
+   If the source has a hierarchy that is incompatible with the one in
+   the workspace, the conflicting source nodes are ignored, and any
+   unaligned nodes (e) become _incertae sedis_ nodes under an ancestor
+   containing the incompatible node's children.
+
+   For example, NCBI contributes Insecta = Dicondylia + Monocondylia
+   to the workspace, with Dicondylia = Pterygota + Zygentoma.  WoRMS
+   as a source has Insecta = Apterygota + Pterygota, where Apterygota
+   = Thysanura + Archaeognatha, and Thysanura has Zygentoma as a
+   synonym.  That is, NCBI groups Thysanura (Zygentoma) with
+   Pterygota, while WoRMS groups it with Archaeognatha.  The WoRMS
+   hierarchy is ignored in favor of the higher priority NCBI
+   hierarchy.
+
+   The test for compatibility is very simple: a source node is
+   incompatible with the workspace if the nodes that its aligned
+   children align with do not all have the same parent.
 
 ## Final patches
 
-After all source taxonomies are aligned and merged, we apply general ad hoc
-patches to the workspace, in a manner similar to that
-employed with the source taxonomies.  Patches are represented in a
-variety of formats representing historical accidents of curation (i.e. we
-have updated our patch system over time in response to curator feedback).  Rather
-than convert all patches to
-some form already known to the system, we kept them in their original form.
-This practice facilitates further editing.
+After all source taxonomies are aligned and merged, we apply general
+ad hoc additions and patches to the workspace, in a manner similar to
+that employed with the source taxonomies.  Patches are represented in
+three formats; an early patch system used hand-written tabular files,
+additions via the user interface use a machine-processed JSON format,
+and most other patches are written as simple Python statements.  There
+are 106 additions in JSON form, 97 additions and patches in tabular
+form, and approximately 121 in Python form.
 
-* give the number of patches [JAR: get number from v3.0 when final;
-`python util/count_patches.py amendments.py` ~= 121,
-`tail +2 feed/misc/chromista-spreadsheet.csv | wc` = 239,
-`cat amendments/*.json | grep original_label | wc` ~= 106]
+<!--
+[JAR: get numbers from v3.0 when final;
+`grep "^[a-z]" ../../feed/ott/edits/*.tsv | wc` = 97
+`cat amendments/*.json | grep original_label | wc` = 106
+`python util/count_patches.py amendments.py` = 121 ]
+-->
 
 ## Assigning identifiers
 

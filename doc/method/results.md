@@ -1,12 +1,12 @@
 ## Summary of Open Tree Taxonomy
 
-The methods and results presented here are for version 3.0 of the Open Tree Taxonomy (which follows five previous releases using the automated assembly method). The taxonomy contains 3,592,832 total taxa, 3,271,408 tips and 276,375 internal nodes. 2,335,148 of the nodes have a Linnean binomial of the form Genus epithet. There are 2,031,519 synonym records and 8154 homonyms (name-strings for which there are multiple nodes). A longer list of metrics is in supplementary data.
+The methods and results presented here are for version 3.0 of the Open Tree Taxonomy (which follows five previous releases using the automated assembly method). The taxonomy contains 3,592,827 total taxa, 3,271,403 tips and 276,375 internal nodes. 2,335,143 of the nodes have a Linnean binomial of the form Genus epithet. There are 2,027,352 synonym records and 8154 homonyms (name-strings for which there are multiple nodes). A longer list of metrics is in supplementary data.
 
 ## Results of assembly procedure
 
-As OTT is assembled, the alignment procedure examines every source node, either choosing an alignment target for it in the workspace, or leaving it unaligned. The following table categorizes source nodes according to how they are processed in the alignment phase.
+As OTT is assembled, the alignment procedure processes every source node, either choosing an alignment target for it in the workspace based on the results of the heuristics, or leaving it unaligned. Of the 6,236,185 source nodes, 3,754,547 (60%) had no candidate nodes (i.e. they appear to be unique in the source). Of the remaining nodes with one or more candidates, application of the heuristics resulted in a single candidate 2,458,157 times, and rejected all candidates 10,593 times. These summary stats do not take into account special cases requiring ad hoc intervention. Table X describes the detailed results of the alignment phase. We note that presence of a single candidate node does not automatically align the two nodes - we still apply the heuristics to ensure a match (and occasionally reject the single candidate).  
 
-For the 139790 cases where there were multiple candidates, we use the heuristics described in Methods to try and align a source node to a single node in the workspace. Here is the frequency of use of each heuristic:
+When reducing a candidate set from multiple nodes to one node, we counted the frequency of success for each heuristic, i.e. the number of times that a particular heuristic was the one that resulted in a single candidate. Table X shows these results. Separation (do not align taxa in different groups, according to the separation taxonomy; used first), Lineage (align taxa with shared lineage; used midway through) and Same-name-string (prefer candidates who primary name string matches; used last) were by far the most frequent. 
 
 21898 (15.7%) : Separation
 164 (0.1%) : Disparate ranks"
@@ -26,16 +26,16 @@ We set out to cover the OTUs in the Open Tree corpus of phylogenetic trees. The
 corpus contains published studies (each study with one or more phylogenetic
 trees) that are manually uploaded and annotated by Open Tree curators. The use
 interface contains tools that help curators map the OTUs in a study to taxa in
-OTT. Of the 3242 studies in the Open Tree database, 2871 have at least 50% of
+OTT. Of the 3,242 studies in the Open Tree database, 2,871 have at least 50% of
 OTUs mapped to OTT.  (A lower overall mapping rate usually indicates incomplete
-curation, not an inability to map to OTT.)  These 2871 studies contain 538728
+curation, not an inability to map to OTT.)  These 2,871 studies contain 538,728
 OTUs, and curators have mapped 514346 to OTT taxa, or 95.5%.
 
 To assess the reason for the remaining 4.5% of OTUs being unmapped, we
-investigated a random sample of 10 OTUs.  In three cases, the label
+investigated a random sample of ten OTUs.  In three cases, the label
 was a genus name in OTT followed by "sp" (e.g. "_Euglena sp_"),
-suggesting the curator's unwillingness to make use of an OTU not
-classified to species.  In the remaining seven cases, the taxon was
+suggesting the curator's unwillingness to take the genus as the correct mapping for the OTU.
+In the remaining seven cases, the taxon was
 already in OTT, and additional curator effort would have found it.
 Two of these were misspellings in the phylogeny source; one was
 present under a slightly different name-string (subspecies in OTT,
@@ -44,9 +44,18 @@ reclassification); and in the remaining four cases, either the taxon
 was added to OTT after the study was curated, or the curation task was
 left incomplete.
 
+Of the 195,355 OTT records that are the targets of OTUs, 190,084
+(97.3%) are represented in NCBI Taxonomy.  If the Open Tree project
+had simply adopted NCBI Taxonomy instead of OTT, it would have met its
+OTU coverage requirement (but not the taxonomic coverage requirement).
+This reflects a preference among our curators for molecular
+phylogenetic evidence over other kinds.
+
+<!--
 [JAR: measure of how many mapped OTUs come from NCBI, i.e. how close NCBI
-gets us to the mapping requirement: `python doc/method/otus_in_ncbi.py` =
-'172440 out of 195675 OTUs mapped to OTT are in NCBI' (88%)]
+gets us to the mapping requirement: `../../bin/jython measure_coverage.py` =
+NCBI 190084, OTT 195355 = 0.9730
+-->
 
 ### Taxonomic coverage
 
@@ -89,7 +98,8 @@ version of GBIF used a different taxonomy file format, which requires
 extensive changes to our import code (most notably, handling taxon
 name-strings that now included authority information).
 
-We estimate the the update from OTT v2.10 to OTT v3.0 required approximately 3 days of development time. This was greater than previous updates due to the changes required to handle the major changes in GBIF content and format.  
+We estimate the update from OTT v2.10 to OTT v3.0 required approximately three days of development time
+related to source taxonomy changes. This was greater than previous updates due to the changes required to handle the major changes in GBIF content and format.  
 
 ### Open data
 

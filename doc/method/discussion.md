@@ -65,6 +65,43 @@ common and unique heuristics to automated, scalable name-string matching.
 
 ## Potential improvements and future work
 
-Certainly the taxonomy could be improved by incorporating DUA-encumbered
-sources such the IUCN Red List, but doing so would conflict with the
-project's open data requirement.
+The development of the assembly asoftware has been driven by the needs
+of the Open Tree project, not by any concerted effort to create a
+widely applicable or theoretically principled tool.  Many improvements
+are possible on both practical and theoretical grounds.  Following are
+some of the directions for development that could have the highest
+impact.
+
+* It is very likely that the method could be improved by making better
+  use of tree topology, and decreasing its reliance on the names of
+  internal nodes.  Better use of topology might permit separation and
+  identification of tips without use of a separation taxonomy,
+  removing the need for the manual work of maintaining the separation
+  taxonomy and aligning source taxonomies to it (when the alignment
+  cannot be done automatically).
+
+* Additional information that is available in some source taxon
+  records could be put to good use in alignment, especially authority
+  information.  Names could also be analyzed to detect partial
+  matches, e.g. epithet-only matching (in the presence of other
+  evidence such as family), spelling and gender variant recognition.
+
+* An assembly run can lead to a variety of error conditions and test
+  failures.  Currently these are difficult to diagnose, mainly for
+  lack of technology for displaying the particular pieces of the
+  source taxonomies, workspace, and alignment and merge history that
+  are relevant to the error.  Once this information is surfaced it is
+  usually not too difficult to work out a fix in the form of a patch
+  or an improvement to the program.
+
+* The presence of invalid and unaccepted names remains a significant
+  problem.  The information necessary to detect them is out there in
+  databases, and could be harvested.
+
+* Curators frequently request new taxonomy sources.  The most frequently
+  requested are improved fish, bird, and plant sources.  Again, the
+  information is available, but not yet harvested.
+
+* Basic usability features for application to new projects would
+  include proper packaging of the application, and support for Darwin
+  Core Archives.

@@ -82,9 +82,14 @@ public abstract class Node {
 			return "";
 	}
 
-    public void copySourceIdsTo(Node node) {
-        if (this.sourceIds != null)
-            node.sourceIds = new ArrayList<QualifiedId>(this.sourceIds);
+    // hmm, I think node is always a taxon
+    public void copySourceIdsFrom(Node node) {
+        if (node.sourceIds != null) {
+            this.sourceIds = new ArrayList<QualifiedId>(node.sourceIds);
+            Taxonomy tax = this.getTaxonomy();
+            for (QualifiedId qid : this.sourceIds)
+                tax.indexByQid(this, qid);
+        }
     }
 
 }

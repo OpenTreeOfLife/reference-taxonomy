@@ -383,7 +383,7 @@ def patch_fung(fung):
             cyph.rename('Cyphellopsis')
         else:
             cyph = fung.newTaxon('Cyphellopsis', 'genus', 'if:17439')
-        fung.taxon('Niaceae').take(cyph)
+            fung.taxon('Niaceae').take(cyph)
 
     fung.taxon('Asterinales').synonym('Asteriniales', 'spelling variant')  #backward compatibility
 
@@ -440,8 +440,8 @@ def patch_fung(fung):
     # 2015-10-06 https://en.wikipedia.org/wiki/Taphrinomycotina
     if fung.taxon('Taphrinomycotina').isRoot():
         fung.taxon('Ascomycota').take(fung.taxon('Taphrinomycotina'))
-    if fung.taxon('Saccharomycotina').isRoot():
-        fung.taxon('Ascomycota').take(fung.taxon('Saccharomycotina'))
+        if fung.taxon('Saccharomycotina').isRoot():
+            fung.taxon('Ascomycota').take(fung.taxon('Saccharomycotina'))
 
     # 2016-09-01 This is unplaced and keeps getting erroneously mapped to
     # Rhodophyta, creating duplicates (it's really a Chlorophyte)
@@ -479,11 +479,10 @@ def link_to_h2007(tax):
             print '*** Missing fungal order', order_name
 
     # Stereopsidaceae = Stereopsis + Clavulicium
-    if tax.maybeTaxon('Stereopsidaceae') == None:
-        s = tax.newTaxon('Stereopsidaceae', 'family', 'https://en.wikipedia.org/wiki/Stereopsidales')
-        s.take(tax.taxon('Stereopsis', 'Agaricomycetes'))
-        s.take(tax.taxon('Clavulicium', 'Agaricomycetes'))
-        # Dangling node at this point, but will be attached below
+    s = establish('Stereopsidaceae', tax, division='Fungi', source='gbif:7717211')
+    s.take(tax.taxon('Stereopsis', 'Agaricomycetes'))
+    s.take(tax.taxon('Clavulicium', 'Agaricomycetes'))
+    # Dangling node at this point, but will be attached below
 
     # 2015-07-13 Romina
     h2007_fam = 'http://figshare.com/articles/Fungal_Classification_2015/1465038'
@@ -835,7 +834,8 @@ def align_ncbi(ncbi, silva, ott):
 
     a = ott.alignment(ncbi)
 
-    set_SAR_divisions(ncbi, ott)
+    for name in ['Stramenopiles', 'Alveolata', 'Rhizaria']:
+        ott.setDivision(ncbi.taxon(name), 'SAR')
 
     a.same(ncbi.taxon('Viridiplantae'), ott.taxon('Chloroplastida'))
 
@@ -974,26 +974,22 @@ def align_gbif(gbif, ott):
 
     a = ott.alignment(gbif)
 
+    # First fix the divisions
     ott.setDivision(gbif.taxon('Chromista'), 'Eukaryota')
     ott.setDivision(gbif.taxon('Protozoa'), 'Eukaryota')
 
     plants = set_divisions(gbif, ott)
     a.same(plants, ott.taxon('Archaeplastida'))
+    ott.setDivision(gbif.taxon('Ciliophora', 'Chromista'), 'SAR')  #GBIF puts it in Chromista, actually Alveolata
 
-    # http://dev.gbif.org/issues/browse/POR-3073
-    # 2016 GBIF seems to have Fragillariophyceae in a class Bacillariophyceae.
-    # In NCBI (and everywhere else) the taxon called 'Bacillariophyceae'
-    # is a sibling of Fragillariophyceae in Bacillariophyta.
-    # This loop seems to be unnecessary, but not worrying about it for now.
-    for (in_sar, ott_name) in [('Bacillariophyceae', 'Bacillariophyta'),
-                               ('Foraminifera', 'Foraminifera'),
-                               ('Ochrophyta', 'Stramenopiles')]:
-        taxon = gbif.taxon(in_sar)
-        if taxon != None:
-            ott.setDivision(taxon, 'SAR')
-            a.same(taxon, ott.taxon(ott_name, 'SAR'))
+    print '# Chromista division =', gbif.taxon('Chromista').getDivision()
+    print '# Ciliophora division =', gbif.taxon('Ciliophora', 'Chromista').getDivisionProper()
+    print '# Ciliophora division =', gbif.taxon('Ciliophora', 'Chromista').getDivision()
+    print '# 8248855 division =', gbif.taxon('8248855').getDivisionProper()
+    print '# 8248855 division =', gbif.taxon('8248855').getDivision()
 
     a.same(gbif.taxon('Animalia'), ott.taxon('Metazoa'))
+    # End divisions
 
     # can't figure out why this is here.  maybe in wrong place.
     a.same(gbif.taxon('Cyclophora', 'Bacillariophyceae'),
@@ -1143,9 +1139,6 @@ def align_gbif(gbif, ott):
     # But they cannot be proper homonyms; too close.
     # (gbif is in Agaricomycotina, ncbi is in Ustilaginomycotina)
     a.same(gbif.taxon('Moniliellaceae', 'Fungi'), ott.taxon('Moniliellaceae', 'Fungi'))
-
-    # 2017-02-15 Noticed during 3.0 build
-    a.same(gbif.maybeTaxon('Ochrophyta'), ott.taxon('Stramenopiles'))
 
     return a
 
@@ -1417,20 +1410,25 @@ def patch_gbif(gbif):
 
 # Align low-priority WoRMS
 def align_worms(worms, ott):
-    ott.setDivision(worms.taxon('Chromista'), 'Eukaryota')
-    ott.setDivision(worms.taxon('Protozoa'), 'Eukaryota')
-
-    worms.taxon('Glaucophyta').absorb(worms.taxon('Glaucophyceae'))
 
     a = ott.alignment(worms)
+
+    # First get the divisions right
     a.same(worms.taxon('Biota'), ott.taxon('life'))
     a.same(worms.taxon('Animalia'), ott.taxon('Metazoa'))
 
-    a.same(worms.taxon('Harosa'), ott.taxon('SAR'))
+    ott.setDivision(worms.taxon('Chromista'), 'Eukaryota')
+    ott.setDivision(worms.taxon('Protozoa'), 'Eukaryota')
+
+    a.same(worms.taxon('Harosa'), ott.taxon('SAR'))     # Cool!
     a.same(worms.taxon('Heterokonta'), ott.taxon('Stramenopiles'))
 
     plants = set_divisions(worms, ott)
     a.same(plants, ott.taxon('Archaeplastida'))
+    ott.setDivision(worms.taxon('Ciliophora', 'Chromista'), 'SAR')
+
+    worms.taxon('Glaucophyta').absorb(worms.taxon('Glaucophyceae'))
+    # End divisions adjustments
 
     a.same(worms.taxonThatContains('Trichosporon', 'Trichosporon lodderae'),
            ott.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
@@ -1571,12 +1569,15 @@ def align_irmng(irmng, ott):
 
     a = ott.alignment(irmng)
 
+    # Fix divisions
     ott.setDivision(irmng.taxon('Protista'), 'Eukaryota')
 
     a.same(irmng.taxon('Animalia'), ott.taxon('Metazoa'))
 
     plants = set_divisions(irmng, ott)
+    ott.setDivision(irmng.taxon('Ciliophora', 'Protista'), 'SAR')
     a.same(plants, ott.taxon('Archaeplastida'))
+    # End divisions
 
     # Fungi suppressed at David Hibbett's request
     irmng.taxon('Fungi').hideDescendantsToRank('species')
@@ -1714,17 +1715,33 @@ def set_divisions(taxonomy, ott):
     # These aren't plants
     set_SAR_divisions(taxonomy, ott)
 
+    # Where does this belong?
+    z = taxonomy.maybeTaxon('Microsporidia')
+    if z != None:
+        ott.setDivision(z, 'Fungi')  #GBIF puts it in Protozoa, IF in Fungi
+
     return plants
 
-sar_contains = ['Stramenopiles', 'Heterokonta', 'Heterokontophyta',
-                'Alveolata', 'Rhizaria',
-                'Bacillariophyta', 'Bacillariophyceae',
-                'Foraminifera', 'Foraminiferida',
-                'Ochrophyta']
+sar_contains = ['Stramenopiles',
+                'Heterokonta',
+                'Heterokontophyta',
+                'Alveolata',
+                'Rhizaria',
+                'Bacillariophyta',
+                'Bacillariophyceae',
+                'Foraminifera',
+                'Foraminiferida',
+                'Myzozoa',     #GBIF puts it in Chromista
+                'Ochrophyta',  #GBIF puts it in Chromista
+                'Oomycota',    #GBIF puts it in Chromista
+                'Radiozoa',	   #GBIF puts it in Chromista, acutally Rhizaria
+                'Dinophyta',   #IRMNG puts in in Protista, actually Rhizaria
+                ]
 
 def set_SAR_divisions(taxonomy, ott):
     for name in sar_contains:
-        z = taxonomy.maybeTaxon(name)
+        z = taxonomy.maybeTaxon(name, 'Chromista')
+        if z == None:
+            z = taxonomy.maybeTaxon(name, 'Protista')
         if z != None:
             ott.setDivision(z, 'SAR')
-

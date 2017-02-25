@@ -161,7 +161,8 @@ public abstract class Taxonomy {
             Taxon existing = this.lookupId(id);
             if (existing != null) {
                 if (existing != node)
-                    System.err.format("** Id collision: %s wants id of %s\n", node, existing);
+                    System.err.format("** Id collision: attempt to add %s (= %s) as an id for %s\n",
+                                      id, existing, node);
             } else {
                 if (node.id == null)
                     node.id = id;
@@ -292,39 +293,33 @@ public abstract class Taxonomy {
         else {
             Node node = this.qidIndex.get(qid);
             if (node != null) {
-                if (node.taxon().prunedp || this.qidAmbiguous.contains(qid))
+                if (node.taxon().prunedp)
                     return null;
+                if (this.qidAmbiguous.contains(qid)) {
+                    System.out.format("# Ambiguous qid %s = %s + ...\n", qid, node);
+                    return null;
+                }
             }
             return node;
         }
     }
 
-    // index a single node by one qid
+    // index a single node by one qid.
+    // Don't index synonyms.
     public void indexByQid(Node node, QualifiedId qid) {
+        if (node instanceof Synonym)
+            return;
         if (this.qidIndex != null) {
             Node other = this.qidIndex.get(qid);
             if (other != null) {
-                if (other != node)
+                if (other != node) {
                     this.qidAmbiguous.add(qid);
+                    System.out.format("# Making qid ambiguous %s = %s + %s\n", qid, node, other);
+                }
             } else
                 this.qidIndex.put(qid, node);
         }
     }
-
-    // index all nodes by all their qids
-    public void indexByQid() {
-        this.startQidIndex();
-        for (Taxon taxon : this.taxa()) {
-            if (taxon.sourceIds != null)
-                for (QualifiedId qid : taxon.sourceIds)
-                    indexByQid(taxon, qid);
-            for (Synonym syn : taxon.getSynonyms())
-                if (syn.sourceIds != null)
-                    for (QualifiedId qid : syn.sourceIds)
-                        indexByQid(syn, qid);
-        }
-    }
-
 
 	// DWIMmish - taxonomy can be specified in any of the following ways:
     //   1. interim taxonomy format, if argument ends with '/'
@@ -1205,7 +1200,7 @@ public abstract class Taxonomy {
 
     Taxon dupThoroughly(Taxon node, String reason) {
         Taxon newnode = dup(node, reason);
-        node.copySourceIdsTo(newnode);
+        newnode.copySourceIdsFrom(node);
         newnode.properFlags = node.properFlags;
         return newnode;
     }

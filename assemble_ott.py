@@ -380,28 +380,71 @@ def assign_ids_from_list(tax, filename):
     while True:
         row = r.readNext()
         if row == None: break
-        [qid, ids] = row
-        taxon = tax.lookupQid(QualifiedId(qid))
+        [qid_string, ids] = row
+        tracep = (qid_string == 'ncbi:33543' or qid_string == 'gbif:2433391'
+                  or qid_string == 'gbif:2467506' or qid_string == 'ncbi:28376')
+        if tracep:
+            print '# Tracing %s %s' % (qid_string, ids)
+        qid = QualifiedId(qid_string)
+        taxon = tax.lookupQid(qid)
         if taxon != None:
             id_list = ids.split(';')
+            qid_id = id_list[0]
+            if tracep == False:
+                tracep = (qid_id == '565578' or qid_id == '5541322')
 
-            # If every id maps either nowhere or to the taxon,
-            # set every id to map to the taxon.
-            win = True
-            for id in id_list:
-                z = tax.lookupId(id)
-                if z != None and z != taxon: win = False
-            if win:
-                if taxon.id != id_list[0]:
-                    if taxon.id == None:
-                        count += 1
+            if tracep:
+                print '# qid %s, id_list %s' % (qid, id_list)
+
+            # Look for collision
+            tenant = tax.lookupId(qid_id)
+            if tenant != None:
+                # qid_id is unavailable
+                # Happens 7700 or so times; most cases ought to be homonymized,
+                # but not all
+                if tracep:
+                    print '# %s (for %s) is in use by %s' % (qid_id, taxon, tenant)
+                False
+
+            # Qid from list is one of the taxon's qids.
+
+            # Use the proposed id if the qid's node has no id
+            elif taxon.id == None:
+                # Happens 87854 for OTT 3.0
+                if tracep: print '# Setting %s as id of %s' % (qid_id, taxon)
+                taxon.setId(qid_id)
+                # Deal with aliases
+                for id in id_list[1:]:
+                    if tax.lookupId(id) == None:
+                        if tracep: print '# adding %s as id for %s' % (id, taxon)
+                        tax.addId(taxon, id)
                     else:
-                        change_count += 1
-                        taxon.setId(id_list[0])
-                        for id in id_list:
-                            taxon.taxonomy.addId(taxon, id)
+                        if tracep:
+                            print '# alias %s (for %s) is in use by %s' % (id, taxon, tax.lookupId(id))
+                count += 1
+
+            # If it has an id, but qid is not the primary qid, skip it
+            elif taxon.sourceIds[0] != qid:
+                if tracep: print '# %s is minor for %s' % (qid_id, taxon)
+                False
+
+            # Use the id in the id_list if it's smaller than the one in taxon
+            elif int(qid_id) < int(taxon.id):
+                if tracep: print '# %s is replacing %s as the id of %s' % (qid_id, taxon.id, taxon)
+                taxon.setId(qid_id)
+                for id in id_list[1:]:
+                    if tax.lookupId(id) == None:
+                        tax.addId(taxon, id)
+                change_count += 1
+
+            else:
+                if tracep: print '# %s has id %s < %s' % (qid, qid_id, taxon)
+        else:
+            if tracep: print '# no taxon with qid %s; ids %s' % (qid, ids)
+
+
     infile.close()
-    print '| Assigned %s, changed %s ids from %s' % (count, change_count, filename)
+    print '| Assigned %s ids, changed %s ids from %s' % (count, change_count, filename)
 
     # Could harvest merges from the id list, as well, and
     # maybe even restore lower-numbered OTT ids.
@@ -555,4 +598,5 @@ names_of_interest = ['Ciliophora',
                      'Chromista',
                      'Protista',
                      'Protozoa',
+                     'Zaglossus bruijni',
                      ]

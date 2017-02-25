@@ -99,6 +99,8 @@ public class UnionTaxonomy extends Taxonomy {
         this.skeletonAlignment = a;
 	}
 
+    // node is in a source taxonomy
+
     public void setDivision(Taxon node, String divname) {
         Taxon div = skeletonAlignment.source.unique(divname);
         if (div != null)
@@ -124,7 +126,8 @@ public class UnionTaxonomy extends Taxonomy {
             setIdspace(source);
         source.setEventLogger(this.eventLogger);
         Alignment a = new AlignmentByName(source, this);
-        source.clearDivisions(); // division determinations are cached in nodes
+        // Don't clear divisions - sometimes they're set manually before this point
+        // source.clearDivisions(); // division determinations are cached in nodes
         // source.forest.setDivision(this.skeletonAlignment.source.forest);
         return a;
     }
@@ -354,51 +357,13 @@ public class UnionTaxonomy extends Taxonomy {
 		return maxid;
 	}
 
-	public void transferIds0(SourceTaxonomy idsource, Alignment a) {
-		System.out.println("--- Assigning ids to union starting with " + idsource.getTag() + " ---");
-
-        Map<Taxon, Taxon> assignments = new HashMap<Taxon, Taxon>();
-
-        int carryOver = 0;
-		for (Taxon idnode : idsource.taxa()) {
-            // Consider using idnode.id as the id for the union node it maps to
-			Taxon unode = a.getTaxon(idnode);
-			if (unode != null &&
-                unode.id == null &&
-                this.lookupId(idnode.id) == null) {
-
-                Taxon haveIdNode = assignments.get(unode);
-                if (haveIdNode == null)
-                    assignments.put(unode, idnode);
-                else if (betterIdNode(idnode, haveIdNode, unode))
-                    // Lumping.
-                    assignments.put(unode, idnode);
-			}
-		}
-
-        for (Taxon unode : assignments.keySet())
-            unode.setId(assignments.get(unode).id);
-
-        System.out.format("| %s ids transferred\n", assignments.size());
-
-        // Carry over forwards from previous OTT.
-        int forwardsCount = 0;
-        for (String id : idsource.allIds()) {
-            Taxon idnode = idsource.lookupId(id);
-            Taxon unode = a.getTaxon(idnode);
-            if (unode != null && this.lookupId(id) == null) {
-                this.addId(unode, id);
-                ++forwardsCount;
-            }
-        }
-        System.out.format("| %s merged ids transferred\n", forwardsCount);
-	}
+    // Prefer lower-numbered ids, when there is a choice
 
 	public void transferIds(SourceTaxonomy idsource, Alignment a) {
         List<String> all = new ArrayList<String>();
         for (String id : idsource.allIds())
             all.add(id);
-        Collections.sort(all);
+        Collections.sort(all, compareIds);
         int count = 0;
         int collisions = 0;
         for (String id : all) {
@@ -409,7 +374,7 @@ public class UnionTaxonomy extends Taxonomy {
                 if (collision == null) {
                     this.addId(unode, id);
                     ++count;
-                } else if (collision != unode) {
+                } else if (collision != idnode) {
                     System.out.format("| collision: id %s for %s now assigned to %s\n",
                                       id,
                                       idnode,
@@ -421,46 +386,16 @@ public class UnionTaxonomy extends Taxonomy {
         System.out.format("| %s ids transferred, %s collisions\n", count, collisions);
     }
 
-    // Return true if node1 is a better node to get id from than node2
-    boolean betterIdNode(Taxon node1, Taxon node2, Taxon unode) {
-        if (node1 == null || node1.id == null) return false;
-        if (node2 == null || node2.id == null) return true;
-        if (node1 == node2) return false;
-
-        // Prefer id node that has new node's source
-        if (unode.sourceIds != null) {
-            QualifiedId source = unode.sourceIds.get(0);
-            boolean s1 = (node1.sourceIds != null && node1.sourceIds.contains(source));
-            boolean s2 = (node1.sourceIds != null && node2.sourceIds.contains(source));
-            if (s1 != s2) return s1;
-        }
-
-        // Prefer id of node of same name
-        if (unode.name != null) {
-            boolean n1 = unode.name.equals(node1.name);
-            boolean n2 = unode.name.equals(node2.name);
-            if (n1 != n2) return n1;
-        }
-
-        /*
-        // Prefer formerly placed nodes ? ...
-        boolean p1 = node1.isPlaced();
-        boolean p2 = node2.isPlaced();
-        if (p1 != p2) return p1;
-
-        // Prefer nodes that are used in phylesystem or synthesis ? ...
-        boolean i1 = this.importantIds.lookupId(node1.id) != null;
-        boolean i2 = this.importantIds.lookupId(node2.id) != null;
-        if (i1 != i2) return i1;
-        */
-
-        // Prefer smaller node ids.
-        try {
-            return Integer.parseInt(node1.id) < Integer.parseInt(node2.id);
-        } catch (NumberFormatException e) {
-            return false;
-        }
-    }
+	static Comparator<String> compareIds = new Comparator<String>() {
+		public int compare(String x, String y) {
+            if (x == y) return 0;
+            if (x == null) return -1;
+            if (y == null) return 1;
+            int len = x.length() - y.length();
+            if (len != 0) return len;
+            return x.compareTo(y);
+		}
+	};
 
     // ----- "Preferred" ids (those in phylesystem or synthesis) - for reporting -----
 
@@ -501,7 +436,7 @@ public class UnionTaxonomy extends Taxonomy {
         return importantIds;
     }
 
-	// Cf. assignIds()
+	// Cf. carryOverIds()
 	// x is a source node drawn from the idsource taxonomy file.
 	// target is the union node it might or might not map to.
     // -- appears to be unused now.

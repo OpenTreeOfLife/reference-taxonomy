@@ -335,7 +335,7 @@ class MergeMachine {
         // grumble. comapped should be stored in the alignment.
         newnode.comapped = node;
         answer.maybeLog(union);
-        newnode.addSource(node);
+        addSource(newnode, node);
         return newnode;
 	}
 
@@ -418,13 +418,17 @@ class MergeMachine {
 
         // Hack for dealing with NCBI taxon merges
         int count = 0;
+        String idspace = source.getIdspace();
+        // For every id in the source taxonomy...
         for (String id: source.allIds()) {
             Taxon node = source.lookupId(id);
+            // If the id is an alias...
             if (node != null && !node.id.equals(id)) {
                 Taxon unode = alignment.getTaxon(node);
+                // If the source node is aligned...
                 if (unode != null) {
-                    union.indexByQid(unode,
-                                     new QualifiedId(source.getIdspace(), id));
+                    // index the source node under the alias
+                    union.indexByQid(unode, new QualifiedId(idspace, id));
                     ++count;
                 }
             }
@@ -440,15 +444,22 @@ class MergeMachine {
             unode.setName(node.name);
 
 		if (unode.rank == Rank.NO_RANK || unode.rank == Rank.CLUSTER_RANK)
-            unode.rank = node.rank;
+            if (node.rank != null)
+                unode.rank = node.rank;
 
 		unode.addFlag(node.flagsToAdd(unode));
 
         // No change to hidden or incertae sedis flags.  Union node
         // has precedence.
 
-        unode.addSource(node);
+        addSource(unode, node);
         // see https://github.com/OpenTreeOfLife/reference-taxonomy/issues/36
+	}
+
+	public void addSource(Taxon unode, Taxon node) {
+        // node may have multiple qids -- maybe we should index under all of them?
+        if (!node.unsourced)
+			unode.addSourceId(node.getQualifiedId());
 	}
 
 	// 3799 conflicts as of 2014-04-12

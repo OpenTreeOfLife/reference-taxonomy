@@ -413,6 +413,17 @@ NCBI.  How can that be?...   bug in online(), fixed.
 But the Cnidarian is still missing.  Why is irmng:1289670 not present
 in the OTT draft? ... it's there in tax/irmng, but not in the log ...
 
+2017-02-24 failing.  The error is:
+
+** More than one taxon named Campanella is in SAR
+   [(Campanella 136738=ncbi:168241+2), (Campanella 6412068=gbif:7898144+6)]
+
+ncbi:168241 < Peritrichia < Ciliophora < Alveolata.
+gbif:7898144 < Peritrichida < Ciliophora < Chromista.
+ciliophore find its way into SAR?  
+  
+
+
 ### Steinia
 
 Another 3-way homonym including SAR.
@@ -432,6 +443,22 @@ Steinia	irmng:1299622	not=>	?	unresolved/blocked	not-same/weak-division,not-same
 
 Solution: flush the dipteran, and its inclusion test
 Steinia,Holozoa,5346621,""
+
+Losing test:
+** More than one taxon named Steinia is in SAR
+   [(Steinia 564869=silva:AJ310494/#8+2), (Steinia 6414939=gbif:8248855+2)]
+
+gbif:8248855 = Steinia Diesing, 1866
+  in Ciliophora in Chromista - should match the one in SILVA.  Why
+  doesn't it?
+
+Steinia	gbif:8248855	not=>	Steinia	if:5201	1070040	not-same/weak-division	Eukaryota|Fungi
+Steinia	gbif:8248855	not=>	Steinia	silva:AJ310494/#8	564869	not-same/weak-division	Eukaryota|SAR
+Steinia	gbif:8248855	=>	Steinia	gbif:8248855	6412766	new/graft	null
+
+Why is its division Eukaryota instead of SAR?  ... bug in
+adjustment/alignment ...
+
 
 ### Tipuloidea
 

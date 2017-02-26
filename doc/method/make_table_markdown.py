@@ -263,12 +263,20 @@ merge_label_info = {
 source's extinctness flag, if any, is copied to the workspace node."""), #was aligned/tip
     "mapped/internal":
     (68, """Similarly, internal node"""), #was aligned/internal
-    "new/tip":
-    (70, """Source tip not aligned, so a new tip is created in the workspace."""),
-    "new/polysemy":
-    (72, """Similarly but there is already another node with this name-string in the workspace."""),
+
     "new/graft":
-    (74, 'New internal node, part of graft.'),
+    (70, """Root of unaligned source subtree copied (grafted) to existing workspace node."""),
+
+    "new/in-graft":
+    (70, """Part of an unaligned source subtree copied to workspace."""),
+
+    # "graft/tip":
+    # (71, """Source tip internal to a graft."""),
+    # "graft/polysemy":
+    # (72, """Similarly, but there is already another node with this name-string in the workspace."""),
+    # "graft/internal":
+    # (74, """Internal node internal to a graft."""),
+
     "new/refinement":
     (76, 'Source node inserted into the hierarchy above one workspace node and below another.'),
     "reject/absorbed":

@@ -132,13 +132,19 @@ public class UnionTaxonomy extends Taxonomy {
     public void align(Alignment a) {
         this.markDivisions(a);
         a.align(); // no reporting
+        populateAlignmentReport(a);
+    }
+
+    void populateAlignmentReport(Alignment a) {
         // Reporting
         for (Taxon node : a.source.taxa()) {
             if (node.prunedp) continue;
             Answer answer = a.getAnswer(node);
             String reason;
-            if (answer == null) reason = "none";
-            else reason = answer.reason;
+            if (answer == null)
+                reason = "none";
+            else
+                reason = answer.reason;
             Integer count = alignmentSummary.get(reason);
             if (count == null) count = 0;
             alignmentSummary.put(reason, 1 + count);
@@ -154,6 +160,7 @@ public class UnionTaxonomy extends Taxonomy {
         Taxonomy source = a.source;
         try {
             new MergeMachine(source, this, a, mergeSummary).augment();
+            fixMergeSummary(a);
             this.check();
             this.sources.add(source);
         } catch (Exception e) {
@@ -161,6 +168,53 @@ public class UnionTaxonomy extends Taxonomy {
             throw e;
         }
 	}
+
+    void fixMergeSummary(Alignment a) {
+        String prefix = a.source.getIdspace();    // how to identify copies of source nodes
+        int grafts = 0;
+        for (Taxon root : a.source.roots())
+            grafts += countGrafts(root, prefix, a);
+        Integer imports = mergeSummary.get("new/import");
+        if (imports == null)
+            ;   // first time through
+        else if (grafts < imports) {
+            mergeSummary.remove("new/import");
+            mergeSummary.put("new/graft", grafts);
+            // This isn't quite right - will also count some nodes in refinements
+            mergeSummary.put("new/in-graft", imports - grafts);
+        } else
+            System.err.format("** Grafts %s >= imports %s\n", grafts, imports);
+    }
+
+    // A graft is an edge where the parent is not in the source tree
+    // and the child is recursively in the source tree.
+
+    int countGrafts(Taxon node, String prefix, Alignment a) {
+        if (node.prunedp) return 0;
+        int grafts = 0;
+
+        for (Taxon child : node.getChildren()) {
+            int n = countGrafts(child, prefix, a);
+            if (n == 0) {
+                Taxon uchild = a.getTaxon(child);
+                if (uchild != null) {
+                    QualifiedId qid = uchild.originId();
+                    if (qid != null && qid.prefix.equals(prefix)) {
+
+                        Taxon uparent = uchild.parent;
+                        QualifiedId pid = uparent.originId();
+                        if (pid != null && !pid.prefix.equals(prefix))
+
+                            ++grafts;
+                    }
+                }
+            }
+            else
+                grafts += n;
+        }
+        return grafts;
+    }
+
 
     // Abbreviation for u.alignment(source) + u.absorb(source, a)
     // for when there are no ad-hoc alignments.

@@ -28,3 +28,16 @@ of synthesis requires that source taxonomies be available online, either through
 APIs or by bulk download, in a format that can be easily parsed, and ideally
 without terms of use that prevent distribution and re-use of the resulting
 synthetic taxonomies.    
+
+### Acknowledgments
+
+We would like to thank Nico Franz and Mark Holder for their comments
+on early versions of this manuscript; Markus Döring, Tony Rees, and
+Paul Kirk for answering our many questions about source taxonomies;
+Cody Hinchliff for writing an early version of the assembly code and
+etablishing the general approach to taxonomy combination; and Yan Wong
+and other users of the Open Tree system provided many helpful comments
+on the taxonomy.
+
+Financial support was provided by the National Science Foundation
+under grant number NNNNN-NNNNN.

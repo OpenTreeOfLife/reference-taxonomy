@@ -172,7 +172,7 @@ public class Taxon extends Node implements Comparable<Taxon> {
         Synonym syn = this.addSynonym(node.name, type);
         if (syn != null) {
             Taxon source = node.taxon();
-            if (!source.taxonomy.getIdspace().equals("skel")) //KLUDGE!!!
+            if (!source.unsourced)
                 syn.addSourceId(source.getQualifiedId());
         }
         return syn;

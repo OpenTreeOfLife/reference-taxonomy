@@ -1500,7 +1500,7 @@ public abstract class Taxonomy {
                         reportDifference("raised-to-root", node, node.parent, null, out);
                     else if (!newnode.isRoot() && node.isRoot())
                         reportDifference("no-longer-root", node, null, newnode.parent, out);
-                } else if (!newnode.isRoot() && !newnode.parent.id.equals(node.parent.id))
+                } else if (!newnode.isRoot() && !newnode.parent.equals(this.lookupId(node.parent.id)))
                     reportDifference("moved", node, node.parent, newnode.parent, out);
 				if (newnode.isHidden() && !node.isHidden())
 					reportDifference("hidden", node, null, null, out);

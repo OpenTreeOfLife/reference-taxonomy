@@ -374,11 +374,11 @@ public class UnionTaxonomy extends Taxonomy {
                 if (collision == null) {
                     this.addId(unode, id);
                     ++count;
-                } else if (collision != idnode) {
-                    System.out.format("| collision: id %s for %s now assigned to %s\n",
+                } else if (collision != unode) {
+                    System.out.format("| Collision: id %s is assigned to %s (wanted for %s)\n",
                                       id,
-                                      idnode,
-                                      collision);
+                                      collision,
+                                      unode);
                     ++collisions;
                 }
             }

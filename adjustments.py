@@ -69,6 +69,9 @@ def deal_with_polysemies(ott):
     establish('Lutheria', ott, division='Platyhelminthes', source='worms:479527', ott_id='5131356')  # flatworm
     establish('Lutheria', ott, division='Insecta', source='gbif:7978890')  # orthopteran
 
+    # not sure why this is needed.
+    establish('Stereopsidaceae', ott, division='Fungi', source='gbif:7717211')
+
 def load_silva():
     silva = Taxonomy.getTaxonomy('tax/silva/', 'silva')
 
@@ -454,6 +457,15 @@ def patch_fung(fung):
     # 2017-02-13 https://github.com/OpenTreeOfLife/opentree/issues/773
     fung.taxon('Dactylella ambrosia').notCalled('Fusarium ambrosium')
 
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/301
+    # An Ichthyosporean variously misclassified as a fungus or an oomyocote.
+    # Fixed by NCBI.
+    if fung.taxon('329819') != None:
+        fung.taxon('329819').prune()  # Dermocystidium salmonis
+    if fung.taxon('483212') != None:
+        fung.taxon('483212').prune()  # Ostracoblabe salmonis
+
+
     print "Fungi in Index Fungorum has %s nodes"%fung.taxon('Fungi').count()
 
 # tax = ott
@@ -479,7 +491,7 @@ def link_to_h2007(tax):
             print '*** Missing fungal order', order_name
 
     # Stereopsidaceae = Stereopsis + Clavulicium
-    s = establish('Stereopsidaceae', tax, division='Fungi', source='gbif:7717211')
+    s = tax.taxon('Stereopsidaceae', 'Fungi')
     s.take(tax.taxon('Stereopsis', 'Agaricomycetes'))
     s.take(tax.taxon('Clavulicium', 'Agaricomycetes'))
     # Dangling node at this point, but will be attached below
@@ -1139,6 +1151,9 @@ def align_gbif(gbif, ott):
     # But they cannot be proper homonyms; too close.
     # (gbif is in Agaricomycotina, ncbi is in Ustilaginomycotina)
     a.same(gbif.taxon('Moniliellaceae', 'Fungi'), ott.taxon('Moniliellaceae', 'Fungi'))
+
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/301
+    a.same(gbif.taxon('Dermocystidium salmonis'), ott.taxon('Dermocystidium salmonis', 'Ichthyosporea'))
 
     return a
 

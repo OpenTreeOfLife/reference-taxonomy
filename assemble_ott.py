@@ -599,4 +599,5 @@ names_of_interest = ['Ciliophora',
                      'Protista',
                      'Protozoa',
                      'Zaglossus bruijni',
+                     'Acropora',
                      ]

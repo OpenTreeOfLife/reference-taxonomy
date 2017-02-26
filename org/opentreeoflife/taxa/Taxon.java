@@ -157,7 +157,7 @@ public class Taxon extends Node implements Comparable<Taxon> {
             return null;
         } else {
             for (Synonym syn : this.synonyms)
-                if (syn.name.equals(name) && syn.type.equals(type))
+                if (syn.name.equals(name))
                     return syn;
             Synonym syn = new Synonym(name, type, this); // does addToNameIndex
             if (this.synonyms == NO_SYNONYMS)

@@ -34,8 +34,7 @@ def create_ott(version):
     for name in names_of_interest:
         ott.eventLogger.namesOfInterest.add(name)
 
-    # idspace string 'skel' is magical, see Taxon.addSource
-    ott.setSkeleton(Taxonomy.getTaxonomy('tax/skel/', 'skel'))
+    ott.setSkeleton(Taxonomy.getTaxonomy('tax/separation/', 'separation'))
 
     # These are particularly hard cases; create alignment targets up front
     adjustments.deal_with_polysemies(ott)
@@ -87,7 +86,7 @@ def merge_sources(ott):
     # higher priority to Worms for Malacostraca, Cnidaria so we split out
     # those clades from worms and absorb them before NCBI
     worms = adjustments.load_worms()
-    # Malacostraca instead of Decapoda because M. is in the skeleton
+    # Malacostraca instead of Decapoda because M. is in the separation taxonomy
     (malacostraca, worms_sans_malacostraca) = split_taxonomy(worms, 'Malacostraca')
     align_and_merge(ott.alignment(malacostraca))
     (cnidaria, low_priority_worms) = split_taxonomy(worms_sans_malacostraca, 'Cnidaria')

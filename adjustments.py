@@ -16,7 +16,8 @@ def deal_with_polysemies(ott):
     # ncbi 10197 	|	6072	|	Ctenophora	|	phylum	|	= comb jellies  OTT 641212
     # ncbi 516519	|	702682	|	Ctenophora	|	genus	|	= cranefly      OTT 1043126
 
-    # The comb jellies are already in the taxonomy at this point (from skeleton).
+    # The comb jellies are already in the taxonomy at this point (from
+    # separation taxonomy).
 
     # Add the diatom to OTT so that SILVA has something to map its diatom to
     # that's not the comb jellies.
@@ -28,7 +29,7 @@ def deal_with_polysemies(ott):
     # Diatom.  Contains e.g. Ctenophora pulchella.
     establish('Ctenophora', ott, ancestor='Bacillariophyta', ott_id='103964')
 
-    # The comb jelly should already be in skeleton, but include the code for symmetry.
+    # The comb jelly should already be in separation, but include the code for symmetry.
     # Contains e.g. Leucothea multicornis
     establish('Ctenophora', ott, parent='Metazoa', ott_id='641212')
 
@@ -71,6 +72,10 @@ def deal_with_polysemies(ott):
 
     # not sure why this is needed.
     establish('Stereopsidaceae', ott, division='Fungi', source='gbif:7717211')
+
+    # 3.0draft5 problem
+    establish('Corymorpha', ott, division='Cnidaria', source='ncbi:264057', ott_id='183501')
+    establish('Corymorpha', ott, division='Nematoda', source='ncbi:364543', ott_id='860265')
 
 def load_silva():
     silva = Taxonomy.getTaxonomy('tax/silva/', 'silva')
@@ -199,7 +204,7 @@ def patch_silva(silva):
     # JAR 2014-05-13 scrutinizing pin() and BarrierNodes.  Wikipedia
     # confirms this synonymy.  Dail L. prefers -phyta to -phyceae
     # but says -phytina would be more correct per code.
-    # Skeleton taxonomy has -phyta (on Dail's advice).
+    # Separation taxonomy has -phyta (on Dail's advice).
     silva.taxon('Rhodophyceae').synonym('Rhodophyta')    # moot now?
 
     silva.taxon('Florideophycidae', 'Rhodophyceae').synonym('Florideophyceae')
@@ -651,7 +656,7 @@ def patch_ncbi(ncbi):
         if ncbi.maybeTaxon(toplevel) != None:
             ncbi.taxon(toplevel).prune(this_source)
 
-    # - Canonicalize division names (cf. skeleton) -
+    # - Canonicalize division names (cf. separation) -
     # JAR 2014-05-13 scrutinizing pin() and BarrierNodes.  Wikipedia
     # confirms these synonymies.
     ncbi.taxon('Glaucocystophyceae').rename('Glaucophyta')

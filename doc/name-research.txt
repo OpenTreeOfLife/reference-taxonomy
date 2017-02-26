@@ -748,6 +748,29 @@ grep "Calothrix	" tax/gbif/taxonomy.tsv
 Solution: the AB074504/#6 variant seems to be a ghost - there is no
 such genus in modern versions of SILVA.  Rename it arbitrarily for now.
 
+### Acropora
+
+Two or three of them.  In OTT 2.10:
+
+1. 712401 = ncbi:6127,worms:205469,gbif:2259768,irmng:1360055 = a Cnidarian.
+
+2. Junior Homonym of Acropora Oken, 1815, Junior synonym of Porina d'Orbigny, 1852
+   via worms.  = 4149092
+
+In OTT 3.xdraft5:
+
+?. 298457 Acropora worms:205469,ncbi:6127,ncbi:646209,worms:248342,gbif:7673664,gbif:1004092,irmng:1278255
+Placed in Bryozoa.  This is wrong.  Easiest fix is to add Bryozoa as a
+separation taxon.
+
+1. 712401 Isopora, has synonym Acropora according to IRMNG
+
+2. Junior Homonym of Acropora Oken, 1815, Junior synonym of Porina
+   d'Orbigny, 1852  = 4149092
+
+So what is 298457 supposed to be?  ncbi:646209 = Heteropora.
+
+
 ## Trichosporon
 
 I think this is just a genus of fungi but I don't know why there end

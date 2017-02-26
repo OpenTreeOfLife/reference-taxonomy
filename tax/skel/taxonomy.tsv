@@ -13,6 +13,7 @@ uid	parent_uid	name	rank
 361838	5268475	Chloroplastida	no rank
 352914	304358	Fungi	no rank
 691846	304358	Metazoa	no rank
+442934	691846	Bryozoa	phylum
 641212	691846	Ctenophora	phylum
 67819	691846	Porifera	no rank
 641033	691846	Cnidaria	no rank

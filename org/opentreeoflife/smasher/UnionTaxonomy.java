@@ -172,21 +172,26 @@ public class UnionTaxonomy extends Taxonomy {
         }
 	}
 
+    // All copied nodes (other than refinements) are recorded as
+    // new/import.  We need to split this count into grafts and non-grafts.
+    // This is called for each merge but has to deal with cumulative counts.
+
     void fixMergeSummary(Alignment a) {
         String prefix = a.source.getIdspace();    // how to identify copies of source nodes
-        int grafts = 0;
+        int grafts = 0;                           // this source only
         for (Taxon root : a.source.roots())
             grafts += countGrafts(root, prefix, a);
-        Integer imports = mergeSummary.get("new/import");
-        if (imports == null)
-            ;   // first time through
-        else if (grafts < imports) {
-            mergeSummary.remove("new/import");
-            mergeSummary.put("new/graft", grafts);
-            // This isn't quite right - will also count some nodes in refinements
-            mergeSummary.put("new/in-graft", imports - grafts);
-        } else
-            System.err.format("** Grafts %s >= imports %s\n", grafts, imports);
+        Integer imports = mergeSummary.get("new/import");  // this source only! zeroed out every time
+        if (imports == null) imports = 0;
+        mergeSummary.remove("new/import");
+
+        Integer oldGrafts = mergeSummary.get("new/graft");
+        if (oldGrafts == null) oldGrafts = 0;
+        Integer oldNonGrafts = mergeSummary.get("new/in-graft");
+        if (oldNonGrafts == null) oldNonGrafts = 0;
+
+        mergeSummary.put("new/graft", oldGrafts + grafts);
+        mergeSummary.put("new/in-graft", oldNonGrafts + (imports - grafts));
     }
 
     // A graft is an edge where the parent is not in the source tree

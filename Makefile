@@ -13,7 +13,7 @@
 JAVAFLAGS=-Xmx14G
 
 # Modify as appropriate
-WHICH=3.0draft3a
+WHICH=3.0draft6
 PREV_WHICH=2.10
 
 # ----- Taxonomy source locations -----
@@ -111,7 +111,7 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py adjustments.py amendments.
 		    bin/jython \
 		    inclusions.csv \
 		    feed/amendments/amendments-1/next_ott_id.json \
-		    tax/skel/taxonomy.tsv \
+		    tax/separation/taxonomy.tsv \
 		    feed/ott_id_list/by_qid.csv
 	@date
 	@rm -f *py.class

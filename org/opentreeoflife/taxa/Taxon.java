@@ -164,7 +164,7 @@ public class Taxon extends Node implements Comparable<Taxon> {
             return null;
         } else {
             for (Synonym syn : this.synonyms)
-                if (syn.name.equals(name) && syn.type.equals(type))
+                if (syn.name.equals(name))
                     return syn;
             Synonym syn = new Synonym(name, type, this); // does addToNameIndex
             if (this.synonyms == NO_SYNONYMS)
@@ -179,7 +179,7 @@ public class Taxon extends Node implements Comparable<Taxon> {
         Synonym syn = this.addSynonym(node.name, type);
         if (syn != null) {
             Taxon source = node.taxon();
-            if (!source.taxonomy.getIdspace().equals("skel")) //KLUDGE!!!
+            if (!source.unsourced)
                 syn.addSourceId(source.getQualifiedId());
         }
         return syn;
@@ -372,10 +372,8 @@ public class Taxon extends Node implements Comparable<Taxon> {
 		if (this.division == null) {
 			if (this.parent != null)
 				this.division = this.parent.getDivision();
-            else {
-                // System.out.format("## No barrier taxonomy / %s\n", this);
+            else
                 return null;     // forest
-            }
 		}
 		return this.division;
 	}
@@ -410,14 +408,6 @@ public class Taxon extends Node implements Comparable<Taxon> {
 			   (this.name.startsWith(up.name) || up.taxonomy.lookup(up.name).size() > 1))
 			up = up.parent;
 		return up;
-	}
-
-	//out.println("uid\t|\tparent_uid\t|\tname\t|\trank\t|\t" +
-	//			"source\t|\tsourceid\t|\tsourcepid\t|\tuniqname\t|\tpreottol_id\t|\t");
-
-	public void addSource(Taxon source) {
-        if (!source.unsourced)
-			this.addSourceId(source.getQualifiedId());
 	}
 
 	public QualifiedId getQualifiedId() {

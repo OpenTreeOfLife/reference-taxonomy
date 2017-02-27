@@ -381,13 +381,10 @@ public class InterimFormat {
                 String[] parts = tabOnly.split(str);
                 String alias = parts[0].trim();
                 String truth = parts[1].trim();
-                Taxon dest = tax.lookupId(truth);
-                if (dest != null) {
-                    Taxon probe = tax.lookupId(alias);
-                    if (probe == null) {
-                        tax.addId(dest, alias);
-                        ++count;
-                    }
+                Taxon target = tax.lookupId(truth);
+                if (target != null && tax.lookupId(alias) == null) {
+                    tax.addId(target, alias);
+                    ++count;
                 }
             }
             System.out.format("| %s id aliases\n", count);

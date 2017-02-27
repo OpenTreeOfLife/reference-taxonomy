@@ -41,11 +41,12 @@ reclassification); and in the remaining four cases, either the taxon
 was added to OTT after the study was curated, or the curation task was
 left incomplete.
 
-Of the 195,355 OTT records that are the targets of OTUs, 190,084
-(97.3%) are represented in NCBI Taxonomy.  If the Open Tree project
+Of the 194,100 OTT records that are the targets of OTUs, 188,581
+(97.2%) are represented in NCBI Taxonomy.  If the Open Tree project
 had simply adopted NCBI Taxonomy instead of OTT, it would have met its
 OTU coverage requirement (but not the taxonomic coverage requirement).
-This reflects a preference among our curators for molecular
+By comparison, GBIF covers 87.6%, and IRMNG covers 62.8%.
+The high coverage by NCBI reflects a preference among our curators for molecular
 phylogenetic evidence over other kinds.
 
 <!--

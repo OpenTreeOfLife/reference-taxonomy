@@ -84,8 +84,8 @@ impact.
 * Additional information that is available in some source taxon
   records could be put to good use in alignment, especially authority
   information.  Names could also be analyzed to detect partial
-  matches, e.g. epithet-only matching (in the presence of other
-  evidence such as family), spelling and gender variant recognition.
+  matches, e.g. matching on species epithets even when the genus
+  disagrees, and spelling and gender variant recognition.
 
 * An assembly run can lead to a variety of error conditions and test
   failures.  Currently these are difficult to diagnose, mainly for
@@ -113,3 +113,17 @@ impact.
 * Basic usability features for application to new projects would
   include proper packaging of the application, and support for Darwin
   Core Archives.
+
+Future work on taxonomy aggregation should attempt a more rigorous and
+pluralistic approach to classification.  Alignment should detect and
+record lumping and splitting events, and the classification conflicts
+detected during merge should be exposed to users.  Exposing conflicts
+is in the interest of scientific transparency.  Retaining all higher
+groupings in the sources would be useful in phylogenetic analysis, as
+a check on which of the sources agree and which disagree with a given
+analysis.  Lumping and splitting, when they can be detected, could be
+recorded a taxon that has, as one of its children, a distinct taxon
+with the same name-string.  Ideally better handling of "taxon
+concepts" in aggregators would encourage sources to make links to
+descriptions and revisions more readily available for a variety of
+purposes.

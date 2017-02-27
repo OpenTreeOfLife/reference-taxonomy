@@ -94,9 +94,15 @@ test-results: make_table_markdown.py
 refresh: taxonomy_metrics.py
 	cp -p $(REF_HOME)/tax/ott/alignment_summary.json cache/
 	cp -p $(REF_HOME)/tax/ott/merge_summary.json cache/
-	$(JYTHON) $< $(REF_HOME)/tax/ott/ $(REF_HOME)/tax/skel/ \
+	$(JYTHON) $< $(REF_HOME)/tax/ott/ $(REF_HOME)/tax/separation/ \
 	   taxonomy_summary.json.new \
 	   contributions_summary.csv.new
 	mv taxonomy_summary.json.new cache/taxonomy_summary.json
 	mv contributions_summary.csv.new cache/contributions_summary.csv
 
+# How well does the taxonomy
+
+coverage:
+	$(REF_HOME)/bin/jython measure_coverage.py \
+	   $(REF_HOME)/tax/ott/ $(REF_HOME)/ids_that_are_otus.tsv \
+	   | tee out/coverage.txt

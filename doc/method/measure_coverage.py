@@ -1,35 +1,50 @@
+# Command line arguments: tax ids
+#   tax: path to taxonomy, e.g. ../../tax/ott/
+#   ids: path to ids file, e.g. ../../ids_that_are_otus.tsv
+
+# To test:
+#   ../../bin/jython measure_coverage.py ../../t/tax/aster/ ../../ids_in_synthesis.tsv
+
+
 from org.opentreeoflife.taxa import Taxonomy
 
-import os, csv
+import os, csv, sys
 
 home = '../..'
 
-ott = Taxonomy.getRawTaxonomy(os.path.join(home, 'tax/ott/'), 'ott')
-# for faster testing:
-#ott = Taxonomy.getTaxonomy(os.path.join(home, 't/tax/aster/'), 'ott')
+def doit(tax_path, ids_path):
 
-def doit():
+    ott = Taxonomy.getRawTaxonomy(tax_path, 'ott')
 
-    prefix_to_count = {}
-    otu_count = 0
-    ott_count = 0
+    all_nodes = {}
 
-    with open(os.path.join(home, 'ids_that_are_otus.tsv'), 'r') as infile:
+    with open(ids_path, 'r') as infile:
         reader = csv.reader(infile, delimiter='\t')
+        otu_count = 0
         for row in reader:
-            otu_count += 1
             id = row[0]
             if otu_count % 50000 == 0: print otu_count, id
+            otu_count += 1
             node = ott.lookupId(id)
             if node != None:
-                ott_count += 1
-                for qid in node.sourceIds:
-                    prefix = qid.prefix
-                    count = prefix_to_count.get(prefix, 0)
-                    prefix_to_count[prefix] = count + 1
+                all_nodes[node.id] = node
 
+    print 'OTT taxa assigned to OTUs:', len(all_nodes)
+
+    prefix_to_count = {}
+    ott_count = 0
+
+    for id in all_nodes:
+        node = all_nodes[id]
+        ott_count += 1
+        for qid in node.sourceIds:
+            prefix = qid.prefix
+            count = prefix_to_count.get(prefix, 0)
+            prefix_to_count[prefix] = count + 1
+
+    print 'OTT ids assigned to OTUs:', otu_count
     for prefix in prefix_to_count:
         print prefix, prefix_to_count[prefix]
-    print 'ott', ott_count
 
-doit()
+doit(sys.argv[1], sys.argv[2])
+

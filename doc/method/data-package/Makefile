@@ -3,53 +3,59 @@
 
 # This Makefile needs to be run in a directory that has just successfully built OTT 3.0 draft 3.
 
-all: ott3.0.tgz separation.tgz silva.tgz worms.tgz fung.tgz ncbi.tgz gbif.tgz irmng.tgz \
-  accessions.tgz amendments.tgz ott2.10.tgz by_qid.tgz amendments.tgz README
+all: $F/ott3.0.tgz $F/separation.tgz $F/silva.tgz $F/worms.tgz		\
+ $F/fung.tgz $F/ncbi.tgz $F/gbif.tgz $F/irmng.tgz $F/ $F/		\
+ $F/accessions.tgz $F/amendments.tgz $F/ott2.10.tgz $F/by_qid.tgz	\
+ $F/amendments.tgz $F/README
 
 REF=../../..
+F=files
 
-ott3.0.tgz: $(REF)/tarballs/ott3.0draft3.tgz
+$F/README: README
+	cp -p $< $@
+
+$F/ott3.0.tgz: $(REF)/tarballs/ott3.0draft3.tgz
 	ln -sf $< $@
 
-alt-ott3.0.tgz:
+$F/alt-ott3.0.tgz:
 	wget http://files.opentreeoflife.org/ott/ott3.0/ott3.0draft3.tgz
 
-separation.tgz: $(REF)/tax/separation/taxonomy.tsv
+$F/separation.tgz: $(REF)/tax/separation/taxonomy.tsv
 	tar czf $@ -C $(REF) tax/separation
 
-silva.tgz: $(REF)/tax/silva/taxonomy.tsv
+$F/silva.tgz: $(REF)/tax/silva/taxonomy.tsv
 	tar czf $@ -C $(REF) tax/silva
 
-worms.tgz: $(REF)/tax/worms/taxonomy.tsv
+$F/worms.tgz: $(REF)/tax/worms/taxonomy.tsv
 	tar czf $@ -C $(REF) tax/worms
 
-fung.tgz: $(REF)/tax/fung/taxonomy.tsv
+$F/fung.tgz: $(REF)/tax/fung/taxonomy.tsv
 	tar czf $@ -C $(REF) tax/fung
 
-ncbi.tgz: $(REF)/tax/ncbi/taxonomy.tsv
+$F/ncbi.tgz: $(REF)/tax/ncbi/taxonomy.tsv
 	tar czf $@ -C $(REF) tax/ncbi
 
-gbif.tgz: $(REF)/tax/gbif/taxonomy.tsv
+$F/gbif.tgz: $(REF)/tax/gbif/taxonomy.tsv
 	tar czf $@ -C $(REF) tax/gbif
 
-irmng.tgz: $(REF)/tax/irmng/taxonomy.tsv
+$F/irmng.tgz: $(REF)/tax/irmng/taxonomy.tsv
 	tar czf $@ -C $(REF) tax/irmng
 
 # genbank accessions
-accessions.tgz: $(REF)/feed/silva/work/accessions.tsv
+$F/accessions.tgz: $(REF)/feed/silva/work/accessions.tsv
 	tar czf $@  -C $(REF) feed/silva/work/accessions.tsv
 
 # amendments
-amendments.tgz: $(REF)/feed/amendments/amendments-1
+$F/amendments.tgz: $(REF)/feed/amendments/amendments-1
 	tar czf $@ -C $(REF) --exclude "\\.git" --exclude LICENSE feed/amendments
 
 # /amendments-1 
 # --exclude "\\.git" --exclude LICENSE 
 
-ott2.10.tgz: $(REF)/tax/prev_/taxonomy.tsv
+$F/ott2.10.tgz: $(REF)/tax/prev_/taxonomy.tsv
 	tar czf $@ -C $(REF) tax/prev_ott
 
-by_qid.tgz: $(REF)/ott_id_list/by_qid.csv
+$F/by_qid.tgz: $(REF)/ott_id_list/by_qid.csv
 	tar czf $@ -C $(REF) ott_id_list/by_qid.csv
 
 clean: rm *.tgz

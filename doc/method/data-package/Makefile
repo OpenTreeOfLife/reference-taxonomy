@@ -14,8 +14,8 @@ ott3.0.tgz: $(REF)/tarballs/ott3.0draft3.tgz
 alt-ott3.0.tgz:
 	wget http://files.opentreeoflife.org/ott/ott3.0/ott3.0draft3.tgz
 
-separation.tgz: $(REF)/tax/skel/taxonomy.tsv
-	tar czf $@ -C $(REF) tax/skel
+separation.tgz: $(REF)/tax/separation/taxonomy.tsv
+	tar czf $@ -C $(REF) tax/separation
 
 silva.tgz: $(REF)/tax/silva/taxonomy.tsv
 	tar czf $@ -C $(REF) tax/silva

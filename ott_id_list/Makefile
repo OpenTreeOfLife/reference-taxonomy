@@ -12,8 +12,16 @@ test: make_ott_id_list.py
 
 indexes: by_qid.csv
 
+# '-t ,' = field separator
+# '-k 1' = find sort key in column 1 (origin 1)
+# '-s' = stable
+# '-n' = numeric sort
+# by_qid.csv has two columns
+
 by_qid.csv: make_indexes.py ott_id_list
 	python make_indexes.py ott_id_list
+	sort -t , -k 2 -n -s by_qid.csv > $@.new
+	mv $@.new $@
 
 # sorts 160M in 3.2 seconds!!
 ott_id_list.csv: ott_id_list

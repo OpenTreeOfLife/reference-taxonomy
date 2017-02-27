@@ -289,7 +289,8 @@ public class AlignmentByName extends Alignment {
         Heuristic.ranks,                  // fail if incompatible ranks
 		Heuristic.lineage,                // prefer shared lineage
         Heuristic.subsumption,            // prefer shared membership
-        Heuristic.sameDivisionPreferred,  // prefer same division
+        Heuristic.weakDivision,           // require same division
+        // Heuristic.sameDivisionPreferred,  // prefer same division
         Heuristic.byPrimaryName,          // prefer same name
 		Heuristic.sameSourceId,           // prefer same source id
 		Heuristic.anySourceId,            // prefer candidate with any source id the same

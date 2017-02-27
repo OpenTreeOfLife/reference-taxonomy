@@ -6,6 +6,7 @@ def doit():
                      'notCalled', 'Has_child', 'Whether_same',
                      'fix_names',
                      'extinct', 'extant', 'set_extant', 'Whether_extant',
+                     'setDivision',
                      'same', 'synonym', 'prune', 'absorb', 'elide'])
 
     pat = re.compile('(%s)\\(' % (alts,))

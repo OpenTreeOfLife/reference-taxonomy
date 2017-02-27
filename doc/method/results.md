@@ -54,6 +54,39 @@ gets us to the mapping requirement: `../../bin/jython measure_coverage.py` =
 NCBI 190084, OTT 195355 = 0.9730
 -->
 
+### Phylogeneticaly informed classification
+
+Assessing whether OTT is more 'phylogenetically informed' than it
+otherwise might be is difficult.  To date the phylogenetic quality of
+the taxonomy comes from the priority order of the taxonomic sources.
+We have relied on the project's curators, who have a strong
+phylogenetic interest, to provide guidance.  Following are examples of
+curator decision-making:
+
+ * For microbes, SILVA is considered more phylogenetically sound than
+   NCBI taxonomy, because the SILVA taxonomy is based on a recent
+   comprehensive phylogenetic analysis.
+
+ * Priority of NCBI Taxonomy over the GBIF backbone is suggested by
+   NCBI's apparent interest in phylogeny, reflected in NCBI Taxonomy's
+   much higher resolution, its inclusion of phylogenetically important
+   groups such as Eukaryota, and by its avoidance of known
+   paraphyletic groupings such as Protozoa.
+
+ * The Hibbett 2007 upper fungal taxonomy reflects, by construction,
+   the most recent phylogenetic studies of Fungi.
+
+Ideally we would have a measure of 'phylogenetically informed' that we
+could use to compare OTT to other taxonomies, to test alternative
+constructions of OTT, and to check the forward progress of OTT.  It is
+not clear what one would use as a standard against which to judge.
+The Open Tree project's supertree of life is a candidate, but is not
+without issues (such as its own possible errors, and the fact that OTT
+is itself use in construction the supertree).  Ensuring that
+comparisons are meaningful, and comparable with one another, would be
+a technical challenge.
+
+
 ### Taxonomic coverage
 
 OTT has 2.3M binomials (presumptive valid species names), vs. 1.6M for
@@ -64,21 +97,6 @@ accepted.
 
 This level of coverage would seem to meet Open Tree's taxonomic
 coverage requirement as well as any other available taxonomic source.
-
-### Backbone quality
-
-Assessing the quality of the backbone is a challenge, and to do this thoroughly would require manual assessment against the scientific literature in taxonomy and phylogenetics. The ranking of inputs into the process allows curators with taxonomic expertise to elevate the rank of either whole input taxonomies (for example, NCBI at higher priority than GBIF) or specific clades (e.g. Cnidaria in WoRMS outranks NCBI Cnidaria).
-
-* We can check for resolution compared to other taxonomies, e.g. NCBI, GBIF,
-  IRMNG.  Crude measure is ratio of
-  nonterminal to terminal = average branching factor.  Might be good
-  to control for tip set (use same set of species for every taxonomy)
-  and/or only look at taxa above the species level.
-* How phylogenetically accurate is it?  One test of this: How many
-  nodes are found paraphyletic as a result of supertree synthesis?
-  2614 contested taxa (out of ...?).  Ideally we would compare
-  meaningfully to NCBI, GBIF, but this would require new syntheses...
-  http://files.opentreeoflife.org/synthesis/opentree7.0/output/subproblems/index.html#contested
 
 ### Ongoing update
 

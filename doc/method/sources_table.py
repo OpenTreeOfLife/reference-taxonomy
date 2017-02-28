@@ -17,7 +17,7 @@ properties = [
      'version': '4b3ba1a',
      'priority': 1,
      'focus': 'life',
-     'taxa': 29,
+     'taxa': 31,
      'synonyms': 8,
      'goals': ''},
     {'name': 'ARB-SILVA',
@@ -102,7 +102,9 @@ properties = [
 
 header = ['name', 'reference',
           #'version',   #Removed at KC's request
-          'focus', 'taxa', 'synonyms', 'priority', 'reasons']
+          'focus', 'taxa', 'synonyms',
+          # 'priority', #Removed at KC's request
+          'reasons']
 
 table = []
 table.append(header)
@@ -110,7 +112,9 @@ table.append(header)
 for plist in properties:
     table.append([plist['name'], plist['reference'],
                   #plist['version'],
-                  plist['focus'], plist['taxa'], plist['synonyms'], plist['priority'], plist['goals']])
+                  plist['focus'], plist['taxa'], plist['synonyms'],
+                  #plist['priority'],
+                  plist['goals']])
 
 
 def show_table_csv(table):

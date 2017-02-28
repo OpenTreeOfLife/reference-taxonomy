@@ -4,7 +4,7 @@
 Each source taxonomy has its own import procedure, usually a file
 download from the provider's web site followed by application of a
 script that converts the source to a common format for import.  Given
-the converted source files, the taxonomy can be read by the assembly
+the converted source files, the taxonomy can be read by the OTT assembly
 procedure.
 
 After each source taxonomy is loaded, the following normalizations
@@ -35,29 +35,34 @@ processing phases.
 
 ## Aligning nodes across taxonomies
 
+This section and the next give details of the taxonomy combination
+method introduced above.
+
+OTT is assembled in a temporary work area or _workspace_ by
+alternately aligning a source to the workspace and merging that source
+into the workspace.
 It is important that source taxonomy nodes be matched with workspace nodes when and
 only when this is appropriate.  A mistaken identity between a source
 node and a workspace node can be disastrous, leading not just to an
-incorrect tree but to downstream curation errors in OTU matching
+incorrect classification but to downstream curation errors in OTU matching
 (e.g. putting a snail in flatworms).  A mistaken non-identity
 (separation) can also be a problem, since taxon duplication
-(i.e. multiple nodes for the same taxon) leads to incomplete
-annotation (information about one copy not propagating to the other)
-and to loss of unification opportunities in phylogeny synthesis.
+(i.e. multiple nodes for the same taxon) leads to 
+loss of unification opportunities in phylogeny synthesis.
 
 As described above, source taxonomies are processed (aligned and
-merged) in priority order.  For each source taxonomy, ad hoc
+merged) in priority order.  For each source taxonomy, _ad hoc_
 adjustments are applied before automatic alignments.  For automatic
 alignment, alignments closest to the tips of the source taxonomy are
 found in a first pass, and all others in a second pass.  The two-pass
 structure permits first-pass alignments to be used during the second
 pass (see Overlap, below).
 
-### Ad hoc alignment adjustments
+### _Ad hoc_ alignment adjustments
 
-Automated alignment is preceded by ad hoc 'adjustments' that address
+A set of _ad hoc_ 'adjustments' address
 known issues that are beyond the capabilities of the automated process
-to fix. These often reflect either errors or missing information in source taxonomies, discovered through the failure of automated alignment, and confirmed manually via the primary literature. Although each individual adjustment is ad hoc, i.e. not the
+to address. These often reflect either errors or missing information in source taxonomies, discovered through the failure of automated alignment, and confirmed manually via the literature. Although each individual adjustment is _ad hoc,_ i.e. not the
 result of automation, the adjustments are recorded in a file that can
 be run as a script.  Following are some examples of adjustments.
 
@@ -65,7 +70,7 @@ be run as a script.  Following are some examples of adjustments.
 1. addition of synonyms to facilitate later matching (e.g. 'Florideophyceae' as synonym for 'Florideophycidae')
 1. name changes (e.g. 'Choanomonada' to 'Choanoflagellida')
 1. deletions (e.g. removing synonym 'Eucarya' for 'Eukaryota' to avoid
-   confusing eukaryotes with genus Eucarya in Magnoliopsida; or removing
+   confusing eukaryotes with genus _Eucarya_ in Magnoliopsida; or removing
    unaccepted genus _Tipuloidea_ in Hemiptera to avoid confusion with
    the superfamily in Diptera)
 1. merges to repair redundancies in the source (e.g. Pinidae, Coniferophyta, Coniferopsida)
@@ -75,11 +80,11 @@ be run as a script.  Following are some examples of adjustments.
 1. alignments to override automated alignment rules (Eccrinales not in Fungi,
    Myzostomatida not in Annelida)
 
-In the process of assembling the reference taxonomy, 289 ad hoc
+In the process of assembling the reference taxonomy, about 300 _ad hoc_
 adjustments are made to the source taxonomies before they are
 aligned to the workspace.
 <!--
-[JAR: check numbers when v3.0 is final: `python util/count_patches.py adjustments.py` ~= 289]
+[JAR: check numbers when 3.0 is final: `python util/count_patches.py adjustments.py` ~= 289]
 -->
 
 ### Candidate identification
@@ -110,8 +115,9 @@ Example: There are two nodes named _Aporia lemoulti_ in the GBIF
 backbone taxonomy; one is a plant and the other is an insect.  One of
 these two is an erroneous duplication, but the automated system has to
 be able to cope with this situation because we don't have the
-resources to correct all source taxonomy errors.  It is necessary to
-choose the right candidate for the IRMNG node with name _Aporia
+resources to correct all source taxonomy errors.  When IRMNG is
+aligned, it is necessary to
+choose the right candidate for the node with name _Aporia
 lemoulti_.  Consequences of incorrect placement might include putting
 siblings of IRMNG _Aporia lemoulti_ in the wrong kingdom as well.
 
@@ -132,10 +138,9 @@ them in the alignment process:
  1. **Separation**: If n and n' are contained in "obviously different" major groups
     such as animals and plants, do not align n' to n.  Two major
     groups (or "separation taxa") are "obviously different" if they
-    are disjoint as determined by the separation taxonomy and the alignments
-    of the source taxonomy and workspace to it.
+    are disjoint as determined by the separation taxonomy.
 
-    (Examples: (1) the _Aporia_ cases above; (2)
+    _Examples:_ (1) the _Aporia_ cases above; (2)
     NCBI says n = _Pteridium_ is a land plant, WoRMS says n' = _Pteridium_ is a
     rhodophyte, and the separation taxonomy says land plants and rhodophytes
     are disjoint, so n and n' are different taxa.
@@ -146,12 +151,12 @@ them in the alignment process:
     a rank inferior to genus (species, etc.) and the other is family or
     a rank superior to family (order, etc.).
 
-    (Examples: (1) IRMNG _Pulicomorpha_, a genus, matches NCBI
+    _Examples:_ (1) IRMNG _Pulicomorpha_, a genus, matches NCBI
     _Pulicomorpha_, a genus, not GBIF Pulicomorpha, a suborder.
     Note that both candidates are insects. (2) For genus _Ascophora_ in
     GBIF (which is in
     Platyhelminthes), candidate _Ascophora_ from WoRMS, a genus, is
-    preferred to candidate Ascophora from NCBI, an infraorder.)
+    preferred to candidate Ascophora from NCBI, an infraorder.
 
  1. **Lineage**: Prefer to align species or genus n' to n if they have
     common lineage.
@@ -159,19 +164,18 @@ them in the alignment process:
     the family-rank ancestor node of n' is the same as the name-string of the
     family-rank ancestor node of n.
 
-    (Example: Source node _Plasmodiophora diplantherae_ from Index
+    _Example:_ Source node _Plasmodiophora diplantherae_ from Index
     Fungorum, in Protozoa, has one workspace candidate derived from
     NCBI and another from WoRMS.  Because the source node and the NCBI
     candidate both claim to be in a taxon with name 'Phytomyxea', while the
-    WoRMS candidate has no applicable lineage in common, the NCBI
-    candidate is chosen.)
+    WoRMS candidate has no near lineage in common, the NCBI
+    candidate is chosen.
 
     The details are complicated because (a) every pair of nodes have
     at least _some_ of their lineage in common, and (b) genus names do not
     provide any information when comparing species nodes with the same
     name-string, so for species we can't just look at the parent taxon.  The exact
     rule used is the following:
-
     Define the 'quasiparent name' of n, q(n), to be the
     name-string of the nearest ancestor of n whose name-string is not
     a prefix of n's name-string.  (For example, the quasiparent of a species would typically be
@@ -181,53 +185,53 @@ them in the alignment process:
     then prefer n to candidates that lack these properties.
 
  1. **Overlap**: Prefer to align n' to n if they are higher level groupings that overlap.
-    Stated a bit more carefully: if n' has a descendant aligned to
+    Stated a bit more carefully: Prefern' if n' has a descendant aligned to
     a descendant of n.  
 
-    (Example: Source node _Peranema_ from GBIF has two candidates from NCBI.
+    _Example:_ Source node _Peranema_ from GBIF has two candidates from NCBI.
     One candidate shares descendant _Peranema cryptocercum_ with the source taxon,
     while the other shares no descendants with the source taxon.
-    The source is therefore aligned to the one with the shared descendant.)
+    The source is therefore aligned to the one with the shared descendant.
 
  1. **Proximity**:
-    Prefer candidates n with the property that
+    Require a candidate n to have the property that
     the smallest separation taxon containing the source node n'
-    is also the smallest separation taxon containing a candidate n.
+    is also the smallest separation taxon containing n.
 
-    (Example: for source node Heterocheilidae in IRMNG (a nematode family) whose smallest
-    separation ancestor is Metazoa, prefer
-    the NCBI Taxonomy candidate with smallest separation ancestor
-    Metazoa (also a nematode family) to the one with smallest separation
-    ancestor Diptera (a fly family).)
+    _Example:_ for source node Heterocheilidae in IRMNG (a nematode family) whose smallest
+    separation ancestor is Metazoa, choose
+    the workspace (NCBI) candidate with smallest separation ancestor
+    Metazoa (also a nematode family), and not the one with smallest separation
+    ancestor Diptera (a fly family).
 
  1. **Same name-string**: Prefer candidates whose primary name-string
     is the same as the primary name-string of n'.
 
-    (Example: For source node n' = GBIF _Zabelia tyaihyoni_,
+    _Example:_ For source node n' = GBIF _Zabelia tyaihyoni_,
     candidate _Zabelia tyaihyoni_ from NCBI is preferred to candidate
     _Zabelia mosanensis_, also from NCBI.  NCBI _Z. mosanensis_ is a
     candidate for n' because GBIF declares that _Z. mosanensis_ is a synonym
-    for GBIF _Z. tyaihyoni_.)
+    for GBIF _Z. tyaihyoni_.
 
 ### Control flow for applying heuristics
 
 Each heuristic, when presented with a source node and a
 candidate (workspace node), answers 'yes', 'no', or 'no information'.  'Yes' means
-that according to the rule the two nodes refer to the same taxon, 'no'
+that according to the rule, the two nodes refer to the same taxon, 'no'
 means they refer to different taxa, and 'no information' means that
 this rule provides no information as to whether the nodes refer to the
 same taxon.
 
 The answers are assigned numeric scores of 1 for yes, 0 for no
-information, and -1 for no.  Roughly speaking, a candidate that a
-heuristic gives a no is eliminated; one that is unique in getting a
+information, and -1 for no.  A candidate that a
+heuristic gives a no is eliminated, one that is unique in getting a
 yes is selected, and if there are no yeses or no unique yes, more
 heuristics are consulted.
 
 The heuristics are applied in the order in which they are listed
 above.  The outcome is sensitive to the ordering.  The ordering is
-forced to some extent by internal logic, and the final ordering
-was determined by extensive trial and error.
+forced to some extent by internal logic, but overall the ordering
+was determined by trial and error.
 
 If there is a single candidate that is not rejected by any heuristic,
 it is aligned to that candidate.
@@ -245,15 +249,15 @@ follows:
       1. Otherwise, replace C with C' and proceed to the next heuristic
  4. If C is singleton after all heuristics are exhausted, its
     member is taken to be the correct match.
- 5. Otherwise, the source node does not match unambiguously; alignment fails.
+ 5. Otherwise, the source node does not match unambiguously, and alignment fails.
 
 ### Failure to choose
 
 If the alignment process ends with multiple candidates, there is an
 unresolvable ambiguity.  If the ambiguous source node has no children,
 it is dropped, which is OK because it probably corresponds to one of
-the existing candidates and therefore would make no new contribution
-to the workspace.  If the ambiguous source node has children, it is
+the existing candidates and therefore would make no new contribution.
+If the ambiguous source node has children, it is
 treated as unaligned and therefore new, possibly turning an N-way
 homonym into an N+1-way homonym.  This could easily be wrong because
 it is so unlikely that the source node really represents a distinct taxon.
@@ -262,12 +266,12 @@ not needed because it inconsistent or can be 'absorbed', and it is
 dropped.  If it is not dropped, then there is a troublesome situation
 that calls for manual review.
 
-As an example of an unaligned tip, consider GBIF _Katoella pulchra_.  
+As an example of an unaligned tip, consider GBIF _Katoella pulchra_.
 The candidates are NCBI
 _Davallodes pulchra_ and _Davallodes yunnanensis_.  (There is no
 _Katoella pulchra_ in the workspace at the time of alignment.
 The two candidates come from synonymies with _Katoella pulchra_
-declared by GBIF.)  
+declared by GBIF.)
 Neither candidate is preferable to the other, so
 _Katoella pulchra_ is left unaligned and
 is omitted from the assembly.
@@ -279,7 +283,7 @@ After the alignment phase, we are left with the set of source nodes that
 could not be aligned to the workspace. The next step is to determine
 if and how these (potentially new) nodes can be merged into the workspace.
 
-The combined taxonomy U is constructed by adding copies of unaligned
+The combined taxonomy (U, above) is constructed by adding copies of unaligned
 nodes from the
 source taxonomy S' one at a time to the workspace, which initially
 contains a copy of S.  Nodes of S' therefore correspond to workspace nodes in
@@ -293,12 +297,13 @@ a child of the
 nearest common ancestor node of r''s siblings' images.  A graft is
 flagged _incertae
 sedis_ if that NCA is a node other than the parent of the sibling
-images.  Insertions by construction never have this property, so an insertion is never
+images.  By construction, insertions, never have this property, so an insertion is never
 flagged _incertae sedis_.
 
 The following schematic examples illustrate each of the cases that come
-up while merging taxonomies. Note that, because the source taxonomies are added in order of priority, if there is a conflict between the workspace
-and the new source, we retain what's in the workspace. Figure 3 illustrates each of these six cases.
+up while merging taxonomies. Taxonomy fragments are written in Newick
+notation [ref ?].
+Figure 3 illustrates each of these six cases.
 
 1. ((a,b)x,(c,d)y)z + ((c,d)y,(e,f)w)z = ((a,b)x,(c,d)y,(e,f)w)z
 
@@ -306,7 +311,7 @@ and the new source, we retain what's in the workspace. Figure 3 illustrates each
    so it and its children are copied.  The workspace copy of w is
    attached as a sibling of its siblings' images: its sibling is y in S',
    which is aligned to y in the workspace, so the copy becomes a child
-   of y's parent, or z (in the workspace).
+   of y's parent, or z.
 
 1. ((a,b)x,(c,d)y)z + (a,b,c,d)z = ((a,b)x,(c,d)y)z
 
@@ -316,7 +321,7 @@ and the new source, we retain what's in the workspace. Figure 3 illustrates each
 
 1. (a,b,c,d)z + ((a,b)x,(c,d)y)z = ((a,b)x,(c,d)y)z
 
-   Not a problem.  Supposing x and y are unaligned, then x and y from
+   Supposing x and y are unaligned, then x and y from
    S' insert into the classification of z.  The workspace gets copies of these
    two S'-nodes.
 
@@ -334,8 +339,9 @@ and the new source, we retain what's in the workspace. Figure 3 illustrates each
 
    For example, family Melyridae from GBIF has five genera, of which two
    (_Trichoceble_, _Danacaea_) are not found in the workspace,
-   and the other three do not all have the same parent after alignment
-   - they are in three different subfamilies.  _Trichoceble_ and _Danacaea_
+   and the other three do not all have the same parent after
+   alignment -
+   they are in three different subfamilies.  _Trichoceble_ and _Danacaea_
    are made to be _incertae sedis_ children of Melyridae, because
    there is no telling which NCBI subfamily they are supposed to go in.
 
@@ -355,14 +361,19 @@ and the new source, we retain what's in the workspace. Figure 3 illustrates each
    unaligned nodes (e) become _incertae sedis_ nodes under an ancestor
    containing the incompatible node's children.
 
-   For example, NCBI contributes Insecta = Dicondylia + Monocondylia
-   to the workspace, with Dicondylia = Pterygota + Zygentoma.  WoRMS
-   as a source has Insecta = Apterygota + Pterygota, where Apterygota
-   = Thysanura + Archaeognatha, and Thysanura has Zygentoma as a
-   synonym.  That is, NCBI groups Thysanura (Zygentoma) with
+   For example, when WoRMS is merged, the workspace has, from NCBI,
+
+   ((Archaeognatha)Monocondylia,(Pterygota,Zygentoma)Dicondylia)Insecta
+
+   and the classification given by WoRMS is
+
+   ((Archaeognatha,Thysanura=Zygentoma)Apteryogota,Pterygota)Insecta
+
+   That is, NCBI groups Thysanura (Zygentoma) with
    Pterygota, while WoRMS groups it with Archaeognatha.  The WoRMS
    hierarchy is ignored in favor of the higher priority NCBI
-   hierarchy.
+   hierarchy.  If Insecta in WoRMS had had an unaligned third child, it would
+   have ended up _incertae sedis_ in Insecta.
 
    The test for compatibility is very simple: a source node is
    incompatible with the workspace if the nodes that its aligned
@@ -371,16 +382,16 @@ and the new source, we retain what's in the workspace. Figure 3 illustrates each
 ## Final patches
 
 After all source taxonomies are aligned and merged, we apply general
-ad hoc additions and patches to the workspace, in a manner similar to
+_ad hoc_ additions and patches to the workspace, in a manner similar to
 that employed with the source taxonomies.  Patches are represented in
-three formats; an early patch system used hand-written tabular files,
+three formats.  An early patch system used hand-written tabular files,
 additions via the user interface use a machine-processed JSON format,
 and most other patches are written as simple Python statements.  There
 are 106 additions in JSON form, 97 additions and patches in tabular
 form, and approximately 121 in Python form.
 
 <!--
-[JAR: get numbers from v3.0 when final;
+[JAR: get numbers from 3.0 when final;
 `grep "^[a-z]" ../../feed/ott/edits/*.tsv | wc` = 97
 `cat amendments/*.json | grep original_label | wc` = 106
 `python util/count_patches.py amendments.py` = 121 ]
@@ -388,19 +399,18 @@ form, and approximately 121 in Python form.
 
 ## Assigning identifiers
 
-The final step is to assign unique, stable identifiers to nodes so that external links to OTT nodes will continue to functional correctly after the previous OTT version is replaced by the new one.
+The final step is to assign unique, stable identifiers to nodes so that external links to OTT nodes will continue to function correctly after the previous OTT version is replaced by the new one.
 
 Identifier assignment is done by aligning the previous version of OTT
-to the new taxonomy.  As with the other alignments, there are scripted
+to the new version.  As with the other alignments, there are scripted
 _ad hoc_ adjustments to correct for some errors that would otherwise
 be made by automated assignment.  For this alignment, the set of
-heuristics is extended by adding rules to prefer candidates that have
+heuristics is extended by adding rules that prefer candidates that have
 the same source taxonomy node id as the previous version node being
 aligned.  After transferring identifiers of aligned nodes, any
 remaining workspace nodes are given newly 'minted' identifiers.
 
-The previous OTT version is not merged into the new version; the alignment is
-computed only for the purpose of assigning identifiers.  A node can only persist
+The alignment is computed only for the purpose of assigning identifiers;
+the previous OTT version is not merged into the workspace.   An identifier can only persist
 from one OTT version to the next if it continues to occur in some source
-taxonomy.  If every taxon record giving rise to a particular workspace node
-disappears from the sources, the taxon  does not appear in the next OTT version.
+taxonomy.

@@ -17,3 +17,9 @@ echo $((n1 + n2 + n3))
 echo "  of which feed/ott/edits: $n1"
 echo "           amendments: $n2"
 echo "           amendments.py: $n3"
+
+echo
+
+echo "Number of separation taxa"
+tail +2 $R/tax/separation/taxonomy.tsv | wc | \
+  (read nn mm; echo $nn)

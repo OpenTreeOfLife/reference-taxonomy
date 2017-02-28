@@ -4,7 +4,7 @@
 Each source taxonomy has its own import procedure, usually a file
 download from the provider's web site followed by application of a
 script that converts the source to a common format for import.  Given
-the converted source files, the taxonomy can be read by the assembly
+the converted source files, the taxonomy can be read by the OTT assembly
 procedure.
 
 After each source taxonomy is loaded, the following normalizations
@@ -35,15 +35,20 @@ processing phases.
 
 ## Aligning nodes across taxonomies
 
+This section and the next give details of the taxonomy combination
+method introduced above.
+
+OTT is assembled in a temporary work area or _workspace_ by
+alternately aligning a source to the workspace and merging that source
+into the workspace.
 It is important that source taxonomy nodes be matched with workspace nodes when and
 only when this is appropriate.  A mistaken identity between a source
 node and a workspace node can be disastrous, leading not just to an
-incorrect tree but to downstream curation errors in OTU matching
+incorrect classification but to downstream curation errors in OTU matching
 (e.g. putting a snail in flatworms).  A mistaken non-identity
 (separation) can also be a problem, since taxon duplication
-(i.e. multiple nodes for the same taxon) leads to incomplete
-annotation (information about one copy not propagating to the other)
-and to loss of unification opportunities in phylogeny synthesis.
+(i.e. multiple nodes for the same taxon) leads to 
+loss of unification opportunities in phylogeny synthesis.
 
 As described above, source taxonomies are processed (aligned and
 merged) in priority order.  For each source taxonomy, ad hoc
@@ -55,9 +60,9 @@ pass (see Overlap, below).
 
 ### Ad hoc alignment adjustments
 
-Automated alignment is preceded by ad hoc 'adjustments' that address
+A set of _ad hoc_ 'adjustments' address
 known issues that are beyond the capabilities of the automated process
-to fix. These often reflect either errors or missing information in source taxonomies, discovered through the failure of automated alignment, and confirmed manually via the primary literature. Although each individual adjustment is ad hoc, i.e. not the
+to address. These often reflect either errors or missing information in source taxonomies, discovered through the failure of automated alignment, and confirmed manually via the literature. Although each individual adjustment is ad hoc, i.e. not the
 result of automation, the adjustments are recorded in a file that can
 be run as a script.  Following are some examples of adjustments.
 
@@ -65,7 +70,7 @@ be run as a script.  Following are some examples of adjustments.
 1. addition of synonyms to facilitate later matching (e.g. 'Florideophyceae' as synonym for 'Florideophycidae')
 1. name changes (e.g. 'Choanomonada' to 'Choanoflagellida')
 1. deletions (e.g. removing synonym 'Eucarya' for 'Eukaryota' to avoid
-   confusing eukaryotes with genus Eucarya in Magnoliopsida; or removing
+   confusing eukaryotes with genus _Eucarya_ in Magnoliopsida; or removing
    unaccepted genus _Tipuloidea_ in Hemiptera to avoid confusion with
    the superfamily in Diptera)
 1. merges to repair redundancies in the source (e.g. Pinidae, Coniferophyta, Coniferopsida)
@@ -75,7 +80,7 @@ be run as a script.  Following are some examples of adjustments.
 1. alignments to override automated alignment rules (Eccrinales not in Fungi,
    Myzostomatida not in Annelida)
 
-In the process of assembling the reference taxonomy, 289 ad hoc
+In the process of assembling the reference taxonomy, about 300 _ad hoc_
 adjustments are made to the source taxonomies before they are
 aligned to the workspace.
 <!--
@@ -110,8 +115,9 @@ Example: There are two nodes named _Aporia lemoulti_ in the GBIF
 backbone taxonomy; one is a plant and the other is an insect.  One of
 these two is an erroneous duplication, but the automated system has to
 be able to cope with this situation because we don't have the
-resources to correct all source taxonomy errors.  It is necessary to
-choose the right candidate for the IRMNG node with name _Aporia
+resources to correct all source taxonomy errors.  When IRMNG is
+aligned, it is necessary to
+choose the right candidate for the node with name _Aporia
 lemoulti_.  Consequences of incorrect placement might include putting
 siblings of IRMNG _Aporia lemoulti_ in the wrong kingdom as well.
 
@@ -132,10 +138,9 @@ them in the alignment process:
  1. **Separation**: If n and n' are contained in "obviously different" major groups
     such as animals and plants, do not align n' to n.  Two major
     groups (or "separation taxa") are "obviously different" if they
-    are disjoint as determined by the separation taxonomy and the alignments
-    of the source taxonomy and workspace to it.
+    are disjoint as determined by the separation taxonomy.
 
-    (Examples: (1) the _Aporia_ cases above; (2)
+    _Examples:_ (1) the _Aporia_ cases above; (2)
     NCBI says n = _Pteridium_ is a land plant, WoRMS says n' = _Pteridium_ is a
     rhodophyte, and the separation taxonomy says land plants and rhodophytes
     are disjoint, so n and n' are different taxa.
@@ -146,12 +151,12 @@ them in the alignment process:
     a rank inferior to genus (species, etc.) and the other is family or
     a rank superior to family (order, etc.).
 
-    (Examples: (1) IRMNG _Pulicomorpha_, a genus, matches NCBI
+    _Examples:_ (1) IRMNG _Pulicomorpha_, a genus, matches NCBI
     _Pulicomorpha_, a genus, not GBIF Pulicomorpha, a suborder.
     Note that both candidates are insects. (2) For genus _Ascophora_ in
     GBIF (which is in
     Platyhelminthes), candidate _Ascophora_ from WoRMS, a genus, is
-    preferred to candidate Ascophora from NCBI, an infraorder.)
+    preferred to candidate Ascophora from NCBI, an infraorder.
 
  1. **Lineage**: Prefer to align species or genus n' to n if they have
     common lineage.
@@ -159,19 +164,18 @@ them in the alignment process:
     the family-rank ancestor node of n' is the same as the name-string of the
     family-rank ancestor node of n.
 
-    (Example: Source node _Plasmodiophora diplantherae_ from Index
+    _Example:_ Source node _Plasmodiophora diplantherae_ from Index
     Fungorum, in Protozoa, has one workspace candidate derived from
     NCBI and another from WoRMS.  Because the source node and the NCBI
     candidate both claim to be in a taxon with name 'Phytomyxea', while the
-    WoRMS candidate has no applicable lineage in common, the NCBI
-    candidate is chosen.)
+    WoRMS candidate has no near lineage in common, the NCBI
+    candidate is chosen.
 
     The details are complicated because (a) every pair of nodes have
     at least _some_ of their lineage in common, and (b) genus names do not
     provide any information when comparing species nodes with the same
     name-string, so for species we can't just look at the parent taxon.  The exact
     rule used is the following:
-
     Define the 'quasiparent name' of n, q(n), to be the
     name-string of the nearest ancestor of n whose name-string is not
     a prefix of n's name-string.  (For example, the quasiparent of a species would typically be
@@ -181,33 +185,33 @@ them in the alignment process:
     then prefer n to candidates that lack these properties.
 
  1. **Overlap**: Prefer to align n' to n if they are higher level groupings that overlap.
-    Stated a bit more carefully: if n' has a descendant aligned to
+    Stated a bit more carefully: Prefern' if n' has a descendant aligned to
     a descendant of n.  
 
-    (Example: Source node _Peranema_ from GBIF has two candidates from NCBI.
+    _Example:_ Source node _Peranema_ from GBIF has two candidates from NCBI.
     One candidate shares descendant _Peranema cryptocercum_ with the source taxon,
     while the other shares no descendants with the source taxon.
-    The source is therefore aligned to the one with the shared descendant.)
+    The source is therefore aligned to the one with the shared descendant.
 
  1. **Proximity**:
-    Prefer candidates n with the property that
+    Require a candidate n to have the property that
     the smallest separation taxon containing the source node n'
-    is also the smallest separation taxon containing a candidate n.
+    is also the smallest separation taxon containing n.
 
-    (Example: for source node Heterocheilidae in IRMNG (a nematode family) whose smallest
-    separation ancestor is Metazoa, prefer
-    the NCBI Taxonomy candidate with smallest separation ancestor
-    Metazoa (also a nematode family) to the one with smallest separation
-    ancestor Diptera (a fly family).)
+    _Example:_ for source node Heterocheilidae in IRMNG (a nematode family) whose smallest
+    separation ancestor is Metazoa, choose
+    the workspace (NCBI) candidate with smallest separation ancestor
+    Metazoa (also a nematode family), and not the one with smallest separation
+    ancestor Diptera (a fly family).
 
  1. **Same name-string**: Prefer candidates whose primary name-string
     is the same as the primary name-string of n'.
 
-    (Example: For source node n' = GBIF _Zabelia tyaihyoni_,
+    _Example:_ For source node n' = GBIF _Zabelia tyaihyoni_,
     candidate _Zabelia tyaihyoni_ from NCBI is preferred to candidate
     _Zabelia mosanensis_, also from NCBI.  NCBI _Z. mosanensis_ is a
     candidate for n' because GBIF declares that _Z. mosanensis_ is a synonym
-    for GBIF _Z. tyaihyoni_.)
+    for GBIF _Z. tyaihyoni_.
 
 ### Control flow for applying heuristics
 

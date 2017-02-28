@@ -74,7 +74,7 @@ Assessing whether OTT is more 'phylogenetically informed' than it
 otherwise might be is difficult.  The phylogenetic quality of
 the taxonomy is determined from by the taxonomic sources and their priority order.
 We have relied on the project's curators, who have a strong
-phylogenetic interest, to provide guidance on order.  Following are examples of
+phylogenetic interest, to provide guidance on both.  Following are examples of
 curator decision-making:
 
  * For microbes, SILVA is considered more phylogenetically sound than

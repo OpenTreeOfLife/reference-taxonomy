@@ -379,6 +379,10 @@ Figure 3 illustrates each of these six cases.
    incompatible with the workspace if the nodes that its aligned
    children align with do not all have the same parent.
 
+<img src="../figures/fig3a.jpeg" width="512" height="384"/>
+<img src="../figures/fig3b.jpeg" width="512" height="384"/>
+
+
 ## Final patches
 
 After all source taxonomies are aligned and merged, we apply general

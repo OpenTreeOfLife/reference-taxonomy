@@ -17,7 +17,7 @@ linked from the OTT taxonomy files and user interfaces so that
 provenance is always available.
 
 **Separation taxa**  
-This is a small curated tree containing 29 major groups such
+This is a small curated tree containing 31 major groups such
 as animals, plants, and fungi.  Its purpose is to assist
 in separating homonyms.  If a node
 is found in one of these separation groups, then it will not match a

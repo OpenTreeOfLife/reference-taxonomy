@@ -253,7 +253,7 @@ heuristic_label_info = {
     "disparate ranks":       (11, "Disparate ranks"),
     "by lineage":            (12, 'Lineage'),
     "overlapping membership":(14, 'Overlap'),
-    "same division":         (16, 'Proximity'),
+    "same-division-weak":    (16, 'Proximity'),
     "by name":               (18, 'Same name-string'),
 }
 

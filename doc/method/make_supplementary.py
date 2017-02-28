@@ -37,7 +37,7 @@ def make_supplementary(cache_path, supp_path):
 
         # Use of heuristics in choice-making
 
-        dump_csv(h_table, 'choice_stats.csv')
+        dump_csv(h_table, os.path.join(supp_path, 'choice_stats.csv'))
 
     # Fate under merge
 
@@ -98,7 +98,7 @@ def join(summary, label_info):
 
 def dump_csv(table, path):
     with open(path, 'w') as file:
-        print 'writing', path
+        print 'Writing', path
         writer = csv.writer(file)
         for row in table:
             if not isinstance(row[0], int) or row[0] > 0:

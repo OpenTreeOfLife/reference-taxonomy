@@ -50,7 +50,6 @@ supplementary/taxonomy_stats.csv: make_supplementary.py \
 		       cache/contributions_summary.csv
 	mkdir -p supplementary
 	python $< cache supplementary
-	mv $@.new $@
 
 lib/Markdown.pl:
 	mkdir -p lib

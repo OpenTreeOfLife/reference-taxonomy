@@ -1,3 +1,13 @@
+# Results
+
+The assembly method described above yields the reference taxonomy that
+is used by the Open Tree of Life project.  The taxonomy itself, the
+details of how the assembly method unrolls to generate the taxonomy,
+and the degree to which the taxonomy meets the goals set out for it
+are all of interest in assessing how, and how well, the method works.
+We will address each of these three aspects of
+the method in turn.
+
 ## Summary of Open Tree Taxonomy
 
 The methods and results presented here are for version 3.0 of the Open Tree Taxonomy (which follows five previous releases using the automated assembly method). The taxonomy contains 3,592,827 total taxa, 3,271,403 tips and 276,375 internal nodes. 2,335,143 of the nodes have a Linnean binomial of the form Genus epithet. There are 2,027,352 synonym records and 8154 homonyms (name-strings for which there are multiple nodes). A longer list of metrics is in supplementary data.

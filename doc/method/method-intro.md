@@ -56,7 +56,7 @@ by priority.  Priority means that if S is judged more accurate or
 otherwise "better" than S', then S occurs earlier in the sequence than
 S' and its information supersedes that from later sources.  Priority
 judgements are made by curators (either project personnel or participants
-in OpenTree workshops and online forums) based on their taxonomic
+in Open Tree workshops and online forums) based on their taxonomic
 expertise.
 
 We define an operator for combining taxonomies pairwise, written

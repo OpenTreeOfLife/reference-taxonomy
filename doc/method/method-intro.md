@@ -110,7 +110,7 @@ special cases. Ambiguities caused by synonyms and homonyms create most of the
 difficulties, with inconsistent or unclear higher taxon membership creating the
 rest. The development of the assembly process described here has been a driven
 by trial and error - finding cases that fail and then adding / modifying
-heuristics to address the underlying cause, or adding an ad hoc adjustment for
+heuristics to address the underlying cause, or adding an _ad hoc_ adjustment for
 cases that are rare or overly complex.
 
 The following sections describe the source taxonomies, and then detail the

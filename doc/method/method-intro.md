@@ -100,7 +100,7 @@ hundreds of thousands of similar simple grafting events.
 
 The other merge method is an _insertion_, where the unaligned
 node has descendants that are in S. This always
-occurs when S' has greater resolution than S. For example, see Figure 2b, where GBIF provides greater resolution than NCBI.
+occurs when S' has greater resolution than S. For example, see Figure 2b, where WoRMS provides greater resolution than NCBI.
 
 The vast majority of alignment and merge situations are simple, similar to the
 examples shown in Figure 2. However, even a small fraction of special cases can add up to
@@ -112,6 +112,8 @@ rest. The development of the assembly process described here has been a driven
 by trial and error - finding cases that fail and then adding / modifying
 heuristics to address the underlying cause, or adding an _ad hoc_ adjustment for
 cases that are rare or overly complex.
+
+<img src="../figures/fig2.jpeg" width="512" height="384"/>
 
 The following sections describe the source taxonomies, and then detail the
 taxonomy combination method.

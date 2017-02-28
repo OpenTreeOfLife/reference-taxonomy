@@ -5,12 +5,9 @@
 REF_HOME=../..
 JYTHON=$(REF_HOME)/bin/jython
 
-all: draft.html supplementary/taxonomy_stats.csv
+all: out/draft.html supplementary/taxonomy_stats.csv
 
 # use --html4tags flag?
-
-draft.html: out/draft.html
-	ln -sf $< $@
 
 out/draft.html: out/draft.md lib/Markdown.pl
 	@mkdir -p out

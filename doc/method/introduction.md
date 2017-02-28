@@ -41,6 +41,8 @@ The Open Tree of Life project consists of a set of tools for
 The outcome is one or more summary trees combining phylogenetic and
 taxonomic knowledge. Figure 1 illustrates an overview of the process of combining phylogeny and taxonomy, while the details are described in a separate publication [ref Redelings & Holder 2017].
 
+<img src="../figures/fig1.jpeg" width="512" height="384"/>
+
 Although Open Tree is primarily a phylogenetics effort, it requires a
 reference taxonomy that can support each of these functions.
 

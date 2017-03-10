@@ -157,7 +157,7 @@ retrieved.
     Current version download location (unverified):
     [http://www.gbif.org/dataset/d7dddbf4-2cf0-4f39-9b2a-bb099caae36c](http://www.gbif.org/dataset/d7dddbf4-2cf0-4f39-9b2a-bb099caae36c).
 
-1.  [Interim Register of Marine and Nonmarine Genera (IRMNG)](http://www.obis.org.au/irmng/), from CSIRO.
+1.  [Interim Register of Marine and Nonmarine Genera (IRMNG)](http://irmng.org/).
     <br />
     We used a version dated 2014-01-31.  Download location:
     [http://purl.org/opentree/ott/ott2.8/inputs/IRMNG\_DWC-2014-01-30.zip](http://purl.org/opentree/ott/ott2.8/inputs/IRMNG_DWC-2014-01-30.zip).

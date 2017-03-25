@@ -92,6 +92,18 @@
     "label": "20130702"
   }, 
   {
+    "_type": "capture", 
+    "name": "gbif-20160729", 
+    "bytes": 347031944, 
+    "legal": "public", 
+    "filename": "gbif-20160729.zip", 
+    "retrieved_from": "http://rs.gbif.org/datasets/backbone/2016-07-25/backbone.zip.old", 
+    "last_modified": "2016-07-29", 
+    "capture_of": "gbif", 
+    "date": "2016-07-29", 
+    "label": "20130729"
+  }, 
+  {
     "===": "(Never deployed, according to my email archive)", 
     "_type": "capture", 
     "name": "ott2.1", 
@@ -580,6 +592,18 @@
     "label": "20160629"
   }, 
   {
+    "===": "Input to ott3.0", 
+    "_type": "capture", 
+    "name": "ncbi-20161109", 
+    "bytes": 37595767, 
+    "legal": "pd", 
+    "filename": "ncbi-20161109.tgz", 
+    "last_modified": "2016-11-09", 
+    "capture_of": "ncbi", 
+    "date": "2016-11-09", 
+    "label": "20161109"
+  }, 
+  {
     "_type": "capture", 
     "name": "ott2.10", 
     "generated_on": "2016-10-01", 
@@ -599,5 +623,26 @@
     "date": "2016-10-01", 
     "commit": "https://github.com/OpenTreeOfLife/reference-taxonomy/commit/eca7bdefdc8ad10fb39b9ff8c98db1cc186d7e94", 
     "filename": "ott2.10.tgz"
+  },
+  {
+    "_type": "capture", 
+    "name": "ott3.0", 
+    "generated_on": "2017-02-26", 
+    "legal": "cc0", 
+    "label": "3.0", 
+    "sources": {
+      "silva": "silva-115", 
+      "ncbi": "ncbi-20161109", 
+      "gbif": "gbif-20160729", 
+      "irmng": "irmng-ot-20161108", 
+      "worms": "worms-1", 
+      "study713": "study713-20140721", 
+      "h2007": "h2007-2015-v4", 
+      "if": "fung-9"
+    }, 
+    "capture_of": "ott", 
+    "date": "2017-02-26", 
+    "commit": "https://github.com/OpenTreeOfLife/reference-taxonomy/commit/f90cf8407d3deb515b4336978c42422a32556743", 
+    "filename": "ott3.0.tgz"
   }
 ]

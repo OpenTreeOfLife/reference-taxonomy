@@ -1,5 +1,11 @@
 # jython?  yes, I think so.
 
+# First command line argument is path to parent of all OTT release directories, e.g.
+# ../repo/files.opentreeoflife.org/ott
+# Second argument is local directory into which e.g. registry
+
+
+
 from org.opentreeoflife.taxa import Taxonomy, Taxon
 from org.opentreeoflife.taxa import QualifiedId
 
@@ -39,14 +45,9 @@ def canonicalize(qid):
     else:
         return qid
 
-def doit(ottpath, registry_path):
+# Returns list ['ott1.0', ...]
 
-    # Registration records (qid, capture, taxon.name) indexed by id
-    registrations_by_id = {}
-
-    # OTT ids indexed by qid.toString()
-    registrations_by_qid = {}
-
+def ott_releases(ottpath):
     dirs = []
     for file in os.listdir(ottpath):
         if file.startswith('ott'):
@@ -57,13 +58,24 @@ def doit(ottpath, registry_path):
     for dir in dirs:
         if not dir in source_info:
             print '** no source info for', dir
+    return dirs
+
+def doit(ottpath, registry_path):
+
+    # Registration records (qid, capture, taxon.name) indexed by id
+    registrations_by_id = {}
+
+    # OTT ids indexed by qid.toString()
+    registrations_by_qid = {}
+
+    releases = ott_releases(ottpath)
 
     if not os.path.isdir(registry_path):
         os.makedirs(registry_path)
 
     seqnum = 0
 
-    for dir in dirs:
+    for dir in releases:
         print >>sys.stderr, dir
         info = source_info[dir]
         full = os.path.join(ottpath, dir)

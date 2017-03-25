@@ -7,7 +7,7 @@ f624223f31](https://github.com/OpenTreeOfLife/reference-taxonomy/commit/f624223f
 
 ## Download
 
-[Download](http://files.opentreeoflife.org/ott/ott2.6.tgz) (gzipped tar file, 94 Mbyte) 
+[Download](http://files.opentreeoflife.org/ott/ott2.6/ott2.6.tgz) (gzipped tar file, 94 Mbyte) 
 
 ## Files in this package
 

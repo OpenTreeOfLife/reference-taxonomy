@@ -240,10 +240,30 @@ public class AlignmentByName extends Alignment {
         getCandidatesViaName(node, "C", candidateMap); // canonical
         for (Synonym syn : node.getSynonyms())
             getCandidatesViaName(syn, "S", candidateMap);
+        if (candidateMap.size() == 0)
+            getCandidatesViaGender(node, candidateMap);
         return candidateMap;
     }
 
-    Map<Taxon, String> getCandidatesViaName(Node node, String mode, Map<Taxon, String> candidateMap) {
+    void getCandidatesViaGender(Node node, Map<Taxon, String> candidateMap) {
+        if (node.name == null) return;
+        if (node.name.indexOf(' ') <= 0) return;
+        String altName;
+        if (node.name.endsWith("a"))
+            altName = node.name.substring(0, node.name.length()-1) + "us";
+        else if (node.name.endsWith("us"))
+            altName = node.name.substring(0, node.name.length()-2) + "a";
+        else
+            return;
+        Collection<Node> unodes = target.lookup(altName);
+        if (unodes != null)
+            for (Node unode : unodes) {
+                System.out.format("# Gender correction? %s -> %s\n", node, unode);
+                addCandidate(candidateMap, unode, "G");
+            }
+    }
+
+    void getCandidatesViaName(Node node, String mode, Map<Taxon, String> candidateMap) {
         if (node.name != null) {
             Collection<Node> unodes = target.lookup(node.name);
             if (unodes != null)
@@ -267,7 +287,6 @@ public class AlignmentByName extends Alignment {
                 mode2 = mode + "J";
             }
         }
-        return candidateMap;
     }
 
     void addCandidate(Map<Taxon, String> candidateMap, Node unode, String mode) {

@@ -108,7 +108,8 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py adjustments.py amendments.
 		    tax/prev_ott/taxonomy.tsv \
 		    feed/misc/chromista_spreadsheet.py \
 		    ids_that_are_otus.tsv \
-		    feed/eol/out/identifiers.csv \
+		    feed/eol/out/eol-digest.csv \
+		    feed/eol/get_eol_ids.py \
 		    bin/jython \
 		    inclusions.csv \
 		    feed/amendments/amendments-1/next_ott_id.json \
@@ -366,6 +367,11 @@ feed/eol/out/identifiers.csv: feed/eol/in/identifiers.csv.gz
 	gunzip -c $< | grep ',596,\|,1172,\|,123,\|,1347,\|,800,' > $@.new
 	mv $@.new $@
 
+feed/eol/out/eol-digest.csv: feed/eol/make_digest.py feed/eol/in/identifiers.csv.gz
+	mkdir -p feed/eol/out
+	gunzip -c feed/eol/in/identifiers.csv.gz | python feed/eol/make_digest.py > $@.new
+	mv $@.new $@
+
 # there ought to be a rule for archiving EOL, and another for loading it
 
 
@@ -569,6 +575,8 @@ t/tax/aster/taxonomy.tsv: compile t/aster.py \
                           t/tax/gbif_aster/taxonomy.tsv \
                           t/tax/prev_aster/taxonomy.tsv \
                           t/edits/edits.tsv \
+			  feed/eol/get_eol_ids.py \
+			  feed/eol/out/eol-digest.csv \
 			  bin/jython
 	@mkdir -p `dirname $@`
 	bin/jython t/aster.py

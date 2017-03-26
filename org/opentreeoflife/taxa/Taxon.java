@@ -722,12 +722,14 @@ public class Taxon extends Node implements Comparable<Taxon> {
 		}
 	};
 
-    static String MAX_STRING = "zzzzz";   // this is kind of stupid
+    static String MAX_STRING = "zzzzzzzzzz";   // this is kind of stupid
 
     public int compareTo(Taxon that) {
         int z;
         String id1 = (this.id == null ? MAX_STRING : this.id);
         String id2 = (that.id == null ? MAX_STRING : that.id);
+        if ((z = id1.length() - id2.length()) != 0)
+            return z;
         if ((z = id1.compareTo(id2)) != 0)
             return z;
 

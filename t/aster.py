@@ -91,7 +91,7 @@ def assemble():
 
     tax.assignNewIds(new_taxa_path)
 
-    get_eol_ids('feed/eol/out/identifiers.csv', tax)
+    get_eol_ids('feed/eol/out/eol-digest.csv', tax)
 
     # Write the model taxonomy out to a set of files
     tax.dump('t/tax/aster/', '\t|\t')

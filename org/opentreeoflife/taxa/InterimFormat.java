@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Collections;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -73,7 +74,7 @@ public class InterimFormat {
 		new File(outprefix).mkdirs();
         tax.dumpExtras(outprefix);
 		dumpMetadata(outprefix + "about.json");
-		dumpNodes(tax.roots(), outprefix, sep);
+		dumpNodes(tax, outprefix, sep);
 		dumpSynonyms(outprefix + "synonyms.tsv", sep);
         dumpForwards(outprefix + "forwards.tsv");
 		// tax.dumpHidden(outprefix + "hidden.tsv");
@@ -306,28 +307,37 @@ public class InterimFormat {
 		}
 	}
 
-	public void dumpNodes(Iterable<Taxon> nodes, String outprefix, String sep) throws IOException {
-		PrintStream out = Taxonomy.openw(outprefix + "taxonomy.tsv");
+	public void dumpNodes(Taxonomy tax, String outprefix, String sep) throws IOException {
+        ArrayList<Taxon> allNodes = new ArrayList<Taxon>();
+		for (Taxon node : tax.taxa())
+            allNodes.add(node);
+        System.out.format("| Sorting\n");
+        Collections.sort(allNodes);
 
+		PrintStream out = Taxonomy.openw(outprefix + "taxonomy.tsv");
 		out.format("uid%sparent_uid%sname%srank%ssourceinfo%suniqname%sflags%s\n",
 				   // 0  1		     2	   3     4	   		 5		   6
                    sep, sep, sep, sep, sep, sep, sep
 					);
 
+		dumpNodes(allNodes, out, sep);
+		out.close();
+    }
+
+	public void dumpNodes(Iterable<Taxon> nodes, PrintStream out, String sep) throws IOException {
 		for (Taxon node : nodes)
 			if (!node.prunedp)
-				dumpNode(node, out, true, sep);
+				dumpNode(node, out, sep);
             else
                 System.err.format("** Prunedp taxon in taxonomy: %s\n", node);
-		out.close();
 	}
 
 	// Recursive!
-	void dumpNode(Taxon node, PrintStream out, boolean rootp, String sep) {
+	void dumpNode(Taxon node, PrintStream out, String sep) {
 		// 0. uid:
 		out.print((node.id == null ? "?" : node.id) + sep);
 		// 1. parent_uid:
-		out.print(((node.taxonomy.hasRoot(node) || rootp) ? "" : node.parent.id)  + sep);
+		out.print(((node.parent == node.taxonomy.forest) ? "" : node.parent.id) + sep);
 		// 2. name:
 		out.print((node.name == null ? "" : node.name)
 				  + sep);
@@ -354,14 +364,6 @@ public class InterimFormat {
 		// was: out.print(((node.flags != null) ? node.flags : "") + sep);
 
 		out.println();
-
-		if (node.children != null)
-			for (Taxon child : node.children) {
-				if (child == null)
-					System.err.println("** null in children list!? " + node);
-				else
-					dumpNode(child, out, false, sep);
-			}
 	}
 
     // load forwarding pointers

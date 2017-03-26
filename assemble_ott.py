@@ -371,7 +371,7 @@ def ids_and_additions(ott):
     assign_ids_from_list(ott, 'feed/ott_id_list/by_qid.csv')
 
     # Add EOL page ids
-    get_eol_ids('feed/eol/out/identifiers.csv', ott)
+    get_eol_ids('feed/eol/out/eol-digest.csv', ott)
 
     # Mint ids for new nodes
     ott.assignNewIds(new_taxa_path)

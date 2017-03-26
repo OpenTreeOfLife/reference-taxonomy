@@ -1755,7 +1755,9 @@ sar_contains = ['Stramenopiles',
                 'Ochrophyta',  #GBIF puts it in Chromista
                 'Oomycota',    #GBIF puts it in Chromista
                 'Radiozoa',	   #GBIF puts it in Chromista, acutally Rhizaria
-                'Dinophyta',   #IRMNG puts in in Protista, actually Rhizaria
+                'Dinophyta',   #IRMNG puts it in Protista, actually Rhizaria
+                'Dinophyceae', #found while chasing Piscinoodinium dup
+                'Sphaeriparaceae',
                 ]
 
 def set_SAR_divisions(taxonomy, ott):

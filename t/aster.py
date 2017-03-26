@@ -1,11 +1,14 @@
 # Jython script to build the "model village" taxonomy.
 
-import os
+import os, sys
 from org.opentreeoflife.taxa import Taxonomy
 from org.opentreeoflife.taxa import TsvEdits, Addition, CSVReader, QualifiedId
 from org.opentreeoflife.smasher import UnionTaxonomy
 from java.io import FileReader
 from claim import Has_child
+
+sys.path.append("feed/eol/")
+from get_eol_ids import get_eol_ids
 
 def assemble():
 
@@ -87,6 +90,8 @@ def assemble():
         assign_ids_from_list(tax, 'ott_id_list/by_qid.csv')
 
     tax.assignNewIds(new_taxa_path)
+
+    get_eol_ids('feed/eol/out/identifiers.csv', tax)
 
     # Write the model taxonomy out to a set of files
     tax.dump('t/tax/aster/', '\t|\t')

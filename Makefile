@@ -13,8 +13,8 @@
 JAVAFLAGS=-Xmx14G
 
 # Modify as appropriate
-WHICH=3.0draft7
-PREV_WHICH=2.10
+WHICH=3.1draft0
+PREV_WHICH=3.0
 
 # ----- Taxonomy source locations -----
 
@@ -108,6 +108,7 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py adjustments.py amendments.
 		    tax/prev_ott/taxonomy.tsv \
 		    feed/misc/chromista_spreadsheet.py \
 		    ids_that_are_otus.tsv \
+		    feed/eol/out/identifiers.csv \
 		    bin/jython \
 		    inclusions.csv \
 		    feed/amendments/amendments-1/next_ott_id.json \
@@ -346,6 +347,27 @@ feed/silva/in/tax_ranks.txt:
 	wget --output-document=$@.new $(SILVA_RANKS_URL)
 	mv $@.new $@
 	@ls -l $@
+
+# Input: EOL page ids
+
+refresh-eol: feed/eol/out/identifiers.csv
+
+feed/eol/in/identifiers.csv.gz:
+	mkdir -p feed/eol/in
+	@echo "** The EOL identifiers file must be downloaded manually"
+	@echo "** and placed in feed/eol/in/identifiers.csv.gz."
+	@echo "** Visit this page: http://opendata.eol.org/dataset/identifiers"
+
+# From Yan Wong:
+#  ((('ncbi', 1172), ('if', 596), ('worms', 123), ('irmng', 1347), ('gbif', 800)))
+
+feed/eol/out/identifiers.csv: feed/eol/in/identifiers.csv.gz
+	mkdir -p feed/eol/out
+	gunzip -c $< | grep ',596,\|,1172,\|,123,\|,1347,\|,800,' > $@.new
+	mv $@.new $@
+
+# there ought to be a rule for archiving EOL, and another for loading it
+
 
 # ----- Katz lab Protista/Chromista parent assignments
 

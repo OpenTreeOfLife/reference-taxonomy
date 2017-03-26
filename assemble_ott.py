@@ -20,6 +20,10 @@ import check_inclusions
 from claim import *
 #import reason_report
 
+sys.path.append("feed/eol/")
+from get_eol_ids import get_eol_ids
+
+
 this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/make-ott.py'
 inclusions_path = 'inclusions.csv'
 additions_clone_path = 'feed/amendments/amendments-1'
@@ -365,6 +369,9 @@ def ids_and_additions(ott):
 
     print '-- Checking id list'
     assign_ids_from_list(ott, 'feed/ott_id_list/by_qid.csv')
+
+    # Add EOL page ids
+    get_eol_ids('feed/eol/out/identifiers.csv', ott)
 
     # Mint ids for new nodes
     ott.assignNewIds(new_taxa_path)

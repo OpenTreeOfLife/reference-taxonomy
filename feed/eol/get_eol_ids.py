@@ -7,8 +7,8 @@ outpath = 'eol_conflicts.csv'
 
 multiple_page_ids = 0   #kludge
 
-def get_eol_ids(inpath, tax):
-    page_to_ott = {}
+def load_eol_ids(inpath, tax):
+    page_to_nodes = {}
     ott_to_page = {}
     with open(inpath, 'r') as infile:
         print '| Processing EOL page ids file %s' % (inpath)
@@ -18,17 +18,17 @@ def get_eol_ids(inpath, tax):
         for row in reader:
             row_count += 1
             [page_id, idspace, source_id] = row
-            if row_count % 250000 == 0:
+            if row_count % 500000 == 0:
                 print row_count, row
             qid = QualifiedId(idspace, source_id)
             node = tax.lookupQid(qid)
-            if node != None:
-                nodes = page_to_ott.get(page_id)
+            if node != None and node.isPotentialOtu():
+                nodes = page_to_nodes.get(page_id)
                 if nodes == None:
-                    nodes = [node]
-                    page_to_ott[page_id] = nodes
-                elif not node in nodes:
-                    nodes.append(node)
+                    nodes = [(node, qid)]
+                    page_to_nodes[page_id] = nodes
+                elif not in_alist(node, nodes):
+                    nodes.append((node, qid))
 
                 pages = ott_to_page.get(node.id)
                 if pages == None:
@@ -37,17 +37,31 @@ def get_eol_ids(inpath, tax):
                 elif not page_id in pages:
                     pages.append(page_id)
 
-        print '| EOL page id hits: %s, node hits: %s' % (len(page_to_ott), len(ott_to_page))
+        print '| EOL page id hits: %s, node hits: %s' % (len(page_to_nodes), len(ott_to_page))
 
     # Sort page ids and OTT nodes
 
     for node_id in ott_to_page:
         pages = ott_to_page[node_id]
-        if len(pages) > 1: pages.sort(key=int)
+        if len(pages) > 1:
+            pages.sort(key=int)
 
-    for page_id in page_to_ott:
-        nodes = page_to_ott[page_id]
-        if len(nodes) > 1: nodes.sort()
+    for page_id in page_to_nodes:
+        nodes = page_to_nodes[page_id]
+        if len(nodes) > 1:
+            nodes.sort(key=lambda(node, qid): node.id)
+
+    return (page_to_nodes, ott_to_page)
+
+def in_alist(node, nodes):
+    for (xnode, qid) in nodes:
+        if node is xnode:
+            return True
+    return False
+
+def get_eol_ids(inpath, tax):
+
+    (page_to_nodes, ott_to_page) = load_eol_ids(inpath, tax)
 
     # Assign an EOL page id to as many nodes as possible
 
@@ -62,7 +76,7 @@ def get_eol_ids(inpath, tax):
         # Or, maybe an incorrect synonym in OTT.
         # But no good way to tell.
 
-        renode = page_to_ott[page_id][0]
+        (renode, _) = page_to_nodes[page_id][0]
         if renode == node:
             node.addSourceId(QualifiedId('eol', page_id))
         else:
@@ -73,8 +87,8 @@ def get_eol_ids(inpath, tax):
     # Report on errors EOL homonym errors / OTT missing synonyms
 
     things_to_report = 0
-    for page_id in page_to_ott:
-        if len(page_to_ott[page_id]) > 1:
+    for page_id in page_to_nodes:
+        if len(page_to_nodes[page_id]) > 1:
             things_to_report += 1
 
     if things_to_report > 0:
@@ -82,8 +96,9 @@ def get_eol_ids(inpath, tax):
         with open(outpath, 'w') as outfile:
             writer = csv.writer(outfile)
 
-            for page_id in page_to_ott:
-                nodes = page_to_ott[page_id]
+            for page_id in page_to_nodes:
+                nodes = page_to_nodes[page_id]
+
                 if len(nodes) > 1:
                     # Multiple OTT nodes for a single EOL page id.
                     # Maybe a synonym known to EOL but missing from OTT.
@@ -96,8 +111,8 @@ def get_eol_ids(inpath, tax):
                     # If near, or same epithet, then more likely an OTT error.
                     # If distant, then more likely an EOL error.
 
-                    node1 = nodes[0]
-                    node2 = nodes[1]
+                    (node1, qid1) = nodes[0]
+                    (node2, qid2) = nodes[1]
 
                     similarity = 0
                     if node1.name == node2.name:
@@ -108,7 +123,11 @@ def get_eol_ids(inpath, tax):
                     elif same_epithet(node1.name, node2.name):
                         similarity = 1
                     if similarity != 2:
-                        writer.writerow([page_id, node1.id, node1.name, node2.id, node2.name,
+                        div1 = node1.getDivision().name
+                        div2 = node2.getDivision().name
+                        writer.writerow([page_id,
+                                         qid1, node1.name, div1,
+                                         qid2, node2.name, div2,
                                          node1.rank.name, node1.mrca(node2).count(), similarity])
 
 def get_eol_qid(node):
@@ -126,8 +145,7 @@ def same_epithet(name1, name2):
 
 def epithet_stem(name):
     s = name.split(' ', 1)
-    if len(s) != 2: return None
-    epi = s[1]
+    epi = s[-1]
     if epi.endswith('us'): return epi[0:-2]
     if epi.endswith('um'): return epi[0:-2]
     if epi.endswith('a'): return epi[0:-1]

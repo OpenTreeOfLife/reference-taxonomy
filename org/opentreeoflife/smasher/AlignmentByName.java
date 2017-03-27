@@ -257,10 +257,8 @@ public class AlignmentByName extends Alignment {
             return;
         Collection<Node> unodes = target.lookup(altName);
         if (unodes != null)
-            for (Node unode : unodes) {
-                System.out.format("# Gender correction? %s -> %s\n", node, unode);
+            for (Node unode : unodes)
                 addCandidate(candidateMap, unode, "G");
-            }
     }
 
     void getCandidatesViaName(Node node, String mode, Map<Taxon, String> candidateMap) {

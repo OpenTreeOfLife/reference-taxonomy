@@ -888,6 +888,16 @@ public class Taxon extends Node implements Comparable<Taxon> {
 				Taxonomy.HIDDEN) != 0;
     }
 
+    static private int OTU_FLAGS = (Taxonomy.FORMER_CONTAINER |
+                                    Taxonomy.NOT_OTU |
+                                    Taxonomy.HYBRID |
+                                    Taxonomy.VIRAL);
+
+    // can it potentially be used as an OTU?
+    public boolean isPotentialOtu() {
+        return (this.properFlags & OTU_FLAGS) == 0;
+    }
+
 	public boolean isExtinct() {
 		return ((this.properFlags | this.inferredFlags) &
 				Taxonomy.EXTINCT) != 0;

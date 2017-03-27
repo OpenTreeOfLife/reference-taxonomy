@@ -611,8 +611,16 @@ def align_fungi(fungi, ott):
     # Unfortunately Choanoflagellida is currently showing up as
     # inconsistent.
     if False:
-        a.same(fungorum.maybeTaxon('Choanoflagellida'),
+        a.same(fungi.maybeTaxon('Choanoflagellida'),
                ott.maybeTaxon('Choanoflagellida', 'Opisthokonta'))
+
+    # 2017-03-26 Noticed this during the EOL id import - bad Bacteria/Fungi homonym
+    chon = fungi.maybeTaxon('Chondromyces', 'Fungi')
+    if chon != None: ott.setDivision(chon, 'Bacteria')
+
+    # 2017-03-26 http://dx.doi.org/10.1080/01916122.2002.9989566
+    red = fungi.maybeTaxon('Reduviasporonites', 'Fungi')
+    if red != None: ott.setDivision(red, 'Chloroplastida')
 
     return a
 
@@ -1160,6 +1168,15 @@ def align_gbif(gbif, ott):
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/301
     a.same(gbif.taxon('Dermocystidium salmonis'), ott.taxon('Dermocystidium salmonis', 'Ichthyosporea'))
 
+    # 2017-03-26 Noticed this during the EOL id import.
+    chon = gbif.maybeTaxon('Chondromyces', 'Fungi')
+    if chon != None: ott.setDivision(chon, 'Bacteria')
+
+    # 2017-03-26 This has been moved to Cercozoa - not a fungus.  See e.g. 
+    # the web version of Index Fungorum.
+    plas = gbif.maybeTaxon('Plasmodiophora', 'Fungi')
+    if plas != None: ott.setDivision(plas, 'SAR')
+
     return a
 
 def patch_gbif(gbif):
@@ -1466,6 +1483,9 @@ def align_worms(worms, ott):
     # Annelida is a barrier, need to put Sipuncula inside it
     worms.taxon('Annelida').take(worms.taxon('Sipuncula'))
 
+    plas = worms.maybeTaxon('Plasmodiophora', 'Fungi')
+    if plas != None: ott.setDivision(plas, 'SAR')
+
     return a
 
 # ----- Interim Register of Marine and Nonmarine Genera (IRMNG) -----
@@ -1582,6 +1602,9 @@ def load_irmng():
     luth_girault = irmng.maybeTaxon('1427241')
     if luth_girault != None and luth_girault.hasChildren():
         luth_girault.prune()
+
+    # 2017-03-26 Redundant Cornuta (11647 is better)
+    if irmng.maybeTaxon('1161') != None: irmng.taxon('1161').elide()
 
     return irmng
 
@@ -1715,6 +1738,10 @@ def align_irmng(irmng, ott):
     # 2017-02-15 Noticed during 3.0 build
     a.same(irmng.taxon('Heterokontophyta'), ott.taxon('Stramenopiles'))
 
+    # 2017-03-26
+    plas = irmng.maybeTaxon('Plasmodiophora', 'Fungi')
+    if plas != None: ott.setDivision(plas, 'SAR')
+
     return a
 
 
@@ -1758,6 +1785,10 @@ sar_contains = ['Stramenopiles',
                 'Dinophyta',   #IRMNG puts it in Protista, actually Rhizaria
                 'Dinophyceae', #found while chasing Piscinoodinium dup
                 'Sphaeriparaceae',
+                'Cercozoa',    #found during EOL review
+                'Desmothoracida',   #was in Heliozoa
+                'Apodiniaceae', #since removed from GBIF... protozoan
+                'Actoniphryida',
                 ]
 
 def set_SAR_divisions(taxonomy, ott):
@@ -1765,5 +1796,7 @@ def set_SAR_divisions(taxonomy, ott):
         z = taxonomy.maybeTaxon(name, 'Chromista')
         if z == None:
             z = taxonomy.maybeTaxon(name, 'Protista')
+            if z == None:
+                z = taxonomy.maybeTaxon(name, 'Protozoa')
         if z != None:
             ott.setDivision(z, 'SAR')

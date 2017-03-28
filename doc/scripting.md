@@ -36,7 +36,11 @@ clone, and `script.py` is the name of a script file.
 
 If you like you can skip the `script.py` parameter, and you'll get an interactive jython prompt.
 
-    bin/jython script.py
+    $ bin/jython
+    Jython 2.7.0 (default:9987c746f838, Apr 29 2015, 02:25:11) 
+    [Java HotSpot(TM) 64-Bit Server VM (Oracle Corporation)] on java1.8.0_05
+    Type "help", "copyright", "credits" or "license" for more information.
+    >>> 
 
 You may have a need to set the Java memory limit, which might be too large or too small for your purposes.  To do  this, edit JAVAFLAGS in the bin/jython script (or edit the Makefile and force re-creation of bin/jython).  The default is currently 14G.  For memory-intensive runs it should be set near the actual physical memory available on the machine.
 
@@ -68,7 +72,7 @@ source taxonomies (although they needn't be), obtained as follows:
 which fetches a taxonomy from files (in the format specified by this tool,
 see wiki).  There can be as many of these retrievals as you like.
 
-The first argument is a directory name and must end in a '/'.  
+The first argument is a directory name and must end in a '`/`'.  
 The directory must contain a file 'taxonomy.tsv'.
 
 The second argument is an 'idspace' prefix that will appear in the

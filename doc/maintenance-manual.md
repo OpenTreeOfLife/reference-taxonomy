@@ -24,20 +24,20 @@ All solutions involve edits either to `adjustments.py` or
 [scripting feature documentation](https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/scripting.md).
 
 
-### [Issue 341](https://github.com/OpenTreeOfLife/feedback/issues/341) - Campanulales
+### [Issue 341](https://github.com/OpenTreeOfLife/feedback/issues/341) - Campanulales = Asterales?
 
-Is there an error or not?  I followed the supplied link to Asterales
-and then to the second IRMNG record, and indeed equating Campanulales
+Is there an error or not?  I followed the supplied OTT link to Asterales,
+and from there to the second IRMNG record, for Campanulales.  Indeed, equating Campanulales
 with Asterales sounds fishy.  But this is what NCBI does, so it stands.
-A deeper analysis is hard, and that's why I created the followon 
-[issue 316](https://github.com/OpenTreeOfLife/reference-taxonomy/issues/316) on pro parte synonyms.
+The synonymy is pro parte, I believe, so perhaps it shouldn't stand.
+See new [issue 316](https://github.com/OpenTreeOfLife/reference-taxonomy/issues/316) on pro parte synonyms.
 
-### [Issue 340](https://github.com/OpenTreeOfLife/feedback/issues/340)
+### [Issue 340](https://github.com/OpenTreeOfLife/feedback/issues/340) Myomorpha incorrectly synonymised with Sciurognathi
 
-Mark has already analyzed this; turns out to be the same as the
+Mark has already analyzed this/  Turns out to be logically the same as the
 previous issue (341).
 
-### [Issue 336](https://github.com/OpenTreeOfLife/feedback/issues/336) - Miliaria calandra
+### [Issue 336](https://github.com/OpenTreeOfLife/feedback/issues/336) - Miliaria calandra is synonym for Emberiza calandra
 
 Running the following commands at the shell
 
@@ -47,15 +47,18 @@ Running the following commands at the shell
 shows that NCBI has the two names as separate species; so that is the
 source of the error.
 
-Many possible fixes.  The easiest - requiring the least amount of
-thinking - is to do an absorb in `patch_ott` (amendments.py):
+There are many possible fixes.  The easiest - requiring the least amount of
+thinking - is to do an `absorb` in `patch_ott` (amendments.py):
 
     ott.taxon('Emberiza calandra').absorb(ott.taxon('Miliaria calandra'))
 
-(To find out which one is 'best' I checked worldbirdnames.org and wikipedia.)
+(To find out which of the two is 'best' I checked worldbirdnames.org and wikipedia.)
 
-But I would probably put the directive in `patch_ncbi` in
-adjustments.py.  This requires some knowledge of the order.
+But personally I would prefer to put the directive in `patch_ncbi` in
+adjustments.py, to prevent the creation of incorrect structure in OTT
+in the first place.  This requires some knowledge of the merge order,
+so is less robust to future taxonomy changes than the `amendments.py`
+method.
 
     ncbi.taxon('Emberiza calandra').absorb(ncbi.taxon('Miliaria calandra'))
 

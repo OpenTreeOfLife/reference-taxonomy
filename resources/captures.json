@@ -592,18 +592,6 @@
     "label": "20160629"
   }, 
   {
-    "===": "Input to ott3.0", 
-    "_type": "capture", 
-    "name": "ncbi-20161109", 
-    "bytes": 37595767, 
-    "legal": "pd", 
-    "filename": "ncbi-20161109.tgz", 
-    "last_modified": "2016-11-09", 
-    "capture_of": "ncbi", 
-    "date": "2016-11-09", 
-    "label": "20161109"
-  }, 
-  {
     "_type": "capture", 
     "name": "ott2.10", 
     "generated_on": "2016-10-01", 
@@ -624,6 +612,18 @@
     "commit": "https://github.com/OpenTreeOfLife/reference-taxonomy/commit/eca7bdefdc8ad10fb39b9ff8c98db1cc186d7e94", 
     "filename": "ott2.10.tgz"
   },
+  {
+    "===": "Input to ott3.0", 
+    "_type": "capture", 
+    "name": "ncbi-20161109", 
+    "bytes": 37595767, 
+    "legal": "pd", 
+    "filename": "ncbi-20161109.tgz", 
+    "last_modified": "2016-11-09", 
+    "capture_of": "ncbi", 
+    "date": "2016-11-09", 
+    "label": "20161109"
+  }, 
   {
     "_type": "capture", 
     "name": "ott3.0", 

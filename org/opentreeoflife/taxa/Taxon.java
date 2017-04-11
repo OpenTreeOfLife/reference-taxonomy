@@ -73,6 +73,13 @@ public class Taxon extends Node implements Comparable<Taxon> {
         return synonyms;
     }
 
+    public QualifiedId originId() {
+        if (this.sourceIds != null)
+            return this.sourceIds.get(0);
+        else
+            return null;
+    }
+
     public Iterable<Taxon> descendants(final boolean includeSelf) {
         final Taxon node = this;
         return new Iterable<Taxon>() {
@@ -724,9 +731,9 @@ public class Taxon extends Node implements Comparable<Taxon> {
         if ((z = id1.compareTo(id2)) != 0)
             return z;
 
-        String q1 = (this.sourceIds == null ? MAX_STRING : this.sourceIds.get(0).id);
+        String q1 = (this.sourceIds == null ? MAX_STRING : this.originId().id);
         if (q1 == null) q1 = MAX_STRING;
-        String q2 = (that.sourceIds == null ? MAX_STRING : that.sourceIds.get(0).id);
+        String q2 = (that.sourceIds == null ? MAX_STRING : that.originId().id);
         if (q2 == null) q2 = MAX_STRING;
         if ((z = q1.compareTo(q2)) != 0)
             return z;
@@ -828,7 +835,7 @@ public class Taxon extends Node implements Comparable<Taxon> {
 			String thisrank = ((this.rank == Rank.NO_RANK) ? "" : (this.rank.name + " "));
 			if (ancestor == null || ancestor == this) {
 				if (this.sourceIds != null)
-					result = this.name + " (" + thisrank + this.sourceIds.get(0) + ")";
+					result = this.name + " (" + thisrank + this.originId() + ")";
 				else if (this.id != null)
 					result = this.name + " (" + thisrank + this.id + ")";
 				else

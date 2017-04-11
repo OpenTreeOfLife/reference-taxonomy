@@ -5,12 +5,9 @@
 REF_HOME=../..
 JYTHON=$(REF_HOME)/bin/jython
 
-all: draft.html
+all: out/draft.html supplementary/taxonomy_stats.csv
 
 # use --html4tags flag?
-
-draft.html: out/draft.html
-	ln -sf $< $@
 
 out/draft.html: out/draft.md lib/Markdown.pl
 	@mkdir -p out
@@ -19,7 +16,6 @@ out/draft.html: out/draft.md lib/Markdown.pl
 
 MARKDOWNS=abstract.md introduction.md method-intro.md \
   out/sources_table.md method-sources.md method-details.md \
-  out/results_tables.md \
   results.md discussion.md conclusions.md
 
 out/draft.md: $(MARKDOWNS)
@@ -33,23 +29,6 @@ out/sources_table.md: sources_table.py
 
 # Need to manually insert the output into results.py
 
-out/taxonomy_summary.md: taxonomy_metrics.py cache/taxonomy_summary.json
-	$(JYTHON) $< cache/taxonomy_summary.json > $@.new
-	mv $@.new $@
-
-# there are pathnames in the code, should match prereq list
-out/results_tables.md: make_table_markdown.py \
-		       cache/alignment_summary.json \
-		       cache/merge_summary.json \
-		       cache/taxonomy_summary.json \
-		       cache/contributions_summary.csv
-	python $< cache > $@.new
-	mv $@.new $@
-
-out/ruggiero/taxonomy.tsv: ruggiero/ruggiero.csv
-	python ruggiero/import_ruggiero.py $< out/ruggiero.new
-	mv out/ruggiero.new out/ruggiero
-
 out/outline.html: out/outline.md
 	bin/markdown $< >$@.new
 	mv $@.new $@
@@ -59,12 +38,15 @@ out/outline.md: outline.md
 	echo 'Draft is [here](draft.html)' >$@
 	cat $^ >>$@
 
-open: out/draft.html out/outline.html
-	open $<
+supp: supplementary/taxonomy_stats.csv
 
-clean:
-	rm -rf out/*
-	rm draft.html
+supplementary/taxonomy_stats.csv: make_supplementary.py \
+		       cache/alignment_summary.json \
+		       cache/merge_summary.json \
+		       cache/taxonomy_summary.json \
+		       cache/contributions_summary.csv
+	mkdir -p supplementary
+	python $< cache supplementary
 
 lib/Markdown.pl:
 	mkdir -p lib
@@ -72,12 +54,6 @@ lib/Markdown.pl:
 	unzip Markdown_1.0.1.zip
 	mv Markdown_1.0.1/Markdown.pl $@
 	rm -r Markdown_1.0.1 Markdown_1.0.1.zip
-
-# Use this to test that results.py works before siccing it on OTT
-# NEEDS TO BE FIXED
-test-results: make_table_markdown.py
-	$(JYTHON) $< $(REF_HOME)/t/tax/aster/
-
 
 
 #	echo '<link crossorigin="anonymous" href="https://assets-cdn.github.com/assets/frameworks-130b94ff796a9660d814b59665547ebaf99cc439323c908f41c6ff46e4255c8e.css" integrity="sha256-EwuU/3lqlmDYFLWWZVR+uvmcxDkyPJCPQcb/RuQlXI4=" media="all" rel="stylesheet" />' \
@@ -94,9 +70,51 @@ test-results: make_table_markdown.py
 refresh: taxonomy_metrics.py
 	cp -p $(REF_HOME)/tax/ott/alignment_summary.json cache/
 	cp -p $(REF_HOME)/tax/ott/merge_summary.json cache/
-	$(JYTHON) $< $(REF_HOME)/tax/ott/ $(REF_HOME)/tax/skel/ \
+	$(JYTHON) $< $(REF_HOME)/tax/ott/ $(REF_HOME)/tax/separation/ \
 	   taxonomy_summary.json.new \
 	   contributions_summary.csv.new
 	mv taxonomy_summary.json.new cache/taxonomy_summary.json
 	mv contributions_summary.csv.new cache/contributions_summary.csv
+
+# How well does the taxonomy cover...
+
+coverage:
+	$(REF_HOME)/bin/jython measure_coverage.py \
+	   $(REF_HOME)/tax/ott/ $(REF_HOME)/ids_that_are_otus.tsv \
+	   | tee out/coverage.txt
+
+# -----------------------------------------------------------------------------
+# Graveyard
+
+# - no longer used. delete soon -
+# there are pathnames in the code, should match prereq list
+out/results_tables.md: make_table_markdown.py \
+		       cache/alignment_summary.json \
+		       cache/merge_summary.json \
+		       cache/taxonomy_summary.json \
+		       cache/contributions_summary.csv
+	python $< cache > $@.new
+	mv $@.new $@
+
+out/ruggiero/taxonomy.tsv: ruggiero/ruggiero.csv
+	python ruggiero/import_ruggiero.py $< out/ruggiero.new
+	mv out/ruggiero.new out/ruggiero
+
+out/taxonomy_summary.md: taxonomy_metrics.py cache/taxonomy_summary.json
+	$(JYTHON) $< cache/taxonomy_summary.json > $@.new
+	mv $@.new $@
+
+# Use this to test that results.py works before siccing it on OTT
+# NEEDS TO BE FIXED
+test-results: make_table_markdown.py
+	$(JYTHON) $< $(REF_HOME)/t/tax/aster/
+
+# -----------------------------------------------------------------------------
+
+open: out/draft.html out/outline.html
+	open $<
+
+clean:
+	rm -rf out/*
+	rm draft.html
 

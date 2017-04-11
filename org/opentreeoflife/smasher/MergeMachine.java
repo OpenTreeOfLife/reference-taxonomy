@@ -142,12 +142,12 @@ class MergeMachine {
 			else {
                 Answer a = alignment.getAnswer(node);
                 if (a == null)
-                    acceptNew(node, "new/tip");
+                    acceptNew(node, "new/import");
                 else if (a.value <= Answer.HECK_NO)
                     // Don't create homonym if it's too close a match
                     // (weak no) or ambiguous (noinfo)
                     // YES > NOINFO > NO > HECK_NO  (sorry)
-                    acceptNew(node, "new/polysemy");
+                    acceptNew(node, "new/import");
                 else
                     tick("ambiguous/redundant");
             }
@@ -184,7 +184,7 @@ class MergeMachine {
                 }
                 if (count == 0) {
                     // new & unplaced old children only... copying stuff over to union.
-                    Taxon newnode = acceptNew(node, "new/graft");
+                    Taxon newnode = acceptNew(node, "new/import");
                     takeOn(node, newnode, 0);
                 } else if (!consistentp) {
                     inconsistent(node, child1, child2, sink);

@@ -121,7 +121,7 @@ retrieved.
     <br />
     Download location: [http://purl.org/opentree/ott/ott2.8/inputs/lamiales-20140118.tsv](http://purl.org/opentree/ott/ott2.8/inputs/lamiales-20140118.tsv)
 
-1.  [World Registry of Marine Species (WoRMS)](http://www.marinespecies.org/aphia.php) - harvested from web site using web API over several days ending around 1 October 2015.
+1.  [World Register of Marine Species (WoRMS)](http://www.marinespecies.org/aphia.php) - harvested from web site using web API over several days ending around 1 October 2015.
     Download location: [http://files.opentreeoflife.org/worms/worms-1/worms-1-ot.tgz](http://files.opentreeoflife.org/worms/worms-1/worms-1-ot.tgz)
 
 1.  NCBI Taxonomy, from the 

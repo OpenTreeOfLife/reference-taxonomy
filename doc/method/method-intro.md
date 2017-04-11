@@ -4,21 +4,21 @@
 The conventional approach to meeting the requirements stated in the introduction
 would be to create a database, copy the first taxonomy into it, then
 somehow merge the second taxonomy into that, repeating for further sources if
-necessary.  However, it is not clear how to meet the the ongoing update
+necessary.  However, it is not clear how to meet the ongoing update
 requirement under this approach.  As the source taxonomies change, we would like
 for the combined taxonomy to contain only information derived from the latest
 versions of the sources, without residual information from previous versions.  Many
-changes to the sources are corrections, and we do not want to rely on
-information known to be incorrect.  
+changes to the sources are corrections, and we do not want to retain
+information from previous versions that is known to be incorrect.  
 
 Rather than maintain a database of taxonomic information, we instead developed a
 process for assembling a taxonomy from two or more taxonomic sources.  With a
 repeatable process, we can generate a new combined taxonomy version from new
-source taxonomy versions de novo, and do so frequently.  There are additional
+source taxonomy versions _de novo_, and do so frequently.  There are additional
 benefits as well, such as the ability to add additional sources relatively
 easily, and to use the tool for other purposes.
 
-In the following, any definite claims or measurements apply to the
+In the following, any definite claims or measurements refer to the
 Open Tree reference taxonomy version 3.0.
 
 ## Terminology
@@ -37,23 +37,17 @@ Open Tree reference taxonomy version 3.0.
     within the same taxonomy.  This is close to the nontechnical meaning of 'homonym'
     and is not to be confused with 'homonym' in the nomenclatural sense,
     which only applies within a single nomenclatural code.
-    Nomenclatural homonyms and hemihomonyms [ref 10.11646/bionomina.4.1.3] are all homonyms in this sense.
+    Nomenclatural homonyms and hemihomonyms [ref 10.11646/bionomina.4.1.3] are both homonyms in this sense.
   * primary = the non-synonym name-string of a node, as opposed to one of the synonyms.
   * image (of a node n') = the workspace node corresponding to n'
   * _incertae sedis_: taxon A is _incertae sedis_ in taxon B if A is a child of B
-    but is not known to be outside of B's non-_incertae-sedis_ children.  That is,
+    but is not known to be disjoint from B's non-_incertae-sedis_ children.  That is,
     if we had more information, it might turn out that A is a
     member of one of the other children of B.
 
 ## Assembly overview
 
-To produce the Open Tree reference taxonomy,
-we developed a tool for assembling taxonomies from two or more
-taxonomic sources.  By using an automated process, we can generate a
-new combined taxonomy version from new source taxonomy versions at any
-point.
-
-This section is an overview of the method. Several
+This section is an overview of the taxonomy assembly method. Several
 generalities stated here are simplifications; the actual method (described later)
 is significantly more involved.
 
@@ -62,7 +56,7 @@ by priority.  Priority means that if S is judged more accurate or
 otherwise "better" than S', then S occurs earlier in the sequence than
 S' and its information supersedes that from later sources.  Priority
 judgements are made by curators (either project personnel or participants
-in OpenTree workshops or online forums) based on their taxonomic
+in Open Tree workshops and online forums) based on their taxonomic
 expertise.
 
 We define an operator for combining taxonomies pairwise, written
@@ -86,11 +80,6 @@ The combination S + S' is formed in two steps:
 
 Examples of these two cases are given in Figure 2.
 
-The merge step is performed by modifying the workspace.  If the
-workspace starts out empty, it holds intermediate taxonomy U1 after S1
-is combined, then intermediate taxonomy U2, and so on.  At the end we
-read out the reference taxonomy.
-
 As a simple example, consider a genus represented in both
 taxonomies, but containing different species in the two:
 
@@ -111,7 +100,7 @@ hundreds of thousands of similar simple grafting events.
 
 The other merge method is an _insertion_, where the unaligned
 node has descendants that are in S. This always
-occurs when S' has greater resolution than S. For example, see Figure 2b, where GBIF provides greater resolution than NCBI.
+occurs when S' has greater resolution than S. For example, see Figure 2b, where WoRMS provides greater resolution than NCBI.
 
 The vast majority of alignment and merge situations are simple, similar to the
 examples shown in Figure 2. However, even a small fraction of special cases can add up to
@@ -121,8 +110,10 @@ special cases. Ambiguities caused by synonyms and homonyms create most of the
 difficulties, with inconsistent or unclear higher taxon membership creating the
 rest. The development of the assembly process described here has been a driven
 by trial and error - finding cases that fail and then adding / modifying
-heuristics to address the underlying cause, or adding an ad hoc adjustment for
+heuristics to address the underlying cause, or adding an _ad hoc_ adjustment for
 cases that are rare or overly complex.
+
+<img src="../figures/fig2.jpeg" width="512" height="384"/>
 
 The following sections describe the source taxonomies, and then detail the
 taxonomy combination method.

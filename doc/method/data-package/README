@@ -29,7 +29,8 @@ Note:          See https://github.com/OpenTreeOfLife/reference-taxonomy/blob/mas
 
 File:          separation.tgz
 Description:   Separation taxonomy
-Note:          Same as what's found in the code repository.
+Source URL:    https://github.com/OpenTreeOfLife/reference-taxonomy/tax/separation
+Access date:   26 February 2017
 
 File:          amendments.tgz
 Description:   Taxonomy additions submitted using Open Tree curation tool
@@ -45,7 +46,7 @@ Access date:   28 June 2016
 Note:          see script in source code repository
 
 File:          ott2.10.tgz
-Description:   OTT version 2.10 (used by version 3.0 only for id assignment)
+Description:   OTT version 2.10 (used in version 3.0 build only for id assignment)
 Created:       1 October 2016
 
 File:          by_qid.tgz

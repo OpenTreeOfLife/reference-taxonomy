@@ -45,11 +45,17 @@ cache/ott3.0.tgz:
 
 cache/ott2.10.tgz:
 	mkdir -p cache
-	wget -O $@.new $@ http://files.opentreeoflife.org/ott/ott2.10/ott2.10.tgz
+	wget -O $@.new http://files.opentreeoflife.org/ott/ott2.10/ott2.10.tgz
 	mv $@.new $@
 
-# The file is misnamed on the server.  It's really a .tar.gz file, not a .csv.gz file.
-$F/by_qid.tgz:
+$F/by_qid.tgz: cache/by_qid.csv.gz
+	(cd cache; gunzip by_qid.csv.gz)
+	mkdir -p ott_id_list
+	mv cache/by_qid.csv ott_id_list/
+	tar czf $@ ott_id_list
+
+cache/by_qid.csv.gz:
+	mkdir -p cache
 	wget -O $@.new http://files.opentreeoflife.org/idlist/idlist-20161118/by_qid.csv.gz
 	mv $@.new $@
 

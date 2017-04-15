@@ -1,77 +1,38 @@
 About the contents of this data package
 ---------------------------------------
 
-For further information on the original taxonomy sources see the article.
+For further information on the original taxonomy sources see the
+associated article, and the release notes at
 
-For the scripts that convert the original sources (on the web) to
-their processed versions (in this data package), see the Makefile and
-the feed/ directory in the code repository (in Zenodo, [ref zenodo
-deposit DOI]).
+  https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/ott3.0.md
 
-For documentation on taxonomy file formats, see [ref zenodo, after
-moving these from wiki to repo].
+This file is also found in the Zenodo deposit related to the article,
+https://doi.org/10.5281/zenodo.546111
 
-This data package archives the processed versions of the taxonomies,
-not the original sources.  Information about sources is provided.
+For the program that creates OTT from the source taxonomies, see
+the Zenodo deposit.  The current version is available here:
 
-"Source date" refers to the write date of the source file.  "Access
-date" is the date on which the source file was retrieved.
+  https://github.com/OpenTreeOfLife/reference-taxonomy
 
-All files are GNU 'tar' archives, compressed using gzip compression.
+For documentation on taxonomy file formats, see
+
+  https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/Interim-taxonomy-file-format.md
+
+This documentation is also found in the Zenodo deposit.
+
+All .tgz files are GNU 'tar' archives, compressed using gzip
+compression.
 
 -----
 
 File:          ott3.0.tgz
-Description:   Open Tree Taxonomy version 3.0
+Description:   Open Tree Taxonomy version 3.0 (draft 6)
+Created:       26 February 2017
 
 File:          separation.tgz
 Description:   Separation taxonomy
-Note:          Same as what's found in the code repository.
-
-File:          silva.tgz
-Description:   SILVA Taxonomy version 115
-Source URL:    ftp://ftp.arb-silva.de/release_115/Exports/SSURef_NR99_115_tax_silva.fasta.tgz
-Source date:   7 September 2013
-Access date:   1 November 2013
-Source length: 816923384 bytes
-
-File:          fung.tgz
-Description:   Index Fungorum
-Source URL:    derived from database query result files provided by Paul Kirk
-Access date:   7 April 2014
-
-File:          worms.tgz
-Description:   WoRMS taxonomy
-Source URL:    accessed via web service described at http://www.marinespecies.org/aphia.php?p=webservice
-Access date:   1 October 2015
-
-File:          ncbi.tgz
-Description:   NCBI Taxonomy
-Source URL:    ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz
-Source date:   9 November 2016
-Access date:   9 November 2016
-Source length: 37595767 bytes
-
-File:          gbif.tgz
-Description:   GBIF backbone taxonomy
-Source URL:    http://rs.gbif.org/datasets/backbone/backbone.zip
-Source date:   29 July 2016
-Access date:   11 November 2016
-Source length: 347031944 bytes
-
-File:          irmng.tgz
-Description:   IRMNG
-Source URL:    http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip
-Source date:   31 January 2014
-Access date:   7 June 2014
-Note:          We obtained a separate extinct/extant annotations file from Tony Rees of CSIRO
-Source length: IRMNG_DWC.zip 111780936, IRMNG_DWC_SP_PROFILE.csv 62845750 bytes
-
-File:          prev_ott.tgz
-Description:   OTT version 2.10 (used only for id assignment)
-
-File:          by_qid.csv.gz
-Description:   Cumulative source id to OTT id mappings (used only for id assignment)
+Source URL:    https://github.com/OpenTreeOfLife/reference-taxonomy/tax/separation
+Access date:   26 February 2017
 
 File:          amendments.tgz
 Description:   Taxonomy additions submitted using Open Tree curation tool
@@ -86,7 +47,65 @@ Source URL:    ftp://ftp.ncbi.nlm.nih.gov/genbank/
 Access date:   28 June 2016
 Note:          see script in source code repository
 
-"The selected license applies to all of your files displayed in the
-top of the form. If you want to upload some files under a different
-license, please do so in two separate uploads."
+File:          ott2.10.tgz
+Description:   OTT version 2.10 (used in version 3.0 build only for id assignment)
+Created:       1 October 2016
+
+File:          by_qid.tgz
+Description:   Cumulative source id to OTT id mappings (used only for id assignment)
+Created:       18 November 2016
+
+-----
+
+Sources not in this deposit:
+
+Description:   SILVA Taxonomy version 115
+Source URL:    ftp://ftp.arb-silva.de/release_115/Exports/SSURef_NR99_115_tax_silva.fasta.tgz
+Source date:   7 September 2013
+Access date:   1 November 2013
+Source length: 816923384 bytes
+Note:          File ncbi_to_silva.tsv is a mapping from NCBI ids to SILVA 
+               reference sequence genbank ids.
+
+Description:   Index Fungorum
+Source URL:    derived from database query result files provided by Paul Kirk
+Access date:   7 April 2014
+Processed:     http://files.opentreeoflife.org/fung/fung-9/fung-9-ot.tgz
+
+Description:   WoRMS taxonomy
+Source URL:    accessed via web service described at http://www.marinespecies.org/aphia.php?p=webservice
+Access date:   1 October 2015
+Processed:     http://files.opentreeoflife.org/worms/worms-1/worms-1-ot.tgz
+
+Description:   NCBI Taxonomy
+Source URL:    ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz
+Source date:   9 November 2016
+Access date:   9 November 2016
+Source length: 37595767 bytes
+Copy:          http://files.opentreeoflife.org/ncbi/ncbi-20161109/ncbi-20161109.tgz
+
+Description:   GBIF backbone taxonomy
+Source URL:    http://rs.gbif.org/datasets/backbone/backbone.zip
+Source date:   29 July 2016
+Access date:   11 November 2016
+Source length: 347031944 bytes
+Copy:          http://files.opentreeoflife.org/gbif/gbif-20160729/gbif-20160729.zip
+
+Description:   IRMNG
+Source URL:    http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip
+Source date:   31 January 2014
+Access date:   7 June 2014
+Note:          We obtained a separate extinct/extant annotations file from Tony Rees of CSIRO
+Source length: IRMNG_DWC.zip 111780936, IRMNG_DWC_SP_PROFILE.csv 62845750 bytes
+Processed:     http://files.opentreeoflife.org/irmng-ot/irmng-ot-20161108/irmng-ot-20161108.tgz
+
+Note:
+
+- 'Processed' gives a link to the processed version of the source (in
+  Open Tree 'Interim' format).
+
+- 'Source date' refers to the write date of the source file (e.g. from
+  Last-modified: HTTP header).
+
+- 'Access date' is the date on which we retrieved the source file.
 

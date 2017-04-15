@@ -1,9 +1,5 @@
 # The tests work in JAR's setup...
 
-# You'll need to put a copy of the previous (or baseline) version of OTT in tax/prev_ott/.
-# This is a manual step.
-# Get it from http://files.opentreeoflife.org/ott/
-
 #  $^ = all prerequisites
 #  $< = first prerequisite
 #  $@ = file name of target

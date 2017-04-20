@@ -21,7 +21,7 @@ WORMS_URL=http://files.opentreeoflife.org/worms/worms-1/worms-1-ot.tgz
 
 NCBI_URL="http://files.opentreeoflife.org/ncbi/ncbi-20161109/ncbi-20161109.tgz"
 
-IDLIST_URL="http://files.opentreeoflife.org/ott_id_list/idlist-20161118/by_qid.csv.gz"
+IDLIST_URL="http://files.opentreeoflife.org/idlist/idlist-20161118/by_qid.csv.gz"
 
 # Was http://ecat-dev.gbif.org/repository/export/checklist1.zip
 # Could be http://rs.gbif.org/datasets/backbone/backbone.zip

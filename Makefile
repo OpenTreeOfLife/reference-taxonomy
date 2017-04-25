@@ -12,16 +12,24 @@ JAVAFLAGS=-Xmx14G
 WHICH=3.1
 PREV_WHICH=3.0
 
+all: compile
+
+EXCL=--exclude="*~" --exclude=".??*"
+
+# ----- Version selection -----
+
+include config.mk
+
+refresh-config: config.mk
+
+config.mk: config.json
+	python util/update_config.py <config.json >config.mk
+
 # ----- Taxonomy source locations -----
 
-# 12787947 Oct  6  2015 taxonomy.tsv
-FUNG_URL=http://files.opentreeoflife.org/fung/fung-9/fung-9-ot.tgz
+WORMS_URL=http://files.opentreeoflife.org/worms/$(WORMS)/$(WORMS)-ot.tgz
 
-WORMS_URL=http://files.opentreeoflife.org/worms/worms-1/worms-1-ot.tgz
-
-NCBI_URL="http://files.opentreeoflife.org/ncbi/ncbi-20161109/ncbi-20161109.tgz"
-
-IDLIST_URL="http://files.opentreeoflife.org/ott_id_list/idlist-20161118/by_qid.csv.gz"
+NCBI_URL="http://files.opentreeoflife.org/ncbi/$(NCBI)/$(NCBI).tgz"
 
 # Was http://ecat-dev.gbif.org/repository/export/checklist1.zip
 # Could be http://rs.gbif.org/datasets/backbone/backbone.zip
@@ -31,72 +39,36 @@ GBIF_URL=http://files.opentreeoflife.org/gbif/gbif-20160729/gbif-20160729.zip
 
 IRMNG_URL=http://files.opentreeoflife.org/irmng-ot/irmng-ot-20161108/irmng-ot-20161108.tgz
 
-# Silva 115: 206M uncompresses to 817M
-# issue #62 - verify  (is it a tsv file or csv file?)
-# see also http://www.arb-silva.de/no_cache/download/archive/release_115/ ?
-
-SILVA_EXPORTS=ftp://ftp.arb-silva.de/release_115/Exports
-SILVA_URL=$(SILVA_EXPORTS)/SSURef_NR99_115_tax_silva.fasta.tgz
-
 # This is used as a source of OTT id assignments.
 PREV_OTT_URL=http://files.opentreeoflife.org/ott/ott$(PREV_WHICH)/ott$(PREV_WHICH).tgz
 
+IDLIST_URL="http://files.opentreeoflife.org/idlist/idlist-20161118/by_qid.csv.gz"
+
 # 9 Sep 2016
 AMENDMENTS_REFSPEC=feed/amendments/refspec
-
-# -----
 
 # Where to put tarballs
 #TARDIR=/raid/www/roots/opentree/ott
 TARDIR?=tarballs
 
-# Scripts and other inputs related to taxonomy
+# -----
 
-# The tax/ directory is full of taxonomies; mostly (entirely?) derived objects.
-FUNG=tax/fung
+# Smasher related variables
 
 CP=-classpath ".:lib/*"
 JAVA=JYTHONPATH=util java $(JAVAFLAGS) $(CP)
-SMASH=org.opentreeoflife.smasher.Smasher
+SMASH=$(JAVA) org.opentreeoflife.smasher.Smasher
 CLASS=org/opentreeoflife/smasher/Smasher.class
 JAVASOURCES=$(shell find org/opentreeoflife -name "*.java")
 
 # ----- Targets
 
-all: compile
-
-# Shorthand target
-compile: $(CLASS)
-
-# Compile the Java classes
-$(CLASS): $(JAVASOURCES) \
-	  lib/jython-standalone-2.7.0.jar \
-	  lib/json-simple-1.1.1.jar \
-	  lib/junit-4.12.jar
-	javac -g $(CP) $(JAVASOURCES)
-
-# Script to start up jython (with OTT classes preloaded)
-bin/jython:
-	mkdir -p bin
-	(echo "#!/bin/bash"; \
-	 echo "export JYTHONPATH=.:$$PWD:$$PWD/util:$$PWD/lib/json-simple-1.1.1.jar"; \
-	 echo exec java "$(JAVAFLAGS)" -jar $$PWD/lib/jython-standalone-2.7.0.jar '$$*') >$@
-	chmod +x $@
-
-# Script to start up the background daemon
-bin/smasher:
-	mkdir -p bin
-	(echo "#!/bin/bash"; \
-	 echo "cd $$PWD/service"; \
-	 echo ./service '$$*') >$@
-	chmod +x $@
-
-# The open tree taxonomy
+# The open tree reference taxonomy
 
 ott: tax/ott/log.tsv tax/ott/version.txt tax/ott/README.html
 tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py adjustments.py amendments.py \
                     tax/silva/taxonomy.tsv \
-		    tax/fung/taxonomy.tsv tax/713/taxonomy.tsv \
+		    import/fung/taxonomy.tsv tax/713/taxonomy.tsv \
 		    tax/ncbi/taxonomy.tsv tax/gbif/taxonomy.tsv \
 		    tax/irmng/taxonomy.tsv \
 		    tax/worms/taxonomy.tsv \
@@ -123,31 +95,130 @@ tax/ott/version.txt:
 tax/ott/README.html: tax/ott/log.tsv util/make_readme.py
 	python util/make_readme.py tax/ott/ >$@
 
-# ----- Taxonomy inputs
+# ----- Taxonomy sources
 
-feed/ott_id_list/by_qid.csv:
-	@mkdir -p feed/ott_id_list
+# Input: SILVA
+# Significant tabs !!!
 
-	@mkdir -p tmp
+# Silva 115: 206M uncompresses to 817M
+# issue #62 - verify  (is it a tsv file or csv file?)
+
+SILVA_URL=http://files.opentreeoflife.org/fung/$(SILVA)/$(SILVA).tgz
+
+archive/silva/$(SILVA)/$(SILVA).tgz:
 	@mkdir -p `dirname $@`
-	wget --output-document=tmp/by_qid.csv.gz $(IDLIST_URL)
-	(cd tmp; gunzip by_qid.csv.gz)
-	mv tmp/by_qid.csv `dirname $@`/
-	@ls -l $@
+	wget --output-document=$@.new $(SILVA_URL)
+	mv $@.new $@
+
+fetch-silva: archive/silva/$(SILVA)/$(SILVA).tgz
+	ls -l archive/silva/$(SILVA)
+
+source/silva/$(SILVA)/silva_no_sequences.txt: archive/silva/$(SILVA)/$(SILVA).tgz
+	tar -C source/silva -xzvf $<
+
+# Get taxon names from Genbank accessions file.
+# The accessions file has genbank id, ncbi id, strain, taxon name.
+# *** maybe put accessionid_to_taxonid.tsv into the digest? ***
+source/silva/$(SILVA)/cluster_names.tsv: source/silva/$(SILVA)/silva_no_sequences.txt \
+				import/ncbi/$(NCBI)/taxonomy.tsv \
+				feed/silva/accessionid_to_taxonid.tsv
+	python import_scripts/silva/get_taxon_names.py \
+	       import/ncbi/$(NCBI)/taxonomy.tsv \
+	       feed/silva/accessionid_to_taxonid.tsv \
+	       $@.new
+	mv $@.new $@
+
+# Create the taxonomy import files from the no_sequences digest & accessions
+import/silva/$(SILVA)/taxonomy.tsv: import_scripts/silva/process_silva.py source/silva/$(SILVA)/silva_no_sequences.txt \
+            source/silva/$(SILVA)/cluster_names.tsv 
+	@mkdir -p import/silva/$(SILVA)
+	python import_scripts/silva/process_silva.py \
+	       source/silva/$(SILVA)/silva_no_sequences.txt \
+	       source/silva/$(SILVA)/cluster_names.tsv \
+	       source/silva/$(SILVA)/origin_info.json \
+	       import/silva/$(SILVA)
+
+silva: import/silva/$(SILVA)/taxonomy.tsv
+
+# Archive.
+
+archive-silva:
+	@mkdir -p archive/silva/$(SILVA)
+	[ -d source/silva/$(SILVA) ] || \
+	  (echo "Inputs to tar not available"; exit 1)
+	tar -C source/silva -cvzf archive/silva/$(SILVA)/$(SILVA).tgz $(SILVA) \
+	  $(EXCL)
+	bin/publish-taxonomy silva $(SILVA) .tgz
+
+# Refresh from web.
+
+SILVA_ARCHIVE=https://www.arb-silva.de/no_cache/download/archive
+
+# To advance to a new SILVA release, delete this file, then 'make refresh-silva'
+raw/silva/release:
+	@mkdir -p raw/silva
+	wget -q -O raw/silva/release-index.html $(SILVA_ARCHIVE)/
+	python import_scripts/silva/get_silva_release_info.py \
+	  <raw/silva/release-index.html | \
+	  (read r d; echo "$$r" >$@; echo "$$d" >raw/silva/date)
+
+# Get the fasta file (big; for release 128, it's 150M)
+raw/silva/silva.gz: raw/silva/release
+	mkdir -p raw/silva 
+	echo $(SILVA_ARCHIVE)/release_`cat raw/silva/release`/Exports/SILVA_`cat raw/silva/release`_SSURef_Nr99_tax_silva.fasta.gz >raw/silva/origin_url
+	wget -O $@ `cat raw/silva/origin_url`
+	touch $@
+
+# Get latest SILVA from web; extract fasta file; make digest
+get-silva-release: raw/silva/silva.gz
+	@mkdir -p source/silva/silva-`cat raw/silva/release`
+	@mkdir -p archive/silva/silva-`cat raw/silva/release`
+	gunzip -c raw/silva/silva.gz >raw/silva/silva.fasta
+	grep ">.*;" raw/silva/silva.fasta > source/silva/silva-`cat raw/silva/release`/silva_no_sequences.txt
+	python util/origin_info.py \
+	  `cat raw/silva/date` \
+	  `cat raw/silva/origin_url` \
+	  >source/silva/silva-`cat raw/silva/release`/origin_info.json
+	rm raw/silva/silva.fasta
+	ls -l source/silva/silva-`cat raw/silva/release`
+	tar -C source/silva -cvzf archive/silva/silva-`cat raw/silva/release`.tgz \
+	  silva-`cat raw/silva/release` $(EXCL)
+
+# Make the new version the one to be used in assembly
+refresh-silva: get-silva-release
+	python util/update_config.py silva silva-`cat raw/silva/release` \
+	  <config.json >config.mk
 
 # Input: Index Fungorum
 
-fung: tax/fung/taxonomy.tsv tax/fung/synonyms.tsv
+# 12787947 Oct  6  2015 taxonomy.tsv
+FUNG_URL=http://files.opentreeoflife.org/fung/$(FUNG)/$(FUNG)-ot.tgz
 
-tax/fung/taxonomy.tsv: 
-	@mkdir -p tmp
+archive/fung/$(FUNG)/$(FUNG)-ot.tgz:
 	@mkdir -p `dirname $@`
-	wget --output-document=tmp/fung-ot.tgz $(FUNG_URL)
-	(cd tmp; tar xzf fung-ot.tgz)
-	mv tmp/fung*/* `dirname $@`/
-	@ls -l $@
+	wget --output-document=$@.new $(FUNG_URL)
+	mv $@.new $@
 
-tax/fung/about.json:
+fetch-fung: archive/fung/$(FUNG)/$(FUNG)-ot.tgz
+	ls -l archive/fung/$(FUNG)
+
+import/fung/$(FUNG)/taxonomy.tsv: archive/fung/$(FUNG)/$(FUNG)-ot.tgz
+	@rm -rf tmp/fung
+	@mkdir -p import/fung/$(FUNG) tmp/fung
+	(cd tmp/fung; tar xzf -) < $<
+	@ls -l tmp/fung
+	mv tmp/fung/*/* `dirname $@`/
+	rm -rf tmp/fung
+	@ls -l `dirname $@`
+
+import-fung: import/fung/$(FUNG)/taxonomy.tsv
+
+fung: import/fung/$(FUNG)/taxonomy.tsv
+	(cd tax; ln -sf ../`dirname $<` fung)
+
+# Refresh fung... hmm... incomplete
+
+source/fung/$(FUNG)/about.json:
 	@mkdir -p `dirname $@`
 	cp -p feed/fung/about.json tax/fung/
 
@@ -155,36 +226,43 @@ tax/fung/about.json:
 # Formerly, where we now have /dev/null, we had
 # ../data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP
 
-ncbi: tax/ncbi/taxonomy.tsv
-tax/ncbi/taxonomy.tsv: feed/ncbi/in/nodes.dmp feed/ncbi/process_ncbi_taxonomy_taxdump.py 
-	@mkdir -p tax/ncbi.tmp
-	@mkdir -p feed/ncbi/in
-	python feed/ncbi/process_ncbi_taxonomy_taxdump.py F feed/ncbi/in \
-            /dev/null tax/ncbi.tmp $(NCBI_URL)
-	rm -rf tax/ncbi
-	mv -f tax/ncbi.tmp tax/ncbi
-
-feed/ncbi/in/nodes.dmp: feed/ncbi/in/taxdump.tar.gz
+archive/ncbi/$(NCBI)/$(NCBI).tgz:
 	@mkdir -p `dirname $@`
-	tar -C feed/ncbi/in -xzvf feed/ncbi/in/taxdump.tar.gz
+	wget --output-document=$@.new $(FUNG_URL)
+	mv $@.new $@
+
+fetch-ncbi: archive/ncbi/$(NCBI)/$(NCBI).tgz
+
+source/ncbi/$(NCBI)/.source: archive/ncbi/$(NCBI)/$(NCBI).tgz
+	@mkdir -p `dirname $@`
+	tar -C `dirname $@` -xzvf $<
 	touch $@
 
-feed/ncbi/in/taxdump.tar.gz:
-	@mkdir -p feed/ncbi/in
-	wget --output-document=$@.new $(NCBI_URL)
-	mv $@.new $@
-	@ls -l $@
+import/ncbi/$(NCBI)/.import: source/ncbi/$(NCBI)/.source feed/ncbi/process_ncbi_taxonomy_taxdump.py
+	@rm -rf tmp/ncbi
+	@mkdir -p tmp/ncbi
+	python feed/ncbi/process_ncbi_taxonomy_taxdump.py F source/ncbi/$(NCBI) \
+            /dev/null tmp/ncbi $(NCBI_URL)
+	rm -rf `dirname $@`
+	mv -f tmp/ncbi `dirname $@`
+	touch $@
+
+import-ncbi: import/ncbi/$(NCBI)/.import
+
+ncbi: import/ncbi/$(NCBI)/taxonomy.tsv
+	(cd tax; ln -sf ../`dirname $<` ncbi)
+
 
 NCBI_ORIGIN_URL=ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz
-NCBI_TAXDUMP=feed/ncbi/in/taxdump.tar.gz
+NCBI_TAXDUMP=source/ncbi/$(NCBI)/taxdump.tar.gz
 
 refresh-ncbi:
-	@mkdir -p feed/ncbi/in
+	@mkdir -p source/ncbi/$(NCBI)
 	wget --output-document=$(NCBI_TAXDUMP).new $(NCBI_ORIGIN_URL)
 	mv $(NCBI_TAXDUMP).new $(NCBI_TAXDUMP)
 	@ls -l $(NCBI_TAXDUMP)
 
-# Don't forget to scp -p feed/ncbi/in/taxdump.tar.gz to
+# Don't forget to scp -p source/ncbi/$(NCBI)/taxdump.tar.gz to
 #  files:files.opentreeoflife.org/ncbi/ncbi-YYYYMMDD/ncbi-YYYYMMDD.tgz
 
 # Formerly, where it says /dev/null, we had ../data/gbif/ignore.txt
@@ -242,10 +320,10 @@ refresh-gbif:
 
 tax/worms/taxonomy.tsv:
 	@mkdir -p tax/worms tmp
-	wget --output-document=tmp/worms-1-ot.tgz $(WORMS_URL)
-	(cd tmp; tar xzf worms-1-ot.tgz)
+	wget --output-document=tmp/$(WORMS)-ot.tgz $(WORMS_URL)
+	(cd tmp; tar xzf $(WORMS)-ot.tgz)
 	rm -f tax/worms/*
-	mv tmp/worms-1-ot*/* tax/worms/
+	mv tmp/$(WORMS)-ot*/* tax/worms/
 
 # Input: IRMNG
 
@@ -292,56 +370,8 @@ irmng-tarball:
 	 mv $(TARDIR)/irmng-ot-$$d.tgz.tmp $(TARDIR)/irmng-ot-$$d.tgz )
 
 publish-irmng:
-	bin/publish-taxonomy irmng-ot
+	bin/publish-taxonomy irmng-ot irmng-ot-zzz .tgz
 
-
-# Input: SILVA
-# Significant tabs !!!
-
-feed/silva/out/taxonomy.tsv: feed/silva/process_silva.py feed/silva/work/silva_no_sequences.fasta feed/silva/work/accessions.tsv 
-	@mkdir -p feed/silva/out
-	python feed/silva/process_silva.py \
-	       feed/silva/work/silva_no_sequences.fasta \
-	       feed/silva/work/accessions.tsv \
-	       feed/silva/out "$(SILVA_URL)"
-
-silva: tax/silva/taxonomy.tsv
-
-tax/silva/taxonomy.tsv: feed/silva/out/taxonomy.tsv
-	@mkdir -p tax/silva
-	cp -p feed/silva/out/* tax/silva/
-
-feed/silva/in/silva.fasta:
-	@mkdir -p `dirname $@`
-	wget --output-document=$@.tgz.new "$(SILVA_URL)"
-	mv $@.tgz.new $@.tgz
-	@ls -l $@.tgz
-	(cd feed/silva/in && tar xzvf silva.fasta.tgz && mv *silva.fasta silva.fasta)
-
-# To make loading the information faster, we remove all the sequence data
-feed/silva/work/silva_no_sequences.fasta: feed/silva/in/silva.fasta
-	@mkdir -p feed/silva/work
-	grep ">.*;" $< >$@.new
-	mv $@.new $@
-
-# This file has genbank id, ncbi id, strain, taxon name
-feed/silva/work/accessions.tsv: feed/silva/work/silva_no_sequences.fasta \
-				tax/ncbi/taxonomy.tsv \
-				feed/silva/accessionid_to_taxonid.tsv
-	python feed/silva/get_taxon_names.py \
-	       tax/ncbi/taxonomy.tsv \
-	       feed/silva/accessionid_to_taxonid.tsv \
-	       $@.new
-	mv $@.new $@
-
-# No longer used
-
-SILVA_RANKS_URL=$(SILVA_EXPORTS)/tax_ranks_ssu_115.csv
-feed/silva/in/tax_ranks.txt:
-	@mkdir -p `dirname $@`
-	wget --output-document=$@.new $(SILVA_RANKS_URL)
-	mv $@.new $@
-	@ls -l $@
 
 # ----- Katz lab Protista/Chromista parent assignments
 
@@ -382,6 +412,46 @@ tax/prev_ott/taxonomy.tsv:
 	if [ -e tax/prev_ott/synonyms ]; then mv tax/prev_ott/synonyms tax/prev_ott/synonyms.tsv; fi
 	rm -rf tmp
 
+# Source: OTT id list compiled from all previous OTT versions
+
+import/idlist/by_qid.csv: source/idlist/by_qid.csv
+	... link or copy ??? ...
+	ln -sf $< $@
+
+source/idlist/by_qid.csv: stage/idlist/by_qid.tgz stage/idlist/meta.json
+	(cd stage/idlist; gunzip by_qid.tgz)
+	mv -f stage/idlist/*/* $@
+	cp -p stage/idlist/meta.json source/idlist/meta.json
+
+stage/idlist/by_qid.tgz: stage/idlist/about.json
+	... which version? ...
+	... version is in stage/idlist/meta.json ...
+	python util/archivetool.py get idlist stage/idlist/about.json archive/idlist 
+	... writes archive/, links from stage/ ...
+
+refresh-idlist:
+	(cd ott_id_list; make)
+	mv ott_id_list/by_qid.csv source/idlist/
+	... create source/idlist/meta.json ...
+	python util/archivetool.py refresh idlist source stage archive by_qid.csv | bash
+	... ??? dir name should include version number ...
+	... tar czvf stage/idlist/by_qid.tgz -C stage idlist-xxx/by_qid.csv
+
+archive-idlist: source/idlist/about.json    # or stage/ ???
+	...
+
+# ,,,,,,,,,,,
+
+feed/ott_id_list/by_qid.csv:
+	@mkdir -p feed/ott_id_list
+
+	@mkdir -p tmp
+	@mkdir -p `dirname $@`
+	wget --output-document=tmp/by_qid.csv.gz $(IDLIST_URL)
+	(cd tmp; gunzip by_qid.csv.gz)
+	mv tmp/by_qid.csv `dirname $@`/
+	@ls -l $@
+
 # ----- Phylesystem OTU list
 
 # This rule typically won't run, since the target is checked in
@@ -394,7 +464,7 @@ ids_that_are_otus.tsv:
 # Open Tree project and can use scp; could be modified to use
 # curl. this doesn't matter much since the list is checked into the
 # repo.)
-ids_in_synthesis.tsv:
+ids_in_synthesis.tsv: bin/jython
 	rm -rf synth-nexson-tmp
 	mkdir -p synth-nexson-tmp
 	scp -p files:"files.opentreeoflife.org/synthesis/current/output/phylo_snapshot/*@*.json" synth-nexson-tmp/
@@ -412,7 +482,7 @@ PREOTTOL=../../preottol
 # How does it know where to write to?
 
 tax/ott/aux.tsv: $(CLASS) tax/ott/log.tsv
-	$(JAVA) $(SMASH) tax/ott/ --aux $(PREOTTOL)/preottol-20121112.processed
+	$(SMASH) tax/ott/ --aux $(PREOTTOL)/preottol-20121112.processed
 
 $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 	python util/process-preottol.py $< $@
@@ -435,24 +505,24 @@ tarball: tax/ott/log.tsv tax/ott/version.txt
 
 # Not currently used since smasher already suppresses non-OTU deprecations
 tax/ott/otu_deprecated.tsv: ids_that_are_otus.tsv tax/ott/deprecated.tsv
-	$(JAVA) $(SMASH) --join ids_that_are_otus.tsv tax/ott/deprecated.tsv >$@.new
+	$(SMASH) --join ids_that_are_otus.tsv tax/ott/deprecated.tsv >$@.new
 	mv $@.new $@
 	wc $@
 
 # This file is big
 tax/ott/differences.tsv: tax/prev_ott/taxonomy.tsv tax/ott/taxonomy.tsv
-	$(JAVA) $(SMASH) --diff tax/prev_ott/ tax/ott/ $@.new
+	$(SMASH) --diff tax/prev_ott/ tax/ott/ $@.new
 	mv $@.new $@
 	wc $@
 
 # OTUs only
 tax/ott/otu_differences.tsv: tax/ott/differences.tsv
-	$(JAVA) $(SMASH) --join ids_that_are_otus.tsv tax/ott/differences.tsv >$@.new
+	$(SMASH) --join ids_that_are_otus.tsv tax/ott/differences.tsv >$@.new
 	mv $@.new $@
 	wc $@
 
 tax/ott/otu_hidden.tsv: tax/ott/hidden.tsv
-	$(JAVA) $(SMASH) --join ids_that_are_otus.tsv tax/ott/hidden.tsv >$@.new
+	$(SMASH) --join ids_that_are_otus.tsv tax/ott/hidden.tsv >$@.new
 	mv $@.new $@
 	wc $@
 
@@ -497,12 +567,12 @@ test-smasher: compile
 
 # internal tests
 test2: $(CLASS)
-	$(JAVA) $(SMASH) --test
+	$(SMASH) --test
 
 check:
 	bash run-tests.sh
 
-inclusion-tests: inclusions.csv 
+inclusion-tests: inclusions.csv bin/jython
 	bin/jython util/check_inclusions.py inclusions.csv tax/ott/
 
 # -----------------------------------------------------------------------------
@@ -513,17 +583,17 @@ TAXON=Asterales
 # t/tax/prev/taxonomy.tsv: tax/prev_ott/taxonomy.tsv   - correct expensive
 t/tax/prev_aster/taxonomy.tsv: 
 	@mkdir -p `dirname $@`
-	$(JAVA) $(SMASH) tax/prev_ott/ --select2 $(TAXON) --out t/tax/prev_aster/
+	$(SMASH) tax/prev_ott/ --select2 $(TAXON) --out t/tax/prev_aster/
 
-# dependency on tax/ncbi/taxonomy.tsv - correct expensive
+# dependency on import/ncbi/$(NCBI)/taxonomy.tsv - correct expensive
 t/tax/ncbi_aster/taxonomy.tsv: 
 	@mkdir -p `dirname $@`
-	$(JAVA) $(SMASH) tax/ncbi/ --select2 $(TAXON) --out t/tax/ncbi_aster/
+	$(SMASH) import/ncbi/$(NCBI)/ --select2 $(TAXON) --out t/tax/ncbi_aster/
 
 # dependency on tax/gbif/taxonomy.tsv - correct but expensive
 t/tax/gbif_aster/taxonomy.tsv: 
 	@mkdir -p `dirname $@`
-	$(JAVA) $(SMASH) tax/gbif/ --select2 $(TAXON) --out t/tax/gbif_aster/
+	$(SMASH) tax/gbif/ --select2 $(TAXON) --out t/tax/gbif_aster/
 
 # Previously:
 #t/tax/aster/taxonomy.tsv: $(CLASS) \
@@ -532,7 +602,7 @@ t/tax/gbif_aster/taxonomy.tsv:
 #                          t/tax/prev_aster/taxonomy.tsv \
 #                          t/edits/edits.tsv
 #        @mkdir -p `dirname $@`
-#        $(JAVA) $(SMASH) t/tax/ncbi_aster/ t/tax/gbif_aster/ \
+#        $(SMASH) t/tax/ncbi_aster/ t/tax/gbif_aster/ \
 #             --edits t/edits/ \
 #             --ids t/tax/prev_aster/ \
 #             --out t/tax/aster/
@@ -558,6 +628,34 @@ aster-tarball: t/tax/aster/taxonomy.tsv
 	 tar czvf $(TARDIR)/aster.tgz.tmp -C t/tax aster && \
 	 mv $(TARDIR)/aster.tgz.tmp $(TARDIR)/aster.tgz )
 
+# ----- Smasher
+
+# Shorthand target
+compile: $(CLASS)
+
+# Compile the Java classes
+$(CLASS): $(JAVASOURCES) \
+	  lib/jython-standalone-2.7.0.jar \
+	  lib/json-simple-1.1.1.jar \
+	  lib/junit-4.12.jar
+	javac -g $(CP) $(JAVASOURCES)
+
+# Script to start up jython (with OTT classes preloaded)
+bin/jython:
+	mkdir -p bin
+	(echo "#!/bin/bash"; \
+	 echo "export JYTHONPATH=.:$$PWD:$$PWD/util:$$PWD/lib/json-simple-1.1.1.jar"; \
+	 echo exec java "$(JAVAFLAGS)" -jar $$PWD/lib/jython-standalone-2.7.0.jar '$$*') >$@
+	chmod +x $@
+
+# Script to start up the background daemon
+bin/smasher:
+	mkdir -p bin
+	(echo "#!/bin/bash"; \
+	 echo "cd $$PWD/service"; \
+	 echo ./service '$$*') >$@
+	chmod +x $@
+
 # ----- Clean
 
 # The 'clean' target deletes everything except files fetched from the Internet.
@@ -569,7 +667,7 @@ clean:
 	rm -rf tax/ott
 	rm -rf feed/*/out feed/*/work
 	rm -rf *.tmp new_taxa
-	rm -rf tax/ncbi tax/gbif tax/silva
+	rm -rf import/ncbi/$(NCBI) tax/gbif tax/silva
 	rm -f feed/misc/chromista_spreadsheet.py
 	rm -rf t/amendments t/tax/aster
 

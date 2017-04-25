@@ -1,0 +1,26 @@
+{
+ "fung": {
+  "version": "fung-9"
+ }, 
+ "gbif": {
+  "version": "gbif-20160729"
+ }, 
+ "idlist": {
+  "version": "idlist-20161118"
+ }, 
+ "irmng": {
+  "version": "irmng-20140131"
+ }, 
+ "ncbi": {
+  "version": "ncbi-20161109"
+ }, 
+ "prev_ott": {
+  "version": "ott3.0"
+ }, 
+ "silva": {
+  "version": "silva-115"
+ }, 
+ "worms": {
+  "version": "worms-1"
+ }
+}

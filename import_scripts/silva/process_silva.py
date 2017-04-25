@@ -329,7 +329,7 @@ def get_tips(taxa, cluster_parent):
     print 'NBCI taxa that span multiple SILVA "genera":', paraphyletic_count
     return ncbi_to_taxon
 
-def write_taxonomy(taxa, synonyms, ncbi_to_taxon, url, nodesfilename, outdir):
+def write_taxonomy(taxa, synonyms, ncbi_to_taxon, blob, nodesfilename, outdir):
     taxpath = os.path.join(outdir, 'taxonomy.tsv')
     newtaxpath = taxpath + '.new'
     with open(newtaxpath, 'w') as taxfile:
@@ -362,7 +362,7 @@ def write_taxonomy(taxa, synonyms, ncbi_to_taxon, url, nodesfilename, outdir):
     os.rename(newsynpath, synpath)
 
     write_ncbi_to_taxonid(ncbi_to_taxon, outdir)
-    writeAboutFile(url, nodesfilename, outdir)
+    writeAboutFile(blob, nodesfilename, outdir)
 
 def form_id(taxon):
     if taxon.name == None:
@@ -376,7 +376,7 @@ def form_id(taxon):
     else:
         return taxon.id
 
-def writeAboutFile(url, nodesfilename, taxdir):
+def writeAboutFile(blob, nodesfilename, taxdir):
     aboutfilename = taxdir+"/about.json"
     aboutfile = open(aboutfilename,"w")
     # Get file date from nodes.dmp in downloaddir
@@ -391,8 +391,8 @@ def writeAboutFile(url, nodesfilename, taxdir):
                            "description": "SILVA Taxonomy"},
              "prefix": "silva",
              "namespaces": [],
-             "url": url,
-             "lastModified": iso_time,
+             "url": blob["origin_url"],
+             "lastModified": blob["origin_date"],
              "smush": False}
     aboutfile.write(json.dumps(about))
     print "Wrote", aboutfilename
@@ -426,18 +426,20 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process SILVA distribution to make opentree-format taxonomy')
     parser.add_argument('silva', help='silva.fast file (with or without sequences)')
     parser.add_argument('mapping', help='genbank id to NCBI taxon id mapping')
-    parser.add_argument('outdir', help='taxonomy directory')
-    parser.add_argument('url', help='URL for the about file')
+    parser.add_argument('origin_info', help='JSON file with origin info')
+    parser.add_argument('outdir', help='taxonomy output directory')
     args = parser.parse_args()
 
     fasta_path = args.silva
     accessionid_to_taxonid_path = args.mapping
+    origin_info_path = args.origin_info
+    with open(origin_info_path, 'r') as injson:
+        blob = json.load(injson)
     outdir = args.outdir
-    url = args.url
     accession_to_ncbi_info = read_accession_to_ncbi_info(accessionid_to_taxonid_path)
     pathdict = makePathDict(fasta_path)
     (taxa, synonyms, ncbi_to_taxon) = process_silva(pathdict, outdir)
-    write_taxonomy(taxa, synonyms, ncbi_to_taxon, url, args.silva, outdir)
+    write_taxonomy(taxa, synonyms, ncbi_to_taxon, blob, args.silva, outdir)
 
 
 #                       if False:

@@ -1,10 +1,14 @@
+# Phase 2 of accession info harvesting: read pickle file, write TSV
+
+# Original by Peter Midford, 27 January 2015
+
 import argparse
 import time
-import os
+import sys, os
 import pickle
 
-DEFAULT_PICKLE_FILE = 'Genbank.pickle'
-DEFAULT_ACCESSION_MAP = 'accessionid_to_taxonid.tsv'
+DEFAULT_PICKLE_FILE = sys.argv[1]   # 'Genbank.pickle'
+DEFAULT_ACCESSION_MAP = sys.argv[2]  # 'accessionid_to_taxonid.tsv'
 parser = argparse.ArgumentParser(description='Text genbank flatfile testing')
 
 

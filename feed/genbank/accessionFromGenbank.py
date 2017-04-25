@@ -1,29 +1,37 @@
 # Obtain NCBI ids and strain names for SILVA cluster from Genbank.
 # This script access the .seq files directly, instead of using eutils.
 
+# Command line arguments:
+#   Input: SILVA unprocessed taxonomy path (from .fasta file)
+#   Output: pickle file path
+
+# Original by Peter Midford, 27 January 2015
+# Former location in this repository was feed/genbank/
+
 import argparse
 import time
-import os
+import sys, os
 import pickle
 
 # These maximum values need to be updated manually from the directory listing 
 # at ftp://ftp.ncbi.nlm.nih.gov/genbank/
-# This should be automated
+# This should be automated - get directory listing, parse file names, etc.
+# alternatively: a try/except
 
-RANGES = {"gbbct": 159,  # bacteria, now 238
-          "gbinv": 132,  # invertebrates, now 136
-          "gbmam": 9,   # other mammals, now 37
-          "gbpln": 95,  # plants, now 125
-          "gbpri": 48,  # primates, now 53
-          "gbrod": 31,  # rodents
-          "gbvrt": 44   # other vertebrates, now 60
+RANGES = {"gbbct": 350, # bacteria, was 159
+          "gbinv": 153, # invertebrates, was 132
+          "gbmam": 39,   # other mammals, was 9
+          "gbpln": 145,  # plants, was 95
+          "gbpri": 56,  # primates, was 48
+          "gbrod": 30,  # rodents, was 31
+          "gbvrt": 64   # other vertebrates, was 44
           # "gbvrl": 33,  # virus
           # "gbphg": 2,  # phage
 }
 
 FTP_SERVER = 'ftp://ftp.ncbi.nlm.nih.gov/genbank/'
-DEFAULT_PICKLE_FILE = 'Genbank.pickle'
-SILVA_FILE = 'feed/silva/work/silva_no_sequences.fasta'
+SILVA_FILE = sys.argv[1]  # 'feed/silva/work/silva_no_sequences.fasta'
+DEFAULT_PICKLE_FILE = sys.argv[2]  #'Genbank.pickle'
 
 # Process one genbank flat file, extracting taxon ids and strain names.
 

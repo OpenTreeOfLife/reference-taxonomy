@@ -29,8 +29,6 @@ config.mk: config.json
 
 WORMS_URL=http://files.opentreeoflife.org/worms/$(WORMS)/$(WORMS)-ot.tgz
 
-NCBI_URL="http://files.opentreeoflife.org/ncbi/$(NCBI)/$(NCBI).tgz"
-
 # Was http://ecat-dev.gbif.org/repository/export/checklist1.zip
 # Could be http://rs.gbif.org/datasets/backbone/backbone.zip
 # 2016-05-17 purl.org is broken, cannot update this link
@@ -97,6 +95,22 @@ tax/ott/README.html: tax/ott/log.tsv util/make_readme.py
 
 # ----- Taxonomy sources
 
+# Recipe for adding a new taxonomy source x:
+#
+# 1. Define 'make refresh-x' rule, creating archive/x/x-vvv
+#    1a. If the archive is anything other than a direct copy of a file 
+#        from the web, also create source/x/x-vvv (a compilation, digest, 
+#	 or subset of stuff found on the web)
+# 2. Define 'make x' rule, which creates import/x/x-vvv
+#    2a. 'make fetch-x' should get archive/x/x-vvv from the files server
+#    2b. source/x/x-vvv can just be the extraction of archive/x/x-vvv
+#    2c. import/x/x-vvv gets generated from source/x/x-vvv (or in 
+#    	 cases where an OT-format taxonomy is archived,, directly from
+# 	 archive/x/x-vvv)
+# 3. Define 'make archive-x' to create archive/x/x-vvv from source/x/x-vvv
+#    (opposite direction to 2b) and copy the archive file to the files
+#    server
+
 # Input: SILVA
 # Significant tabs !!!
 
@@ -113,8 +127,9 @@ archive/silva/$(SILVA)/$(SILVA).tgz:
 fetch-silva: archive/silva/$(SILVA)/$(SILVA).tgz
 	ls -l archive/silva/$(SILVA)
 
-source/silva/$(SILVA)/silva_no_sequences.txt: archive/silva/$(SILVA)/$(SILVA).tgz
+source/silva/$(SILVA)/.source: archive/silva/$(SILVA)/$(SILVA).tgz
 	tar -C source/silva -xzvf $<
+	touch $@
 
 # Get taxon names from Genbank accessions file.
 # The accessions file has genbank id, ncbi id, strain, taxon name.
@@ -138,7 +153,10 @@ import/silva/$(SILVA)/taxonomy.tsv: import_scripts/silva/process_silva.py source
 	       source/silva/$(SILVA)/origin_info.json \
 	       import/silva/$(SILVA)
 
+import-silva: import/silva/$(SILVA)/taxonomy.tsv
+
 silva: import/silva/$(SILVA)/taxonomy.tsv
+	(cd tax; ln -sf ../`dirname $<` silva)
 
 # Archive.
 
@@ -151,6 +169,11 @@ archive-silva:
 	bin/publish-taxonomy silva $(SILVA) .tgz
 
 # Refresh from web.
+
+# Make the new version the one to be used in assembly
+refresh-silva: get-silva-release
+	python util/update_config.py silva silva-`cat raw/silva/release` \
+	  <config.json >config.mk
 
 SILVA_ARCHIVE=https://www.arb-silva.de/no_cache/download/archive
 
@@ -184,10 +207,24 @@ get-silva-release: raw/silva/silva.gz
 	tar -C source/silva -cvzf archive/silva/silva-`cat raw/silva/release`.tgz \
 	  silva-`cat raw/silva/release` $(EXCL)
 
-# Make the new version the one to be used in assembly
-refresh-silva: get-silva-release
-	python util/update_config.py silva silva-`cat raw/silva/release` \
-	  <config.json >config.mk
+# Input: Genbank sequence records
+
+# One file, feed/silva/accessionid_to_taxonid.tsv
+# As of 2017-04-25, this file was in the repository.  6.7M
+# It really ought to be versioned and archived.
+
+# -rw-r--r--+ 1 jar  staff  17773988 Dec 16 19:38 feed/silva/work/accessions.tsv
+# -rw-r--r--+ 1 jar  staff   6728426 Dec  2 22:42 feed/silva/accessionid_to_taxonid.tsv
+# -rw-r--r--+ 1 jar  staff      6573 Jun 28  2016 feed/genbank/accessionFromGenbank.py
+# -rw-r--r--+ 1 jar  staff      1098 Oct  7  2015 feed/genbank/makeaccessionid2taxonid.py
+#
+# accessionFromGenbank.py reads genbank and writes Genbank.pickle
+# makeaccessionid2taxonid.py reads Genbank.pickle writes accessionid_to_taxonid.tsv
+
+
+archive/genbank/$(GENBANK)/$(GENBANK).tgz:
+	echo foo
+
 
 # Input: Index Fungorum
 
@@ -223,25 +260,29 @@ source/fung/$(FUNG)/about.json:
 	cp -p feed/fung/about.json tax/fung/
 
 # Input: NCBI Taxonomy
+
 # Formerly, where we now have /dev/null, we had
 # ../data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP
 
+NCBI_URL="http://files.opentreeoflife.org/ncbi/$(NCBI)/$(NCBI).tgz"
+
 archive/ncbi/$(NCBI)/$(NCBI).tgz:
 	@mkdir -p `dirname $@`
-	wget --output-document=$@.new $(FUNG_URL)
+	wget --output-document=$@.new $(NCBI_URL)
 	mv $@.new $@
 
 fetch-ncbi: archive/ncbi/$(NCBI)/$(NCBI).tgz
+	ls -l archive/ncbi/$(NCBI)
 
 source/ncbi/$(NCBI)/.source: archive/ncbi/$(NCBI)/$(NCBI).tgz
 	@mkdir -p `dirname $@`
 	tar -C `dirname $@` -xzvf $<
 	touch $@
 
-import/ncbi/$(NCBI)/.import: source/ncbi/$(NCBI)/.source feed/ncbi/process_ncbi_taxonomy_taxdump.py
+import/ncbi/$(NCBI)/.import: source/ncbi/$(NCBI)/.source import_scripts/ncbi/process_ncbi_taxonomy.py
 	@rm -rf tmp/ncbi
 	@mkdir -p tmp/ncbi
-	python feed/ncbi/process_ncbi_taxonomy_taxdump.py F source/ncbi/$(NCBI) \
+	python import_scripts/ncbi/process_ncbi_taxonomy.py F source/ncbi/$(NCBI) \
             /dev/null tmp/ncbi $(NCBI_URL)
 	rm -rf `dirname $@`
 	mv -f tmp/ncbi `dirname $@`
@@ -252,18 +293,35 @@ import-ncbi: import/ncbi/$(NCBI)/.import
 ncbi: import/ncbi/$(NCBI)/taxonomy.tsv
 	(cd tax; ln -sf ../`dirname $<` ncbi)
 
+# Archive
+
+archive-ncbi:
+	bin/publish-taxonomy ncbi $(NCBI) .tgz
+
+# Refresh from web.
 
 NCBI_ORIGIN_URL=ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz
-NCBI_TAXDUMP=source/ncbi/$(NCBI)/taxdump.tar.gz
+NCBI_TAXDUMP=raw/ncbi/taxdump.tar.gz
 
-refresh-ncbi:
-	@mkdir -p source/ncbi/$(NCBI)
+refresh-ncbi: get-ncbi-release
+	python util/update_config.py ncbi ncbi-`cat raw/ncbi/release` \
+	  <config.json >config.mk
+
+# We look at division.dmp just to get the date of the release.
+# Could have been any of the 9 files, but that one is small.
+
+get-ncbi-release:
+	@mkdir -p raw/ncbi
 	wget --output-document=$(NCBI_TAXDUMP).new $(NCBI_ORIGIN_URL)
-	mv $(NCBI_TAXDUMP).new $(NCBI_TAXDUMP)
+	mv -f $(NCBI_TAXDUMP).new $(NCBI_TAXDUMP)
 	@ls -l $(NCBI_TAXDUMP)
-
-# Don't forget to scp -p source/ncbi/$(NCBI)/taxdump.tar.gz to
-#  files:files.opentreeoflife.org/ncbi/ncbi-YYYYMMDD/ncbi-YYYYMMDD.tgz
+	tar -C raw/ncbi -xvzf $(NCBI_TAXDUMP) division.dmp
+	@ls -l raw/ncbi
+	python util/modification_date.py raw/ncbi/division.dmp >raw/ncbi/release
+	echo New NCBI version is `cat raw/ncbi/release`
+	rm raw/ncbi/division.dmp
+	mkdir -p archive/ncbi/ncbi-`cat raw/ncbi/release`
+	mv -f $(NCBI_TAXDUMP) archive/ncbi/ncbi-`cat raw/ncbi/release`/ncbi-`cat raw/ncbi/release`.tgz
 
 # Formerly, where it says /dev/null, we had ../data/gbif/ignore.txt
 

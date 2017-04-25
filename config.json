@@ -5,6 +5,9 @@
  "gbif": {
   "version": "gbif-20160729"
  }, 
+ "genbank": {
+  "version": "genbank-20131130"
+ }, 
  "idlist": {
   "version": "idlist-20161118"
  }, 

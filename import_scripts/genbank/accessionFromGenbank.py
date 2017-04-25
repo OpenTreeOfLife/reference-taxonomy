@@ -17,6 +17,7 @@ import pickle
 # at ftp://ftp.ncbi.nlm.nih.gov/genbank/
 # This should be automated - get directory listing, parse file names, etc.
 # alternatively: a try/except
+# Numbers here are current as of 2017-04-20
 
 RANGES = {"gbbct": 350, # bacteria, was 159
           "gbinv": 153, # invertebrates, was 132

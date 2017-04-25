@@ -6,8 +6,12 @@
 import sys, json, argparse
 
 def convert_config(blob):
-    for key in blob:
-        print '%s=%s' % (key.upper(), blob[key]["version"])
+    versions=[]
+    for key in sorted(blob.keys()):
+        v = blob[key]["version"]
+        print '%s=%s' % (key.upper(), v)
+        versions.append('retrieve-' + key)
+    print 'retrieve-all=%s' % ' '.join(versions)
 
 def write_config(blob):
     sys.stderr.write('Writing updated config.json\n')

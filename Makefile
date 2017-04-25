@@ -22,7 +22,7 @@ include config.mk
 
 refresh-config: config.mk
 
-config.mk: config.json
+config.mk: config.json util/update_config.py
 	python util/update_config.py <config.json >config.mk
 
 # ----- Taxonomy source locations -----
@@ -65,9 +65,11 @@ JAVASOURCES=$(shell find org/opentreeoflife -name "*.java")
 
 ott: tax/ott/log.tsv tax/ott/version.txt tax/ott/README.html
 tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py adjustments.py amendments.py \
-                    tax/silva/taxonomy.tsv \
-		    import/fung/taxonomy.tsv tax/713/taxonomy.tsv \
-		    tax/ncbi/taxonomy.tsv tax/gbif/taxonomy.tsv \
+                    import/silva/$(SILVA)/taxonomy.tsv \
+		    import/fung/$(FUNG)/taxonomy.tsv \
+		    tax/713/taxonomy.tsv \
+		    import/ncbi/$(NCBI)/taxonomy.tsv \
+		    tax/gbif/taxonomy.tsv \
 		    tax/irmng/taxonomy.tsv \
 		    tax/worms/taxonomy.tsv \
 		    feed/ott/edits/ott_edits.tsv \
@@ -102,7 +104,7 @@ tax/ott/README.html: tax/ott/log.tsv util/make_readme.py
 #        from the web, also create source/x/x-vvv (a compilation, digest, 
 #	 or subset of stuff found on the web)
 # 2. Define 'make x' rule, which creates import/x/x-vvv
-#    2a. 'make fetch-x' should get archive/x/x-vvv from the files server
+#    2a. 'make retrieve-x' should get archive/x/x-vvv from the files server
 #    2b. source/x/x-vvv can just be the extraction of archive/x/x-vvv
 #    2c. import/x/x-vvv gets generated from source/x/x-vvv (or in 
 #    	 cases where an OT-format taxonomy is archived,, directly from
@@ -119,13 +121,14 @@ tax/ott/README.html: tax/ott/log.tsv util/make_readme.py
 
 SILVA_URL=http://files.opentreeoflife.org/fung/$(SILVA)/$(SILVA).tgz
 
-archive/silva/$(SILVA)/$(SILVA).tgz:
-	@mkdir -p `dirname $@`
-	wget --output-document=$@.new $(SILVA_URL)
-	mv $@.new $@
+retrieve-silva: archive/silva/$(SILVA)/.retrieve
 
-fetch-silva: archive/silva/$(SILVA)/$(SILVA).tgz
+archive/silva/$(SILVA)/.retrieve:
+	@mkdir -p archive/silva/$(SILVA)
+	wget --output-document=archive/silva/retrieve.tmp $(SILVA_URL)
+	mv archive/silva/retrieve.tmp archive/silva/$(SILVA)/$(SILVA).tgz
 	ls -l archive/silva/$(SILVA)
+	touch $@
 
 source/silva/$(SILVA)/.source: archive/silva/$(SILVA)/$(SILVA).tgz
 	tar -C source/silva -xzvf $<
@@ -133,13 +136,12 @@ source/silva/$(SILVA)/.source: archive/silva/$(SILVA)/$(SILVA).tgz
 
 # Get taxon names from Genbank accessions file.
 # The accessions file has genbank id, ncbi id, strain, taxon name.
-# *** maybe put accessionid_to_taxonid.tsv into the digest? ***
 source/silva/$(SILVA)/cluster_names.tsv: source/silva/$(SILVA)/silva_no_sequences.txt \
 				import/ncbi/$(NCBI)/taxonomy.tsv \
-				feed/silva/accessionid_to_taxonid.tsv
+				import/genbank/$(GENBANK)/accessions.tsv
 	python import_scripts/silva/get_taxon_names.py \
 	       import/ncbi/$(NCBI)/taxonomy.tsv \
-	       feed/silva/accessionid_to_taxonid.tsv \
+	       import/genbank/$(GENBANK)/accessions.tsv \
 	       $@.new
 	mv $@.new $@
 
@@ -207,11 +209,7 @@ get-silva-release: raw/silva/silva.gz
 	tar -C source/silva -cvzf archive/silva/silva-`cat raw/silva/release`.tgz \
 	  silva-`cat raw/silva/release` $(EXCL)
 
-# Input: Genbank sequence records
-
-# One file, feed/silva/accessionid_to_taxonid.tsv
-# As of 2017-04-25, this file was in the repository.  6.7M
-# It really ought to be versioned and archived.
+# Input: Digest of genbank sequence records
 
 # -rw-r--r--+ 1 jar  staff  17773988 Dec 16 19:38 feed/silva/work/accessions.tsv
 # -rw-r--r--+ 1 jar  staff   6728426 Dec  2 22:42 feed/silva/accessionid_to_taxonid.tsv
@@ -220,24 +218,64 @@ get-silva-release: raw/silva/silva.gz
 #
 # accessionFromGenbank.py reads genbank and writes Genbank.pickle
 # makeaccessionid2taxonid.py reads Genbank.pickle writes accessionid_to_taxonid.tsv
+#
+# feed/silva/accessionid_to_taxonid.tsv:
+#   As of 2017-04-25, this file was in the repository.  6.7M
+#   It's an input to the SILVA build.
+#   It really ought to be versioned and archived.
+#   Originally made: 30 Nov 2013
+#
+# accessions.tsv not in repo, is more recent, includes taxon name and a column for strain.
+# Created before 6 July 2016, don't know when.  But none of the rows have strain info.
 
+GENBANK_URL=http://files.opentreeoflife.org/genbank/$(GENBANK)/$(GENBANK).tgz
 
 archive/genbank/$(GENBANK)/$(GENBANK).tgz:
-	echo foo
+	@mkdir -p `dirname $@`
+	wget --output-document=$@.new $(GENBANK_URL)
+	mv $@.new $@
 
+import/genbank/$(GENBANK)/accessions.tsv: 
+	tar -C import/genbank -xzf archive/genbank/$(GENBANK)/$(GENBANK).tgz
+
+genbank: import/genbank/$(GENBANK)/accessions.tsv
+
+archive-genbank:
+	@mkdir -p archive/genbank/$(GENBANK)
+	tar -C import/genbank -cvzf archive/genbank/$(GENBANK)/$(GENBANK).tgz $(GENBANK) \
+	  $(EXCL)
+	bin/publish-taxonomy genbank $(GENBANK) .tgz
+
+
+# This takes a long time - reads every flat file in genbank
+# Also - be sure to update RANGES in accessionFromGenbank.py, so you
+# don't miss any genbank records!  Manual process now, could be 
+# automated.
+
+refresh-genbank: import_scripts/genbank/accessionFromGenbank.py \
+		 import_scripts/genbank/makeaccessionid2taxonid.py
+	mkdir -p raw/genbank
+	python import_scripts/genbank/accessionFromGenbank.py \
+	       source/silva/$(SILVA)/silva_no_sequences.txt \
+	       raw/genbank/Genbank.pickle
+	@echo Making accessions.tsv
+	python import_scripts/genbank/makeaccessionid2taxonid.py \
+	       raw/genbank/Genbank.pickle \
+	       import/genbank/$(GENBANK)/accessions.tsv
 
 # Input: Index Fungorum
+
+retrieve-fung: archive/fung/$(FUNG)/.retrieve
 
 # 12787947 Oct  6  2015 taxonomy.tsv
 FUNG_URL=http://files.opentreeoflife.org/fung/$(FUNG)/$(FUNG)-ot.tgz
 
-archive/fung/$(FUNG)/$(FUNG)-ot.tgz:
+archive/fung/$(FUNG)/.retrieve:
 	@mkdir -p `dirname $@`
 	wget --output-document=$@.new $(FUNG_URL)
-	mv $@.new $@
-
-fetch-fung: archive/fung/$(FUNG)/$(FUNG)-ot.tgz
+	mv -f $@.new $@
 	ls -l archive/fung/$(FUNG)
+	touch $@
 
 import/fung/$(FUNG)/taxonomy.tsv: archive/fung/$(FUNG)/$(FUNG)-ot.tgz
 	@rm -rf tmp/fung
@@ -266,12 +304,12 @@ source/fung/$(FUNG)/about.json:
 
 NCBI_URL="http://files.opentreeoflife.org/ncbi/$(NCBI)/$(NCBI).tgz"
 
-archive/ncbi/$(NCBI)/$(NCBI).tgz:
-	@mkdir -p `dirname $@`
-	wget --output-document=$@.new $(NCBI_URL)
-	mv $@.new $@
+retrieve-ncbi: archive/ncbi/$(NCBI)/.retrieve
 
-fetch-ncbi: archive/ncbi/$(NCBI)/$(NCBI).tgz
+archive/ncbi/$(NCBI)/.retrieve:
+	@mkdir -p archive/ncbi/$(NCBI)
+	wget --output-document=archive/ncbi/$(NCBI)/retrieve.tmp $(NCBI_URL)
+	mv archive/ncbi/$(NCBI)/retrieve.tmp archive/ncbi/$(NCBI)/$(NCBI).tgz
 	ls -l archive/ncbi/$(NCBI)
 
 source/ncbi/$(NCBI)/.source: archive/ncbi/$(NCBI)/$(NCBI).tgz

@@ -602,6 +602,30 @@
     "filename": "ott2.10.tgz"
   },
   {
+    "===": "Input to ott3.0", 
+    "_type": "capture", 
+    "name": "ncbi-20161109", 
+    "bytes": 37595767, 
+    "legal": "pd", 
+    "filename": "ncbi-20161109.tgz", 
+    "last_modified": "2016-11-09", 
+    "capture_of": "ncbi", 
+    "date": "2016-11-09", 
+    "label": "20161109"
+  },
+  {
+    "_type": "capture", 
+    "name": "gbif-20160729", 
+    "bytes": 0, 
+    "legal": "public", 
+    "filename": "gbif-20160729.zip", 
+    "retrieved_from": "http://rs.gbif.org/datasets/backbone/backbone-current.zip", 
+    "last_modified": "2016-07-29", 
+    "capture_of": "gbif", 
+    "date": "2016-07-29", 
+    "label": "20160729"
+  }, 
+  {
     "_type": "capture", 
     "name": "ott3.0", 
     "generated_on": "2017-02-26", 

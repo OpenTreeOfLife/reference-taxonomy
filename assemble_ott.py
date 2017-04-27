@@ -14,7 +14,6 @@ from org.opentreeoflife.taxa import CSVReader, QualifiedId
 from java.io import FileReader
 
 import ncbi_ott_assignments
-sys.path.append("feed/misc/")
 import adjustments, amendments
 import check_inclusions
 from claim import *
@@ -34,7 +33,7 @@ def create_ott(version):
     for name in names_of_interest:
         ott.eventLogger.namesOfInterest.add(name)
 
-    ott.setSkeleton(Taxonomy.getTaxonomy('tax/separation/', 'separation'))
+    ott.setSkeleton(Taxonomy.getTaxonomy('curation/separation/', 'separation'))
 
     # These are particularly hard cases; create alignment targets up front
     adjustments.deal_with_polysemies(ott)
@@ -66,29 +65,34 @@ def create_ott(version):
 def merge_sources(ott):
 
     # SILVA
-    silva = adjustments.load_silva()
+    silva = Taxonomy.getTaxonomy('tax/silva/', 'silva')
+    adjustments.adjust_silva(silva)
     silva_to_ott = adjustments.align_silva(silva, ott)
     align_and_merge(silva_to_ott)
 
     # Hibbett 2007
-    h2007 = adjustments.load_h2007()
+    h2007 = Taxonomy.getTaxonomy('curation/h2007/tree.tre', 'h2007')
+    adjustments.adjust_h2007(h2007)
     h2007_to_ott = ott.alignment(h2007)
     align_and_merge(h2007_to_ott)
 
     # Index Fungorum
-    fungorum = adjustments.load_fung()
+    fungorum = Taxonomy.getTaxonomy('tax/fung/', 'if')
+    adjustments.adjust_fung(fungorum)
     (fungi, fungorum_sans_fungi) = split_taxonomy(fungorum, 'Fungi')
     align_and_merge(adjustments.align_fungi(fungi, ott))
 
     # the non-Fungi from Index Fungorum get absorbed below
 
-    lamiales = adjustments.load_lamiales()
+    lamiales = Taxonomy.getTaxonomy('curation/lamiales/', 'study713')
+    adjustments.adjust_lamiales(lamiales)
     align_and_merge(adjustments.align_lamiales(lamiales, ott))
 
     # WoRMS
     # higher priority to Worms for Malacostraca, Cnidaria so we split out
     # those clades from worms and absorb them before NCBI
-    worms = adjustments.load_worms()
+    worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
+    adjustments.adjust_worms(worms)
     # Malacostraca instead of Decapoda because M. is in the separation taxonomy
     (malacostraca, worms_sans_malacostraca) = split_taxonomy(worms, 'Malacostraca')
     align_and_merge(ott.alignment(malacostraca))
@@ -96,7 +100,8 @@ def merge_sources(ott):
     align_and_merge(ott.alignment(cnidaria))
 
     # NCBI
-    ncbi = adjustments.load_ncbi()
+    ncbi = Taxonomy.getTaxonomy('tax/ncbi/', 'ncbi')
+    adjustments.adjust_ncbi(ncbi)
 
     # analyzeOTUs sets flags on questionable taxa (hybrid, metagenomes,
     #  etc) to allow the option of suppression downstream
@@ -122,7 +127,8 @@ def merge_sources(ott):
     # align_and_merge(adjustments.align_fungorum_sans_fungi(fungorum_sans_fungi, ott))
 
     # GBIF
-    gbif = adjustments.load_gbif()
+    gbif = Taxonomy.getTaxonomy('tax/gbif/', 'gbif')
+    adjustments.adjust_gbif(gbif)
     gbif_to_ott = adjustments.align_gbif(gbif, ott)
     align_and_merge(gbif_to_ott)
 
@@ -137,7 +143,8 @@ def merge_sources(ott):
         cyl.setId('51754')
 
     # IRMNG
-    irmng = adjustments.load_irmng()
+    irmng = Taxonomy.getTaxonomy('tax/irmng/', 'irmng')
+    adjustments.adjust_irmng(irmng)
     a = adjustments.align_irmng(irmng, ott)
     hide_irmng(irmng)
     align_and_merge(a)
@@ -181,7 +188,7 @@ def split_taxonomy(taxy, taxon_name):
 def load_ncbi_to_silva(ncbi, silva, silva_to_ott):
     mappings = {}
     flush = []
-    with open('feed/silva/out/ncbi_to_silva.tsv', 'r') as infile:
+    with open('tax/silva/ncbi_to_silva.tsv', 'r') as infile:
         reader = csv.reader(infile, delimiter='\t')
         for (ncbi_id, silva_cluster_id) in reader:
             n = ncbi.maybeTaxon(ncbi_id)

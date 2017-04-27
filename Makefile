@@ -47,21 +47,22 @@ JAVASOURCES=$(shell find org/opentreeoflife -name "*.java")
 
 ott: tax/ott/log.tsv tax/ott/version.txt tax/ott/README.html
 tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py adjustments.py amendments.py \
+		    bin/jython \
+		    curation/separation/taxonomy.tsv \
                     resource/silva/$(SILVA)/taxonomy.tsv \
 		    resource/fung-ot/$(FUNG-OT)/taxonomy.tsv \
-		    tax/713/taxonomy.tsv \
+		    curation/lamiales/taxonomy.tsv \
+		    curation/h2007/tree.tre \
 		    resource/worms-ot/$(WORMS-OT)/taxonomy.tsv \
 		    resource/ncbi/$(NCBI)/taxonomy.tsv \
 		    resource/gbif/$(GBIF)/taxonomy.tsv \
 		    resource/irmng/$(IRMNG)/taxonomy.tsv \
+		    resource/amendments/$(AMENDMENTS)/amendments-1/next_ott_id.json \
 		    curation/edits/ott_edits.tsv \
 		    resource/ott/$(PREV-OTT)/taxonomy.tsv \
+		    resource/idlist/$(IDLIST)/by_qid.csv \
 		    ids_that_are_otus.tsv \
-		    bin/jython \
-		    inclusions.csv \
-		    raw/amendments/amendments-1/next_ott_id.json \
-		    tax/separation/taxonomy.tsv \
-		    resource/idlist/$(IDLIST)/by_qid.csv
+		    inclusions.csv
 	@date
 	@rm -f *py.class util/*py.class
 	@mkdir -p tax/ott
@@ -495,20 +496,29 @@ refresh-irmng:
 retrieve-amendments:
 	echo "NYI"
 
-# 9 Sep 2016
-AMENDMENTS_REFSPEC=raw/amendments/refspec
+fetch_amendments: resource/amendments/$(AMENDMENTS)/.fetch
 
-fetch_amendments: raw/amendments/amendments-1/next_ott_id.json
-
-raw/amendments/amendments-1/next_ott_id.json: raw/amendments/amendments-1 $(AMENDMENTS_REFSPEC)
+resource/amendments/$(AMENDMENTS)/.fetch: raw/amendments/amendments-1
 	(cd raw/amendments/amendments-1 && git checkout master && git pull)
-	(cd raw/amendments/amendments-1; git checkout -q `cat ../../../$(AMENDMENTS_REFSPEC)`)
+	(cd raw/amendments/amendments-1 && git checkout -q $(AMENDMENTS_REFSPEC))
+	@mkdir -p resource/amendments/$(AMENDMENTS)/amendments-1
+	cp -pr raw/amendments/amendments-1/amendments \
+	       resource/amendments/$(AMENDMENTS)/amendments-1/
+	echo $(AMENDMENTS_REFSPEC) > resource/amendments/$(AMENDMENTS)/refspec
+	touch $@
 
 refresh-amendments: raw/amendments/amendments-1
 	(cd raw/amendments/amendments-1 && git checkout master && git pull)
-	(cd raw/amendments/amendments-1; git log -n 1) | head -1 | sed -e 's/commit //' >$(AMENDMENTS_REFSPEC).new
-	mv $(AMENDMENTS_REFSPEC).new $(AMENDMENTS_REFSPEC)
-	(cd raw/amendments/amendments-1; git checkout -q `cat ../../../$(AMENDMENTS_REFSPEC)`)
+	(cd raw/amendments/amendments-1; git log -n 1) | head -1 | sed -e 's/commit //' >raw/amendments/refspec.new
+	mv raw/amendments/refspec.new raw/amendments/refspec
+	(cd raw/amendments/amendments-1; git checkout -q `cat ../../../raw/amendments/refspec`)
+	head -c 7 raw/amendments/refspec > raw/amendments/version
+	mkdir -p resource/amendments/amendments-`cat raw/amendments/version`/amendments-1
+	cp -pr raw/amendments/amendments-1/amendments resource/amendments/amendments-`cat raw/amendments/version`/amendments-1/
+	cp -p raw/amendments/refspec resource/amendments/amendments-`cat raw/amendments/version`/
+	echo "TBD: STORE NEW REFSPEC AND VERSION IN config.json"
+
+# fetch
 
 raw/amendments/amendments-1:
 	@mkdir -p raw/amendments
@@ -783,14 +793,12 @@ clean:
 	rm -f `find . -name "*.class"`
 	rm -rf bin/jython
 	rm -rf tax/ott
-	rm -rf feed/*/out feed/*/work
 	rm -rf *.tmp new_taxa
 	rm -rf resource/ncbi/$(NCBI) tax/gbif tax/silva
 	rm -rf t/amendments t/tax/aster
 
 distclean: clean
 	rm -f lib/*
-	rm -rf raw/amendments/amendments-1
-	rm -rf archive
+	rm -rf archive work resource
 	rm -rf tax/fung tax/irmng* tax/worms-ot 
 	rm -rf resource/ott/$(PREV_OTT)

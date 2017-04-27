@@ -77,11 +77,8 @@ def deal_with_polysemies(ott):
     establish('Corymorpha', ott, division='Cnidaria', source='ncbi:264057', ott_id='183501')
     establish('Corymorpha', ott, division='Nematoda', source='ncbi:364543', ott_id='860265')
 
-def load_silva():
-    silva = Taxonomy.getTaxonomy('tax/silva/', 'silva')
-
+def adjust_silva(silva):
     patch_silva(silva)
-
     for name in ['Metazoa',
                  'Fungi',
                  'Chloroplast',
@@ -286,8 +283,7 @@ def align_silva(silva, ott):
 
 # Hibbett 2007
 
-def load_h2007():
-    h2007 = Taxonomy.getTaxonomy('feed/h2007/tree.tre', 'h2007')
+def adjust_h2007(h2007):
 
     # h2007/if synonym https://github.com/OpenTreeOfLife/reference-taxonomy/issues/40
     h2007.taxon('Urocystales').synonym('Urocystidales')
@@ -296,9 +292,7 @@ def load_h2007():
 
 # Index Fungorum
 
-def load_fung():
-    fung = Taxonomy.getTaxonomy('tax/fung/', 'if')
-
+def adjust_fung(fung):
     fung.analyzeMajorRankConflicts()
 
     # 2014-04-14 Bad Fungi homonyms in new version of IF.  90156 is the good one.
@@ -376,7 +370,7 @@ def patch_fung(fung):
     # There are two Polyangium, a bacterium (NCBI) and a flatworm (IF).
 
     # smush folds sibling taxa that have the same name.
-    # (repeats - see load_fung()  ???)
+    # (repeats - see adjust_fung()  ???)
     # fung.smush()
 
     # *** Fungi processing
@@ -626,8 +620,7 @@ def align_fungorum_sans_fungi(sans, ott):
 # ----- Lamiales taxonomy from study 713 -----
 # http://dx.doi.org/10.1186/1471-2148-10-352
 
-def load_lamiales():
-    study713 = Taxonomy.getTaxonomy('tax/713/', 'study713')
+def adjust_lamiales(study713):
     return study713
 
 def align_lamiales(study713, ott):
@@ -640,13 +633,41 @@ def align_lamiales(study713, ott):
     # Buchnera is also a hemihomonym with a bacterial genus.  Checked in inclusions.csv
     return a
 
+# WoRMS
+
+def adjust_worms():
+    worms.smush()
+
+    # 2015-02-17 According to WoRMS web site.  Occurs in pg_1229
+    if worms.maybeTaxon('Scenedesmus communis') != None:
+        worms.taxon('Scenedesmus communis').synonym('Scenedesmus caudata')
+
+    # Species fungorum puts this species in Candida
+    worms.taxon('Trichosporon diddensiae').rename('Candida diddensiae')
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/194 I think
+    worms.taxon('Actinopterygii').notCalled('Osteichthyes')
+
+    worms.smush()  # Gracilimesus gorbunovi, pg_1783
+
+    # According to NCBI and IF, this is not in Fungi
+    worms.taxon('Fungi').parent.take(worms.taxon('Eccrinales'))
+
+    # 2016-09-02 on gitter: Pisces vs. Mososauridae confusion
+    worms.taxon('Tylosurus').notCalled('Tylosaurus')
+
+    pl = worms.maybeTaxon('Pleuromamma abdominalis abyssalis natio hypothermophil')
+    if pl != None: pl.prune()
+
+    bad_ecc = worms.maybeTaxon('Trichomycetes', 'Zygomycota')
+    if bad_ecc != None: bad_ecc.prune()
+
+    return worms
+
 # NCBI
 
-def load_ncbi():
-    ncbi = Taxonomy.getTaxonomy('tax/ncbi/', 'ncbi')
-
+def adjust_ncbi(ncbi):
     patch_ncbi(ncbi)
-
     return ncbi
 
 def patch_ncbi(ncbi):
@@ -944,40 +965,9 @@ def align_ncbi_to_silva(mappings, a):
     print changes, '| NCBI taxa mapped to SILVA clusters'
 
 
-def load_worms():
-    worms = Taxonomy.getTaxonomy('tax/worms/', 'worms')
-    worms.smush()
-
-    # 2015-02-17 According to WoRMS web site.  Occurs in pg_1229
-    if worms.maybeTaxon('Scenedesmus communis') != None:
-        worms.taxon('Scenedesmus communis').synonym('Scenedesmus caudata')
-
-    # Species fungorum puts this species in Candida
-    worms.taxon('Trichosporon diddensiae').rename('Candida diddensiae')
-
-    # https://github.com/OpenTreeOfLife/feedback/issues/194 I think
-    worms.taxon('Actinopterygii').notCalled('Osteichthyes')
-
-    worms.smush()  # Gracilimesus gorbunovi, pg_1783
-
-    # According to NCBI and IF, this is not in Fungi
-    worms.taxon('Fungi').parent.take(worms.taxon('Eccrinales'))
-
-    # 2016-09-02 on gitter: Pisces vs. Mososauridae confusion
-    worms.taxon('Tylosurus').notCalled('Tylosaurus')
-
-    pl = worms.maybeTaxon('Pleuromamma abdominalis abyssalis natio hypothermophil')
-    if pl != None: pl.prune()
-
-    bad_ecc = worms.maybeTaxon('Trichomycetes', 'Zygomycota')
-    if bad_ecc != None: bad_ecc.prune()
-
-    return worms
-
 # ----- GBIF (Global Biodiversity Information Facility) taxonomy -----
 
-def load_gbif():
-    gbif = Taxonomy.getTaxonomy('tax/gbif/', 'gbif')
+def adjust_gbif(gbif):
     gbif.smush()
 
     # In GBIF, if a rank is skipped for some children but not others, that
@@ -1470,8 +1460,7 @@ def align_worms(worms, ott):
 
 # ----- Interim Register of Marine and Nonmarine Genera (IRMNG) -----
 
-def load_irmng():
-    irmng = Taxonomy.getTaxonomy('tax/irmng/', 'irmng')
+def adjust_irmng(irmng):
     irmng.smush()
     irmng.analyzeMajorRankConflicts()
 

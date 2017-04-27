@@ -9,7 +9,7 @@
   "version": "genbank-20131130"
  }, 
  "idlist": {
-  "version": "idlist-20161118"
+  "version": "idlist-3.0"
  }, 
  "irmng": {
   "version": "irmng-20140131"
@@ -20,7 +20,10 @@
  "ott": {
   "version": "ott3.1"
  }, 
- "prev_ott": {
+ "prev-idlist": {
+  "version": "idlist-2.10"
+ }, 
+ "prev-ott": {
   "version": "ott3.0"
  }, 
  "silva": {

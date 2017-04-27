@@ -13,7 +13,7 @@ def convert_config(blob):
         versions.append('retrieve-' + key)
     print 'retrieve-all=%s' % ' '.join(versions)
     print 'WHICH=%s' % blob["ott"]["version"][3:]
-    print 'PREV_WHICH=%s' % blob["prev_ott"]["version"][3:]
+    print 'PREV_WHICH=%s' % blob["prev-ott"]["version"][3:]
 
 def write_config(blob):
     sys.stderr.write('Writing updated config.json\n')

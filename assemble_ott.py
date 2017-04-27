@@ -42,6 +42,9 @@ def create_ott(version):
     # Align and merge each source in sequence
     merge_sources(ott)
 
+    # "Old" patch system
+    TsvEdits.edit(ott, 'curation/edits/')
+
     # consider try: ... except: print '**** Exception in patch_ott'
     amendments.patch_ott(ott)
 

@@ -1,8 +1,6 @@
 # coding=utf-8
 
-from org.opentreeoflife.taxa import TsvEdits
 from claim import *
-#from chromista_spreadsheet import fixChromista
 
 # ----- Final patches -----
 
@@ -402,9 +400,6 @@ def patch_ott(ott):
 
     # https://github.com/OpenTreeOfLife/feedback/issues/159
     ott.taxon('Nesophontidae').extinct()
-
-    # "Old" patch system
-    TsvEdits.edit(ott, 'feed/ott/edits/')
 
     # JAR 2016-06-30 Fixing a warning from 'report_on_h2007'
     # There really ought to be a family (Hyaloraphidiaceae, homonym) in

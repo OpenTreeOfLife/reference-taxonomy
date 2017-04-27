@@ -54,14 +54,14 @@ tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py adjustments.py amendments.
 		    resource/ncbi/$(NCBI)/taxonomy.tsv \
 		    resource/gbif/$(GBIF)/taxonomy.tsv \
 		    resource/irmng/$(IRMNG)/taxonomy.tsv \
-		    feed/ott/edits/ott_edits.tsv \
+		    curation/edits/ott_edits.tsv \
 		    resource/ott/$(PREV-OTT)/taxonomy.tsv \
 		    ids_that_are_otus.tsv \
 		    bin/jython \
 		    inclusions.csv \
 		    raw/amendments/amendments-1/next_ott_id.json \
 		    tax/separation/taxonomy.tsv \
-		    feed/ott_id_list/by_qid.csv
+		    resource/idlist/$(IDLIST)/by_qid.csv
 	@date
 	@rm -f *py.class util/*py.class
 	@mkdir -p tax/ott
@@ -471,7 +471,7 @@ resource/irmng/$(IRMNG)/taxonomy.tsv: import_scripts/irmng/process_irmng.py \
 
 irmng: tax/irmng/taxonomy.tsv
 
-archive-irmng:
+archive-irmng: archive/irmng/$(IRMNG)/$(IRMNG).zip
 	bin/publish-taxonomy archive irmng $(IRMNG) .zip
 
 # Build IRMNG from Tony's .csv files
@@ -552,21 +552,22 @@ idlist: resource/idlist/$(IDLIST)/by_qid.csv
 # So, to make the id list for 3.1, we first make 3.1, then
 # combine the 3.0 id list with new registrations from 3.1.
 
-refresh-idlist:
-	rm -rf resource/idlist/idlist-$(WHICH)
-	cp -pr resource/idlist/idlist-$(PREV_WHICH) resource/idlist/idlist-$(WHICH)
-	... extend it by adding new taxonomy ...
-	python import_scripts/idlist/extend_idlist.py \
-	       resource/idlist/idlist-$(PREV_WHICH)/registrations \
-	       resource/ott/ott$(WHICH) \
-	       resources/captures.json \
-	       resource/idlist/idlist-$(WHICH)/registrations/ott$(WHICH).csv
-	mv ott_id_list/by_qid.csv work/idlist/
-	python util/archivetool.py refresh idlist source stage archive by_qid.csv | bash
-	... ??? dir name should include version number ...
-	... tar czvf stage/idlist/by_qid.tgz -C stage idlist-xxx/by_qid.csv
+refresh-idlist: get-idlist-release
+	python util/archivetool.py refresh idlist source resource archive by_qid.csv | bash
 
-archive-idlist: resource/idlist/$(IDLIST)/by_qid.csv    # or stage/ ???
+get-idlist-release: resource/idlist/$(PREV-IDLIST)/by_qid.csv
+	@rm -rf resource/idlist/$(IDLIST)
+	@mkdir -p resource/idlist/$(IDLIST)
+	cp -pr resource/idlist/$(PREV-IDLIST)/regs resource/idlist/$(IDLIST)/
+	python import_scripts/idlist/extend_idlist.py \
+	       resource/idlist/$(IDLIST)/regs \
+	       resource/ott/$(PREV-OTT) \
+	       $(PREV-OTT) \
+	       resources/captures.json \
+	       resource/idlist/$(IDLIST)/regs/$(PREV-OTT).csv
+
+archive-idlist: resource/idlist/$(IDLIST)/by_qid.csv
+	tar -C resource/idlist -czf archive/idlist/$(IDLIST).tgz $(IDLIST)
 	bin/publish-taxonomy archive idlist $(IDLIST) .tgz
 
 # ----- Phylesystem OTU list
@@ -785,12 +786,11 @@ clean:
 	rm -rf feed/*/out feed/*/work
 	rm -rf *.tmp new_taxa
 	rm -rf resource/ncbi/$(NCBI) tax/gbif tax/silva
-	rm -f feed/misc/chromista_spreadsheet.py
 	rm -rf t/amendments t/tax/aster
 
 distclean: clean
 	rm -f lib/*
 	rm -rf raw/amendments/amendments-1
-	rm -rf feed/*/in
+	rm -rf archive
 	rm -rf tax/fung tax/irmng* tax/worms-ot 
 	rm -rf resource/ott/$(PREV_OTT)

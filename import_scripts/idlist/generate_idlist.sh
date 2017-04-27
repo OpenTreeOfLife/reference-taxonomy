@@ -4,7 +4,7 @@
 
 set -e
 
-csvdir=resource/idlist/idlist-3.0/regs
+csvdir=resource/idlist/idlist-2.10/regs
 captures=resources/captures.json
 
 [ -e $captures ] || (echo Missing $captures ; exit 1)

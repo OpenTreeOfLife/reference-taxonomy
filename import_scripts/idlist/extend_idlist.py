@@ -13,14 +13,12 @@ def extend_idlist(previous, ott_path, ott_version, captures_path, outpath):
     registrations = read_registrations(previous)
     (registrations_by_id, ids_for_qid) = index_registrations(registrations)
 
-    new_regs = do_one_taxonomy(ott_path, source_info, registrations_by_id, ids_for_qid)
+    new_regs = do_one_taxonomy(ott_version, ott_path, source_info, registrations_by_id, ids_for_qid)
     write_registrations(new_regs, outpath)
     write_indexes(registrations_by_id, ids_for_qid, os.path.dirname(os.path.dirname(outpath)))
 
-def do_one_taxonomy(ott_path, source_info, registrations_by_id, ids_for_qid):
-
+def do_one_taxonomy(ott_version, ott_path, source_info, registrations_by_id, ids_for_qid):
     if ott_path.endswith('/'): ott_path = ott_path[0:-1]
-    ott_version = os.path.basename(os.path.dirname(ott_path))
     info = source_info.get(unicode(ott_version))
     if info == None:
         print >>sys.stderr, '** Missing sources info for %s' % ott_version
@@ -199,16 +197,20 @@ def index_registrations(registrations):
 
 def read_registrations(previous_path):
     regs = []
-    dir = os.listdir(previous_path)
-    for name in sorted(dir, key=lambda v:float(v[3:][0:-4])):
-        if name.endswith('.csv'):
-            path = os.path.join(previous_path, name)
-            with open(path, 'r') as infile:
-                print 'Reading', path
-                reader = csv.reader(infile)
-                for row in reader:
-                    (id, qid, source, ottver, note) = row
-                    regs.append((int(id), parse_qid(qid), source, ottver, note))
+    names = os.listdir(previous_path)
+    names = [name for name in names if name.startswith('ott') and name.endswith('.csv')]
+    def sort_key(name):
+        (major, minor) = name[3:][0:-4].split('.')
+        return (int(major), int(minor))
+    names = sorted(names, key=sort_key)
+    for name in names:
+        path = os.path.join(previous_path, name)
+        with open(path, 'r') as infile:
+            print 'Reading', path
+            reader = csv.reader(infile)
+            for row in reader:
+                (id, qid, source, ottver, note) = row
+                regs.append((int(id), parse_qid(qid), source, ottver, note))
     print 'Got %s registrations' % len(regs)
     return regs
 

@@ -1,10 +1,11 @@
 #!/bin/bash
 
-[ $# -eq 3 ] || (echo "Arg count $#, wanted 3"; exit 1)
+[ $# -eq 4 ] || (echo "Arg count $#, wanted 4"; exit 1)
 
-resource=$1
-version=$2
-suffix=$3
+archive=$1
+resource=$2
+version=$3
+suffix=$4
 
 set -e
 
@@ -18,7 +19,7 @@ host=files
 repo=files.opentreeoflife.org
 
 # Local directory containins tarballs
-tardir=archive/$resource/$version
+tardir=$archive/$resource/$version
 
 remotedir=$repo/$resource/$version
 

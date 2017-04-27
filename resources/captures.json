@@ -1,3 +1,4 @@
+{"captures":
 [
   {
     "_type": "capture", 
@@ -599,5 +600,27 @@
     "date": "2016-10-01", 
     "commit": "https://github.com/OpenTreeOfLife/reference-taxonomy/commit/eca7bdefdc8ad10fb39b9ff8c98db1cc186d7e94", 
     "filename": "ott2.10.tgz"
+  },
+  {
+    "_type": "capture", 
+    "name": "ott3.0", 
+    "generated_on": "2017-02-26", 
+    "legal": "cc0", 
+    "label": "3.0", 
+    "sources": {
+      "silva": "silva-115", 
+      "ncbi": "ncbi-20161109", 
+      "gbif": "gbif-20160729", 
+      "irmng": "irmng-ot-20161108", 
+      "worms": "worms-1", 
+      "study713": "study713-20140721", 
+      "h2007": "h2007-2015-v4", 
+      "if": "fung-9"
+    }, 
+    "capture_of": "ott", 
+    "date": "2017-02-26", 
+    "commit": "https://github.com/OpenTreeOfLife/reference-taxonomy/commit/fc5cb5c2749e9e986749281a3284d2c1df42b58d", 
+    "filename": "ott3.0.tgz"
   }
 ]
+}

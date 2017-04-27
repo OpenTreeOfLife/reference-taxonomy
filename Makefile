@@ -27,31 +27,13 @@ config.mk: config.json util/update_config.py
 
 # ----- Taxonomy source locations -----
 
-WORMS_URL=http://files.opentreeoflife.org/worms/$(WORMS)/$(WORMS)-ot.tgz
-
-# Was http://ecat-dev.gbif.org/repository/export/checklist1.zip
-# Could be http://rs.gbif.org/datasets/backbone/backbone.zip
-# 2016-05-17 purl.org is broken, cannot update this link
-# GBIF_URL=http://purl.org/opentree/gbif-backbone-2013-07-02.zip
-GBIF_URL=http://files.opentreeoflife.org/gbif/gbif-20160729/gbif-20160729.zip
-
-IRMNG_URL=http://files.opentreeoflife.org/irmng-ot/irmng-ot-20161108/irmng-ot-20161108.tgz
-
-# This is used as a source of OTT id assignments.
-PREV_OTT_URL=http://files.opentreeoflife.org/ott/ott$(PREV_WHICH)/ott$(PREV_WHICH).tgz
-
-IDLIST_URL="http://files.opentreeoflife.org/idlist/idlist-20161118/by_qid.csv.gz"
-
-# 9 Sep 2016
-AMENDMENTS_REFSPEC=feed/amendments/refspec
-
 # Where to put tarballs
 #TARDIR=/raid/www/roots/opentree/ott
 TARDIR?=tarballs
 
 # -----
 
-# Smasher related variables
+# Smasher related configuration
 
 CP=-classpath ".:lib/*"
 JAVA=JYTHONPATH=util java $(JAVAFLAGS) $(CP)
@@ -65,24 +47,23 @@ JAVASOURCES=$(shell find org/opentreeoflife -name "*.java")
 
 ott: tax/ott/log.tsv tax/ott/version.txt tax/ott/README.html
 tax/ott/log.tsv: $(CLASS) make-ott.py assemble_ott.py adjustments.py amendments.py \
-                    import/silva/$(SILVA)/taxonomy.tsv \
-		    import/fung/$(FUNG)/taxonomy.tsv \
+                    resource/silva/$(SILVA)/taxonomy.tsv \
+		    resource/fung-ot/$(FUNG-OT)/taxonomy.tsv \
 		    tax/713/taxonomy.tsv \
-		    import/ncbi/$(NCBI)/taxonomy.tsv \
-		    tax/gbif/taxonomy.tsv \
-		    tax/irmng/taxonomy.tsv \
-		    tax/worms/taxonomy.tsv \
+		    resource/worms-ot/$(WORMS-OT)/taxonomy.tsv \
+		    resource/ncbi/$(NCBI)/taxonomy.tsv \
+		    resource/gbif/$(GBIF)/taxonomy.tsv \
+		    resource/irmng/$(IRMNG)/taxonomy.tsv \
 		    feed/ott/edits/ott_edits.tsv \
-		    tax/prev_ott/taxonomy.tsv \
-		    feed/misc/chromista_spreadsheet.py \
+		    resource/ott/$(PREV-OTT)/taxonomy.tsv \
 		    ids_that_are_otus.tsv \
 		    bin/jython \
 		    inclusions.csv \
-		    feed/amendments/amendments-1/next_ott_id.json \
+		    raw/amendments/amendments-1/next_ott_id.json \
 		    tax/separation/taxonomy.tsv \
 		    feed/ott_id_list/by_qid.csv
 	@date
-	@rm -f *py.class
+	@rm -f *py.class util/*py.class
 	@mkdir -p tax/ott
 	@echo Writing transcript to tax/ott/transcript.out
 	time bin/jython make-ott.py $(WHICH) 2>&1 | tee tax/ott/transcript.out.new
@@ -101,25 +82,25 @@ tax/ott/README.html: tax/ott/log.tsv util/make_readme.py
 #
 # 1. Define 'make refresh-x' rule, creating archive/x/x-vvv
 #    1a. If the archive is anything other than a direct copy of a file 
-#        from the web, also create source/x/x-vvv (a compilation, digest, 
+#        from the web, also create work/x/x-vvv (a compilation, digest, 
 #	 or subset of stuff found on the web)
-# 2. Define 'make x' rule, which creates import/x/x-vvv
+# 2. Define 'make x' rule, which creates resource/x/x-vvv
 #    2a. 'make retrieve-x' should get archive/x/x-vvv from the files server
-#    2b. source/x/x-vvv can just be the extraction of archive/x/x-vvv
-#    2c. import/x/x-vvv gets generated from source/x/x-vvv (or in 
+#    2b. work/x/x-vvv can just be the extraction of archive/x/x-vvv
+#    2c. resource/x/x-vvv gets generated from work/x/x-vvv (or in 
 #    	 cases where an OT-format taxonomy is archived,, directly from
 # 	 archive/x/x-vvv)
-# 3. Define 'make archive-x' to create archive/x/x-vvv from source/x/x-vvv
+# 3. Define 'make archive-x' to create archive/x/x-vvv from work/x/x-vvv
 #    (opposite direction to 2b) and copy the archive file to the files
 #    server
 
-# Input: SILVA
+# --- Source: SILVA
 # Significant tabs !!!
 
 # Silva 115: 206M uncompresses to 817M
 # issue #62 - verify  (is it a tsv file or csv file?)
 
-SILVA_URL=http://files.opentreeoflife.org/fung/$(SILVA)/$(SILVA).tgz
+SILVA_URL=http://files.opentreeoflife.org/silva/$(SILVA)/$(SILVA).tgz
 
 retrieve-silva: archive/silva/$(SILVA)/.retrieve
 
@@ -130,45 +111,45 @@ archive/silva/$(SILVA)/.retrieve:
 	ls -l archive/silva/$(SILVA)
 	touch $@
 
-source/silva/$(SILVA)/.source: archive/silva/$(SILVA)/$(SILVA).tgz
-	tar -C source/silva -xzvf $<
+work/silva/$(SILVA)/.source: archive/silva/$(SILVA)/$(SILVA).tgz
+	tar -C work/silva -xzvf $<
 	touch $@
 
 # Get taxon names from Genbank accessions file.
 # The accessions file has genbank id, ncbi id, strain, taxon name.
-source/silva/$(SILVA)/cluster_names.tsv: source/silva/$(SILVA)/silva_no_sequences.txt \
-				import/ncbi/$(NCBI)/taxonomy.tsv \
-				import/genbank/$(GENBANK)/accessions.tsv
-	python import_scripts/silva/get_taxon_names.py \
-	       import/ncbi/$(NCBI)/taxonomy.tsv \
-	       import/genbank/$(GENBANK)/accessions.tsv \
+work/silva/$(SILVA)/cluster_names.tsv: work/silva/$(SILVA)/silva_no_sequences.txt \
+				resource/ncbi/$(NCBI)/taxonomy.tsv \
+				resource/genbank/$(GENBANK)/accessions.tsv
+	python resource_scripts/silva/get_taxon_names.py \
+	       resource/ncbi/$(NCBI)/taxonomy.tsv \
+	       resource/genbank/$(GENBANK)/accessions.tsv \
 	       $@.new
 	mv $@.new $@
 
 # Create the taxonomy import files from the no_sequences digest & accessions
-import/silva/$(SILVA)/taxonomy.tsv: import_scripts/silva/process_silva.py source/silva/$(SILVA)/silva_no_sequences.txt \
-            source/silva/$(SILVA)/cluster_names.tsv 
-	@mkdir -p import/silva/$(SILVA)
+resource/silva/$(SILVA)/taxonomy.tsv: import_scripts/silva/process_silva.py work/silva/$(SILVA)/silva_no_sequences.txt \
+            work/silva/$(SILVA)/cluster_names.tsv 
+	@mkdir -p resource/silva/$(SILVA)
 	python import_scripts/silva/process_silva.py \
-	       source/silva/$(SILVA)/silva_no_sequences.txt \
-	       source/silva/$(SILVA)/cluster_names.tsv \
-	       source/silva/$(SILVA)/origin_info.json \
-	       import/silva/$(SILVA)
+	       work/silva/$(SILVA)/silva_no_sequences.txt \
+	       work/silva/$(SILVA)/cluster_names.tsv \
+	       work/silva/$(SILVA)/origin_info.json \
+	       resource/silva/$(SILVA)
 
-import-silva: import/silva/$(SILVA)/taxonomy.tsv
+import-silva: resource/silva/$(SILVA)/taxonomy.tsv
 
-silva: import/silva/$(SILVA)/taxonomy.tsv
+silva: resource/silva/$(SILVA)/taxonomy.tsv
 	(cd tax; ln -sf ../`dirname $<` silva)
 
 # Archive.
 
 archive-silva:
 	@mkdir -p archive/silva/$(SILVA)
-	[ -d source/silva/$(SILVA) ] || \
+	[ -d work/silva/$(SILVA) ] || \
 	  (echo "Inputs to tar not available"; exit 1)
-	tar -C source/silva -cvzf archive/silva/$(SILVA)/$(SILVA).tgz $(SILVA) \
+	tar -C work/silva -cvzf archive/silva/$(SILVA)/$(SILVA).tgz $(SILVA) \
 	  $(EXCL)
-	bin/publish-taxonomy silva $(SILVA) .tgz
+	bin/publish-taxonomy archive silva $(SILVA) .tgz
 
 # Refresh from web.
 
@@ -196,20 +177,20 @@ raw/silva/silva.gz: raw/silva/release
 
 # Get latest SILVA from web; extract fasta file; make digest
 get-silva-release: raw/silva/silva.gz
-	@mkdir -p source/silva/silva-`cat raw/silva/release`
+	@mkdir -p work/silva/silva-`cat raw/silva/release`
 	@mkdir -p archive/silva/silva-`cat raw/silva/release`
 	gunzip -c raw/silva/silva.gz >raw/silva/silva.fasta
-	grep ">.*;" raw/silva/silva.fasta > source/silva/silva-`cat raw/silva/release`/silva_no_sequences.txt
+	grep ">.*;" raw/silva/silva.fasta > work/silva/silva-`cat raw/silva/release`/silva_no_sequences.txt
 	python util/origin_info.py \
 	  `cat raw/silva/date` \
 	  `cat raw/silva/origin_url` \
-	  >source/silva/silva-`cat raw/silva/release`/origin_info.json
+	  >work/silva/silva-`cat raw/silva/release`/origin_info.json
 	rm raw/silva/silva.fasta
-	ls -l source/silva/silva-`cat raw/silva/release`
-	tar -C source/silva -cvzf archive/silva/silva-`cat raw/silva/release`.tgz \
+	ls -l work/silva/silva-`cat raw/silva/release`
+	tar -C work/silva -cvzf archive/silva/silva-`cat raw/silva/release`.tgz \
 	  silva-`cat raw/silva/release` $(EXCL)
 
-# Input: Digest of genbank sequence records
+# --- Source: Digest of genbank sequence records
 
 # -rw-r--r--+ 1 jar  staff  17773988 Dec 16 19:38 feed/silva/work/accessions.tsv
 # -rw-r--r--+ 1 jar  staff   6728426 Dec  2 22:42 feed/silva/accessionid_to_taxonid.tsv
@@ -235,16 +216,16 @@ archive/genbank/$(GENBANK)/$(GENBANK).tgz:
 	wget --output-document=$@.new $(GENBANK_URL)
 	mv $@.new $@
 
-import/genbank/$(GENBANK)/accessions.tsv: 
-	tar -C import/genbank -xzf archive/genbank/$(GENBANK)/$(GENBANK).tgz
+resource/genbank/$(GENBANK)/accessions.tsv:
+	tar -C resource/genbank -xzf archive/genbank/$(GENBANK)/$(GENBANK).tgz
 
-genbank: import/genbank/$(GENBANK)/accessions.tsv
+genbank: resource/genbank/$(GENBANK)/accessions.tsv
 
 archive-genbank:
 	@mkdir -p archive/genbank/$(GENBANK)
-	tar -C import/genbank -cvzf archive/genbank/$(GENBANK)/$(GENBANK).tgz $(GENBANK) \
+	tar -C resource/genbank -cvzf archive/genbank/$(GENBANK)/$(GENBANK).tgz $(GENBANK) \
 	  $(EXCL)
-	bin/publish-taxonomy genbank $(GENBANK) .tgz
+	bin/publish-taxonomy archive genbank $(GENBANK) .tgz
 
 
 # This takes a long time - reads every flat file in genbank
@@ -256,55 +237,93 @@ refresh-genbank: import_scripts/genbank/accessionFromGenbank.py \
 		 import_scripts/genbank/makeaccessionid2taxonid.py
 	mkdir -p raw/genbank
 	python import_scripts/genbank/accessionFromGenbank.py \
-	       source/silva/$(SILVA)/silva_no_sequences.txt \
+	       work/silva/$(SILVA)/silva_no_sequences.txt \
 	       raw/genbank/Genbank.pickle
 	@echo Making accessions.tsv
 	python import_scripts/genbank/makeaccessionid2taxonid.py \
 	       raw/genbank/Genbank.pickle \
-	       import/genbank/$(GENBANK)/accessions.tsv
+	       resource/genbank/$(GENBANK)/accessions.tsv
 
-# Input: Index Fungorum
+# --- Source: Index Fungorum in Open Tree form
 
-retrieve-fung: archive/fung/$(FUNG)/.retrieve
+retrieve-fung-ot: archive/fung-ot/$(FUNG-OT)/.retrieve
 
 # 12787947 Oct  6  2015 taxonomy.tsv
-FUNG_URL=http://files.opentreeoflife.org/fung/$(FUNG)/$(FUNG)-ot.tgz
+FUNG_URL=http://files.opentreeoflife.org/fung-ot/$(FUNG-OT)/$(FUNG-OT).tgz
 
-archive/fung/$(FUNG)/.retrieve:
+archive/fung-ot/$(FUNG-OT)/$(FUNG-OT).tgz:
 	@mkdir -p `dirname $@`
-	wget --output-document=$@.new $(FUNG_URL)
+	wget -q --output-document=$@.new $(FUNG_URL)
 	mv -f $@.new $@
-	ls -l archive/fung/$(FUNG)
-	touch $@
+	ls -l archive/fung-ot/$(FUNG-OT)
+	touch archive/fung-ot/$(FUNG-OT)/.retrieve
 
-import/fung/$(FUNG)/taxonomy.tsv: archive/fung/$(FUNG)/$(FUNG)-ot.tgz
-	@rm -rf tmp/fung
-	@mkdir -p import/fung/$(FUNG) tmp/fung
-	(cd tmp/fung; tar xzf -) < $<
-	@ls -l tmp/fung
-	mv tmp/fung/*/* `dirname $@`/
-	rm -rf tmp/fung
+resource/fung-ot/$(FUNG-OT)/taxonomy.tsv: archive/fung-ot/$(FUNG-OT)/$(FUNG-OT).tgz
+	@rm -rf tmp/fung-ot
+	@mkdir -p resource/fung-ot/$(FUNG-OT) tmp/fung-ot
+	(cd tmp/fung-ot; tar xzf -) <archive/fung-ot/$(FUNG-OT)/$(FUNG-OT).tgz
+	@ls -l tmp/fung-ot
+	mv tmp/fung-ot/*/* `dirname $@`/
+	rm -rf tmp/fung-ot
 	@ls -l `dirname $@`
 
-import-fung: import/fung/$(FUNG)/taxonomy.tsv
+import-fung-ot: resource/fung-ot/$(FUNG-OT)/taxonomy.tsv
 
-fung: import/fung/$(FUNG)/taxonomy.tsv
-	(cd tax; ln -sf ../`dirname $<` fung)
+fung-ot: resource/fung-ot/$(FUNG-OT)/taxonomy.tsv
+	(cd tax; ln -sf ../`dirname $<` fung-ot)
 
-# Refresh fung... hmm... incomplete
+archive-fung-ot: archive/fung-ot/$(FUNG-OT)
+	bin/publish-taxonomy archive fung-ot $(FUNG-OT) .tgz
 
-source/fung/$(FUNG)/about.json:
-	@mkdir -p `dirname $@`
-	cp -p feed/fung/about.json tax/fung/
+# --- Source: WoRMS in Open Tree form
 
-# Input: NCBI Taxonomy
+WORMS-OT_URL=http://files.opentreeoflife.org/worms-ot/$(WORMS-OT)/$(WORMS-OT).tgz
+
+retrieve-worms-ot: archive/worms-ot/$(WORMS-OT)/.retrieve
+
+archive/worms-ot/$(WORMS-OT)/.retrieve:
+	@mkdir -p tax/worms-ot archive/worms-ot/$(WORMS-OT)
+	wget --output-document=archive/worms-ot/$(WORMS-OT)/$(WORMS-OT).tgz $(WORMS-OT_URL)
+	touch $@
+
+worms-ot: archive/worms-ot/$(WORMS-OT)/$(WORMS-OT).tgz
+	tar -C resource/worms-ot -xzf $<
+	(cd tax; ln -sf ../resource/worms-ot/$(WORMS-OT) worms-ot)
+
+archive-worms-ot: archive/worms-ot/$(WORMS-OT)
+	bin/publish-taxonomy archive worms $(WORMS-OT) .tgz
+
+refresh-worms-ot: 
+	@echo NYI
+
+# --- Source: WoRMS in native form (??)
+# This is assembled by import_scripts/worms/worms.py which does a web crawl
+# These rules haven't been tested!
+
+refresh-worms: crawl-worms
+	python util/update_config.py worms worms-`cat raw/worms/release` \
+	  <config.json >config.mk
+
+crawl-worms: import_scripts/worms/worms.py
+	@mkdir -p raw/worms/new
+	touch raw/worms/.today
+	python import_scripts/worms/worms.py \
+	       raw/worms/new/taxonomy.tsv raw/worms/new/synonyms.tsv raw/worms/new/worms.log
+	python util/modification_date.py raw/worms/.today >raw/worms/release
+	@rm -rf resource/worms/worms-`cat raw/worms/release`
+	mv raw/worms/new resource/worms/worms-`cat raw/worms/release`
+
+archive-worms: archive/worms/$(WORMS)
+	bin/publish-taxonomy archive worms $(WORMS) .tgz
+
+# --- Source: NCBI Taxonomy
 
 # Formerly, where we now have /dev/null, we had
 # ../data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP
 
-NCBI_URL="http://files.opentreeoflife.org/ncbi/$(NCBI)/$(NCBI).tgz"
-
 retrieve-ncbi: archive/ncbi/$(NCBI)/.retrieve
+
+NCBI_URL="http://files.opentreeoflife.org/ncbi/$(NCBI)/$(NCBI).tgz"
 
 archive/ncbi/$(NCBI)/.retrieve:
 	@mkdir -p archive/ncbi/$(NCBI)
@@ -312,29 +331,29 @@ archive/ncbi/$(NCBI)/.retrieve:
 	mv archive/ncbi/$(NCBI)/retrieve.tmp archive/ncbi/$(NCBI)/$(NCBI).tgz
 	ls -l archive/ncbi/$(NCBI)
 
-source/ncbi/$(NCBI)/.source: archive/ncbi/$(NCBI)/$(NCBI).tgz
+work/ncbi/$(NCBI)/.source: archive/ncbi/$(NCBI)/$(NCBI).tgz
 	@mkdir -p `dirname $@`
 	tar -C `dirname $@` -xzvf $<
 	touch $@
 
-import/ncbi/$(NCBI)/.import: source/ncbi/$(NCBI)/.source import_scripts/ncbi/process_ncbi_taxonomy.py
+resource/ncbi/$(NCBI)/.import: work/ncbi/$(NCBI)/.source import_scripts/ncbi/process_ncbi_taxonomy.py
 	@rm -rf tmp/ncbi
 	@mkdir -p tmp/ncbi
-	python import_scripts/ncbi/process_ncbi_taxonomy.py F source/ncbi/$(NCBI) \
+	python import_scripts/ncbi/process_ncbi_taxonomy.py F work/ncbi/$(NCBI) \
             /dev/null tmp/ncbi $(NCBI_URL)
 	rm -rf `dirname $@`
 	mv -f tmp/ncbi `dirname $@`
 	touch $@
 
-import-ncbi: import/ncbi/$(NCBI)/.import
+import-ncbi: resource/ncbi/$(NCBI)/.import
 
-ncbi: import/ncbi/$(NCBI)/taxonomy.tsv
+ncbi: resource/ncbi/$(NCBI)/taxonomy.tsv
 	(cd tax; ln -sf ../`dirname $<` ncbi)
 
 # Archive
 
 archive-ncbi:
-	bin/publish-taxonomy ncbi $(NCBI) .tgz
+	bin/publish-taxonomy archive ncbi $(NCBI) .tgz
 
 # Refresh from web.
 
@@ -361,192 +380,194 @@ get-ncbi-release:
 	mkdir -p archive/ncbi/ncbi-`cat raw/ncbi/release`
 	mv -f $(NCBI_TAXDUMP) archive/ncbi/ncbi-`cat raw/ncbi/release`/ncbi-`cat raw/ncbi/release`.tgz
 
-# Formerly, where it says /dev/null, we had ../data/gbif/ignore.txt
+# --- Source: GBIF
 
-gbif: tax/gbif/taxonomy.tsv
+gbif: resource/gbif/$(GBIF)/taxonomy.tsv
 
-feed/gbif/work/projection_2016.tsv: feed/gbif/in/taxon.txt feed/gbif/project_2016.py
-	@mkdir -p feed/gbif/work
-	python feed/gbif/project_2016.py feed/gbif/in/taxon.txt $@.new
-	mv $@.new $@
+retrieve-gbif: archive/gbif/$(GBIF)/$(GBIF).zip
 
-feed/gbif/work/projection_2013.tsv: feed/gbif/in/2013/taxon.txt feed/gbif/project_2013.py
-	@mkdir -p feed/gbif/work
-	python feed/gbif/project_2013.py feed/gbif/in/2013/taxon.txt $@.new
-	mv $@.new $@
-
-GBIF_VERSION=2016
-
-tax/gbif/taxonomy.tsv: feed/gbif/work/projection_$(GBIF_VERSION).tsv feed/gbif/process_gbif_taxonomy.py
-	@mkdir -p tax/gbif.tmp
-	python feed/gbif/process_gbif_taxonomy.py \
-	       feed/gbif/work/projection_$(GBIF_VERSION).tsv \
-	       tax/gbif.tmp
-	cp -p feed/gbif/about.json tax/gbif.tmp/
-	rm -rf tax/gbif
-	mv -f tax/gbif.tmp tax/gbif
+GBIF_URL=http://files.opentreeoflife.org/gbif/$(GBIF)/$(GBIF).zip
 
 # The '|| true' is because unzip erroneously returns status code 1
 # when there are warnings.
-feed/gbif/in/taxon.txt: feed/gbif/in/gbif-backbone.zip
-	(cd feed/gbif/in && (unzip gbif-backbone.zip || true))
-	touch feed/gbif/in/taxon.txt
+archive/gbif/$(GBIF)/.retrieve:
+	@mkdir -p archive/gbif/$(GBIF)
+	wget --output-document=archive/gbif/$(GBIF)/retrieve.tmp $(GBIF_URL)
+	mv archive/gbif/$(GBIF)/retrieve.tmp archive/gbif/$(GBIF)/$(GBIF).zip
+	ls -l archive/gbif/$(GBIF)
 
-feed/gbif/in/gbif-backbone.zip:
-	@mkdir -p feed/gbif/in
-	wget --output-document=$@.new "$(GBIF_URL)"
+work/gbif/$(GBIF)/zip/.source: archive/gbif/$(GBIF)/$(GBIF).zip
+	mkdir -p `dirname $@`
+	(cd work/gbif/$(GBIF)/zip && (unzip $< || true))
+	touch work/gbif/$(GBIF)/zip/.source
+
+work/gbif/$(GBIF)/projection_2016.tsv: work/gbif/$(GBIF)/zip/.source import_scripts/gbif/project_2016.py
+	@mkdir -p `dirname $@`
+	python import_scripts/gbif/project_2016.py work/gbif/$(GBIF)/zip/.source $@.new
 	mv $@.new $@
-	@ls -l $@
 
-GBIF_SOURCE_URL=http://rs.gbif.org/datasets/backbone/backbone-current.zip
+# Formerly, where it says /dev/null, we had ../data/gbif/ignore.txt
+
+resource/gbif/$(GBIF)/taxonomy.tsv: work/gbif/$(GBIF)/projection_2016.tsv \
+				  import_scripts/gbif/process_gbif_taxonomy.py
+	@mkdir -p `dirname $@`
+	@mkdir -p work/gbif/$(GBIF)/new
+	python import_scripts/gbif/process_gbif_taxonomy.py \
+	       work/gbif/$(GBIF)/projection_2016.tsv \
+	       work/gbif/$(GBIF)/new
+	rm -rf resource/gbif/$(GBIF)
+	mv work/gbif/$(GBIF)/new resource/gbif/$(GBIF)
+
+# Archive to files server
+
+archive-gbif: archive/gbif/$(GBIF)/$(GBIF).zip
+	bin/publish-taxonomy archive gbif $(GBIF) .zip
+
+
+# Get a new GBIF from the web and store to archive/gbif/$(GBIF)/$(GBIF).zip
+
+# Was http://ecat-dev.gbif.org/repository/export/checklist1.zip
+# Could be http://rs.gbif.org/datasets/backbone/backbone.zip
+# 2016-05-17 purl.org is broken, cannot update this link
+# GBIF_URL=http://purl.org/opentree/gbif-backbone-2013-07-02.zip
+
+GBIF_ORIGIN_URL=http://rs.gbif.org/datasets/backbone/backbone-current.zip
 
 refresh-gbif:
-	@mkdir -p feed/gbif/in
-	wget --output-document=gbif.new "$(GBIF_SOURCE_URL)"
-	rm -f feed/gbif/in/gbif-backbone.zip
-	mv gbif.new feed/gbif/in/gbif-backbone.zip
+	@mkdir -p raw/gbif/zip
+	wget --output-document=raw/gbif/gbif.zip "$(GBIF_ORIGIN_URL)"
+	(cd raw/gbif/zip && (unzip raw/gbif/gbif.zip  || true))
+	python util/modification_date.py raw/gbif/zip/taxon.txt >raw/gbif/release
+	[ -d archive/gbif/gbif-`cat raw/gbif/release` ] && (echo "Already got it!"; exit 1)
+	echo New GBIF version is `cat raw/gbif/release`
+	@mkdir -p work/gbif/gbif-`cat raw/gbif/release`
+	mv raw/gbig/zip work/gbif/gbif-`cat raw/gbif/release`/
+	@mkdir -p archive/gbif/gbif-`cat raw/gbif/release`
+	mv -f raw/gbif/gbif.zip archive/gbif/gbif-`cat raw/gbif/release`/gbif-`cat raw/gbif/release`.zip
 
-# TBD: a publication rule for new GBIF versions.
-# publish-gbif
-#	bin/publish-taxonomy gbif
+# --- Source: IRMNG
 
+retrieve-irmng: archive/irmng/$(IRMNG)/$(IRMNG).zip
 
-# Input: WoRMS
-# This is assembled by feed/worms/process_worms.py which does a web crawl
+IRMNG_URL=http://files.opentreeoflife.org/irmng/$(IRMNG)/$(IRMNG).zip
 
-tax/worms/taxonomy.tsv:
-	@mkdir -p tax/worms tmp
-	wget --output-document=tmp/$(WORMS)-ot.tgz $(WORMS_URL)
-	(cd tmp; tar xzf $(WORMS)-ot.tgz)
-	rm -f tax/worms/*
-	mv tmp/$(WORMS)-ot*/* tax/worms/
+archive/irmng/$(IRMNG)/$(IRMNG).zip:
+	@mkdir -p `dirname $@`
+	wget --output-document=$@ $(IRMNG_URL)
 
-# Input: IRMNG
+work/irmng/$(IRMNG)/zip/IRMNG_DWC.csv:
+	@mkdir -p `dirname $@`
+	(cd work/irmng/$(IRMNG)/zip && (unzip archive/irmng/$(IRMNG)/$(IRMNG).zip || true))
+	touch work/irmng/$(IRMNG)/.source
+
+resource/irmng/$(IRMNG)/taxonomy.tsv: import_scripts/irmng/process_irmng.py \
+				    work/irmng/$(IRMNG)/zip/IRMNG_DWC.csv 
+	@mkdir -p `dirname $@`
+	python import_scripts/irmng/process_irmng.py \
+	   work/irmng/$(IRMNG)/zip/IRMNG_DWC.csv \
+	   work/irmng/$(IRMNG)/zip/IRMNG_DWC_SP_PROFILE.csv \
+	   resource/irmng/$(IRMNG)/taxonomy.tsv \
+	   resource/irmng/$(IRMNG)/synonyms.tsv
 
 irmng: tax/irmng/taxonomy.tsv
 
-tax/irmng/taxonomy.tsv:
-	@mkdir -p tmp/irmng-ot
-	wget --output-document=tmp/irmng-ot.tgz $(IRMNG_URL)
-	(cd tmp/irmng-ot; tar xzf ../irmng-ot.tgz)
-	(rm -rf tax/irmng && \
-	 mv -f tmp/irmng-ot/* tax/irmng && \
-	 rm -rf tmp/irmng-ot)
+archive-irmng:
+	bin/publish-taxonomy archive irmng $(IRMNG) .zip
 
-# Build IRMNG from Tony's .csv files - these files unfortunately are
-# not public
+# Build IRMNG from Tony's .csv files
 
-refresh-irmng: feed/irmng/process_irmng.py feed/irmng/in/IRMNG_DWC.csv 
-	@mkdir -p feed/irmng/out
-	python feed/irmng/process_irmng.py \
-	   feed/irmng/in/IRMNG_DWC.csv \
-	   feed/irmng/in/IRMNG_DWC_SP_PROFILE.csv \
-	   feed/irmng/out/taxonomy.tsv \
-	   feed/irmng/out/synonyms.tsv
-	rm -rf tax/irmng
-	mv feed/irmng/out tax/irmng
+IRMNG_ORIGIN_URL=http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip
 
-feed/irmng/in/IRMNG_DWC.csv: feed/irmng/in/IRMNG_DWC.zip
-	(cd feed/irmng/in && \
-	 unzip IRMNG_DWC.zip && \
-	 mv IRMNG_DWC_2???????.csv IRMNG_DWC.csv && \
-	 mv IRMNG_DWC_SP_PROFILE_2???????.csv IRMNG_DWC_SP_PROFILE.csv)
+refresh-irmng: 
+	@mkdir -p raw/irmng/zip
+	wget --output-document=raw/irmng/irmng.zip "$(IRMNG_ORIGIN_URL)"
+	(cd raw/irmng/zip && (unzip raw/irmng/irmng.zip || true))
+	python util/modification_date.py raw/irmng/zip/IRMNG_DWC.csv >raw/irmng/release
+	[ -d archive/irmng/irmng-`cat raw/irmng/release` ] && (echo "Already got it!"; exit 1)
+	echo New IRMNG version is `cat raw/irmng/release`
+	@mkdir -p work/irmng/irmng-`cat raw/irmng/release`
+	mv raw/gzip/zip work/irmng/irmng-`cat raw/irmng/release`/
+	@mkdir -p archive/irmng/irmng-`cat raw/irmng/release`
+	mv raw/gzip/irmng.zip archive/irmng/irmng-`cat raw/irmng/release`/irmng-`cat raw/irmng/release`.zip
 
-feed/irmng/in/IRMNG_DWC.zip:
-	@mkdir -p `dirname $@`
-	wget --output-document=$@.new "http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip"
-	mv $@.new $@
+# --- Source: Open Tree curated amendments
 
-irmng-tarball:
-	(mkdir -p $(TARDIR) && \
-	 d=`date "+%Y%m%d"` && \
-	 echo Today is $$d && \
-	 cp -prf tax/irmng tax/irmng-ot-$$d && \
-	 tar czvf $(TARDIR)/irmng-ot-$$d.tgz.tmp -C tax irmng-ot-$$d && \
-	 mv $(TARDIR)/irmng-ot-$$d.tgz.tmp $(TARDIR)/irmng-ot-$$d.tgz )
+retrieve-amendments:
+	echo "NYI"
 
-publish-irmng:
-	bin/publish-taxonomy irmng-ot irmng-ot-zzz .tgz
+# 9 Sep 2016
+AMENDMENTS_REFSPEC=raw/amendments/refspec
 
+fetch_amendments: raw/amendments/amendments-1/next_ott_id.json
 
-# ----- Katz lab Protista/Chromista parent assignments
+raw/amendments/amendments-1/next_ott_id.json: raw/amendments/amendments-1 $(AMENDMENTS_REFSPEC)
+	(cd raw/amendments/amendments-1 && git checkout master && git pull)
+	(cd raw/amendments/amendments-1; git checkout -q `cat ../../../$(AMENDMENTS_REFSPEC)`)
 
-z: feed/misc/chromista_spreadsheet.py
-feed/misc/chromista_spreadsheet.py: feed/misc/chromista-spreadsheet.csv feed/misc/process_chromista_spreadsheet.py
-	python feed/misc/process_chromista_spreadsheet.py \
-           feed/misc/chromista-spreadsheet.csv >feed/misc/chromista_spreadsheet.py
-
-# ----- Amendments
-
-fetch_amendments: feed/amendments/amendments-1/next_ott_id.json
-
-feed/amendments/amendments-1/next_ott_id.json: feed/amendments/amendments-1 $(AMENDMENTS_REFSPEC)
-	(cd feed/amendments/amendments-1 && git checkout master && git pull)
-	(cd feed/amendments/amendments-1; git checkout -q `cat ../../../$(AMENDMENTS_REFSPEC)`)
-
-refresh-amendments: feed/amendments/amendments-1
-	(cd feed/amendments/amendments-1 && git checkout master && git pull)
-	(cd feed/amendments/amendments-1; git log -n 1) | head -1 | sed -e 's/commit //' >$(AMENDMENTS_REFSPEC).new
+refresh-amendments: raw/amendments/amendments-1
+	(cd raw/amendments/amendments-1 && git checkout master && git pull)
+	(cd raw/amendments/amendments-1; git log -n 1) | head -1 | sed -e 's/commit //' >$(AMENDMENTS_REFSPEC).new
 	mv $(AMENDMENTS_REFSPEC).new $(AMENDMENTS_REFSPEC)
-	(cd feed/amendments/amendments-1; git checkout -q `cat ../../../$(AMENDMENTS_REFSPEC)`)
+	(cd raw/amendments/amendments-1; git checkout -q `cat ../../../$(AMENDMENTS_REFSPEC)`)
 
-feed/amendments/amendments-1:
-	@mkdir -p feed/amendments
-	(cd feed/amendments; git clone https://github.com/OpenTreeOfLife/amendments-1.git)
+raw/amendments/amendments-1:
+	@mkdir -p raw/amendments
+	(cd raw/amendments; git clone https://github.com/OpenTreeOfLife/amendments-1.git)
 
-# ----- Previous version of OTT, for id assignments
+# --- Source: Previous version of OTT, for id assignments
 
-tax/prev_ott/taxonomy.tsv:
+# This is used as a source of OTT id assignments.
+PREV_OTT_URL=http://files.opentreeoflife.org/ott/$(PREV-OTT)/$(PREV-OTT).tgz
+
+resource/ott/$(PREV-OTT)/taxonomy.tsv:
 	@mkdir -p tmp 
 	wget --output-document=tmp/prev_ott.tgz $(PREV_OTT_URL)
 	@ls -l tmp/prev_ott.tgz
 	(cd tmp/ && tar xvf prev_ott.tgz)
-	rm -rf tax/prev_ott
-	@mkdir -p tax/prev_ott
-	mv tmp/ott*/* tax/prev_ott/
-	if [ -e tax/prev_ott/taxonomy ]; then mv tax/prev_ott/taxonomy tax/prev_ott/taxonomy.tsv; fi
-	if [ -e tax/prev_ott/synonyms ]; then mv tax/prev_ott/synonyms tax/prev_ott/synonyms.tsv; fi
+	rm -rf resource/ott/$(PREV-OTT)
+	@mkdir -p resource/ott/$(PREV-OTT)
+	mv tmp/ott*/* resource/ott/$(PREV-OTT)/
+	if [ -e resource/ott/$(PREV-OTT)/taxonomy ]; then mv resource/ott/$(PREV-OTT)/taxonomy resource/ott/$(PREV-OTT)/taxonomy.tsv; fi
+	if [ -e resource/ott/$(PREV-OTT)/synonyms ]; then mv resource/ott/$(PREV-OTT)/synonyms resource/ott/$(PREV-OTT)/synonyms.tsv; fi
 	rm -rf tmp
 
-# Source: OTT id list compiled from all previous OTT versions
+# --- Source: OTT id list compiled from all previous OTT versions
 
-import/idlist/by_qid.csv: source/idlist/by_qid.csv
-	... link or copy ??? ...
-	ln -sf $< $@
+retrieve-idlist: archive/idlist/$(IDLIST)/$(IDLIST).tgz
 
-source/idlist/by_qid.csv: stage/idlist/by_qid.tgz stage/idlist/meta.json
-	(cd stage/idlist; gunzip by_qid.tgz)
-	mv -f stage/idlist/*/* $@
-	cp -p stage/idlist/meta.json source/idlist/meta.json
+IDLIST_URL="http://files.opentreeoflife.org/idlist/$(IDLIST)/$(IDLIST).tgz"
 
-stage/idlist/by_qid.tgz: stage/idlist/about.json
-	... which version? ...
-	... version is in stage/idlist/meta.json ...
-	python util/archivetool.py get idlist stage/idlist/about.json archive/idlist 
-	... writes archive/, links from stage/ ...
+archive/idlist/$(IDLIST)/$(IDLIST).tgz:
+	@mkdir -p `dirname $@`
+	wget --output-document=$@ $(IDLIST_URL)
+
+resource/idlist/$(IDLIST)/by_qid.csv: archive/idlist/$(IDLIST)/$(IDLIST).tgz
+	@mkdir -p tmp/idlist resource/idlist/$(IDLIST)
+	tar -C tmp/idlist -xzf archive/idlist/$(IDLIST)/$(IDLIST).tgz
+	mv tmp/idlist/*/* resource/idlist/$(IDLIST)/
+
+idlist: resource/idlist/$(IDLIST)/by_qid.csv
+
+# When we build 3.1, the IDLIST version is for ids through OTT 3.0.
+# So, to make the id list for 3.1, we first make 3.1, then
+# combine the 3.0 id list with new registrations from 3.1.
 
 refresh-idlist:
-	(cd ott_id_list; make)
-	mv ott_id_list/by_qid.csv source/idlist/
-	... create source/idlist/meta.json ...
+	rm -rf resource/idlist/idlist-$(WHICH)
+	cp -pr resource/idlist/idlist-$(PREV_WHICH) resource/idlist/idlist-$(WHICH)
+	... extend it by adding new taxonomy ...
+	python import_scripts/idlist/extend_idlist.py \
+	       resource/idlist/idlist-$(PREV_WHICH)/registrations \
+	       resource/ott/ott$(WHICH) \
+	       resources/captures.json \
+	       resource/idlist/idlist-$(WHICH)/registrations/ott$(WHICH).csv
+	mv ott_id_list/by_qid.csv work/idlist/
 	python util/archivetool.py refresh idlist source stage archive by_qid.csv | bash
 	... ??? dir name should include version number ...
 	... tar czvf stage/idlist/by_qid.tgz -C stage idlist-xxx/by_qid.csv
 
-archive-idlist: source/idlist/about.json    # or stage/ ???
-	...
-
-# ,,,,,,,,,,,
-
-feed/ott_id_list/by_qid.csv:
-	@mkdir -p feed/ott_id_list
-
-	@mkdir -p tmp
-	@mkdir -p `dirname $@`
-	wget --output-document=tmp/by_qid.csv.gz $(IDLIST_URL)
-	(cd tmp; gunzip by_qid.csv.gz)
-	mv tmp/by_qid.csv `dirname $@`/
-	@ls -l $@
+archive-idlist: resource/idlist/$(IDLIST)/by_qid.csv    # or stage/ ???
+	bin/publish-taxonomy archive idlist $(IDLIST) .tgz
 
 # ----- Phylesystem OTU list
 
@@ -590,9 +611,9 @@ $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
  
 tarball: tax/ott/log.tsv tax/ott/version.txt
 	(mkdir -p $(TARDIR) && \
-	 tar czvf $(TARDIR)/ott$(WHICH).tgz.tmp -C tax ott \
+	 tar czvf $(TARDIR)/$(OTT).tgz.tmp -C tax ott \
 	   --exclude differences.tsv --exclude "#*" && \
-	 mv $(TARDIR)/ott$(WHICH).tgz.tmp $(TARDIR)/ott$(WHICH).tgz )
+	 mv $(TARDIR)/$(OTT).tgz.tmp $(TARDIR)/$(OTT).tgz )
 	@echo "Don't forget to bump the version number"
 
 # Then, something like
@@ -606,8 +627,8 @@ tax/ott/otu_deprecated.tsv: ids_that_are_otus.tsv tax/ott/deprecated.tsv
 	wc $@
 
 # This file is big
-tax/ott/differences.tsv: tax/prev_ott/taxonomy.tsv tax/ott/taxonomy.tsv
-	$(SMASH) --diff tax/prev_ott/ tax/ott/ $@.new
+tax/ott/differences.tsv: resource/ott/$(PREV_OTT)/taxonomy.tsv tax/ott/taxonomy.tsv
+	$(SMASH) --diff resource/ott/$(PREV_OTT)/ tax/ott/ $@.new
 	mv $@.new $@
 	wc $@
 
@@ -676,15 +697,15 @@ inclusion-tests: inclusions.csv bin/jython
 
 TAXON=Asterales
 
-# t/tax/prev/taxonomy.tsv: tax/prev_ott/taxonomy.tsv   - correct expensive
+# t/tax/prev/taxonomy.tsv: resource/ott/$(PREV_OTT)/taxonomy.tsv   - correct expensive
 t/tax/prev_aster/taxonomy.tsv: 
 	@mkdir -p `dirname $@`
-	$(SMASH) tax/prev_ott/ --select2 $(TAXON) --out t/tax/prev_aster/
+	$(SMASH) resource/ott/$(PREV_OTT)/ --select2 $(TAXON) --out t/tax/prev_aster/
 
-# dependency on import/ncbi/$(NCBI)/taxonomy.tsv - correct expensive
+# dependency on resource/ncbi/$(NCBI)/taxonomy.tsv - correct expensive
 t/tax/ncbi_aster/taxonomy.tsv: 
 	@mkdir -p `dirname $@`
-	$(SMASH) import/ncbi/$(NCBI)/ --select2 $(TAXON) --out t/tax/ncbi_aster/
+	$(SMASH) resource/ncbi/$(NCBI)/ --select2 $(TAXON) --out t/tax/ncbi_aster/
 
 # dependency on tax/gbif/taxonomy.tsv - correct but expensive
 t/tax/gbif_aster/taxonomy.tsv: 
@@ -763,13 +784,13 @@ clean:
 	rm -rf tax/ott
 	rm -rf feed/*/out feed/*/work
 	rm -rf *.tmp new_taxa
-	rm -rf import/ncbi/$(NCBI) tax/gbif tax/silva
+	rm -rf resource/ncbi/$(NCBI) tax/gbif tax/silva
 	rm -f feed/misc/chromista_spreadsheet.py
 	rm -rf t/amendments t/tax/aster
 
 distclean: clean
 	rm -f lib/*
-	rm -rf feed/amendments/amendments-1
+	rm -rf raw/amendments/amendments-1
 	rm -rf feed/*/in
-	rm -rf tax/fung tax/irmng* tax/worms 
-	rm -rf tax/prev_ott
+	rm -rf tax/fung tax/irmng* tax/worms-ot 
+	rm -rf resource/ott/$(PREV_OTT)

@@ -1,6 +1,6 @@
 {
- "fung": {
-  "version": "fung-9"
+ "fung-ot": {
+  "version": "fung-ot-9"
  }, 
  "gbif": {
   "version": "gbif-20160729"
@@ -17,13 +17,16 @@
  "ncbi": {
   "version": "ncbi-20161109"
  }, 
+ "ott": {
+  "version": "ott3.1"
+ }, 
  "prev_ott": {
   "version": "ott3.0"
  }, 
  "silva": {
   "version": "silva-115"
  }, 
- "worms": {
-  "version": "worms-1"
+ "worms-ot": {
+  "version": "worms-ot-1"
  }
 }

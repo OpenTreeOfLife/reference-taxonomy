@@ -1,4 +1,7 @@
-# jython?  yes, I think so.
+# Command line arguments:
+#  - path to directory containing OTT versions
+#  - path to output directory (will hold .csv files)
+
 
 from org.opentreeoflife.taxa import Taxonomy, Taxon
 from org.opentreeoflife.taxa import QualifiedId
@@ -163,7 +166,7 @@ def doit(ottpath, registry_path):
 
         # Stow the registrations for reference next time around
         for reg in new_regs:
-            id = reg[0]
+            (id, qid, version, reg_type, name) = reg
             regs = registrations_by_id.get(id)
             if regs == None:
                 registrations_by_id[id] = [reg]

@@ -95,7 +95,7 @@ resource/$(OTT)/README.html: resource/$(OTT)/log.tsv util/make_readme.py
 
 # Recipe for adding a new taxonomy source x:
 #
-# 1. Define a rule for resource/x-vvv/.made to create the resource files
+# 1. Define a rule for r/x-vvv/resource/.made to create the resource files
 #    (e.g. taxonomy) from the files in source/x-vvv (or direct from archive/x-vvv).
 # 2. Define a rule for new/x, creating a new source/x-vvv from stuff on the web.
 

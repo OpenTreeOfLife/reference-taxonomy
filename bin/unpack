@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# unpack a b
+#
+# Unpack a tar file A so that its files go into B.
+#
+# If A only contains a single directory, then put that directory's
+# files into B instead.
+
+set -e
+
+src=$1
+dst=$2
+
+# Extract into temporary directory
+rm -rf $dst.untar 
+mkdir -p $dst.untar
+
+echo "Unpacking $src to $dst"
+tar -C $dst.untar -xzf $src
+
+mkdir -p $dst.new
+
+# Copy temp to dest
+if [ `ls $dst.untar | wc -l | (read a b; echo $a)` = 1 ]; then
+  if [ -d $dst.untar/* ]; then
+    echo "  Eliding singleton directory" $dst.untar/*
+    mv $dst.untar/*/* $dst.new/
+  else
+    mv $dst.untar/* $dst.new/
+  fi
+else
+  mv $dst.untar/* $dst.new/
+fi
+
+# Get rid of temp
+rm -rf $dst.untar
+
+# Generic indication of done-ness
+touch $dst.new/.made
+
+# Put new stuff in place
+rm -rf $dst
+mv $dst.new $dst

@@ -1,39 +1,47 @@
 {
  "amendments": {
   "version": "amendments-bcafdea",
+  "suffix": ".tgz",
   "refspec": "bcafdea7f2e9231274cae2df2beed7d732ca46c5"
  }, 
- "fung-ot": {
-  "version": "fung-ot-9"
+ "fung": {
+  "version": "fung-9",
+  "suffix": "-ot.tgz"
  }, 
  "gbif": {
-  "version": "gbif-20160729"
+  "version": "gbif-20160729",
+  "suffix": ".zip"
  }, 
  "genbank": {
-  "version": "genbank-20131130"
+  "version": "genbank-20131130",
+  "suffix": ".tgz"
  }, 
  "idlist": {
-  "version": "idlist-3.0"
+  "version": "idlist-3.0",
+  "suffix": ".tgz"
  }, 
  "irmng": {
-  "version": "irmng-20140131"
+  "version": "irmng-20140131",
+  "suffix": ".zip"
  }, 
  "ncbi": {
-  "version": "ncbi-20161109"
+  "version": "ncbi-20161109",
+  "suffix": ".tgz"
  }, 
  "ott": {
-  "version": "ott3.1"
- }, 
- "prev-idlist": {
-  "version": "idlist-2.10"
+  "version": "ott3.1",
+  "suffix": ".tgz"
  }, 
  "prev-ott": {
-  "version": "ott3.0"
+  "version": "ott3.0",
+  "suffix": ".tgz"
  }, 
  "silva": {
-  "version": "silva-115"
+  "version": "silva-115",
+  "suffix": ".tgz"
  }, 
- "worms-ot": {
-  "version": "worms-ot-1"
+ "worms": {
+  "version": "worms-1",
+  "suffix": "-ot.tgz"
  }
 }

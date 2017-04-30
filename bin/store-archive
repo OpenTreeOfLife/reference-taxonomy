@@ -1,0 +1,47 @@
+#!/bin/bash
+
+set -e
+
+# Store one archive file to the files server
+
+host=files
+
+# command line arg = archive/ncbi-20170425
+
+dir=$1
+name=`basename $dir`
+
+if [ ! -e $dir/.made ]; then
+  echo "No archive to store: $dir"
+  exit 1
+fi
+
+# For URL: strip off the version number, leaving only the resource name
+
+stem=`echo $name | egrep -o "^[^0-9]+"`
+
+# Index of last char in stem
+i=$((${#stem}-1))
+
+if [ ${stem:$i} = '-' ]; then
+   stem=${stem:0:$i}
+elif [ ${stem:$i} = '.' ]; then
+   stem=${stem:0:$i}
+fi
+
+if [ ! -e suffix/$stem ]; then
+  echo "Missing suffix file suffix/$stem (see bin/update_config.py)"
+  exit 1
+fi
+
+suffix=`cat suffix/$stem`
+
+ar=$dir/archive$suffix
+
+if [ ! -e $ar ]; then
+  echo "Missing archive file $ar"
+  exit 1
+fi
+
+ssh $host mkdir -p $remotedir
+scp -p $ar $host:files.opentreeoflife.org/$stem/$name/$name$suffix

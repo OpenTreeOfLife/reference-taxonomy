@@ -635,7 +635,7 @@ def align_lamiales(study713, ott):
 
 # WoRMS
 
-def adjust_worms():
+def adjust_worms(worms):
     worms.smush()
 
     # 2015-02-17 According to WoRMS web site.  Occurs in pg_1229

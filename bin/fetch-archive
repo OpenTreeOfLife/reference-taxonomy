@@ -1,0 +1,54 @@
+#!/bin/bash
+
+set -e
+
+# Retrieve one archive file from the files server
+
+server=files.opentreeoflife.org
+
+# command line arg = archive/ncbi-20170425
+
+dir=$1
+name=`basename $dir`
+
+if [ -e $dir/.made ]; then
+  echo "$dir is already present"
+  exit 0
+fi
+
+# For URL: strip off the version number, leaving only the resource name
+
+stem=`echo $name | egrep -o "^[^0-9]+"`
+
+# Index of last char in stem
+i=$((${#stem}-1))
+
+if [ ${stem:$i} = '-' ]; then
+   stem=${stem:0:$i}
+elif [ ${stem:$i} = '.' ]; then
+   stem=${stem:0:$i}
+fi
+
+if [ ! -e suffix/$stem ]; then
+  echo "Missing suffix file suffix/$stem (see bin/update_config.py)"
+  exit 1
+fi
+
+suffix=`cat suffix/$stem`
+
+URL=http://$server/$stem/$name/$name$suffix
+
+mkdir -p $dir
+
+if wget -q --output-document=$dir/downloaded $URL; then
+
+    # Finish up
+
+    mv -f $dir/downloaded $dir/archive$suffix
+    touch $dir/.made
+    ls -l $dir
+
+else
+    echo "wget of $URL failed"
+    exit 1
+fi

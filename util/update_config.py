@@ -1,17 +1,29 @@
+#!/bin/python
+
 # Filter converting configuration file to 'make' format file for
 # inclusion by main Makefile.
-# Input: config.json 
-# Output: config.mk
+# Input (stdin): config.json 
+# Output (stdout): config.mk
 
-import sys, json, argparse
+import sys, os, json, argparse
+
+suffixes_path = 'suffix'
 
 def convert_config(blob):
     versions=[]
+    if not os.path.isdir(suffixes_path):
+        print >>sys.stderr, 'Creating', suffixes_path
+        os.mkdir(suffixes_path)
     for key in sorted(blob.keys()):
-        v = blob[key]["version"]
+        cap = blob[key]
+        v = cap["version"]
         print '%s=%s' % (key.upper(), v)
-        versions.append('retrieve-' + key)
-    print 'retrieve-all=%s' % ' '.join(versions)
+        with open(os.path.join(suffixes_path, key), 'w') as outfile:
+            outfile.write("%s\n" % cap["suffix"])
+        # OTT is a derived object, not a source
+        if key != "ott":
+            versions.append('fetch-' + key)
+    print 'fetch-all: %s' % ' '.join(versions)
     print 'WHICH=%s' % blob["ott"]["version"][3:]
     print 'PREV_WHICH=%s' % blob["prev-ott"]["version"][3:]
     print 'AMENDMENTS_REFSPEC=%s' % blob["amendments"]["refspec"]

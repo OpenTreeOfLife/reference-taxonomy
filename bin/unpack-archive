@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# Extract source files from archive
+
+set -e
+
+# command line arg = e.g. archive/ncbi-20170425 source/ncbi-20170425
+
+dir=$1
+dest=$2
+name=`basename $dir`
+
+if ! [ -e $dir/.made ]; then
+    bin/fetch-archive $dir
+    exit 1
+fi
+
+# For URL: strip off the version number, leaving only the resource name
+
+stem=`echo $name | egrep -o "^[^0-9]+"`
+
+# Index of last char in stem
+i=$((${#stem}-1))
+
+if [ ${stem:$i} = '-' ]; then
+    stem=${stem:0:$i}
+elif [ ${stem:$i} = '.' ]; then
+    stem=${stem:0:$i}
+fi
+
+if [ ! -e suffix/$stem ]; then
+    echo "Missing suffix file suffix/$stem (see bin/update_config.py)"
+    exit 1
+fi
+
+suffix=`cat suffix/$stem`
+
+ar=$dir/archive$suffix
+
+if [ ! -e $ar ]; then
+    echo "Missing archive file $ar"
+    exit 1
+fi
+
+if [ $suffix = '.zip' ]; then
+    mkdir -p $dest.new
+    (cd $dest.new && (unzip $ar || true))
+    touch $dest.new/.made
+    rm -rf $dest
+    mv $dest.new $dest
+    echo "Unpacked $ar to $dest"
+elif [ $suffix = '.tgz' -o $suffix = '-ot.tgz' ]; then
+    bin/unpack $ar $dest
+    touch $dest/.made
+    echo "Unpacked $ar to $dest"
+else
+    echo "unpack-archive: Unrecognized suffix $suffix"
+    exit 1
+fi

@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# Create archive from source files
+
+set -e
+
+EXCL='--exclude="*~" --exclude=".??*" --exclude="#*" --exclude=debug'
+
+# command line arg = e.g. archive/ncbi-20170425 source/ncbi-20170425 
+
+dir=$1
+dest=$2
+name=`basename $dir`
+
+dryrun=
+if [ x$DRYRUN != x ]; then dryrun=echo; fi
+
+if [ ! -e $dir/.made ]; then
+    echo "Missing sources (need $dir/.made)"
+    exit 1
+fi
+
+# For URL: strip off the version number, leaving only the resource name
+
+stem=`echo $name | egrep -o "^[^0-9]+"`
+# Index of last char in stem
+i=$((${#stem}-1))
+if [ ${stem:$i} = '-' ]; then
+    stem=${stem:0:$i}
+elif [ ${stem:$i} = '.' ]; then
+    stem=${stem:0:$i}
+fi
+if [ ! -e suffix/$stem ]; then
+    echo "Missing suffix file suffix/$stem (see bin/update_config.py)"
+    exit 1
+fi
+suffix=`cat suffix/$stem`
+
+if [ $suffix = '.zip' ]; then
+    echo "Zip archiving not implemented"
+    exit 1
+elif [ $suffix = '-ot.tgz' ]; then
+    if [ `dirname $dir` = source ]; then
+        dir=resource/$name
+    fi
+elif [ $suffix != '.tgz' ]; then
+    echo "pack-archive: Unrecognized suffix $suffix"
+    exit 1
+fi
+
+ar=$dest/archive$suffix
+
+$dryrun mkdir -p $dest
+$dryrun tar -C `dirname $dir` -cvzf $ar $EXCL $name
+$dryrun cp -p $dir/.made $dest/.made
+echo "Packed $dir to $ar"

@@ -1,11 +1,13 @@
 
-from org.opentreeoflife.smasher import Taxonomy
+from org.opentreeoflife.taxa import Taxonomy
 
-sourcenames = ['if.4', 'if.2', 'if.1']
+output = 'hackedfung2/'
 
-sources = [Taxonomy.getTaxonomy('feed/fung/' + name + '/', name) for name in sourcenames]
+sourcenames = ['fung-4', 'fung-2', 'fung-1']
 
-fung = Taxonomy.getTaxonomy('feed/fung/if.7/', 'if')
+fung = Taxonomy.getTaxonomy('resource/fung-7/', 'if')
+
+sources = [Taxonomy.getTaxonomy('resource/%s/' % name, 'if') for name in sourcenames]
 
 def fix_root():
     root = establish('Fungi', '90156', 'kingdom')
@@ -24,7 +26,7 @@ def establish(name, id, rank):
 
 def fix_parents(root):
     changes = {}
-    for taxon in fung:
+    for taxon in fung.taxa():
         if taxon.getParent() == None:
             # See if the taxon in a previous version
             recovered = None
@@ -61,9 +63,9 @@ def attempt(taxon, otaxon):
 def fix_synonyms():
     name_maps = [(source, source.makeSynonymIndex()) for source in sources]
     syns = {}
-    for taxon in fung:
+    for taxon in fung.taxa():
         for (source, nmap) in name_maps:
-            probe = source.idIndex[taxon.id]
+            probe = source.lookupId(taxon.id)
             if probe != None:
                 for name in nmap[probe]:
                     if name[0:len(taxon.name)] == taxon.name:
@@ -82,4 +84,4 @@ root = fix_root()
 fix_parents(root)
 fix_synonyms()
 
-fung.dump("tax/fung/")
+fung.dump(output)

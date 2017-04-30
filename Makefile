@@ -95,48 +95,33 @@ resource/$(OTT)/README.html: resource/$(OTT)/log.tsv util/make_readme.py
 
 # Recipe for adding a new taxonomy source x:
 #
-# 1. Define 'make x' rule, which creates resource/x-vvv, 
-#    in 2 or 3 stages:
-#    2a. 'make fetch-x' should fetch x's .tgz or .zip file from
-#        the files server (if not already present) and put it
-#	 in archive/x-vvv/archive.tgz (or .zip)
-#    2b. resource/x-vvv is created from archive/x-vvv,
-#    	 optionally by way of source/x-vvv and work/x-vvv
-# 2. Define 'make refresh-x' rule, creating a new archive/x-vvv
-#    2a. If the archive is anything other than a direct copy of a file 
-#        from the web, also create work/x-vvv (a compilation, digest, 
-#	 or subset of stuff found on the web)
-# 3. Define 'make archive-x' to create archive/x-vvv from work/x-vvv
-#    (opposite direction to 2b) and copy the archive file to the files
-#    server
-# 4. 'make store-x' is the inverse of 'make fetch-x'
+# 1. Define a rule for resource/x-vvv/.made to create the resource files
+#    (e.g. taxonomy) from the files in source/x-vvv (or direct from archive/x-vvv).
+# 2. Define a rule for new/x, creating a new source/x-vvv from stuff on the web.
 
 # Pattern rules!  All targets phony.
 
 fetch/%:
-	bin/fetch-archive `dirname $@`
+	bin/fetch-archive archive/`basename $@`
 
-store/%: archive/%/.made
-	bin/store-archive `dirname $<`
+# store does a pack, if necessary
+
+store/%:
+	bin/store-archive archive/`basename $@`
 
 # Unpack an archive (also fetch it if necessary)
+# Unpack does a fetch, if necessary
+
+unpack/%:
+	bin/unpack-archive archive/`basename $@` source/`basename $@`
+
+pack/%: source/%/.made
+	bin/pack-archive source/% archive/%
 
 source/%/.made:
 	d=`dirname $@`; bin/unpack-archive archive/`basename $$d` $$d
 
 # Imported taxonomy stored on archive server
-
-unpack-ot/%: archive/%/archive-ot.tgz
-	bin/unpack $< resource/`basename $@`
-
-# Inverse of above
-
-tar/%:
-	@mkdir -p archive/`basename $<`
-	tar -C resource -cvzf archive/`basename $<`/archive.tgz `basename $<` \
-	  $(EXCL)
-	echo .tgz >archive/`basename $<`/suffix
-	touch archive/`basename $<`/.made
 
 refresh/%: new/%
 	python util/update_config.py `basename $<` `basename $<`-`cat raw/%/release` \
@@ -165,7 +150,7 @@ resource/$(SILVA)/.made: import_scripts/silva/process_silva.py \
 # Get taxon names from Genbank accessions file.
 # The accessions file has genbank id, ncbi id, strain, taxon name.
 # -- it seems the accessions file now has taxon names, so we
-# probably don't need to make this file.
+# probably don't need to take NCBI taxonomy as an input.
 work/$(SILVA)/cluster_names.tsv: resource/$(NCBI)/.made \
 				 resource/$(GENBANK)/accessions.tsv
 	@mkdir -p `dirname $@`
@@ -231,7 +216,8 @@ raw/silva/release:
 # accessions.tsv not in repo, is more recent, includes taxon name and a column for strain.
 # Created before 6 July 2016, don't know when.  But none of the rows have strain info.
 
-resource/$(GENBANK)/.made: archive/$(GENBANK)/.made
+resource/$(GENBANK)/.made: source/$(GENBANK)/.made
+	(cd resource; ln -sf ../source/$(GENBANK) $(GENBANK))
 
 # This takes a long time - reads every flat file in genbank
 # Also - be sure to update RANGES in accessionFromGenbank.py, so you
@@ -241,30 +227,45 @@ resource/$(GENBANK)/.made: archive/$(GENBANK)/.made
 new/genbank: import_scripts/genbank/accessionFromGenbank.py \
 	     import_scripts/genbank/makeaccessionid2taxonid.py \
 	     source/$(SILVA)/silva_no_sequences.fasta
-	mkdir -p work/genbank-NEW/r
+	mkdir -p work/genbank-NEW source/genbank-NEW
+	@echo "*** Reading all of Genbank - this can take a while!"
 	python import_scripts/genbank/accessionFromGenbank.py \
 	       source/$(SILVA)/silva_no_sequences.fasta \
 	       work/genbank-NEW/Genbank.pickle
-	@echo "TBD: move work/genbank-NEW to correct dated location"
+	python util/modification_date.py work/genbank-NEW/Genbank.pickle \
+	   >work/worms-NEW/release
 	@echo Making accessions.tsv
+	@mkdir -p source/genbank-`cat work/worms-NEW/release`
 	python import_scripts/genbank/makeaccessionid2taxonid.py \
 	       work/genbank-NEW/Genbank.pickle \
-	       work/genbank-NEW/r/accessions.tsv
-	python util/modification_date.py work/genbank-NEW/r/accessions.tsv \
-	   >work/worms-NEW/release
-	mv work/genbank-NEW/r resource/genbank-`work/worms-NEW/release`
-	mv work/genbank-NEW work/genbank-`work/worms-NEW/release`
-	touch resource/genbank-NEW/.made
+	       source/genbank-`cat work/worms-NEW/release`/accessions.tsv
+	touch source/genbank-`cat work/worms-NEW/release`/.made
 
 # --- Source: Index Fungorum in Open Tree form
 
-resource/$(FUNG)/.made:
+unpack/$(FUNG):
 	bin/unpack-archive archive/$(FUNG) resource/$(FUNG)
+
+pack/$(FUNG): resource/$(FUNG)/.made
+	bin/pack-archive resource/$(FUNG) archive/$(FUNG)
+
+# new/fung: ...
+
+# How fung-9 was created:
+# import_scripts/fung/patch_together.py 
+#   which reads fung-4, fung-2, fung-1
+#
+# The earlier versions were created using various versions of the
+# process_fungorum.py script, operating on various files from Paul
+# Kirk as unput.
 
 # --- Source: WoRMS in Open Tree form
 
-resource/$(WORMS)/.made:
+unpack/$(WORMS):
 	bin/unpack-archive archive/$(WORMS) resource/$(WORMS)
+
+pack/$(WORMS): resource/$(WORMS)/.made
+	bin/pack-archive resource/$(WORMS) archive/$(WORMS)
 
 # WoRMS is imported by import_scripts/worms/worms.py which does a web crawl
 # This rule hasn't been tested!
@@ -382,6 +383,13 @@ new/irmng:
 
 # --- Source: Open Tree curated amendments
 
+# Dummy
+unpack/$(AMENDMENTS):
+	@true
+
+store/$(AMENDMENTS):
+	@true
+
 resource/$(AMENDMENTS)/.made: raw/amendments/amendments-1
 	(cd raw/amendments/amendments-1 && git checkout master && git pull)
 	(cd raw/amendments/amendments-1 && git checkout -q $(AMENDMENTS_REFSPEC))
@@ -412,14 +420,19 @@ new/amendments: raw/amendments/amendments-1
 
 # --- Source: Previous version of OTT, for id assignments
 
-resource/$(PREV-OTT)/.made:
+unpack/$(PREV-OTT):
 	bin/unpack-archive archive/$(PREV-OTT) resource/$(PREV-OTT)
 
+# Dummy, no action required
+pack/$(PREV-OTT): archive/$(PREV-OTT)/archive.tgz
 
 # --- Source: OTT id list compiled from all previous OTT versions
 
-resource/$(IDLIST)/.made: archive/$(IDLIST)/archive.tgz
-	bin/unpack $< resource/$(IDLIST)
+unpack/$(IDLIST):
+	bin/unpack-archive archive/$(IDLIST) resource/$(IDLIST)
+
+pack/$(IDLIST): resource/$(IDLIST)/.made
+	bin/pack-archive resource/$(IDLIST) archive/$(IDLIST)
 
 # When we build 3.1, IDLIST is idlist-3.0, which has ids through OTT 3.0.
 # So, to make the id list for 3.1, we first make OTT (or get) 3.1, then
@@ -482,7 +495,7 @@ ids_in_synthesis.tsv: bin/jython
 # For publishing OTT drafts or releases.
 # File names beginning with # are emacs lock links.
  
-# Maybe not needed now that we have tar/ and store/ targets?
+# Maybe not needed now that we have pack/ and store/ targets?
 
 tarball: resource/$(OTT)/.made
 	(mkdir -p $(TARDIR) && \

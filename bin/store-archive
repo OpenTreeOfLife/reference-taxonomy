@@ -11,37 +11,57 @@ host=files
 dir=$1
 name=`basename $dir`
 
-if [ ! -e $dir/.made ]; then
-  echo "No archive to store: $dir"
-  exit 1
-fi
+dryrun=
+if [ x$DRYRUN != x ]; then dryrun=echo; fi
 
 # For URL: strip off the version number, leaving only the resource name
 
 stem=`echo $name | egrep -o "^[^0-9]+"`
-
 # Index of last char in stem
 i=$((${#stem}-1))
-
 if [ ${stem:$i} = '-' ]; then
    stem=${stem:0:$i}
 elif [ ${stem:$i} = '.' ]; then
    stem=${stem:0:$i}
 fi
-
 if [ ! -e suffix/$stem ]; then
   echo "Missing suffix file suffix/$stem (see bin/update_config.py)"
   exit 1
 fi
-
 suffix=`cat suffix/$stem`
 
 ar=$dir/archive$suffix
 
-if [ ! -e $ar ]; then
-  echo "Missing archive file $ar"
-  exit 1
+path=files.opentreeoflife.org/$stem/$name/$name$suffix
+
+if ssh $host test -e $path ; then
+    echo "File $path already exists on server '$host'"
+    exit 0
 fi
 
-ssh $host mkdir -p $remotedir
-scp -p $ar $host:files.opentreeoflife.org/$stem/$name/$name$suffix
+# TBD: re-pack if source is newer than archive (-nt)
+
+if [ ! -e $dir/.made ]; then
+    # Create archive from source files...
+    if [ $suffix = ".tgz" -a -e source/$name/.made ]; then
+        echo "Attempting to pack $ar from source/$name"
+        $dryrun bin/pack-archive source/$name $dir
+    elif [ $suffix = "-ot.tgz" -a -e resource/$name/.made ]; then
+        echo "Attempting to pack $ar from resource/$name"
+        $dryrun bin/pack-archive resource/$name $dir
+    else
+        echo "Failed to find either $dir or source/$name"
+    fi
+fi
+
+if [ ! -e $ar ]; then
+    echo "Missing archive file $ar"
+    if [ x$dryrun = x ]; then
+        exit 1
+    else
+        exit 0
+    fi
+fi
+
+$dryrun ssh $host mkdir -p `dirname $path`
+$dryrun scp -p $ar $host:$path

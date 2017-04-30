@@ -5,7 +5,20 @@
 
 # Run this with:  python feed/fung/patch-if.py
 
+# First committed by JAR on 28 Jun 2015
+# Committed 21 Jul 2015
+# Committed  6 Oct 2015
+# Version fung-9 was generated on 6 Oct 2015
+
+# There is a different script fix-if.py dated 3 Oct 2015.  Not sure
+# how they relate.
+
 import csv, os
+
+# inputs = ['feed/fung/if.4/', 'feed/fung/if.3/', 'feed/fung/if.2/', 'feed/fung/if.1/']
+# inputs = ['resource/fung-4/', 'resource/fung-3/', 'resource/fung-2/', 'resource/fung-1/']
+inputs = ['resource/fung-4/', 'resource/fung-2/', 'resource/fung-1/']
+destdir = 'hackedfung/'
 
 rank_order = {}
 i = 0
@@ -185,7 +198,7 @@ class Taxon:
         writer.writerow((self.id, parent_id, self.name, self.rank, self.flags))
 
 
-fung  = get_taxonomy('feed/fung/if.4/', 'if')
+fung  = get_taxonomy(inputs[0], 'if')
 
 fungi = fung.maybeTaxon('90156')
 if fungi == None:
@@ -215,13 +228,13 @@ sacc.parent_id = tina.id
 
 print 'Testing:' , fung.maybeTaxon('Saccharomycetes')
 
-fixit(get_taxonomy('feed/fung/if.3/', 'if'), True)
-fixit(get_taxonomy('feed/fung/if.2/', 'if'), True)
-fixit(get_taxonomy('feed/fung/if.1/', 'if'), False)
+for input in inputs[1:-1]:
+    fixit(get_taxonomy(input, 'if'), True)
+
+fixit(get_taxonomy(inputs[-1], 'if'), False)
 
 sacc.flags = ''
 
-destdir = 'tax/hackedfung/'
 fung.dump(destdir)
 
 print all_ranks.keys()

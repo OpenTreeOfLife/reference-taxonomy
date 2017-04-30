@@ -22,8 +22,11 @@ def convert_config(blob):
             outfile.write("%s\n" % cap["suffix"])
         # OTT is a derived object, not a source
         if key != "ott":
-            versions.append('fetch-' + key)
-    print 'fetch-all: %s' % ' '.join(versions)
+            versions.append(v)
+    print 'fetch-all: %s' % ' '.join(map((lambda v:'fetch/%s' % v), versions))
+    print 'unpack-all: %s' % ' '.join(map((lambda v:'unpack/%s' % v), versions))
+    print 'store-all: %s' % ' '.join(map((lambda v:'store/%s' % v), versions))
+    print 'pack-all: %s' % ' '.join(map((lambda v:'pack/%s' % v), versions))
     print 'WHICH=%s' % blob["ott"]["version"][3:]
     print 'PREV_WHICH=%s' % blob["prev-ott"]["version"][3:]
     print 'AMENDMENTS_REFSPEC=%s' % blob["amendments"]["refspec"]

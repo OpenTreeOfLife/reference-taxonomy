@@ -11,6 +11,9 @@ server=files.opentreeoflife.org
 dir=$1
 name=`basename $dir`
 
+dryrun=
+if [ x$DRYRUN != x ]; then dryrun=echo; fi
+
 if [ -e $dir/.made ]; then
   echo "$dir is already present"
   exit 0
@@ -18,35 +21,31 @@ fi
 
 # For URL: strip off the version number, leaving only the resource name
 
-stem=`echo $name | egrep -o "^[^0-9]+"`
-
 # Index of last char in stem
+stem=`echo $name | egrep -o "^[^0-9]+"`
 i=$((${#stem}-1))
-
 if [ ${stem:$i} = '-' ]; then
    stem=${stem:0:$i}
 elif [ ${stem:$i} = '.' ]; then
    stem=${stem:0:$i}
 fi
-
 if [ ! -e suffix/$stem ]; then
   echo "Missing suffix file suffix/$stem (see bin/update_config.py)"
   exit 1
 fi
-
 suffix=`cat suffix/$stem`
 
 URL=http://$server/$stem/$name/$name$suffix
 
-mkdir -p $dir
+$dryrun mkdir -p $dir
 
-if wget -q --output-document=$dir/downloaded $URL; then
+if $dryrun wget -q --output-document=$dir/downloaded $URL; then
 
     # Finish up
 
-    mv -f $dir/downloaded $dir/archive$suffix
-    touch $dir/.made
-    ls -l $dir
+    $dryrun mv -f $dir/downloaded $dir/archive$suffix
+    $dryrun touch $dir/.made
+    $dryrun ls -l $dir
 
 else
     echo "wget of $URL failed"

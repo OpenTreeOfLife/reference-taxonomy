@@ -13,7 +13,7 @@
   "suffix": ".zip"
  }, 
  "genbank": {
-  "version": "genbank-20131130",
+  "version": "genbank-20161216",
   "suffix": ".tgz"
  }, 
  "idlist": {

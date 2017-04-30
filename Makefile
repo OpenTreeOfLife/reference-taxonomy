@@ -249,15 +249,21 @@ unpack/$(FUNG):
 pack/$(FUNG): resource/$(FUNG)/.made
 	bin/pack-archive resource/$(FUNG) archive/$(FUNG)
 
-# new/fung: ...
+new/fung: resource/fung-1/.made resource/fung-2/.made resource/fung-4/.made
+	python import_scripts/fung/cobble_fung.py
+	rm -rf resource/fung-NEW
+	mv hackedfung resource/fung-NEW
+	cp -p resource/fung-4/synonyms.tsv resource/fung-NEW
+	touch resource/fung-NEW/.made
+	echo TBD: Bump the version number and use it
 
 # How fung-9 was created:
-# import_scripts/fung/patch_together.py 
+# import_scripts/fung/cobble_fung.py 
 #   which reads fung-4, fung-2, fung-1
 #
 # The earlier versions were created using various versions of the
-# process_fungorum.py script, operating on various files from Paul
-# Kirk as unput.
+# feed/if.py (process_fungorum.py) script, operating on various files
+# from Paul Kirk as unput.
 
 # --- Source: WoRMS in Open Tree form
 

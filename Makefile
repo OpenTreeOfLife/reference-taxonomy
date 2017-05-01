@@ -74,7 +74,7 @@ r/$(OTT)/resource/log.tsv: bin/jython $(CLASS) \
 	    r/$(AMENDMENTS)/resource/.made \
 	    curation/edits/ott_edits.tsv \
 	    r/$(PREV-OTT)/resource/.made \
-	    r/$(IDLIST)/resource/by_qid.csv \
+	    r/$(IDLIST)/resource/.made \
 	    ids_that_are_otus.tsv ids_in_synthesis.tsv \
 	    inclusions.csv
 	@date
@@ -304,15 +304,35 @@ r/$(NCBI)/resource/.made: r/$(NCBI)/source/.made import_scripts/ncbi/process_ncb
 # We look at division.dmp just to get the date of the release.
 # Could have been any of the 9 files, but that one is small.
 
-new/ncbi:
-	@mkdir -p r/ncbi-NEW/archive/archive.tgz raw/ncbi
+new/ncbi: r/ncbi-NEW/source/.made r/ncbi-NEW/properties.json
+
+r/ncbi-NEW/source/.made: r/ncbi-NEW/archive/.made
+	@mkdir -p r/ncbi-NEW/source
+	tar -C r/ncbi-NEW/source -xzf r/ncbi-NEW/archive/archive.tgz
+	touch r/ncbi-NEW/source/.made
+
+r/ncbi-NEW/properties.json: r/ncbi-NEW/source/.made r/ncbi-NEW/archive/.made
+	echo "{}" >r/ncbi-NEW/properties.json
+	bin/put ncbi-NEW series ncbi
+	bin/put ncbi-NEW label \
+	   `python util/modification_date.py r/ncbi-NEW/source/names.dmp`
+	bin/put ncbi-NEW name ncbi-`bin/get ncbi-NEW label`
+	bin/put ncbi-NEW archive_file `bin/get ncbi-NEW name`.tgz
+	bin/put ncbi-NEW bytes `wc -c r/ncbi-NEW/archive/archive.tgz | (read c d && echo $$c)`
+	bin/put ncbi-NEW legal pd
+	bin/put ncbi-NEW ott_idspace ncbi
+	echo New NCBI version is `bin/get ncbi-NEW name`
+
+# bin/get ncbi-NEW label
+# bin/put ncbi-NEW label `python util/...`
+
+# archive_file, date, description, bytes
+
+r/ncbi-NEW/archive/.made:
+	@mkdir -p r/ncbi-NEW/archive
 	wget -q --output-document=r/ncbi-NEW/archive/archive.tgz $(NCBI_ORIGIN_URL)
 	touch r/ncbi-NEW/archive/.made
 	@ls -l r/ncbi-NEW/archive
-	tar -C raw/ncbi -xzf r/ncbi-NEW/archive division.dmp
-	echo ncbi-`python util/modification_date.py raw/ncbi/division.dmp` \
-	   >r/ncbi-NEW/source/name
-	echo New NCBI version is `cat r/ncbi-NEW/source/name`
 
 blah/ncbi:
 	rm -rf r/`cat r/ncbi-NEW/source/name`/archive

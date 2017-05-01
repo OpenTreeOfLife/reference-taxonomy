@@ -88,7 +88,8 @@
       "name_template": "h2007-{version}", 
       "date": "2014-03-14", 
       "capture_description": "Tree file in Newick format", 
-      "description": "Hibbett 2007 fungal orders, originals from figshare"
+      "description": "Hibbett 2007 fungal orders, originals from figshare",
+      "doi": "http://dx.doi.org/10.1016/j.mycres.2007.03.004"
     }, 
     {
       "_type": "resource", 

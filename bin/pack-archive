@@ -8,17 +8,10 @@ EXCL='--exclude="*~" --exclude=".??*" --exclude="#*" --exclude=debug'
 
 # command line arg = e.g. archive/ncbi-20170425 source/ncbi-20170425 
 
-dir=$1
-dest=$2
-name=`basename $dir`
+name=$1
 
 dryrun=
 if [ x$DRYRUN != x ]; then dryrun=echo; fi
-
-if [ ! -e $dir/.made ]; then
-    echo "Missing sources (need $dir/.made)"
-    exit 1
-fi
 
 # For URL: strip off the version number, leaving only the resource name
 
@@ -48,9 +41,24 @@ elif [ $suffix != '.tgz' ]; then
     exit 1
 fi
 
+if [ $suffix = 'zip' ]; then
+    echo ".zip creation NYI - $name"
+    exit 1
+elif [ $suffix = '-ot.tgz' ]; then
+    src=r/$name/resource
+elif [ $suffix = '.tgz' ]; then
+    src=r/$name/source
+fi
+
+if [ ! -e $src/.made ]; then
+    echo "Missing sources (need $src/.made)"
+    exit 1
+fi
+
+dest=r/$name/archive
 ar=$dest/archive$suffix
 
 $dryrun mkdir -p $dest
 $dryrun tar -C `dirname $dir` -cvzf $ar $EXCL $name
-$dryrun cp -p $dir/.made $dest/.made
+$dryrun touch $dest/.made
 echo "Packed $dir to $ar"

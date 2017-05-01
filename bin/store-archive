@@ -6,10 +6,10 @@ set -e
 
 host=files
 
-# command line arg = archive/ncbi-20170425
+# command line arg = ncbi-20170425  (for example)
 
-dir=$1
-name=`basename $dir`
+name=$1
+dir=r/$name/archive
 
 dryrun=
 if [ x$DRYRUN != x ]; then dryrun=echo; fi
@@ -43,14 +43,14 @@ fi
 
 if [ ! -e $dir/.made ]; then
     # Create archive from source files...
-    if [ $suffix = ".tgz" -a -e source/$name/.made ]; then
+    if [ $suffix = ".tgz" -a -e r/$name/source/.made ]; then
         echo "Attempting to pack $ar from source/$name"
-        $dryrun bin/pack-archive source/$name $dir
+        $dryrun bin/pack-archive r/$name/source $dir
     elif [ $suffix = "-ot.tgz" -a -e resource/$name/.made ]; then
-        echo "Attempting to pack $ar from resource/$name"
-        $dryrun bin/pack-archive resource/$name $dir
+        echo "Attempting to pack $ar from r/$name/resource"
+        $dryrun bin/pack-archive r/$name/resource $dir
     else
-        echo "Failed to find either $dir or source/$name"
+        echo "Failed to find either $dir or r/$name/source"
     fi
 fi
 

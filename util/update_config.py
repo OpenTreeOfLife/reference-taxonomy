@@ -10,7 +10,8 @@ import sys, os, json, argparse
 suffixes_path = 'suffix'
 
 def convert_config(blob):
-    versions=[]
+    fu_versions=[]
+    ps_versions=[]
     if not os.path.isdir(suffixes_path):
         print >>sys.stderr, 'Creating', suffixes_path
         os.mkdir(suffixes_path)
@@ -22,11 +23,13 @@ def convert_config(blob):
             outfile.write("%s\n" % cap["suffix"])
         # OTT is a derived object, not a source
         if key != "ott":
-            versions.append(v)
-    print 'fetch-all: %s' % ' '.join(map((lambda v:'fetch/%s' % v), versions))
-    print 'unpack-all: %s' % ' '.join(map((lambda v:'unpack/%s' % v), versions))
-    print 'store-all: %s' % ' '.join(map((lambda v:'store/%s' % v), versions))
-    print 'pack-all: %s' % ' '.join(map((lambda v:'pack/%s' % v), versions))
+            fu_versions.append(v)
+        if key != "prev-ott":
+            ps_versions.append(v)
+    print 'fetch-all: %s' % ' '.join(map((lambda v:'fetch/%s' % v), fu_versions))
+    print 'unpack-all: %s' % ' '.join(map((lambda v:'unpack/%s' % v), fu_versions))
+    print 'store-all: %s' % ' '.join(map((lambda v:'store/%s' % v), ps_versions))
+    print 'pack-all: %s' % ' '.join(map((lambda v:'pack/%s' % v), ps_versions))
     print 'WHICH=%s' % blob["ott"]["version"][3:]
     print 'PREV_WHICH=%s' % blob["prev-ott"]["version"][3:]
     print 'AMENDMENTS_REFSPEC=%s' % blob["amendments"]["refspec"]

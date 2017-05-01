@@ -8,8 +8,8 @@ server=files.opentreeoflife.org
 
 # command line arg = archive/ncbi-20170425
 
-dir=$1
-name=`basename $dir`
+name=$1
+dir=r/$name/archive
 
 dryrun=
 if [ x$DRYRUN != x ]; then dryrun=echo; fi
@@ -39,11 +39,11 @@ URL=http://$server/$stem/$name/$name$suffix
 
 $dryrun mkdir -p $dir
 
-if $dryrun wget -q --output-document=$dir/downloaded $URL; then
+if $dryrun wget -q --output-document=$dir/downloaded.tmp $URL; then
 
     # Finish up
 
-    $dryrun mv -f $dir/downloaded $dir/archive$suffix
+    $dryrun mv -f $dir/downloaded.tmp $dir/archive$suffix
     $dryrun touch $dir/.made
     $dryrun ls -l $dir
 

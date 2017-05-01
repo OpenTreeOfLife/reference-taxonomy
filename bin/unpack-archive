@@ -6,9 +6,9 @@ set -e
 
 # command line arg = e.g. archive/ncbi-20170425 source/ncbi-20170425
 
-dir=$1
-dest=$2
-name=`basename $dir`
+name=$1
+
+dir=r/$name/archive
 
 dryrun=
 if [ x$DRYRUN != x ]; then dryrun=echo; fi
@@ -43,6 +43,7 @@ if [ ! -e $ar ]; then
 fi
 
 if [ $suffix = '.zip' ]; then
+    dest=r/$name/source
     $dryrun mkdir -p $dest.new
     ($dryrun cd $dest.new && ($dryrun unzip $ar || true))
     $dryrun cp -p $dir/.made $dest.new/.made
@@ -51,10 +52,10 @@ if [ $suffix = '.zip' ]; then
     echo "Unpacked $ar to $dest"
     exit 0
 elif [ $suffix = '-ot.tgz' ]; then
-    if [ `dirname $dest` = source ]; then
-        dest=resource/$name
-    fi
-elif [ ! $suffix = '.tgz' ]; then
+    dest=r/$name/resource
+elif [ $suffix = '.tgz' ]; then
+    dest=r/$name/source
+else
     echo "unpack-archive: Unrecognized suffix $suffix"
     exit 1
 fi

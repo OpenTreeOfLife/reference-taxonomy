@@ -53,43 +53,43 @@ JAVASOURCES=$(shell find org/opentreeoflife -name "*.java")
 
 # The open tree reference taxonomy
 
-ott: resource/$(OTT)/.made
+ott: r/$(OTT)/resource/.made
 
-resource/$(OTT)/.made: resource/$(OTT)/log.tsv \
-		       resource/$(OTT)/version.txt \
-		       resource/$(OTT)/README.html
+r/$(OTT)/resource/.made: r/$(OTT)/resource/log.tsv \
+		       r/$(OTT)/resource/version.txt \
+		       r/$(OTT)/resource/README.html
 	touch $@
 
-resource/$(OTT)/log.tsv: bin/jython $(CLASS) \
+r/$(OTT)/resource/log.tsv: bin/jython $(CLASS) \
             make-ott.py assemble_ott.py adjustments.py amendments.py \
 	    curation/separation/taxonomy.tsv \
-	    resource/$(SILVA)/.made \
-	    resource/$(FUNG)/.made \
+	    r/$(SILVA)/resource/.made \
+	    r/$(FUNG)/resource/.made \
 	    curation/lamiales/taxonomy.tsv \
 	    curation/h2007/tree.tre \
-	    resource/$(WORMS)/.made \
-	    resource/$(NCBI)/.made \
-	    resource/$(GBIF)/.made \
-	    resource/$(IRMNG)/.made \
-	    resource/$(AMENDMENTS)/.made \
+	    r/$(WORMS)/resource/.made \
+	    r/$(NCBI)/resource/.made \
+	    r/$(GBIF)/resource/.made \
+	    r/$(IRMNG)/resource/.made \
+	    r/$(AMENDMENTS)/resource/.made \
 	    curation/edits/ott_edits.tsv \
-	    resource/$(PREV-OTT)/.made \
-	    resource/$(IDLIST)/by_qid.csv \
+	    r/$(PREV-OTT)/resource/.made \
+	    r/$(IDLIST)/resource/by_qid.csv \
 	    ids_that_are_otus.tsv ids_in_synthesis.tsv \
 	    inclusions.csv
 	@date
 	@rm -f *py.class util/*py.class curation/*py.class
-	@mkdir -p resource/$(OTT)/debug
-	@echo Writing transcript to resource/$(OTT)/debug/transcript.out
-	time bin/jython make-ott.py $(WHICH) config.json resource/$(OTT)/ \
+	@mkdir -p r/$(OTT)/resource/debug
+	@echo Writing transcript to r/$(OTT)/resource/debug/transcript.out
+	time bin/jython make-ott.py $(WHICH) config.json r/$(OTT)/resource/ \
 	  2>&1 | tee tmp/transcript.out
-	mv tmp/transcript.out resource/$(OTT)/debug/transcript.out
+	mv tmp/transcript.out r/$(OTT)/resource/debug/transcript.out
 
-resource/$(OTT)/version.txt:
-	echo $(WHICH) >resource/$(OTT)/version.txt
+r/$(OTT)/resource/version.txt:
+	echo $(WHICH) >r/$(OTT)/resource/version.txt
 
-resource/$(OTT)/README.html: resource/$(OTT)/log.tsv util/make_readme.py
-	python util/make_readme.py resource/$(OTT)/ >$@
+r/$(OTT)/resource/README.html: r/$(OTT)/resource/log.tsv util/make_readme.py
+	python util/make_readme.py r/$(OTT)/resource/ >$@
 
 # ----- Taxonomy sources
 
@@ -102,31 +102,39 @@ resource/$(OTT)/README.html: resource/$(OTT)/log.tsv util/make_readme.py
 # Pattern rules!  All targets phony.
 
 fetch/%:
-	bin/fetch-archive archive/`basename $@`
+	bin/fetch-archive `basename $@`
 
 # store does a pack, if necessary
 
 store/%:
-	bin/store-archive archive/`basename $@`
+	bin/store-archive `basename $@`
 
 # Unpack an archive (also fetch it if necessary)
 # Unpack does a fetch, if necessary
 
 unpack/%:
-	bin/unpack-archive archive/`basename $@` source/`basename $@`
+	bin/unpack-archive `basename $@`
 
-pack/%: source/%/.made
-	bin/pack-archive source/% archive/%
-
-source/%/.made:
-	d=`dirname $@`; bin/unpack-archive archive/`basename $$d` $$d
+pack/%:
+	bin/pack-archive `basename $@`
 
 # Imported taxonomy stored on archive server
 
 refresh/%: new/%
-	python util/update_config.py `basename $<` `basename $<`-`cat raw/%/release` \
+	d=`basename $@`; python util/update_config.py $$d `cat r/$$d/source/name` \
 	  <config.json >config.mk
 	rm -rf raw/`basename $<`
+
+# "It is possible that more than one pattern rule will meet these
+# criteria. In that case, make will choose the rule with the
+# shortest stem (that is, the pattern that matches most
+# specifically). If more than one pattern rule has the shortest
+# stem, make will choose the first one found in the makefile."
+
+r/%-NEW/source/.made: new/%
+
+r/%/source/.made:
+	d=`dirname $@; e=`dirname $$d`; bin/unpack-archive `basename $$e`
 
 
 # --- Source: SILVA
@@ -136,27 +144,27 @@ refresh/%: new/%
 # issue #62 - verify  (is it a tsv file or csv file?)
 
 # Create the taxonomy import files from the no_sequences digest & accessions
-resource/$(SILVA)/.made: import_scripts/silva/process_silva.py \
-			 source/$(SILVA)/.made \
-			 work/$(SILVA)/cluster_names.tsv
-	@mkdir -p resource/$(SILVA)
+r/$(SILVA)/resource/.made: import_scripts/silva/process_silva.py \
+			 r/$(SILVA)/source/.made \
+			 r/$(SILVA)/work/cluster_names.tsv
+	@mkdir -p r/$(SILVA)/resource
 	python import_scripts/silva/process_silva.py \
-	       source/$(SILVA)/silva_no_sequences.fasta \
-	       work/$(SILVA)/cluster_names.tsv \
-	       source/$(SILVA)/origin_info.json \
-	       resource/$(SILVA)
+	       r/$(SILVA)/source/silva_no_sequences.fasta \
+	       r/$(SILVA)/work/cluster_names.tsv \
+	       r/$(SILVA)/source/origin_info.json \
+	       r/$(SILVA)/resource
 	touch $@
 
 # Get taxon names from Genbank accessions file.
 # The accessions file has genbank id, ncbi id, strain, taxon name.
 # -- it seems the accessions file now has taxon names, so we
 # probably don't need to take NCBI taxonomy as an input.
-work/$(SILVA)/cluster_names.tsv: resource/$(NCBI)/.made \
-				 resource/$(GENBANK)/accessions.tsv
+r/$(SILVA)/work/cluster_names.tsv: r/$(NCBI)/resource/.made \
+				 r/$(GENBANK)/resource/accessions.tsv
 	@mkdir -p `dirname $@`
 	python import_scripts/silva/get_taxon_names.py \
-	       resource/$(NCBI)/taxonomy.tsv \
-	       resource/$(GENBANK)/accessions.tsv \
+	       r/$(NCBI)/resource/taxonomy.tsv \
+	       r/$(GENBANK)/resource/accessions.tsv \
 	       $@.new
 	mv -f $@.new $@
 
@@ -165,37 +173,35 @@ work/$(SILVA)/cluster_names.tsv: resource/$(NCBI)/.made \
 
 # Digestify fasta file and create sources for archive
 
-new/silva: raw/silva/download.tgz
-	@mkdir -p work/silva-`cat raw/silva/release`
-	@mkdir -p archive/silva-`cat raw/silva/release`
-	gunzip -c raw/silva/download.tgz >raw/silva/silva.fasta
-	grep ">.*;" raw/silva/silva.fasta > source/silva-`cat raw/silva/release`/silva_no_sequences.fasta
+new/silva: r/silva-NEW/work/download.gz r/silva-NEW/work/release
+	gunzip -c r/silva-NEW/work/download.gz | \
+	  grep ">.*;" > r/silva-NEW/source/silva_no_sequences.fasta
 	python util/origin_info.py \
-	  `cat raw/silva/date` \
-	  `cat raw/silva/origin_url` \
-	  >source/silva-`cat raw/silva/release`/origin_info.json
-	rm raw/silva/silva.fasta
-	touch source/silva-`cat raw/silva/release`/.made
-	ls -l source/silva-`cat raw/silva/release`
+	  `cat r/silva-NEW/work/date` \
+	  `cat r/silva-NEW/work/origin_url` \
+	  >r/silva-NEW/source/origin_info.json
+	echo silva-`cat r/silva-NEW/work/release` > r/silva-NEW/source/name
+	touch r/silva-NEW/source/.made
+	ls -l r/silva-NEW/source
 
 # Get the fasta file (big; for release 128, it's 150M)
 
-raw/silva/download.tgz: raw/silva/release
-	echo $(SILVA_ARCHIVE)/release_`cat raw/silva/release`/Exports/SILVA_`cat raw/silva/release`_SSURef_Nr99_tax_silva.fasta.gz >raw/silva/origin_url
+r/silva-NEW/work/download.tgz: r/silva-NEW/work/release
+	echo $(SILVA_ARCHIVE)/release_`cat r/silva-NEW/work/release`/Exports/SILVA_`cat r/silva-NEW/work/release`_SSURef_Nr99_tax_silva.fasta.gz >r/silva-NEW/work/origin_url
 	(echo \
-	 wget -q --output-file=raw/silva/download.tgz.new \
-	      `cat raw/silva/origin_url` && \
-	 mv raw/silva/download.tgz.new raw/silva/download.tgz)
+	 wget -q --output-file=r/silva-NEW/work/download.tgz.new \
+	      `cat r/silva-NEW/work/origin_url` && \
+	 mv r/silva-NEW/work/download.tgz.new r/silva-NEW/work/download.tgz)
 
 # Figure out which release we want, before downloading, by scanning the index.html file
 
-raw/silva/release:
-	@mkdir -p raw/silva
-	wget -q -O raw/silva/release-index.html $(SILVA_ARCHIVE)/
+r/silva-NEW/work/release:
+	@mkdir -p r/silva-NEW/work
+	wget -q -O r/silva-NEW/work/release-index.html $(SILVA_ARCHIVE)/
 	python import_scripts/silva/get_silva_release_info.py \
-	  <raw/silva/release-index.html | \
-	  (read r d; echo "$$r" >raw/silva/release; \
-	  	     echo "$$d" >raw/silva/date)
+	  < r/silva-NEW/work/release-index.html | \
+	  (read r d; echo "$$r" >r/silva-NEW/work/release; \
+	  	     echo "$$d" >r/silva-NEW/work/date)
 
 # --- Source: Digest of genbank sequence records
 
@@ -216,45 +222,43 @@ raw/silva/release:
 # accessions.tsv not in repo, is more recent, includes taxon name and a column for strain.
 # Created before 6 July 2016, don't know when.  But none of the rows have strain info.
 
-resource/$(GENBANK)/.made: source/$(GENBANK)/.made
-	(cd resource; ln -sf ../source/$(GENBANK) $(GENBANK))
+r/$(GENBANK)/resource/.made: r/$(GENBANK)/source/.made
+	(cd r/$(GENBANK); ln -sf source resource)
 
 # This takes a long time - reads every flat file in genbank
 # Also - be sure to update RANGES in accessionFromGenbank.py, so you
 # don't miss any genbank records!  Manual process now, could be 
 # automated.
 
-new/genbank: import_scripts/genbank/accessionFromGenbank.py \
-	     import_scripts/genbank/makeaccessionid2taxonid.py \
-	     source/$(SILVA)/silva_no_sequences.fasta
-	mkdir -p work/genbank-NEW source/genbank-NEW
+r/genbank-NEW/work/Genbank.pickle: import_scripts/genbank/accessionFromGenbank.py \
+	     r/$(SILVA)/source/silva_no_sequences.fasta
+	mkdir -p r/genbank-NEW/work
 	@echo "*** Reading all of Genbank - this can take a while!"
 	python import_scripts/genbank/accessionFromGenbank.py \
-	       source/$(SILVA)/silva_no_sequences.fasta \
-	       work/genbank-NEW/Genbank.pickle
-	python util/modification_date.py work/genbank-NEW/Genbank.pickle \
-	   >work/worms-NEW/release
+	       r/$(SILVA)/source/silva_no_sequences.fasta \
+	       r/genbank-NEW/work/Genbank.pickle
+
+new/genbank: r/genbank-NEW/work/Genbank.pickle \
+	     import_scripts/genbank/makeaccessionid2taxonid.py
 	@echo Making accessions.tsv
-	@mkdir -p source/genbank-`cat work/worms-NEW/release`
+	@mkdir -p r/genbank-NEW/source
 	python import_scripts/genbank/makeaccessionid2taxonid.py \
-	       work/genbank-NEW/Genbank.pickle \
-	       source/genbank-`cat work/worms-NEW/release`/accessions.tsv
-	touch source/genbank-`cat work/worms-NEW/release`/.made
+	       r/genbank-NEW/work/Genbank.pickle \
+	       r/genbank-NEW/source/accessions.tsv
+	touch r/genbank-NEW/source/.made
+
+newversion/genbank: r/genbank-NEW/work/Genbank.pickle
+	python util/modification_date.py r/genbank-NEW/work/Genbank.pickle \
+	   >r/worms-NEW/work/release
 
 # --- Source: Index Fungorum in Open Tree form
 
-unpack/$(FUNG):
-	bin/unpack-archive archive/$(FUNG) resource/$(FUNG)
-
-pack/$(FUNG): resource/$(FUNG)/.made
-	bin/pack-archive resource/$(FUNG) archive/$(FUNG)
-
-new/fung: resource/fung-1/.made resource/fung-2/.made resource/fung-4/.made
+new/fung: r/fung-1/resource/.made r/fung-3/resource/.made r/fung-4/resource/.made
 	python import_scripts/fung/cobble_fung.py
-	rm -rf resource/fung-NEW
-	mv hackedfung resource/fung-NEW
-	cp -p resource/fung-4/synonyms.tsv resource/fung-NEW
-	touch resource/fung-NEW/.made
+	rm -rf r/fung-NEW/source
+	mv hackedfung r/fung-NEW/source
+	cp -p r/fung-4/resource/synonyms.tsv resource/fung-NEW
+	touch r/fung-NEW/resource/.made
 	echo TBD: Bump the version number and use it
 
 # How fung-9 was created:
@@ -267,37 +271,32 @@ new/fung: resource/fung-1/.made resource/fung-2/.made resource/fung-4/.made
 
 # --- Source: WoRMS in Open Tree form
 
-unpack/$(WORMS):
-	bin/unpack-archive archive/$(WORMS) resource/$(WORMS)
-
-pack/$(WORMS): resource/$(WORMS)/.made
-	bin/pack-archive resource/$(WORMS) archive/$(WORMS)
-
 # WoRMS is imported by import_scripts/worms/worms.py which does a web crawl
 # This rule hasn't been tested!
 
 new/worms: import_scripts/worms/worms.py
 	echo "*** Warning! This can take several days to run. ***"
-	@mkdir -p work/worms-NEW/r
+	@mkdir -p r/worms-NEW/source
 	python import_scripts/worms/worms.py \
-	       work/worms-NEW/r/taxonomy.tsv work/worms-NEW/r/synonyms.tsv work/worms-NEW/r/worms.log
-	touch work/worms-NEW/.today
-	python util/modification_date.py work/worms-NEW/.today >work/worms-NEW/release
-	mv work/worms-NEW/r resource/worms-`cat work/worms-NEW/release`
-	mv work/worms-NEW work/worms-`cat work/worms-NEW/release`
+	       r/worms-NEW/source/taxonomy.tsv \
+	       r/worms-NEW/source/synonyms.tsv \
+	       r/worms-NEW/source/worms.log
+	touch r/worms-NEW/work/.today
+	python util/modification_date.py r/worms-NEW/work/.today >r/worms-NEW/work/release
+	echo worms-`cat r/worms-NEW/work/release` >r/worms-NEW/source/name
 
 # --- Source: NCBI Taxonomy
 
 # Formerly (version 1.0), where we now have /dev/null, we had
 # ../data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP
 
-resource/$(NCBI)/.made: source/$(NCBI)/.made import_scripts/ncbi/process_ncbi_taxonomy.py
-	@rm -rf resource/$(NCBI).new
-	@mkdir -p resource/$(NCBI).new
-	python import_scripts/ncbi/process_ncbi_taxonomy.py F source/$(NCBI) \
-            /dev/null resource/$(NCBI).new $(NCBI_ORIGIN_URL)
+r/$(NCBI)/resource/.made: r/$(NCBI)/source/.made import_scripts/ncbi/process_ncbi_taxonomy.py
+	@rm -rf r/$(NCBI)/resource.new
+	@mkdir -p r/$(NCBI)/resource.new
+	python import_scripts/ncbi/process_ncbi_taxonomy.py F r/$(NCBI)/source \
+            /dev/null r/$(NCBI)/resource.new $(NCBI_ORIGIN_URL)
 	rm -rf `dirname $@`
-	mv -f resource/$(NCBI).new `dirname $@`
+	mv -f r/$(NCBI)/resource.new `dirname $@`
 	touch $@
 
 # Refresh from web.
@@ -306,38 +305,41 @@ resource/$(NCBI)/.made: source/$(NCBI)/.made import_scripts/ncbi/process_ncbi_ta
 # Could have been any of the 9 files, but that one is small.
 
 new/ncbi:
-	@mkdir -p archive/ncbi-NEW/archive.tgz raw/ncbi
-	wget -q --output-document=archive/ncbi-NEW/archive.tgz $(NCBI_ORIGIN_URL)
-	touch archive/ncbi-NEW/.made
-	@ls -l archive/ncbi-NEW
-	tar -C raw/ncbi -xzf archive/ncbi-NEW division.dmp
-	python util/modification_date.py raw/ncbi/division.dmp >raw/ncbi/release
-	echo New NCBI version is `cat raw/ncbi/release`
-	rm -rf archive/ncbi-`cat raw/ncbi/release`
-	mv -f archive/ncbi-NEW archive/ncbi-`cat raw/ncbi/release`
+	@mkdir -p r/ncbi-NEW/archive/archive.tgz raw/ncbi
+	wget -q --output-document=r/ncbi-NEW/archive/archive.tgz $(NCBI_ORIGIN_URL)
+	touch r/ncbi-NEW/archive/.made
+	@ls -l r/ncbi-NEW/archive
+	tar -C raw/ncbi -xzf r/ncbi-NEW/archive division.dmp
+	echo ncbi-`python util/modification_date.py raw/ncbi/division.dmp` \
+	   >r/ncbi-NEW/source/name
+	echo New NCBI version is `cat r/ncbi-NEW/source/name`
+
+blah/ncbi:
+	rm -rf r/`cat r/ncbi-NEW/source/name`/archive
+	mv -f r/ncbi-NEW r/ncbi-`cat r/ncbi-NEW/source/release`/archive
 
 # --- Source: GBIF
 
 # Formerly, where it says /dev/null, we had ../data/gbif/ignore.txt
 
-resource/$(GBIF)/.made: work/$(GBIF)/projection.tsv \
+r/$(GBIF)/resource/.made: r/$(GBIF)/work/projection.tsv \
 			import_scripts/gbif/process_gbif_taxonomy.py
 	@mkdir -p `dirname $@`
-	@mkdir -p resource/$(GBIF).new
+	@mkdir -p r/$(GBIF)/resource.new
 	python import_scripts/gbif/process_gbif_taxonomy.py \
-	       work/$(GBIF)/projection.tsv \
-	       resource/$(GBIF).new
-	touch resource/$(GBIF).new/.made
-	rm -rf resource/$(GBIF)
-	mv resource/$(GBIF).new resource/$(GBIF)
+	       r/$(GBIF)/work/projection.tsv \
+	       r/$(GBIF)/resource.new
+	touch r/$(GBIF)/resource.new/.made
+	rm -rf r/$(GBIF)/resource
+	mv r/$(GBIF)/resource.new r/$(GBIF)/resource
 
-work/$(GBIF)/projection.tsv: source/$(GBIF)/.made \
+r/$(GBIF)/work/projection.tsv: r/$(GBIF)/source/.made \
 			     import_scripts/gbif/project_2016.py
 	@mkdir -p `dirname $@`
-	python import_scripts/gbif/project_2016.py source/$(GBIF)/taxon.txt $@.new
+	python import_scripts/gbif/project_2016.py r/$(GBIF)/source/taxon.txt $@.new
 	mv $@.new $@
 
-# Get a new GBIF from the web and store to archive/$(GBIF)/archive.zip
+# Get a new GBIF from the web and store to r/$(GBIF)/archive/archive.zip
 
 # Was http://ecat-dev.gbif.org/repository/export/checklist1.zip
 # Could be http://rs.gbif.org/datasets/backbone/backbone.zip
@@ -347,45 +349,51 @@ work/$(GBIF)/projection.tsv: source/$(GBIF)/.made \
 # should be very similar to IRMNG
 
 new/gbif:
-	@mkdir -p archive/gbif-NEW source/gbif-NEW
-	wget -q --output-document=archive/gbif-NEW/archive.zip "$(GBIF_ORIGIN_URL)"
+	@mkdir -p r/gbif-NEW/archive r/gbif-NEW/source
+	wget -q --output-document=r/gbif-NEW/archive/archive.zip "$(GBIF_ORIGIN_URL)"
 	touch archive/gbif-NEW/.made
-	(cd source/gbif-NEW && (unzip archive/gbif-NEW/archive.zip  || true))
-	python util/modification_date.py source/gbif-NEW/taxon.txt >raw/gbif/release
-	touch source/gbif-NEW/.made
-	echo New GBIF version is `cat raw/gbif/release`
-	mv source/gbif-NEW source/gbif-`cat raw/gbif/release`
-	mv archive/gbif-NEW archive/gbif-`cat raw/gbif/release`
+	(cd r/gbif-NEW/source && (unzip r/gbif-NEW/archive/archive.zip  || true))
+	echo gbif-`python util/modification_date.py source/gbif-NEW/taxon.txt` \
+	   > r/gbif-NEW/source/name
+	touch r/gbif-NEW/source/.made
+	echo New GBIF is `cat r/gbif-NEW/source/name`
+
+blah/gbif:
+	[ -d r/`cat r/gbif-NEW/source/name` ] && (echo "collision" && exit 1)
+	mv r/gbif-NEW r/`cat r/gbif-NEW/source/name`
 
 # --- Source: IRMNG
 
-resource/$(IRMNG)/.made: source/$(IRMNG)/.made \
+r/$(IRMNG)/resource/.made: r/$(IRMNG)/source/.made \
 			 import_scripts/irmng/process_irmng.py
 	@mkdir -p `dirname $@`.new
 	python import_scripts/irmng/process_irmng.py \
-	   source/$(IRMNG)/IRMNG_DWC.csv \
-	   source/$(IRMNG)/IRMNG_DWC_SP_PROFILE.csv \
-	   resource/$(IRMNG).new/taxonomy.tsv \
-	   resource/$(IRMNG).new/synonyms.tsv
-	touch resource/$(IRMNG).new/.made
-	rm -rf resource/$(IRMNG)
-	mv resource/$(IRMNG).new resource/$(IRMNG)
+	   r/$(IRMNG)/source/IRMNG_DWC.csv \
+	   r/$(IRMNG)/source/IRMNG_DWC_SP_PROFILE.csv \
+	   r/$(IRMNG)/resource.new/taxonomy.tsv \
+	   r/$(IRMNG)/resource.new/synonyms.tsv
+	touch r/$(IRMNG)/resource.new/.made
+	rm -rf r/$(IRMNG)/resource
+	mv r/$(IRMNG)/resource.new r/$(IRMNG)/resource
 
 # Build IRMNG from Tony's .csv files
 
 # should be same as for GBIF
 
 new/irmng:
-	@mkdir -p archive/irmng-NEW source/irmng-NEW raw/irmng
-	wget -q --output-document=archive/irmng-NEW/archive.zip "$(IRMNG_ORIGIN_URL)"
-	touch archive/irmng-NEW/.made
-	(cd source/irmng-NEW && (unzip archive/irmng-NEW/archive.zip || true))
-	touch source/irmng-NEW/.made
-	python util/modification_date.py source/irmng-NEW/IRMNG_DWC.csv >raw/irmng/release
-	echo New IRMNG version is `cat raw/irmng/release`
-	[ -d archive/irmng-`cat raw/irmng/release` ] && (echo "Already got it!"; exit 1)
-	mv source/irmng-NEW source/irmng-`cat raw/irmng/release`
-	mv archive/irmng-NEW archive/irmng-`cat raw/irmng/release`
+	@mkdir -p r/irmng-NEW/archive r/irmng-NEW/source raw/irmng
+	wget -q --output-document=r/irmng-NEW/archive/archive.zip "$(IRMNG_ORIGIN_URL)"
+	touch r/irmng-NEW/archive/.made
+	(cd r/irmng-NEW/source && (unzip r/irmng-NEW/archive/archive.zip || true))
+	echo irmng-`python util/modification_date.py r/irmng-NEW/source/IRMNG_DWC.csv` \
+	   >r/irmng-NEW/source/name
+	touch r/irmng-NEW/source/.made
+	echo New IRMNG is `cat r/irmng-NEW/source/name`
+	[ -d archive/`cat r/irmng-NEW/source/name` ] && (echo "Already got it!"; exit 1)
+
+blah/irmng:
+	mv source/irmng-NEW source/`cat r/irmng-NEW/source/name`
+	mv archive/irmng-NEW archive/`cat r/irmng-NEW/source/name`
 
 # --- Source: Open Tree curated amendments
 
@@ -396,16 +404,16 @@ unpack/$(AMENDMENTS):
 store/$(AMENDMENTS):
 	@true
 
-resource/$(AMENDMENTS)/.made: raw/amendments/amendments-1
+r/$(AMENDMENTS)/resource/.made: raw/amendments/amendments-1
 	(cd raw/amendments/amendments-1 && git checkout master && git pull)
 	(cd raw/amendments/amendments-1 && git checkout -q $(AMENDMENTS_REFSPEC))
-	@mkdir -p resource/$(AMENDMENTS).new/amendments-1
+	@mkdir -p r/$(AMENDMENTS)/resource.new/amendments-1
 	cp -pr raw/amendments/amendments-1/amendments \
-	       resource/$(AMENDMENTS).new/amendments-1/
-	echo $(AMENDMENTS_REFSPEC) > resource/$(AMENDMENTS).new/refspec
-	touch resource/$(AMENDMENTS).new/.made
-	rm -rf resource/$(AMENDMENTS)
-	mv resource/$(AMENDMENTS).new resource/$(AMENDMENTS)
+	       r/$(AMENDMENTS)/resource.new/amendments-1/
+	echo $(AMENDMENTS_REFSPEC) > r/$(AMENDMENTS)/resource.new/refspec
+	touch r/$(AMENDMENTS)/resource.new/.made
+	rm -rf r/$(AMENDMENTS)/resource
+	mv r/$(AMENDMENTS)/resource.new r/$(AMENDMENTS)/resource
 
 # fetch from github
 
@@ -414,31 +422,31 @@ raw/amendments/amendments-1:
 	(cd raw/amendments; git clone $(AMENDMENTS_ORIGIN_URL))
 
 new/amendments: raw/amendments/amendments-1
+	@mkdir -p r/amendments-NEW/source/amendments-1
 	(cd raw/amendments/amendments-1 && git checkout master && git pull)
-	(cd raw/amendments/amendments-1; git log -n 1) | head -1 | sed -e 's/commit //' >raw/amendments/refspec.new
-	mv raw/amendments/refspec.new raw/amendments/refspec
-	(cd raw/amendments/amendments-1; git checkout -q `cat ../../../raw/amendments/refspec`)
-	head -c 7 raw/amendments/refspec > raw/amendments/version
-	mkdir -p resource/amendments-`cat raw/amendments/version`/amendments-1
-	cp -pr raw/amendments/amendments-1/amendments resource/amendments-`cat raw/amendments/version`/amendments-1/
-	cp -p raw/amendments/refspec resource/amendments-`cat raw/amendments/version`/
+	(cd raw/amendments/amendments-1; git log -n 1) | \
+	  head -1 | sed -e 's/commit //' >raw/amendments/refspec.new
+	mv raw/amendments/refspec.new r/amendments-NEW/source/refspec
+	cp -pr raw/amendments/amendments-1/amendments r/amendments-NEW/source/amendments-1/
+	echo amendments-`head -c 7 raw/amendments/refspec` >r/amendments-NEW/source/name
+	touch r/amendments-NEW/source/.made
+
+blah/amendments:
+	mkdir -p r/`cat r/amendments-NEW/source/name`/source/resource/amendments-1
 	@echo "TBD: STORE NEW REFSPEC AND VERSION IN config.json"
 
 # --- Source: Previous version of OTT, for id assignments
 
-unpack/$(PREV-OTT):
-	bin/unpack-archive archive/$(PREV-OTT) resource/$(PREV-OTT)
+r/$(PREV-OTT)/resource/.made: r/$(PREV-OTT)/source/.made
+	(cd r/$(PREV-OTT); ln -s source resource)
 
 # Dummy, no action required
-pack/$(PREV-OTT): archive/$(PREV-OTT)/archive.tgz
+pack/$(PREV-OTT): r/$(PREV-OTT)/archive/archive.tgz
 
 # --- Source: OTT id list compiled from all previous OTT versions
 
-unpack/$(IDLIST):
-	bin/unpack-archive archive/$(IDLIST) resource/$(IDLIST)
-
-pack/$(IDLIST): resource/$(IDLIST)/.made
-	bin/pack-archive resource/$(IDLIST) archive/$(IDLIST)
+r/$(IDLIST)/resource/.made: r/$(IDLIST)/source/.made
+	(cd r/$(IDLIST); ln -sf source resource)
 
 # When we build 3.1, IDLIST is idlist-3.0, which has ids through OTT 3.0.
 # So, to make the id list for 3.1, we first make OTT (or get) 3.1, then
@@ -446,17 +454,17 @@ pack/$(IDLIST): resource/$(IDLIST)/.made
 
 NEW-IDLIST=idlist-$(WHICH)
 
-new/idlist: resource/$(IDLIST)/.made
-	@rm -rf resource/$(NEW-IDLIST)
-	@mkdir -p resource/$(NEW-IDLIST)
-	cp -pr resource/$(IDLIST)/regs resource/$(NEW-IDLIST)/
+new/idlist: r/$(IDLIST)/source/.made
+	@rm -rf r/$(NEW-IDLIST)/source
+	@mkdir -p r/$(NEW-IDLIST)/source
+	cp -pr r/$(IDLIST)/source/regs r/$(NEW-IDLIST)/source/
 	python import_scripts/idlist/extend_idlist.py \
-	       resource/$(IDLIST)/regs \
-	       resource/$(PREV-OTT) \
+	       r/$(IDLIST)/source/regs \
+	       r/$(PREV-OTT)/resource \
 	       $(PREV-OTT) \
 	       resources/captures.json \
-	       resource/$(NEW-IDLIST)/regs/$(PREV-OTT).csv
-	touch resource/$(NEW-IDLIST)/.made
+	       r/$(NEW-IDLIST)/source/regs/$(PREV-OTT).csv
+	touch r/$(NEW-IDLIST)/source/.made
 
 # ----- TBD: wikidata.py (from which we get EOL ids)
 
@@ -503,7 +511,7 @@ ids_in_synthesis.tsv: bin/jython
  
 # Maybe not needed now that we have pack/ and store/ targets?
 
-tarball: resource/$(OTT)/.made
+tarball: r/$(OTT)/resource/.made
 	(mkdir -p $(TARDIR) && \
 	 tar czvf $(TARDIR)/$(OTT).tgz.tmp -C tax ott $(EXCL) && \
 	 mv $(TARDIR)/$(OTT).tgz.tmp $(TARDIR)/$(OTT).tgz )
@@ -514,31 +522,31 @@ tarball: resource/$(OTT)/.made
 #   opentree@ot10.opentreeoflife.org:files.opentreeoflife.org/ott/ott2.9/
 
 # Not currently used since smasher already suppresses non-OTU deprecations
-resource/$(OTT)/otu_deprecated.tsv: ids_that_are_otus.tsv resource/$(OTT)/deprecated.tsv
-	$(SMASH) --join ids_that_are_otus.tsv resource/$(OTT)/deprecated.tsv >$@.new
+r/$(OTT)/resource/otu_deprecated.tsv: ids_that_are_otus.tsv r/$(OTT)/resource/deprecated.tsv
+	$(SMASH) --join ids_that_are_otus.tsv r/$(OTT)/resource/deprecated.tsv >$@.new
 	mv $@.new $@
 	wc $@
 
 # This file is big
-work/$(OTT)/differences.tsv: resource/$(PREV-OTT)/.made resource/$(OTT)/.made
-	$(SMASH) --diff resource/$(PREV-OTT)/ resource/$(OTT)/ $@.new
+r/$(OTT)/work/differences.tsv: r/$(PREV-OTT)/resource/.made r/$(OTT)/resource/.made
+	$(SMASH) --diff r/$(PREV-OTT)/resource/ r/$(OTT)/resource/ $@.new
 	mv $@.new $@
 	wc $@
 
 # OTUs only
-resource/$(OTT)/otu_differences.tsv: work/$(OTT)/differences.tsv
-	$(SMASH) --join ids_that_are_otus.tsv work/$(OTT)/differences.tsv >$@.new
+r/$(OTT)/resource/debug/otu_differences.tsv: r/$(OTT)/work/differences.tsv
+	$(SMASH) --join ids_that_are_otus.tsv r/$(OTT)/work/differences.tsv >$@.new
 	mv $@.new $@
 	wc $@
 
-resource/$(OTT)/otu_hidden.tsv: resource/$(OTT)/hidden.tsv
-	$(SMASH) --join ids_that_are_otus.tsv resource/$(OTT)/hidden.tsv >$@.new
+r/$(OTT)/resource/debug/otu_hidden.tsv: r/$(OTT)/resource/hidden.tsv
+	$(SMASH) --join ids_that_are_otus.tsv r/$(OTT)/resource/hidden.tsv >$@.new
 	mv $@.new $@
 	wc $@
 
 # The works
-works: ott resource/$(OTT)/otu_differences.tsv resource/$(OTT)/forwards.tsv
-	touch resource/$(OTT)/.made
+works: ott r/$(OTT)/resource/debug/otu_differences.tsv r/$(OTT)/resource/forwards.tsv
+	touch r/$(OTT)/resource/.made
 
 tags: $(JAVASOURCES)
 	etags *.py util/*.py $(JAVASOURCES)
@@ -580,27 +588,27 @@ check:
 	bash run-tests.sh
 
 inclusion-tests: inclusions.csv bin/jython
-	bin/jython util/check_inclusions.py inclusions.csv resource/$(OTT)/
+	bin/jython util/check_inclusions.py inclusions.csv r/$(OTT)/resource/
 
 # -----------------------------------------------------------------------------
 # Asterales test system ('make test')
 
 TAXON=Asterales
 
-# t/tax/prev/taxonomy.tsv: resource/$(PREV-OTT)/taxonomy.tsv   - correct expensive
+# t/tax/prev/taxonomy.tsv: r/$(PREV-OTT)/resource/taxonomy.tsv   - correct expensive
 t/tax/prev_aster/taxonomy.tsv: 
 	@mkdir -p `dirname $@`
-	$(SMASH) resource/$(PREV-OTT)/ --select2 $(TAXON) --out t/tax/prev_aster/
+	$(SMASH) r/$(PREV-OTT)/resource/ --select2 $(TAXON) --out t/tax/prev_aster/
 
-# dependency on resource/$(NCBI)/taxonomy.tsv - correct expensive
+# dependency on r/$(NCBI)/resource/taxonomy.tsv - correct expensive
 t/tax/ncbi_aster/taxonomy.tsv: 
 	@mkdir -p `dirname $@`
-	$(SMASH) resource/$(NCBI)/ --select2 $(TAXON) --out t/tax/ncbi_aster/
+	$(SMASH) r/$(NCBI)/resource/ --select2 $(TAXON) --out t/tax/ncbi_aster/
 
-# dependency on tax/gbif/taxonomy.tsv - correct but expensive
+# dependency on GBIF taxonomy.tsv - correct but expensive
 t/tax/gbif_aster/taxonomy.tsv: 
 	@mkdir -p `dirname $@`
-	$(SMASH) tax/gbif/ --select2 $(TAXON) --out t/tax/gbif_aster/
+	$(SMASH) r/$(GBIF)/resource/ --select2 $(TAXON) --out t/tax/gbif_aster/
 
 # Previously:
 #t/tax/aster/taxonomy.tsv: $(CLASS) \
@@ -671,11 +679,11 @@ bin/smasher:
 clean:
 	rm -f `find . -name "*.class"`
 	rm -rf bin/jython
-	rm -rf resource/$(OTT)
-	rm -rf *.tmp new_taxa
-	rm -rf resource/$(NCBI) resource/$(GBIF)
+	rm -rf r/$(OTT)
+	rm -rf *.tmp new_taxa suffix
+	rm -rf r/*/resource
 	rm -rf t/amendments t/tax/aster
 
 distclean: clean
 	rm -f lib/*
-	rm -rf archive work resource tmp raw
+	rm -rf r tmp raw

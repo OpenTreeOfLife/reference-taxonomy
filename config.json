@@ -1,47 +1,12 @@
 {
- "amendments": {
-  "version": "amendments-bcafdea",
-  "suffix": ".tgz",
-  "refspec": "bcafdea7f2e9231274cae2df2beed7d732ca46c5"
- }, 
- "fung": {
-  "version": "fung-9",
-  "suffix": "-ot.tgz"
- }, 
- "gbif": {
-  "version": "gbif-20160729",
-  "suffix": ".zip"
- }, 
- "genbank": {
-  "version": "genbank-20161216",
-  "suffix": ".tgz"
- }, 
- "idlist": {
-  "version": "idlist-3.0",
-  "suffix": ".tgz"
- }, 
- "irmng": {
-  "version": "irmng-20140131",
-  "suffix": ".zip"
- }, 
- "ncbi": {
-  "version": "ncbi-20161109",
-  "suffix": ".tgz"
- }, 
- "ott": {
-  "version": "ott3.1",
-  "suffix": ".tgz"
- }, 
- "prev-ott": {
-  "version": "ott3.0",
-  "suffix": ".tgz"
- }, 
- "silva": {
-  "version": "silva-115",
-  "suffix": ".tgz"
- }, 
- "worms": {
-  "version": "worms-1",
-  "suffix": "-ot.tgz"
- }
+ "amendments": "amendments-bcafdea7f2e9231274cae2df2beed7d732ca46c5",
+ "fung": "fung-9",
+ "gbif": "gbif-20160729",
+ "genbank": "genbank-20161216",
+ "idlist": "idlist-3.0",
+ "irmng": "irmng-20140131",
+ "ncbi": "ncbi-20161109",
+ "prev-ott": "ott3.0",
+ "silva": "silva-115",
+ "worms": "worms-1"
 }

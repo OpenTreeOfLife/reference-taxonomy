@@ -215,13 +215,13 @@
   {
     "===": "Received from Tony Rees, personal communication.", 
     "_type": "capture", 
-    "name": "irmng-20140130", 
+    "name": "irmng-20140131", 
     "retrieved_from": "http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip", 
     "bytes": 111780936, 
     "legal": "handoff", 
-    "filename": "irmng-20140130.zip", 
+    "filename": "irmng-20140131.zip", 
     "_archivable": false, 
-    "last_modified": "2014-01-30", 
+    "last_modified": "2014-01-31", 
     "capture_of": "irmng", 
     "date": "2014-01-30", 
     "label": "20140130"
@@ -631,6 +631,7 @@
     "generated_on": "2017-02-26", 
     "legal": "cc0", 
     "label": "3.0", 
+    "minor": "0",
     "sources": {
       "silva": "silva-115", 
       "ncbi": "ncbi-20161109", 

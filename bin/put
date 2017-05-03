@@ -28,3 +28,4 @@ blob[args.selector] = args.value
 
 with open(path, 'w') as outfile:
     json.dump(blob, outfile, indent=2, sort_keys=True)
+    outfile.write('\n')

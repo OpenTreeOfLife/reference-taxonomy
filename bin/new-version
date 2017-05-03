@@ -1,0 +1,65 @@
+#!/usr/bin/python
+
+# Initiate a new version (issue) 'foo-NEW' of some series 'foo'.
+
+root = 'r'
+
+import os, sys, json, argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('series')
+parser.add_argument('suffix')
+parser.add_argument('legal')
+args = parser.parse_args()
+
+# Figure out separator (usually -) by looking at existing linked
+# version 'foo', if any
+
+series_dir = os.path.join(root, args.series)    # symlink
+if os.path.isdir(series_dir):
+    # Read series properties to get separator
+    path = os.path.join(series_dir, 'properties.json')
+    if os.path.exists(path):
+        with open(path, 'r') as infile:
+            series_blob = json.load(infile)
+else:
+    series_blob = {}
+separator = series_blob.get("separator")
+if separator == None:
+    print "Using default separator '-' for %s" % args.series
+    separator = '-'
+
+# Compose blob
+# (maybe: also copy suffix, description, legal, ott_idspace...?)
+# (no, better for those to be set explicitly in Makefile)
+
+blob = {"series": args.series,
+        "separator": separator,
+        "suffix": args.suffix,
+        "legal": args.legal}
+
+# Create foo-NEW
+
+new_name = args.series + '-NEW'
+new_dir = os.path.join(root, new_name)
+
+if not os.path.isdir(new_dir):
+    os.mkdir(new_dir)
+
+prop_path = os.path.join(new_dir, 'properties.json')
+
+if os.path.exists(prop_path):
+    sys.stderr.write('Overwriting %s\n' % prop_path)
+
+with open(prop_path, 'w') as outfile:
+    json.dump(blob, outfile, indent=2, sort_keys=True)
+    outfile.write('\n')
+
+# Link foo to foo-NEW
+
+if os.path.lexists(series_dir):
+    os.unlink(series_dir)
+    print 'Redirecting %s to %s' % (series_dir, os.path.join(root, new_name))
+else:
+    sys.stderr.write('Brand new series %s!\n' % args.series)
+os.symlink(new_name, series_dir)

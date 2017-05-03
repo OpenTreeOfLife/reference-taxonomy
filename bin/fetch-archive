@@ -4,7 +4,9 @@ set -e
 
 # Retrieve one archive file from the files server
 
-server=files.opentreeoflife.org
+if [ x$FILES_URL_PREFIX = x ]; then
+    FILES_URL_PREFIX=http://files.opentreeoflife.org
+fi
 
 # command line arg = archive/ncbi-20170425
 
@@ -19,23 +21,27 @@ if [ -e $dir/.made ]; then
   exit 0
 fi
 
-# For URL: strip off the version number, leaving only the resource name
-
+series=`echo $name | egrep -o "^[^0-9.]+"`
 # Index of last char in stem
-stem=`echo $name | egrep -o "^[^0-9]+"`
-i=$((${#stem}-1))
-if [ ${stem:$i} = '-' ]; then
-   stem=${stem:0:$i}
-elif [ ${stem:$i} = '.' ]; then
-   stem=${stem:0:$i}
+i=$((${#series}-1))
+if [ ${series:$i} = '-' ]; then
+   series=${series:0:$i}
+elif [ ${series:$i} = '.' ]; then
+   series=${series:0:$i}
 fi
-if [ ! -e suffix/$stem ]; then
-  echo "Missing suffix file suffix/$stem (see bin/update_config.py)"
-  exit 1
-fi
-suffix=`cat suffix/$stem`
 
-URL=http://$server/$stem/$name/$name$suffix
+PROP_URL=$FILES_URL_PREFIX/$series/$name/properties.json
+
+if [ x$dryrun = x ]; then
+    wget -q --output-document=$dir/properties.json.new $PROP_URL
+    mv $dir/properties.json.new $dir/properties.json
+    suffix=`bin/get $name suffix`
+else
+    echo wget -q --output-document=$dir/properties.json $PROP_URL
+    suffix=.suffix
+fi
+
+URL=$FILES_URL_PREFIX/$series/$name/$name$suffix
 
 $dryrun mkdir -p $dir
 

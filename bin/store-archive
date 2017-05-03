@@ -4,7 +4,12 @@ set -e
 
 # Store one archive file to the files server
 
-host=files
+if [ x$SSH_PATH_PREFIX = x ]; then
+    SSH_PATH_PREFIX=files.opentreeoflife.org:files.opentreeoflife.org
+fi
+
+host=`echo $SSH_PATH_PREFIX | sed -e s/:.*//`
+root=${SSH_PATH_PREFIX:$((${#host} + 1))}
 
 # command line arg = ncbi-20170425  (for example)
 
@@ -16,26 +21,16 @@ if [ x$DRYRUN != x ]; then dryrun=echo; fi
 
 # For URL: strip off the version number, leaving only the resource name
 
-stem=`echo $name | egrep -o "^[^0-9]+"`
-# Index of last char in stem
-i=$((${#stem}-1))
-if [ ${stem:$i} = '-' ]; then
-   stem=${stem:0:$i}
-elif [ ${stem:$i} = '.' ]; then
-   stem=${stem:0:$i}
-fi
-if [ ! -e suffix/$stem ]; then
-  echo "Missing suffix file suffix/$stem (see bin/update_config.py)"
-  exit 1
-fi
-suffix=`cat suffix/$stem`
+series=`bin/get $name series`
+suffix=`bin/get $name suffix`
 
 ar=$dir/archive$suffix
 
-path=files.opentreeoflife.org/$stem/$name/$name$suffix
+ar_path=$root/$series/$name/$name$suffix
+prop_path=$root/$series/$name/properties.json
 
-if ssh $host test -e $path ; then
-    echo "File $path already exists on server '$host'"
+if ssh $host test -e $ar_path ; then
+    echo "File $ar_path already exists on server '$host'"
     exit 0
 fi
 
@@ -63,5 +58,6 @@ if [ ! -e $ar ]; then
     fi
 fi
 
-$dryrun ssh $host mkdir -p `dirname $path`
-$dryrun scp -p $ar $host:$path
+$dryrun ssh $host mkdir -p `dirname $ar_path`
+$dryrun scp -p $ar $host:$ar_path
+$dryrun scp -p r/$name/properties.json $host:$prop_path

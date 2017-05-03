@@ -15,19 +15,7 @@ if [ x$DRYRUN != x ]; then dryrun=echo; fi
 
 # For URL: strip off the version number, leaving only the resource name
 
-stem=`echo $name | egrep -o "^[^0-9]+"`
-# Index of last char in stem
-i=$((${#stem}-1))
-if [ ${stem:$i} = '-' ]; then
-    stem=${stem:0:$i}
-elif [ ${stem:$i} = '.' ]; then
-    stem=${stem:0:$i}
-fi
-if [ ! -e suffix/$stem ]; then
-    echo "Missing suffix file suffix/$stem (see bin/update_config.py)"
-    exit 1
-fi
-suffix=`cat suffix/$stem`
+suffix=`bin/get $name suffix`
 
 if [ $suffix = '.zip' ]; then
     echo "Zip archiving not implemented"

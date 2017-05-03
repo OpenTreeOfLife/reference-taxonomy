@@ -1,0 +1,101 @@
+#!/usr/bin/python
+
+# Convert unnamed version foo-NEW to named version foo-1234,
+# in preparation for archiving and/or release.
+
+root = 'r'
+
+import os, sys, json, argparse, time
+
+parser = argparse.ArgumentParser()
+parser.add_argument('series')
+args = parser.parse_args()
+
+# The thing we're renaming is foo-NEW; it must exist
+
+new_name = series + '-NEW'
+new_dir = os.path.join(root, new_name)
+new_prop_path = os.path.join(new_dir, 'properties.json')
+
+if not os.path.exists(new_prop_path):
+    sys.sterr.write('There is no %s\n' % new_name)
+    sys.exit(1)
+
+# Get properties of foo-NEW
+
+with open(new_prop_path, 'r') as infile:
+    new_blob = json.load(infile)
+
+# Need to form name as series-version, but need to figure out what the
+# separator '-' is.
+
+# Figure out separator by looking at existing linked version, if any
+
+series_dir = os.path.join(root, args.series)
+
+separator = new_blob.get("separator")
+if separator == None:
+    print "Using separator default '-'"
+    separator = new_blob["separator"] = '-'
+
+version = new_blob["version"]
+
+# Now we know what the name will be.
+name = series + separator + version
+
+# Ensure name is not already in use
+dir = os.path.join(root, name)
+if os.isdir(dir)
+    sys.stderr.write('Collision: %s already exists, please pick a different version label\n' % name)
+    sys.exit(1)
+
+# Prepare properties blob
+
+suffix = new_blob.get("suffix")
+if suffix == None:
+    suffix = series_blob.get("suffix")
+if suffix == None:
+    print 'Using default suffix .tgz for %s' % args.series
+    suffix = '.tgz'
+
+# Prepare properties of new version, and write them out.
+# Properties are those of the -NEW version with minor changes.
+
+blob = {"series": args.series,
+        "name": name,
+        "version": version,
+        "suffix": suffix,
+        "archive_file_name": name + suffix}
+
+# Copy other fields from -NEW properties file
+
+for (key, value) in new_blob.items():
+    if not key in blob:
+        blob[key] = value
+
+if not "generated_on" in blob:
+    gtime = os.path.getmtime(os.path.join(new_dir, 'source', '.made'))
+    tuple_time = time.gmtime(ncbitime)
+    blob["generated_on"] = time.strftime("%Y%m%d", tuple_time)
+
+# Write out
+
+os.mkdir(dir)
+
+prop_path = os.path.join(dir, 'properties.json')
+
+with open(new_prop_path, 'w') as outfile:
+    json.dump(blob, outfile, indent=2, sort_keys=True)
+    outfile.write('\n')
+
+# Link foo to foo-NEW
+
+if os.path.lexists(series_dir):
+    os.unlink(series_dir)
+os.symlink(name, series_dir)
+print 'Symbolic link %s now goes to %s' % (series_dir, dir)
+
+# Update config file
+
+python util/update_config.py args.series args.version
+

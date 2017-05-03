@@ -31,7 +31,8 @@ def create_ott(version, config_path, ott_path):
 
     with open(config_path, 'r') as configfile:
         config = json.load(configfile)
-    def resource(r): return os.path.join('resource', config[r]["version"], '')
+    def resource(r):
+        path = os.path.join('r', config[r], 'resource', '')
 
     ott = UnionTaxonomy.newTaxonomy('ott')
     ott.version = version;

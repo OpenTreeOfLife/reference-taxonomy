@@ -6,24 +6,19 @@
 
 import sys, os, csv, json
 
-def extend_idlist(previous, ott_path, ott_version, captures_path, outpath):
-    source_info = get_source_info(captures_path)
+def extend_idlist(previous, ott_path, ott_version, outpath):
+    info = get_sources_table(ott_version, ott_path)
 
     # previous is a directory of .csv files, one per OTT version
     registrations = read_registrations(previous)
     (registrations_by_id, ids_for_qid) = index_registrations(registrations)
 
-    new_regs = do_one_taxonomy(ott_version, ott_path, source_info, registrations_by_id, ids_for_qid)
+    new_regs = do_one_taxonomy(ott_version, ott_path, info, registrations_by_id, ids_for_qid)
     write_registrations(new_regs, outpath)
     write_indexes(registrations_by_id, ids_for_qid, os.path.dirname(os.path.dirname(outpath)))
 
-def do_one_taxonomy(ott_version, ott_path, source_info, registrations_by_id, ids_for_qid):
+def do_one_taxonomy(ott_version, ott_path, info, registrations_by_id, ids_for_qid):
     if ott_path.endswith('/'): ott_path = ott_path[0:-1]
-    info = source_info.get(unicode(ott_version))
-    if info == None:
-        print >>sys.stderr, '** Missing sources info for %s' % ott_version
-        json.dump(source_info, sys.stderr, indent=2)
-        sys.exit(1)
 
     ott = read_taxonomy(ott_path)
 
@@ -221,19 +216,20 @@ def write_registrations(new_regs, outpath):
         for (id, qid, source, ottver, note) in new_regs:
             writer.writerow([id, unparse_qid(qid), source, ottver, note])
 
-def get_source_info(captures_path):
-    print 'Getting source info from', captures_path
-    with open(captures_path, 'r') as infile:
-        captures_info = json.load(infile)
-    if u"captures" in captures_info:
-        captures_info = captures_info[u"captures"]
-    source_info = {}    # Maps OTT version to source version info
-    for capture_info in captures_info:
-        if capture_info[u"capture_of"] == u"ott":
-            # N.b. unicode
-            source_info[capture_info[u"name"]] = capture_info[u"sources"]
-    print 'Got %s source info blobs' % len(source_info)
-    return source_info
+# Return mapping source series -> source version for a particular OTT version
+# as stored in properties file
+
+def get_sources_table(ott_version, ott_path):
+    path = os.path.join(ott_path, '..', 'properties.json')
+    if not os.path.exists(path):
+        path = os.path.join(ott_path, '..', '..', 'properties.json')
+        if not os.path.exists(path):
+            path = os.path.join('properties', ott_version, 'properties.json')
+            if not os.path.exists(path):
+                print >>sys.stderr, '** Missing sources for %s' % ott_version
+    with open(path, 'r') as infile:
+        info = json.load(infile)
+    return info["sources"]
 
 def canonicalize(qid):
     (prefix, n) = qid

@@ -10,24 +10,17 @@ fi
 
 # command line arg = archive/ncbi-20170425
 
-name=$1
-dir=r/$name/archive
+series=$1
+name=$2
 
 dryrun=
 if [ x$DRYRUN != x ]; then dryrun=echo; fi
 
-if [ -e $dir/.made ]; then
-  echo "$dir is already present"
-  exit 0
-fi
+dir=r/$name
 
-series=`echo $name | egrep -o "^[^0-9.]+"`
-# Index of last char in stem
-i=$((${#series}-1))
-if [ ${series:$i} = '-' ]; then
-   series=${series:0:$i}
-elif [ ${series:$i} = '.' ]; then
-   series=${series:0:$i}
+if [ -e $dir/archive/.made ]; then
+    echo "$dir archive is already present"
+    exit 0
 fi
 
 PROP_URL=$FILES_URL_PREFIX/$series/$name/properties.json
@@ -43,17 +36,27 @@ fi
 
 URL=$FILES_URL_PREFIX/$series/$name/$name$suffix
 
-$dryrun mkdir -p $dir
+$dryrun mkdir -p $dir/archive
 
-if $dryrun wget -q --output-document=$dir/downloaded.tmp $URL; then
+if $dryrun wget -q --output-document=$dir/archive/downloaded.tmp $URL; then
 
     # Finish up
 
-    $dryrun mv -f $dir/downloaded.tmp $dir/archive$suffix
-    $dryrun touch $dir/.made
-    $dryrun ls -l $dir
+    $dryrun mv -f $dir/archive/downloaded.tmp $dir/archive/archive$suffix
+    $dryrun touch $dir/archive/.made
+    $dryrun ls -l $dir/archive
 
 else
     echo "wget of $URL failed"
     exit 1
+fi
+
+
+# Check it out
+# N.b. $name could be foo-NEW
+
+if [ ! -d r/$series-HEAD ]; then
+    ln -sf $name r/$series-HEAD
+else
+    echo "Warning: r/$series-HEAD exists, so not directing it to $name"
 fi

@@ -21,10 +21,11 @@ def convert_config(blob):
     serieses = sorted(blob.keys())
     versions = map(lambda series: blob[series], serieses)
 
-    # Set individual 'make' variables ...
-    for series in serieses:
-        v = blob[series]
-        print '%s=%s' % (series.upper(), v)
+    if False:
+        # Set individual 'make' variables ...
+        for series in serieses:
+            v = blob[series]
+            print '%s=%s' % (series.upper(), v)
 
     # Set symbolic links ...
     if not os.path.isdir(links_path):
@@ -32,23 +33,34 @@ def convert_config(blob):
         os.mkdir(links_path)
     for series in serieses:
         v = blob[series]
-        link = os.path.join(links_path, series)
+        link = os.path.join(links_path, series + '-HEAD')
         if os.path.lexists(link):
             os.unlink(link)
-        novo = os.path.join(root, series + '-NEW')
-        if os.path.isdir(novo):
-            os.symlink(v, novo)
+        n = series + '-NEW'
+        if os.path.isdir(os.path.join(root, n)):
+            os.symlink(n, link)
         else:
             os.symlink(v, link)
 
     # Lists
-    print 'fetch-all: %s' % ' '.join(map((lambda v:'fetch/%s' % v), fetch_unpack_versions))
-    print 'unpack-all: %s' % ' '.join(map((lambda v:'unpack/%s' % v), fetch_unpack_versions))
-    print 'store-all: %s' % ' '.join(map((lambda v:'store/%s' % v), pack_store_versions))
-    print 'pack-all: %s' % ' '.join(map((lambda v:'pack/%s' % v), pack_store_versions))
-
     # This dependency list refers to the symbolic links
-    print 'RESOURCES=%s' % ' '.join(map((lambda series:os.path.join(root, series, 'resource', '.made')), serieses))
+    for series in serieses:
+        v = blob[series]
+        print ('r/%s-HEAD/source/.made:\n\tbin/unpack-archive %s %s' %
+               (series, series, v))
+
+    print ('SOURCES=%s' % 
+           ' '.join(map((lambda series: os.path.join(root, series + '-HEAD', 
+                                                     'source', '.made')),
+                        serieses)))
+    print ('RESOURCES=%s' % 
+           ' '.join(map((lambda series: os.path.join(root, series + '-HEAD', 
+                                                     'resource', '.made')),
+                        serieses)))
+    print ('STORES=%s' %
+           ' '.join(map((lambda series: os.path.join('store', series + '-NEW')),
+                        serieses)))
+    print 'SERIESES=%s' % ' '.join(serieses)
 
 def write_config(blob):
     sys.stderr.write('Writing updated config.json\n')

@@ -229,7 +229,11 @@ def get_sources_table(ott_version, ott_path):
                 print >>sys.stderr, '** Missing sources for %s' % ott_version
     with open(path, 'r') as infile:
         info = json.load(infile)
-    return info["sources"]
+    sources = info["sources"]
+    # Convert Makefile source name to idspace name
+    if "fung" in sources and not "if" in sources:
+        sources["if"] = sources["fung"]
+    return sources
 
 def canonicalize(qid):
     (prefix, n) = qid

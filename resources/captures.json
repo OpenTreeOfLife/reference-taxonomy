@@ -632,6 +632,7 @@
     "legal": "cc0", 
     "label": "3.0", 
     "minor": "0",
+    "draft": "6",
     "sources": {
       "silva": "silva-115", 
       "ncbi": "ncbi-20161109", 

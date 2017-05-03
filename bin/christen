@@ -1,0 +1,122 @@
+#!/usr/bin/python
+
+# Invoked for every 'refresh/foo' operation.
+
+# Convert unnamed version foo-NEW to named version foo-1234,
+# in preparation for archiving and/or release.
+
+# Command line argument should be foo-NEW.
+
+root = 'r'
+
+import os, sys, json, argparse, time
+
+parser = argparse.ArgumentParser()
+parser.add_argument('novo')
+args = parser.parse_args()
+
+# The thing we're renaming is novo (e.g. foo-NEW); it must exist
+
+novo = args.novo
+novo_dir = os.path.join(root, novo)
+novo_prop_path = os.path.join(novo_dir, 'properties.json')
+
+# Get properties of foo-NEW
+
+if not os.path.exists(novo_prop_path):
+    sys.sterr.write('There is no %s\n' % novo)
+    sys.exit(1)
+
+with open(novo_prop_path, 'r') as infile:
+    blob = json.load(infile)
+
+# Need to form name as series-version, but need to figure out what the
+# separator '-' is.
+
+# Figure out separator by looking at existing linked version, if any
+
+series = blob.get("series")
+if series == None:
+    sys.stderr.write("Expected series in %s, but did not find it\n" % novo_prop_path)
+    sys.exit(1)
+
+version = blob.get("version")
+if version == None:
+    sys.stderr.write("Expected version in %s, but did not find it\n" % novo_prop_path)
+    sys.exit(1)
+
+separator = blob.get("separator")
+if separator == None:
+    print "Using separator default '-'"
+    separator = '-'
+    blob["separator"] = separator
+
+# Now we know what the name will be.
+name = series + separator + version
+if blob.get("name", name) != name:
+    print 'Changing name from %s to %s' % (blob["name"], name)
+blob["name"] = name
+
+dir = os.path.join(root, name)
+prop_path = os.path.join(dir, 'properties.json')
+
+# Ensure name is not already in use
+if os.path.isdir(dir):
+    if (os.path.getmtime(prop_path) != os.path.getmtime(novo_prop_path)):
+        sys.stderr.write('Collision: %s already exists.  Please pick a different version label\n' % name)
+        sys.exit(1)
+    else:
+        print 'Recycling: %s = %s' % (prop_path, novo_prop_path)
+        recycling = True
+else:
+    recycling = False
+
+# Prepare properties blob
+
+suffix = blob.get("suffix")
+if suffix == None:
+    print 'Using default suffix .tgz for %s' % series
+    suffix = '.tgz'
+    blob["suffix"] = suffix
+
+# Prepare properties of new version, and write them out.
+# Properties are those of the -NEW version with minor changes.
+
+blob["archive_file_name"] = name + suffix
+
+if not "generated_on" in blob:
+    gtime = os.path.getmtime(os.path.join(novo_dir, 'source', '.made'))
+    tuple_time = time.gmtime(gtime)
+    t = time.strftime("%Y%m%d", tuple_time)
+    blob["generated_on"] = t
+    if not "date" in blob:
+        blob["date"] = t
+
+# Rename foo-NEW to foo-123
+
+print 'Renaming %s to %s' % (novo_dir, dir)
+
+if not recycling:
+    os.rename(novo_dir, dir)
+
+with open(prop_path, 'w') as outfile:
+    json.dump(blob, outfile, indent=2, sort_keys=True)
+    outfile.write('\n')
+
+# Link foo-NEW and foo-HEAD to foo-1234
+
+def do_link(q):
+    if q != name:
+        q_dir = os.path.join(root, q)
+        if os.path.islink(q_dir):
+            os.unlink(q_dir)
+        elif os.path.exists(q_dir):
+            sys.stderr.write('Expected %s to be a link, but it it not\n', q_dir)
+            sys.exit(1)
+        os.symlink(name, q_dir)
+        print 'Symbolic link %s now directs to %s' % (q_dir, dir)
+
+do_link(series + '-HEAD')
+
+if not recycling:
+    do_link(novo)

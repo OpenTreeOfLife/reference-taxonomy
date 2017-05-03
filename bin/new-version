@@ -15,10 +15,10 @@ args = parser.parse_args()
 # Figure out separator (usually -) by looking at existing linked
 # version 'foo', if any
 
-series_dir = os.path.join(root, args.series)    # symlink
-if os.path.isdir(series_dir):
+head_dir = os.path.join(root, args.series + '-HEAD')    # symlink
+if os.path.isdir(head_dir):
     # Read series properties to get separator
-    path = os.path.join(series_dir, 'properties.json')
+    path = os.path.join(head_dir, 'properties.json')
     if os.path.exists(path):
         with open(path, 'r') as infile:
             series_blob = json.load(infile)
@@ -55,11 +55,8 @@ with open(prop_path, 'w') as outfile:
     json.dump(blob, outfile, indent=2, sort_keys=True)
     outfile.write('\n')
 
-# Link foo to foo-NEW
-
-if os.path.lexists(series_dir):
-    os.unlink(series_dir)
-    print 'Redirecting %s to %s' % (series_dir, os.path.join(root, new_name))
-else:
-    sys.stderr.write('Brand new series %s!\n' % args.series)
-os.symlink(new_name, series_dir)
+head_path = os.path.join(root, args.series + '-HEAD')
+if os.path.islink(head_path):
+    os.unlink(head_path)
+os.symlink(new_name, head_path)
+print 'Symbolic link %s now directs to %s' % (head_path, new_dir)

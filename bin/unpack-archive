@@ -6,22 +6,37 @@ set -e
 
 # command line arg = e.g. archive/ncbi-20170425 source/ncbi-20170425
 
-name=$1
-
-dir=r/$name/archive
+# N.b. spec might be foo-HEAD or foo-NEW
+series=$1
+spec=$2
 
 dryrun=
 if [ x$DRYRUN != x ]; then dryrun=echo; fi
 
-if ! [ -e $dir/.made ]; then
-    bin/fetch-archive $dir
+dir=r/$spec
+if ! [ -d $dir/. ]; then
+    echo "Missing directory $dir"
+    exit 1
 fi
+
+if ! [ -e $dir/properties.json ]; then
+    echo "Missing file $dir/properties.json"
+    exit 1
+fi
+
+if ! [ -e $dir/archive/.made ]; then
+    bin/fetch-archive $series $spec
+fi
+
+
+dir=r/$spec
+
 
 # For URL: strip off the version number, leaving only the resource name
 
-suffix=`bin/get $name suffix`
+suffix=`bin/get $spec suffix`
 
-ar=$dir/archive$suffix
+ar=$dir/archive/archive$suffix
 
 # TBD: re-unpack if archive is newer than source (-nt)
 
@@ -31,28 +46,32 @@ if [ ! -e $ar ]; then
 fi
 
 if [ $suffix = '.zip' ]; then
-    dest=r/$name/source
+    dest=$dir/source
     $dryrun mkdir -p $dest.new
     ($dryrun cd $dest.new && ($dryrun unzip $ar || true))
-    $dryrun cp -p $dir/.made $dest.new/.made
+    $dryrun cp -p $dir/archive/.made $dest.new/.made
     $dryrun rm -rf $dest
     $dryrun mv $dest.new $dest
     echo "Unpacked $ar to $dest"
     exit 0
 elif [ $suffix = '-ot.tgz' ]; then
-    dest=r/$name/resource
+    dest=$dir/resource
 elif [ $suffix = '.tgz' ]; then
-    dest=r/$name/source
+    dest=$dir/source
 else
     echo "unpack-archive: Unrecognized suffix $suffix"
     exit 1
 fi
 
-if [ -e $dest/.made -a ! $dir/.made -nt $dest/.made ]; then
-    echo "- $dest newer than $dir, not unpacking"
+if [ -e $dest/.made -a ! $dir/archive/.made -nt $dest/.made ]; then
+    echo "$dest newer than $dir/archive, not unpacking"
     exit 0
 fi
 
-$dryrun bin/unpack $ar $dest
-$dryrun touch $dest/.made
+$dryrun bin/unpack $ar $dir/source
+$dryrun cp -p $dir/archive/.made $dir/source/.made
+if [ $dest != $dir/source ]; then
+    (cd $dir; ln -sf source resource)
+fi
+
 echo "Unpacked $ar to $dest"

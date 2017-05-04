@@ -26,7 +26,7 @@ AMENDMENTS_ORIGIN_URL=https://github.com/OpenTreeOfLife/amendments-1.git
 
 include config.mk
 
-refresh-config: config.mk
+configure: config.mk
 
 config.mk: config.json util/update_config.py
 	python util/update_config.py <config.json >config.mk
@@ -56,7 +56,7 @@ OTT_MAJOR=3
 
 # The open tree reference taxonomy
 
-ott: r/ott-NEW/resource/.partial
+ott: r/ott-NEW/resource/.partial<
 
 # The works
 r/ott-NEW/resource/.made: r/ott-NEW/resource/.partial \
@@ -111,26 +111,34 @@ r/ott-NEW:
 
 # Pattern rules!
 
-# resource/%: r/%-HEAD/resource/.made  - this doesn't work, don't know why
+# From the gnu make manual, re pattern rules:
+# "all of its prerequisites (after pattern substitution) must name
+# files that exist or can be made"
+# For our purposes this means most pattern rules should have zero
+# prerequisistes.
 
-# This usually gets overridden.
+# My experience is that this is not true.  The pattern rule won't
+# apply even if the prerequisiste *can* be made.
 
-r/%/resource/.made: r/%/source/.made
-	(cd r/$(*F); rm -f resource; ln -sf source resource)
+# "It is possible that more than one pattern rule will meet these
+# criteria. In that case, make will choose the rule with the
+# shortest stem (that is, the pattern that matches most
+# specifically). If more than one pattern rule has the shortest
+# stem, make will choose the first one found in the makefile."
 
-# pack source to archive
+fetch-all: $(UNPACKS)
 
-# Make new archive from new source.
-# This rule is overridden for some sources.
+# unpack does a fetch, if necessary
 
-r/%-NEW/archive/.made: r/%-NEW/source/.made
-	bin/pack-archive $(*F)-NEW
+unpack/%:
+	bin/unpack-archive $(*F)
 
-# refresh/ rule - get stuff from web & put it in a source dir
-# Don't know why this doesn't work.
-
-refresh/%: r/%-NEW/source/.made
-	bin/christen $(*F)-NEW
+unpack-to-head/%: unpack/%
+	@h=r/`bin/get $(*F) series`-HEAD && \
+	  if [ -L $$h ]; then \
+	    true; else  \
+	    echo $$h := $(*F); ln -s $(*F) $$h; \
+	  fi
 
 # store does a pack, if necessary
 
@@ -139,12 +147,8 @@ store/%:
 
 store-all: $(STORES)
 
-# "It is possible that more than one pattern rule will meet these
-# criteria. In that case, make will choose the rule with the
-# shortest stem (that is, the pattern that matches most
-# specifically). If more than one pattern rule has the shortest
-# stem, make will choose the first one found in the makefile."
-
+# Not quite right... need to handle draft releases
+ott-release: ott store-all
 
 # --- Source: SILVA
 # Significant tabs !!!
@@ -153,27 +157,27 @@ store-all: $(STORES)
 # issue #62 - verify  (is it a tsv file or csv file?)
 
 # Create the taxonomy import files from the no_sequences digest & accessions
-r/silva-%/resource/.made: import_scripts/silva/process_silva.py \
-			 r/silva-$(*F)/source/.made \
-			 r/silva-$(*F)/work/cluster_names.tsv
-	@mkdir -p r/silva-$(*F)/resource
+r/silva-HEAD/resource/.made: import_scripts/silva/process_silva.py \
+			 r/silva-HEAD/source/.made \
+			 r/silva-HEAD/work/cluster_names.tsv
+	@mkdir -p r/silva-HEAD/resource
 	python import_scripts/silva/process_silva.py \
-	       r/silva-$(*F)/source/silva_no_sequences.fasta \
-	       r/silva-$(*F)/work/cluster_names.tsv \
-	       r/silva-$(*F)/source/origin_info.json \
-	       r/silva-$(*F)/resource
+	       r/silva-HEAD/source/silva_no_sequences.fasta \
+	       r/silva-HEAD/work/cluster_names.tsv \
+	       r/silva-HEAD/source/origin_info.json \
+	       r/silva-HEAD/resource
 	touch $@
 
 # Get taxon names from Genbank accessions file.
 # The accessions file has genbank id, ncbi id, strain, taxon name.
 # -- it seems the accessions file now has taxon names, so we
 # probably don't need to take NCBI taxonomy as an input.
-r/silva-%/work/cluster_names.tsv: r/ncbi-%/resource/.made \
-				   r/genbank-%/resource/accessions.tsv
+r/silva-HEAD/work/cluster_names.tsv: r/ncbi-HEAD/resource/.made \
+				   r/genbank-HEAD/resource/accessions.tsv
 	@mkdir -p `dirname $@`
 	python import_scripts/silva/get_taxon_names.py \
-	       r/ncbi-$(*F)/resource/taxonomy.tsv \
-	       r/genbank-$(*F)/resource/accessions.tsv \
+	       r/ncbi-HEAD/resource/taxonomy.tsv \
+	       r/genbank-HEAD/resource/accessions.tsv \
 	       $@.new
 	mv -f $@.new $@
 
@@ -257,7 +261,7 @@ r/genbank-NEW/work/Genbank.pickle: import_scripts/genbank/accessionFromGenbank.p
 	mkdir -p r/genbank-NEW/work
 	@echo "*** Reading all of Genbank - this can take a while!"
 	python import_scripts/genbank/accessionFromGenbank.py \
-	       r/silva-$(*F)/source/silva_no_sequences.fasta \
+	       r/silva-HEAD/source/silva_no_sequences.fasta \
 	       r/genbank-NEW/work/Genbank.pickle
 	d=`python util/modification_date.py r/genbank-NEW/work/Genbank.pickle`; \
           bin/put genbank-NEW date $$d; \
@@ -318,13 +322,13 @@ r/worms-NEW:
 # Formerly (version 1.0), where we now have /dev/null, we had
 # ../data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP
 
-r/ncbi-%/resource/.made: r/ncbi-%/source/.made import_scripts/ncbi/process_ncbi_taxonomy.py
-	@rm -rf r/ncbi-$(*F)/resource.new
-	@mkdir -p r/ncbi-$(*F)/resource.new
-	python import_scripts/ncbi/process_ncbi_taxonomy.py F r/ncbi-$(*F)/source/.made \
-            /dev/null r/ncbi-$(*F)/resource.new $(NCBI_ORIGIN_URL)
+r/ncbi-HEAD/resource/.made: r/ncbi-HEAD/source/.made import_scripts/ncbi/process_ncbi_taxonomy.py
+	@rm -rf r/ncbi-HEAD/resource.new
+	@mkdir -p r/ncbi-HEAD/resource.new
+	python import_scripts/ncbi/process_ncbi_taxonomy.py F r/ncbi-HEAD/source/.made \
+            /dev/null r/ncbi-HEAD/resource.new $(NCBI_ORIGIN_URL)
 	rm -rf `dirname $@`
-	mv -f r/ncbi-$(*F)/resource.new `dirname $@`
+	mv -f r/ncbi-HEAD/resource.new `dirname $@`
 	touch $@
 
 # Refresh source from web.  Source depends on archive.
@@ -351,21 +355,21 @@ r/ncbi-NEW:
 
 # Formerly, where it says /dev/null, we had ../data/gbif/ignore.txt
 
-r/gbif-%/resource/.made: r/gbif-%/work/projection.tsv \
+r/gbif-HEAD/resource/.made: r/gbif-HEAD/work/projection.tsv \
 			import_scripts/gbif/process_gbif_taxonomy.py
 	@mkdir -p `dirname $@`
-	@mkdir -p r/gbif-$(*F)/resource.new
+	@mkdir -p r/gbif-HEAD/resource.new
 	python import_scripts/gbif/process_gbif_taxonomy.py \
-	       r/gbif-$(*F)/work/projection.tsv \
-	       r/gbif-$(*F)/resource.new
-	rm -rf r/gbif-$(*F)/resource
-	mv r/gbif-$(*F)/resource.new r/gbif-$(*F)/resource
+	       r/gbif-HEAD/work/projection.tsv \
+	       r/gbif-HEAD/resource.new
+	rm -rf r/gbif-HEAD/resource
+	mv r/gbif-HEAD/resource.new r/gbif-HEAD/resource
 	touch $@
 
-r/gbif-%/work/projection.tsv: r/gbif-%/source/.made \
+r/gbif-HEAD/work/projection.tsv: r/gbif-HEAD/source/.made \
 			     import_scripts/gbif/project_2016.py
 	@mkdir -p `dirname $@`
-	python import_scripts/gbif/project_2016.py r/gbif-$(*F)/source/taxon.txt $@.new
+	python import_scripts/gbif/project_2016.py r/gbif-HEAD/source/taxon.txt $@.new
 	mv $@.new $@
 
 # Get a new GBIF from the web and store to r/gbif-HEAD/archive/archive.zip
@@ -397,16 +401,16 @@ r/gbif-NEW:
 
 # --- Source: IRMNG
 
-r/irmng-%/resource/.made: r/irmng-%/source/.made \
+r/irmng-HEAD/resource/.made: r/irmng-HEAD/source/.made \
 			 import_scripts/irmng/process_irmng.py
 	@mkdir -p `dirname $@`.new
 	python import_scripts/irmng/process_irmng.py \
-	   r/irmng-$(*F)/source/IRMNG_DWC.csv \
-	   r/irmng-$(*F)/source/IRMNG_DWC_SP_PROFILE.csv \
-	   r/irmng-$(*F)/resource.new/taxonomy.tsv \
-	   r/irmng-$(*F)/resource.new/synonyms.tsv
-	rm -rf r/irmng-$(*F)/resource
-	mv r/irmng-$(*F)/resource.new r/irmng-$(*F)/resource
+	   r/irmng-HEAD/source/IRMNG_DWC.csv \
+	   r/irmng-HEAD/source/IRMNG_DWC_SP_PROFILE.csv \
+	   r/irmng-HEAD/resource.new/taxonomy.tsv \
+	   r/irmng-HEAD/resource.new/synonyms.tsv
+	rm -rf r/irmng-HEAD/resource
+	mv r/irmng-HEAD/resource.new r/irmng-HEAD/resource
 	touch $@
 
 # Build IRMNG from Tony's .csv files
@@ -458,13 +462,13 @@ r/amendments-NEW:
 # So, to make the id list for 3.1, we first make OTT (or get) 3.1, then
 # combine the 3.0 id list with new registrations from 3.1.
 
-r/idlist-NEW/source/.made: r/idlist-%/resource/.made r/prev-ott-%/resource/.made r/idlist-NEW
+r/idlist-NEW/source/.made: r/idlist-HEAD/resource/.made r/prev-ott-HEAD/resource/.made r/idlist-NEW
 	@rm -rf r/idlist-NEW/source
 	@mkdir -p r/idlist-NEW/source
-	cp -pr r/idlist-$(*F)/resource/regs r/idlist-NEW/source/
+	cp -pr r/idlist-HEAD/resource/regs r/idlist-NEW/source/
 	python import_scripts/idlist/extend_idlist.py \
-	       r/idlist-$(*F)/resource/regs \
-	       r/prev-ott-$(*F)/resource \
+	       r/idlist-HEAD/resource/regs \
+	       r/prev-ott-HEAD/resource \
 	       $(PREV-OTT) \
 	       r/idlist-NEW/source/regs/$(PREV-OTT).csv
 	bin/put idlist-NEW version `bin/get $(PREV-OTT) version`
@@ -519,15 +523,15 @@ ids_in_synthesis.tsv: bin/jython
  
 # Maybe this rule isn't needed now that we have pack/ and store/ targets?
 
-tarball: r/ott-%/archive/.made
+tarball: r/ott-HEAD/archive/.made
 
 # Then, something like
 # scp -p -i ~/.ssh/opentree/opentree.pem tarballs/ott2.9draft3.tgz \
 #   opentree@ot10.opentreeoflife.org:files.opentreeoflife.org/ott/ott2.9/
 
 # This file is big
-r/ott-NEW/work/differences.tsv: r/prev-ott-%/resource/.made r/ott-NEW/resource/.made
-	$(SMASH) --diff r/prev-ott-$(*F)/resource/ r/ott-NEW/resource/ $@.new
+r/ott-NEW/work/differences.tsv: r/prev-ott-HEAD/resource/.made r/ott-NEW/resource/.made
+	$(SMASH) --diff r/prev-ott-HEAD/resource/ r/ott-NEW/resource/ $@.new
 	mv $@.new $@
 	wc $@
 

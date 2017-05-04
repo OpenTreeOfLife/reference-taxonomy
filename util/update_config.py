@@ -28,24 +28,32 @@ def convert_config(blob):
     # This dependency list refers to the symbolic links
     for series in serieses:
         v = blob[series]
-        print (('fetch/%s:\n' +
-                '\tbin/unpack-archive -h %s %s\n') %
-               (series, v, series))
         print (('refresh/%s: r/%s-NEW/source/.made\n' +
-                '\tbin/christen %s-NEW\n') %
+                '\tbin/christen %s-NEW') %
                (series, series, series))
+        print (('r/%s-HEAD/source/.made:\n' +
+                '\tbin/link-head %s %s easy\n'
+                '\tbin/unpack-archive %s-HEAD') %
+               (series, v, series, series))
+        print
 
-    print ('FETCHES=%s' % 
-           ' '.join(map((lambda series: 'fetch/' + series),
+    # For 'make fetch-all'
+    print ('UNPACKS=%s' % 
+           ' '.join(map((lambda series: 'r/%s-HEAD/source/.made' % series),
                         serieses)))
+    # For 'make ott'
     print ('RESOURCES=%s' % 
            ' '.join(map((lambda series: os.path.join(root, series + '-HEAD', 
                                                      'resource', '.made')),
                         serieses)))
+    # For 'make store-all'
     print ('STORES=%s' %
-           ' '.join(map((lambda series: os.path.join('store', series + '-NEW')),
+           ' '.join(map((lambda series: os.path.join('store', series + '-HEAD')),
                         serieses)))
-    print 'SERIESES=%s' % ' '.join(serieses)
+
+    for series in serieses:
+        print '%s: r/%s-HEAD/resource/.made' % (series, series)
+
 
 def write_config(blob):
     sys.stderr.write('Writing updated config.json\n')
@@ -53,19 +61,6 @@ def write_config(blob):
         json.dump(blob, outfile, indent=1, sort_keys=True)
 
 stem_re = re.compile('^[^0-9]*')
-
-# This isn't used but I can't bear to throw it away
-def stem(v):
-    if v.startswith('amendments'):
-        # kludge due to hex digits in commit hashes
-        return 'amendments'
-    m = stem_re.match(v)
-    if m == None:
-        print >>sys.stderr, 'Cannot find stem of %s' % v
-        sys.exit(1)
-    s = m.group(0)
-    if s.endswith('-'): s = s[0:-1]
-    return s
 
 parser = argparse.ArgumentParser(description='Config tool')
 parser.add_argument('resource', nargs='?', default=None)
@@ -83,3 +78,42 @@ if args.resource != None:
 
 convert_config(blob)
 
+
+
+
+
+
+
+
+
+# Note used
+# Create properties.json file, if it doesn't already exist
+def stub_properties(series, version):
+    blob = {"series":series, "version":version}
+    dir = os.path.join('r', version)
+    prop_path = os.path.join(dir, 'properties.json')
+    if not os.path.exists(prop_path):
+        if not os.path.isdir(dir):
+            os.makedirs(dir)
+        with open(prop_path, 'w') as outfile:
+            json.dump(blob, outfile, indent=2, sort_keys=True)
+
+# Note used
+# Link from foo-HEAD to foo-123, if link doesn't already exist
+def set_head(series, version):
+    h = os.path.join('r', series + '-HEAD')
+    if not os.path.lexists(h):
+        os.symlink(version, h)
+
+# This isn't used but I can't bear to throw it away
+def stem(v):
+    if v.startswith('amendments'):
+        # kludge due to hex digits in commit hashes
+        return 'amendments'
+    m = stem_re.match(v)
+    if m == None:
+        print >>sys.stderr, 'Cannot find stem of %s' % v
+        sys.exit(1)
+    s = m.group(0)
+    if s.endswith('-'): s = s[0:-1]
+    return s

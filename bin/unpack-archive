@@ -1,63 +1,65 @@
 #!/bin/bash
 
-# Extract source files from archive
+# Extract source files from archive.
+# No-op
 
 set -e
 
-# command line arg = e.g. archive/ncbi-20170425 source/ncbi-20170425
+[ $# = 1 ] || (echo "unpack-archive: arg count"; exit 1)
 
-if [ x$1 = x-h ]; then
-    headp=true
-    shift
-else
-    headp=false
-fi
+# command line arg = e.g. [-h] archive/ncbi-20170425 source/ncbi-20170425
 
 # N.b. spec might be foo-HEAD or foo-NEW
 spec=$1
-series=$2
 
 dryrun=
 if [ x$DRYRUN != x ]; then dryrun=echo; fi
 
-if $headp; then
-    if [ -e r/$series-HEAD ]; then
-        echo "$series-HEAD link exists; suppressing fetch of $spec"
-        echo "Do 'rm r/$series-HEAD' to force"
+dir=r/$spec
+
+if [ -e $dir/source/.made ]; then
+    if [ ! -e $dir/archive/.made ]; then
+        # If we already have the desired source, and there's no
+        # archive, assume it is new, and just use it.
+        echo "unpack-archive: source $spec is already present"
+        exit 0
+    elif [ ! $dir/archive/.made -nt $dir/source/.made ]; then
+        # If the archive is not newer than the source, then the
+        # source we already have is good enough, and there's no
+        # need to unpack.
+        echo "unpack-archive: source $spec is present and not older than archive"
         exit 0
     fi
 fi
 
-dir=r/$spec
-
 if ! [ -e $dir/archive/.made ]; then
-    bin/fetch-archive $spec $series
+    bin/fetch-archive $spec
 fi
 
 if ! [ -d $dir/. ]; then
-    echo "Missing directory $dir"
+    echo "unpack-archive: missing directory $dir"
     exit 1
 fi
 
 if ! [ -e $dir/properties.json ]; then
-    echo "Missing file $dir/properties.json"
+    echo "unpack-archive: missing file $dir/properties.json"
     exit 1
 fi
 
+name=`bin/get $spec name`
+series=`bin/get $spec series`
+suffix=`bin/get $spec suffix`
 
-dir=r/$spec
-
+dir=r/$name
 
 # For URL: strip off the version number, leaving only the resource name
-
-suffix=`bin/get $spec suffix`
 
 ar=$dir/archive/archive$suffix
 
 # TBD: re-unpack if archive is newer than source (-nt)
 
 if [ ! -e $ar ]; then
-    echo "Missing archive file $ar"
+    echo "unpack-archive: missing archive file $ar"
     exit 1
 fi
 
@@ -91,9 +93,4 @@ else
     fi
 
     echo "Unpacked $ar to $dest"
-fi
-
-if $headp; then
-    rm -f r/$series-HEAD
-    ln -s $spec r/$series-HEAD
 fi

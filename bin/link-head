@@ -1,0 +1,39 @@
+#!/bin/bash
+
+set -e
+
+# Make foo-HEAD point to foo-xxx
+
+# 'firm' means do this unconditionally.
+# 'easy' means create link only if there isn't one already.
+
+spec=$1
+series=$2
+firm=$3
+
+target=r/$series-HEAD
+
+if [ -L $target ]; then
+    if [ x$firm = xfirm ]; then
+        rm $target
+    else
+        exit 0
+    fi
+fi
+
+# Create directory and properties file if they don't exist
+
+if [ ! -d r/$spec ]; then
+    mkdir -p r/$spec
+fi
+
+props=r/$spec/properties.json
+if [ ! -e $props ]; then
+    echo "Creating $props"
+    echo "{\"series\": \"$series\", \"name\": \"$spec\"}" >$props
+fi
+
+# Link
+
+echo $target := $spec
+ln -s $spec $target

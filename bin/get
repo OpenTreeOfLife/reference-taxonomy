@@ -1,9 +1,11 @@
 #!/usr/bin/python
 
+# get x y
+# Print the value of the y property of x.
+
 import os, sys, json, argparse
 
 parser = argparse.ArgumentParser()
-
 parser.add_argument('obj')
 parser.add_argument('selector')
 
@@ -22,4 +24,10 @@ if not os.path.exists(path):
 
 with open(path, 'r') as infile:
     blob = json.load(infile)
-    print blob.get(args.selector)
+    value = blob.get(args.selector)
+    if value == None:
+        sys.stderr.write('get: this object does not have this property: %s %s\n' %
+                         (args.obj, args.selector))
+        sys.exit(1)
+    else:
+        print value

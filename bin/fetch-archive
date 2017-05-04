@@ -10,8 +10,8 @@ fi
 
 # command line arg = archive/ncbi-20170425
 
-series=$1
-name=$2
+name=$1
+series=$2
 
 dryrun=
 if [ x$DRYRUN != x ]; then dryrun=echo; fi
@@ -23,11 +23,17 @@ if [ -e $dir/archive/.made ]; then
     exit 0
 fi
 
+$dryrun mkdir -p $dir
+
 PROP_URL=$FILES_URL_PREFIX/$series/$name/properties.json
 
 if [ x$dryrun = x ]; then
-    wget -q --output-document=$dir/properties.json.new $PROP_URL
-    mv $dir/properties.json.new $dir/properties.json
+    if wget -q --output-document=$dir/properties.json.new $PROP_URL; then
+        mv $dir/properties.json.new $dir/properties.json
+    else
+        echo "Failed to retrieve $PROP_URL"
+        exit 1
+    fi
     suffix=`bin/get $name suffix`
 else
     echo wget -q --output-document=$dir/properties.json $PROP_URL
@@ -38,25 +44,16 @@ URL=$FILES_URL_PREFIX/$series/$name/$name$suffix
 
 $dryrun mkdir -p $dir/archive
 
+echo Fetching $URL
+
 if $dryrun wget -q --output-document=$dir/archive/downloaded.tmp $URL; then
 
     # Finish up
 
     $dryrun mv -f $dir/archive/downloaded.tmp $dir/archive/archive$suffix
     $dryrun touch $dir/archive/.made
-    $dryrun ls -l $dir/archive
 
 else
     echo "wget of $URL failed"
     exit 1
-fi
-
-
-# Check it out
-# N.b. $name could be foo-NEW
-
-if [ ! -d r/$series-HEAD ]; then
-    ln -sf $name r/$series-HEAD
-else
-    echo "Warning: r/$series-HEAD exists, so not directing it to $name"
 fi

@@ -31,7 +31,7 @@ refresh-config: config.mk
 config.mk: config.json util/update_config.py
 	python util/update_config.py <config.json >config.mk
 
-fetch: $(SOURCES)
+fetch: $(FETCHES)
 
 # ----- Taxonomy source locations -----
 
@@ -106,20 +106,12 @@ r/ott-NEW:
 
 # ----- Taxonomy sources
 
-# Recipe for adding a new taxonomy source x:
-#
-# 1. Define a rule for r/x-vvv/resource/.made to create the resource files
-#    (e.g. taxonomy) from the files in source/x-vvv (or direct from archive/x-vvv).
-# 2. Define a rule for r/x-NEW/source/.made, creating a new source/x-NEW from stuff on the web.
-
-# unpack archive to source
-
-unpack-all: $(SOURCES)
-
 # N.b. unpack-archive will fetch an archive if there isn't one already
 # there
 
 # Pattern rules!
+
+# resource/%: r/%-HEAD/resource/.made  - this doesn't work, don't know why
 
 # This usually gets overridden.
 
@@ -135,6 +127,7 @@ r/%-NEW/archive/.made: r/%-NEW/source/.made
 	bin/pack-archive $(*F)-NEW
 
 # refresh/ rule - get stuff from web & put it in a source dir
+# Don't know why this doesn't work.
 
 refresh/%: r/%-NEW/source/.made
 	bin/christen $(*F)-NEW
@@ -338,7 +331,7 @@ r/ncbi-%/resource/.made: r/ncbi-%/source/.made import_scripts/ncbi/process_ncbi_
 # Override default pattern rule (archive instead of source).
 
 r/ncbi-NEW/source/.made: r/ncbi-NEW/archive/.made
-	bin/unpack-archive ncbi ncbi-NEW
+	bin/unpack-archive ncbi-NEW ncbi
 	d=`python util/modification_date.py r/ncbi-NEW/source/names.dmp`; \
           bin/put ncbi-NEW date $$d; \
           bin/put ncbi-NEW version $$d
@@ -385,7 +378,7 @@ r/gbif-%/work/projection.tsv: r/gbif-%/source/.made \
 # should be very similar to IRMNG
 
 r/gbif-NEW/source/.made: r/gbif-NEW/archive/.made
-	bin/unpack-archive gbif gbif-NEW
+	bin/unpack-archive gbif-NEW gbif
 	d=`python util/modification_date.py r/gbif-NEW/source/taxon.txt`; \
           bin/put gbif-NEW date $$d; \
           bin/put gbif-NEW version $$d
@@ -421,7 +414,7 @@ r/irmng-%/resource/.made: r/irmng-%/source/.made \
 # Refresh makes archive instead of source
 
 r/irmng-NEW/source/.made: r/irmng-NEW/archive/.made
-	bin/unpack-archive irmng irmng-NEW
+	bin/unpack-archive irmng-NEW irmng
 	d=`python util/modification_date.py r/irmng-NEW/source/IRMNG_DWC.csv`; \
           bin/put gbif-NEW date $$d; \
           bin/put gbif-NEW version $$d

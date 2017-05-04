@@ -27,7 +27,6 @@ $dryrun mkdir -p $dst.new
 # Copy temp to dest
 if [ `ls $dst.untar | wc -l | (read a b; echo $a)` = 1 ]; then
   if [ -d $dst.untar/* ]; then
-    echo "  Eliding singleton directory" $dst.untar/*
     $dryrun mv $dst.untar/*/* $dst.new/
   else
     $dryrun mv $dst.untar/* $dst.new/

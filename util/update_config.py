@@ -7,15 +7,12 @@
 # Output (stdout): config.mk
 
 # Side effect: 
-#  - create symbolic links r/foo -> r/foo-123
 #  - update config.json, if a field update was specified
 
 
 import sys, os, json, argparse, re
 
 root = 'r'
-# Option of putting all the links in a different directory
-links_path = root
 
 def convert_config(blob):
     serieses = sorted(blob.keys())
@@ -27,31 +24,19 @@ def convert_config(blob):
             v = blob[series]
             print '%s=%s' % (series.upper(), v)
 
-    # Set symbolic links ...
-    if not os.path.isdir(links_path):
-        print >>sys.stderr, 'Creating', links_path
-        os.mkdir(links_path)
-    for series in serieses:
-        v = blob[series]
-        link = os.path.join(links_path, series + '-HEAD')
-        if os.path.lexists(link):
-            os.unlink(link)
-        n = series + '-NEW'
-        if os.path.isdir(os.path.join(root, n)):
-            os.symlink(n, link)
-        else:
-            os.symlink(v, link)
-
     # Lists
     # This dependency list refers to the symbolic links
     for series in serieses:
         v = blob[series]
-        print ('r/%s-HEAD/source/.made:\n\tbin/unpack-archive %s %s' %
-               (series, series, v))
+        print (('fetch/%s:\n' +
+                '\tbin/unpack-archive -h %s %s\n') %
+               (series, v, series))
+        print (('refresh/%s: r/%s-NEW/source/.made\n' +
+                '\tbin/christen %s-NEW\n') %
+               (series, series, series))
 
-    print ('SOURCES=%s' % 
-           ' '.join(map((lambda series: os.path.join(root, series + '-HEAD', 
-                                                     'source', '.made')),
+    print ('FETCHES=%s' % 
+           ' '.join(map((lambda series: 'fetch/' + series),
                         serieses)))
     print ('RESOURCES=%s' % 
            ' '.join(map((lambda series: os.path.join(root, series + '-HEAD', 

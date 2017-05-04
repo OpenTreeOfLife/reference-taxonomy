@@ -6,14 +6,34 @@ set -e
 
 # command line arg = e.g. archive/ncbi-20170425 source/ncbi-20170425
 
+if [ x$1 = x-h ]; then
+    headp=true
+    shift
+else
+    headp=false
+fi
+
 # N.b. spec might be foo-HEAD or foo-NEW
-series=$1
-spec=$2
+spec=$1
+series=$2
 
 dryrun=
 if [ x$DRYRUN != x ]; then dryrun=echo; fi
 
+if $headp; then
+    if [ -e r/$series-HEAD ]; then
+        echo "$series-HEAD link exists; suppressing fetch of $spec"
+        echo "Do 'rm r/$series-HEAD' to force"
+        exit 0
+    fi
+fi
+
 dir=r/$spec
+
+if ! [ -e $dir/archive/.made ]; then
+    bin/fetch-archive $spec $series
+fi
+
 if ! [ -d $dir/. ]; then
     echo "Missing directory $dir"
     exit 1
@@ -22,10 +42,6 @@ fi
 if ! [ -e $dir/properties.json ]; then
     echo "Missing file $dir/properties.json"
     exit 1
-fi
-
-if ! [ -e $dir/archive/.made ]; then
-    bin/fetch-archive $series $spec
 fi
 
 
@@ -52,26 +68,32 @@ if [ $suffix = '.zip' ]; then
     $dryrun cp -p $dir/archive/.made $dest.new/.made
     $dryrun rm -rf $dest
     $dryrun mv $dest.new $dest
-    echo "Unpacked $ar to $dest"
     exit 0
-elif [ $suffix = '-ot.tgz' ]; then
-    dest=$dir/resource
-elif [ $suffix = '.tgz' ]; then
-    dest=$dir/source
 else
-    echo "unpack-archive: Unrecognized suffix $suffix"
-    exit 1
+    if [ $suffix = '-ot.tgz' ]; then
+        dest=$dir/resource
+    elif [ $suffix = '.tgz' ]; then
+        dest=$dir/source
+    else
+        echo "unpack-archive: Unrecognized suffix $suffix"
+        exit 1
+    fi
+
+    if [ -e $dest/.made -a ! $dir/archive/.made -nt $dest/.made ]; then
+        echo "$dest newer than $dir/archive, not unpacking"
+        exit 0
+    fi
+
+    $dryrun bin/unpack $ar $dir/source
+    $dryrun cp -p $dir/archive/.made $dir/source/.made
+    if [ $dest != $dir/source ]; then
+        (cd $dir; ln -sf source resource)
+    fi
+
+    echo "Unpacked $ar to $dest"
 fi
 
-if [ -e $dest/.made -a ! $dir/archive/.made -nt $dest/.made ]; then
-    echo "$dest newer than $dir/archive, not unpacking"
-    exit 0
+if $headp; then
+    rm -f r/$series-HEAD
+    ln -s $spec r/$series-HEAD
 fi
-
-$dryrun bin/unpack $ar $dir/source
-$dryrun cp -p $dir/archive/.made $dir/source/.made
-if [ $dest != $dir/source ]; then
-    (cd $dir; ln -sf source resource)
-fi
-
-echo "Unpacked $ar to $dest"

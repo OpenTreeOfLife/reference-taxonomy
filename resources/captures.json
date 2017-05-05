@@ -117,7 +117,7 @@
     "label": "115", 
     "capture_of": "silva", 
     "date": "2013-08-23", 
-    "filename": "silva-115.fasta.tgz"
+    "filename": "silva-115.tgz"
   }, 
   {
     "===": "Installed in phylografter around 2013-10-21", 
@@ -613,18 +613,6 @@
     "date": "2016-11-09", 
     "label": "20161109"
   },
-  {
-    "_type": "capture", 
-    "name": "gbif-20160729", 
-    "bytes": 0, 
-    "legal": "public", 
-    "filename": "gbif-20160729.zip", 
-    "retrieved_from": "http://rs.gbif.org/datasets/backbone/backbone-current.zip", 
-    "last_modified": "2016-07-29", 
-    "capture_of": "gbif", 
-    "date": "2016-07-29", 
-    "label": "20160729"
-  }, 
   {
     "_type": "capture", 
     "name": "ott3.0", 

@@ -66,7 +66,14 @@ fi
 if [ $suffix = '.zip' ]; then
     dest=$dir/source
     $dryrun mkdir -p $dest.new
-    ($dryrun cd $dest.new && ($dryrun unzip $ar || true))
+    # The archive is at x/archive/archive.zip ($ar)
+    # We are unpacking to x/source.new/ ($dest.new)
+    ($dryrun cd $dest.new && \
+      (pwd; $dryrun unzip ../archive/archive.zip | head -50 || true))
+    if [ "x`ls $dest.new`" = x ]; then
+        echo "unpack-archive: no files extracted from $ar"
+        exit 1
+    fi
     $dryrun cp -p $dir/archive/.made $dest.new/.made
     $dryrun rm -rf $dest
     $dryrun mv $dest.new $dest

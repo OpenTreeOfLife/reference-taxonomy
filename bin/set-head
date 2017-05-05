@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# link-head foo foo-xxx easy|firm
+
+# Make foo-HEAD point to foo-xxx.
+
+# 'firm' means do this unconditionally.
+# 'easy' means create link only if there isn't one already.
+
+set -e
+
+series=$1
+spec=$2
+firm=$3
+
+series=`bin/get $spec series`
+name=`bin/get $spec name`
+
+target=r/$series-HEAD
+
+if [ -L $target ]; then
+    if [ x$firm = xfirm ]; then
+        rm $target
+    else
+        exit 0
+    fi
+fi
+
+# Link
+
+echo $target := $spec
+ln -s $spec $target

@@ -58,20 +58,23 @@ OTT_MAJOR=3
 
 ott: refresh/ott
 
-r/ott-NEW/source/.made: r/ott-NEW/resource/.made
-	(cd r/ott-NEW && rm -f source && ln -s resource source)
+r/ott-NEW/resource/.made: r/ott-NEW/source/.made
+	(cd r/ott-NEW && rm -f resource && ln -s source resource)
 
 # The works
-r/ott-NEW/resource/.made: r/ott-NEW/resource/.partial \
-			 r/ott-NEW/resource/debug/otu_differences.tsv
+# Reinstate later: r/ott-NEW/source/debug/otu_differences.tsv
+r/ott-NEW/source/.made: r/ott-NEW/source/.partial
 	touch $@
 
-r/ott-NEW/resource/.partial: r/ott-NEW/resource/debug/transcript.out \
-		       	    r/ott-NEW/resource/version.txt \
-		       	    r/ott-NEW/resource/README.html
+r/ott-NEW/source/.partial: r/ott-NEW/source/debug/transcript.out \
+		       	     r/ott-NEW/source/version.txt \
+		       	     r/ott-NEW/source/README.html
+	touch $@
 
-r/ott-NEW/resource/debug/transcript.out: bin/jython $(CLASS) \
-            make-ott.py assemble_ott.py adjustments.py amendments.py \
+r/ott-NEW/source/debug/transcript.out: bin/jython $(CLASS) \
+            make-ott.py assemble_ott.py \
+	    curation/adjustments.py \
+	    curation/amendments.py \
 	    curation/separation/taxonomy.tsv \
 	    $(RESOURCES) \
 	    r/ott-PREVIOUS/resource/.made \
@@ -83,22 +86,24 @@ r/ott-NEW/resource/debug/transcript.out: bin/jython $(CLASS) \
 	    r/ott-NEW
 	@date
 	@rm -f *py.class util/*py.class curation/*py.class
-	@mkdir -p r/ott-NEW/resource/debug
+	@mkdir -p r/ott-NEW/source/debug
 	@echo SET THE VERSION.
-	bin/put ott-NEW draft $((1 + `bin/get ott-NEW draft`))
+	bin/put ott-NEW draft $$((1 + `bin/get ott-NEW draft`))
 	bin/put ott-NEW version $(OTT_MAJOR).`bin/get ott-NEW minor`
-	@echo Writing transcript to r/ott-NEW/resource/debug/transcript.out
-	time echo bin/jython make-ott.py `bin/get ott-NEW version` config.json r/ott-NEW/resource/ \
-	  2>&1 | tee tmp/transcript.out
-	mv tmp/transcript.out r/ott-NEW/resource/debug/transcript.out
+	@echo Writing transcript to r/ott-NEW/source/debug/transcript.out
+	time bin/fake bin/jython make-ott.py `bin/get ott-NEW version` config.json \
+	  r/ott-NEW/source/debug/ \
+	  2>&1 | tee r/ott-NEW/source/debug/transcript.out
+	(cd r/ott-NEW/source/debug; \
+	 mv taxonomy.tsv synonyms.tsv forwards.tsv about.json ../)
 
-r/ott-NEW/resource/version.txt: r/ott-NEW
-	@mkdir -p r/ott-NEW/resource
+r/ott-NEW/source/version.txt: r/ott-NEW
+	@mkdir -p r/ott-NEW/source
 	echo `bin/get ott-NEW version`draft`bin/get ott-NEW draft` \
-	    >r/ott-NEW/resource/version.txt
+	    >r/ott-NEW/source/version.txt
 
-r/ott-NEW/resource/README.html: r/ott-NEW/resource/debug/transcript.out util/make_readme.py
-	python util/make_readme.py r/ott-NEW/resource/ >$@
+r/ott-NEW/source/README.html: r/ott-NEW/source/debug/transcript.out util/make_readme.py
+	python util/make_readme.py r/ott-NEW/source/ >$@
 
 r/ott-NEW: r/ott-PREVIOUS/resource/.made
 	bin/new-version ott .tgz cc0
@@ -108,7 +113,7 @@ r/ott-NEW: r/ott-PREVIOUS/resource/.made
 	(cd r/ott-NEW; rm -f source; ln -sf resource source)
 
 r/ott-PREVIOUS/resource/.made: r/ott-PREVIOUS/source/.made
-	(cd r/ott-HEAD && rm -f resource && ln -s source resource)
+	(cd r/ott-PREVIOUS && rm -f resource && ln -s source resource)
 
 
 # ----- Taxonomy sources
@@ -282,6 +287,9 @@ r/genbank-NEW:
 
 # --- Source: Index Fungorum in Open Tree form
 
+r/fung-HEAD/resource/.made: r/fung-HEAD/source/.made
+	(cd r/fung-HEAD; rm resource; ln -sf source resource)
+
 r/fung-NEW/resource/.made: r/fung-1/resource/.made r/fung-3/resource/.made r/fung-4/resource/.made
 	@mkdir r/fung-NEW/resource
 	python import_scripts/fung/cobble_fung.py
@@ -338,7 +346,7 @@ r/worms-NEW:
 r/ncbi-HEAD/resource/.made: r/ncbi-HEAD/source/.made import_scripts/ncbi/process_ncbi_taxonomy.py
 	@rm -rf r/ncbi-HEAD/resource.new
 	@mkdir -p r/ncbi-HEAD/resource.new
-	python import_scripts/ncbi/process_ncbi_taxonomy.py F r/ncbi-HEAD/source/.made \
+	python import_scripts/ncbi/process_ncbi_taxonomy.py F r/ncbi-HEAD/source \
             /dev/null r/ncbi-HEAD/resource.new $(NCBI_ORIGIN_URL)
 	rm -rf `dirname $@`
 	mv -f r/ncbi-HEAD/resource.new `dirname $@`
@@ -418,8 +426,8 @@ r/irmng-HEAD/resource/.made: r/irmng-HEAD/source/.made \
 			 import_scripts/irmng/process_irmng.py
 	@mkdir -p `dirname $@`.new
 	python import_scripts/irmng/process_irmng.py \
-	   r/irmng-HEAD/source/IRMNG_DWC.csv \
-	   r/irmng-HEAD/source/IRMNG_DWC_SP_PROFILE.csv \
+	   r/irmng-HEAD/source/IRMNG_DWC_20*.csv \
+	   r/irmng-HEAD/source/IRMNG_DWC_SP_PROFILE_20*.csv \
 	   r/irmng-HEAD/resource.new/taxonomy.tsv \
 	   r/irmng-HEAD/resource.new/synonyms.tsv
 	rm -rf r/irmng-HEAD/resource
@@ -450,22 +458,33 @@ r/irmng-NEW:
 
 # --- Source: Open Tree curated amendments
 
-# Previous version... hmm... overrides config.mk ?
+# Note, no dependence on /source/.
+# A dependence on /source/ would attempt archive retrieval, which would fail.
 
-r/amendments-HEAD/resource/.made: tmp/amendments/amendments-1
-	@mkdir -p r/amendments-NEW/source/amendments-1
+r/amendments-HEAD/resource/.made: r/amendments-HEAD/properties.json
+	mkdir -p `dirname $@`
+	n=`bin/get amendments-PREVIOUS name` && bin/put amendments-HEAD version $${n:11}
 	(cd tmp/amendments/amendments-1 && \
-	 git checkout `bin/get amendments-HEAD version` && \
-	 git pull)
+	 git fetch && \
+	 git checkout `bin/get amendments-HEAD version`)
 	cp -pr tmp/amendments/amendments-1/amendments \
-	       r/amendments-HEAD/source/amendments-1/
+	       r/amendments-HEAD/resource/amendments-1/
 	touch $@
+
+# Recursive make is not generally recommended, but don't see what else
+# to do in this case.  We don't want HEAD to depend on PREVIOUS.
+
+r/amendments-HEAD/properties.json:
+	$(MAKE) r/amendments-PREVIOUS/properties.json
+	bin/set-head amendments amendments-PREVIOUS
 
 # New version: fetch from github
 
 r/amendments-NEW/source/.made: tmp/amendments/amendments-1 r/amendments-NEW
 	@mkdir -p r/amendments-NEW/source/amendments-1
-	(cd tmp/amendments/amendments-1 && git checkout master && git pull)
+	(cd tmp/amendments/amendments-1 && \
+	 git checkout master && \
+	 git pull)
 	bin/put amendments-NEW version `(cd tmp/amendments/amendments-1; git log -n 1) | \
 	  head -1 | sed -e 's/commit //'`
 	cp -pr tmp/amendments/amendments-1/amendments \
@@ -490,15 +509,15 @@ r/idlist-HEAD/resource/.made: r/idlist-HEAD/source/.made
 # So, to make the id list for 3.1, we first make OTT (or get) 3.1, then
 # combine the 3.0 id list with new registrations from 3.1.
 
-r/idlist-NEW/source/.made: r/idlist-PREVIOUS/resource/.made \
+r/idlist-NEW/source/.made: r/idlist-PREVIOUS/source/.made \
 			   r/ott-HEAD/resource/.made \
 			   r/idlist-NEW
 	@rm -rf r/idlist-NEW/source
 	@mkdir -p r/idlist-NEW/source
-	cp -pr r/idlist-PREVIOUS/resource/regs r/idlist-NEW/source/
+	cp -pr r/idlist-PREVIOUS/source/regs r/idlist-NEW/source/
 	bin/put idlist-NEW version `bin/get ott-HEAD version`
 	python import_scripts/idlist/extend_idlist.py \
-	       r/idlist-PREVIOUS/resource \
+	       r/idlist-PREVIOUS/source \
 	       r/ott-HEAD/resource \
 	       `bin/get ott-HEAD name` \
 	       r/ott-HEAD/properties.json \
@@ -561,13 +580,13 @@ tarball: r/ott-HEAD/archive/.made
 #   opentree@ot10.opentreeoflife.org:files.opentreeoflife.org/ott/ott2.9/
 
 # This file is big
-r/ott-NEW/work/differences.tsv: r/ott-PREVIOUS/resource/.made r/ott-NEW/resource/.made
-	$(SMASH) --diff r/ott-PREVIOUS/resource/ r/ott-NEW/resource/ $@.new
+r/ott-NEW/work/differences.tsv: r/ott-PREVIOUS/resource/.made r/ott-NEW/source/.partial
+	$(SMASH) --diff r/ott-PREVIOUS/resource/ r/ott-NEW/source/ $@.new
 	mv $@.new $@
 	wc $@
 
 # OTUs only
-r/ott-NEW/resource/debug/otu_differences.tsv: r/ott-NEW/work/differences.tsv
+r/ott-NEW/source/debug/otu_differences.tsv: r/ott-NEW/work/differences.tsv
 	$(SMASH) --join ids_that_are_otus.tsv r/ott-NEW/work/differences.tsv >$@.new
 	mv $@.new $@
 	wc $@

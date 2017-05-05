@@ -1,8 +1,8 @@
 #!/bin/bash
 
-set -e
-
 # Store one archive file to the files server
+
+set -e
 
 if [ x$SSH_PATH_PREFIX = x ]; then
     SSH_PATH_PREFIX=files.opentreeoflife.org:files.opentreeoflife.org

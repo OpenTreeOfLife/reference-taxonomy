@@ -23,7 +23,7 @@ if [ -e r/$spec/properties.json ]; then
     series=`bin/get $spec series`
 else
     series=`echo $spec | egrep -o "[^0-9.]+"`
-    if [ x$series = x$spec ]; then
+    if [ "x$series" = "x$spec" ]; then
         echo "fetch-archive: version specifier has no digits: $spec"
         exit 1
     else

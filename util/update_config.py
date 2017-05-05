@@ -32,11 +32,14 @@ def convert_config(blob):
                 '\tbin/christen %s-NEW') %
                (series, series, series))
         print (('r/%s-HEAD/source/.made: r/%s-PREVIOUS/source/.made\n' +
-                '\tbin/link-head %s %s easy') %
-               (series, series, v, series))
-        print (('r/%s-PREVIOUS/source/.made:\n' +
-                '\tbin/unpack-archive %s') %
-               (series, v))
+                '\tbin/set-head %s %s-PREVIOUS easy') %
+               (series, series, series, series))
+        print (('r/%s-PREVIOUS/source/.made: r/%s-PREVIOUS/properties.json\n' +
+                '\tbin/unpack-archive %s-PREVIOUS') %
+               (series, series, series))
+        print (('r/%s-PREVIOUS/properties.json:\n' +
+                '\tbin/set-previous %s %s') %
+               (series, series, v))
         print
 
     # For 'make store-all'

@@ -1,24 +1,36 @@
 # Command line arguments:
 #  - path to directory containing previously generated .csv files
-#  - path to new OTT version
-#  - path to captures file   e.g. ../resources/captures.json
-#  - path to output directory (will hold idlists/ott*.csv and by_qid.csv)
+#  - path to new OTT (not ending in /)
+#  - versioned name of new OTT e.g. ott3.1
+#  - path to OTT properties.json file
+#  - path to output directory (will hold ott*.csv and by_qid.csv)
 
-import sys, os, csv, json
+import sys, os, csv, json, argparse
 
-def extend_idlist(previous, ott_path, ott_version, outpath):
-    info = get_sources_table(ott_version, ott_path)
+def extend_idlist(previous_path, ott_path, ott_name, props_path, out_path):
+    if ott_path.endswith('/'): ott_path = ott_path[0:-1]
+    previous_regs = os.path.join(previous_path, 'regs')
+    names = previous_versions_list(previous_regs)
+    if ott_name + '.csv' in names:
+        sys.stderr.write('%s has already been processed.  Wait until there is a new OTT version before making a new idlist.\n' % ott_name)
+        sys.exit(1)
 
-    # previous is a directory of .csv files, one per OTT version
-    registrations = read_registrations(previous)
+    info = get_sources_table(ott_name, props_path)
+
+    # previous_regs is a directory of .csv files, one per OTT version
+    registrations = read_registrations(previous_regs, names)
     (registrations_by_id, ids_for_qid) = index_registrations(registrations)
 
-    new_regs = do_one_taxonomy(ott_version, ott_path, info, registrations_by_id, ids_for_qid)
-    write_registrations(new_regs, outpath)
-    write_indexes(registrations_by_id, ids_for_qid, os.path.dirname(os.path.dirname(outpath)))
+    new_regs = do_one_taxonomy(ott_name, ott_path, info,
+                               registrations_by_id, ids_for_qid)
+    regs_path = os.path.join(out_path, 'regs')
+    # Assume regs directory exists (other files are in it already)
+    write_registrations(new_regs, os.path.join(regs_path, ott_name + '.csv'))
+    write_indexes(registrations_by_id,
+                  ids_for_qid,
+                  out_path)
 
-def do_one_taxonomy(ott_version, ott_path, info, registrations_by_id, ids_for_qid):
-    if ott_path.endswith('/'): ott_path = ott_path[0:-1]
+def do_one_taxonomy(ott_name, ott_path, info, registrations_by_id, ids_for_qid):
 
     ott = read_taxonomy(ott_path)
 
@@ -31,7 +43,7 @@ def do_one_taxonomy(ott_version, ott_path, info, registrations_by_id, ids_for_qi
         if len(qids) == 0:
             qids = [('ott', str(id))]
             # Could be from edit/
-            print >>sys.stderr, '** Sourceless taxon: %s in %s' % (id, ott_version)
+            print >>sys.stderr, '** Sourceless taxon: %s in %s' % (id, ott_name)
 
         qid = qids[0]
 
@@ -97,7 +109,7 @@ def do_one_taxonomy(ott_version, ott_path, info, registrations_by_id, ids_for_qi
             source_version = ''
         else:
             source_version = info[unicode(src)]
-        reg = (id, qid, source_version, ott_version, note)
+        reg = (id, qid, source_version, ott_name, note)
         new_regs.append(reg)
 
     print merges, 'merges'
@@ -190,16 +202,20 @@ def index_registrations(registrations):
                 ids.append(id)
     return (registrations_by_id, ids_for_qid)
 
-def read_registrations(previous_path):
-    regs = []
-    names = os.listdir(previous_path)
+# Return [..., 'ott2.3.csv', ...]
+
+def previous_versions_list(previous_regs):
+    names = os.listdir(previous_regs)
     names = [name for name in names if name.startswith('ott') and name.endswith('.csv')]
     def sort_key(name):
         (major, minor) = name[3:][0:-4].split('.')
         return (int(major), int(minor))
-    names = sorted(names, key=sort_key)
+    return sorted(names, key=sort_key)
+
+def read_registrations(previous_regs, names):
+    regs = []
     for name in names:
-        path = os.path.join(previous_path, name)
+        path = os.path.join(previous_regs, name)
         with open(path, 'r') as infile:
             print 'Reading', path
             reader = csv.reader(infile)
@@ -209,9 +225,9 @@ def read_registrations(previous_path):
     print 'Got %s registrations' % len(regs)
     return regs
 
-def write_registrations(new_regs, outpath):
-    print 'Writing %s registrations to %s' % (len(new_regs), outpath)
-    with open(outpath, 'w') as outfile:
+def write_registrations(new_regs, csv_path):
+    print 'Writing %s registrations to %s' % (len(new_regs), csv_path)
+    with open(csv_path, 'w') as outfile:
         writer = csv.writer(outfile)
         for (id, qid, source, ottver, note) in new_regs:
             writer.writerow([id, unparse_qid(qid), source, ottver, note])
@@ -219,15 +235,8 @@ def write_registrations(new_regs, outpath):
 # Return mapping source series -> source version for a particular OTT version
 # as stored in properties file
 
-def get_sources_table(ott_version, ott_path):
-    path = os.path.join(ott_path, '..', 'properties.json')
-    if not os.path.exists(path):
-        path = os.path.join(ott_path, '..', '..', 'properties.json')
-        if not os.path.exists(path):
-            path = os.path.join('properties', ott_version, 'properties.json')
-            if not os.path.exists(path):
-                print >>sys.stderr, '** Missing sources for %s' % ott_version
-    with open(path, 'r') as infile:
+def get_sources_table(ott_name, props_path):
+    with open(props_path, 'r') as infile:
         info = json.load(infile)
     sources = info["sources"]
     # Convert Makefile source name to idspace name
@@ -242,11 +251,11 @@ def canonicalize(qid):
     else:
         return qid
 
-def write_indexes(registrations_by_id, ids_for_qid, path):
+def write_indexes(registrations_by_id, ids_for_qid, out_path):
 
-    qid_path = os.path.join(path, 'by_qid.csv')
+    qid_path = os.path.join(out_path, 'by_qid.csv')
 
-    print >>sys.stderr, 'Writing %s qids to %s' % (len(ids_for_qid), qid_path)
+    print >>sys.stderr, 'Writing %s qid records to %s' % (len(ids_for_qid), qid_path)
 
     with open(qid_path, 'w') as outfile:
         writer = csv.writer(outfile)
@@ -254,9 +263,9 @@ def write_indexes(registrations_by_id, ids_for_qid, path):
             # ott ids can get out of order, e.g. gbif:6197514,3190274;3185577
             writer.writerow([unparse_qid(qid), ';'.join([str(i) for i in ids_for_qid[qid]])])
 
-    id_path = os.path.join(path, 'by_id.csv')
+    id_path = os.path.join(out_path, 'by_id.csv')
 
-    print >>sys.stderr, 'Writing %s ids to %s' % (len(registrations_by_id), id_path)
+    print >>sys.stderr, 'Writing %s id records to %s' % (len(registrations_by_id), id_path)
 
     with open(id_path, 'w') as outfile:
         writer = csv.writer(outfile)
@@ -268,5 +277,13 @@ def write_indexes(registrations_by_id, ids_for_qid, path):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Extend the identifier list with new taxonomy version')
+    parser.add_argument('previous', help='path to old islist directory')
+    parser.add_argument('ott', help='new OTT (directory containing taxonomy.tsv)')
+    parser.add_argument('name', help='new OTT version (e.g. ott3.1)')
+    parser.add_argument('properties', help='properties.json file for new OTT version')
+    parser.add_argument('output', help='path to new idlist directory (output)')
+    args = parser.parse_args()
+
     # previous, ott, ottver, captures, out
-    extend_idlist(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
+    extend_idlist(args.previous, args.ott, args.name, args.properties, args.output)

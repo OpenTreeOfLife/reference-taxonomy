@@ -31,24 +31,28 @@ def convert_config(blob):
         print (('refresh/%s: r/%s-NEW/source/.made\n' +
                 '\tbin/christen %s-NEW') %
                (series, series, series))
-        print (('r/%s-HEAD/source/.made:\n' +
-                '\tbin/link-head %s %s easy\n'
-                '\tbin/unpack-archive %s-HEAD') %
-               (series, v, series, series))
+        print (('r/%s-HEAD/source/.made: r/%s-PREVIOUS/source/.made\n' +
+                '\tbin/link-head %s %s easy') %
+               (series, series, v, series))
+        print (('r/%s-PREVIOUS/source/.made:\n' +
+                '\tbin/unpack-archive %s') %
+               (series, v))
         print
 
+    # For 'make store-all'
+    print ('STORES=%s' %
+           ' '.join(map((lambda series: os.path.join('store', series + '-HEAD')),
+                        serieses)))
     # For 'make fetch-all'
     print ('UNPACKS=%s' % 
            ' '.join(map((lambda series: 'r/%s-HEAD/source/.made' % series),
                         serieses)))
+
+    serieses.remove("ott")
     # For 'make ott'
     print ('RESOURCES=%s' % 
            ' '.join(map((lambda series: os.path.join(root, series + '-HEAD', 
                                                      'resource', '.made')),
-                        serieses)))
-    # For 'make store-all'
-    print ('STORES=%s' %
-           ' '.join(map((lambda series: os.path.join('store', series + '-HEAD')),
                         serieses)))
 
     for series in serieses:

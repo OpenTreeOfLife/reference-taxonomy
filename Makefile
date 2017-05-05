@@ -56,7 +56,10 @@ OTT_MAJOR=3
 
 # The open tree reference taxonomy
 
-ott: r/ott-NEW/resource/.partial<
+ott: refresh/ott
+
+r/ott-NEW/source/.made: r/ott-NEW/resource/.made
+	(cd r/ott-NEW && rm -f source && ln -s resource source)
 
 # The works
 r/ott-NEW/resource/.made: r/ott-NEW/resource/.partial \
@@ -71,6 +74,7 @@ r/ott-NEW/resource/debug/transcript.out: bin/jython $(CLASS) \
             make-ott.py assemble_ott.py adjustments.py amendments.py \
 	    curation/separation/taxonomy.tsv \
 	    $(RESOURCES) \
+	    r/ott-PREVIOUS/resource/.made \
 	    curation/lamiales/taxonomy.tsv \
 	    curation/h2007/tree.tre \
 	    curation/edits/ott_edits.tsv \
@@ -96,13 +100,16 @@ r/ott-NEW/resource/version.txt: r/ott-NEW
 r/ott-NEW/resource/README.html: r/ott-NEW/resource/debug/transcript.out util/make_readme.py
 	python util/make_readme.py r/ott-NEW/resource/ >$@
 
-# TBD: set version to be PREV_OTT (3.0) plus 1 (3.1)
-r/ott-NEW:
+r/ott-NEW: r/ott-PREVIOUS/resource/.made
 	bin/new-version ott .tgz cc0
-	bin/put ott-NEW minor $$((1 + `bin/get ott-HEAD minor`))
+	bin/put ott-NEW minor $$((1 + `bin/get ott-PREVIOUS minor`))
 	bin/put ott-NEW draft 0
 	bin/put ott-NEW ott_idspace ott
 	(cd r/ott-NEW; rm -f source; ln -sf resource source)
+
+r/ott-PREVIOUS/resource/.made: r/ott-PREVIOUS/source/.made
+	(cd r/ott-HEAD && rm -f resource && ln -s source resource)
+
 
 # ----- Taxonomy sources
 
@@ -173,7 +180,7 @@ r/silva-HEAD/resource/.made: import_scripts/silva/process_silva.py \
 # -- it seems the accessions file now has taxon names, so we
 # probably don't need to take NCBI taxonomy as an input.
 r/silva-HEAD/work/cluster_names.tsv: r/ncbi-HEAD/resource/.made \
-				   r/genbank-HEAD/resource/accessions.tsv
+				     r/genbank-HEAD/resource/.made
 	@mkdir -p `dirname $@`
 	python import_scripts/silva/get_taxon_names.py \
 	       r/ncbi-HEAD/resource/taxonomy.tsv \
@@ -244,6 +251,9 @@ r/silva-NEW:
 # don't miss any genbank records!  Manual process now, could be 
 # automated.
 
+r/genbank-HEAD/resource/.made: r/genbank-HEAD/source/.made
+	(cd r/genbank-HEAD && rm -f resource && ln -s source resource)
+
 r/genbank-NEW/source/.made: r/genbank-NEW/work/Genbank.pickle \
 	     		      import_scripts/genbank/makeaccessionid2taxonid.py
 	@echo Making accessions.tsv
@@ -295,6 +305,9 @@ r/fung-NEW:
 
 # --- Source: WoRMS in Open Tree form
 
+r/worms-HEAD/resource/.made: r/worms-HEAD/source/.made
+	(cd r/worms-HEAD && rm -f resource && ln -s source resource)
+
 # WoRMS is imported by import_scripts/worms/worms.py which does a web crawl
 # This rule hasn't been tested!
 
@@ -335,7 +348,7 @@ r/ncbi-HEAD/resource/.made: r/ncbi-HEAD/source/.made import_scripts/ncbi/process
 # Override default pattern rule (archive instead of source).
 
 r/ncbi-NEW/source/.made: r/ncbi-NEW/archive/.made
-	bin/unpack-archive ncbi-NEW ncbi
+	bin/unpack-archive ncbi-NEW
 	d=`python util/modification_date.py r/ncbi-NEW/source/names.dmp`; \
           bin/put ncbi-NEW date $$d; \
           bin/put ncbi-NEW version $$d
@@ -382,7 +395,7 @@ r/gbif-HEAD/work/projection.tsv: r/gbif-HEAD/source/.made \
 # should be very similar to IRMNG
 
 r/gbif-NEW/source/.made: r/gbif-NEW/archive/.made
-	bin/unpack-archive gbif-NEW gbif
+	bin/unpack-archive gbif-NEW
 	d=`python util/modification_date.py r/gbif-NEW/source/taxon.txt`; \
           bin/put gbif-NEW date $$d; \
           bin/put gbif-NEW version $$d
@@ -418,7 +431,7 @@ r/irmng-HEAD/resource/.made: r/irmng-HEAD/source/.made \
 # Refresh makes archive instead of source
 
 r/irmng-NEW/source/.made: r/irmng-NEW/archive/.made
-	bin/unpack-archive irmng-NEW irmng
+	bin/unpack-archive irmng-NEW
 	d=`python util/modification_date.py r/irmng-NEW/source/IRMNG_DWC.csv`; \
           bin/put gbif-NEW date $$d; \
           bin/put gbif-NEW version $$d
@@ -436,6 +449,17 @@ r/irmng-NEW:
 	bin/put ott-NEW ott_idspace irmng
 
 # --- Source: Open Tree curated amendments
+
+# Previous version... hmm... overrides config.mk ?
+
+r/amendments-HEAD/resource/.made: tmp/amendments/amendments-1
+	@mkdir -p r/amendments-NEW/source/amendments-1
+	(cd tmp/amendments/amendments-1 && \
+	 git checkout `bin/get amendments-HEAD version` && \
+	 git pull)
+	cp -pr tmp/amendments/amendments-1/amendments \
+	       r/amendments-HEAD/source/amendments-1/
+	touch $@
 
 # New version: fetch from github
 
@@ -458,20 +482,27 @@ r/amendments-NEW:
 
 # --- Source: OTT id list compiled from all previous OTT versions
 
+r/idlist-HEAD/resource/.made: r/idlist-HEAD/source/.made
+	(cd r/idlist-HEAD && rm -f resource && ln -s source resource)
+
+
 # When we build 3.1, IDLIST is idlist-3.0, which has ids through OTT 3.0.
 # So, to make the id list for 3.1, we first make OTT (or get) 3.1, then
 # combine the 3.0 id list with new registrations from 3.1.
 
-r/idlist-NEW/source/.made: r/idlist-HEAD/resource/.made r/prev-ott-HEAD/resource/.made r/idlist-NEW
+r/idlist-NEW/source/.made: r/idlist-PREVIOUS/resource/.made \
+			   r/ott-HEAD/resource/.made \
+			   r/idlist-NEW
 	@rm -rf r/idlist-NEW/source
 	@mkdir -p r/idlist-NEW/source
-	cp -pr r/idlist-HEAD/resource/regs r/idlist-NEW/source/
+	cp -pr r/idlist-PREVIOUS/resource/regs r/idlist-NEW/source/
+	bin/put idlist-NEW version `bin/get ott-HEAD version`
 	python import_scripts/idlist/extend_idlist.py \
-	       r/idlist-HEAD/resource/regs \
-	       r/prev-ott-HEAD/resource \
-	       $(PREV-OTT) \
-	       r/idlist-NEW/source/regs/$(PREV-OTT).csv
-	bin/put idlist-NEW version `bin/get $(PREV-OTT) version`
+	       r/idlist-PREVIOUS/resource \
+	       r/ott-HEAD/resource \
+	       `bin/get ott-HEAD name` \
+	       r/ott-HEAD/properties.json \
+	       r/idlist-NEW/source
 	touch $@
 
 r/idlist-NEW:
@@ -530,8 +561,8 @@ tarball: r/ott-HEAD/archive/.made
 #   opentree@ot10.opentreeoflife.org:files.opentreeoflife.org/ott/ott2.9/
 
 # This file is big
-r/ott-NEW/work/differences.tsv: r/prev-ott-HEAD/resource/.made r/ott-NEW/resource/.made
-	$(SMASH) --diff r/prev-ott-HEAD/resource/ r/ott-NEW/resource/ $@.new
+r/ott-NEW/work/differences.tsv: r/ott-PREVIOUS/resource/.made r/ott-NEW/resource/.made
+	$(SMASH) --diff r/ott-PREVIOUS/resource/ r/ott-NEW/resource/ $@.new
 	mv $@.new $@
 	wc $@
 
@@ -588,10 +619,10 @@ inclusion-tests: inclusions.csv bin/jython
 
 TAXON=Asterales
 
-# t/tax/prev/taxonomy.tsv: r/prev-ott-HEAD/resource/taxonomy.tsv   - correct expensive
+# t/tax/prev/taxonomy.tsv: r/ott-HEAD/resource/taxonomy.tsv   - correct expensive
 t/tax/prev_aster/taxonomy.tsv: 
 	@mkdir -p `dirname $@`
-	$(SMASH) r/prev-ott-HEAD/resource/ --select2 $(TAXON) --out t/tax/prev_aster/
+	$(SMASH) r/ott-PREVIOUS/resource/ --select2 $(TAXON) --out t/tax/prev_aster/
 
 # dependency on r/ncbi-HEAD/resource/taxonomy.tsv - correct expensive
 t/tax/ncbi_aster/taxonomy.tsv: 

@@ -55,8 +55,10 @@ with open(prop_path, 'w') as outfile:
     json.dump(blob, outfile, indent=2, sort_keys=True)
     outfile.write('\n')
 
-head_path = os.path.join(root, args.series + '-HEAD')
-if os.path.islink(head_path):
-    os.unlink(head_path)
-os.symlink(new_name, head_path)
-print 'Symbolic link %s now directs to %s' % (head_path, new_dir)
+# -HEAD linking is now handled by 'link-head'
+if False:
+    head_path = os.path.join(root, args.series + '-HEAD')
+    if os.path.islink(head_path):
+        os.unlink(head_path)
+    os.symlink(new_name, head_path)
+    print 'Symbolic link %s now directs to %s' % (head_path, new_dir)

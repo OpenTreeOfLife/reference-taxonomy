@@ -46,11 +46,11 @@ if ! [ -e $dir/properties.json ]; then
     exit 1
 fi
 
-name=`bin/get $spec name`
+# spec could xxx-NEW, in which case there's no name
 series=`bin/get $spec series`
 suffix=`bin/get $spec suffix`
 
-dir=r/$name
+dir=r/$spec
 
 # For URL: strip off the version number, leaving only the resource name
 

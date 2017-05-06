@@ -461,7 +461,7 @@ r/irmng-NEW:
 # Note, no dependence on /source/.
 # A dependence on /source/ would attempt archive retrieval, which would fail.
 
-r/amendments-HEAD/resource/.made: r/amendments-HEAD/properties.json
+r/amendments-HEAD/resource/.made: r/amendments-HEAD/.issue
 	mkdir -p `dirname $@`
 	n=`bin/get amendments-PREVIOUS name` && bin/put amendments-HEAD version $${n:11}
 	(cd tmp/amendments/amendments-1 && \
@@ -474,8 +474,8 @@ r/amendments-HEAD/resource/.made: r/amendments-HEAD/properties.json
 # Recursive make is not generally recommended, but don't see what else
 # to do in this case.  We don't want HEAD to depend on PREVIOUS.
 
-r/amendments-HEAD/properties.json:
-	$(MAKE) r/amendments-PREVIOUS/properties.json
+r/amendments-HEAD/.issue:
+	$(MAKE) r/amendments-PREVIOUS/.issue
 	bin/set-head amendments amendments-PREVIOUS
 
 # New version: fetch from github

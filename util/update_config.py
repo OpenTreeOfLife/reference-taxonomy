@@ -34,10 +34,10 @@ def convert_config(blob):
         print (('r/%s-HEAD/source/.made: r/%s-PREVIOUS/source/.made\n' +
                 '\tbin/set-head %s %s-PREVIOUS easy') %
                (series, series, series, series))
-        print (('r/%s-PREVIOUS/source/.made: r/%s-PREVIOUS/properties.json\n' +
+        print (('r/%s-PREVIOUS/source/.made: r/%s-PREVIOUS/.issue\n' +
                 '\tbin/unpack-archive %s-PREVIOUS') %
                (series, series, series))
-        print (('r/%s-PREVIOUS/properties.json:\n' +
+        print (('r/%s-PREVIOUS/.issue:\n' +
                 '\tbin/set-previous %s %s') %
                (series, series, v))
         print
@@ -93,7 +93,7 @@ convert_config(blob)
 
 
 
-# Note used
+# Not used
 # Create properties.json file, if it doesn't already exist
 def stub_properties(series, version):
     blob = {"series":series, "version":version}

@@ -76,6 +76,7 @@ if [ $suffix = '.zip' ]; then
     fi
     $dryrun cp -p $dir/archive/.made $dest.new/.made
     $dryrun rm -rf $dest
+    $dryrun touch $dest.new/.made
     $dryrun mv $dest.new $dest
     exit 0
 else

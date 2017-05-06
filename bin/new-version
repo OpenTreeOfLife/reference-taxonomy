@@ -45,6 +45,9 @@ new_dir = os.path.join(root, new_name)
 
 if not os.path.isdir(new_dir):
     os.mkdir(new_dir)
+    # touch
+    with open(os.path.join(new_dir, '.issue'), 'w'):
+        True
 
 prop_path = os.path.join(new_dir, 'properties.json')
 

@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# set-previous series name
+
+# Make series-PREVIOUS point to series-vvv
+
+set -e
+
+series=$1
+name=$2
+
+# Create foo-xxx if it doesn't exist already
+
+if [ ! -d r/$name ]; then
+    mkdir r/$name
+    touch r/$name/.issue
+fi
+
+# Create properties file
+
+if [ ! -e r/$name/properties.json ]; then
+   echo "{}" >r/$name/properties.json
+fi
+
+# Set series and name
+bin/put $name series $series
+bin/put $name name $name
+
+target=r/$series-PREVIOUS
+
+if [ -L $target ]; then
+    rm $target
+fi
+
+# Link
+
+echo $target := $name
+ln -s $name $target

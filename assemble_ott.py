@@ -64,7 +64,7 @@ def create_ott(ott_spec):
     # This has to happen *after* ids are assigned, since additions use OTT 
     # ids to identify parents.
     print '-- Processing additions --'
-    additions_clone_path = os.path.join(access_resource('amendments'), 'amendments-1')
+    additions_clone_path = os.path.join(access_source('amendments'), 'amendments-1')
     Addition.processAdditions(additions_clone_path, ott)
 
     # Mint ids for new nodes
@@ -194,6 +194,7 @@ def access_source(spec):
 # or, read the ott-NEW properties.json file, add the sources, and write it out
 
 def record_ott_sources(ott_spec):
+    print '| Recording source version numbers in properties file'
     management.set_property(ott_spec, "sources", accessed_sources)
 
 # utilities

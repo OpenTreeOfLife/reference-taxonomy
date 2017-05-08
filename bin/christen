@@ -84,14 +84,6 @@ if suffix == None:
 
 blob["archive_file_name"] = name + suffix
 
-if not "generated_on" in blob:
-    gtime = os.path.getmtime(os.path.join(novo_dir, 'source', '.made'))
-    tuple_time = time.gmtime(gtime)
-    t = time.strftime("%Y%m%d", tuple_time)
-    blob["generated_on"] = t
-    if not "date" in blob:
-        blob["date"] = t
-
 # Rename foo-NEW to foo-123
 
 print 'Renaming %s to %s' % (novo_dir, dir)

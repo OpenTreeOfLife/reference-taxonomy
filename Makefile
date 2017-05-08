@@ -92,8 +92,12 @@ r/ott-NEW/source/debug/transcript.out: bin/jython $(CLASS) \
 	bin/put ott-NEW draft $$((1 + `bin/get ott-NEW draft`))
 	bin/put ott-NEW version $(OTT_MAJOR).`bin/get ott-NEW minor`
 	@echo Writing transcript to r/ott-NEW/source/debug/transcript.out
-	time bin/jython make-ott.py ott-NEW \
-	  2>&1 | tee r/ott-NEW/source/debug/transcript.out.new
+	rm -f /tmp/make-ott-completed
+	time (bin/jython make-ott.py ott-NEW && touch /tmp/make-ott-completed) 2>&1 \
+	  | tee r/ott-NEW/source/transcript.out.new
+	[ -e /tmp/make-ott-completed ]
+	bin/put ott-NEW "generated_on" `date +"%Y%m%d"`
+	bin/put ott-NEW "date" `date +"%Y%m%d"`
 	(cd r/ott-NEW/source && \
 	 [ -e taxonomy.tsv ] && \
 	 mkdir -p debug && \

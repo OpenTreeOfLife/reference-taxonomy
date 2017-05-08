@@ -1,12 +1,16 @@
 # coding=utf-8
 
-from org.opentreeoflife.taxa import Taxonomy, Rank
-from claim import *
-#from claim import Has_child, Whether_same, With_ancestor, With_descendant, \
-#                  Whether_extant, make_claim, make_claims
+from proposition import *
 from establish import establish
 
+from org.opentreeoflife.taxa import Rank
+
 this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/taxonomies.py'
+
+# Don't change these ids!
+
+def otc(id):
+    return 'otc:' + str(id)
 
 # ----- Difficult polysemies -----
 
@@ -94,6 +98,12 @@ def patch_silva(silva):
 
     # Used in studies pg_2448,pg_2783,pg_2753, seen deprecated on 2015-07-20
     # These are probably now obviated by improvements in the way silva is merged
+    proclaim(silva,
+             synonym_of(taxon('AF364847'),
+                        taxon('Pantoea ananatis LMG 20103'),
+                        'synonym', # relationship unknown
+                        otc(1)))
+
     if silva.maybeTaxon('AF364847') != None:
         silva.taxon('AF364847').rename('Pantoea ananatis LMG 20103')    # ncbi:706191
     if silva.maybeTaxon('EF690403') != None:
@@ -497,34 +507,30 @@ def link_to_h2007(tax):
 
     # 2015-07-13 Romina
     h2007_fam = 'http://figshare.com/articles/Fungal_Classification_2015/1465038'
-    some_claims = []
-    for (order, families) in \
-        [('Talbotiomycetales',['Talbotiomyces calosporus']),
-         ('Moniliellales',['Moniliellaceae']),   
-         ('Malasseziales',['Malasseziaceae']),   # , 'Malassezia' - redundant
-         ('Trichotheliales',['Trichotheliaceae', 'Myeloconidiaceae']),
-         ('Trichosporonales',['Sporobolomyces ruberrimus']),
-         ('Holtermanniales',['Holtermanniella']),
-         ('Lepidostromatales',['Lepidostromataceae']),
-         ('Atheliales',['Atheliaceae']),
-         ('Stereopsidales',['Stereopsidaceae']),
-         ('Septobasidiales',['Septobasidiaceae']),
-         ('Symbiotaphrinales',['Symbiotaphrina']),
-         ('Caliciales',['Sphaerophoraceae']),
-         ('Sarrameanales',['Sarrameanaceae']),
-         ('Trapeliales',['Trapeliaceae']),
-         ('Halosphaeriales',['Halosphaeriaceae']),
-         ('Abrothallales',['Abrothallus']),
-         ('Arctomiales',['Arctomiaceae']),
-         ('Hymeneliales',['Hymeneliaceae']),
-         ('Leprocaulales',['Leprocaulaceae']),
-         ('Loxosporales',['Loxospora']),  #Hodkinson and Lendemer 2011
-     ]:
-        for family in families:
-            some_claims.append(Has_child(order, family, h2007_fam))
-    if not make_claims(tax, some_claims):
-        print '** one or more claims failed'
-    test_claims(tax, some_claims, windy=True)
+    for (family, order, sid) in \
+        [('Talbotiomyces calosporus', 'Talbotiomycetales', otc(3)),
+         ('Moniliellaceae', 'Moniliellales', otc(4)),
+         ('Malasseziaceae', 'Malasseziales', otc(5)),   # , 'Malassezia' - redundant
+         ('Trichotheliaceae', 'Trichotheliales', otc(6)),
+         ('Myeloconidiaceae', 'Trichotheliales', otc(7)),
+         ('Sporobolomyces ruberrimus', 'Trichosporonales', otc(8)),
+         ('Holtermanniella', 'Holtermanniales', otc(9)),
+         ('Lepidostromataceae', 'Lepidostromatales', otc(10)),
+         ('Atheliaceae', 'Atheliales', otc(11)),
+         ('Stereopsidaceae', 'Stereopsidales', otc(12)),
+         ('Septobasidiaceae', 'Septobasidiales', otc(13)),
+         ('Symbiotaphrina', 'Symbiotaphrinales', otc(14)),
+         ('Sphaerophoraceae', 'Caliciales', otc(15)),
+         ('Sarrameanaceae', 'Sarrameanales', otc(16)),
+         ('Trapeliaceae', 'Trapeliales', otc(17)),
+         ('Halosphaeriaceae', 'Halosphaeriales', otc(18)),
+         ('Abrothallus', 'Abrothallales', otc(19)),
+         ('Arctomiaceae', 'Arctomiales', otc(20)),
+         ('Hymeneliaceae', 'Hymeneliales', otc(21)),
+         ('Leprocaulaceae', 'Leprocaulales', otc(22)),
+         ('Loxospora', 'Loxosporales', otc(23)),  #Hodkinson and Lendemer 2011
+         ]:
+        proclaim(tax, has_parent(taxon(family), taxon(order), sid))
 
 # ----- Index Fungorum -----
 # IF is pretty comprehensive for Fungi, but has an assortment of other
@@ -812,7 +818,7 @@ def patch_ncbi(ncbi):
     # Chris Owen patches 2014-01-30
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/88
     # NCBI puts Chaetognatha in Deuterostomia.
-    ncbi.taxon('Protostomia').take(ncbi.taxonThatContains('Chaetognatha','Sagittoidea'))
+    ncbi.taxon('Protostomia').take(ncbi.taxonThatContains('Chaetognatha', 'Sagittoidea'))
 
     # https://github.com/OpenTreeOfLife/feedback/issues/184
     h = ncbi.maybeTaxon('Hylobates alibarbis')
@@ -992,8 +998,8 @@ def align_gbif(gbif, ott):
     print '# Chromista division =', gbif.taxon('Chromista').getDivision()
     print '# Ciliophora division =', gbif.taxon('Ciliophora', 'Chromista').getDivisionProper()
     print '# Ciliophora division =', gbif.taxon('Ciliophora', 'Chromista').getDivision()
-    print '# 8248855 division =', gbif.taxon('8248855').getDivisionProper()
-    print '# 8248855 division =', gbif.taxon('8248855').getDivision()
+    # print '# 8248855 division =', gbif.taxon('8248855').getDivisionProper()
+    # print '# 8248855 division =', gbif.taxon('8248855').getDivision()
 
     a.same(gbif.taxon('Animalia'), ott.taxon('Metazoa'))
     # End divisions
@@ -1011,12 +1017,12 @@ def align_gbif(gbif, ott):
     gbif.taxon('Fungi').hideDescendantsToRank('species')
 
     # Suppressed at Laura Katz's request
-    gbif.taxonThatContains('Bacteria','Escherichia').hideDescendants()
-    gbif.taxonThatContains('Archaea','Halobacteria').hideDescendants()
+    gbif.taxonThatContains('Bacteria', 'Escherichia').hideDescendants()
+    gbif.taxonThatContains('Archaea', 'Halobacteria').hideDescendants()
 
     # - Alignment -
 
-    #a.same(gbif.taxon('Cyanobacteria'), silva.taxon('Cyanobacteria','Cyanobacteria')) #'D88288/#3'
+    #a.same(gbif.taxon('Cyanobacteria'), silva.taxon('Cyanobacteria', 'Cyanobacteria')) #'D88288/#3'
 
     # Automatic alignment makes the wrong choice for this one
     # a.same(ncbi.taxon('5878'), gbif.taxon('10'))    # Ciliophora
@@ -1167,30 +1173,24 @@ def patch_gbif(gbif):
     if myo != None:
         myo.absorb(gbif.taxon('2439119'))
 
-    # RR 2014-04-12 #47
-    db = gbif.maybeTaxon('Drake-brockmania')
-    if db == None:
-        gbif.taxon('Drake-Brockmania').rename('Drake-brockmania', 'spelling variant')
-    else:
-        db.absorb(gbif.taxon('Drake-Brockmania'))
-    # RR #50 - this one is in NCBI, see above
-    gbif.taxon('Saxofridericia').absorb(gbif.maybeTaxon('Saxo-Fridericia'))
-    # RR #57 - the genus is in NCBI, see above
-    gbif.taxon('Solms-laubachia').absorb(gbif.taxon('Solms-Laubachia'))
-    gbif.taxon('Solms-laubachia pulcherrima').absorb(gbif.taxon('Solms-Laubachia pulcherrima'))
+    for (synonym, primary, sid) in [
+            ('Chryso-Hypnum', 'Chryso-hypnum', otc('24')),  # 2014-04-13 JAR noticed while grepping
+            ('Drake-Brockmania', 'Drake-brockmania', otc(2)),  # RR 2014-04-12 #47
+            ('Saxo-Fridericia', 'Saxofridericia', otc(36)),  # RR #50 - this one is in NCBI, see above
+            ('Solms-Laubachia', 'Solms-laubachia', otc(37)), # RR #57 - the genus is in NCBI, see above
+            ('Solms-Laubachia pulcherrima', 'Solms-laubachia pulcherrima', otc(38)), # RR #57
+            ('Cyrto-Hypnum', 'Cyrto-hypnum', otc(39)),
+            ('Ebriacea', 'Ebriaceae', otc(40)),  # JAR 2014-04-23 Noticed while perusing silva/gbif conflicts
+            ('Acanthocistidae', 'Acanthocystidae', otc(41)),
+            ('Bullacta ecarata', 'Bullacta exarata', otc(42))
+    ]:
+        proclaim(gbif, synonym_of(taxon(synonym), taxon(primary), 'spelling variant', sid))
 
-    # RR #45
-    gbif.taxon('Cyrto-hypnum').absorb(gbif.taxon('Cyrto-Hypnum'))
+    # These three went away after change to gbif processing after OTT 2.9
+    # Whether_same('Drepano-Hypnum', 'Drepano-hypnum', True),
+    # Whether_same('Complanato-Hypnum', 'Complanato-hypnum', True),
+    # Whether_same('Leptorrhyncho-Hypnum', 'Leptorrhyncho-hypnum', True),
 
-    # 2014-04-13 JAR noticed while grepping
-    claims = [
-        Whether_same('Chryso-hypnum', 'Chryso-Hypnum', True),
-        # these three went away after change to gbif processing after 2.9
-        # Whether_same('Drepano-Hypnum', 'Drepano-hypnum', True),
-        # Whether_same('Complanato-Hypnum', 'Complanato-hypnum', True),
-        # Whether_same('Leptorrhyncho-Hypnum', 'Leptorrhyncho-hypnum', True),
-    ]
-    make_claims(gbif, claims)
     # See new versions above
     # gbif.taxon('Chryso-hypnum').absorb(gbif.taxon('Chryso-Hypnum'))
     # gbif.taxon('Complanato-Hypnum').rename('Complanato-hypnum')
@@ -1198,36 +1198,35 @@ def patch_gbif(gbif):
 
     # 2014-04-21 RR
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/45
-    for epithet in ['cylindraceum',
-                    'lepidoziaceum',
-                    'intermedium',
-                    'espinosae',
-                    'pseudoinvolvens',
-                    'arzobispoae',
-                    'sharpii',
-                    'frontinoae',
-                    'atlanticum',
-                    'stevensii',
-                    'brachythecium']:
-        claim = Whether_same('Cyrto-Hypnum ' + epithet, 'Cyrto-hypnum ' + epithet, True,
-                             'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/45')
-        claim.make_true(gbif)
+    for (epithet, sid) in [('cylindraceum', otc(25)),
+                           ('lepidoziaceum', otc(26)),
+                           ('intermedium', otc(27)),
+                           ('espinosae', otc(28)),
+                           ('pseudoinvolvens', otc(29)),
+                           ('arzobispoae', otc(30)),
+                           ('sharpii', otc(31)),
+                           ('frontinoae', otc(32)),
+                           ('atlanticum', otc(33)),
+                           ('stevensii', otc(34)),
+                           ('brachythecium', otc(35)),
+                    ]:
+        prop = synonym_of(taxon('Cyrto-Hypnum ' + epithet),
+                          taxon('Cyrto-hypnum ' + epithet),
+                          'spelling variant',
+                          sid)
+        proclaim(gbif, prop)
         # was gbif.taxon('Cyrto-hypnum ' + epithet).absorb(gbif.taxon('Cyrto-Hypnum ' + epithet))
 
-    # JAR 2014-04-23 Noticed while perusing silva/gbif conflicts
-    gbif.taxon('Ebriaceae').synonym('Ebriacea')
-    gbif.taxon('Acanthocystidae').absorb(gbif.taxon('Acanthocistidae'))
     # wrong: gbif.taxon('Dinophyta').synonym('Dinophyceae')  # according to NCBI
     # these groups are missing from gbif 2016 anyhow
+    # paraphyletic ??
 
     # JAR 2014-06-29 stumbled on this while trying out new alignment
     # methods and examining troublesome homonym Bullacta exarata.
     # GBIF obviously puts it in the wrong place, see description at
     # http://www.gbif.org/species/4599744 (it's a snail, not a shrimp).
     bex = gbif.maybeTaxon('Bullacta exarata', 'Atyidae')
-    bec = gbif.maybeTaxon('Bullacta ecarata', 'Atyidae')
-    if bex != None and bec != None:
-        bex.absorb(bec)
+    if bex != None:
         bex.detach()
 
     # JAR 2014-07-18  - get rid of Helophorus duplication
@@ -1236,7 +1235,7 @@ def patch_gbif(gbif):
     # GBIF 6757656 = Helophorus Leach, from IRMNG homonym list
     #    in 7829 = Hydraenidae Mulsant, 1844
     #  ('Helophorus', 'Helophoridae') ('Helophorus', 'Hydraenidae')
-    gbif.taxon('3263442').absorb(gbif.maybeTaxon('6757656'))
+    proclaim(gbif, alias_of(taxon(id='6757656'), taxon(id='3263442'), otc(43)))
 
     # JAR 2015-06-27  there are two Myospalax myospalax
     # The one in Spalacidae is the right one, Myospalacinae is the wrong one
@@ -1270,8 +1269,7 @@ def patch_gbif(gbif):
 
     # JAR 2016-07-04 observed while scanning rank inversion messages.
     # Corrected rank from https://en.wikipedia.org/wiki/Protochonetes
-    if not gbif.taxon('Chonetoidea').setRank('superfamily'):
-        print '** setRank failed for Chonetoidea'
+    proclaim(gbif, has_rank(taxon('Chonetoidea'), 'superfamily', oct(44)))
 
     # https://github.com/OpenTreeOfLife/feedback/issues/144
     lepi = gbif.maybeTaxon('Lepilemur tymerlachsonorum')
@@ -1288,7 +1286,7 @@ def patch_gbif(gbif):
     nav_species = gbif.maybeTaxon('8616388')
     if nav_species != None: nav_species.prune()
 
-    gbif.taxon('Navicula').absorb(gbif.maybeTaxon('Naviculae'))
+    proclaim(gbif, synonym_of(taxon('Naviculae'), taxon('Navicula'), 'spelling variant', otc(45)))
 
     # GBIF as of 2016-09-01 says "doubtful taxon"
     bad_foram = gbif.maybeTaxon('Foraminifera', 'Granuloreticulosea')
@@ -1296,11 +1294,15 @@ def patch_gbif(gbif):
         bad_foram.prune(this_source)
 
     # 2016-09-01 Wrongly in Hymenoptera
-    gbif.taxon('Pieridae', 'Insecta').take(gbif.taxonThatContains('Aporia', 'Aporia gigantea'))
+    proclaim(gbif, has_parent(taxon('Aporia', 'Aporia gigantea'),
+                              taxon('Pieridae', 'Insecta'),
+                              otc(46)))
 
     # The Bdellodes mites were in flatworms in GBIF 2013.  This
     # has been straightened out.
-    gbif.taxon('Bdellidae').take(gbif.taxonThatContains('Bdellodes', 'Bdellodes robusta'))
+    proclaim(gbif, has_parent(taxon('Bdellodes', 'Bdellodes robusta'),
+                              taxon('Bdellidae'),
+                              otc(47)))
 
     # 2016-09-01 These are fossil fungi spores, not plants.  They're in 
     # Index Fungorum, so we don't need wrong info from GBIF.
@@ -1378,9 +1380,9 @@ def patch_gbif(gbif):
             ('Rhaphidodendron', '7957205'),
             ('Millettella', '7884383'),
     ]:
-        taxon = gbif.taxon(name, 'Foraminifera')
-        if taxon != None and gbif.maybeTaxon(bad_id) != None:
-            taxon.absorb(gbif.taxon(bad_id))
+        tax = gbif.taxon(name, 'Foraminifera')
+        if tax != None and gbif.maybeTaxon(bad_id) != None:
+            tax.absorb(gbif.taxon(bad_id))
     
     # 2016-11-20 Diaphoropodon showed up as ambiguous in transcript.
     # There are two Diaphoropodon in new GBIF (4898754 + 8212987).
@@ -1388,7 +1390,9 @@ def patch_gbif(gbif):
     # OTT thinks Sarc. is inconsistent.  8 is a child of 
     # Chlamydophryidae -- which is in SAR!  So these two things are
     # actually the same.
-    gbif.taxon('Diaphoropodon', 'Foraminifera').absorb(gbif.maybeTaxon('Diaphoropodon', 'Sarcomastigophora'))
+    proclaim(gbif, has_parent(taxon('Diaphoropodon', 'Sarcomastigophora'),
+                              taxon('Diaphoropodon', 'Foraminifera'),
+                              otc(48)))
 
     # GBIF has two taxa Rotalites and two synonym Rotalites.  That
     # seems excessive.
@@ -1402,19 +1406,31 @@ def patch_gbif(gbif):
     # 7996474  parent 1 (! Animalia)
     # 8063968 parent 7475854 = Rotaliidae
     # Let's make them all the same as 8063968.
-    gbif.taxon('Rotalia', 'Foraminifera').absorb(gbif.taxon('Rotalites', 'Foraminifera'))
-    gbif.taxon('Rotalia', 'Foraminifera').absorb(gbif.maybeTaxon('8101279'))
-    gbif.taxon('Rotalia', 'Foraminifera').absorb(gbif.maybeTaxon('7996474'))
+    proclaim(gbif, has_parent(taxon('Rotalites', 'Foraminifera'),
+                              taxon('Rotalia', 'Foraminifera'),
+                              otc(49)))
+    proclaim(gbif, synonym_of(taxon(id='8101279'),
+                              taxon('Rotalia', 'Foraminifera'),
+                              'synonym',  # spelling variant?
+                              otc(50)))
+    proclaim(gbif, synonym_of(taxon(id='7996474'),
+                              taxon('Rotalia', 'Foraminifera'),
+                              'synonym',  # ?
+                              otc(51)))
 
     # Similar cases (probably): (from Chromista spreadsheet ambiguities)
     # Umbellina, Rotalina
 
     # 2016-11-23 Unseparated homonym found while trying to use Holozoa
     # as an example of something
-    gbif.taxon('Distaplia', 'Chordata').notCalled('Holozoa')
+    dist = gbif.maybeTaxon('Distaplia', 'Chordata')
+    if dist != None:
+        dist.notCalled('Holozoa')
 
     # 2017-02-15 JAR Noted as suspicious during 3.0 build
-    gbif.taxon('Ochrophyta').notCalled('Chrysophyceae')
+    och = gbif.maybeTaxon('Ochrophyta')
+    if och != None:
+        och.notCalled('Chrysophyceae')
 
     return gbif
 

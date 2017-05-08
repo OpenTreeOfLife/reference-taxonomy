@@ -24,12 +24,14 @@ import check_inclusions
 import management
 
 inclusions_path = 'inclusions.csv'
-additions_clone_path = 'feed/amendments/amendments-1'
 new_taxa_path = 'new_taxa'
 
 # ott_spec would typically be "ott-NEW"
 
 def create_ott(ott_spec):
+
+    with open(os.path.join(access_source('idlist'), 'by_qid.csv'), 'r') as infile:
+        print '# can access idlist'
 
     ott_path = management.source_path(ott_spec)
 
@@ -53,11 +55,23 @@ def create_ott(ott_spec):
     # consider try: ... except: print '**** Exception in patch_ott'
     amendments.patch_ott(ott)
 
+    # End of topology changes.  Now assign ids.
+    retain_ids(ott,
+               access_source('ott-PREVIOUS'),
+               os.path.join(access_source('idlist'), 'by_qid.csv'))
+
+    # Apply the additions (which already have ids assigned).
+    # This has to happen *after* ids are assigned, since additions use OTT 
+    # ids to identify parents.
+    print '-- Processing additions --'
+    additions_clone_path = os.path.join(access_resource('amendments'), 'amendments-1')
+    Addition.processAdditions(additions_clone_path, ott)
+
+    # Mint ids for new nodes
+    ott.assignNewIds(new_taxa_path)
+
     # Remove all trees but the largest (or make them life incertae sedis)
     ott.deforestate()
-
-    # End of topology changes.  Now assign ids.
-    ids_and_additions(ott, management.resource_path('ott-PREVIOUS'))
 
     # data structure integrity checks
     ott.check()
@@ -68,7 +82,7 @@ def create_ott(ott_spec):
 
     ott.dump(ott_path)
 
-    record_ott_sources(ott-spec)
+    record_ott_sources(ott_spec)
 
     return ott
 
@@ -173,7 +187,8 @@ def load_taxonomy(spec):
 accessed_sources = {}
 
 def access_source(spec):
-    accessed_sources[spec] = management.get_property(spec, "name")
+    accessed_sources[management.get_property(spec, "series")] = \
+       management.get_property(spec, "name")
     return management.resource_path(spec)
 
 # or, read the ott-NEW properties.json file, add the sources, and write it out
@@ -308,7 +323,7 @@ def hide_irmng(irmng):
 # -----------------------------------------------------------------------------
 # OTT id assignment
 
-def ids_and_additions(ott, prev_path):
+def retain_ids(ott, prev_path, by_qid):
 
     # ad hoc assignments specifically for NCBI taxa, basedon NCBI id
 
@@ -395,19 +410,12 @@ def ids_and_additions(ott, prev_path):
     # Assign old ids to nodes in the new version
     ott.carryOverIds(ids) # Align & copy ids
 
-    # Apply the additions (which already have ids assigned)
-    print '-- Processing additions --'
-    Addition.processAdditions(additions_clone_path, ott)
-
     print '-- Checking id list'
-    assign_ids_from_list(ott, 'feed/ott_id_list/by_qid.csv')
-
-    # Mint ids for new nodes
-    ott.assignNewIds(new_taxa_path)
+    retain_ids_from_list(ott, by_qid)
 
 # Use master OTT id list to assign some ids
 
-def assign_ids_from_list(tax, filename):
+def retain_ids_from_list(tax, filename):
     count = 0
     change_count = 0
     infile = FileReader(filename)

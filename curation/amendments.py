@@ -1,6 +1,9 @@
 # coding=utf-8
 
-from claim import *
+from proposition import *
+
+def otc(id):
+    return 'otc:' + str(id)
 
 # ----- Final patches -----
 
@@ -93,9 +96,9 @@ def patch_ott(ott):
     # These had all disappeared from NCBI by Nov 2016, but the new GBIF
     # has synonymized Pteridophyta with Tracheophyta.
     for name in ['Pinophyta', 'Pteridophyta', 'Gymnospermophyta']:
-        taxon = ott.maybeTaxon(name, 'Chloroplastida')
-        if taxon != None and ott.maybeTaxon('Rosa', name) == None:
-            taxon.incertaeSedis()
+        tax = ott.maybeTaxon(name, 'Chloroplastida')
+        if tax != None and ott.maybeTaxon('Rosa', name) == None:
+            tax.incertaeSedis()
 
     # Patches from the Katz lab to give decent parents to taxa classified
     # as Chromista or Protozoa
@@ -301,7 +304,10 @@ def patch_ott(ott):
     # Fold Norops into Anolis
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/31
     # TBD: Change species names from Norops X to Anolis X for all X
-    ott.taxon('Anolis').absorb(ott.maybeTaxon('Norops', 'Iguanidae'))
+    proclaim(ott, synonym_of(taxon('Norops', 'Iguanidae'),
+                             taxon('Anolis'),
+                             'proparte synonym',
+                             otc(52)))
 
     for (name, super) in [
         # JAR 2014-04-08 - these are in study OTUs - see IRMNG
@@ -330,7 +336,7 @@ def patch_ott(ott):
         # JAR 2014-05-13
         ('Saurischia', None),
         # there are two of these, maybe should be merged.
-        # 'Myoxidae', 'Rodentia'),
+        # ('Myoxidae', 'Rodentia'),
 
         # JAR 2014-05-13 These are marked extinct by IRMNG but are all in NCBI
         # and have necleotide sequences
@@ -437,9 +443,9 @@ def patch_ott(ott):
                  'Barytheriidae',             # GBIF
                  'Anthracobunidae',           # GBIF
                  ]:
-        taxon = ott.maybeTaxon(name, 'Proboscidea')
-        if taxon != None:
-            taxon.extinct()
+        tax = ott.maybeTaxon(name, 'Proboscidea')
+        if tax != None:
+            tax.extinct()
 
     # From 2.10 deprecated list
     for (name, anc) in [
@@ -453,9 +459,9 @@ def patch_ott(ott):
                  # Rustia	ncbi:86991,gbif:2904559,irmng:1356264	newly-hidden[extinct]	Rustia	=
                  ('Thalassiosira guillardii', 'SAR'),    # mistake in WoRMS
             ]:
-        taxon = ott.maybeTaxon(name, anc)
-        if taxon != None:
-            taxon.extant()
+        tax = ott.maybeTaxon(name, anc)
+        if tax != None:
+            tax.extant()
 
     # we were getting extinctness from IRMNG, but now it's suppressed
     din = ott.maybeTaxon('Dinaphis', 'Aphidoidea')
@@ -569,8 +575,8 @@ def patch_ott(ott):
                  'Plesiopithecus', 'Suratius', 'Killikaike blakei', 'Rissoina bonneti',
                  # 'Mycosphaeroides'  - gone
              ]:
-        claim = Whether_extant(name, False, 'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116')
-        claim.make_true(ott)
+        proclaim(ott, is_extinct(taxon(name), otc(53)))
+                            # 'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116'
 
     # MTH 2016-01-05 https://github.com/OpenTreeOfLife/reference-taxonomy/issues/182
     h2 = ott.maybeTaxon('Homarus', 'Coleoptera')

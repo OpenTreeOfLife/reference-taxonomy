@@ -95,11 +95,11 @@ r/ott-NEW/source/debug/transcript.out: bin/jython $(CLASS) \
 	time bin/jython make-ott.py ott-NEW \
 	  2>&1 | tee r/ott-NEW/source/debug/transcript.out.new
 	(cd r/ott-NEW/source && \
-	 ([ -e taxonomy.tsv ] && \
-	  mkdir -p debug && \
-	  mv *.* debug/ && \
-	  mv debug/taxonomy.tsv debug/synonyms.tsv debug/forwards.tsv ./ && \
-	  mv r/ott-NEW/source/debug/transcript.out.new r/ott-NEW/source/debug/transcript.out)
+	 [ -e taxonomy.tsv ] && \
+	 mkdir -p debug && \
+	 mv *.* debug/ && \
+	 mv debug/taxonomy.tsv debug/synonyms.tsv debug/forwards.tsv ./ && \
+	 mv debug/transcript.out.new debug/transcript.out)
 
 r/ott-NEW/source/version.txt: r/ott-NEW
 	@mkdir -p r/ott-NEW/source

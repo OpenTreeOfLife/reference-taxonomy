@@ -6,10 +6,10 @@ public class Synonym extends Node {
 
     String type;                 // synonym, authority, common name, etc.
 
-    public Synonym(String name, String type, Taxon taxon) {
+    public Synonym(String name, String kind, Taxon taxon) {
         super(name);
         this.parent = taxon;
-        this.type = type;
+        this.type = kind;
         taxon.taxonomy.addToNameIndex(this, name);
     }
 

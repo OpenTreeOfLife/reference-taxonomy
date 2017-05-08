@@ -72,7 +72,7 @@ public class InterimFormat {
 	public void dump(String outprefix, String sep) throws IOException {
 		new File(outprefix).mkdirs();
         tax.dumpExtras(outprefix);
-		dumpMetadata(outprefix + "about.json");
+		// obsolete dumpMetadata(outprefix + "about.json");
 		dumpNodes(tax.roots(), outprefix, sep);
 		dumpSynonyms(outprefix + "synonyms.tsv", sep);
         dumpForwards(outprefix + "forwards.tsv");
@@ -116,7 +116,7 @@ public class InterimFormat {
 
 	public void dumpMetadata(String filename)	throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
-        tax.properties.put("version", tax.version);
+        // obsolete tax.properties.put("version", tax.version);
 		out.println(tax.properties);
 		out.close();
 	}
@@ -411,6 +411,7 @@ public class InterimFormat {
 			int name_column = 1;
 			int type_column = Integer.MAX_VALUE;
 			int info_column = Integer.MAX_VALUE;
+            int sid_column = Integer.MAX_VALUE;
 			int row = 0;
 			int losers = 0;
             Pattern pat = null;
@@ -442,6 +443,8 @@ public class InterimFormat {
 							if (o3 != null) type_column = o3;
 							Integer o4 = headerx.get("sourceinfo");
 							if (o4 != null) info_column = o4;
+							Integer o5 = headerx.get("sid");
+							if (o5 != null) sid_column = o5;
 							continue;
 						}
 					}
@@ -453,6 +456,9 @@ public class InterimFormat {
                     String sourceinfo = (info_column < parts.length ?
                                          parts[info_column] :
                                          "");
+                    String sid = (sid_column < parts.length ?
+                                  parts[sid_column] :
+                                  null);
 					Taxon node = tax.lookupId(id);
 					if (node == null) {
 						if (false && ++losers < 10)
@@ -489,9 +495,11 @@ public class InterimFormat {
                     if (type.equals("") || type.equals("None"))
                         type = "synonym";
 
-                    Node syn = node.addSynonym(name, type);
+                    Node syn = node.addSynonym(name, type, sid);
                     if (syn != null) {
                         syn.setSourceIds(sourceinfo);
+                        if (sid != null)
+                            syn.setId(sid);
                         if (syn != node) {
                             ++count;
                         } else

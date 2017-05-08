@@ -366,20 +366,25 @@ public class UnionTaxonomy extends Taxonomy {
 	}
 
 	public void assignNewIds(String newTaxaPath) {
-        List<Taxon> nodes = new ArrayList<Taxon>();
-        for (Taxon root: this.roots())
-            findTaxaNeedingIds(root, nodes);
+        List<Taxon> nodes = this.taxaNeedingIds();
 
         // cross-check max id with what's stored
         long maxid = maxid(this);
         long sourcemax = maxid(this.idsourceAlignment.source);
         if (sourcemax > maxid) maxid = sourcemax;
 
-        System.out.format("| %s taxa need ids; greatest id so far is %s\n", nodes.size(), maxid);
+        System.out.format("| %s taxa need ids; greatest id seen is %s\n", nodes.size(), maxid);
 
         if (nodes.size() > 0)
-            Addition.assignNewIds(nodes, newTaxaPath);
+            Addition.assignNewIds(nodes, maxid, newTaxaPath);
 	}
+
+    public List<Taxon> taxaNeedingIds() {
+        List<Taxon> nodes = new ArrayList<Taxon>();
+        for (Taxon root: this.roots())
+            findTaxaNeedingIds(root, nodes);
+        return nodes;
+    }
 
     public void findTaxaNeedingIds(Taxon node, List<Taxon> nodes) {
         if (node.id == null)

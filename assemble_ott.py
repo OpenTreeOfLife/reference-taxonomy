@@ -20,22 +20,20 @@ sys.path.append("curation/")
 import adjustments, amendments
 
 import check_inclusions
-#from claim import *
-#import reason_report
+
+import management
 
 inclusions_path = 'inclusions.csv'
 additions_clone_path = 'feed/amendments/amendments-1'
 new_taxa_path = 'new_taxa'
 
-def create_ott(version, config_path, ott_path):
+# ott_spec would typically be "ott-NEW"
 
-    with open(config_path, 'r') as configfile:
-        config = json.load(configfile)
-    def resource(r):
-        path = os.path.join('r', config[r], 'resource', '')
+def create_ott(ott_spec):
+
+    ott_path = management.source_path(ott_spec)
 
     ott = UnionTaxonomy.newTaxonomy('ott')
-    ott.version = version;
 
     # Would be nice if there were tests for all of these...
     for name in names_of_interest:
@@ -47,7 +45,7 @@ def create_ott(version, config_path, ott_path):
     adjustments.deal_with_polysemies(ott)
 
     # Align and merge each source in sequence
-    merge_sources(ott, resource)
+    merge_sources(ott)
 
     # "Old" patch system
     TsvEdits.edit(ott, 'curation/edits/')
@@ -59,7 +57,7 @@ def create_ott(version, config_path, ott_path):
     ott.deforestate()
 
     # End of topology changes.  Now assign ids.
-    ids_and_additions(ott, resource('prev-ott'))
+    ids_and_additions(ott, management.resource_path('ott-PREVIOUS'))
 
     # data structure integrity checks
     ott.check()
@@ -70,12 +68,17 @@ def create_ott(version, config_path, ott_path):
 
     ott.dump(ott_path)
 
+    record_ott_sources(ott-spec)
+
     return ott
 
-def merge_sources(ott, resource):
+def merge_sources(ott):
+
+    gbif = load_taxonomy('gbif')
+    adjustments.adjust_gbif(gbif)
 
     # SILVA
-    silva = Taxonomy.getTaxonomy(resource('silva'), 'silva')
+    silva = load_taxonomy('silva')
     adjustments.adjust_silva(silva)
     silva_to_ott = adjustments.align_silva(silva, ott)
     align_and_merge(silva_to_ott)
@@ -87,7 +90,7 @@ def merge_sources(ott, resource):
     align_and_merge(h2007_to_ott)
 
     # Index Fungorum
-    fungorum = Taxonomy.getTaxonomy(resource('fung'), 'if')
+    fungorum = load_taxonomy('fung')
     adjustments.adjust_fung(fungorum)
     (fungi, fungorum_sans_fungi) = split_taxonomy(fungorum, 'Fungi')
     align_and_merge(adjustments.align_fungi(fungi, ott))
@@ -101,7 +104,7 @@ def merge_sources(ott, resource):
     # WoRMS
     # higher priority to Worms for Malacostraca, Cnidaria so we split out
     # those clades from worms and absorb them before NCBI
-    worms = Taxonomy.getTaxonomy(resource('worms'), 'worms')
+    worms = load_taxonomy('worms')
     adjustments.adjust_worms(worms)
     # Malacostraca instead of Decapoda because M. is in the separation taxonomy
     (malacostraca, worms_sans_malacostraca) = split_taxonomy(worms, 'Malacostraca')
@@ -110,7 +113,7 @@ def merge_sources(ott, resource):
     align_and_merge(ott.alignment(cnidaria))
 
     # NCBI
-    ncbi = Taxonomy.getTaxonomy(resource('ncbi'), 'ncbi')
+    ncbi = load_taxonomy('ncbi')
     adjustments.adjust_ncbi(ncbi)
 
     # analyzeOTUs sets flags on questionable taxa (hybrid, metagenomes,
@@ -122,11 +125,10 @@ def merge_sources(ott, resource):
 
     # Reporting
     # Get mapping from NCBI to OTT, derived via SILVA and Genbank.
-    mappings = load_ncbi_to_silva(os.path.join(resource('silva'), 'ncbi_to_silva.tsv'),
+    mappings = load_ncbi_to_silva(os.path.join(management.resource_path('silva'),
+                                               'ncbi_to_silva.tsv'),
                                   ncbi, silva, silva_to_ott)
     compare_ncbi_to_silva(mappings, silva_to_ott)
-
-    debug_divisions('Reticularia splendens', ncbi, ott)
 
     # Low-priority WoRMS
     # This is suboptimal, but the names are confusing the division logic
@@ -138,8 +140,6 @@ def merge_sources(ott, resource):
     # align_and_merge(adjustments.align_fungorum_sans_fungi(fungorum_sans_fungi, ott))
 
     # GBIF
-    gbif = Taxonomy.getTaxonomy(resource('gbif'), 'gbif')
-    adjustments.adjust_gbif(gbif)
     gbif_to_ott = adjustments.align_gbif(gbif, ott)
     align_and_merge(gbif_to_ott)
 
@@ -154,7 +154,7 @@ def merge_sources(ott, resource):
         cyl.setId('51754')
 
     # IRMNG
-    irmng = Taxonomy.getTaxonomy(resource('irmng'), 'irmng')
+    irmng = load_taxonomy('irmng')
     adjustments.adjust_irmng(irmng)
     a = adjustments.align_irmng(irmng, ott)
     hide_irmng(irmng)
@@ -164,8 +164,22 @@ def merge_sources(ott, resource):
     adjustments.link_to_h2007(ott)
     report_on_h2007(h2007, h2007_to_ott)
 
-    get_default_extinct_info_from_gbif(os.path.join(resource('gbif'), 'paleo.tsv'),
+    get_default_extinct_info_from_gbif(os.path.join(management.resource_path('gbif'), 'paleo.tsv'),
                                        gbif, gbif_to_ott)
+
+def load_taxonomy(spec):
+    return Taxonomy.getTaxonomy(access_source(spec), management.get_property(spec, "ott_idspace"))
+
+accessed_sources = {}
+
+def access_source(spec):
+    accessed_sources[spec] = management.get_property(spec, "name")
+    return management.resource_path(spec)
+
+# or, read the ott-NEW properties.json file, add the sources, and write it out
+
+def record_ott_sources(ott_spec):
+    management.set_property(ott_spec, "sources", accessed_sources)
 
 # utilities
 

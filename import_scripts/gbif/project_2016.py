@@ -11,6 +11,9 @@ def project_2016_gbif(inpath, outpath):
         with open(outpath, 'w') as outfile:
             for line in infile:
                 row = line.split('\t')
+                if len(row) < 11:
+                    print 'bad row %s: %s' % (i, line)
+                    continue
                 scientific = row[6].decode('utf-8')
                 canonical = canonical_name(scientific)
                 canenc = canonical.encode('utf-8')

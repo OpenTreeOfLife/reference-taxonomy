@@ -75,6 +75,7 @@ r/ott-NEW/source/debug/transcript.out: bin/jython $(CLASS) \
             make-ott.py assemble_ott.py \
 	    curation/adjustments.py \
 	    curation/amendments.py \
+	    util/proposition.py \
 	    curation/separation/taxonomy.tsv \
 	    $(RESOURCES) \
 	    r/ott-PREVIOUS/resource/.made \
@@ -86,16 +87,19 @@ r/ott-NEW/source/debug/transcript.out: bin/jython $(CLASS) \
 	    r/ott-NEW
 	@date
 	@rm -f *py.class util/*py.class curation/*py.class
-	@mkdir -p r/ott-NEW/source/debug
+	@mkdir -p r/ott-NEW/source
 	@echo SET THE VERSION.
 	bin/put ott-NEW draft $$((1 + `bin/get ott-NEW draft`))
 	bin/put ott-NEW version $(OTT_MAJOR).`bin/get ott-NEW minor`
 	@echo Writing transcript to r/ott-NEW/source/debug/transcript.out
-	time bin/fake bin/jython make-ott.py `bin/get ott-NEW version` config.json \
-	  r/ott-NEW/source/debug/ \
-	  2>&1 | tee r/ott-NEW/source/debug/transcript.out
-	(cd r/ott-NEW/source/debug; \
-	 mv taxonomy.tsv synonyms.tsv forwards.tsv about.json ../)
+	time bin/jython make-ott.py ott-NEW \
+	  2>&1 | tee r/ott-NEW/source/debug/transcript.out.new
+	(cd r/ott-NEW/source && \
+	 ([ -e taxonomy.tsv ] && \
+	  mkdir -p debug && \
+	  mv *.* debug/ && \
+	  mv debug/taxonomy.tsv debug/synonyms.tsv debug/forwards.tsv ./ && \
+	  mv r/ott-NEW/source/debug/transcript.out.new r/ott-NEW/source/debug/transcript.out)
 
 r/ott-NEW/source/version.txt: r/ott-NEW
 	@mkdir -p r/ott-NEW/source
@@ -476,7 +480,7 @@ r/amendments-HEAD/resource/.made: r/amendments-HEAD/.issue
 
 r/amendments-HEAD/.issue:
 	$(MAKE) r/amendments-PREVIOUS/.issue
-	bin/set-head amendments amendments-PREVIOUS
+	bin/set-head amendments amendments-PREVIOUS easy
 
 # New version: fetch from github
 

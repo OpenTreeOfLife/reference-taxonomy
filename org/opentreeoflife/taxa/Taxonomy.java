@@ -41,7 +41,7 @@ import org.json.simple.JSONObject;
 
 public abstract class Taxonomy {
     private Map<String, List<Node>> nameIndex = new HashMap<String, List<Node>>();
-	private Map<String, Taxon> idIndex = new HashMap<String, Taxon>();
+	private Map<String, Node> idIndex = new HashMap<String, Node>();
     public Taxon forest = new Taxon(this, null);
 	public String idspace = null; // "ncbi", "ott", etc.
 	String[] header = null;
@@ -56,8 +56,6 @@ public abstract class Taxonomy {
 
     Map<QualifiedId, Node> qidIndex = null;
     Set<QualifiedId> qidAmbiguous = null;
-
-    public String version = null;
 
 	public Taxonomy() {
     }
@@ -154,9 +152,7 @@ public abstract class Taxonomy {
         return this.idIndex.keySet();
     }
 
-    public void addId(Taxon node, String id) {
-        if (node.prunedp)
-            return;
+    public void addId(Node node, String id) {
         if (id != null) {
             Taxon existing = this.lookupId(id);
             if (existing != null) {
@@ -171,7 +167,7 @@ public abstract class Taxonomy {
         }
     }
 
-    public void removeFromIdIndex(Taxon node, String id) {
+    public void removeFromIdIndex(Node node, String id) {
         // could check that lookupId(id) == node
         this.idIndex.remove(id);
     }
@@ -197,11 +193,13 @@ public abstract class Taxonomy {
 	}
 
     // Every taxonomy has an idspace, even if not every node has an id.
+    // Follow synonyms through to taxa for backward compatility.
 
 	public Taxon lookupId(String id) {
-        Taxon t = this.idIndex.get(id);
-        if (t == null)
-            return t;
+        Node n = this.idIndex.get(id);
+        if (n == null)
+            return null;
+        Taxon t = n.taxon();
         if (t.prunedp)
             // System.err.format("** Pruned taxon found in id index: %s\n", t);
             return null;
@@ -358,14 +356,14 @@ public abstract class Taxonomy {
 	private static final Pattern NEGATIVE_NUMERAL = Pattern.compile("-[0-9]+");
 
     void purgeTemporaryIds() {
-        List<Taxon> losers = new ArrayList<Taxon>();
-        for (Taxon node : idIndex.values())
+        List<Node> losers = new ArrayList<Node>();
+        for (Node node : idIndex.values())
             if (node.id != null &&
                 NEGATIVE_NUMERAL.matcher(node.id).matches())
                 losers.add(node);
         if (losers.size() > 0)
             System.out.printf("| Removing %s temporary ids\n", losers.size());
-        for (Taxon node : losers) {
+        for (Node node : losers) {
             idIndex.remove(node);
             node.id = null;
         }
@@ -1623,7 +1621,8 @@ public abstract class Taxonomy {
 
 			if (candidates.size() == 1) {
                 Taxon result = candidates.get(0);
-                if (!result.name.equals(name))
+                if (false && !result.name.equals(name))
+                    // This message was useful once, but now it's getting in the way
                     System.out.format("* Warning: taxon %s was referenced using synonym %s (%s)\n", result, name, this.idspace);
 				return result;
             }
@@ -1777,7 +1776,9 @@ public abstract class Taxonomy {
         }
 
         // Ensure every identified node is reachable...
-        for (Taxon taxon : idIndex.values()) {
+        for (Node node1 : idIndex.values()) {
+            if (!(node1 instanceof Taxon)) continue;
+            Taxon taxon = (Taxon)node1;
             if (!all.contains(taxon)) {
                 if (taxon.prunedp) {
                     if (taxon.id != null)

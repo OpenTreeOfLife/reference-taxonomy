@@ -61,11 +61,23 @@ def convert_config(blob):
     for series in serieses:
         print '%s: r/%s-HEAD/resource/.made' % (series, series)
 
+def get_config():
+    if not os.path.exists('config.json'):
+        return
+    props_path = 'r/ott-HEAD/properties.json'
+    if os.path.exists(props_path):
+        with open(props_path, 'r') as infile:
+            blob = json.load(infile)
+            config = blob["source"]
+        with open('config.json', 'w') as outfile:
+            json.dump(config, outfile, indent=1, sort_keys=True)
+            outfile.write('\n')
 
 def write_config(blob):
     sys.stderr.write('Writing updated config.json\n')
     with open('config.json', 'w') as outfile:
         json.dump(blob, outfile, indent=1, sort_keys=True)
+        outfile.write('\n')
 
 stem_re = re.compile('^[^0-9]*')
 

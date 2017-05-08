@@ -284,10 +284,11 @@ public class Addition {
     static long fakeFirst = 9000000L;
     static long fakeLast = Long.MAX_VALUE;
 
-    // Mint an id for each taxon in the taxon list.
+    // Nodes is a list of nodes lacking an id.
+    // The method mints an id for each taxon in nodes.
     // Parents must occur before their children in the taxon list.
 
-    public static void assignNewIds(List<Taxon> nodes, String newTaxaPath) {
+    public static void assignNewIds(List<Taxon> nodes, long maxid, String newTaxaPath) {
 
         if (nodes.size() == 0)
             return;
@@ -309,49 +310,61 @@ public class Addition {
             System.err.format("** Failed to read cached id asignments from %s: %s\n", newTaxaDir, e);
         }
 
-        List<Taxon> fewerNodes = new ArrayList<Taxon>();
-        for (Taxon node : nodes)
-            if (node.id == null) fewerNodes.add(node);
-        if (fewerNodes.size() == 0) {
-            System.out.format("| All id requests satisfied\n");
-            return;
-        }
-
         File idRangeFile = new File(newTaxaDir, "range.json");
+
+        Long firstId = 0L;
+        Long lastId = 0L;
+
         if (idRangeFile.canRead()) {
             JSONObject idRange = null;
             try {
                 idRange = (JSONObject)loadJSON(idRangeFile);
             } catch (Exception e) {
-                System.err.format("** Lose %s\n", e);
+                System.err.format("** Can read but can't read %s\n", e);
             }
 
             Map <?, ?> range = (Map<?, ?>)idRange;
-            Long firstId = (Long)range.get("first");
-            Long lastId = (Long)range.get("last");
-            if (assignIds(fewerNodes, firstId, lastId)) {
-                Map<String, Object> r = generateRequest(fewerNodes, new HashMap<Taxon, String>());
-                File f = new File(newTaxaDir, String.format("addition-%s-%s.json", firstId, lastId));
-                System.err.format("| Writing %s id assignments to %s\n", fewerNodes.size(), f);
-                emitJSON(r, f);
-            } else {
-                System.err.format("** Range [%s, %s] not big enough to provide %s ids\n",
-                                  firstId, lastId, fewerNodes.size());
-                assignIds(fewerNodes, fakeFirst, fakeLast);
-            }
-        } else {
-            File f = new File(newTaxaDir, "need_ids.json");
+            firstId = (Long)range.get("first");
+            lastId = (Long)range.get("last");
+        }
+
+        if (maxid >= firstId)
+            firstId = maxid + 1;
+
+        long haveIds = lastId - firstId + 1;
+
+        // Method 1: Complain to user and get them to find an id
+        // range (perhaps using the additions API service).
+
+        // Method 2: Invoke the additions service.
+        // Not yet implemented.
+
+        if (nodes.size() > haveIds) {
+
             System.err.println();
-            System.err.format("** Did not find %s for id range to use for new ids.\n",
-                              idRangeFile);
-            System.err.format("** Please assign a range of at least %s ids and place it in that file.\n",
-                              nodes.size());
+            System.err.format("** Ran out of ids; need %s have %s.\n", nodes.size(), haveIds);
+            System.err.format("** Please assign a range of at least %s ids and place it in %s.\n",
+                              nodes.size(), idRangeFile);
             System.err.format("** File contents should be: {\"first\": mmm, \"last\": nnn}\n");
+
+            File f = new File(newTaxaDir, "need_ids.json");
             System.err.format("** Number of ids needed has been written to %s\n", f);
             System.err.println();
             demand(nodes.size(), f);
-            assignIds(fewerNodes, fakeFirst, fakeLast);
+
+            firstId = fakeFirst;
+            lastId = fakeLast;
+            if (maxid >= firstId)
+                firstId = maxid + 1;
         }
+
+        assignIds(nodes, firstId, lastId);
+
+        File f = new File(newTaxaDir, String.format("addition-%s-%s.json", firstId, lastId));
+        System.err.format("| Writing additions API request file %s\n", f);
+        // This file can be used with the additions API if desired
+        Map<String, Object> r = generateRequest(nodes, new HashMap<Taxon, String>());
+        emitJSON(r, f);
     }
 
     static void demand(long count, File f) {
@@ -368,12 +381,8 @@ public class Addition {
         long id = firstId;
         for (Taxon node : nodes) {
             if (node.id == null) {
-                String sid;
-                while (node.taxonomy.lookupId(sid = Long.toString(id)) != null)
-                    ++id;
-                if (id >= lastId)
-                    return false;
-                node.taxonomy.addId(node, sid);
+                if (id > lastId) return false;
+                node.taxonomy.addId(node, Long.toString(id));
                 node.markEvent("addition");
                 ++id;
             }

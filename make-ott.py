@@ -3,11 +3,9 @@
 import sys
 import assemble_ott
 
-version = sys.argv[1]
-config = sys.argv[2]
-ott_path = sys.argv[3]
+ott_spec = sys.argv[1]
 
-ott = assemble_ott.create_ott(version, config, ott_path)
+ott = assemble_ott.create_ott(ott_spec)
 
 assemble_ott.report(ott)
 print '-- Done'

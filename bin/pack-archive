@@ -46,6 +46,7 @@ rm -f $name
 ln -sf ../$src $name
 
 $dryrun tar -c -z -f archive$suffix $EXCL -h $name
+touch .made
 
 echo Removing temporary symbolic link $dest/$name
 rm $name

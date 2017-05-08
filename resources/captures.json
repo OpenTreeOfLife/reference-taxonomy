@@ -250,15 +250,45 @@
     "label": "2014-v2"
   }, 
   {
-    "===": "Date unknown, but it was after 1/30 and before the 2.4 build on 3/17.", 
+    "_type": "capture", 
+    "name": "irmng-20140131", 
+    "generated_on": "2014-01-31", 
+    "legal": "cc0", 
+    "label": "20140131", 
+    "capture_of": "irmng", 
+    "date": "2014-01-31", 
+    "filename": "irmng-20140131.zip"
+  }, 
+  {
+    "===": "Date unknown, but it was after 1/30 and before the 2.4 build on 3/17. - Seems we don't have this one?", 
     "_type": "capture", 
     "name": "irmng-ot-20140316", 
     "generated_on": "2014-03-16", 
-    "legal": "cc0", 
+    "legal": "public", 
     "label": "20140316", 
     "capture_of": "irmng-ot", 
     "date": "2014-03-16", 
     "filename": "irmng-ot-20140316.tgz"
+  }, 
+  {
+    "_type": "capture", 
+    "name": "irmng-ot-20140630", 
+    "generated_on": "2014-06-30", 
+    "legal": "public", 
+    "label": "20140630", 
+    "capture_of": "irmng-ot", 
+    "date": "2014-06-30", 
+    "filename": "irmng-ot-20140630.tgz"
+  }, 
+  {
+    "_type": "capture", 
+    "name": "irmng-ot-20141108", 
+    "generated_on": "2014-11-08", 
+    "legal": "public", 
+    "label": "20141108", 
+    "capture_of": "irmng-ot", 
+    "date": "2014-1108", 
+    "filename": "irmng-ot-20141108.tgz"
   }, 
   {
     "===": "Installed in phylografter around 2014-03-28", 

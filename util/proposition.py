@@ -12,17 +12,18 @@
 
 from org.opentreeoflife.taxa import Rank
 
+# A different false value, used here to mean "I don't know"
+Dunno = None
+
 def proclaim(tax, prop):        # called make_claim in claim.py
-    if prop.proclaim(tax, True):
-        if prop.check(tax, True):
-            return True
-        else:
-            print ('** %s seemed to accept %s, but we couldn\'t verify' %
-                   (tax.getTag(), prop.stringify()))
-            return False
-    else:
-        # Diagnostics will already have been printed at this point
-        return False
+    attitude1 = prop.proclaim(tax, True)
+    attitude2 = prop.check(tax, not attitude1)
+    if attitude2:
+        return attitude2
+    elif attitude1:
+        print ('** %s seemed to accept %s, but we couldn\'t confirm' %
+               (tax.getTag(), prop.stringify()))
+    return attitude2
 
 def taxon(name=None, ancestor=None, descendant=None, id=None):
     return _Designator(name, ancestor, descendant, id)
@@ -36,10 +37,10 @@ class _Designator:
     def resolve_in(self, taxonomy, windy):
         if self.id != None:
             result = taxonomy.lookupId(self.id)
+            if result == None and windy:
+                print '** id does not resolve' % self.id
         else:
-            result = taxonomy.taxon(self.name, self.ancestor, self.descendant, False)
-        if result == None and windy:
-            print '** %s does not resolve' % self.stringify()
+            result = taxonomy.taxon(self.name, self.ancestor, self.descendant, windy)
         return result
     def stringify(self):
         return ("taxon('%s'%s%s%s)" %
@@ -48,6 +49,12 @@ class _Designator:
                  (", descendant='%s'" % self.descendant) if (self.descendant != None) else '',
                  (", id=%s" % self.id) if (self.id != None) else ''
              ))
+
+# Propositions also want to have:
+#   URL - of a document justifying the claim.
+#   issue URL - where the problem was raised.
+#   note - information that's currently only in comments in the 
+#     taxonomy sources (curation/amendments.py and so on).
 
 def has_parent(child, parent, sid):
     return _Has_parent(child, parent, sid)
@@ -61,18 +68,22 @@ class _Has_parent:
         c = self.child.resolve_in(tax, windy)
         p = self.parent.resolve_in(tax, windy)
         if c == None:
-            return False
+            return Dunno
         if p == None:
-            return False
+            return Dunno
+        elif c.parent == p:
+            return True
         else:
-            return c.parent == p
+            # if windy: ...
+            # could report on different cases
+            return False
     def proclaim(self, tax, windy):
         c = self.child.resolve_in(tax, windy)
         p = self.parent.resolve_in(tax, windy)
         if c == None:
-            return False
+            return Dunno
         if p == None:
-            return False
+            return Dunno
         if p.descendsFrom(c):
             if windy:
                 print ('Cannot make %s a child of %p because %c is one of its ancestors' %
@@ -90,14 +101,15 @@ class _Has_parent:
                 self.source_id)
 
 # This is mainly for objective synonyms. proparte and subjective don't really work.
+# Still pretty ugly, but should work for current OTT purposes.
 
 def synonym_of(syn, pri, kind, sid):
     return _Synonym_of(syn, pri, kind, sid)
 
 class _Synonym_of:
     def __init__(self, syn, pri, kind, sid):
-        self.primary = pri
         self.synonym = syn
+        self.primary = pri
         self.kind = kind
         self.source_id = sid
         if self.primary.name == None:
@@ -105,51 +117,53 @@ class _Synonym_of:
         if self.synonym.name == None:
             print '** Missing name', self.synonym.stringify(), sid
     def check(self, tax, windy):
-        p = self.primary.resolve_in(tax, windy)
         s = self.synonym.resolve_in(tax, windy)
+        p = self.primary.resolve_in(tax, windy)
         if p == None:
-            return False
+            return Dunno
         if s == None:
+            return Dunno
+        elif p.name == self.synonym.name:
+            if windy:
+                print ('** Warning: %s is primary, not synonym, of %s' %
+                       (self.synonym.name, p))
             return False
         elif p != s:
             if windy:
                 print '** no synonymy'
             return False
-        elif p.name != self.primary.name:
-            if windy:
-                print '** name of %s is not %s' % (p, self.primary.name)
-            return False
         else: 
             return True
     def proclaim(self, tax, windy):
-        p = self.primary.resolve_in(tax, False)
         s = self.synonym.resolve_in(tax, False)
-        # OK this is tricky.  p and have have their own names,
-        # as do self.primary and self.synonym.
+        p = self.primary.resolve_in(tax, False)
+        # OK this is tricky.  Nodes p and s have have their own names,
+        # as do the designators self.primary and self.synonym.
         # This primary objective is for node p to have self.synonym as a synonym.
-        if p != None and s != None and p != s:
-            p.absorb(s, self.kind, self.source_id)
-        if p != None:
-            if p.name == self.primary.name:
-                return True
-            elif p.name == self.synonym.name:
-                p.rename(self.primary.name)
-                return True
-            else:
+        if p == None:
+            if s == None:
                 if windy:
-                    print ('** Warning: synonym conflict: %s %s %s' %
-                           (p.name, self.primary.stringify(), self.synonym.stringify()))
-                return p == s
-        elif s != None:
-            # Ugh.  Synonym types need to get inverted.
-            s.rename(self.primary.name)
-            return True
+                    print ('** Cannot claim %s synonym of %s - neither resolves in %s' %
+                           (self.synonym.name, self.primary.name, tax.getTag()))
+                return Dunno
+            else:
+                s.rename(self.primary.name)
+                return True
         else:
-            # Diagnostics will NOT have already been displayed
-            if windy:
-                print ('** Cannot claim %s synonym of %s - neither resolves in %s' %
-                       (self.synonym.name, self.primary.name, tax.getTag()))
-            return False
+            if s != None:
+                p.absorb(s, self.kind, self.source_id)
+            p.synonym(self.synonym.name, self.kind, self.source_id)
+            if p.name == self.synonym.name:
+                p.rename(self.primary.name)
+                if p.name == self.synonym.name:
+                    if windy:
+                        print ('** %s is primary name of %s, not synonym' %
+                               (self.synonym.name, p))
+                    return False
+                else:
+                    return True
+            else:
+                return True
     def stringify(self):
         return ('synonym_of(%s, %s, %s, %s)' %
                 (self.synonym.stringify(),
@@ -158,7 +172,7 @@ class _Synonym_of:
                  self.source_id))
 
 
-# Sort of like synonym, but for aliases
+# Sort of like synonym, but for id aliases.
 
 def alias_of(syn, pri, sid):
     return _Alias_of(syn, pri, sid)

@@ -1,14 +1,5 @@
 # OTT maintainer's guide
 
-## Related documents
-
-* Repository [README](https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/README.md)
-* [Scripting feature](https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/scripting.md)
-* [Research on particular names](https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/names-research.txt)
-* [Deploying a new taxonomy version](https://github.com/OpenTreeOfLife/germinator/wiki/Deploying-a-new-taxonomy-version)
-* [Notes from the 2016 GBIF update](https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/gbif-update-1.md)
-
-
 
 ## Addressing feedback issues
 

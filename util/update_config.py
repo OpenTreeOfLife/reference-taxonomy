@@ -15,6 +15,11 @@ import sys, os, json, argparse, re
 root = 'r'
 
 def convert_config(blob):
+
+    # Input might be a properties file
+    if "sources" in blob:
+        blob = blob["sources"]
+
     serieses = sorted(blob.keys())
     versions = map(lambda series: blob[series], serieses)
 
@@ -25,7 +30,6 @@ def convert_config(blob):
             print '%s=%s' % (series.upper(), v)
 
     # Lists
-    # This dependency list refers to the symbolic links
     for series in serieses:
         v = blob[series]
         print (('refresh/%s: r/%s-NEW/source/.made\n' +
@@ -42,11 +46,7 @@ def convert_config(blob):
                (series, series, v))
         print
 
-    # For 'make store-all'
-    print ('STORES=%s' %
-           ' '.join(map((lambda series: os.path.join('store', series + '-HEAD')),
-                        serieses)))
-    # For 'make fetch-all'
+    # For 'make fetch-all' which is redundant
     print ('UNPACKS=%s' % 
            ' '.join(map((lambda series: 'r/%s-HEAD/source/.made' % series),
                         serieses)))
@@ -61,24 +61,6 @@ def convert_config(blob):
     for series in serieses:
         print '%s: r/%s-HEAD/resource/.made' % (series, series)
 
-def get_config():
-    if not os.path.exists('config.json'):
-        return
-    props_path = 'r/ott-HEAD/properties.json'
-    if os.path.exists(props_path):
-        with open(props_path, 'r') as infile:
-            blob = json.load(infile)
-            config = blob["source"]
-        with open('config.json', 'w') as outfile:
-            json.dump(config, outfile, indent=1, sort_keys=True)
-            outfile.write('\n')
-
-def write_config(blob):
-    sys.stderr.write('Writing updated config.json\n')
-    with open('config.json', 'w') as outfile:
-        json.dump(blob, outfile, indent=1, sort_keys=True)
-        outfile.write('\n')
-
 stem_re = re.compile('^[^0-9]*')
 
 parser = argparse.ArgumentParser(description='Config tool')
@@ -88,51 +70,4 @@ args = parser.parse_args()
 
 blob = json.load(sys.stdin)
 
-if args.resource != None:
-    if not args.resource in blob:
-        sys.stderr.write('** No such resource: %s\n' % args.resource)
-        sys.exit(1)
-    blob[args.resource] = args.version
-    write_config(blob)
-
 convert_config(blob)
-
-
-
-
-
-
-
-
-
-# Not used
-# Create properties.json file, if it doesn't already exist
-def stub_properties(series, version):
-    blob = {"series":series, "version":version}
-    dir = os.path.join('r', version)
-    prop_path = os.path.join(dir, 'properties.json')
-    if not os.path.exists(prop_path):
-        if not os.path.isdir(dir):
-            os.makedirs(dir)
-        with open(prop_path, 'w') as outfile:
-            json.dump(blob, outfile, indent=2, sort_keys=True)
-
-# Note used
-# Link from foo-HEAD to foo-123, if link doesn't already exist
-def set_head(series, version):
-    h = os.path.join('r', series + '-HEAD')
-    if not os.path.lexists(h):
-        os.symlink(version, h)
-
-# This isn't used but I can't bear to throw it away
-def stem(v):
-    if v.startswith('amendments'):
-        # kludge due to hex digits in commit hashes
-        return 'amendments'
-    m = stem_re.match(v)
-    if m == None:
-        print >>sys.stderr, 'Cannot find stem of %s' % v
-        sys.exit(1)
-    s = m.group(0)
-    if s.endswith('-'): s = s[0:-1]
-    return s

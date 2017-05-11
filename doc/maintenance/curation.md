@@ -267,3 +267,19 @@ browser on devtree.
 Print statements in the python and Java code are helpful.
 Particularly useful: The `.show()` method on a `Taxon` (node) object
 displays the taxon's lineage, children, and flags.
+
+## Particular alignment analyses
+
+When alignment is overeager, or when it fails to happen at all, it is
+necessary to first determine what the correct state of affairs is,
+based on external information.  Only then can a repair be instituted.
+
+Here are notes that I've taken in tracking down particularly
+troublesome cases.
+
+* [Research on particular names](../names-research.txt)
+
+## Older documentation (user documentation for smasher):
+
+* [Scripting feature](https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/scripting.md)
+

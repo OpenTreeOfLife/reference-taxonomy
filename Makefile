@@ -153,6 +153,8 @@ fetch-all: $(UNPACKS)
 unpack/%:
 	bin/unpack-archive $(*F)
 
+# Unpack and also set the HEAD, if not already set
+
 unpack-to-head/%: unpack/%
 	@h=r/`bin/get $(*F) series`-HEAD && \
 	  if [ -L $$h ]; then \
@@ -165,7 +167,9 @@ unpack-to-head/%: unpack/%
 store/%:
 	if [ -e r/$(*F)/source/.made ]; then bin/store-archive $(*F); fi
 
-store-all: $(STORES)
+# Include any newly created resources, and exclude deleted resources
+
+store-all: $(subst r/,store/,$(wildcard r/*-HEAD))
 
 # Not quite right... need to handle draft releases
 ott-release: ott store-all

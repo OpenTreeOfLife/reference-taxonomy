@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# WoRMS had about 330,000 records in 2014
+# WoRMS had about 330,000 taxon records in 2014
 # Square root of 360,000 is 600.
 # If harvested over 24 hours, that would be 229 records per minute
 # or 4 per second.
@@ -15,14 +15,13 @@
 # Every member of the queue is an aphia id for a record that has been 
 # processed, but whose children and synonyms have not.
 
-RECORDS_PER_CHUNK = 20   # eventually maybe 800
 REQUESTS_PER_SLEEP = 3
 SECONDS_PER_SLEEP = 1
-DEFAULT_CHUNK_SIZE = 100
+DEFAULT_CHUNK_SIZE = 100   # eventually maybe 800
 
 DEFAULT_PROXY = 'http://www.marinespecies.org/aphia.php?p=soap&wsdl=1'
-
 DEFAULT_ROOT_ID = 1  # Biota
+stop_at_species = True
 
 # Need:
 #  https://sourceforge.net/projects/pywebsvcs/files/SOAP.py/
@@ -38,38 +37,68 @@ WORMSPROXY = WSDL.Proxy(DEFAULT_PROXY)
 
 seen = {}
 
-def fetch_worms(root, queuepath, outpath, chunk_count):
+# For phase I
+def fetch_worms(root, queuepath, outdir, chunk_size, chunk_count):
     queue = load_queue(queuepath, root)
     j = 0
     while len(queue) > 0 and j < chunk_count:
-        chunk = get_chunk(queue)
-        save_chunk(chunk, outpath)
+        chunk = get_chunk(chunk_size, queue)
+        save_chunk(chunk, outdir)
         save_queue(queue, queuepath)
         j += 1
 
-def save_chunk(chunk, outpath):
+# For phase II
+
+def fetch_worms_synonyms(outdir, chunk_count):
+    done = 0
+    for name in sorted(os.listdir(outdir)):
+        if done >= chunk_count: break
+        if name.startswith('a'):
+            inpath = os.path.join(outdir, name)
+            synpath = os.path.join(outdir, 's%s.csv' % name[1:-4])
+            if not os.path.exists(synpath):
+                print '%s -> %s' % (inpath, synpath)
+                taxon_aphias = load_aphias(inpath)
+                syn_aphias = get_synonym_aphias(taxon_aphias)
+                save_aphias(syn_aphias, synpath)
+                done += 1
+
+def save_chunk(chunk, outdir):
     (aphias, links) = chunk
     if len(links) > 0:
-        if not os.path.isdir(outpath):
-            os.makedirs(outpath)
+        if not os.path.isdir(outdir):
+            os.makedirs(outdir)
         id = links[0][0]
         print 'chunk', id
-        path = os.path.join(outpath, 'l%s.csv' % id)
+        # %07d
+        path = os.path.join(outdir, 'l%07d.csv' % id)
         print 'writing', path, len(links)
         with open(path, 'w') as outfile:
             writer = csv.writer(outfile)
             writer.writerow(links_header)
             for row in links:
                 writer.writerow(row)
+        path = os.path.join(outdir, 'a%07d.csv' % id)
+        save_aphias(aphias, path)
 
-        if len(aphias) > 0:
-            path = os.path.join(outpath, 'a%s.csv' % id)
-            print 'writing', path, len(aphias)
-            with open(path, 'w') as outfile:
-                writer = csv.writer(outfile)
-                writer.writerow(digest_header)
-                for row in aphias:
-                    writer.writerow([fieldify(x) for x in row])
+def save_aphias(aphias, path):
+    if len(aphias) > 0:
+        print 'writing', path, len(aphias)
+        with open(path, 'w') as outfile:
+            writer = csv.writer(outfile)
+            writer.writerow(digest_header)
+            for row in aphias:
+                writer.writerow([fieldify(x) for x in row])
+
+# For phase II
+def load_aphias(inpath):
+    aphias = []
+    with open(inpath, 'r') as infile:
+        reader = csv.reader(infile)
+        reader.next()  # header
+        for row in reader:
+            aphias.append(row)
+    return aphias
 
 def fieldify(x):
     if isinstance(x, unicode):
@@ -82,32 +111,31 @@ def fieldify(x):
         return x
 
 def load_queue(queuepath, root):
+    q = deque()
     if os.path.exists(queuepath):
         with open(queuepath, 'r') as infile:
-            line = infile.next()
-            queued = line.strip().split(' ')
-            print '%s ids queued' % len(queued)
-            ids = [int(id) for id in queued]
+            for line in infile:
+                id = int(line.strip())
+                q.append(id)
+                seen[id] = 'queued'
     else:
-        ids = [root]
-    for id in ids:
-        seen[id] = ('queued', 'q')
-    return deque(ids)
+        q.append(root)
+        seen[root] = 'queued'
+    print '%s ids queued' % len(q)
+    return q
 
 def save_queue(queue, queuepath):
     print 'queued:', len(queue)
     with open(queuepath, 'w') as outfile:
-        outfile.write(' '.join([str(x) for x in queue]))
-        outfile.write('\n')
+        writer = csv.writer(outfile)
+        for id in queue:
+            writer.writerow([id])
 
-def get_chunk(queue):
+def get_chunk(chunk_size, queue):
     record_count = [0]
     request_count = [0]
     aphias = []
     links = []
-    def emit(digested_record):
-        aphias.append(digested_record)
-        record_count[0] += 1
     def throttle():
         request_count[0] += 1
         if request_count[0] % REQUESTS_PER_SLEEP == 0:
@@ -115,51 +143,86 @@ def get_chunk(queue):
     def see(child, parent_id, rel):
         if child.AphiaID in seen:
             if child.status != 'unaccepted':
-                (parent_id2, rel2) = seen[child.AphiaID]
-                print ('** REPEAT ENCOUNTER: %s = %s %s + %s %s (%s) **' %
+                parent_id2 = seen[child.AphiaID]
+                print ('** REPEAT ENCOUNTER: %s = %s + %s (%s) **' %
                        (child.AphiaID,
-                        rel2, parent_id2,
-                        rel, parent_id,
+                        parent_id2,
+                        parent_id,
                         child.status))
             s = False
         else:
             # First time encountering this id
-            seen[child.AphiaID] = (parent_id, rel)
-            emit(digest(child))
+            seen[child.AphiaID] = parent_id
+            aphias.append(digest(child))
+            record_count[0] += 1
             s = True
-        links.append((child.AphiaID, parent_id, rel))
+        links.append((child.AphiaID, parent_id, 'c'))
         return s
-    while len(queue) > 0 and record_count[0] < RECORDS_PER_CHUNK:
-        parent_id = queue.pop()  # id
-        linked_ids = {}
-
-        print 'requesting synonyms of', parent_id
-        for syn in sort_aphia(get_one_taxon_synonyms(parent_id)):
-            if syn.AphiaID in linked_ids:
-                # Silently ignore duplicate synonyms
-                continue
-            linked_ids[syn.AphiaID] = True
-            see(syn, parent_id, 's')
-        throttle()
+    while len(queue) > 0 and record_count[0] < chunk_size:
+        parent_id = queue.pop()
+        siblings = {}
 
         print 'requesting children of', parent_id
         children = sort_aphia(get_one_taxon_children(parent_id))
         to_q = []
         for child in children:
-            if child.AphiaID in linked_ids:
+
+            if child.AphiaID in siblings:
                 # Ignore duplicate children, and children that
                 # duplicate synonyms
                 continue
-            linked_ids[child.AphiaID] = True
+
+            # If valid id != id then it's actually a
+            # synonym (perhaps of a sibling)
+            if synonymp(child):
+                siblings[child.AphiaID] = True
+                see(child, child.valid_AphiaID, 's')
+                continue
+
+            siblings[child.AphiaID] = True
             if see(child, parent_id, 'c'):
                 # Open tree policy for WoRMS: no subspecies.
                 # Huge performance win on download.
-                if child.rank != 'Species':
+                if not (stop_at_species and child.rank == 'Species'):
                     to_q.append(child.AphiaID)
         # try to do lowest numbered subtrees first
         queue.extend(reversed(to_q))
+
         throttle()
     return (aphias, links)
+
+def synonymp(aphia):
+    return (aphia.valid_AphiaID != aphia.AphiaID and
+            aphia.valid_AphiaID != None and
+            aphia.valid_AphiaID > 0)
+            
+# Phase II
+
+def get_synonym_aphias(aphias):
+    status_column = digest_header.index('status')
+    request_count = 0
+    for taxon in aphias:
+        taxon_id = int(taxon[0])
+        seen[taxon_id] = True
+    syn_aphias = []
+    for taxon in aphias:
+        if taxon[status_column] == 'accepted':
+            taxon_id = int(taxon[0])
+            cosynonyms = {}
+            print 'requesting synonyms of', taxon_id
+            # Get all aphia records for synonyms of aphia
+            for syn in sort_aphia(get_one_taxon_synonyms(taxon_id)):
+                if not syn.AphiaID in cosynonyms:
+                    cosynonyms[syn.AphiaID] = True
+                    if not syn.AphiaID in seen:
+                        # First time encountering this id
+                        seen[syn.AphiaID] = taxon_id
+                        if synonymp(syn):
+                            syn_aphias.append(digest(syn))
+            request_count += 1
+            if request_count % REQUESTS_PER_SLEEP == 0:
+                sleep(SECONDS_PER_SLEEP)
+    return syn_aphias
 
 def sort_aphia(aphia_list):
     return sorted(aphia_list, key=(lambda aphia: aphia.AphiaID))
@@ -236,6 +299,7 @@ def get_one_taxon_synonyms(taxon_id):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument('--synonyms', dest='synonymsp', action='store_true')
     parser.add_argument('--queue', dest='queuefile')
     parser.add_argument('--out', dest='outdir')
     parser.add_argument('--chunks', dest='chunk_count', type=int)
@@ -243,4 +307,10 @@ if __name__ == "__main__":
     parser.add_argument('--chunksize', dest='chunksize', type=int,
                         default=DEFAULT_CHUNK_SIZE)
     args = parser.parse_args()
-    fetch_worms(args.root, args.queuefile, args.outdir, args.chunk_count)
+    if not args.synonymsp:
+        print 'phase 1'
+        fetch_worms(args.root, args.queuefile, args.outdir,
+                    args.chunksize, args.chunk_count)
+    else:
+        print 'phase 2'
+        fetch_worms_synonyms(args.outdir, args.chunk_count)

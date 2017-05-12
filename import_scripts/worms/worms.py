@@ -1,10 +1,11 @@
 #!/usr/bin/python
 
-from SOAPpy import WSDL
-import re
 import sys
+import re
 import logging
 import codecs
+import pickle
+from SOAPpy import WSDL
 
 
 # usage:
@@ -26,7 +27,6 @@ ROOT_ID = 1
 
 def startup(args):
     """ """
-    import pickle
     pargs = vars(process_args())
     log_fname = pargs["log_file"]
     results_fname = pargs["taxonomy_file"]  # pargs.taxonomy_file ?
@@ -105,7 +105,6 @@ TESTPAUSE = 20
 def traverse_taxonomy(root_id, pickled):
     from collections import deque
     from time import sleep
-    import pickle
     if pickled:
         (queue, taxa, synonyms) = pickled
         last_sleep = len(taxa)
@@ -116,7 +115,7 @@ def traverse_taxonomy(root_id, pickled):
         synonyms = []
         last_sleep = 0
     while ((len(queue) > 0) and (len(taxa) < 500000)):
-        print "Taxa count = %d" % len(taxa)
+        print "Taxon count = %d" % len(taxa)
         if (len(taxa) - last_sleep) > TESTPAUSE:
             print "sleeping", TESTPAUSE
             sleep(20)

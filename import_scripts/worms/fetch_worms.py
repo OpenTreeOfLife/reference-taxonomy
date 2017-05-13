@@ -144,7 +144,7 @@ def get_chunk(chunk_size, queue):
         if child.AphiaID in seen:
             if child.status != 'unaccepted':
                 parent_id2 = seen[child.AphiaID]
-                print ('** REPEAT ENCOUNTER: %s = %s + %s (%s) **' %
+                print ('** REPEAT ENCOUNTER: %s ~ %s + %s (%s) **' %
                        (child.AphiaID,
                         parent_id2,
                         parent_id,
@@ -156,13 +156,13 @@ def get_chunk(chunk_size, queue):
             aphias.append(digest(child))
             record_count[0] += 1
             s = True
-        links.append((child.AphiaID, parent_id, 'c'))
+        links.append((child.AphiaID, parent_id, rel))
         return s
     while len(queue) > 0 and record_count[0] < chunk_size:
         parent_id = queue.pop()
         siblings = {}
 
-        print 'requesting children of', parent_id
+        # print 'requesting children of', parent_id
         children = sort_aphia(get_one_taxon_children(parent_id))
         to_q = []
         for child in children:
@@ -171,22 +171,21 @@ def get_chunk(chunk_size, queue):
                 # Ignore duplicate children, and children that
                 # duplicate synonyms
                 continue
+            siblings[child.AphiaID] = True
 
             # If valid id != id then it's actually a
             # synonym (perhaps of a sibling)
             if synonymp(child):
-                siblings[child.AphiaID] = True
                 see(child, child.valid_AphiaID, 's')
                 continue
 
-            siblings[child.AphiaID] = True
             if see(child, parent_id, 'c'):
                 # Open tree policy for WoRMS: no subspecies.
                 # Huge performance win on download.
                 if not (stop_at_species and child.rank == 'Species'):
                     to_q.append(child.AphiaID)
         # try to do lowest numbered subtrees first
-        queue.extend(reversed(to_q))
+        queue.extend(to_q)
 
         throttle()
     return (aphias, links)
@@ -209,7 +208,7 @@ def get_synonym_aphias(aphias):
         if taxon[status_column] == 'accepted':
             taxon_id = int(taxon[0])
             cosynonyms = {}
-            print 'requesting synonyms of', taxon_id
+            # print 'requesting synonyms of', taxon_id
             # Get all aphia records for synonyms of aphia
             for syn in sort_aphia(get_one_taxon_synonyms(taxon_id)):
                 if not syn.AphiaID in cosynonyms:
@@ -272,7 +271,6 @@ def get_one_taxon_children(taxon_id):
     try:
         wsdlChildren = WORMSPROXY.getAphiaChildrenByID(taxon_id,
                                                        offset=offset)
-        print 'gotcha', len(wsdlChildren)
         if wsdlChildren:
             result.extend(wsdlChildren)
             while len(wsdlChildren) == MAXLENGTH:

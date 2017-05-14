@@ -5,18 +5,18 @@
 # temporary name    - trim [unassigned] when present?
 # alternate representation   - what does this mean?
 # unaccepted        - usually a synonym, but not always
-# taxon inquirendum
 # nomen nudum
 # uncertain
 # nomen dubium
+# taxon inquirendum    - do not use
 
-import os, csv, argparse
+import os, csv, argparse, re
 
 parents = {}
 taxa = {}
 synonyms = {}
-status_values = {}
 has_children = {}
+taxa_by_name = {}    # name -> records
 
 def process_worms(digest_path, out_path):
     names = sorted(os.listdir(digest_path))
@@ -33,7 +33,8 @@ def process_worms(digest_path, out_path):
         form = '%s\t%s\t%s\t%s\t%s\n'
         taxfile.write(form % ('uid', 'parent', 'name', 'rank', 'flags'))
         for taxon in sorted(taxa.values(), key=lambda taxon: int(taxon[0])):
-            taxfile.write(form % taxon)
+            if not suppress(taxon):
+                taxfile.write(form % taxon)
     os.rename(taxpath + '.new', taxpath)
     synpath = os.path.join(out_path, 'synonyms.tsv')
     print 'writing %s synonyms to %s' % (len(synonyms), synpath)
@@ -43,6 +44,28 @@ def process_worms(digest_path, out_path):
         for synonym in sorted(synonyms.values(), key=lambda synonym: int(synonym[0])):
             synfile.write(form % synonym)
     os.rename(synpath + '.new', synpath)
+
+def suppress(taxon):
+    # (id, parent_id, name, rank, flags) = taxon
+    if taxon[0] in has_children:
+        return False
+    name = taxon[2]
+    parent_id = taxon[1]
+    taxa = taxa_by_name[name]
+    if len(taxa) == 1:
+        return False
+    elif parent_id in map(grandparent_id, taxa):
+        print 'suppress', taxon
+        return True
+    else:
+        return False
+
+def grandparent_id(taxon):
+    parent_id = taxon[1]    # OTT form
+    parent = taxa.get(parent_id)
+    if parent == None: return None
+    gp_id = parent[1]
+    return gp_id
 
 def process_links(inpath):
     with open(inpath, 'r') as infile:
@@ -57,6 +80,8 @@ def process_links(inpath):
                 parents[id] = parent_id
                 has_children[parent_id] = True
 
+sub = re.compile('([A-Za-z]+) \\(([A-Za-z]+)\\)(.*)')
+
 def process_records(inpath):
     with open(inpath, 'r') as infile:
         reader = csv.reader(infile)
@@ -65,32 +90,66 @@ def process_records(inpath):
             # id,name,authority,rank,status,unacceptreason,valid,extinct
             # 0 ,1   ,2        ,3   ,4     ,5             ,6    ,7
             id = row[0]
-            name = row[1]
-            valid = row[6]
-            if id == valid:
-                parent = parents.get(id)
-                if parent == None:
-                    print 'missing parent', id
-                    continue
-                flags = []
-                if row[7] != '':
-                    flags.append('extinct')
-                status = row[4]
-                unassigned = '[unassigned] '
-                if name.startswith(unassigned):
-                    name = name[len(unassigned):]
-                if status == 'accepted':
-                    True
-                elif status == 'interim unpublished':
-                    True
-                elif id in has_children:
-                    True
-                else:
-                    flags.append('hidden')
-                status_values[status] = True
-                taxa[id] = (id, parent, name, row[3].lower(), ','.join(flags))
-            elif valid != '':
-                synonyms[id] = (valid, name, id)
+            valid_id = row[6]
+            rank = row[3].lower()
+            name = fix_name(row[1], rank)
+            if id == valid_id or valid_id == '':
+                taxon = record_to_taxon(row, rank, name)
+                if taxon != None:
+                    taxa[id] = taxon
+            elif valid_id != '':
+                synonyms[id] = (valid_id, name, id)
+
+def record_to_taxon(row, rank, name):
+    id = row[0]
+
+    parent = parents.get(id)
+    if parent == None:
+        print 'missing parent', id
+        parent = ''
+
+    # Determine flags
+    flags = []
+    if row[7] != '':
+        flags.append('extinct')
+    status = row[4]
+    if status == 'accepted':
+        True
+    elif status == 'interim unpublished':
+        True
+    elif id in has_children:     # This works
+        True
+    else:
+        flags.append('hidden')
+
+    taxon = (id, parent, name, rank, ','.join(flags))
+    others = taxa_by_name.get(name)
+    if others == None:
+        taxa_by_name[name] = [taxon]
+    else:
+        others.append(taxon)
+    return taxon
+
+unassigned = '[unassigned] '
+
+def fix_name(name, rank):
+    if name.startswith(unassigned):
+        name = name[len(unassigned):]
+    m = sub.match(name)
+    if m != None:
+        # Four cases:
+        #  Gg (Sub) sp  -> Gg sp
+        #  Gg (Sub)     -> Sub
+        #  Gs (Gs) sp   -> Gs sp
+        #  Gs (Gs)      -> Gs subgenus Gs
+        if m.group(3) != '':
+            name = ('%s%s' % (m.group(1), m.group(3)))
+        elif m.group(1) == m.group(2):
+            name = ('%s %s %s%s' %
+                    (m.group(1), rank, m.group(2), m.group(3)))
+        else:
+            name = m.group(2)
+    return name
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

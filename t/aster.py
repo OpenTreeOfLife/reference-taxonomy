@@ -11,7 +11,6 @@ def assemble():
 
     # Create model taxonomy
     tax = UnionTaxonomy.newTaxonomy('ott')
-    tax.version = "this is a test"
 
     for name in ['Pentaphragma ellipticum',
                  'Lachnophyllum',
@@ -87,6 +86,8 @@ def assemble():
         assign_ids_from_list(tax, 'ott_id_list/by_qid.csv')
 
     tax.assignNewIds(new_taxa_path)
+
+    tax.check()
 
     # Write the model taxonomy out to a set of files
     tax.dump('t/tax/aster/', '\t|\t')

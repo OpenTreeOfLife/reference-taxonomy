@@ -8,6 +8,7 @@ import os, sys, json, argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('obj')
 parser.add_argument('selector')
+parser.add_argument('default', nargs='?', default=None)
 
 args = parser.parse_args()
 
@@ -26,8 +27,11 @@ with open(path, 'r') as infile:
     blob = json.load(infile)
     value = blob.get(args.selector)
     if value == None:
-        sys.stderr.write('get: this object does not have this property: %s %s\n' %
-                         (args.obj, args.selector))
-        sys.exit(1)
+        if args.default == None:
+            sys.stderr.write('get: this object does not have this property: %s %s\n' %
+                             (args.obj, args.selector))
+            sys.exit(1)
+        else:
+            print args.default
     else:
         print value

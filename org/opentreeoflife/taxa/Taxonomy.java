@@ -136,6 +136,7 @@ public abstract class Taxonomy {
 
     // delete a synonym
     public void removeFromNameIndex(Node node) {
+        if (node.name == null) return;
 		List<Node> nodes = this.lookup(node.name);
         // node.name is name for every node in nodes
         if (nodes != null) {
@@ -169,7 +170,8 @@ public abstract class Taxonomy {
 
     public void removeFromIdIndex(Node node, String id) {
         // could check that lookupId(id) == node
-        this.idIndex.remove(id);
+        if (id != null)
+            this.idIndex.remove(id);
     }
 
     public void removeFromQidIndex(Taxon node, QualifiedId qid) {
@@ -204,6 +206,17 @@ public abstract class Taxonomy {
             // System.err.format("** Pruned taxon found in id index: %s\n", t);
             return null;
         return t;
+	}
+
+	public Node getNodeById(String id) {
+        Node n = this.idIndex.get(id);
+        if (n == null)
+            return null;
+        else if (n.isPruned())
+            return null;
+        else
+            return n;
+>>>>>>> 54930d9... initial configuration, fix synonym ids, etc
 	}
 
     // Roots - always Taxons, never Synonyms.
@@ -1006,10 +1019,20 @@ public abstract class Taxonomy {
     void copySelectedIds(Taxonomy tax2) {
         int count = 0;
         for (String id : this.allIds()) {
+<<<<<<< HEAD
             Taxon node = this.lookupId(id);
             if (!node.id.equals(id) && tax2.lookupId(node.id) != null) {
                 tax2.addId(node, id);
                 ++count;
+=======
+            Node node = this.getNodeById(id);
+            if (node != null && node.id != null) {
+                Node node2 = tax2.getNodeById(node.id);
+                if (node2 != null) {
+                    tax2.addId(node2, id);
+                    ++count;
+                }
+>>>>>>> 54930d9... initial configuration, fix synonym ids, etc
             }
         }
         System.out.format("| copied %s id aliases\n", count);
@@ -1752,71 +1775,76 @@ public abstract class Taxonomy {
 
     public void check() {
         Set<Taxon> all = new HashSet<Taxon>();
+
+        // Ensure all reachable nodes are indexed ...
         for (Taxon taxon : this.taxa()) {
-            if (taxon.prunedp)
+            if (taxon.prunedp) {
                 System.err.format("** check: Pruned taxon found in hierarchy: %s in %s\n", taxon, taxon.parent);
-            else
-                all.add(taxon);
-        }
-
-        // Ensure every named node is reachable...
-        for (Node node : allNamedNodes()) {
-            Taxon taxon = node.taxon();
-            if (!all.contains(taxon)) {
-                if (node == taxon)
-                    System.err.format("** check: Named taxon not in hierarchy: %s in %s\n", taxon, taxon.parent);
-                else if (taxon.prunedp)
-                    System.err.format("** check: Pruned taxon found in name index: %s = %s in %s\n",
-                                      node.name, taxon, taxon.parent);
-                else
-                    System.err.format("** check: Synonym %s taxon not in hierarchy: %s in %s\n",
-                                      node.name, taxon, taxon.parent);
-                all.add(taxon);
+                continue;
             }
+
+            all.add(taxon);
+
+            // Check name index ...
+            if (taxon.name != null) {
+                Collection<Node> nodes = this.lookup(taxon.name);
+                if (nodes == null)
+                    System.err.format("** check: Named node not in name index: %s\n", taxon);
+                else if (!nodes.contains(taxon))
+                    System.err.format("** check: Named node is not in name index: %s\n", taxon);
+            }
+
+            // Check id index ...
+            if (taxon.id != null) {
+                Node node = getNodeById(taxon.id);
+                if (node == null)
+                    System.err.format("** check: Identified node not in id index: %s\n", taxon);
+                else if (node != taxon)
+                    System.err.format("** check: Identified node collision with id index: %s %s\n", taxon,  node);
+            }
+
+            // Check parent/child links...
+            if (taxon.parent == null) {
+                if (taxon != forest)
+                    System.err.format("** check: null parent %s\n", taxon);
+            } else if (!taxon.parent.children.contains(taxon))
+                System.err.format("** check: Not in parent's children list: %s %s\n",
+                                  taxon, taxon.parent);
         }
 
-        // Ensure every identified node is reachable...
-        for (Node node1 : idIndex.values()) {
-            if (!(node1 instanceof Taxon)) continue;
-            Taxon taxon = (Taxon)node1;
-            if (!all.contains(taxon)) {
-                if (taxon.prunedp) {
-                    if (taxon.id != null)
-                        // foo. we don't have a list of ids for use in removeFromIdIndex.
-                        System.err.format("** check: Pruned taxon is in identifier index: %s\n", taxon);
-                } else {
-                    System.err.format("** check: Identified taxon not in hierarchy: %s\n", taxon);
+        // Ensure every named node (taxon or synonym) is reachable...
+        for (Node node : allNamedNodes()) {
+            if (node.isPruned())
+                System.err.format("** check: Pruned node found in name index: %s\n", node);
+            else {
+                Taxon taxon = node.taxon();
+                if (!all.contains(taxon)) {
+                    if (node == taxon)
+                        System.err.format("** check: Named taxon not in hierarchy: %s in %s\n", taxon, taxon.parent);
+                    else
+                        System.err.format("** check: Synonym %s taxon not in hierarchy: %s in %s\n",
+                                          node.name, taxon, taxon.parent);
                     all.add(taxon);
                 }
             }
         }
 
-        // Ensure all nodes are indexed ...
-        for (Taxon node : all) {
-            if (node.name != null && !node.prunedp) {
-                Collection<Node> nodes = this.lookup(node.name);
-                if (nodes == null)
-                    System.err.format("** check: Named node not in name index: %s\n", node);
-                else if (!nodes.contains(node))
-                    System.err.format("** check: Named node is not in name index: %s\n", node);
+        // Ensure every identified node (taxon or synonym) is reachable...
+        for (String id : this.allIds()) {
+            Node node = this.getNodeById(id);
+            if (node.isPruned())
+                if (node instanceof Taxon && id.equals(node.id))
+                    System.err.format("** check: Pruned node found in identifier index: %s\n", node);
+            else {
+                Taxon taxon = node.taxon();
+                if (!all.contains(taxon)) {
+                    if (node == taxon)
+                        System.err.format("** check: Identified taxon %s not in hierarchy\n", taxon);
+                    else
+                        System.err.format("** check: Identified synonym %s not in hierarchy (= %s)\n", node, taxon);
+                    all.add(taxon);
+                }
             }
-            if (node.id != null) {
-                Taxon taxon = lookupId(node.id);
-                if (taxon == null)
-                    System.err.format("** check: Identified node not in id index: %s\n", node);
-                else if (taxon != node)
-                    System.err.format("** check: Identified node collision with id index: %s %s\n", node,  taxon);
-            }
-        }
-
-        // Check parent/child links...
-        for (Taxon node : all) {
-            if (node.parent == null) {
-                if (node != forest && !node.prunedp)
-                    System.err.format("** check: null parent %s\n", node);
-            } else if (!node.parent.children.contains(node))
-                System.err.format("** check: not in parent's children list: %s %s\n",
-                                  node, node.parent);
         }
     }
 

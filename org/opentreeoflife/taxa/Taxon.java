@@ -56,6 +56,10 @@ public class Taxon extends Node implements Comparable<Taxon> {
         return this.name.equals(othername);
     }
 
+    public boolean isPruned() {    // foo
+        return this.prunedp;
+    }
+
     public Collection<Taxon> getChildren() {
         if (children == NO_CHILDREN)
             return NO_CHILDREN_LIST;
@@ -726,8 +730,10 @@ public class Taxon extends Node implements Comparable<Taxon> {
 		if (this.children != NO_CHILDREN)
 			for (Taxon child : new ArrayList<Taxon>(children))
 				child.setRemoved(reason);
-        for (Synonym syn : this.synonyms)
+        for (Synonym syn : this.synonyms) {
             this.taxonomy.removeFromNameIndex(syn);
+            this.taxonomy.removeFromIdIndex(syn, syn.id);
+        }
         this.taxonomy.removeFromNameIndex(this);
 		if (this.id != null) {
             this.taxonomy.removeFromIdIndex(this, this.id);
@@ -1046,7 +1052,8 @@ public class Taxon extends Node implements Comparable<Taxon> {
             this.properFlags &= ~Taxonomy.EXTINCT;
         }
         other.properFlags |= Taxonomy.MERGED;
-		other.prune(sid);    // delete the one node
+		other.prune(qid);    // delete the one node
+        other.name = other.name + " [absorbed]";
         // copy sources from other to syn?
         return true;
 	}

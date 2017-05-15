@@ -25,6 +25,8 @@ public abstract class Node {
 
     public abstract String uniqueName();
 
+    public abstract boolean isPruned();    // foo
+
 	public String getId() {
         return id;
     }
@@ -67,8 +69,8 @@ public abstract class Node {
 			return new QualifiedId(space, this.name);
         } else {
 			// What if from a Newick string?
-			System.out.println("* [getQualifiedId] Nondescript");
-            return new QualifiedId(space, "<nondescript>");
+			System.out.println("* [getQualifiedId] unnamed");
+            return new QualifiedId(space, "<unnamed>");
         }
 	}
 

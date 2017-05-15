@@ -548,10 +548,12 @@ public class InterimFormat {
         out.format("id\treplacement\n");
         int count = 0;
         for (String id : tax.allIds()) {
-            Taxon node = tax.lookupId(id);
-            if (!node.id.equals(id)) {
-                out.format("%s\t%s\n", id, node.id);
-                ++count;
+            Node node = tax.getNodeById(id);
+            if (node != null && !node.isPruned()) {
+                if (!node.id.equals(id)) {
+                    out.format("%s\t%s\n", id, node.id);
+                    ++count;
+                }
             }
         }
         System.out.format("| %s id aliases\n", count);

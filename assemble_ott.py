@@ -68,6 +68,7 @@ def create_ott(ott_spec):
     Addition.processAdditions(additions_clone_path, ott)
 
     # Mint ids for new nodes
+    print '-- Minting new ids --'
     ott.assignNewIds(new_taxa_path)
 
     # Remove all trees but the largest (or make them life incertae sedis)

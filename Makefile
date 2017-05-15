@@ -89,7 +89,7 @@ r/ott-NEW/source/debug/transcript.out: bin/jython $(CLASS) \
 	@rm -f *py.class util/*py.class curation/*py.class
 	@mkdir -p r/ott-NEW/source
 	@echo SET THE VERSION.
-	bin/put ott-NEW draft $$((1 + `bin/get ott-NEW draft`))
+	bin/put ott-NEW draft $$((1 + `bin/get ott-NEW draft 0`))
 	bin/put ott-NEW version $(OTT_MAJOR).`bin/get ott-NEW minor`
 	@echo Writing transcript to r/ott-NEW/source/debug/transcript.out
 	rm -f /tmp/make-ott-completed

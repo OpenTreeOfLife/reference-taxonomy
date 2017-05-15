@@ -43,18 +43,25 @@ public class Addition {
         File repo = new File(repoPath);
         if (!repo.isDirectory())
             repo.mkdirs();
-        for (File doc : Addition.repoAdditionDocuments(repo)) {
+        List<File> docs = Addition.repoAdditionDocuments(repo);
+        System.out.format("| Processing %s addition files from %s\n", docs.size(), repoPath);
+        int count = 0;
+        for (File doc : docs) {
             // don't log, there are now too many files
             // System.out.format("| Processing %s\n", doc);
-            processAdditionDocument(doc, tax);
+            count += processAdditionDocument(doc, tax);
         }
+        System.out.format("| Processed %s addition records\n", count);
     }
 
     public static List<File> repoAdditionDocuments(File repo) {
-        File subdir = new File(repo, "amendments");
-        if (!subdir.isDirectory())
-            subdir.mkdirs();
-        return listAdditionDocuments(subdir);
+        List<File> docs1 = listAdditionDocuments(repo);
+        List<File> docs2 = listAdditionDocuments(new File(repo, "amendments"));
+        if (docs1 == null) docs1 = new ArrayList<File>();
+        if (docs2 == null) docs2 = new ArrayList<File>();
+        docs1.addAll(docs2);
+        docs1.sort(compareFiles);
+        return docs1;
     }
 
     // repo is the root directory of the repository (or fake repository).
@@ -69,7 +76,6 @@ public class Addition {
         if (files == null)      // directory doesn't exist
             return new ArrayList<File>();
         List<File> listOfFiles = Arrays.asList(files);
-        listOfFiles.sort(compareFiles);
         return listOfFiles;
     }
 
@@ -87,16 +93,16 @@ public class Addition {
     // the taxa are "original" with this document) create 
     // new nodes as needed.
 
-    public static void processAdditionDocument(File file, Taxonomy tax) throws IOException, ParseException {
+    public static int processAdditionDocument(File file, Taxonomy tax) throws IOException, ParseException {
 		BufferedReader fr = Taxonomy.fileReader(file);
 		JSONParser parser = new JSONParser();
         Object obj = parser.parse(fr);
-        processAdditionDocument(obj, tax);
+        return processAdditionDocument(obj, tax);
     }
 
     // A different way to do this: turn the addition document into a Taxonomy, and absorb() it.
 
-    public static void processAdditionDocument(Object json, Taxonomy tax) throws ParseException {
+    public static int processAdditionDocument(Object json, Taxonomy tax) throws ParseException {
         if (!(json instanceof Map))
             throw new RuntimeException("bad json for addition");
         Map top = (Map)json;
@@ -188,12 +194,13 @@ public class Addition {
         }
         if (false) {
             // too many of these
-        int unmatched = taxa.size() - matched;
-        System.out.format("| %s matched, %s %s\n",
-                          matched,
-                          unmatched,
-                          (originalp ? "deprecated" : "added"));
+            int unmatched = taxa.size() - matched;
+            System.out.format("| %s matched, %s %s\n",
+                              matched,
+                              unmatched,
+                              (originalp ? "deprecated" : "added"));
         }
+        return taxa.size();
     }
 
     static Taxon getAddedTaxon(String name, Taxon parent, String firstSource, String ott_id, Taxonomy tax) {
@@ -360,7 +367,9 @@ public class Addition {
 
         assignIds(nodes, firstId, lastId);
 
-        File f = new File(newTaxaDir, String.format("addition-%s-%s.json", firstId, lastId));
+        long lastAssigned = firstId + nodes.size() - 1;
+
+        File f = new File(newTaxaDir, String.format("addition-%s-%s.json", firstId, lastAssigned));
         System.err.format("| Writing additions API request file %s\n", f);
         // This file can be used with the additions API if desired
         Map<String, Object> r = generateRequest(nodes, new HashMap<Taxon, String>());

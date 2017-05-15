@@ -29,6 +29,10 @@ public class Synonym extends Node {
         return String.format("%s (synonym for %s)", this.name, uniq);
     }
 
+    public boolean isPruned() {    // foo
+        return parent.prunedp;
+    }
+
     public String toString() {
         return String.format("(%s %s %s)", type, name, taxon());
     }

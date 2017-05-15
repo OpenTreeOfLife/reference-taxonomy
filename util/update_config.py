@@ -51,7 +51,6 @@ def convert_config(blob):
            ' '.join(map((lambda series: 'r/%s-HEAD/source/.made' % series),
                         serieses)))
 
-    serieses.remove("ott")
     # For 'make ott'
     print ('RESOURCES=%s' % 
            ' '.join(map((lambda series: os.path.join(root, series + '-HEAD', 

@@ -89,11 +89,6 @@ def create_ott(ott_spec):
 
 def merge_sources(ott):
 
-    worms = load_taxonomy('worms')
-    adjustments.adjust_worms(worms)
-    (malacostraca, worms_sans_malacostraca) = split_taxonomy(worms, 'Malacostraca')
-    (cnidaria, low_priority_worms) = split_taxonomy(worms_sans_malacostraca, 'Cnidaria')
-
     # SILVA
     silva = load_taxonomy('silva')
     adjustments.adjust_silva(silva)
@@ -118,21 +113,17 @@ def merge_sources(ott):
     adjustments.adjust_lamiales(lamiales)
     align_and_merge(adjustments.align_lamiales(lamiales, ott))
 
-    """
     # WoRMS
-    # higher priority to Worms for Malacostraca, Cnidaria so we split out
+    # higher priority to Worms for Malacostraca, Cnidaria, Mollusca
+    #  so we split out
     # those clades from worms and absorb them before NCBI
     worms = load_taxonomy('worms')
     adjustments.adjust_worms(worms)
     # Malacostraca instead of Decapoda because M. is in the separation taxonomy
     (malacostraca, worms_sans_malacostraca) = split_taxonomy(worms, 'Malacostraca')
     align_and_merge(ott.alignment(malacostraca))
-    (cnidaria, low_priority_worms) = split_taxonomy(worms_sans_malacostraca, 'Cnidaria')
+    (cnidaria, worms_sans_cnidaria) = split_taxonomy(worms_sans_malacostraca, 'Cnidaria')
     align_and_merge(ott.alignment(cnidaria))
-    """
-    align_and_merge(ott.alignment(malacostraca))
-    align_and_merge(ott.alignment(cnidaria))
-
 
     # NCBI
     ncbi = load_taxonomy('ncbi')

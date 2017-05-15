@@ -48,7 +48,8 @@ def convert_config(blob):
                         serieses)))
     # For 'make fetch-all'
     print ('UNPACKS=%s' % 
-           ' '.join(map((lambda series: 'r/%s-HEAD/source/.made' % series),
+           ' '.join(map((lambda series: os.path.join(root, series + '-HEAD',
+                                                     'source', '.made')),
                         serieses)))
 
     # For 'make ott'

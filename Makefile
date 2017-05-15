@@ -321,13 +321,23 @@ r/fung-NEW:
 
 # --- Source: WoRMS in Open Tree form
 
-r/worms-HEAD/resource/.made: r/worms-HEAD/source/.made
-	(cd r/worms-HEAD && rm -f resource && ln -s source resource)
+r/worms-HEAD/resource/.made: import_scripts/worms/process_worms.py r/worms-HEAD/source/.made
+	python import_scripts/worms/process_worms.py r/worms-HEAD/source/digest r/worms-HEAD/resource
+	touch $@
+
+r/worms-NEW/source/.made: import_scripts/worms/fetch_worms.py r/worms-NEW
+	mkdir -p r/worms-NEW/work
+	time python import_scripts/worms/fetch_worms.py --queue r/worms-NEW/work/q.q \
+	       --out r/worms-HEAD/source/digest --chunks 5000 --chunksize 500
+	touch $@
 
 # WoRMS is imported by import_scripts/worms/worms.py which does a web crawl
 # This rule hasn't been tested!
 
-r/worms-NEW/resource/.made: import_scripts/worms/worms.py r/worms-NEW
+r/worms-HEAD/resource/.made-OLD-METHOD: r/worms-HEAD/source/.made
+	(cd r/worms-HEAD && rm -f resource && ln -s source resource)
+
+r/worms-NEW/resource/.made-OLD-METHOD: import_scripts/worms/worms.py r/worms-NEW
 	echo "*** Warning! This can take several days to run. ***"
 	@mkdir -p r/worms-NEW/source
 	python import_scripts/worms/worms.py \

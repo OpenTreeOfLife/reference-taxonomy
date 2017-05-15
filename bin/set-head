@@ -9,11 +9,13 @@
 
 set -e
 
+[ $# = 3 ] || (echo "set-head: wna"; exit 1)
+
 series=$1
 spec=$2
 firm=$3
 
-series=`bin/get $spec series`
+#series=`bin/get $spec series`
 name=`bin/get $spec name`
 
 target=r/$series-HEAD

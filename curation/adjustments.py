@@ -1173,7 +1173,7 @@ def patch_gbif(gbif):
     if myo != None:
         myo.absorb(gbif.taxon('2439119'))
 
-    for (synonym, primary, sid) in [
+    for (synonym, primary, qid) in [
             ('Chryso-Hypnum', 'Chryso-hypnum', otc('24')),  # 2014-04-13 JAR noticed while grepping
             ('Drake-Brockmania', 'Drake-brockmania', otc(2)),  # RR 2014-04-12 #47
             ('Saxo-Fridericia', 'Saxofridericia', otc(36)),  # RR #50 - this one is in NCBI, see above
@@ -1184,7 +1184,7 @@ def patch_gbif(gbif):
             ('Acanthocistidae', 'Acanthocystidae', otc(41)),
             ('Bullacta ecarata', 'Bullacta exarata', otc(42))
     ]:
-        proclaim(gbif, synonym_of(taxon(synonym), taxon(primary), 'spelling variant', sid))
+        proclaim(gbif, synonym_of(taxon(synonym), taxon(primary), 'spelling variant', qid))
 
     # These three went away after change to gbif processing after OTT 2.9
     # Whether_same('Drepano-Hypnum', 'Drepano-hypnum', True),
@@ -1198,7 +1198,7 @@ def patch_gbif(gbif):
 
     # 2014-04-21 RR
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/45
-    for (epithet, sid) in [('cylindraceum', otc(25)),
+    for (epithet, qid) in [('cylindraceum', otc(25)),
                            ('lepidoziaceum', otc(26)),
                            ('intermedium', otc(27)),
                            ('espinosae', otc(28)),
@@ -1213,7 +1213,7 @@ def patch_gbif(gbif):
         prop = synonym_of(taxon('Cyrto-Hypnum ' + epithet),
                           taxon('Cyrto-hypnum ' + epithet),
                           'spelling variant',
-                          sid)
+                          qid)
         proclaim(gbif, prop)
         # was gbif.taxon('Cyrto-hypnum ' + epithet).absorb(gbif.taxon('Cyrto-Hypnum ' + epithet))
 

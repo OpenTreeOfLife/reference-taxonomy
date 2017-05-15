@@ -46,7 +46,12 @@ public class Taxon extends Node implements Comparable<Taxon> {
             tax.addToNameIndex(this, name);
     }
 
-    public Taxon taxon() { return this; }
+    public Taxon taxon() {
+        if (this.prunedp)
+            return null;
+        else
+            return this;
+    }
 
     public String getType() { return null; }
 
@@ -160,28 +165,34 @@ public class Taxon extends Node implements Comparable<Taxon> {
         return syn;
     }
 
+    // type must be nonnull
 	public Synonym addSynonym(String name, String type) {
         return addSynonym(name, type, null);
     }
 
-    // type must be nonnull
-    // sid is a 'source id', either a record id (e.g. in GBIF or IRMNG) or
-    // a curation id 'otc:NNN'
+    // sid is a 'source id', unique within this taxonomy, suitable for
+    // use with getNodeById
 	public Synonym addSynonym(String name, String type, String sid) {
         if (name == null) {
             System.err.format("** Null is not a valid name-string: %s\n", this);
             backtrace();
             return null;
         } else if (name.equals(this.name)) {
+            //System.err.format("** Name can't be both synonym and primary: %s\n", this);
             return null;
         } else {
-            for (Synonym syn : this.synonyms)
-                if (syn.name.equals(name))
+            for (Synonym syn : this.getSynonyms()) {
+                if (syn == null)
+                    System.err.format("** syn is null (of %s)\n", name);
+                else if (syn.name == null)
+                    System.err.format("** syn.name is null (of %s)\n", name);
+                else if (syn.name.equals(name))
                     return syn;
+            }
             Synonym syn = new Synonym(name, type, this); // does addToNameIndex
             syn.taxonomy = this.taxonomy;
             if (sid != null)
-                syn.setId(sid);
+                syn.setId(sid);     // worry about id already in use
             if (this.synonyms == NO_SYNONYMS)
                 this.synonyms = new ArrayList<Synonym>();
             this.synonyms.add(syn);
@@ -193,13 +204,18 @@ public class Taxon extends Node implements Comparable<Taxon> {
     // taxon (either synonym or not).
     // Returns number of synonyms created.
 
-    public int copySynonymsTo(Taxon targetTaxon) {
+    public int copyNamesTo(Taxon targetTaxon) {
         int count = 0;
         if (this.name != null)
-            if (targetTaxon.addSynonym(this, "synonym") != null)
+            if (targetTaxon.name == null)
+                targetTaxon.setName(this.name);
+            else if (targetTaxon.name.equals(this.name))
+                ;
+            else if (targetTaxon.addSynonym(this, "synonym") != null)
                 ++count;
         for (Synonym syn : this.getSynonyms())
-            if (targetTaxon.addSynonym(syn, syn.type) != null)
+            if (!syn.name.equals(targetTaxon.name) &&
+                targetTaxon.addSynonym(syn, syn.type) != null)
                 ++count;
         return count;
     }
@@ -974,8 +990,13 @@ public class Taxon extends Node implements Comparable<Taxon> {
         return this.synonym(name, typ, null);
 	}
 
-	public Synonym synonym(String name, String typ, String sid) {
-        Synonym syn = this.addSynonym(name, typ, sid);
+	public Synonym synonym(String name, String typ, String qid) {
+        // qid is work in progress - ignored for now,
+        // trying to figure out how it gets propagated
+        // through merge and alignment
+        if (qid != null)
+            System.out.format("# discarding qid %s\n", qid);
+        Synonym syn = this.addSynonym(name, typ);
 		if (syn == null)
 			System.out.format("| Synonym already present: %s %s\n", this, name);
         return syn;
@@ -1027,24 +1048,29 @@ public class Taxon extends Node implements Comparable<Taxon> {
 	// Same as take + elide ?
 
 	public boolean absorb(Taxon other) {
-        return absorb(other, "proparte synonym", null);
+        return absorb(other, "synonym", null);
     }
 
-	public boolean absorb(Taxon other, String type, String sid) {
+    // qid is ignored for now... work in progress
+	public boolean absorb(Taxon other, String type, String qid) {
         if (other == null) return false;
 		if (this.taxonomy != other.taxonomy) {
 			System.err.format("** %s and %s aren't in the same taxonomy\n", other, this);
 			return false;
 		}
-		if (other.children != NO_CHILDREN)
-			for (Taxon child : new ArrayList<Taxon>(other.children))
-				// beware concurrent modification
-				child.changeParent(this);
 
-		this.addSynonym(other.name, type, sid);
-        // Synonymness is transitive?
+        // Move all of the children
+        for (Taxon child : new ArrayList<Taxon>(other.getChildren()))
+            // beware concurrent modification?
+            child.changeParent(this);
+
+        // Move the name
+        if (other.name != null)
+            this.addSynonym(other.name, type);
+
+        // Move all of the synonyms (synonymness is transitive)
         for (Synonym syn : other.getSynonyms())
-            this.addSynonym(syn.name, "synonym", sid);
+            this.addSynonym(syn.name, "synonym");
 
         // If an extinct taxon absorbs an extant one, it becomes extant
         if (other.isExtant() && this.isExtinct()) {

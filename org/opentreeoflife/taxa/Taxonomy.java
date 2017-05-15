@@ -153,9 +153,11 @@ public abstract class Taxonomy {
         return this.idIndex.keySet();
     }
 
+    // Cause id to be an identifier of node.
+
     public void addId(Node node, String id) {
         if (id != null) {
-            Taxon existing = this.lookupId(id);
+            Node existing = this.getNodeById(id);
             if (existing != null) {
                 if (existing != node)
                     System.err.format("** Id collision: attempt to add %s (= %s) as an id for %s\n",
@@ -195,17 +197,19 @@ public abstract class Taxonomy {
 	}
 
     // Every taxonomy has an idspace, even if not every node has an id.
-    // Follow synonyms through to taxa for backward compatility.
 
 	public Taxon lookupId(String id) {
-        Node n = this.idIndex.get(id);
+        Node n = this.getNodeById(id);
         if (n == null)
             return null;
-        Taxon t = n.taxon();
-        if (t.prunedp)
-            // System.err.format("** Pruned taxon found in id index: %s\n", t);
+        else if (n instanceof Taxon)
+            return (Taxon)n;
+        else
             return null;
-        return t;
+	}
+
+	public Node getNodeById(String id) {
+        return this.idIndex.get(id);
 	}
 
 	public Node getNodeById(String id) {
@@ -304,8 +308,6 @@ public abstract class Taxonomy {
         else {
             Node node = this.qidIndex.get(qid);
             if (node != null) {
-                if (node.taxon().prunedp)
-                    return null;
                 if (this.qidAmbiguous.contains(qid)) {
                     System.out.format("# Ambiguous qid %s = %s + ...\n", qid, node);
                     return null;
@@ -327,8 +329,11 @@ public abstract class Taxonomy {
                     this.qidAmbiguous.add(qid);
                     System.out.format("# Making qid ambiguous %s = %s + %s\n", qid, node, other);
                 }
-            } else
-                this.qidIndex.put(qid, node);
+            } else {
+                Taxon taxon = node.taxon();
+                if (taxon != null) // not pruned?
+                    this.qidIndex.put(qid, node);
+            }
         }
     }
 
@@ -1013,18 +1018,13 @@ public abstract class Taxonomy {
         return tax2;
     }
 
-    // Copy aliased ids from larger taxonomy to selected subtaxonomy, as appropriate
+    // Copy aliased ids from larger taxonomy (this) to selected
+    // subtaxonomy (tax2), as appropriate.
     // tax2 = the selection, this = where it came from
 
     void copySelectedIds(Taxonomy tax2) {
         int count = 0;
         for (String id : this.allIds()) {
-<<<<<<< HEAD
-            Taxon node = this.lookupId(id);
-            if (!node.id.equals(id) && tax2.lookupId(node.id) != null) {
-                tax2.addId(node, id);
-                ++count;
-=======
             Node node = this.getNodeById(id);
             if (node != null && node.id != null) {
                 Node node2 = tax2.getNodeById(node.id);
@@ -1032,7 +1032,6 @@ public abstract class Taxonomy {
                     tax2.addId(node2, id);
                     ++count;
                 }
->>>>>>> 54930d9... initial configuration, fix synonym ids, etc
             }
         }
         System.out.format("| copied %s id aliases\n", count);
@@ -1215,7 +1214,7 @@ public abstract class Taxonomy {
         Taxon newnode = dupWithoutId(node, reason);
         if (node.id != null)
             newnode.setId(node.id);
-        node.copySynonymsTo(newnode);
+        node.copyNamesTo(newnode);
         return newnode;
     }
 

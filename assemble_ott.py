@@ -89,8 +89,10 @@ def create_ott(ott_spec):
 
 def merge_sources(ott):
 
-    gbif = load_taxonomy('gbif')
-    adjustments.adjust_gbif(gbif)
+    worms = load_taxonomy('worms')
+    adjustments.adjust_worms(worms)
+    (malacostraca, worms_sans_malacostraca) = split_taxonomy(worms, 'Malacostraca')
+    (cnidaria, low_priority_worms) = split_taxonomy(worms_sans_malacostraca, 'Cnidaria')
 
     # SILVA
     silva = load_taxonomy('silva')
@@ -116,6 +118,7 @@ def merge_sources(ott):
     adjustments.adjust_lamiales(lamiales)
     align_and_merge(adjustments.align_lamiales(lamiales, ott))
 
+    """
     # WoRMS
     # higher priority to Worms for Malacostraca, Cnidaria so we split out
     # those clades from worms and absorb them before NCBI
@@ -126,6 +129,10 @@ def merge_sources(ott):
     align_and_merge(ott.alignment(malacostraca))
     (cnidaria, low_priority_worms) = split_taxonomy(worms_sans_malacostraca, 'Cnidaria')
     align_and_merge(ott.alignment(cnidaria))
+    """
+    align_and_merge(ott.alignment(malacostraca))
+    align_and_merge(ott.alignment(cnidaria))
+
 
     # NCBI
     ncbi = load_taxonomy('ncbi')
@@ -155,6 +162,8 @@ def merge_sources(ott):
     # align_and_merge(adjustments.align_fungorum_sans_fungi(fungorum_sans_fungi, ott))
 
     # GBIF
+    gbif = load_taxonomy('gbif')
+    adjustments.adjust_gbif(gbif)
     gbif_to_ott = adjustments.align_gbif(gbif, ott)
     align_and_merge(gbif_to_ott)
 
@@ -300,7 +309,8 @@ def get_default_extinct_info_from_gbif(paleo_path, gbif, gbif_to_ott):
                         flagged += 1
                         taxon.extinct()
                     else:
-                        print "| PaleoDB taxon %s may be extant; it's in %s" % (taxon, prefix)
+                        #print "| PaleoDB taxon %s may be extant; it's in %s" % (taxon, prefix)
+                        True
         infile.close()
         print '| Flagged %s of %s taxa from paleodb\n' % (flagged, paleos)
 
@@ -469,7 +479,7 @@ def retain_ids_from_list(tax, filename):
                 count += 1
 
             # If it has an id, but qid is not the primary qid, skip it
-            elif taxon.sourceIds[0] != qid:
+            elif taxon.sourceIds != None and taxon.sourceIds[0] != qid:
                 if tracep: print '# %s is minor for %s' % (qid_id, taxon)
                 False
 

@@ -8,6 +8,8 @@ public class Synonym extends Node {
 
     public Synonym(String name, String kind, Taxon taxon) {
         super(name);
+        if (name == null)
+            System.err.format("** Null name for synonym of %s\n", taxon);
         this.parent = taxon;
         this.type = kind;
         taxon.taxonomy.addToNameIndex(this, name);

@@ -56,14 +56,14 @@ class _Designator:
 #   note - information that's currently only in comments in the 
 #     taxonomy sources (curation/amendments.py and so on).
 
-def has_parent(child, parent, sid):
-    return _Has_parent(child, parent, sid)
+def has_parent(child, parent, qid):
+    return _Has_parent(child, parent, qid)
 
 class _Has_parent:
-    def __init__(self, child, parent, sid):
+    def __init__(self, child, parent, qid):
         self.child = child
         self.parent = parent
-        self.source_id = sid
+        self.qid = qid
     def check(self, tax, windy):
         c = self.child.resolve_in(tax, windy)
         p = self.parent.resolve_in(tax, windy)
@@ -98,24 +98,22 @@ class _Has_parent:
         return ('has_parent(%s, %s, %s, %s)' %
                 self.child.stringify(),
                 self.parent.stringify(),
-                self.source_id)
+                self.qid)
 
 # This is mainly for objective synonyms. proparte and subjective don't really work.
 # Still pretty ugly, but should work for current OTT purposes.
 
-def synonym_of(syn, pri, kind, sid):
-    return _Synonym_of(syn, pri, kind, sid)
+def synonym_of(syn, pri, kind, qid):
+    return _Synonym_of(syn, pri, kind, qid)
 
 class _Synonym_of:
-    def __init__(self, syn, pri, kind, sid):
+    def __init__(self, syn, pri, kind, qid):
+        if syn == None: print '** Missing synonym taxon', qid
+        if pri == None: print '** Missing primary taxon', qid
         self.synonym = syn
         self.primary = pri
         self.kind = kind
-        self.source_id = sid
-        if self.primary.name == None:
-            print '** Missing name', self.primary.stringify(), sid
-        if self.synonym.name == None:
-            print '** Missing name', self.synonym.stringify(), sid
+        self.qid = qid
     def check(self, tax, windy):
         s = self.synonym.resolve_in(tax, windy)
         p = self.primary.resolve_in(tax, windy)
@@ -143,45 +141,51 @@ class _Synonym_of:
         if p == None:
             if s == None:
                 if windy:
-                    print ('** Cannot claim %s synonym of %s - neither resolves in %s' %
+                    print ('** Cannot make %s a synonym of %s - neither resolves in %s' %
                            (self.synonym.name, self.primary.name, tax.getTag()))
                 return Dunno
             else:
                 s.rename(self.primary.name)
                 return True
         else:
-            if s != None:
-                p.absorb(s, self.kind, self.source_id)
-            p.synonym(self.synonym.name, self.kind, self.source_id)
-            if p.name == self.synonym.name:
+            # Figure out what name should not be primary
+            synname = self.synonym.name
+            if synname == None and s != None:
+                synname = s.name
+            if synname == None:
+                print '** no synonym name supplied'
+
+            # We don't care what p's name is, so long as it isn't
+            # synonym.name.  First rule out that case.
+            if p.name == synname:
+                # Name in synonym taxon must not be primary
                 p.rename(self.primary.name)
-                if p.name == self.synonym.name:
-                    if windy:
-                        print ('** %s is primary name of %s, not synonym' %
-                               (self.synonym.name, p))
-                    return False
-                else:
-                    return True
+
+            # Now do the deed
+            if s != None:
+                p.absorb(s, self.kind, self.qid)
+                # after which s has been pruned - do not reference
             else:
-                return True
+                p.synonym(synname, self.kind, self.qid)
+            return True
     def stringify(self):
         return ('synonym_of(%s, %s, %s, %s)' %
                 (self.synonym.stringify(),
                  self.primary.stringify(),
                  self.kind,
-                 self.source_id))
+                 self.qid))
 
 
 # Sort of like synonym, but for id aliases.
 
-def alias_of(syn, pri, sid):
-    return _Alias_of(syn, pri, sid)
+def alias_of(syn, pri, qid):
+    return _Alias_of(syn, pri, qid)
 
 class _Alias_of:
-    def __init__(self, syn, pri, sid):
+    def __init__(self, syn, pri, qid):
         self.primary = pri
         self.alias = syn
-        self.source_id = sid
+        self.qid = qid
     def check(self, tax, windy):
         p = self.primary.resolve_in(tax, windy)
         s = self.alias.resolve_in(tax, windy)
@@ -205,7 +209,7 @@ class _Alias_of:
         if p != None and s != None:
             if p != s:
                 p.absorb(s)
-                p.synonym(s.name, 'alias', self.source_id)
+                p.synonym(s.name, 'alias', self.qid)
                 p.addId(s.id)
                 for syn in s.getSynonyms():
                     # Not quite right!  Need a LUB for alias types
@@ -226,15 +230,15 @@ class _Alias_of:
         return ('alias_of(%s, %s, %s, %s)' %
                 (self.alias.stringify(),
                  self.primary.stringify(),
-                 self.source_id))
+                 self.qid))
 
-def is_extinct(taxon, sid):
-    return _Is_extinct(taxon, sid)
+def is_extinct(taxon, qid):
+    return _Is_extinct(taxon, qid)
 
 class _Is_extinct:
-    def __init__(self, taxon, sid):
+    def __init__(self, taxon, qid):
         self.taxon = taxon
-        self.sid = sid
+        self.qid = qid
     def check(self, tax, windy):
         t = self.taxon.resolve_in(tax, windy)
         if t == None:
@@ -251,16 +255,16 @@ class _Is_extinct:
     def stringify(self):
         return ('is_extinct(%s, %s)' %
                 self.taxon.stringify(),
-                self.source_id)
+                self.qid)
 
-def has_rank(taxon, rank, sid):
-    return _Has_rank(taxon, rank, sid)
+def has_rank(taxon, rank, qid):
+    return _Has_rank(taxon, rank, qid)
 
 class _Has_rank:
-    def __init__(self, taxon, rank, sid):
+    def __init__(self, taxon, rank, qid):
         self.taxon = taxon
         self.rank = Rank.getRank(rank)
-        self.sid = sid
+        self.qid = qid
         if self.rank == None:
             print '** Unrecognized rank:', rank
     def check(self, tax, windy):
@@ -287,4 +291,4 @@ class _Has_rank:
     def stringify(self):
         return ('has_rank(%s, %s)' %
                 self.taxon.stringify(),
-                self.source_id)
+                self.qid)

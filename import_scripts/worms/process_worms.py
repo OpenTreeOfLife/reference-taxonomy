@@ -27,11 +27,13 @@ def process_worms(digest_path, out_path):
     for name in names:
         if name.startswith('a'):
             process_records(os.path.join(digest_path, name))
+    if not os.path.isdir(out_path):
+        os.makedirs(out_path)
     taxpath = os.path.join(out_path, 'taxonomy.tsv')
     print 'writing %s taxa to %s' % (len(taxa), taxpath)
     with open(taxpath + '.new', 'w') as taxfile:
         form = '%s\t%s\t%s\t%s\t%s\n'
-        taxfile.write(form % ('uid', 'parent', 'name', 'rank', 'flags'))
+        taxfile.write(form % ('uid', 'parent_uid', 'name', 'rank', 'flags'))
         for taxon in sorted(taxa.values(), key=lambda taxon: int(taxon[0])):
             if not suppress(taxon):
                 taxfile.write(form % taxon)
@@ -51,11 +53,15 @@ def suppress(taxon):
         return False
     name = taxon[2]
     parent_id = taxon[1]
+    flags = taxon[4]
     taxa = taxa_by_name[name]
     if len(taxa) == 1:
         return False
     elif parent_id in map(grandparent_id, taxa):
-        print 'suppress', taxon
+        # print 'suppress', taxon   -- 145 of these
+        return True
+    elif 'hidden' in flags:
+        # e.g. Podascon chevreuxi - 211 of these
         return True
     else:
         return False

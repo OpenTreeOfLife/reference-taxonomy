@@ -145,7 +145,7 @@ def merge_sources(ott):
 
     # Low-priority WoRMS
     # This is suboptimal, but the names are confusing the division logic
-    a = adjustments.align_worms(low_priority_worms, ott)
+    a = adjustments.align_worms(worms_sans_cnidaria, ott)
     align_and_merge(a)
 
     # The rest of Index Fungorum.  (Maybe not a good idea to use this.

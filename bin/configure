@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# bin/configure ott3.1 ott3.0 idlist
+#   - get properties.json file for ott3.0
+#   - create .mk include file defining xxx-PREVIOUS
+#   - advance (previous) ott from ott2.9 to ott3.0 = ott-NEW
+#   - advance idlist from ott2.9 to ott3.0 = idlist-NEW
+
+# idlist should have a sources: {...} property
+
+set -e
+
+[ $# = 3 ] || (echo wna; exit 1)
+
+new=$1
+old=$2
+idlist=$3
+
+if [ x$FILES_URL_PREFIX = x ]; then
+    FILES_URL_PREFIX=http://files.opentreeoflife.org
+fi
+
+# Get the old properties file.
+dir=r/$old
+if [ ! -e $dir/properties.json ]; then
+
+    # Commands copied from fetch-archive.
+    # (might be better to have a properties-only option for fetch-archive)
+
+    series=`echo $spec | egrep -o "[^0-9.]+"`
+    i=$((${#series} - 1))
+    [ ${series:i} = '-' ] && series=${series:0:$i}
+
+    PROP_URL=$FILES_URL_PREFIX/$series/$old/properties.json
+    mkdir -p $dir
+    if wget -q --output-document=$dir/properties.json.new $PROP_URL ; then
+        mv $dir/properties.json.new $dir/properties.json
+    else
+        echo "Failed to retrieve $PROP_URL"
+        exit 1
+    fi
+    echo series is $series
+fi
+
+python util/update_config.py <$dir/properties.json >config.mk
+
+series=`bin/get $old series`
+echo initiating $new
+bin/new-version $series .tgz cc0
+bin/put $series-NEW name $new
+
+# ??? how to set the new version property ???
+# get separator from previous version...
+
+sep=`bin/get $series-PREVIOUS separator`
+echo separator is $sep
+drop=$((${#series} + ${#sep}))
+echo drop $drop off the front
+version=${new:drop}
+echo version is $version
+
+bin/put $new version $version
+
+# Needs to be made or fetched (somehow).
+# The following will at least force failure if the wrong version is used.
+
+bin/set-head idlist idlist-`bin/get $old name`
+
+bin/put $new suffix .tgz
+bin/put $new legal cc0
+
+# what about draft?  should only set it if unset

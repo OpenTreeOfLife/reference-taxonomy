@@ -209,10 +209,6 @@ public abstract class Taxonomy {
 	}
 
 	public Node getNodeById(String id) {
-        return this.idIndex.get(id);
-	}
-
-	public Node getNodeById(String id) {
         Node n = this.idIndex.get(id);
         if (n == null)
             return null;
@@ -220,7 +216,6 @@ public abstract class Taxonomy {
             return null;
         else
             return n;
->>>>>>> 54930d9... initial configuration, fix synonym ids, etc
 	}
 
     // Roots - always Taxons, never Synonyms.
@@ -1830,8 +1825,10 @@ public abstract class Taxonomy {
 
         // Ensure every identified node (taxon or synonym) is reachable...
         for (String id : this.allIds()) {
-            Node node = this.getNodeById(id);
-            if (node.isPruned())
+            Node node = this.getNodeById(id); // never returns pruned
+            if (node == null)
+                ;
+            else if (node.isPruned())
                 if (node instanceof Taxon && id.equals(node.id))
                     System.err.format("** check: Pruned node found in identifier index: %s\n", node);
             else {

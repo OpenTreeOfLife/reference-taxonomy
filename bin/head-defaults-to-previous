@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Default -HEAD to -PREVIOUS, that is, if -HEAD doesn't exist.
+
+set -e
+
+[ $# = 1 ] || (echo "head-defaults-to-previous: arg count"; exit 1)
+
+series=$1
+
+if [ -e r/$series-HEAD/source/.made ]; then
+    # Already exists - do not discard what's already there.
+    exit 0
+fi
+
+if [ -e r/$series-HEAD ]; then
+    # Already exists - not sure what to do.
+    echo "$series-HEAD is incomplete, please repair or remove"
+    exit 1
+fi
+
+# Ensure that -PREVIOUS exists
+# Compare update_config.py
+if ! [ -e r/$series-PREVIOUS/source/.made ]; then
+    bin/unpack-archive $series-PREVIOUS
+    touch r/$series-PREVIOUS/.is-previous
+    bin/set-head $series $series-PREVIOUS easy
+fi
+
+# Set -HEAD to point to -PREVIOUS
+bin/set-head series series-PREVIOUS
+

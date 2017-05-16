@@ -26,11 +26,6 @@ AMENDMENTS_ORIGIN_URL=https://github.com/OpenTreeOfLife/amendments-1.git
 
 include config.mk
 
-configure: config.mk
-
-config.mk: config.json util/update_config.py
-	python util/update_config.py <config.json >config.mk
-
 fetch: $(FETCHES)
 
 # ----- Taxonomy source locations -----
@@ -50,9 +45,6 @@ CLASS=org/opentreeoflife/smasher/Smasher.class
 JAVASOURCES=$(shell find org/opentreeoflife -name "*.java")
 
 # ----- Targets
-
-# Edit the following to advance the major version number (e.g. from 3 to 4)
-OTT_MAJOR=3
 
 # The open tree reference taxonomy
 
@@ -78,7 +70,8 @@ r/ott-NEW/source/debug/transcript.out: bin/jython $(CLASS) \
 	    util/proposition.py \
 	    curation/separation/taxonomy.tsv \
 	    $(RESOURCES) \
-	    r/ott-PREVIOUS/resource/.made \
+	    r/idlist-HEAD/source/.made \
+	    r/ott-HEAD/resource/.made \
 	    curation/lamiales/taxonomy.tsv \
 	    curation/h2007/tree.tre \
 	    curation/edits/ott_edits.tsv \
@@ -90,7 +83,6 @@ r/ott-NEW/source/debug/transcript.out: bin/jython $(CLASS) \
 	@mkdir -p r/ott-NEW/source
 	@echo SET THE VERSION.
 	bin/put ott-NEW draft $$((1 + `bin/get ott-NEW draft 0`))
-	bin/put ott-NEW version $(OTT_MAJOR).`bin/get ott-NEW minor`
 	@echo Writing transcript to r/ott-NEW/source/debug/transcript.out
 	rm -f /tmp/make-ott-completed
 	time (bin/jython make-ott.py ott-NEW && touch /tmp/make-ott-completed) 2>&1 \
@@ -113,15 +105,15 @@ r/ott-NEW/source/version.txt: r/ott-NEW
 r/ott-NEW/source/README.html: r/ott-NEW/source/debug/transcript.out util/make_readme.py
 	python util/make_readme.py r/ott-NEW/source/ >$@
 
-r/ott-NEW: r/ott-PREVIOUS/resource/.made
+r/ott-NEW: r/ott-HEAD/resource/.made
 	bin/new-version ott .tgz cc0
-	bin/put ott-NEW minor $$((1 + `bin/get ott-PREVIOUS minor`))
+	bin/put ott-NEW minor $$((1 + `bin/get ott-HEAD minor`))
 	bin/put ott-NEW draft 0
 	bin/put ott-NEW ott_idspace ott
 	(cd r/ott-NEW; rm -f source; ln -sf resource source)
 
-r/ott-PREVIOUS/resource/.made: r/ott-PREVIOUS/source/.made
-	(cd r/ott-PREVIOUS && rm -f resource && ln -s source resource)
+r/ott-HEAD/resource/.made: r/ott-HEAD/source/.made
+	(cd r/ott-HEAD && rm -f resource && ln -s source resource)
 
 
 # ----- Taxonomy sources
@@ -152,6 +144,8 @@ fetch-all: $(UNPACKS)
 
 unpack/%:
 	bin/unpack-archive $(*F)
+
+# (why doesn't this just use bin/set-head?)
 
 unpack-to-head/%: unpack/%
 	@h=r/`bin/get $(*F) series`-HEAD && \
@@ -515,8 +509,9 @@ r/amendments-HEAD/resource/.made: r/amendments-HEAD/.issue
 # a retrieval of PREVIOUS, which is not always what we want.
 
 r/amendments-HEAD/.issue:
-	$(MAKE) r/amendments-PREVIOUS/.issue
+	$(MAKE) r/amendments-PREVIOUS/.is-previous
 	bin/set-head amendments amendments-PREVIOUS easy
+	touch $@
 
 # New version: fetch from github
 
@@ -548,29 +543,29 @@ r/idlist-HEAD/resource/.made: r/idlist-HEAD/source/.made
 	(cd r/idlist-HEAD && rm -f resource && ln -s source resource)
 
 
-refresh/idlist: r/idlist-NEW/source/.made
-	bin/christen idlist-NEW
-
 # When we build OTT 3.1, we need idlist-3.0, but we have
 # idlist-PREVIOUS which is idlist-2.10, which has ids through OTT 2.9.
 
 # So, to make the id list needed to build OTT 3.1, we extend
-# idlist-2.10 with new identifiers added in OTT 3.0, obtaining
+# idlist-2.10 with new identifiers added in OTT 3.0 (ott-HEAD), obtaining
 # idlist-3.0, which is then used as input in build OTT 3.1.
 # Whew!
 
+refresh/idlist: r/idlist-NEW/source/.made
+	bin/christen idlist-NEW
+
 r/idlist-NEW/source/.made: r/idlist-PREVIOUS/source/.made \
-			   r/ott-PREVIOUS/resource/.made \
+			   r/ott-HEAD/source/.made \
 			   r/idlist-NEW
 	@rm -rf r/idlist-NEW/source
 	@mkdir -p r/idlist-NEW/source
 	cp -pr r/idlist-PREVIOUS/source/regs r/idlist-NEW/source/
-	bin/put idlist-NEW version `bin/get ott-PREVIOUS version`
+	bin/put idlist-NEW version `bin/get ott-HEAD version`
 	python import_scripts/idlist/extend_idlist.py \
 	       r/idlist-PREVIOUS/source \
-	       r/ott-PREVIOUS/resource \
-	       `bin/get ott-PREVIOUS name` \
-	       r/ott-PREVIOUS/properties.json \
+	       r/ott-HEAD/source \
+	       `bin/get ott-HEAD name` \
+	       r/ott-HEAD/properties.json \
 	       r/idlist-NEW/source
 	touch $@
 
@@ -630,8 +625,8 @@ tarball: r/ott-HEAD/archive/.made
 #   opentree@ot10.opentreeoflife.org:files.opentreeoflife.org/ott/ott2.9/
 
 # This file is big
-r/ott-NEW/work/differences.tsv: r/ott-PREVIOUS/resource/.made r/ott-NEW/source/.partial
-	$(SMASH) --diff r/ott-PREVIOUS/resource/ r/ott-NEW/source/ $@.new
+r/ott-NEW/work/differences.tsv: r/ott-HEAD/resource/.made r/ott-NEW/source/.partial
+	$(SMASH) --diff r/ott-HEAD/resource/ r/ott-NEW/source/ $@.new
 	mv $@.new $@
 	wc $@
 
@@ -692,7 +687,7 @@ TAXON=Asterales
 # t/tax/prev/taxonomy.tsv: r/ott-HEAD/resource/taxonomy.tsv   - correct expensive
 t/tax/prev_aster/taxonomy.tsv: 
 	@mkdir -p `dirname $@`
-	$(SMASH) r/ott-PREVIOUS/resource/ --select2 $(TAXON) --out t/tax/prev_aster/
+	$(SMASH) r/ott-HEAD/resource/ --select2 $(TAXON) --out t/tax/prev_aster/
 
 # dependency on r/ncbi-HEAD/resource/taxonomy.tsv - correct expensive
 t/tax/ncbi_aster/taxonomy.tsv: 

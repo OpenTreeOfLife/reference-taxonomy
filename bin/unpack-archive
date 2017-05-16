@@ -18,16 +18,20 @@ if [ x$DRYRUN != x ]; then dryrun=echo; fi
 dir=r/$spec
 
 if [ -e $dir/source/.made ]; then
-    if [ ! -e $dir/archive/.made ]; then
+    if [ -e $dir/archive/.made ]; then
+        if [ ! $dir/archive/.made -nt $dir/source/.made ]; then
+            # If the archive is not newer than the source, then the
+            # source we already have is good enough, and there's no
+            # need to unpack.
+            echo "unpack-archive $spec: source is present and not older than archive"
+            exit 0
+        else
+            echo "archive is new; will replace source"
+        fi
+    else
         # If we already have the desired source, and there's no
         # archive, assume it is new, and just use it.
-        echo "unpack-archive: source $spec is already present"
-        exit 0
-    elif [ ! $dir/archive/.made -nt $dir/source/.made ]; then
-        # If the archive is not newer than the source, then the
-        # source we already have is good enough, and there's no
-        # need to unpack.
-        echo "unpack-archive: source $spec is present and not older than archive"
+        echo "unpack-archive $spec: source is already present (without archive, but that's ok)"
         exit 0
     fi
 fi

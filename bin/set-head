@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# link-head foo foo-xxx easy|firm
+# set-head foo foo-xxx easy|firm
 
 # Make foo-HEAD point to foo-xxx.
 

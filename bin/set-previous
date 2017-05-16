@@ -13,8 +13,9 @@ name=$2
 
 if [ ! -d r/$name ]; then
     mkdir r/$name
-    touch r/$name/.issue
 fi
+
+touch r/$name/.is-previous
 
 # Create properties file
 

@@ -897,6 +897,11 @@ def align_ncbi(ncbi, silva, ott):
     # somewhere.
     ncbi.taxon('Fungi').hideDescendantsToRank('species')
 
+    # Position is equivocal, but everyone else puts it in Annelids.
+    # In Annelids also agrees with a tree that's in synthesis.
+    # NCBI is definitely the minority position.
+    ncbi.taxon('Annelida').take(ncbi.taxon('Myzostomida'))
+
     # - Alignment to OTT -
 
     #a.same(ncbi.taxon('Cyanobacteria'), silva.taxon('D88288/#3'))
@@ -1460,11 +1465,6 @@ def align_worms(worms, ott):
            ott.taxonThatContains('Trichosporon', 'Trichosporon cutaneum'))
     a.same(worms.taxonThatContains('Trichoderma', 'Trichoderma koningii'),
            ott.taxonThatContains('Trichoderma', 'Trichoderma koningii'))
-    # 2016-07-28 Noticed this in deprecated.tsv:
-    # NCBI puts Myzostomida outside of Annelida.  To ensure matches, we have
-    # to do so here as well, because Annelida is a barrier node and somewhat
-    # difficult to cross.
-    worms.taxon('Animalia').take(worms.taxon('Myzostomida'))
 
     # extinct foram, polyseym risk with extant bryophyte
     # worms.taxon('Pohlia', 'Rhizaria').prune(this_source)
@@ -1719,6 +1719,11 @@ def align_irmng(irmng, ott):
 
     # 2017-02-15 Noticed during 3.0 build
     a.same(irmng.taxon('Heterokontophyta'), ott.taxon('Stramenopiles'))
+
+    # Yan Wong https://github.com/OpenTreeOfLife/feedback/issues/345
+    # Conolophus should synonymized with Minchenella... see comments
+    if irmng.maybeTaxon('Conolophus', 'Mammalia') != None:
+        irmng.taxon('Conolophus', 'Mammalia').prune()
 
     return a
 

@@ -139,8 +139,6 @@ def patch_ott(ott):
     ott.taxon('Bilateria').take(ott.taxon('Acoela'))
     ott.taxon('Bilateria').take(ott.taxon('Xenoturbella'))
     ott.taxon('Bilateria').take(ott.taxon('Nemertodermatida'))
-    # Myzostomida no longer in Annelida
-    # ott.taxon('Polychaeta','Annelida').take(ott.taxon('Myzostomida'))
     # https://dx.doi.org/10.1007/s13127-011-0044-4
     # Not in deuterostomes
     ott.taxon('Bilateria').take(ott.taxon('Xenacoelomorpha'))
@@ -607,3 +605,32 @@ def patch_ott(ott):
         for child in gal.getChildren():
             if not child.name.endswith(' cuvier'):
                 child.extinct()
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/356
+    for genus in ['Chinlea', 'Diplurus', 'Graphiurichthys',
+                  'Moenkopia', 'Quayia']:
+        g = ott.maybeTaxon(genus, 'Coelacanthidae')
+        if g != None:
+            g.extinct()
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/352
+    for name in ['Lasioseisus chenpengi', 'Rhynacadicrus asperulus']:
+        if ott.maybeTaxon(name, ' Heliconiaceae') != None:
+            ott.taxon(name, ' Heliconiaceae').hide()
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/336
+    proclaim(ott, synonym_of(taxon('Emberiza calandra'),
+                             taxon('Miliaria calandra'),
+                             'objective synonym',
+                             otc(55)))
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/332
+    proclaim(ott, synonym_of(taxon('Strigops habroptila'),
+                             taxon('Strigops habroptilus'),
+                             'spelling variant',
+                             otc(56)))
+
+    # https://github.com/OpenTreeOfLife/feedback/issues/317
+    proclaim(ott, is_extinct(taxon('Kummelonautilus'), otc(57)))
+    proclaim(ott, is_extinct(taxon('Westonoceras'), otc(58)))
+

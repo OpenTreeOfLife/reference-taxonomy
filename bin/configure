@@ -27,7 +27,7 @@ if [ ! -e $dir/properties.json ]; then
     # Commands copied from fetch-archive.
     # (might be better to have a properties-only option for fetch-archive)
 
-    series=`echo $spec | egrep -o "[^0-9.]+"`
+    series=`echo $old | egrep -o "[^0-9.]+"`
     i=$((${#series} - 1))
     [ ${series:i} = '-' ] && series=${series:0:$i}
 
@@ -39,7 +39,6 @@ if [ ! -e $dir/properties.json ]; then
         echo "Failed to retrieve $PROP_URL"
         exit 1
     fi
-    echo series is $series
 fi
 
 python util/update_config.py <$dir/properties.json >config.mk
@@ -52,21 +51,20 @@ bin/put $series-NEW name $new
 # ??? how to set the new version property ???
 # get separator from previous version...
 
-sep=`bin/get $series-PREVIOUS separator`
-echo separator is $sep
+sep=`bin/get $old separator`
 drop=$((${#series} + ${#sep}))
-echo drop $drop off the front
 version=${new:drop}
 echo version is $version
 
-bin/put $new version $version
+bin/put $series-NEW version $version
 
 # Needs to be made or fetched (somehow).
 # The following will at least force failure if the wrong version is used.
 
-bin/set-head idlist idlist-`bin/get $old name`
+rm -f r/idlist-HEAD
+ln -s idlist-`bin/get $old name` r/idlist-HEAD
 
-bin/put $new suffix .tgz
-bin/put $new legal cc0
+bin/put $series-NEW suffix .tgz
+bin/put $series-NEW legal cc0
 
 # what about draft?  should only set it if unset

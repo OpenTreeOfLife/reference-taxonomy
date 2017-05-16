@@ -17,10 +17,10 @@ psplit = prefix.split(':', 1)
 host = psplit[0]
 root = psplit[1]
 
-with open('resources/resources.json', 'r') as infile:
+with open('old-metadata/resources.json', 'r') as infile:
     resources = json.load(infile)
 
-with open('resources/captures.json', 'r') as infile:
+with open('old-metadata/captures.json', 'r') as infile:
     captures = json.load(infile)
 
 

@@ -15,6 +15,10 @@ import sys, os, json, argparse, re
 root = 'r'
 
 def convert_config(blob):
+
+    if "sources" in blob:
+        blob = blob["sources"]
+
     serieses = sorted(blob.keys())
     versions = map(lambda series: blob[series], serieses)
 

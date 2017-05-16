@@ -32,16 +32,13 @@ def convert_config(blob):
     # This dependency list refers to the symbolic links
     for series in serieses:
         v = blob[series]
-        print (('refresh/%s: r/%s-NEW/source/.made\n' +
-                '\tbin/christen %s-NEW') %
-               (series, series, series))
         print (('r/%s-HEAD/source/.made: r/%s-PREVIOUS/source/.made\n' +
                 '\tbin/set-head %s %s-PREVIOUS easy') %
                (series, series, series, series))
-        print (('r/%s-PREVIOUS/source/.made: r/%s-PREVIOUS/.issue\n' +
+        print (('r/%s-PREVIOUS/source/.made: r/%s-PREVIOUS/.is-previous\n' +
                 '\tbin/unpack-archive %s-PREVIOUS') %
                (series, series, series))
-        print (('r/%s-PREVIOUS/.issue:\n' +
+        print (('r/%s-PREVIOUS/.is-previous:\n' +
                 '\tbin/set-previous %s %s') %
                (series, series, v))
         print

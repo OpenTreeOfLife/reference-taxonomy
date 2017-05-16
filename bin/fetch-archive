@@ -46,11 +46,12 @@ if [ -e $dir/archive/.made ]; then
 fi
 
 # Get properties file and suffix
-$dryrun mkdir -p $dir
 PROP_URL=$FILES_URL_PREFIX/$series/$name/properties.json
 if [ x$dryrun = x ]; then
-    if wget -q --output-document=$dir/properties.json.new $PROP_URL; then
-        mv $dir/properties.json.new $dir/properties.json
+    temp=/tmp/$name-properties.json.new
+    if wget -q --output-document=$temp $PROP_URL; then
+        mkdir -p $dir
+        mv $temp $dir/properties.json
         suffix=`bin/get $name suffix`
     else
         echo "Failed to retrieve $PROP_URL"

@@ -58,8 +58,8 @@ OTT_MAJOR=3
 
 ott: refresh/ott
 
-r/ott-NEW/resource/.made: r/ott-NEW/source/.made
-	(cd r/ott-NEW && rm -f resource && ln -s source resource)
+refresh/ott: r/ott-NEW/source/.made
+	bin/christen ott-NEW
 
 # The works
 # Reinstate later: r/ott-NEW/source/debug/otu_differences.tsv
@@ -206,6 +206,9 @@ r/silva-HEAD/work/cluster_names.tsv: r/ncbi-HEAD/resource/.made \
 
 # Digestify fasta file and create sources for archive
 
+refresh/silva: r/silva-NEW/source/.made
+	bin/christen silva-NEW
+
 r/silva-NEW/source/.made: r/silva-NEW/source/silva_no_sequences.fasta
 	python util/origin_info.py \
 	  `cat r/silva-NEW/work/date` \
@@ -295,11 +298,14 @@ r/genbank-NEW:
 
 # --- Source: Index Fungorum in Open Tree form
 
+refresh/fung: r/fung-NEW/source/.made
+	bin/christen fung-NEW
+
 r/fung-HEAD/resource/.made: r/fung-HEAD/source/.made
 	(cd r/fung-HEAD; rm resource; ln -sf source resource)
 
-r/fung-NEW/resource/.made: r/fung-1/resource/.made r/fung-3/resource/.made r/fung-4/resource/.made
-	@mkdir r/fung-NEW/resource
+r/fung-NEW/source/.made: r/fung-1/resource/.made r/fung-3/resource/.made r/fung-4/resource/.made
+	@mkdir r/fung-NEW/source
 	python import_scripts/fung/cobble_fung.py
 	rm -rf r/fung-NEW/source
 	mv hackedfung r/fung-NEW/source
@@ -321,9 +327,14 @@ r/fung-NEW:
 
 # --- Source: WoRMS in Open Tree form
 
+# Make resource (i.e. taxonomy) from source (digest of WoRMS API traversal)
+
 r/worms-HEAD/resource/.made: import_scripts/worms/process_worms.py r/worms-HEAD/source/.made
 	python import_scripts/worms/process_worms.py r/worms-HEAD/source/digest r/worms-HEAD/resource
 	touch $@
+
+refresh/worms: r/worms-NEW/source/.made
+	bin/christen worms-NEW
 
 r/worms-NEW/source/.made: import_scripts/worms/fetch_worms.py r/worms-NEW
 	mkdir -p r/worms-NEW/work
@@ -337,13 +348,13 @@ r/worms-NEW/source/.made: import_scripts/worms/fetch_worms.py r/worms-NEW
 r/worms-HEAD/resource/.made-OLD-METHOD: r/worms-HEAD/source/.made
 	(cd r/worms-HEAD && rm -f resource && ln -s source resource)
 
-r/worms-NEW/resource/.made-OLD-METHOD: import_scripts/worms/worms.py r/worms-NEW
+r/worms-NEW/source/.made-OLD-METHOD: import_scripts/worms/worms.py r/worms-NEW
 	echo "*** Warning! This can take several days to run. ***"
 	@mkdir -p r/worms-NEW/source
 	python import_scripts/worms/worms.py \
-	       r/worms-NEW/resource/taxonomy.tsv \
-	       r/worms-NEW/resource/synonyms.tsv \
-	       r/worms-NEW/resource/worms.log
+	       r/worms-NEW/source/taxonomy.tsv \
+	       r/worms-NEW/source/synonyms.tsv \
+	       r/worms-NEW/source/worms.log
 	touch r/worms-NEW/work/.today
 	d=`python util/modification_date.py r/worms-NEW/work/.today`; \
           bin/put worms-NEW date $$d; \
@@ -372,6 +383,9 @@ r/ncbi-HEAD/resource/.made: r/ncbi-HEAD/source/.made import_scripts/ncbi/process
 
 # Refresh source from web.  Source depends on archive.
 # Override default pattern rule (archive instead of source).
+
+refresh/ncbi: r/ncbi-NEW/source/.made
+	bin/christen ncbi-NEW
 
 r/ncbi-NEW/source/.made: r/ncbi-NEW/archive/.made
 	bin/unpack-archive ncbi-NEW
@@ -420,6 +434,9 @@ r/gbif-HEAD/work/projection.tsv: r/gbif-HEAD/source/.made \
 
 # should be very similar to IRMNG
 
+refresh/gbif: r/gbif-NEW/source/.made
+	bin/christen gbif-NEW
+
 r/gbif-NEW/source/.made: r/gbif-NEW/archive/.made
 	bin/unpack-archive gbif-NEW
 	d=`python util/modification_date.py r/gbif-NEW/source/taxon.txt`; \
@@ -456,6 +473,9 @@ r/irmng-HEAD/resource/.made: r/irmng-HEAD/source/.made \
 #  should be mostly the same as for GBIF
 # Refresh makes archive instead of source
 
+refresh/irmng: r/irmng-NEW/source/.made
+	bin/christen irmng-NEW
+
 r/irmng-NEW/source/.made: r/irmng-NEW/archive/.made
 	bin/unpack-archive irmng-NEW
 	d=`python util/modification_date.py r/irmng-NEW/source/IRMNG_DWC.csv`; \
@@ -490,13 +510,18 @@ r/amendments-HEAD/resource/.made: r/amendments-HEAD/.issue
 	touch $@
 
 # Recursive make is not generally recommended, but don't see what else
-# to do in this case.  We don't want HEAD to depend on PREVIOUS.
+# to do in this case.  We don't want HEAD to depend (in the Makefile
+# sense) on PREVIOUS, since otherwise a demand for HEAD would force
+# a retrieval of PREVIOUS, which is not always what we want.
 
 r/amendments-HEAD/.issue:
 	$(MAKE) r/amendments-PREVIOUS/.issue
 	bin/set-head amendments amendments-PREVIOUS easy
 
 # New version: fetch from github
+
+refresh/amendments: r/amendments-NEW/source/.made
+	bin/christen amendments-NEW
 
 r/amendments-NEW/source/.made: tmp/amendments/amendments-1 r/amendments-NEW
 	@mkdir -p r/amendments-NEW/source/amendments-1
@@ -523,22 +548,29 @@ r/idlist-HEAD/resource/.made: r/idlist-HEAD/source/.made
 	(cd r/idlist-HEAD && rm -f resource && ln -s source resource)
 
 
-# When we build 3.1, IDLIST is idlist-3.0, which has ids through OTT 3.0.
-# So, to make the id list for 3.1, we first make OTT (or get) 3.1, then
-# combine the 3.0 id list with new registrations from 3.1.
+refresh/idlist: r/idlist-NEW/source/.made
+	bin/christen idlist-NEW
+
+# When we build OTT 3.1, we need idlist-3.0, but we have
+# idlist-PREVIOUS which is idlist-2.10, which has ids through OTT 2.9.
+
+# So, to make the id list needed to build OTT 3.1, we extend
+# idlist-2.10 with new identifiers added in OTT 3.0, obtaining
+# idlist-3.0, which is then used as input in build OTT 3.1.
+# Whew!
 
 r/idlist-NEW/source/.made: r/idlist-PREVIOUS/source/.made \
-			   r/ott-HEAD/resource/.made \
+			   r/ott-PREVIOUS/resource/.made \
 			   r/idlist-NEW
 	@rm -rf r/idlist-NEW/source
 	@mkdir -p r/idlist-NEW/source
 	cp -pr r/idlist-PREVIOUS/source/regs r/idlist-NEW/source/
-	bin/put idlist-NEW version `bin/get ott-HEAD version`
+	bin/put idlist-NEW version `bin/get ott-PREVIOUS version`
 	python import_scripts/idlist/extend_idlist.py \
 	       r/idlist-PREVIOUS/source \
-	       r/ott-HEAD/resource \
-	       `bin/get ott-HEAD name` \
-	       r/ott-HEAD/properties.json \
+	       r/ott-PREVIOUS/resource \
+	       `bin/get ott-PREVIOUS name` \
+	       r/ott-PREVIOUS/properties.json \
 	       r/idlist-NEW/source
 	touch $@
 
@@ -648,8 +680,9 @@ test2: $(CLASS)
 check:
 	bash run-tests.sh
 
+# These are run by the OTT build script so this is usually redundant
 inclusion-tests: inclusions.csv bin/jython
-	bin/jython util/check_inclusions.py inclusions.csv r/ott-NEW/resource/
+	bin/jython util/check_inclusions.py inclusions.csv r/ott-NEW/source/
 
 # -----------------------------------------------------------------------------
 # Asterales test system ('make test')

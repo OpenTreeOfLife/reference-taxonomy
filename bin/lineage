@@ -10,9 +10,16 @@ args = argparser.parse_args()
 id = args.id
 tax = os.path.join(args.tax, 'taxonomy.tsv')
 
+splitter = None
+
 while True:
   output = subprocess.check_output(['grep', '--max-count', '1', '^%s\t' % id, tax])
-  row = output.split('\t|\t')
+  if splitter == None:
+    if '\t|\t' in output:
+      splitter = '\t|\t'
+    else:
+      splitter = '\t'
+  row = output.split(splitter)
   pid = row[1]
   if pid == '':
     break

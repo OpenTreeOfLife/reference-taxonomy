@@ -260,23 +260,23 @@
   }, 
   {
     "_type": "capture", 
-    "name": "irmng-ot-20140630", 
-    "generated_on": "2014-06-30", 
+    "name": "irmng-ot-20160630", 
+    "generated_on": "2016-06-30", 
     "legal": "public", 
-    "label": "20140630", 
+    "label": "20160630", 
     "capture_of": "irmng-ot", 
-    "date": "2014-06-30", 
-    "filename": "irmng-ot-20140630.tgz"
+    "date": "2016-06-30", 
+    "filename": "irmng-ot-20160630.tgz"
   }, 
   {
     "_type": "capture", 
-    "name": "irmng-ot-20141108", 
-    "generated_on": "2014-11-08", 
+    "name": "irmng-ot-20161108", 
+    "generated_on": "2016-11-08", 
     "legal": "public", 
-    "label": "20141108", 
+    "label": "20161108", 
     "capture_of": "irmng-ot", 
-    "date": "2014-1108", 
-    "filename": "irmng-ot-20141108.tgz"
+    "date": "2016-11-08", 
+    "filename": "irmng-ot-20161108.tgz"
   }, 
   {
     "===": "Installed in phylografter around 2014-03-28", 
@@ -641,7 +641,8 @@
       "irmng": "irmng-ot-20161108", 
       "worms": "worms-1", 
       "if": "fung-9", 
-      "ott": "ott2.9"
+      "idlist": "idlist-20161118",
+      "ott": "ott2.10"
     }, 
     "capture_of": "ott", 
     "date": "2017-02-26", 

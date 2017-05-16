@@ -105,12 +105,12 @@ for (name, blob) in cap.items():
     print ' '.join(command)
     status = subprocess.call(command)
     if status != 0:
-        print 'failed', status
-
-    # Check to see if it happened
-    command = ['ssh', host, 'test', '-e', hpath]
-    if subprocess.call(command) != 0:
-        print '*** FAILED: %s ***' % hpath
+        print '*** scp failed (%s) to %s' % (status, spath)
+    else:
+        # Check to see if it happened
+        command = ['ssh', host, 'test', '-e', hpath]
+        if subprocess.call(command) != 0:
+            print '*** ?? File not found after scp: %s ***' % hpath
 
 for (name, blob) in cap.items():
     dir = os.path.join('properties', name)

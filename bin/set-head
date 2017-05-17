@@ -18,6 +18,10 @@ firm=$3
 #series=`bin/get $spec series`
 name=`bin/get $spec name`
 
+if [ ! -d r/$name ]; then
+    echo warning: $name does not exist
+fi
+
 target=r/$series-HEAD
 
 if [ -L $target ]; then
@@ -30,5 +34,5 @@ fi
 
 # Link
 
-echo $target := $spec
-ln -s $spec $target
+echo $target := $name
+ln -s $name $target

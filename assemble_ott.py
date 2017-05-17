@@ -124,6 +124,8 @@ def merge_sources(ott):
     align_and_merge(ott.alignment(malacostraca))
     (cnidaria, worms_sans_cnidaria) = split_taxonomy(worms_sans_malacostraca, 'Cnidaria')
     align_and_merge(ott.alignment(cnidaria))
+    (mollusca, low_priority_worms) = split_taxonomy(worms_sans_cnidaria, 'Mollusca')
+    align_and_merge(ott.alignment(mollusca))
 
     # NCBI
     ncbi = load_taxonomy('ncbi')
@@ -145,7 +147,7 @@ def merge_sources(ott):
 
     # Low-priority WoRMS
     # This is suboptimal, but the names are confusing the division logic
-    a = adjustments.align_worms(worms_sans_cnidaria, ott)
+    a = adjustments.align_worms(low_priority_worms, ott)
     align_and_merge(a)
 
     # The rest of Index Fungorum.  (Maybe not a good idea to use this.

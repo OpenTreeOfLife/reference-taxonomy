@@ -23,6 +23,8 @@ fi
 # Compare update_config.py
 if ! [ -e r/$series-PREVIOUS/source/.made ]; then
     bin/unpack-archive $series-PREVIOUS
+    # Kludge to set particular version number... I don't like this
+    make r/$series-PREVIOUS/source/.is-previous
     touch r/$series-PREVIOUS/.is-previous
     bin/set-head $series $series-PREVIOUS easy
 fi

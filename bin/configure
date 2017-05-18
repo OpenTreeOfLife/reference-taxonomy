@@ -41,8 +41,9 @@ else
     exit 1
 fi
 
-# Make ott-HEAD be an alias for previous OTT (e.g. ott-3.0)
+# Make ott-HEAD and ott-PREVIOUS be aliases for previous OTT (e.g. ott-3.0)
 bin/set-head $series $old firm
+bin/set-previous $series $old
 
 # Create config.mk based on "source" in old properties file
 python util/update_config.py <$dir/properties.json >config.mk

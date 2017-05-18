@@ -15,7 +15,7 @@ if [ ! -d r/$name ]; then
     mkdir r/$name
 fi
 
-touch r/$name/.is-previous
+echo $name > r/$name/.is-previous
 
 # Create properties file
 

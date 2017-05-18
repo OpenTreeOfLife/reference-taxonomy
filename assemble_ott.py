@@ -30,7 +30,7 @@ new_taxa_path = 'new_taxa'
 
 def create_ott(ott_spec):
 
-    with open(os.path.join(access_source('idlist'), 'by_qid.csv'), 'r') as infile:
+    with open(os.path.join(access_head('idlist'), 'by_qid.csv'), 'r') as infile:
         print '# can access idlist'
 
     ott_path = management.source_path(ott_spec)
@@ -58,13 +58,13 @@ def create_ott(ott_spec):
     # End of topology changes.  Now assign ids.
     retain_ids(ott,
                access_source('ott-PREVIOUS'),
-               os.path.join(access_source('idlist'), 'by_qid.csv'))
+               os.path.join(access_head('idlist'), 'by_qid.csv'))
 
     # Apply the additions (which already have ids assigned).
     # This has to happen *after* ids are assigned, since additions use OTT 
     # ids to identify parents.
     print '-- Processing additions --'
-    additions_clone_path = os.path.join(access_source('amendments'), 'amendments-1')
+    additions_clone_path = os.path.join(access_head('amendments'), 'amendments-1')
     Addition.processAdditions(additions_clone_path, ott)
 
     # Mint ids for new nodes
@@ -185,7 +185,7 @@ def merge_sources(ott):
                                        gbif, gbif_to_ott)
 
 def load_taxonomy(spec):
-    return Taxonomy.getTaxonomy(access_source(spec), management.get_property(spec, "ott_idspace"))
+    return Taxonomy.getTaxonomy(access_head(spec), management.get_property(spec, "ott_idspace"))
 
 accessed_sources = {}
 
@@ -193,6 +193,9 @@ def access_source(spec):
     accessed_sources[management.get_property(spec, "series")] = \
        management.get_property(spec, "name")
     return management.resource_path(spec)
+
+def access_head(series):
+    return access_source(series + '-HEAD')
 
 # or, read the ott-NEW properties.json file, add the sources, and write it out
 

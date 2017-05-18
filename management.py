@@ -1,12 +1,15 @@
-import os, json
+import os, sys, json
 
 # File name and property file munging.  Coordinates with Makefile.
 
 def issue_root(spec):
-    head = os.path.join('r', spec)
+    root = os.path.join('r', spec)
+    if os.path.isdir(root):
+        return root
+    head = os.path.join('r', spec + '-HEAD')
     if os.path.isdir(head):
         return head
-    return os.path.join('r', spec + '-HEAD')
+    print '** found neither %s nor %s' % (root, head)
 
 def resource_path(spec):
     return os.path.join(issue_root(spec), 'resource', '')

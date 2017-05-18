@@ -14,8 +14,12 @@ if prefix == None:
 
 psplit = prefix.split(':', 1)
 
-host = psplit[0]
-root = psplit[1]
+if len(psplit) > 1:
+    host = psplit[0]
+    root = psplit[1]
+else:
+    host = None    # localhost
+    root = prefix
 
 with open('old-metadata/resources.json', 'r') as infile:
     resources = json.load(infile)
@@ -100,17 +104,23 @@ for (name, blob) in cap.items():
         json.dump(props, outfile, indent=2, sort_keys=True)
         outfile.write('\n')
     hpath = '%s/%s/%s/properties.json' % (root, props["series"], name)
-    spath = '%s:%s' % (host, hpath)
-    command = ['scp', '-q', '-p', path, spath]
-    print ' '.join(command)
-    status = subprocess.call(command)
-    if status != 0:
-        print '*** scp failed (%s) to %s' % (status, spath)
+    if host != None:
+        spath = '%s:%s' % (host, hpath)
+        command = ['scp', '-q', '-p', path, spath]
+        print ' '.join(command)
+        status = subprocess.call(command)
+        if status != 0:
+            print '*** scp failed (%s) to %s' % (status, spath)
+        else:
+            # Check to see if it happened
+            command = ['ssh', host, 'test', '-e', hpath]
+            if subprocess.call(command) != 0:
+                print '*** ?? File not found after scp: %s ***' % hpath
     else:
-        # Check to see if it happened
-        command = ['ssh', host, 'test', '-e', hpath]
-        if subprocess.call(command) != 0:
-            print '*** ?? File not found after scp: %s ***' % hpath
+        command = ['cp', '-p', path, hpath]
+        status = subprocess.call(command)
+        if status != 0:
+            print '*** cp failed (%s) to %s' % (status, hpath)
 
 for (name, blob) in cap.items():
     dir = os.path.join('properties', name)

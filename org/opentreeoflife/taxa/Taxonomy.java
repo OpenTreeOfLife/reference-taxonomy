@@ -302,11 +302,13 @@ public abstract class Taxonomy {
             return null;
         else {
             Node node = this.qidIndex.get(qid);
-            if (node != null) {
-                if (this.qidAmbiguous.contains(qid)) {
-                    System.out.format("# Ambiguous qid %s = %s + ...\n", qid, node);
-                    return null;
-                }
+            if (node == null)
+                return null;
+            if (node.isPruned())
+                return null;
+            if (this.qidAmbiguous.contains(qid)) {
+                System.out.format("# Ambiguous qid %s = %s + ...\n", qid, node);
+                return null;
             }
             return node;
         }

@@ -13,20 +13,15 @@ if [ -e r/$series-HEAD/source/.made ]; then
     exit 0
 fi
 
-if [ -e r/$series-HEAD ]; then
-    # Already exists - not sure what to do.
-    echo "$series-HEAD is incomplete, please repair or remove"
-    exit 1
-fi
-
-# Ensure that -PREVIOUS exists
+# Make xxx-PREVIOUS/source/.made
 # Compare update_config.py
-if ! [ -e r/$series-PREVIOUS/source/.made ]; then
-    # Kludge to set configured version number... I don't like this
-    make  r/$series-PREVIOUS/.is-previous
-    bin/set-head $series $series-PREVIOUS easy
+if [ ! -e r/$series-PREVIOUS/source/.made ]; then
+    # Kludge to get configured previous version... I don't
+    # like the recursive 'make', but the information as
+    # to which version is previous exists only in
+    # config.mk (as the r/$series-PREVIOUS/.is-previous rule)
+    make r/$series-PREVIOUS/.is-previous
+    bin/unpack-archive $series-PREVIOUS
 fi
 
-# Set -HEAD to point to -PREVIOUS
-bin/set-head series series-PREVIOUS
-
+bin/set-head $series $series-PREVIOUS easy

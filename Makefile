@@ -48,17 +48,15 @@ JAVASOURCES=$(shell find org/opentreeoflife -name "*.java")
 
 # The open tree reference taxonomy
 
-ott: refresh/ott
+# for debugging
+ott: r/ott-NEW/source/debug/transcript.out
 
 refresh/ott: r/ott-NEW/source/.made
 	bin/christen ott-NEW
 
 # The works
 # Reinstate later: r/ott-NEW/source/debug/otu_differences.tsv
-r/ott-NEW/source/.made: r/ott-NEW/source/.partial
-	touch $@
-
-r/ott-NEW/source/.partial: r/ott-NEW/source/debug/transcript.out \
+r/ott-NEW/source/.made: r/ott-NEW/source/debug/transcript.out \
 		       	     r/ott-NEW/source/version.txt \
 		       	     r/ott-NEW/source/README.html
 	touch $@
@@ -77,7 +75,7 @@ r/ott-NEW/source/debug/transcript.out: bin/jython $(CLASS) \
 	    curation/edits/ott_edits.tsv \
 	    ids_that_are_otus.tsv ids_in_synthesis.tsv \
 	    inclusions.csv \
-	    r/ott-NEW
+	    r/ott-NEW/source
 	@date
 	@rm -f *py.class util/*py.class curation/*py.class
 	@mkdir -p r/ott-NEW/source
@@ -97,20 +95,19 @@ r/ott-NEW/source/debug/transcript.out: bin/jython $(CLASS) \
 	 mv debug/taxonomy.tsv debug/synonyms.tsv debug/forwards.tsv ./ && \
 	 mv debug/transcript.out.new debug/transcript.out)
 
-r/ott-NEW/source/version.txt: r/ott-NEW
-	@mkdir -p r/ott-NEW/source
+r/ott-NEW/source/version.txt: r/ott-NEW/source
 	echo `bin/get ott-NEW version`draft`bin/get ott-NEW draft` \
 	    >r/ott-NEW/source/version.txt
 
 r/ott-NEW/source/README.html: r/ott-NEW/source/debug/transcript.out util/make_readme.py
 	python util/make_readme.py r/ott-NEW/source/ >$@
 
-r/ott-NEW: r/ott-HEAD/resource/.made
+r/ott-NEW/source: r/ott-HEAD/resource/.made
 	bin/new-version ott .tgz cc0
 	bin/put ott-NEW minor $$((1 + `bin/get ott-HEAD minor`))
 	bin/put ott-NEW draft 0
 	bin/put ott-NEW ott_idspace ott
-	(cd r/ott-NEW; rm -f source; ln -sf resource source)
+	mkdir $@
 
 r/ott-HEAD/resource/.made: r/ott-HEAD/source/.made
 	(cd r/ott-HEAD && rm -f resource && ln -s source resource)
@@ -625,7 +622,7 @@ tarball: r/ott-HEAD/archive/.made
 #   opentree@ot10.opentreeoflife.org:files.opentreeoflife.org/ott/ott2.9/
 
 # This file is big
-r/ott-NEW/work/differences.tsv: r/ott-HEAD/resource/.made r/ott-NEW/source/.partial
+r/ott-NEW/work/differences.tsv: r/ott-HEAD/resource/.made r/ott-NEW/source/debug/transcript.out
 	$(SMASH) --diff r/ott-HEAD/resource/ r/ott-NEW/source/ $@.new
 	mv $@.new $@
 	wc $@
@@ -768,9 +765,11 @@ bin/smasher:
 clean:
 	rm -f `find . -name "*.class"`
 	rm -rf bin/jython
-	rm -rf r/ott-NEW
-	rm -rf r/*/resource
-	rm -rf *.tmp new_taxa suffix
+	rm -rf r/*/resource r/*/source r/*/work
+	rm -rf config.mk
+	rm -rf r/*-NEW
+	rm r/*-HEAD r/*-PREVIOUS
+	rm -rf tmp *.tmp properties
 	rm -rf t/amendments t/tax/aster
 
 distclean: clean

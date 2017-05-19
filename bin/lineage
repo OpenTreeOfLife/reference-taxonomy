@@ -4,11 +4,15 @@ import os, sys, subprocess, argparse
 
 argparser = argparse.ArgumentParser(description='Show lineage of a taxon.')
 argparser.add_argument('id')
-argparser.add_argument('tax', default='tax/ott/')
+argparser.add_argument('tax', default='r/ott-NEW/source')
 
 args = argparser.parse_args()
 id = args.id
 tax = os.path.join(args.tax, 'taxonomy.tsv')
+
+if not os.path.exists(tax):
+  print >>sys.stderr, 'Cannot find taxonomy %s' % tax
+  sys.exit(1)
 
 splitter = None
 

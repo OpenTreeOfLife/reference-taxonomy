@@ -7,9 +7,6 @@
 * [GBIF 2016 update case study](gbif-2016-case-study.md)
 
 
-## Related documents
+For information on the taxonomy and on how smasher works, please see:
 
-* [reference-taxonomy repository README](https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/README.md)
-* [Scripting feature](https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/scripting.md)
-* [Research on particular names](https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/names-research.txt)
-* [Deploying a new taxonomy version](https://github.com/OpenTreeOfLife/germinator/wiki/Deploying-a-new-taxonomy-version)
+* [Automated assembly of a reference taxonomy for phylogenetic data synthesis](https://doi.org/10.1101/116418) (preprint; article accepted to Biodiversity Data Journal)

@@ -1,8 +1,9 @@
-# Quality control
+# Finding and fixing errors
 
-This page may end up being misnamed...
+See also:
 
-[GBIF 2016 import case study](gbif-2016-case-study.md)
+ * [GBIF 2016 import case study](gbif-2016-case-study.md)
+ * [Addressing feedback issues](curation.md)
 
 After each assembly run (`make ott`), the transcript
 (`debug/transcript.out`) should be checked for errors.  Errors are
@@ -121,7 +122,7 @@ have sent email to WoRMS and we'll see what they say.  In the meantime
 (`amendments.py`) that makes NCBI Stylommatophora a child of WoRMS
 Pulmonata:
 
-    # 2017-05-29 Work around bug in WoRMS API
+    \# 2017-05-29 Work around bug in WoRMS API
     proclaim(ott, has_parent(taxon('Stylommatophora', 'Gastropoda'),
                              taxon('Pulmonata', 'Gastropoda'),
                              otc(NNN)))
@@ -133,3 +134,10 @@ end up in sources lists in OTT, making it possible to drill down to
 the text of the patch and any nearby comments.  This is not yet
 implemented.)
 
+### Update
+
+Heard back from WoRMS.  The reason land snails are missing is that
+they are not marine, and by default the API only tells you about
+marine organisms.  I need to re-run with `?marine_only=false`.
+
+In the meantime, the above patch should help.

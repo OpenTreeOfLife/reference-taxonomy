@@ -6,7 +6,8 @@ Following is the general scheme for doing an update after version 3.1,
 updating NCBI Taxonomy, taxon additions, and any new directives added
 to curation/adjustments.py and curation/amendments.py.
 
-    bin/configure ott3.8 ott3.7
+    # For builds POST-3.1 only!  See below for 3.1
+    bin/configure ott3.8 ott3.7   #fill in the correct version numbers
     bin/unpack-archive ott-HEAD   #get previous OTT
     make refresh/ncbi
     make refresh/amendments

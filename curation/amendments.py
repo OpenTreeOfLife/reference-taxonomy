@@ -2,6 +2,8 @@
 
 from proposition import *
 
+# 'otc' stands for 'Open Tree curation'
+
 def otc(id):
     return 'otc:' + str(id)
 
@@ -634,3 +636,10 @@ def patch_ott(ott):
     proclaim(ott, is_extinct(taxon('Kummelonautilus'), otc(57)))
     proclaim(ott, is_extinct(taxon('Westonoceras'), otc(58)))
 
+    # 2017-05-29 Work around bug in WoRMS import
+    # (missing nonmarine species)
+    # (manifested as an inclusions test failure; see maintenance
+    # manual)
+    proclaim(ott, has_parent(taxon('Stylommatophora', 'Gastropoda'),
+                             taxon('Pulmonata', 'Gastropoda'),
+                             otc(59)))

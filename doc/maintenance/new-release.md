@@ -87,6 +87,8 @@ Shell variables
   to be updated, as the source web sites (e.g. gbif.org) can be
   fickle.
 
+## Getting started
+
 The Makefile needs to know which version to build, and where to get
 archived versions of any sources that are not being refreshed.  The
 following command tells it the version numbers of the previous and new

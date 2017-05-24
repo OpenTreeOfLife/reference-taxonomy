@@ -5,6 +5,48 @@ See also:
  * [GBIF 2016 import case study](gbif-2016-case-study.md)
  * [Addressing feedback issues](curation.md)
 
+## What can go wrong
+
+Many kinds of things can go wrong.
+
+1. A source taxonomy can contain an error (taxon in the wrong place)
+1. There can be a spurious alignment, or incorrect equation of two taxa
+1. An alignment can be missed, leading to a duplication
+1. A merge can fail, leading to a conflict and an absent higher taxon
+1. Assembly logic can be wrong, usually leading to a large number of
+   similar errors
+1. A patch can fail as a result of a repair in a source taxonomy.
+
+Errors detected during OTT assembly are written to
+`r/ott-NEW/source/debug/transcript.out` on lines beginning `**`.  (But
+some of those lines might be innocent, so attempting to get rid of all
+such messages may be futile, or worse.)
+
+In particular, a set of taxon inclusion tests (`inclusions.tsv`) is
+run at the end of each assembly, and may detect problems.
+
+Errors are sometimes not seen until a person looks at the taxonomy.
+While some errors are imported from source taxonomies, some result
+from mistakes in the assembly logic.  The best way to find either kind
+is to deploy the taxonomy draft on devapi and use the taxonomy browser
+to inspect it, and/or to make a synthetic tree from it.
+
+Errors are typically repaired by changes to the files
+`curation/adjustments.py` or `curation/amentments.py`.  More strategic
+changes are made in `assemble-ott.py` or in the smasher code itself.
+
+If it is clear which source taxonomies are involved, e.g. for an
+alignment error, repairs should be made in `adjustments.py`.  This is
+preferable especially for higher taxa.  But usually it is easier to
+make repairs in `amendments.py`, because that does not require that
+one determine the reason for the failure or which particular sources
+are involved.
+
+Ideally, over time, undeteced errors will be converted to detectable
+errors by the addition of rows to `inclusions.tsv`.
+
+## Procedure
+
 After each assembly run (`make ott`), the transcript
 (`debug/transcript.out`) should be checked for errors.  Errors are
 indicated with two asterisks at the beginning of the line (`**`).

@@ -2,18 +2,19 @@
 
 ## TL;DR
 
-Following is the general scheme for doing an update after version 3.1,
-updating NCBI Taxonomy, taxon additions, and any new directives added
-to curation/adjustments.py and curation/amendments.py.
+Following is the overall scheme for doing a taxonomy update.  This
+example updates NCBI Taxonomy and the Open Tree curator tool taxon
+additions, and gets any new directives added to
+curation/adjustments.py and curation/amendments.py.
 
     # For builds POST-3.1 only!  See below for 3.1
     bin/configure ott3.8 ott3.7   #fill in the correct version numbers
     bin/unpack-archive ott-HEAD   #get previous OTT
-    make refresh/idlist    #make 3.0 idlist from idlist-2.10 and ott3.0
+    make refresh/idlist    #make 3.7 idlist from idlist-3.6 and ott3.7
     make refresh/ncbi
     make refresh/amendments
     make ott
-    #**** Do QC at this point, redo 'make refresh/ott' as needed ****
+    #**** Check for errors at this point, redo 'make refresh/ott' as needed ****
     make refresh/ott
     make store-all
 
@@ -22,11 +23,12 @@ to curation/adjustments.py and curation/amendments.py.
 Sometimes you want to use a saved version of a source instead of
 either making a new one or using the one used in the previous OTT
 build.  For OTT 3.1 there are a few of these: for genbank, irmng, and
-worms.
+worms.  Once these settings are used for the 3.1 build, they will be
+retained for future builds.
 
-A second 'wart' for building 3.1 is use of a newer OTT 2.10 identifier
-list rather than the OTT 2.10 identifier list that was using in
-building OTT 3.0.
+A second 'wart' for building 3.1 is use of a newer OTT 2.10
+all-identifiers list (idlist) rather than the OTT 2.10 identifier list
+that was using in building OTT 3.0.
 
 The 3.1 build should therefore look like the following:
 
@@ -49,24 +51,7 @@ The 3.1 build should therefore look like the following:
 Each invocation of `make refresh/ott` has the potential of detecting
 errors, and of introducing mistakes that are not caught.
 
-Detected errors are written to `r/ott-NEW/source/debug/transcript.out` on lines
-beginning `**`.  (But some of those lines might be innocent, so
-attempting to get rid of all such messages may be futile or worse.)
-
-Undetected errors are sometimes not seen until a person looks at the
-taxonomy, and often result from bugs in the assembly code.  The best
-way to find these is to deploy the taxonomy draft on devapi and use
-the taxonomy browser to inspect it, and/or to make a synthetic tree
-
-Errors of both kinds are usually repaired by changes to
-`curation/adjustments.py` or `curation/amentments.py`.  More strategic
-changes are made in `assemble-ott.py` or in the smasher code itself.
-
-Ideally, over time, errors of the second kind will be converted to
-errors of the first time, often by the addition of rows to
-`inclusions.tsv`.
-
-See the section [finding and fixing errors](qc.md) for more on finding
+See the section [finding and fixing errors](errors.md) for more on finding
 and fixing errors.
 
 ## Configuring the assembly process
@@ -74,15 +59,18 @@ and fixing errors.
 Shell variables
 
 * `FILES_URL_PREFIX`, defaults to `http://files.opentreeoflife.org` -
-  this is the URL prefix used by `wget` for fetching tarballs
+  this is the URL prefix used by `wget` for fetching tarballs of previous
+  OTT and source versions.
 * `SSH_PATH_PREFIX`, defaults to
   `files.opentreeoflife.org:files.opentreeoflife.org` - this will be
-  the destination used by 'scp' for storing new source and OTT tarballs.
+  the destination used by `scp` for storing new source and OTT tarballs.
+  If the value of `SSH_PATH_PREFIX` does not include a colon `:`, the files will copied 
+  to a local directory.
 
 `make` variables in Makefile
 
-* `NCBI_ORIGIN_URL` - where to get `taxdump.tar.gz` when NCBI
-  Taxonomy is refreshed.
+* `NCBI_ORIGIN_URL` - where to get `taxdump.tar.gz` in order to refresh NCBI
+  Taxonomy.
 * Several other similar variables for other sources.  These may need
   to be updated, as the source web sites (e.g. gbif.org) can be
   fickle.
@@ -96,18 +84,28 @@ versions of OTT:
 
     bin/configure ott3.1 ott3.0
 
-This reads `ott3.0/properties.json`, first copying it from the files
-server if it's not already present locally, and writes `config.mk`,
-which is included by the main Makefile.  `config.mk` encodes the
-knowledge of which versions of the sources were used in building the
-old OTT (`ott3.0` in this case).
+This has the effect of reading the file `ott3.0/properties.json`,
+obtaining it from the files server if it's not already present
+locally, then writing `config.mk`, which is included by the main
+`Makefile`.  `config.mk` encodes the knowledge of which versions of
+the sources were used in building the old OTT (`ott3.0` in this case).
+In addition `bin/configure` sets up a few files, directories, and
+links in preparation for the upcoming build.
 
 
 ## Updating sources
 
-Each source has an optional 'refresh' target that updates the source
-from the source's origin on the web.  Each of these is a little
-different from the others.
+Each source has a 'refresh' target that updates the source from the
+source's origin on the web.  Each of these refresh rules is a little
+different from the others, and you need to think before deciding to do
+each one.
+
+1. `make refresh/idlist` - When building version 3.1 of OTT (say), a
+   version 3.0 identifier list is needed (that is, a list of all OTT
+   identifiers through OTT 3.0).  This list is built by extending the
+   OTT 2.10 identifier list with the new identifiers that were added
+   in OTT 3.0.  So this command has to be part of every release
+   sequence.
 
 1. `make refresh/amendments` - you'll want to do this for every
    release.  This obtains the latest versions of the taxon additions
@@ -122,31 +120,28 @@ different from the others.
    script throttles its requests, the load on the WoRMS API server may
    be noticeable.
 
-1. `make refresh/fung` - this should not be used.  It depends on new
-   information from Paul Kirk (or some other authorized person), which
-   we don't have yet, and
-   each dump will need its own script.
+1. `make refresh/fung` - this should not be used.  Properly done, it
+   would depend on new information from Paul Kirk (or some other
+   authorized person associated with Index Fungorum), which we don't
+   have yet, and each dump will need its own script.
 
 1. `make refresh/gbif` - The GBIF backbone taxonomy dump changed
    format between 2013 and 2016.  This required a new preprocessing
    script to select the particular columns that are used, and to split
    off authority information.  It is quite possible that a new script
    will be needed in order to import a 2017 or later GBIF backbone.  A
-   DwCA importer would certainly help here, but I don't think it will
-   always be sufficient.
+   DwCA importer would certainly help here by making the import robust
+   to addition or rearrangement of columns in the GBIF flat file.  But
+   I don't think it will always be sufficient - e.g. it would not have
+   helped with the switch from canonicalName to scientificName between
+   2013 and 2016.
 
 1. `make refresh/irmng` - This is of no use, without further work,
-   since it will get get the 2014-01-31 version again from the web,
-   resulting in no new content.  The time to look at this is when VLIZ
+   since it will just get the 2014-01-31 version again from the web,
+   which we already have.  The time to look at this again is when VLIZ
    decides to issue an IRMNG dump with post-2014 content.  (I believe
    they are providing partial dumps now, but I don't recommend trying
-   to work with partial dumps.)
-
-1. `make refresh/idlist` - When building version 3.1 of OTT (say), a
-   version 3.0 identifier list is needed (that is, a list of all OTT
-   identifiers through OTT 3.0).  This is built by extending the OTT
-   2.10 identifier list with the new identifiers that were added in
-   OTT 3.0.  So this command has to be part of every release sequence.
+   to work with partial dumps.)  Again, a DwCA importer ought to help.
 
 For more information on how the update process works see
 [here](build-system.md).
@@ -161,9 +156,16 @@ selects content to be loaded from the Open Tree 'files server'.
 
     bin/use-version genbank-20161216
 
+## Creating a draft
+
+    make ott
+
+The draft taxonomy is placed in `r/ott-NEW/source/`.
+
+
 ## TBD: Putting a draft up on devapi
 
-There needs to be a command for creating a tarball, without also
+There needs to be a command for creating a draft tarball, without also
 putting the tarball on the files server as a full point release.
 Coming soon.
 
@@ -176,17 +178,32 @@ After debugging, make the release candidate with
 
 To do the real release, i.e. to publish to the files server, we'll
 need an OTT tarball, and tarballs for all of the sources that went
-into building OTT.  The following creates all of the tarballs and
-stores them on the files server:
+into building OTT.  The following command creates all of the tarballs
+and stores them on the files server:
 
     make store-all
 
-Find them as `http://files.openetreeoflife.org/ott/ott3.1/ott3.1.tgz`,
+Find the tarballs as
+`http://files.openetreeoflife.org/ott/ott3.1/ott3.1.tgz`,
 `http://files.openetreeoflife.org/ncbi/ncbi-20170523/ncbi-20170523.tgz`,
 and so on.
 
 
-## Older instructions
+## And then:
 
-* [reference-taxonomy repository README](../README.md)
-* [Deploying a new taxonomy version](https://github.com/OpenTreeOfLife/germinator/wiki/Deploying-a-new-taxonomy-version)
+1. Create release notes for the new release
+2. Deploy to taxomachine, oti, otindex - some old instructions 
+   [here](https://github.com/OpenTreeOfLife/germinator/wiki/Deploying-a-new-taxonomy-version)
+   should be useful
+3. Do a new synthesis - it would be confusing to users were a new
+   taxonomy deployed at the same time that an old synthetic tree was 
+   active.
+
+
+## Note re identifiers
+
+Smasher allocates identifiers for new non-addition OTT records above
+7000000.  OTT identifiers for curator webapp additions are allocated
+in the range (approximately) 6000000 to 7000000.  There is no check
+for collisions, so in the unlikely event there are more than a million
+additions, some kind of intervention will be needed.

@@ -1,4 +1,4 @@
-# Finding and fixing errors
+<# Finding and fixing errors
 
 See also:
 
@@ -15,7 +15,7 @@ Many kinds of things can go wrong.
 1. A merge can fail, leading to a conflict and an absent higher taxon
 1. Assembly logic can be wrong, usually leading to a large number of
    similar errors
-1. A patch can fail as a result of a repair in a source taxonomy.
+1. A patch can fail as a result of a repair to the source taxonomy.
 
 Errors detected during OTT assembly are written to
 `r/ott-NEW/source/debug/transcript.out` on lines beginning `**`.  (But
@@ -74,7 +74,7 @@ utilities for this.  First, where it comes from:
     r/ott-PREVIOUS/resource/taxonomy.tsv:591146	|	639691	|	Enidae	|	family	|	ncbi:145762,gbif:2297508,irmng:114831
 
 This is apparently a well-known family, not something obscure.  To
-determine where it is, we can use `bin/lineage`:
+determine where it is in the draft OTT, we can use `bin/lineage`:
 
     bin/lineage 591146 r/ott-NEW/source
     591146	639691	Enidae	family	ncbi:145762,gbif:2297508,irmng:114831		merged,hidden_inherited,barren	
@@ -102,7 +102,7 @@ ancestor Eupulmonata being hidden.
 Eupulmonata is made hidden by some logic in the WoRMS conversion
 script that applies to names that are not 'accepted'.  The idea is to
 suppress these from what users see of OTT, yet preserve them for
-future reference.  This may not be the best strategy - maybe the
+future reference.  This may not be the best strategy - maybe they
 should be omitted entirely.  That would be a simple change to the
 WoRMS conversion script, and it ought to solve this problem.  However,
 let's look deeper.
@@ -117,51 +117,18 @@ and WoRMS's priority status in molluscs, is to find all the NCBI
 children of Eupulmonata and place them in the correct WoRMS order
 inside Pulmonata.
 
-Turns out there is only one child (other than a bunch of incertae
+It turns out there is only one child (other than a bunch of incertae
 sedis that we don't care much about), Stylommatophora.  Why did NCBI
 Stylommatophora not align with WoRMS Stylommatophora? - that would
-have fixed this problem.  Stylommatophora is not in our WoRMS digest
+have fixed this problem.  The reason is that Stylommatophora is not in our WoRMS digest
 at all - the whole Stylommatophora subtree is missing, as if it
 weren't a child of Pulmonata at all.
 
-It's present in our older WoRMS dump, but not in the new one.  This is
-troubling... it means either the WoRMS API doesn't work, or there is a
-bug in the harvesting or import code.
-
-To test the WoRMS API, we need to write a little python script, since
-the API uses SOAP and SOAP requests are difficult to cobble together.
-
-    from SOAPpy import WSDL
-    DEFAULT_PROXY = 'http://www.marinespecies.org/aphia.php?p=soap&wsdl=1'
-    WORMSPROXY = WSDL.Proxy(DEFAULT_PROXY)
-    taxon_id = 103  # Pulmonata
-    children = WORMSPROXY.getAphiaChildrenByID(taxon_id)
-    for child in children:
-        print child.AphiaID, child.scientificname, child.status
-
-The output is:
-
-    382238 [unassigned] Pulmonata temporary name
-    1770 Archaeopulmonata alternate representation
-    197 Basommatophora unaccepted
-    412657 Eupulmonata alternate representation
-    446 Gymnomorpha unaccepted
-    382243 Hygrophila accepted
-    1772 Systellommatophora accepted
-
-and Stylommatophora is not in the list, even though it is on the
-Pulmonata page at the WoRMS site.
-
-Turns out there is REST API.  Try that:
-
-    curl http://www.marinespecies.org/rest/AphiaChildrenByAphiaID/103
-
-Same result.
-
-So the WoRMS API is the culprit, not our harvest or import code.  I
-have sent email to WoRMS and we'll see what they say.  In the meantime
-- we still need a fix.  The most direct approach is a patch
-(`amendments.py`) that makes NCBI Stylommatophora a child of WoRMS
+It's present in our older WoRMS dump, but not in the latest one (May
+2017).  This is because of a bug in the new WoRMS refresh script.
+That bug can be fix, but in the meantime it is instructive to see if
+there is another way to fix this.  The most direct approach is a patch
+(in `amendments.py`) that makes NCBI Stylommatophora a child of WoRMS
 Pulmonata:
 
     \# 2017-05-29 Work around bug in WoRMS API
@@ -176,10 +143,5 @@ end up in sources lists in OTT, making it possible to drill down to
 the text of the patch and any nearby comments.  This is not yet
 implemented.)
 
-### Update
-
-Heard back from WoRMS.  The reason land snails are missing is that
-they are not marine, and by default the API only tells you about
-marine organisms.  I need to re-run with `?marine_only=false`.
-
-In the meantime, the above patch should help.
+See [the section on patch writing](patch.md) for information on 
+`proclaim`, `has_parent`, and so on.

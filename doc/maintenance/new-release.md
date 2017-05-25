@@ -14,7 +14,7 @@ curation/adjustments.py and curation/amendments.py.
     make refresh/ncbi
     make refresh/amendments
     make ott
-    #**** Check for errors at this point, redo 'make refresh/ott' as needed ****
+    #**** Check for errors at this point, redo 'make ott' as needed ****
     make refresh/ott
     make store-all
 
@@ -42,7 +42,7 @@ The 3.1 build should therefore look like the following:
     make refresh/ncbi
     make refresh/amendments
     make ott
-    #**** Do QC at this point, redo 'make refresh/ott' as needed ****
+    #**** Do QC at this point, redo 'make ott' as needed ****
     make refresh/ott
     make store-all
 

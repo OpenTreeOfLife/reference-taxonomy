@@ -3,9 +3,9 @@
 * [How to update sources and issue a new release](new-release.md)
 * [Finding and fixing errors](errors.md)
 * [Patch system](patch.md)
-* [Addressing feedback issues](curation.md)
+* [Addressing feedback issues](feedback.md)
 * [Adding a new taxonomic source](new-source.md)
-* [How the OTT build system works](build-system.md)
+* [How the OTT build system works](build-system.md) (diagram [here](ott-management-design.svg))
 * [GBIF 2016 update case study](gbif-2016-case-study.md)
 
 

@@ -2,25 +2,37 @@
 
 See also:
 
+ * [Addressing feedback issues](feedback.md)
  * [GBIF 2016 import case study](gbif-2016-case-study.md)
- * [Addressing feedback issues](curation.md)
 
 ## What can go wrong
 
-Many kinds of things can go wrong.
+Many kinds of things can go wrong when making a new OTT version.
 
-1. A source taxonomy can contain an error (taxon in the wrong place)
-1. There can be a spurious alignment, or incorrect equation of two taxa
+1. A source taxonomy can contain an error (taxon in the wrong place, duplicate, etc)
+1. There can be a spurious alignment, i.e. incorrect equation of what ought to be two taxa
 1. An alignment can be missed, leading to a duplication
 1. A merge can fail, leading to a conflict and an absent higher taxon
+1. A patch can fail as a result of a repair to the source taxonomy.
 1. Assembly logic can be wrong, usually leading to a large number of
    similar errors
-1. A patch can fail as a result of a repair to the source taxonomy.
+1. Incompatible changes to source format (e.g. GBIF 2013 had a canonicalName column (without authority),
+   but GBIF 2016 has scientificName (with authority))
+1. A source can change in some incompatible way, perhaps leading to
+   separation problems or bad duplications or merges
+1. Separation problems leading to duplication
+
+etc.
+
+See [Notes from the 2016 GBIF update](https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/gbif-update-1.md)
+for a case study.
+
+
 
 Errors detected during OTT assembly are written to
-`r/ott-NEW/source/debug/transcript.out` on lines beginning `**`.  (But
-some of those lines might be innocent, so attempting to get rid of all
-such messages may be futile, or worse.)
+`r/ott-NEW/source/debug/transcript.out` on lines beginning `**`.
+(Some of those lines might be innocent, so attempting to get rid of
+all such messages may not be unnecessary.)
 
 In particular, a set of taxon inclusion tests (`inclusions.tsv`) is
 run at the end of each assembly, and may detect problems.
@@ -45,14 +57,16 @@ are involved.
 Ideally, over time, undeteced errors will be converted to detectable
 errors by the addition of rows to `inclusions.tsv`.
 
-## Procedure
+## Example
+
+The following illustrates the debugging utilities `investigate` and `lineage`.
 
 After each assembly run (`make ott`), the transcript
 (`debug/transcript.out`) should be checked for errors.  Errors are
 indicated with two asterisks at the beginning of the line (`**`).
 
 I often check the inclusions tests first.  These show up at the very
-end.
+end of `transcript.out`.
 
 When building `ott3.1`, the following showed up:
 
@@ -60,12 +74,17 @@ When building `ott3.1`, the following showed up:
        There is a Enidae (division Mollusca) not in Gastropoda; its id happens to be 591146
        Id 591146 belongs to (Enidae 591146=ncbi:145762?)
 
+This comes from the following test in `includes.csv`:
+
+    Enidae,Gastropoda,591146,"snail, not foram"
+
 First we need to know where Enidae belongs.  Wikipedia is very clear
 that it should be in Gastropoda.
 
-To understand what went wrong, we need to know where Enidae came from,
-and where it ended up in the taxonomy, if not Gastropoda.  There are
-utilities for this.  First, where it comes from:
+To understand what went wrong, we need to know which source(s)
+contributed Enidae, and where it ended up in the taxonomy, if not
+Gastropoda.  There are utilities for this.  First, where it comes
+from:
 
     bin/investigate Enidae
     r/ncbi-HEAD/resource/taxonomy.tsv:145762	|	145342	|	Enidae	|	family
@@ -73,8 +92,9 @@ utilities for this.  First, where it comes from:
     r/irmng-HEAD/resource/taxonomy.tsv:114831	|	10595	|	Enidae	|	family
     r/ott-PREVIOUS/resource/taxonomy.tsv:591146	|	639691	|	Enidae	|	family	|	ncbi:145762,gbif:2297508,irmng:114831
 
-This is apparently a well-known family, not something obscure.  To
-determine where it is in the draft OTT, we can use `bin/lineage`:
+From the number of sources, this is apparently a well-known family,
+not something obscure.  To determine where it is in the draft OTT, we
+can use `bin/lineage`:
 
     bin/lineage 591146 r/ott-NEW/source
     591146	639691	Enidae	family	ncbi:145762,gbif:2297508,irmng:114831		merged,hidden_inherited,barren	
@@ -101,91 +121,69 @@ ancestor Eupulmonata being hidden.
 
 Eupulmonata is made hidden by some logic in the WoRMS conversion
 script that applies to names that are not 'accepted'.  The idea is to
-suppress these from what users see of OTT, yet preserve them for
-future reference.  This may not be the best strategy - maybe they
-should be omitted entirely.  That would be a simple change to the
-WoRMS conversion script, and it ought to solve this problem.  However,
-let's look deeper.
+suppress 'bad taxa' from what users see of OTT, yet preserve them for
+future reference.  This may not be the best strategy - maybe the
+unaccepted names should be omitted entirely.  That would be a simple
+change to the WoRMS conversion script, and it would solve this
+problem.  However, the idea seems a sound one, so let's look deeper.
 
 You might think we could simply 'unhide' Eupulmonata, but that might
 give a screwy classification.  If you look at the WoRMS record for
-Eupulmonata you find that they think it is paraphyletic, and their
-classification of Pulmonata does not include it; Stylommatophora is a
-direct child of Pulmonata.  That is why Eupulmonata is terminal and
-not accepted.  The correct approach, to bring OTT in line with WoRMS
-and WoRMS's priority status in molluscs, is to find all the NCBI
-children of Eupulmonata and place them in the correct WoRMS order
-inside Pulmonata.
+Eupulmonata you find that the WoRMS curators think it is paraphyletic,
+and their classification of Pulmonata does not include it;
+Stylommatophora is a direct child of Pulmonata.  That is why
+Eupulmonata is terminal and not accepted.  The correct approach, to
+bring OTT in line with WoRMS and WoRMS's priority status in molluscs,
+is to find all the NCBI children of Eupulmonata and place them in the
+correct WoRMS order inside Pulmonata.
 
-It turns out there is only one child (other than a bunch of incertae
-sedis that we don't care much about), Stylommatophora.  Why did NCBI
-Stylommatophora not align with WoRMS Stylommatophora? - that would
-have fixed this problem.  The reason is that Stylommatophora is not in our WoRMS digest
-at all - the whole Stylommatophora subtree is missing, as if it
-weren't a child of Pulmonata at all.
+It turns out there is only one child of Eupulmonata (other than a
+bunch of incertae sedis that we don't care much about),
+Stylommatophora.  Why did NCBI Stylommatophora not align with WoRMS
+Stylommatophora? - that would have fixed this problem.  The reason is
+that Stylommatophora is in WoRMS, but not in our WoRMS digest - the
+whole Stylommatophora subtree is missing, as if it weren't a child of
+Pulmonata at all.
 
 It's present in our older WoRMS dump, but not in the latest one (May
-2017).  This is because of a bug in the new WoRMS refresh script.
-That bug can be fix, but in the meantime it is instructive to see if
-there is another way to fix this.  The most direct approach is a patch
-(in `amendments.py`) that makes NCBI Stylommatophora a child of WoRMS
-Pulmonata:
+2017).  This is because of a bug in the new WoRMS refresh script
+(forgot to set `?marine_only=false`).  That bug can be fixed, but in the
+meantime it is instructive to see if there is another way to fix this.
+The most direct approach is a patch (in `amendments.py`) that makes
+NCBI Stylommatophora a child of WoRMS Pulmonata:
 
     \# 2017-05-29 Work around bug in WoRMS API
     proclaim(ott, has_parent(taxon('Stylommatophora', 'Gastropoda'),
                              taxon('Pulmonata', 'Gastropoda'),
                              otc(NNN)))
 
-where NNN is some integer that doesn't occur in any other `otc(...)`
-expression.  `otc(...)` is currently use only in `adjustments.py` and
-`amendments.py`.  (The idea is that eventually the otc numbers will
-end up in sources lists in OTT, making it possible to drill down to
-the text of the patch and any nearby comments.  This is not yet
-implemented.)
-
-See [the section on patch writing](patch.md) for information on 
-`proclaim`, `has_parent`, and so on.
-
-
-## Updating sources
-
-What can go wrong?
-
-- changes to source format (e.g. GBIF 2013 had a canonicalName column (without authority),
-  but GBIF 2016 has scientificName (with authority))
-- a source can change in some incompatible, perhaps leading to
-  division problems or bad duplications or merges
-- separation problems leading to duplication
-
-See [Notes from the 2016 GBIF update](https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/gbif-update-1.md)
-for a case analysis.
+See [the section on patch writing](patch.md) for information on
+`proclaim`, `has_parent`, `taxon`, and `otc`.
 
 
 ## Testing
 
 ### Building OTT is a test
 
-Look for '\*\*' lines in the transcript.  Compare the current
-transcript to the one for the previous OTT build to see what has
-changed.  A '\*\*' line might be in the previous build, in which case
-it probably can be ignored.
+Look for '\*\*' lines in `transcript.out`.  Compare the current
+transcript to the one for the previous OTT build to see whether an
+error is old or new.  A '\*\*' line might be in the previous build, in
+which case it probably can be ignored.
 
 Check the `deprecated.tsv` file.  If it has a very large number of
-id-retired lines, or if they follow a pattern, something might be
-wrong (such as a division alignment).
+`id-retired` lines (over 20??), or if the contents follow some
+pattern, something might be wrong (such as a division alignment).
 
 ### Inclusion tests
 
-A set of taxon inclusion tests runs every time the taxonomy is built;
-it can also be run directly from the shell, as
-`util/check_inclusions.py`.  (Optional arguments: list of tests,
+A set of taxon inclusion tests runs every time the taxonomy is built.
+It can also be run directly from the shell, as
+`bin/jython util/check_inclusions.py`.  (Optional arguments: list of tests,
 default `inclusions.csv`, and taxonomy, default `r/ott-NEW/source/`.)
 
 The inclusions tests in the reference-taxonomy repository are more
-current than the ones in the germinal repository.  The list should be
-copied from the one repo to the other from time to time, or if these
-tests are not used in the synthetic tree build, the germinator version
-should probably just be deleted.
+current than the ones in the germinator repository.  The list should be
+copied from the one repo to the other from time to time.
 
 An attempt has been made to provide useful information when a test
 fails.  A taxon can disappear, or its OTT id can change, or the
@@ -203,6 +201,8 @@ The `bin/lineage` shell command, given an id and a taxonomy, lists the
 lineage of the given taxon.
 
 `grep` is always handy.  You can put tabs and `^` in search strings.
+Tabs are helpful in picking out a genus record (as opposed to all
+species in the genus).  `^` is useful for lookup by id.  E.g.
 
     grep "Peripatus dominicae" r/ott-NEW/source/taxonomy.tsv 
 
@@ -232,10 +232,4 @@ necessary to first determine what the correct state of affairs is,
 based on external information.  Only then can a repair be instituted.
 
 Here are notes that I've taken in tracking down particularly
-troublesome cases.
-
-* [Research on particular names](../names-research.txt)
-
-## Older documentation (user documentation for smasher):
-
-* [Scripting feature](https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/scripting.md)
+troublesome cases: [Research on particular names](../names-research.txt)

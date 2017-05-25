@@ -110,6 +110,7 @@ synonym into a primary name, and for merging taxon records.
 The `kind` parameter describes what kind of synonym is involved.  It
 is not yet drawn from a controlled vocabulary (although it should be).
 Possible values are `'objective synonym'`, `'subjective synonym'`,
+`'proparte synonym'`,
 `'spelling variant'`, `'misspelling'`.  If all else fails just put
 `'synonym'` meaning an unknown kind of synonym.
 
@@ -120,6 +121,8 @@ This says that the taxon is (or should be known to be) extinct.
     has_rank(taxon, rank, propid)
 
 This says that the taxon has (or should have) the specified rank.
+
+TBD: incertae sedis, hidden, and a few others.   For now use v2.
 
 
 ### Enacting a proposition
@@ -149,3 +152,18 @@ then it might be proclaimed in one taxonomy (e.g. `gbif`), and then
 checked in another (e.g. `ott`).  This would act as a check that no
 intermediate patch has canceled out an earlier one.
 
+
+## New taxa
+
+The `establish` utility creates a taxon if one meeting the parameters
+does not already exist.
+
+    establish(name, taxonomy, rank=None, parent=None, ancestor=None, division=None, ott_id=None, source=None)
+
+`division` is similar to `ancestor` but indicates that the ancestor is
+in the separation taxonomy.
+
+This is used in some cases where sorting out homonyms is otherwise
+difficult to do.
+
+This supersedes `newTaxon` from the v2 patch language.

@@ -145,3 +145,97 @@ implemented.)
 
 See [the section on patch writing](patch.md) for information on 
 `proclaim`, `has_parent`, and so on.
+
+
+## Updating sources
+
+What can go wrong?
+
+- changes to source format (e.g. GBIF 2013 had a canonicalName column (without authority),
+  but GBIF 2016 has scientificName (with authority))
+- a source can change in some incompatible, perhaps leading to
+  division problems or bad duplications or merges
+- separation problems leading to duplication
+
+See [Notes from the 2016 GBIF update](https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/gbif-update-1.md)
+for a case analysis.
+
+
+## Testing
+
+### Building OTT is a test
+
+Look for '\*\*' lines in the transcript.  Compare the current
+transcript to the one for the previous OTT build to see what has
+changed.  A '\*\*' line might be in the previous build, in which case
+it probably can be ignored.
+
+Check the `deprecated.tsv` file.  If it has a very large number of
+id-retired lines, or if they follow a pattern, something might be
+wrong (such as a division alignment).
+
+### Inclusion tests
+
+A set of taxon inclusion tests runs every time the taxonomy is built;
+it can also be run directly from the shell, as
+`util/check_inclusions.py`.  (Optional arguments: list of tests,
+default `inclusions.csv`, and taxonomy, default `r/ott-NEW/source/`.)
+
+The inclusions tests in the reference-taxonomy repository are more
+current than the ones in the germinal repository.  The list should be
+copied from the one repo to the other from time to time, or if these
+tests are not used in the synthetic tree build, the germinator version
+should probably just be deleted.
+
+An attempt has been made to provide useful information when a test
+fails.  A taxon can disappear, or its OTT id can change, or the
+relationship may fail to hold, perhaps due to a merge or a split.
+
+    
+## Troubleshooting
+
+Some tools to use
+
+The `bin/investigate` shell command shows all occurrences of a given
+name in OTT, the previous version of OTT, and all source taxonomies.
+
+The `bin/lineage` shell command, given an id and a taxonomy, lists the
+lineage of the given taxon.
+
+`grep` is always handy.  You can put tabs and `^` in search strings.
+
+    grep "Peripatus dominicae" r/ott-NEW/source/taxonomy.tsv 
+
+`log.txt` shows alignment, merge, and other events connected with
+certain names.  To force logging for a name, if it's not already being
+logged, add it to the `names_of_interest` list in assemble_ott.py.
+
+    grep -A 2 Campanella r/ott-NEW/source/choices.tsv 
+
+`choices.txt` shows alignment choices that were made, whenever there
+were two or more options.
+
+Taxomachine API and taxonomy browser - you can make a taxomachine db
+and put it on devapi or a local taxomachine instance and access it
+through the API, through a local taxonomy browser page (it's a
+one-page static webapp so easy to set up), or through the taxonomy
+browser on devtree.
+
+Print statements in the python and Java code are helpful.
+Particularly useful: The `.show()` method on a `Taxon` (node) object
+displays the taxon's lineage, children, and flags.
+
+## Particular alignment analyses
+
+When alignment is overeager, or when it fails to happen at all, it is
+necessary to first determine what the correct state of affairs is,
+based on external information.  Only then can a repair be instituted.
+
+Here are notes that I've taken in tracking down particularly
+troublesome cases.
+
+* [Research on particular names](../names-research.txt)
+
+## Older documentation (user documentation for smasher):
+
+* [Scripting feature](https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/scripting.md)

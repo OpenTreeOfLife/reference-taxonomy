@@ -19,6 +19,28 @@ full of python files containing patches, to facilitate editing by
 multiple authors.  TBD.
 
 
+### [Issue 345](https://github.com/OpenTreeOfLife/feedback/issues/345) - Conolophus extinct?
+
+As discussed on github, the easy fix is to get rid of the mammal
+Conolophus, keeping the other one.  For this approach, the following
+should go in `adjust_irmng` or `align_irmng`:
+
+    irmng.taxon('Conolophus', 'Mammalia').prune()
+
+If we wanted to keep both taxa, we could use `establish`, with the
+following in `align_irmng`:
+
+    establish('Conolophus', ott, 'genus', ancestor='Mammalia', source='irmng:1415243')
+
+We don't need to `establish` the iguana because it's already present in NCBI and GBIF.
+
+That ought to be enough in itself, but I haven't tried it yet.  To be
+sure, one would align the IRMNG genera to OTT:
+
+    a.same(irmng.taxon('Conolophus', 'Iguania'), ott.taxon('Conolophus', 'Iguania'))
+    a.same(irmng.taxon('Conolophus', 'Mammalia'), ott.taxon('Conolophus', 'Mammlia'))
+
+
 ### [Issue 341](https://github.com/OpenTreeOfLife/feedback/issues/341) - Campanulales = Asterales?
 
 Is there an error or not?  I followed the supplied OTT link to Asterales,
@@ -31,7 +53,7 @@ See new [issue 316](https://github.com/OpenTreeOfLife/reference-taxonomy/issues/
 
 ### [Issue 340](https://github.com/OpenTreeOfLife/feedback/issues/340) Myomorpha incorrectly synonymised with Sciurognathi
 
-Mark has already analyzed this/  Turns out to be logically the same as the
+Mark has already analyzed this.  Turns out to be logically the same as the
 previous issue (341).
 
 ### [Issue 336](https://github.com/OpenTreeOfLife/feedback/issues/336) - Miliaria calandra is synonym for Emberiza calandra

@@ -1,14 +1,4 @@
-# Replacement for claim.py
-
-# Reasons why claim.py didn't work out:
-#
-#  - The 'whether' business never worked.  Negation is way too messy and 
-#    we need to get rid of it somehow.
-#
-#  - The 'reason' business never really worked.  We need to know not
-#    only that the proposition is part of the Open Tree curation
-#    process, but where it is in the source file, for some future
-#    localization feature.
+# Propositions about taxonomies - for use as a 'patch language'
 
 from org.opentreeoflife.taxa import Rank
 
@@ -257,6 +247,31 @@ class _Is_extinct:
                 self.taxon.stringify(),
                 self.qid)
 
+def is_extant(taxon, qid):
+    return _Is_extant(taxon, qid)
+
+class _Is_extant:
+    def __init__(self, taxon, qid):
+        self.taxon = taxon
+        self.qid = qid
+    def check(self, tax, windy):
+        t = self.taxon.resolve_in(tax, windy)
+        if t == None:
+            return False
+        else:
+            return t.isExtant()
+    def proclaim(self, tax, windy):
+        t = self.taxon.resolve_in(tax, windy)
+        if t == None:
+            return False
+        else:
+            t.extant()
+            return True
+    def stringify(self):
+        return ('is_extant(%s, %s)' %
+                self.taxon.stringify(),
+                self.qid)
+
 def has_rank(taxon, rank, qid):
     return _Has_rank(taxon, rank, qid)
 
@@ -292,3 +307,15 @@ class _Has_rank:
         return ('has_rank(%s, %s)' %
                 self.taxon.stringify(),
                 self.qid)
+
+# Replacement for claim.py
+
+# Reasons why claim.py didn't work out:
+#
+#  - The 'whether' business never worked.  Negation is way too messy and 
+#    we need to get rid of it somehow.
+#
+#  - The 'reason' business never really worked.  We need to know not
+#    only that the proposition is part of the Open Tree curation
+#    process, but where it is in the source file, for some future
+#    localization feature.

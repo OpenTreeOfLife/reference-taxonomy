@@ -89,6 +89,11 @@ def create_ott(ott_spec):
 
 def merge_sources(ott):
 
+    # Genbank - this is a kludge to make sure it's in the dependencies list.
+    # But eventually it ought to be handled in this file, not in the silva
+    # import script.
+    access_head('genbank')
+
     # SILVA
     silva = load_taxonomy('silva')
     adjustments.adjust_silva(silva)

@@ -1299,13 +1299,13 @@ def patch_gbif(gbif):
         bad_foram.prune(this_source)
 
     # 2016-09-01 Wrongly in Hymenoptera
-    proclaim(gbif, has_parent(taxon('Aporia', 'Aporia gigantea'),
+    proclaim(gbif, has_parent(taxon('Aporia', descendant='Aporia gigantea'),
                               taxon('Pieridae', 'Insecta'),
                               otc(46)))
 
     # The Bdellodes mites were in flatworms in GBIF 2013.  This
     # has been straightened out.
-    proclaim(gbif, has_parent(taxon('Bdellodes', 'Bdellodes robusta'),
+    proclaim(gbif, has_parent(taxon('Bdellodes', descendant='Bdellodes robusta'),
                               taxon('Bdellidae'),
                               otc(47)))
 

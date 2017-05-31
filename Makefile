@@ -83,7 +83,8 @@ r/ott-NEW/source/debug/transcript.out: bin/jython $(CLASS) \
 	bin/put ott-NEW draft $$((1 + `bin/get ott-NEW draft 0`))
 	@echo Writing transcript to r/ott-NEW/source/debug/transcript.out
 	rm -f /tmp/make-ott-completed
-	time (bin/jython make-ott.py ott-NEW && touch /tmp/make-ott-completed) 2>&1 \
+	(time bin/jython make-ott.py ott-NEW 2>&1 \
+	  && touch /tmp/make-ott-completed) \
 	  | tee r/ott-NEW/source/transcript.out.new
 	[ -e /tmp/make-ott-completed ]
 	bin/put ott-NEW "generated_on" `date +"%Y%m%d"`

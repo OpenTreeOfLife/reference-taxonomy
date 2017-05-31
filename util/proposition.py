@@ -320,6 +320,7 @@ _ids_used = {}
 def otc(id, issue=None, evidence=None):
     if id in _ids_used:
         print 'curation id %s already in use' % id
+    _ids_used[id] = True
     return 'otc:' + str(id)
 
 

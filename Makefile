@@ -577,15 +577,17 @@ ids_that_are_otus.tsv:
 	mv $@.new $@
 	wc $@
 
+SSH_PATH_PREFIX?=files.opentreeoflife.org:files.opentreeoflife.org
+
 # Synthetic tree OTT id list (this rule assumes you're part of the
 # Open Tree project and can use scp; could be modified to use
 # curl. this doesn't matter much since the list is checked into the
 # repo.)
 # To refresh, remove the target, then make it
-ids_in_synthesis.tsv: bin/jython
+ids_in_synthesis.tsv:
 	rm -rf synth-nexson-tmp
 	mkdir -p synth-nexson-tmp
-	scp -p files:"files.opentreeoflife.org/synthesis/current/output/phylo_snapshot/*@*.json" synth-nexson-tmp/
+	scp -p "$(SSH_PATH_PREFIX)/synthesis/current/output/phylo_snapshot/*@*.json" synth-nexson-tmp/
 	time bin/jython util/ids_in_synthesis.py --dir synth-nexson-tmp --outfile $@.new
 	mv $@.new $@
 

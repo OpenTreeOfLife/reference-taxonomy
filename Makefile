@@ -328,28 +328,9 @@ refresh/worms: r/worms-NEW/source/.made
 	bin/christen worms-NEW
 
 r/worms-NEW/source/.made: import_scripts/worms/fetch_worms.py r/worms-NEW
-	mkdir -p r/worms-NEW/work
+	mkdir -p r/worms-NEW/work r/worms-NEW/source/digest
 	time python import_scripts/worms/fetch_worms.py --queue r/worms-NEW/work/q.q \
-	       --out r/worms-HEAD/source/digest --chunks 5000 --chunksize 500
-	touch $@
-
-# WoRMS is imported by import_scripts/worms/worms.py which does a web crawl
-# This rule hasn't been tested!
-
-r/worms-HEAD/resource/.made-OLD-METHOD: r/worms-HEAD/source/.made
-	(cd r/worms-HEAD && rm -f resource && ln -s source resource)
-
-r/worms-NEW/source/.made-OLD-METHOD: import_scripts/worms/worms.py r/worms-NEW
-	echo "*** Warning! This can take several days to run. ***"
-	@mkdir -p r/worms-NEW/source
-	python import_scripts/worms/worms.py \
-	       r/worms-NEW/source/taxonomy.tsv \
-	       r/worms-NEW/source/synonyms.tsv \
-	       r/worms-NEW/source/worms.log
-	touch r/worms-NEW/work/.today
-	d=`python util/modification_date.py r/worms-NEW/work/.today`; \
-          bin/put worms-NEW date $$d; \
-          bin/put worms-NEW version $$d
+	       --out r/worms-NEW/source/digest --chunks 5000 --chunksize 500
 	touch $@
 
 r/worms-NEW:

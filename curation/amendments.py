@@ -2,11 +2,6 @@
 
 from proposition import *
 
-# 'otc' stands for 'Open Tree curation'
-
-def otc(id):
-    return 'otc:' + str(id)
-
 # ----- Final patches -----
 
 def patch_ott(ott):

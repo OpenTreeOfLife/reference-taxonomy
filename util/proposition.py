@@ -167,6 +167,7 @@ class _Synonym_of:
 
 
 # Sort of like synonym, but for id aliases.
+# I don't know whether this is a good idea, or even useful.
 
 def alias_of(syn, pri, qid):
     return _Alias_of(syn, pri, qid)
@@ -307,6 +308,20 @@ class _Has_rank:
         return ('has_rank(%s, %s)' %
                 self.taxon.stringify(),
                 self.qid)
+
+# Open Tree curation.
+# id is an integer unique to the particular call to otc().
+# issue is a URL such as https://github.com/OpenTreeOfLife/feedback/issues/45
+# evidence is a URL such as http://dx.doi.org/10.1002/fedr.19971080106
+# For now these are ignored.  But it should be possible to fix this later.
+
+_ids_used = {}
+
+def otc(id, issue=None, evidence=None):
+    if id in _ids_used:
+        print 'curation id %s already in use' % id
+    return 'otc:' + str(id)
+
 
 # Replacement for claim.py
 

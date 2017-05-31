@@ -7,10 +7,7 @@ from org.opentreeoflife.taxa import Rank
 
 this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/taxonomies.py'
 
-# Don't change these ids!
-
-def otc(id):
-    return 'otc:' + str(id)
+# Don't change the otc() ids!
 
 # ----- Difficult polysemies -----
 
@@ -1181,7 +1178,8 @@ def patch_gbif(gbif):
     for (synonym, primary, qid) in [
             ('Chryso-Hypnum', 'Chryso-hypnum', otc('24')),  # 2014-04-13 JAR noticed while grepping
             ('Drake-Brockmania', 'Drake-brockmania', otc(2)),  # RR 2014-04-12 #47
-            ('Saxo-Fridericia', 'Saxofridericia', otc(36)),  # RR #50 - this one is in NCBI, see above
+            ('Saxo-Fridericia', 'Saxofridericia',
+             otc(36, evidence='https://github.com/OpenTreeOfLife/feedback/issues/50')),  # RR #50 - this one is in NCBI, see above
             ('Solms-Laubachia', 'Solms-laubachia', otc(37)), # RR #57 - the genus is in NCBI, see above
             ('Solms-Laubachia pulcherrima', 'Solms-laubachia pulcherrima', otc(38)), # RR #57
             ('Cyrto-Hypnum', 'Cyrto-hypnum', otc(39)),

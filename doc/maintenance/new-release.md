@@ -46,6 +46,52 @@ The 3.1 build should therefore look like the following:
     make refresh/ott
     make store-all
 
+## Prerequisites
+
+I've been doing OTT builds on a 2014 MacBook with 16G of RAM, and on a
+2010 server with 40G of RAM.  With less RAM than this I think it will
+be painfully slow.  It already takes over 15 minutes even with plenty
+of RAM.
+
+Software requirements:
+* GNU `make`.  I've been using 3.81 and 4.0 but I don't think any 
+  particular version is required.
+* `bash`.
+* GNU `tar`.
+* `wget`.  I've been using GNU `wget` 1.18 and 1.16.
+* python 2.7; I've been using 2.7.10 and 2.7.9.
+* JVM/JRE/javac.  I've been using JRE build 1.8.0_05-b13 on Mac, 
+  openjdk 1.8.0_111 on server.  Java 1.7 ought to work but I haven't 
+  tried it.
+
+Miscellaneous java libraries are retrieved from Maven Central during
+the build process, so as long as you have an Internet connection, you
+shouldn't have to worry about those.
+
+## Smoke test
+
+You can do
+
+    make test
+
+for a basic test.  This does not test everything needed for an OTT
+build; e.g. it doesn't exercise the archiving scripts.  But it does
+invoke many important parts of the infrastructure.
+
+The outcome should be a taxonomy in the `t/tax/aster` directory.
+
+The test taxonomy is rooted at Asterales.  It may be possible to use a
+different taxon as root, e.g. Mammalia, but this hasn't been tested:
+
+    export SELECTION=Mammalia
+    export SELECTION_TAG=mml
+    make test
+
+(If you just want a subset of OTT, you can use the `Smasher` class at
+the command line, or a simple python script, to select it from a
+pre-built OTT.)
+
+
 ## Finding and fixing errors
 
 Each invocation of `make refresh/ott` has the potential of detecting
@@ -60,12 +106,16 @@ Shell variables
 
 * `FILES_URL_PREFIX`, defaults to `http://files.opentreeoflife.org` -
   this is the URL prefix used by `wget` for fetching tarballs of previous
-  OTT and source versions.
+  OTT and source versions.  If you have a local mirror (or subset) or the
+  files site, you might be able to set this to a `file:` URL, but
+  I suspect that wget doesn't understand `file:`.  I accessed by local
+  files mirror using the local Apache 
+  server set up with a symbolic link from the webroot to the mirror.
 * `SSH_PATH_PREFIX`, defaults to
   `files.opentreeoflife.org:files.opentreeoflife.org` - this will be
-  the destination used by `scp` for storing new source and OTT tarballs.
-  If the value of `SSH_PATH_PREFIX` does not include a colon `:`, the files will copied 
-  to a local directory.
+  the destination used by `scp` for storing new tarballs.
+  If the value of `SSH_PATH_PREFIX` does not include a colon `:`, the files
+  will copied to a local directory using `cp -p`.
 
 `make` variables in Makefile
 

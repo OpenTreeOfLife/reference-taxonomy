@@ -1,4 +1,4 @@
-<# Finding and fixing errors
+# Finding and fixing errors
 
 See also:
 

@@ -49,7 +49,7 @@ def overall_table(ott, outpath):
     infra = 0
     barren = 0
     widest = None
-    names = {}
+    names = {}    # Number of nodes having a given name as primary name.
     for taxon in ott.taxa():
         all_flags = taxon.properFlags | taxon.inferredFlags
         if (all_flags & exclude_from_analysis) != 0:
@@ -92,7 +92,7 @@ def overall_table(ott, outpath):
     poly_genera = 0
     poly_list = []
     for name in names:
-        semies = names[name]
+        semies = names[name]    # How many nodes with this name as primary?
         if semies > 1:
             poly += 1
             speciesp = False

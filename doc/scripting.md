@@ -281,9 +281,21 @@ One can iterate over the nodes of a taxonomy:
 Nodes have lots of properties you might want to look at in a script.
     
     taxon.parent
-    taxon.children     # null, or a List of nodes
+    taxon.getChildren()     # a List of nodes
     taxon.isHidden()
     
+You can iterate over the descendants of a node:
+
+    for d in taxon.descendants(): ...
+
+or over all nodes in a taxonomy:
+
+    for d in taxonomy.taxa(): ...
+
+The roots of a taxonomy (a List):
+
+    taxonomy.roots()
+
 You can make a copy of a taxonomy, selecting only the visible (non-hidden) nodes:
 
     taxonomy.selectVisible("my taxonomy but only visible")

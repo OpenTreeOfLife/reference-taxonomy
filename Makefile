@@ -661,24 +661,25 @@ inclusion-tests: inclusions.csv bin/jython
 	bin/jython util/check_inclusions.py inclusions.csv r/ott-NEW/source/
 
 # -----------------------------------------------------------------------------
-# Asterales test system ('make test')
+# Taxonomy-subset test system ('make test')
 
-TAXON=Asterales
+SELECTION?=Asterales
+SELECTION_TAG?=aster
 
 # t/tax/prev/taxonomy.tsv: r/ott-HEAD/resource/taxonomy.tsv   - correct expensive
-t/tax/prev_aster/taxonomy.tsv: 
+t/tax/prev_$(SELECTION_TAG)/taxonomy.tsv: 
 	@mkdir -p `dirname $@`
-	$(SMASH) r/ott-HEAD/resource/ --select2 $(TAXON) --out t/tax/prev_aster/
+	$(SMASH) r/ott-HEAD/resource/ --select2 $(SELECTION) --out t/tax/prev_$(SELECTION_TAG)/
 
 # dependency on r/ncbi-HEAD/resource/taxonomy.tsv - correct expensive
-t/tax/ncbi_aster/taxonomy.tsv: 
+t/tax/ncbi_$(SELECTION_TAG)/taxonomy.tsv: 
 	@mkdir -p `dirname $@`
-	$(SMASH) r/ncbi-HEAD/resource/ --select2 $(TAXON) --out t/tax/ncbi_aster/
+	$(SMASH) r/ncbi-HEAD/resource/ --select2 $(SELECTION) --out t/tax/ncbi_$(SELECTION_TAG)/
 
 # dependency on GBIF taxonomy.tsv - correct but expensive
-t/tax/gbif_aster/taxonomy.tsv: 
+t/tax/gbif_$(SELECTION_TAG)/taxonomy.tsv: 
 	@mkdir -p `dirname $@`
-	$(SMASH) r/gbif-HEAD/resource/ --select2 $(TAXON) --out t/tax/gbif_aster/
+	$(SMASH) r/gbif-HEAD/resource/ --select2 $(SELECTION) --out t/tax/gbif_$(SELECTION_TAG)/
 
 # Previously:
 #t/tax/aster/taxonomy.tsv: $(CLASS) \
@@ -693,25 +694,24 @@ t/tax/gbif_aster/taxonomy.tsv:
 #             --out t/tax/aster/
 
 # New:
-t/tax/aster/taxonomy.tsv: compile t/aster.py \
-                          t/tax/ncbi_aster/taxonomy.tsv \
-                          t/tax/gbif_aster/taxonomy.tsv \
-                          t/tax/prev_aster/taxonomy.tsv \
+t/tax/$(SELECTION_TAG)/taxonomy.tsv: compile t/aster.py \
+                          t/tax/ncbi_$(SELECTION_TAG)/taxonomy.tsv \
+                          t/tax/gbif_$(SELECTION_TAG)/taxonomy.tsv \
+                          t/tax/prev_$(SELECTION_TAG)/taxonomy.tsv \
                           t/edits/edits.tsv \
 			  bin/jython
 	@mkdir -p `dirname $@`
 	bin/jython t/aster.py
 
-t/tax/aster/README.html: t/tax/aster/about.json util/make_readme.py
-	python util/make_readme.py t/tax/aster/ >$@
+t/tax/$(SELECTION_TAG)/README.html: t/tax/$(SELECTION_TAG)/about.json util/make_readme.py
+	python util/make_readme.py t/tax/$(SELECTION_TAG)/ >$@
 
-test: aster
-aster: t/tax/aster/taxonomy.tsv t/tax/aster/README.html
+test: t/tax/$(SELECTION_TAG)/taxonomy.tsv t/tax/$(SELECTION_TAG)/README.html
 
-aster-tarball: t/tax/aster/taxonomy.tsv
+$(SELECTION_TAG)-tarball: t/tax/$(SELECTION_TAG)/taxonomy.tsv
 	(mkdir -p $(TARDIR) && \
-	 tar czvf $(TARDIR)/aster.tgz.tmp -C t/tax aster && \
-	 mv $(TARDIR)/aster.tgz.tmp $(TARDIR)/aster.tgz )
+	 tar czvf $(TARDIR)/$(SELECTION_TAG).tgz.tmp -C t/tax $(SELECTION_TAG) && \
+	 mv $(TARDIR)/$(SELECTION_TAG).tgz.tmp $(TARDIR)/$(SELECTION_TAG).tgz )
 
 # ----- Smasher
 
@@ -754,7 +754,7 @@ clean:
 	rm -rf r/*-NEW
 	rm r/*-HEAD r/*-PREVIOUS
 	rm -rf tmp *.tmp properties
-	rm -rf t/amendments t/tax/aster
+	rm -rf t/amendments t/tax/$(SELECTION_TAG)
 
 distclean: clean
 	rm -f lib/*

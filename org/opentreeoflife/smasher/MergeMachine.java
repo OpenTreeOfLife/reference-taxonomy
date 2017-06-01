@@ -132,8 +132,8 @@ class MergeMachine {
        Sink is the target of the nearest source taxonomy node ancestor
        that has one.
        */
-	void augment(Taxon node, Taxon sink) {
-        if (node.prunedp) return;
+	String augment(Taxon node, Taxon sink) {
+        if (node.prunedp) return "pruned";
         String reason;
         Taxon unode = alignment.getTaxon(node);
 
@@ -142,14 +142,16 @@ class MergeMachine {
                 reason = accept(node, "mapped/tip");
 			else {
                 Answer a = alignment.getAnswer(node);
-                if (a == null)
-                    reason = acceptNew(node, "new/tip");
-                else if (a.value <= Answer.HECK_NO)
+                if (a == null) {
+                    reason = "new/tip";
+                    acceptNew(node, reason);
+                } else if (a.value <= Answer.HECK_NO) {
                     // Don't create homonym if it's too close a match
                     // (weak no) or ambiguous (noinfo)
                     // YES > NOINFO > NO > HECK_NO  (sorry)
-                    reason = acceptNew(node, "new/polysemy");
-                else
+                    reason = "new/polysemy";
+                    acceptNew(node, reason);
+                } else
                     reason = "ambiguous/redundant";
             }
 		} else {
@@ -196,7 +198,7 @@ class MergeMachine {
                     Taxon newnode = acceptNew(node, "new/refinement");
                     takeOld(node, newnode);
                     takeOn(node, newnode, 0); // augmentation
-                    reason = "new/refinement"
+                    reason = "new/refinement";
                 } else {
                     takeOn(node, commonParent, 0);
                     // should include a witness for debugging purposes - merged to/from what?
@@ -339,7 +341,6 @@ class MergeMachine {
         Answer answer = Answer.yes(node, newnode, reason, null);
 
         alignment.setAnswer(node, answer);
-        tick(reason);
 
         // grumble. comapped should be stored in the alignment.
         newnode.comapped = node;

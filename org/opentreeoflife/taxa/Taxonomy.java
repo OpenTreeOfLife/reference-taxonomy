@@ -41,7 +41,7 @@ import org.json.simple.JSONObject;
 
 public abstract class Taxonomy {
     private Map<String, List<Node>> nameIndex = new HashMap<String, List<Node>>();
-	private Map<String, Taxon> idIndex = new HashMap<String, Taxon>();
+	private Map<String, Node> idIndex = new HashMap<String, Node>();
     public Taxon forest = new Taxon(this, null);
 	public String idspace = null; // "ncbi", "ott", etc.
 	String[] header = null;
@@ -56,8 +56,6 @@ public abstract class Taxonomy {
 
     Map<QualifiedId, Node> qidIndex = null;
     Set<QualifiedId> qidAmbiguous = null;
-
-    public String version = null;
 
 	public Taxonomy() {
     }
@@ -138,6 +136,7 @@ public abstract class Taxonomy {
 
     // delete a synonym
     public void removeFromNameIndex(Node node) {
+        if (node.name == null) return;
 		List<Node> nodes = this.lookup(node.name);
         // node.name is name for every node in nodes
         if (nodes != null) {
@@ -154,11 +153,11 @@ public abstract class Taxonomy {
         return this.idIndex.keySet();
     }
 
-    public void addId(Taxon node, String id) {
-        if (node.prunedp)
-            return;
+    // Cause id to be an identifier of node.
+
+    public void addId(Node node, String id) {
         if (id != null) {
-            Taxon existing = this.lookupId(id);
+            Node existing = this.getNodeById(id);
             if (existing != null) {
                 if (existing != node)
                     System.err.format("** Id collision: attempt to add %s (= %s) as an id for %s\n",
@@ -171,9 +170,10 @@ public abstract class Taxonomy {
         }
     }
 
-    public void removeFromIdIndex(Taxon node, String id) {
+    public void removeFromIdIndex(Node node, String id) {
         // could check that lookupId(id) == node
-        this.idIndex.remove(id);
+        if (id != null)
+            this.idIndex.remove(id);
     }
 
     public void removeFromQidIndex(Taxon node, QualifiedId qid) {
@@ -199,13 +199,23 @@ public abstract class Taxonomy {
     // Every taxonomy has an idspace, even if not every node has an id.
 
 	public Taxon lookupId(String id) {
-        Taxon t = this.idIndex.get(id);
-        if (t == null)
-            return t;
-        if (t.prunedp)
-            // System.err.format("** Pruned taxon found in id index: %s\n", t);
+        Node n = this.getNodeById(id);
+        if (n == null)
             return null;
-        return t;
+        else if (n instanceof Taxon)
+            return (Taxon)n;
+        else
+            return null;
+	}
+
+	public Node getNodeById(String id) {
+        Node n = this.idIndex.get(id);
+        if (n == null)
+            return null;
+        else if (n.isPruned())
+            return null;
+        else
+            return n;
 	}
 
     // Roots - always Taxons, never Synonyms.
@@ -292,13 +302,13 @@ public abstract class Taxonomy {
             return null;
         else {
             Node node = this.qidIndex.get(qid);
-            if (node != null) {
-                if (node.taxon().prunedp)
-                    return null;
-                if (this.qidAmbiguous.contains(qid)) {
-                    System.out.format("# Ambiguous qid %s = %s + ...\n", qid, node);
-                    return null;
-                }
+            if (node == null)
+                return null;
+            if (node.isPruned())
+                return null;
+            if (this.qidAmbiguous.contains(qid)) {
+                System.out.format("# Ambiguous qid %s = %s + ...\n", qid, node);
+                return null;
             }
             return node;
         }
@@ -316,8 +326,11 @@ public abstract class Taxonomy {
                     this.qidAmbiguous.add(qid);
                     System.out.format("# Making qid ambiguous %s = %s + %s\n", qid, node, other);
                 }
-            } else
-                this.qidIndex.put(qid, node);
+            } else {
+                Taxon taxon = node.taxon();
+                if (taxon != null) // not pruned?
+                    this.qidIndex.put(qid, node);
+            }
         }
     }
 
@@ -358,14 +371,14 @@ public abstract class Taxonomy {
 	private static final Pattern NEGATIVE_NUMERAL = Pattern.compile("-[0-9]+");
 
     void purgeTemporaryIds() {
-        List<Taxon> losers = new ArrayList<Taxon>();
-        for (Taxon node : idIndex.values())
+        List<Node> losers = new ArrayList<Node>();
+        for (Node node : idIndex.values())
             if (node.id != null &&
                 NEGATIVE_NUMERAL.matcher(node.id).matches())
                 losers.add(node);
         if (losers.size() > 0)
             System.out.printf("| Removing %s temporary ids\n", losers.size());
-        for (Taxon node : losers) {
+        for (Node node : losers) {
             idIndex.remove(node);
             node.id = null;
         }
@@ -1002,16 +1015,20 @@ public abstract class Taxonomy {
         return tax2;
     }
 
-    // Copy aliased ids from larger taxonomy to selected subtaxonomy, as appropriate
+    // Copy aliased ids from larger taxonomy (this) to selected
+    // subtaxonomy (tax2), as appropriate.
     // tax2 = the selection, this = where it came from
 
     void copySelectedIds(Taxonomy tax2) {
         int count = 0;
         for (String id : this.allIds()) {
-            Taxon node = this.lookupId(id);
-            if (!node.id.equals(id) && tax2.lookupId(node.id) != null) {
-                tax2.addId(node, id);
-                ++count;
+            Node node = this.getNodeById(id);
+            if (node != null && node.id != null) {
+                Node node2 = tax2.getNodeById(node.id);
+                if (node2 != null) {
+                    tax2.addId(node2, id);
+                    ++count;
+                }
             }
         }
         System.out.format("| copied %s id aliases\n", count);
@@ -1194,7 +1211,7 @@ public abstract class Taxonomy {
         Taxon newnode = dupWithoutId(node, reason);
         if (node.id != null)
             newnode.setId(node.id);
-        node.copySynonymsTo(newnode);
+        node.copyNamesTo(newnode);
         return newnode;
     }
 
@@ -1623,7 +1640,8 @@ public abstract class Taxonomy {
 
 			if (candidates.size() == 1) {
                 Taxon result = candidates.get(0);
-                if (!result.name.equals(name))
+                if (false && !result.name.equals(name))
+                    // This message was useful once, but now it's getting in the way
                     System.out.format("* Warning: taxon %s was referenced using synonym %s (%s)\n", result, name, this.idspace);
 				return result;
             }
@@ -1753,69 +1771,78 @@ public abstract class Taxonomy {
 
     public void check() {
         Set<Taxon> all = new HashSet<Taxon>();
+
+        // Ensure all reachable nodes are indexed ...
         for (Taxon taxon : this.taxa()) {
-            if (taxon.prunedp)
+            if (taxon.prunedp) {
                 System.err.format("** check: Pruned taxon found in hierarchy: %s in %s\n", taxon, taxon.parent);
-            else
-                all.add(taxon);
-        }
-
-        // Ensure every named node is reachable...
-        for (Node node : allNamedNodes()) {
-            Taxon taxon = node.taxon();
-            if (!all.contains(taxon)) {
-                if (node == taxon)
-                    System.err.format("** check: Named taxon not in hierarchy: %s in %s\n", taxon, taxon.parent);
-                else if (taxon.prunedp)
-                    System.err.format("** check: Pruned taxon found in name index: %s = %s in %s\n",
-                                      node.name, taxon, taxon.parent);
-                else
-                    System.err.format("** check: Synonym %s taxon not in hierarchy: %s in %s\n",
-                                      node.name, taxon, taxon.parent);
-                all.add(taxon);
+                continue;
             }
+
+            all.add(taxon);
+
+            // Check name index ...
+            if (taxon.name != null) {
+                Collection<Node> nodes = this.lookup(taxon.name);
+                if (nodes == null)
+                    System.err.format("** check: Named node not in name index: %s\n", taxon);
+                else if (!nodes.contains(taxon))
+                    System.err.format("** check: Named node is not in name index: %s\n", taxon);
+            }
+
+            // Check id index ...
+            if (taxon.id != null) {
+                Node node = getNodeById(taxon.id);
+                if (node == null)
+                    System.err.format("** check: Identified node not in id index: %s\n", taxon);
+                else if (node != taxon)
+                    System.err.format("** check: Identified node collision with id index: %s %s\n", taxon,  node);
+            }
+
+            // Check parent/child links...
+            if (taxon.parent == null) {
+                if (taxon != forest)
+                    System.err.format("** check: null parent %s\n", taxon);
+            } else if (!taxon.parent.children.contains(taxon))
+                System.err.format("** check: Not in parent's children list: %s %s\n",
+                                  taxon, taxon.parent);
         }
 
-        // Ensure every identified node is reachable...
-        for (Taxon taxon : idIndex.values()) {
-            if (!all.contains(taxon)) {
-                if (taxon.prunedp) {
-                    if (taxon.id != null)
-                        // foo. we don't have a list of ids for use in removeFromIdIndex.
-                        System.err.format("** check: Pruned taxon is in identifier index: %s\n", taxon);
-                } else {
-                    System.err.format("** check: Identified taxon not in hierarchy: %s\n", taxon);
+        // Ensure every named node (taxon or synonym) is reachable...
+        for (Node node : allNamedNodes()) {
+            if (node.isPruned())
+                System.err.format("** check: Pruned node found in name index: %s\n", node);
+            else {
+                Taxon taxon = node.taxon();
+                if (!all.contains(taxon)) {
+                    if (node == taxon)
+                        System.err.format("** check: Named taxon not in hierarchy: %s in %s\n", taxon, taxon.parent);
+                    else
+                        System.err.format("** check: Synonym %s taxon not in hierarchy: %s in %s\n",
+                                          node.name, taxon, taxon.parent);
                     all.add(taxon);
                 }
             }
         }
 
-        // Ensure all nodes are indexed ...
-        for (Taxon node : all) {
-            if (node.name != null && !node.prunedp) {
-                Collection<Node> nodes = this.lookup(node.name);
-                if (nodes == null)
-                    System.err.format("** check: Named node not in name index: %s\n", node);
-                else if (!nodes.contains(node))
-                    System.err.format("** check: Named node is not in name index: %s\n", node);
+        // Ensure every identified node (taxon or synonym) is reachable...
+        for (String id : this.allIds()) {
+            Node node = this.getNodeById(id); // never returns pruned
+            if (node == null)
+                ;
+            else if (node.isPruned())
+                if (node instanceof Taxon && id.equals(node.id))
+                    System.err.format("** check: Pruned node found in identifier index: %s\n", node);
+            else {
+                Taxon taxon = node.taxon();
+                if (!all.contains(taxon)) {
+                    if (node == taxon)
+                        System.err.format("** check: Identified taxon %s not in hierarchy\n", taxon);
+                    else
+                        System.err.format("** check: Identified synonym %s not in hierarchy (= %s)\n", node, taxon);
+                    all.add(taxon);
+                }
             }
-            if (node.id != null) {
-                Taxon taxon = lookupId(node.id);
-                if (taxon == null)
-                    System.err.format("** check: Identified node not in id index: %s\n", node);
-                else if (taxon != node)
-                    System.err.format("** check: Identified node collision with id index: %s %s\n", node,  taxon);
-            }
-        }
-
-        // Check parent/child links...
-        for (Taxon node : all) {
-            if (node.parent == null) {
-                if (node != forest && !node.prunedp)
-                    System.err.format("** check: null parent %s\n", node);
-            } else if (!node.parent.children.contains(node))
-                System.err.format("** check: not in parent's children list: %s %s\n",
-                                  node, node.parent);
         }
     }
 

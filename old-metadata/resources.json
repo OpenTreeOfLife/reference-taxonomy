@@ -1,0 +1,142 @@
+{"resources":
+  [
+    {
+      "_type": "resource", 
+      "name": "gbif", 
+      "legal": "public", 
+      "filename_template": "{name}.zip", 
+      "ott_idspace": "gbif", 
+      "name_template": "gbif-{version}", 
+      "date": "2012-07-03", 
+      "capture_description": "Darwin Core Archive file in .zip form", 
+      "description": "GBIF backbone taxonomy"
+    }, 
+    {
+      "_type": "resource", 
+      "name": "ncbi", 
+      "retrieved_from": "ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz", 
+      "legal": "pd", 
+      "filename_template": "{name}.tgz", 
+      "ott_idspace": "ncbi", 
+      "name_template": "ncbi-{version}", 
+      "date": "2013-02-27", 
+      "capture_description": "An NCBI Taxonomy distribution (taxdump.tgz)", 
+      "description": "NCBI Taxonomy"
+    }, 
+    {
+      "_type": "resource", 
+      "name": "ott", 
+      "legal": "cc0", 
+      "filename_template": "{name}.tgz", 
+      "ott_idspace": "ott", 
+      "name_template": "ott{version}", 
+      "date": "2013-03-16", 
+      "capture_description": "OT taxonomy format tarballs", 
+      "description": "Open Tree Taxonomy"
+    }, 
+    {
+      "_type": "resource", 
+      "name": "silva", 
+      "legal": "public", 
+      "filename_template": "{name}.fasta.tgz", 
+      "ott_idspace": "silva", 
+      "name_template": "silva-{version}", 
+      "date": "2013-08-23", 
+      "capture_description": "fasta.tgz file from the SILVA distribution", 
+      "description": "ARB-SILVA taxonomy"
+    }, 
+    {
+      "===": "Extracted from article", 
+      "_type": "resource", 
+      "doi": "http://dx.doi.org/10.1186/1471-2148-10-352", 
+      "name": "study713", 
+      "legal": "handoff", 
+      "filename_template": "{name}.tsv", 
+      "ott_idspace": "study713", 
+      "name_template": "study713-{version}", 
+      "date": "2013-11-23", 
+      "capture_description": "Clerical variant of taxonomy, in Open Tree tarball form", 
+      "description": "Lamiales taxonomy from Schaferhoff et al 2010"
+    }, 
+    {
+      "_type": "resource", 
+      "name": "irmng", 
+      "legal": "handoff", 
+      "filename_template": "{name}.zip", 
+      "name_template": "irmng-{version}", 
+      "date": "2014-01-30", 
+      "capture_description": "Tarball containing CSV files employing DwC vocabulary", 
+      "description": "IRMNG taxonomy"
+    }, 
+    {
+      "_type": "resource", 
+      "name": "fung", 
+      "legal": "handoff", 
+      "filename_template": "{name}-ot.tgz", 
+      "ott_idspace": "if", 
+      "name_template": "fung-{version}", 
+      "date": "2014-01-30", 
+      "capture_description": "Derived taxonomy in Open Tree taxonomy format", 
+      "description": "Index Fungorum, from Paul Kirk personal communication, 2014"
+    }, 
+    {
+      "_type": "resource", 
+      "name": "h2007", 
+      "legal": "cc-by-3.0", 
+      "filename_template": "{name}.tre", 
+      "ott_idspace": "h2007", 
+      "name_template": "h2007-{version}", 
+      "date": "2014-03-14", 
+      "capture_description": "Tree file in Newick format", 
+      "description": "Hibbett 2007 fungal orders, originals from figshare",
+      "doi": "http://dx.doi.org/10.1016/j.mycres.2007.03.004"
+    }, 
+    {
+      "_type": "resource", 
+      "issue_prefix": "irmng-ot-", 
+      "name": "irmng-ot", 
+      "legal": "handoff", 
+      "filename_template": "{name}.tgz", 
+      "ott_idspace": "irmng", 
+      "name_template": "irmng-ot-{version}", 
+      "date": "2014-03-16", 
+      "capture_description": "Open Tree taxonomy format tarball", 
+      "description": "IRMNG - conversion to OT form"
+    }, 
+    {
+      "_type": "resource", 
+      "issue_prefix": "irmng-", 
+      "name": "irmng", 
+      "legal": "handoff", 
+      "filename_template": "{name}.zip", 
+      "ott_idspace": "irmng", 
+      "name_template": "irmng-{version}", 
+      "date": "2014-01-31", 
+      "capture_description": "DwCA .zip file", 
+      "description": "IRMNG"
+    }, 
+    {
+      "===": "v4 and before: treemachine, v5 and after: propinquity", 
+      "_type": "resource", 
+      "issue_prefix": "synthesis", 
+      "name": "synthesis", 
+      "legal": "cc0", 
+      "filename_template": "{name}.tgz", 
+      "name_template": "synthesis{version}", 
+      "date": "2014-04-14", 
+      "capture_description": "Tarballs", 
+      "description": "Open Tree synthetic tree"
+    }, 
+    {
+      "_type": "resource", 
+      "name": "worms", 
+      "legal": "public", 
+      "filename_template": "{name}-ot.tgz", 
+      "ott_idspace": "worms", 
+      "name_template": "worms-{version}", 
+      "date": "2015-10-02", 
+      "capture_description": "Open Tree taxonomy format tarball", 
+      "description": "WoRMS taxonomy, based on web crawls of worms.org"
+    }
+  ]
+}

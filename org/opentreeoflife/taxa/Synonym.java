@@ -6,10 +6,12 @@ public class Synonym extends Node {
 
     String type;                 // synonym, authority, common name, etc.
 
-    public Synonym(String name, String type, Taxon taxon) {
+    public Synonym(String name, String kind, Taxon taxon) {
         super(name);
+        if (name == null)
+            System.err.format("** Null name for synonym of %s\n", taxon);
         this.parent = taxon;
-        this.type = type;
+        this.type = kind;
         taxon.taxonomy.addToNameIndex(this, name);
     }
 
@@ -27,6 +29,10 @@ public class Synonym extends Node {
         String uniq = parent.uniqueName();
         if (uniq.length() == 0) uniq = parent.name;
         return String.format("%s (synonym for %s)", this.name, uniq);
+    }
+
+    public boolean isPruned() {    // foo
+        return parent.prunedp;
     }
 
     public String toString() {

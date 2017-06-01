@@ -1,0 +1,37 @@
+#!/usr/bin/python
+
+# get x y
+# Print the value of the y property of x.
+
+import os, sys, json, argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('obj')
+parser.add_argument('selector')
+parser.add_argument('default', nargs='?', default=None)
+
+args = parser.parse_args()
+
+dir = os.path.join('r', args.obj)
+if not os.path.isdir(dir):
+    sys.stderr.write('get: no such object: %s\n' % args.obj)
+    sys.exit(1)
+
+path = os.path.join(dir, 'properties.json')
+
+if not os.path.exists(path):
+    sys.stderr.write('get: no properties file for object: %s\n' % args.obj)
+    sys.exit(1)
+
+with open(path, 'r') as infile:
+    blob = json.load(infile)
+    value = blob.get(args.selector)
+    if value == None:
+        if args.default == None:
+            sys.stderr.write('get: this object does not have this property: %s %s\n' %
+                             (args.obj, args.selector))
+            sys.exit(1)
+        else:
+            print args.default
+    else:
+        print value

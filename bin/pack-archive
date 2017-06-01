@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# Create archive from source files
+
+set -e
+
+EXCL='--exclude="*~" --exclude=".??*" --exclude=.made --exclude="#*" --exclude=debug'
+
+# command line arg = e.g. archive/ncbi-20170425 source/ncbi-20170425 
+
+# N.b. name might be foo-NEW or foo-HEAD
+spec=$1
+
+dryrun=
+if [ x$DRYRUN != x ]; then dryrun=echo; fi
+
+dir=r/$spec
+
+# For URL: strip off the version number, leaving only the resource name
+
+suffix=`bin/get $spec suffix`
+
+if [ $suffix = '.zip' ]; then
+    echo "Zip archiving not implemented"
+    exit 1
+elif [ $suffix = '-ot.tgz' ]; then
+    src=resource
+elif [ $suffix = '.tgz' ]; then
+    src=source
+else
+    echo "pack-archive: Unrecognized suffix $suffix"
+    exit 1
+fi
+
+if [ ! -e r/$spec/$src/.made ]; then
+    echo "Missing sources (need r/$spec/$src/.made)"
+    exit 1
+fi
+
+dest=r/$spec/archive
+name=`bin/get $spec name`
+
+mkdir -p $dest
+cd $dest
+rm -f $name
+ln -sf ../$src $name
+
+$dryrun tar -c -z -f archive$suffix $EXCL -h $name
+touch .made
+
+echo Removing temporary symbolic link $dest/$name
+rm $name
+echo "Packed $dir to $dest/archive$suffix"

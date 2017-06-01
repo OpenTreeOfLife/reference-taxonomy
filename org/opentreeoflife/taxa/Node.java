@@ -5,8 +5,10 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 public abstract class Node {
+	public Taxonomy taxonomy;			// For subsumption checks etc.
 	public String name;
 	public Taxon parent = null;
+	public String id = null;
 	public List<QualifiedId> sourceIds = null;
 
     public Node(String name) {
@@ -22,6 +24,55 @@ public abstract class Node {
     public abstract boolean taxonNameIs(String othername);
 
     public abstract String uniqueName();
+
+    public abstract boolean isPruned();    // foo
+
+	public String getId() {
+        return id;
+    }
+
+	public void setId(String id) {
+		if (id == null)
+            return;
+        if (this.id == null)
+            this.addId(id);
+        else if (!this.id.equals(id)) {
+            String wasid = this.id;
+            this.id = null;
+            this.addId(id);
+            this.addId(wasid);
+        }
+	}
+
+    public void addId(String id) {
+        this.taxonomy.addId(this, id);
+    }
+
+    public QualifiedId originId() {
+        if (this.sourceIds != null)
+            return this.sourceIds.get(0);
+        else
+            return null;
+    }
+
+	public QualifiedId getQualifiedId() {
+        String space = this.taxonomy.getIdspace();
+		if (this.id != null) {
+			return new QualifiedId(space, this.id);
+        } else if (this.parent == null) {
+            // Shouldn't happen
+			System.out.format("* [getQualifiedId] %s is detached\n", this);
+            return new QualifiedId(space, "<detached>");
+        } else if (this.name != null) {
+            // e.g. h2007
+			// System.out.format("* [getQualifiedId] Taxon has no id, using name: %s:%s\n", space, this.name);
+			return new QualifiedId(space, this.name);
+        } else {
+			// What if from a Newick string?
+			System.out.println("* [getQualifiedId] unnamed");
+            return new QualifiedId(space, "<unnamed>");
+        }
+	}
 
 	// Add most of the otherwise unmapped nodes to the union taxonomy,
 	// either as new names, fragmented taxa, or (occasionally)

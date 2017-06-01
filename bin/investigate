@@ -1,9 +1,22 @@
 #!/bin/bash
 
-for tax in fung worms 713 silva ncbi gbif irmng prev_ott ott; do
-    grep "	$1	" tax/$tax/taxonomy.tsv  /dev/null
+taxname=$1
+
+function scan {
+    taxname=$1
+    issue=$2
+    dir=r/$issue/resource
+    [ -d $dir ] || return
+    grep "	$taxname	" $dir/taxonomy.tsv  /dev/null
     if [ -e tax/$tax/synonyms.tsv ]; then
-        (grep "^$1	" tax/$tax/synonyms.tsv  /dev/null ||
-         grep "	$1	" tax/$tax/synonyms.tsv  /dev/null)
+        (grep "^$taxname	" $dir/synonyms.tsv  /dev/null ||
+         grep "	$taxname	" $dir/synonyms.tsv  /dev/null)
     fi
+}
+
+for tax in fung worms 713 silva ncbi gbif irmng; do
+    scan "$taxname" $tax-HEAD
 done
+
+scan "$taxname" ott-PREVIOUS
+scan "$taxname" ott-NEW

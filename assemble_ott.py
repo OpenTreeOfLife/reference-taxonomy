@@ -4,7 +4,7 @@
 # Unless specified otherwise issues are in the reference-taxonomy repo:
 # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/...
 
-import sys, os, csv
+import sys, os, csv, json
 
 from org.opentreeoflife.taxa import Taxonomy, SourceTaxonomy, TsvEdits, Addition, Taxon
 from org.opentreeoflife.smasher import UnionTaxonomy
@@ -14,27 +14,34 @@ from org.opentreeoflife.taxa import CSVReader, QualifiedId
 from java.io import FileReader
 
 import ncbi_ott_assignments
-sys.path.append("feed/misc/")
-import adjustments, amendments
-import check_inclusions
-from claim import *
-#import reason_report
 
-this_source = 'https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/make-ott.py'
+# For adjustments, amendments
+sys.path.append("curation/")
+import adjustments, amendments
+
+import check_inclusions
+
+import management
+
 inclusions_path = 'inclusions.csv'
-additions_clone_path = 'feed/amendments/amendments-1'
 new_taxa_path = 'new_taxa'
 
-def create_ott(version):
+# ott_spec would typically be "ott-NEW"
+
+def create_ott(ott_spec):
+
+    with open(os.path.join(access_head('idlist'), 'by_qid.csv'), 'r') as infile:
+        print '# can access idlist'
+
+    ott_path = management.source_path(ott_spec)
 
     ott = UnionTaxonomy.newTaxonomy('ott')
-    ott.version = version;
 
     # Would be nice if there were tests for all of these...
     for name in names_of_interest:
         ott.eventLogger.namesOfInterest.add(name)
 
-    ott.setSkeleton(Taxonomy.getTaxonomy('tax/separation/', 'separation'))
+    ott.setSkeleton(Taxonomy.getTaxonomy('curation/separation/', 'separation'))
 
     # These are particularly hard cases; create alignment targets up front
     adjustments.deal_with_polysemies(ott)
@@ -42,14 +49,30 @@ def create_ott(version):
     # Align and merge each source in sequence
     merge_sources(ott)
 
+    # "Old" patch system
+    TsvEdits.edit(ott, 'curation/edits/')
+
     # consider try: ... except: print '**** Exception in patch_ott'
     amendments.patch_ott(ott)
 
+    # End of topology changes.  Now assign ids.
+    retain_ids(ott,
+               access_source('ott-PREVIOUS'),
+               os.path.join(access_head('idlist'), 'by_qid.csv'))
+
+    # Apply the additions (which already have ids assigned).
+    # This has to happen *after* ids are assigned, since additions use OTT 
+    # ids to identify parents.
+    print '-- Processing additions --'
+    additions_clone_path = os.path.join(access_head('amendments'), 'amendments-1')
+    Addition.processAdditions(additions_clone_path, ott)
+
+    # Mint ids for new nodes
+    print '-- Minting new ids --'
+    ott.assignNewIds(new_taxa_path)
+
     # Remove all trees but the largest (or make them life incertae sedis)
     ott.deforestate()
-
-    # End of topology changes.  Now assign ids.
-    ids_and_additions(ott)
 
     # data structure integrity checks
     ott.check()
@@ -58,35 +81,49 @@ def create_ott(version):
     ott.loadPreferredIds('ids_that_are_otus.tsv', False)
     ott.loadPreferredIds('ids_in_synthesis.tsv', True)
 
+    ott.dump(ott_path)
+
+    record_ott_sources(ott_spec)
+
     return ott
 
 def merge_sources(ott):
 
+    # Genbank - this is a kludge to make sure it's in the dependencies list.
+    # But eventually it ought to be handled in this file, not in the silva
+    # import script.
+    access_head('genbank')
+
     # SILVA
-    silva = adjustments.load_silva()
+    silva = load_taxonomy('silva')
+    adjustments.adjust_silva(silva)
     silva_to_ott = adjustments.align_silva(silva, ott)
     align_and_merge(silva_to_ott)
 
     # Hibbett 2007
-    h2007 = adjustments.load_h2007()
+    h2007 = Taxonomy.getTaxonomy('curation/h2007/tree.tre', 'h2007')
+    adjustments.adjust_h2007(h2007)
     h2007_to_ott = ott.alignment(h2007)
     align_and_merge(h2007_to_ott)
 
     # Index Fungorum
-    fungorum = adjustments.load_fung()
+    fungorum = load_taxonomy('fung')
+    adjustments.adjust_fung(fungorum)
     (fungi, fungorum_sans_fungi) = split_taxonomy(fungorum, 'Fungi')
     align_and_merge(adjustments.align_fungi(fungi, ott))
 
     # the non-Fungi from Index Fungorum get absorbed below
 
-    lamiales = adjustments.load_lamiales()
+    lamiales = Taxonomy.getTaxonomy('curation/lamiales/', 'study713')
+    adjustments.adjust_lamiales(lamiales)
     align_and_merge(adjustments.align_lamiales(lamiales, ott))
 
     # WoRMS
     # higher priority to Worms for Malacostraca, Cnidaria, Mollusca
     #  so we split out
     # those clades from worms and absorb them before NCBI
-    worms = adjustments.load_worms()
+    worms = load_taxonomy('worms')
+    adjustments.adjust_worms(worms)
     # Malacostraca instead of Decapoda because M. is in the separation taxonomy
     (malacostraca, worms_sans_malacostraca) = split_taxonomy(worms, 'Malacostraca')
     align_and_merge(ott.alignment(malacostraca))
@@ -96,7 +133,8 @@ def merge_sources(ott):
     align_and_merge(ott.alignment(mollusca))
 
     # NCBI
-    ncbi = adjustments.load_ncbi()
+    ncbi = load_taxonomy('ncbi')
+    adjustments.adjust_ncbi(ncbi)
 
     # analyzeOTUs sets flags on questionable taxa (hybrid, metagenomes,
     #  etc) to allow the option of suppression downstream
@@ -107,10 +145,10 @@ def merge_sources(ott):
 
     # Reporting
     # Get mapping from NCBI to OTT, derived via SILVA and Genbank.
-    mappings = load_ncbi_to_silva(ncbi, silva, silva_to_ott)
+    mappings = load_ncbi_to_silva(os.path.join(management.resource_path('silva'),
+                                               'ncbi_to_silva.tsv'),
+                                  ncbi, silva, silva_to_ott)
     compare_ncbi_to_silva(mappings, silva_to_ott)
-
-    debug_divisions('Reticularia splendens', ncbi, ott)
 
     # Low-priority WoRMS
     # This is suboptimal, but the names are confusing the division logic
@@ -122,7 +160,8 @@ def merge_sources(ott):
     # align_and_merge(adjustments.align_fungorum_sans_fungi(fungorum_sans_fungi, ott))
 
     # GBIF
-    gbif = adjustments.load_gbif()
+    gbif = load_taxonomy('gbif')
+    adjustments.adjust_gbif(gbif)
     gbif_to_ott = adjustments.align_gbif(gbif, ott)
     align_and_merge(gbif_to_ott)
 
@@ -137,7 +176,8 @@ def merge_sources(ott):
         cyl.setId('51754')
 
     # IRMNG
-    irmng = adjustments.load_irmng()
+    irmng = load_taxonomy('irmng')
+    adjustments.adjust_irmng(irmng)
     a = adjustments.align_irmng(irmng, ott)
     hide_irmng(irmng)
     align_and_merge(a)
@@ -146,7 +186,27 @@ def merge_sources(ott):
     adjustments.link_to_h2007(ott)
     report_on_h2007(h2007, h2007_to_ott)
 
-    get_default_extinct_info_from_gbif(gbif, gbif_to_ott)
+    get_default_extinct_info_from_gbif(os.path.join(management.resource_path('gbif'), 'paleo.tsv'),
+                                       gbif, gbif_to_ott)
+
+def load_taxonomy(spec):
+    return Taxonomy.getTaxonomy(access_head(spec), management.get_property(spec, "ott_idspace"))
+
+accessed_sources = {}
+
+def access_source(spec):
+    accessed_sources[management.get_property(spec, "series")] = \
+       management.get_property(spec, "name")
+    return management.resource_path(spec)
+
+def access_head(series):
+    return access_source(series + '-HEAD')
+
+# or, read the ott-NEW properties.json file, add the sources, and write it out
+
+def record_ott_sources(ott_spec):
+    print '| Recording source version numbers in properties file'
+    management.set_property(ott_spec, "sources", accessed_sources)
 
 # utilities
 
@@ -178,10 +238,10 @@ def split_taxonomy(taxy, taxon_name):
 
 # Maps taxon in NCBI taxonomy to SILVA-derived OTT taxon
 
-def load_ncbi_to_silva(ncbi, silva, silva_to_ott):
+def load_ncbi_to_silva(ncbi_to_silva_path, ncbi, silva, silva_to_ott):
     mappings = {}
     flush = []
-    with open('feed/silva/out/ncbi_to_silva.tsv', 'r') as infile:
+    with open(ncbi_to_silva_path, 'r') as infile:
         reader = csv.reader(infile, delimiter='\t')
         for (ncbi_id, silva_cluster_id) in reader:
             n = ncbi.maybeTaxon(ncbi_id)
@@ -232,27 +292,28 @@ def compare_ncbi_to_silva(mappings, silva_to_ott):
 # extinct flags for taxa originating only from GBIF (i.e. if the taxon also
 # comes from NCBI, WoRMS, etc. then we do not mark it as extinct).
 
-def get_default_extinct_info_from_gbif(gbif, gbif_to_ott):
-    infile = open('tax/gbif/paleo.tsv')
-    paleos = 0
-    flagged = 0
-    for row in infile:
-        paleos += 1
-        id = row.strip()
-        gtaxon = gbif.lookupId(id)
-        if gtaxon != None:
-            taxon = gbif_to_ott.image(gtaxon)
-            if taxon != None:
-                prefix = taxon.sourceIds[0].prefix
-                if prefix == 'gbif':
-                    # See https://github.com/OpenTreeOfLife/feedback/issues/43
-                    # It's OK if it's also in IRMNG
-                    flagged += 1
-                    taxon.extinct()
-                else:
-                    print "| PaleoDB taxon %s may be extant; it's in %s" % (taxon, prefix)
-    infile.close()
-    print '| Flagged %s of %s taxa from paleodb\n' % (flagged, paleos)
+def get_default_extinct_info_from_gbif(paleo_path, gbif, gbif_to_ott):
+    with open(paleo_path, 'r') as infile:
+        paleos = 0
+        flagged = 0
+        for row in infile:
+            paleos += 1
+            id = row.strip()
+            gtaxon = gbif.lookupId(id)
+            if gtaxon != None:
+                taxon = gbif_to_ott.image(gtaxon)
+                if taxon != None:
+                    prefix = taxon.sourceIds[0].prefix
+                    if prefix == 'gbif':
+                        # See https://github.com/OpenTreeOfLife/feedback/issues/43
+                        # It's OK if it's also in IRMNG
+                        flagged += 1
+                        taxon.extinct()
+                    else:
+                        #print "| PaleoDB taxon %s may be extant; it's in %s" % (taxon, prefix)
+                        True
+        infile.close()
+        print '| Flagged %s of %s taxa from paleodb\n' % (flagged, paleos)
 
 
 def hide_irmng(irmng):
@@ -275,7 +336,7 @@ def hide_irmng(irmng):
 # -----------------------------------------------------------------------------
 # OTT id assignment
 
-def ids_and_additions(ott):
+def retain_ids(ott, prev_path, by_qid):
 
     # ad hoc assignments specifically for NCBI taxa, basedon NCBI id
 
@@ -340,7 +401,7 @@ def ids_and_additions(ott):
 
     # --------------------
     # Assign OTT ids to taxa that don't have them, re-using old ids when possible
-    ids = Taxonomy.getRawTaxonomy('tax/prev_ott/', 'ott')
+    ids = Taxonomy.getRawTaxonomy(prev_path, 'ott')
 
     # Edit the id source taxonomy to optimize id coverage
 
@@ -362,19 +423,12 @@ def ids_and_additions(ott):
     # Assign old ids to nodes in the new version
     ott.carryOverIds(ids) # Align & copy ids
 
-    # Apply the additions (which already have ids assigned)
-    print '-- Processing additions --'
-    Addition.processAdditions(additions_clone_path, ott)
-
     print '-- Checking id list'
-    assign_ids_from_list(ott, 'feed/ott_id_list/by_qid.csv')
-
-    # Mint ids for new nodes
-    ott.assignNewIds(new_taxa_path)
+    retain_ids_from_list(ott, by_qid)
 
 # Use master OTT id list to assign some ids
 
-def assign_ids_from_list(tax, filename):
+def retain_ids_from_list(tax, filename):
     count = 0
     change_count = 0
     infile = FileReader(filename)
@@ -426,7 +480,7 @@ def assign_ids_from_list(tax, filename):
                 count += 1
 
             # If it has an id, but qid is not the primary qid, skip it
-            elif taxon.sourceIds[0] != qid:
+            elif taxon.sourceIds != None and taxon.sourceIds[0] != qid:
                 if tracep: print '# %s is minor for %s' % (qid_id, taxon)
                 False
 

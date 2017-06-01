@@ -3,11 +3,10 @@
 import sys
 import assemble_ott
 
-version = sys.argv[1]
+ott_spec = sys.argv[1]
+        
+ott = assemble_ott.create_ott(ott_spec)
 
-ott = assemble_ott.create_ott(version)
-
-ott.dump('tax/ott/')
 assemble_ott.report(ott)
 print '-- Done'
 

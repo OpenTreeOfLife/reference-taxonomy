@@ -1,0 +1,31 @@
+#!/usr/bin/python
+
+import os, sys, json, argparse
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument('obj')
+parser.add_argument('selector')
+parser.add_argument('value')
+
+args = parser.parse_args()
+
+dir = os.path.join('r', args.obj)
+if not os.path.isdir(dir):
+    sys.stderr.write('get: no such object: %s\n' % args.obj)
+    sys.exit(1)
+
+path = os.path.join(dir, 'properties.json')
+
+if not os.path.exists(path):
+    sys.stderr.write('get: no properties file for object: %s\n' % args.obj)
+    sys.exit(1)
+
+with open(path, 'r') as infile:
+    blob = json.load(infile)
+
+blob[args.selector] = args.value
+
+with open(path, 'w') as outfile:
+    json.dump(blob, outfile, indent=2, sort_keys=True)
+    outfile.write('\n')

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -e
+
+[ $# = 1 ] || (echo user-version: wna; exit 1)
+
+spec=$1
+
+bin/unpack-archive $spec
+bin/set-head `bin/get $spec series` $spec firm

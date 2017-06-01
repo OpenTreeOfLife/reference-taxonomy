@@ -33,6 +33,7 @@ public class Rank {
 		{"class",
 		 "subclass",
 		 "infraclass",
+         "subterclass",         // worms Colobognatha
 		 "superorder"},
 		{"order",
 		 "suborder",

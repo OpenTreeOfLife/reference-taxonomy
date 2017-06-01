@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# unpack a b
+#
+# Unpack a tar file A so that its files go into B.
+#
+# If A only contains a single directory, then put that directory's
+# files into B instead.
+
+set -e
+
+src=$1
+dst=$2
+
+dryrun=
+if [ x$DRYRUN != x ]; then dryrun=echo; fi
+
+# Extract into temporary directory
+$dryrun rm -rf $dst.untar 
+$dryrun mkdir -p $dst.untar
+
+echo "Unpacking $src to $dst"
+$dryrun tar -C $dst.untar -xzf $src
+
+$dryrun mkdir -p $dst.new
+
+# Copy temp to dest
+if [ `ls $dst.untar | wc -l | (read a b; echo $a)` = 1 ]; then
+  if [ -d $dst.untar/* ]; then
+    $dryrun mv $dst.untar/*/* $dst.new/
+  else
+    $dryrun mv $dst.untar/* $dst.new/
+  fi
+else
+  $dryrun mv $dst.untar/* $dst.new/
+fi
+
+# Get rid of temp
+$dryrun rm -rf $dst.untar
+
+# Generic indication of done-ness
+$dryrun touch $dst.new/.made
+
+# Put new stuff in place
+$dryrun rm -rf $dst
+$dryrun mv $dst.new $dst

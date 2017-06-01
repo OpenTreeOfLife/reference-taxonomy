@@ -91,7 +91,7 @@ class MergeMachine {
         for (Taxon taxon : source.taxa()) {
             Taxon targetTaxon = alignment.getTaxon(taxon);
             if (targetTaxon == null) continue;
-            count += taxon.copySynonymsTo(targetTaxon);
+            count += taxon.copyNamesTo(targetTaxon);
         }
 		if (count > 0)
 			System.out.format("| Added %s synonyms\n", count);
@@ -416,14 +416,15 @@ class MergeMachine {
                 transferProperties(node, unode);
         }
 
-        // Hack for dealing with NCBI taxon merges
+        // Index source nodes under all their id alias.
+        // Hack for dealing with NCBI taxon merges.
         int count = 0;
         String idspace = source.getIdspace();
         // For every id in the source taxonomy...
         for (String id: source.allIds()) {
             Taxon node = source.lookupId(id);
-            // If the id is an alias...
-            if (node != null && !node.id.equals(id)) {
+            // If the id is not an alias...
+            if (node != null && !id.equals(node.id)) {
                 Taxon unode = alignment.getTaxon(node);
                 // If the source node is aligned...
                 if (unode != null) {

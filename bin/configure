@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# bin/configure ott3.1 ott3.0
+#   - get properties.json file for ott3.0 (ott-HEAD)
+#   - create .mk include file defining xxx-PREVIOUS
+#   - advance (previous) ott from ott2.10 to ott3.0 = ott-NEW
+
+set -e
+
+[ $# = 2 ] || (echo wna; exit 1)
+
+new=$1
+old=$2
+
+if [ x$FILES_URL_PREFIX = x ]; then
+    FILES_URL_PREFIX=http://files.opentreeoflife.org
+fi
+
+# Get the old properties file.
+dir=r/$old
+if [ -e $dir/properties.json ]; then
+    series=`bin/get $old series`
+else
+    # Commands copied from fetch-archive.
+    # (might be better to have a properties-only option for fetch-archive)
+
+    series=`echo $old | egrep -o "[^0-9.]+"`
+    i=$((${#series} - 1))
+    [ ${series:i} = '-' ] && series=${series:0:$i}
+fi
+
+temp=/tmp/$old-properties.json.new
+PROP_URL=$FILES_URL_PREFIX/$series/$old/properties.json
+echo "Getting $PROP_URL"
+if wget -q --output-document=$temp $PROP_URL ; then
+    mkdir -p $dir
+    [ -e $dir/properties.json ] && echo "Overwriting $dir/properties.json"
+    mv $temp $dir/properties.json
+else
+    echo "Failed to retrieve $PROP_URL"
+    exit 1
+fi
+
+# Make ott-HEAD and ott-PREVIOUS be aliases for previous OTT (e.g. ott-3.0)
+bin/set-head $series $old firm
+bin/set-previous $series $old
+
+# Create config.mk based on "source" in old properties file
+python util/update_config.py <$dir/properties.json >config.mk
+
+echo Initiating $new = r/ott-NEW
+bin/new-version $series .tgz cc0
+bin/put $series-NEW name $new
+
+# ??? how to set the new version property ???
+# get separator from previous version...
+
+sep=`bin/get $old separator`
+drop=$((${#series} + ${#sep}))
+version=${new:drop}
+
+bin/put $series-NEW version $version
+
+bin/put $series-NEW suffix .tgz
+bin/put $series-NEW legal cc0
+
+# what about draft?  should only set it if unset

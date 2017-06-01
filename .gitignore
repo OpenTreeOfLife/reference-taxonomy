@@ -51,5 +51,12 @@ feed/gbif/in_2013
 doc/method/data-package/file
 doc/method/draft.html
 doc/method/supplementary
-feed/ott_id_list
+doc/method/data-package/cache
+doc/method/data-package/files
+doc/method/data-package/ott_id_list
+doc/method/data-package/tax
+resource
+archive
+raw
+work
 new_taxa/addition*.json

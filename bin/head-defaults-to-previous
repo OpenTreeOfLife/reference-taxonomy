@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Default -HEAD to -PREVIOUS, that is, if -HEAD doesn't exist.
+
+set -e
+
+[ $# = 1 ] || (echo "head-defaults-to-previous: arg count"; exit 1)
+
+series=$1
+
+if [ -e r/$series-HEAD/source/.made ]; then
+    # Already exists - do not discard what's already there.
+    exit 0
+fi
+
+# Make xxx-PREVIOUS/source/.made
+# Compare update_config.py
+if [ ! -e r/$series-PREVIOUS/source/.made ]; then
+    # Kludge to get configured previous version... I don't
+    # like the recursive 'make', but the information as
+    # to which version is previous exists only in
+    # config.mk (as the r/$series-PREVIOUS/.is-previous rule)
+    make r/$series-PREVIOUS/.is-previous
+    bin/unpack-archive $series-PREVIOUS
+fi
+
+bin/set-head $series $series-PREVIOUS easy

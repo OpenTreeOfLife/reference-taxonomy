@@ -1,0 +1,108 @@
+#!/bin/bash
+
+# Extract source files from archive.
+# No-op
+
+set -e
+
+[ $# = 1 ] || (echo "unpack-archive: arg count"; exit 1)
+
+# command line arg = e.g. [-h] archive/ncbi-20170425 source/ncbi-20170425
+
+# N.b. spec might be foo-HEAD or foo-NEW
+spec=$1
+
+dryrun=
+if [ x$DRYRUN != x ]; then dryrun=echo; fi
+
+dir=r/$spec
+
+if [ -e $dir/source/.made ]; then
+    if [ -e $dir/archive/.made ]; then
+        if [ ! $dir/archive/.made -nt $dir/source/.made ]; then
+            # If the archive is not newer than the source, then the
+            # source we already have is good enough, and there's no
+            # need to unpack.
+            echo "($spec source is present and not older than archive)"
+            exit 0
+        else
+            echo "archive is new; will replace source"
+        fi
+    else
+        # If we already have the desired source, and there's no
+        # archive, assume it is new, and just use it.
+        echo "($spec source is already present (without archive, but that's ok))"
+        exit 0
+    fi
+fi
+
+if ! [ -e $dir/archive/.made ]; then
+    bin/fetch-archive $spec
+fi
+
+if ! [ -d $dir/. ]; then
+    echo "unpack-archive: missing directory $dir"
+    exit 1
+fi
+
+if ! [ -e $dir/properties.json ]; then
+    echo "unpack-archive: missing file $dir/properties.json"
+    exit 1
+fi
+
+# spec could xxx-NEW, in which case there's no name
+series=`bin/get $spec series`
+suffix=`bin/get $spec suffix`
+
+dir=r/$spec
+
+# For URL: strip off the version number, leaving only the resource name
+
+ar=$dir/archive/archive$suffix
+
+# TBD: re-unpack if archive is newer than source (-nt)
+
+if [ ! -e $ar ]; then
+    echo "unpack-archive: missing archive file $ar"
+    exit 1
+fi
+
+if [ $suffix = '.zip' ]; then
+    dest=$dir/source
+    $dryrun mkdir -p $dest.new
+    # The archive is at x/archive/archive.zip ($ar)
+    # We are unpacking to x/source.new/ ($dest.new)
+    ($dryrun cd $dest.new && \
+      (pwd; $dryrun unzip ../archive/archive.zip | head -50 || true))
+    if [ "x`ls $dest.new`" = x ]; then
+        echo "unpack-archive: no files extracted from $ar"
+        exit 1
+    fi
+    $dryrun cp -p $dir/archive/.made $dest.new/.made
+    $dryrun rm -rf $dest
+    $dryrun touch $dest.new/.made
+    $dryrun mv $dest.new $dest
+    exit 0
+else
+    if [ $suffix = '-ot.tgz' ]; then
+        dest=$dir/resource
+    elif [ $suffix = '.tgz' ]; then
+        dest=$dir/source
+    else
+        echo "unpack-archive: Unrecognized suffix $suffix"
+        exit 1
+    fi
+
+    if [ -e $dest/.made -a ! $dir/archive/.made -nt $dest/.made ]; then
+        echo "$dest newer than $dir/archive, not unpacking"
+        exit 0
+    fi
+
+    $dryrun bin/unpack $ar $dir/source
+    $dryrun cp -p $dir/archive/.made $dir/source/.made
+    if [ $dest != $dir/source ]; then
+        (cd $dir; ln -sf source resource)
+    fi
+
+    echo "Unpacked $ar to $dest"
+fi

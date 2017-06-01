@@ -16,8 +16,7 @@ import java.text.Normalizer;
 import java.text.Normalizer.Form;
 
 public class Taxon extends Node implements Comparable<Taxon> {
-    // name and taxonomy are inherited from Node
-	public String id = null;
+    // name, taxonomy, id, and sourceIds are inherited from Node
 	public Rank rank = Rank.NO_RANK;
     public static Collection<Taxon> NO_CHILDREN = null;
     private static Collection<Taxon> NO_CHILDREN_LIST = new ArrayList<Taxon>(0);
@@ -31,7 +30,6 @@ public class Taxon extends Node implements Comparable<Taxon> {
 	Taxon division = null;  // foo.  for Alignment
     public boolean inSynthesis = false; // used only for final annotation
     public boolean unsourced = false;
-	public Taxonomy taxonomy;			// For subsumption checks etc.
 
 	// State during alignment
 	public Taxon comapped = null;		// union node -> example source node
@@ -48,7 +46,12 @@ public class Taxon extends Node implements Comparable<Taxon> {
             tax.addToNameIndex(this, name);
     }
 
-    public Taxon taxon() { return this; }
+    public Taxon taxon() {
+        if (this.prunedp)
+            return null;
+        else
+            return this;
+    }
 
     public String getType() { return null; }
 
@@ -56,6 +59,10 @@ public class Taxon extends Node implements Comparable<Taxon> {
 
     public boolean taxonNameIs(String othername) {
         return this.name.equals(othername);
+    }
+
+    public boolean isPruned() {    // foo
+        return this.prunedp;
     }
 
     public Collection<Taxon> getChildren() {
@@ -71,13 +78,6 @@ public class Taxon extends Node implements Comparable<Taxon> {
 
     public Collection<Synonym> getSynonyms() {
         return synonyms;
-    }
-
-    public QualifiedId originId() {
-        if (this.sourceIds != null)
-            return this.sourceIds.get(0);
-        else
-            return null;
     }
 
     public Iterable<Taxon> descendants(final boolean includeSelf) {
@@ -147,32 +147,12 @@ public class Taxon extends Node implements Comparable<Taxon> {
         } else if (this.name.equals(name))
             return this;
         else {
-            System.err.format("** This taxon already has a canonical name: %s %s\n",
+            System.err.format("** This taxon already has a primary name: %s %s\n",
                               this, name);
             backtrace();
             return null;
         }
     }
-
-    // type must be nonnull
-	public Synonym addSynonym(String name, String type) {
-        if (name == null) {
-            System.err.format("** Null is not a valid name-string: %s\n", this);
-            backtrace();
-            return null;
-        } else if (name.equals(this.name)) {
-            return null;
-        } else {
-            for (Synonym syn : this.synonyms)
-                if (syn.name.equals(name))
-                    return syn;
-            Synonym syn = new Synonym(name, type, this); // does addToNameIndex
-            if (this.synonyms == NO_SYNONYMS)
-                this.synonyms = new ArrayList<Synonym>();
-            this.synonyms.add(syn);
-            return syn;
-        }
-	}
 
     // this is union node, node is source node, syn is also in union
     Synonym addSynonym(Node node, String type) {
@@ -185,17 +165,57 @@ public class Taxon extends Node implements Comparable<Taxon> {
         return syn;
     }
 
+    // type must be nonnull
+	public Synonym addSynonym(String name, String type) {
+        return addSynonym(name, type, null);
+    }
+
+    // sid is a 'source id', unique within this taxonomy, suitable for
+    // use with getNodeById
+	public Synonym addSynonym(String name, String type, String sid) {
+        if (name == null) {
+            System.err.format("** Null is not a valid name-string: %s\n", this);
+            backtrace();
+            return null;
+        } else if (name.equals(this.name)) {
+            //System.err.format("** Name can't be both synonym and primary: %s\n", this);
+            return null;
+        } else {
+            for (Synonym syn : this.getSynonyms()) {
+                if (syn == null)
+                    System.err.format("** syn is null (of %s)\n", name);
+                else if (syn.name == null)
+                    System.err.format("** syn.name is null (of %s)\n", name);
+                else if (syn.name.equals(name))
+                    return syn;
+            }
+            Synonym syn = new Synonym(name, type, this); // does addToNameIndex
+            syn.taxonomy = this.taxonomy;
+            if (sid != null)
+                syn.setId(sid);     // worry about id already in use
+            if (this.synonyms == NO_SYNONYMS)
+                this.synonyms = new ArrayList<Synonym>();
+            this.synonyms.add(syn);
+            return syn;
+        }
+	}
+
     // Ensure that every name (synonym or not) is a name of the target
     // taxon (either synonym or not).
     // Returns number of synonyms created.
 
-    public int copySynonymsTo(Taxon targetTaxon) {
+    public int copyNamesTo(Taxon targetTaxon) {
         int count = 0;
         if (this.name != null)
-            if (targetTaxon.addSynonym(this, "synonym") != null)
+            if (targetTaxon.name == null)
+                targetTaxon.setName(this.name);
+            else if (targetTaxon.name.equals(this.name))
+                ;
+            else if (targetTaxon.addSynonym(this, "synonym") != null)
                 ++count;
         for (Synonym syn : this.getSynonyms())
-            if (targetTaxon.addSynonym(syn, syn.type) != null)
+            if (!syn.name.equals(targetTaxon.name) &&
+                targetTaxon.addSynonym(syn, syn.type) != null)
                 ++count;
         return count;
     }
@@ -230,27 +250,6 @@ public class Taxon extends Node implements Comparable<Taxon> {
             this.notCalled(oldname);
         this.setName(newname);
 	}
-
-	public void setId(String id) {
-        if (this.prunedp) {
-            System.err.format("** Attempt to set id of a pruned taxon: %s %s\n", this, id);
-            return;
-        }
-		if (id == null)
-            return;
-        if (this.id == null)
-            this.addId(id);
-        else if (!this.id.equals(id)) {
-            String wasid = this.id;
-            this.id = null;
-            this.addId(id);
-            this.addId(wasid);
-        }
-	}
-
-    public void addId(String id) {
-        this.taxonomy.addId(this, id);
-    }
 
 	public Taxon getParent() {
 		return parent;
@@ -408,29 +407,6 @@ public class Taxon extends Node implements Comparable<Taxon> {
 			   (this.name.startsWith(up.name) || up.taxonomy.lookup(up.name).size() > 1))
 			up = up.parent;
 		return up;
-	}
-
-	public QualifiedId getQualifiedId() {
-        String space = this.taxonomy.getIdspace();
-		if (this.id != null) {
-			return new QualifiedId(space, this.id);
-        } else if (this.noMrca()) {
-            // Shouldn't happen
-			System.out.println("* [getQualifiedId] Forest");
-			return new QualifiedId(space, "<forest>");
-        } else if (this.parent == null) {
-            // Shouldn't happen
-			System.out.format("* [getQualifiedId] %s is detached\n", this);
-            return new QualifiedId(space, "<detached>");
-        } else if (this.name != null) {
-            // e.g. h2007
-			// System.out.format("* [getQualifiedId] Taxon has no id, using name: %s:%s\n", space, this.name);
-			return new QualifiedId(space, this.name);
-        } else {
-			// What if from a Newick string?
-			System.out.println("* [getQualifiedId] Nondescript");
-            return new QualifiedId(space, "<nondescript>");
-        }
 	}
 
 	// Mainly for debugging
@@ -747,7 +723,6 @@ public class Taxon extends Node implements Comparable<Taxon> {
         return this.getChildren().size() - that.getChildren().size();
     }
 
-
 	// Delete all of this node's descendants.
 	public void trim() {
 		if (this.children != NO_CHILDREN)
@@ -771,8 +746,10 @@ public class Taxon extends Node implements Comparable<Taxon> {
 		if (this.children != NO_CHILDREN)
 			for (Taxon child : new ArrayList<Taxon>(children))
 				child.setRemoved(reason);
-        for (Synonym syn : this.synonyms)
+        for (Synonym syn : this.synonyms) {
             this.taxonomy.removeFromNameIndex(syn);
+            this.taxonomy.removeFromIdIndex(syn, syn.id);
+        }
         this.taxonomy.removeFromNameIndex(this);
 		if (this.id != null) {
             this.taxonomy.removeFromIdIndex(this, this.id);
@@ -1009,9 +986,20 @@ public class Taxon extends Node implements Comparable<Taxon> {
         this.synonym(name, "synonym");
 	}
 
-	public void synonym(String name, String typ) {
-		if (this.addSynonym(name, typ) == null)
+	public Synonym synonym(String name, String typ) {
+        return this.synonym(name, typ, null);
+	}
+
+	public Synonym synonym(String name, String typ, String qid) {
+        // qid is work in progress - ignored for now,
+        // trying to figure out how it gets propagated
+        // through merge and alignment
+        if (qid != null)
+            System.out.format("# discarding qid %s\n", qid);
+        Synonym syn = this.addSynonym(name, typ);
+		if (syn == null)
 			System.out.format("| Synonym already present: %s %s\n", this, name);
+        return syn;
 	}
 
 	public boolean rename(String name) {
@@ -1060,32 +1048,42 @@ public class Taxon extends Node implements Comparable<Taxon> {
 	// Same as take + elide ?
 
 	public boolean absorb(Taxon other) {
-		if (other == null) return false; //error already reported
-		if (other == this) return true;
+        return absorb(other, "synonym", null);
+    }
+
+    // qid is ignored for now... work in progress
+	public boolean absorb(Taxon other, String type, String qid) {
+        if (other == null) return false;
 		if (this.taxonomy != other.taxonomy) {
 			System.err.format("** %s and %s aren't in the same taxonomy\n", other, this);
 			return false;
 		}
-        if (this.rank != Rank.SPECIES_RANK && other.rank == Rank.SPECIES_RANK)
-            System.err.format("** Losing species %s in absorb (to %s)\n", other, this);
-		if (other.children != NO_CHILDREN)
-			for (Taxon child : new ArrayList<Taxon>(other.children))
-				// beware concurrent modification
-				child.changeParent(this);
-        // something about extinct flags here - extinct absorbing non-extinct means ... ?
-        // Not sure about the order of the following two, but if the
-        // synonym comes before the prune, then it might be suppressed
-        // by the presence in the name index of the deprecated taxon
-		this.addSynonym(other.name, "proparte synonym");	// Not sure this is a good idea
+
+        // Move all of the children
+        for (Taxon child : new ArrayList<Taxon>(other.getChildren()))
+            // beware concurrent modification?
+            child.changeParent(this);
+
+        // Move the name
+        if (other.name != null)
+            this.addSynonym(other.name, type);
+
+        // Move all of the synonyms (synonymness is transitive)
+        for (Synonym syn : other.getSynonyms())
+            this.addSynonym(syn.name, "synonym");
+
         // If an extinct taxon absorbs an extant one, it becomes extant
         if (other.isExtant() && this.isExtinct()) {
             System.out.format("| Extant contagion from %s to %s\n", other, this);
             this.properFlags &= ~Taxonomy.EXTINCT;
         }
-		other.prune("absorb");
+        other.properFlags |= Taxonomy.MERGED;
+		other.prune(qid);    // delete the one node
+        other.name = other.name + " [absorbed]";
         // copy sources from other to syn?
         return true;
 	}
+
 
 	public void incertaeSedis() {
 		this.addFlag(Taxonomy.INCERTAE_SEDIS);

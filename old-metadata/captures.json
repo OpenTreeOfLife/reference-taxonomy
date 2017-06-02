@@ -223,8 +223,8 @@
     "_archivable": false, 
     "last_modified": "2014-01-31", 
     "capture_of": "irmng", 
-    "date": "2014-01-30", 
-    "label": "20140130"
+    "date": "2014-01-31", 
+    "label": "20140131"
   }, 
   {
     "===": "taxonomy.tsv is 12808188 bytes", 
@@ -238,17 +238,19 @@
     "filename": "fung-1-ot.tgz"
   }, 
   {
+    "===": "Romina Gazis / publication date 2014-02-11 - First use in OTT was version 2 in OTT 2.4 on 2014-03-17 (also 2.5-2.8)", 
     "_type": "capture", 
-    "name": "irmng-20140131", 
-    "generated_on": "2014-01-31", 
+    "from": "https://dx.doi.org/10.6084/m9.figshare.915439.v2", 
+    "name": "h2007-2014-v2", 
     "legal": "cc0", 
-    "label": "20140131", 
-    "capture_of": "irmng", 
-    "date": "2014-01-31", 
-    "filename": "irmng-20140131.zip"
+    "filename": "h2007-2014-v2.tre", 
+    "capture_of": "h2007", 
+    "date": "2014-03-14", 
+    "publication_date": "2014-03-14", 
+    "label": "2014-v2"
   }, 
   {
-    "===": "Date unknown, but it was after 1/30 and before the 2.4 build on 3/17. - Seems we don't have this one?", 
+    "===": "Date unknown, but it was after 1/31 and before the 2.4 build on 3/17. - Seems we don't have this one?", 
     "_type": "capture", 
     "name": "irmng-ot-20140316", 
     "generated_on": "2014-03-16", 
@@ -291,6 +293,7 @@
       "gbif": "gbif-20130702", 
       "study713": "study713-20140118", 
       "irmng": "irmng-ot-20140316", 
+      "h2007": "h2007-2014-v2", 
       "if": "fung-1"
     }, 
     "capture_of": "ott", 
@@ -311,6 +314,7 @@
       "gbif": "gbif-20130702", 
       "study713": "study713-20140118", 
       "irmng": "irmng-ot-20140316", 
+      "h2007": "h2007-2014-v2", 
       "if": "fung-1"
     }, 
     "capture_of": "ott", 
@@ -341,6 +345,7 @@
       "gbif": "gbif-20130702", 
       "study713": "study713-20140118", 
       "irmng": "irmng-ot-20140316", 
+      "h2007": "h2007-2014-v2", 
       "if": "fung-2"
     }, 
     "capture_of": "ott", 
@@ -383,6 +388,7 @@
       "gbif": "gbif-20130702", 
       "study713": "study713-20140118", 
       "irmng": "irmng-ot-20140316", 
+      "h2007": "h2007-2014-v2", 
       "if": "fung-3"
     }, 
     "capture_of": "ott", 
@@ -436,6 +442,7 @@
       "gbif": "gbif-20130702", 
       "study713": "study713-20140118", 
       "irmng": "irmng-ot-20140316", 
+      "h2007": "h2007-2014-v2", 
       "if": "fung-8"
     }, 
     "capture_of": "ott", 
@@ -489,6 +496,18 @@
     "filename": "opentree3.tre.gz"
   }, 
   {
+    "===": "Romina Gazis / publication date 2015-07-09 - In OTT 2.9 2015-10-12", 
+    "_type": "capture", 
+    "from": "https://dx.doi.org/10.6084/m9.figshare.1465038.v4", 
+    "name": "h2007-2015-v4", 
+    "legal": "cc0", 
+    "filename": "h2007-2015-v4.tre", 
+    "capture_of": "h2007", 
+    "date": "2015-07-14", 
+    "publication_date": "2015-07-14", 
+    "label": "2015-v4"
+  }, 
+  {
     "===": "First version in OTT; input to ott2.9", 
     "_type": "capture", 
     "name": "worms-1", 
@@ -524,6 +543,7 @@
       "irmng": "irmng-ot-20140316", 
       "worms": "worms-1", 
       "study713": "study713-20140721", 
+      "h2007": "h2007-2015-v4", 
       "if": "fung-8"
     }, 
     "capture_of": "ott", 
@@ -593,6 +613,7 @@
       "irmng": "irmng-ot-20160630", 
       "worms": "worms-1", 
       "study713": "study713-20140721", 
+      "h2007": "h2007-2015-v4", 
       "if": "fung-9"
     }, 
     "capture_of": "ott", 

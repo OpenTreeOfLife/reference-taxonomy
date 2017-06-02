@@ -21,6 +21,7 @@ Many kinds of things can go wrong when making a new OTT version.
 1. A source can change in some incompatible way, perhaps leading to
    separation problems or bad duplications or merges
 1. Separation problems leading to duplication
+1. A source can contain a rank previously unknown to OTT
 
 etc.
 
@@ -159,6 +160,133 @@ NCBI Stylommatophora a child of WoRMS Pulmonata:
 
 See [the section on patch writing](patch.md) for information on
 `proclaim`, `has_parent`, `taxon`, and `otc`.
+
+
+## More examples
+
+### New rank
+
+While assembling OTT 3.1:
+
+    ** Unrecognized rank: cohort 33341
+
+Smasher has a fixed set of ranks (Rank.java), so any new rank needs to
+be added as a source code edit.  In this case, first we figure out
+where 'cohort' goes relative to the ranks smasher knows about.  The
+easiest way to do this is by consulting
+[wikipedia](https://en.wikipedia.org/wiki/Taxonomic_rank#Cohort_.28biology.29).
+Alternatively, or in addition, we can consult NCBI, where we see that
+33341 Polyneoptera contains Dermaptera (rank order) and is contained
+in Neoptera (rank infraclass).  In either case, cohort ends up in
+between the xxxclass ranks and the xxxorder ranks.
+
+### Name change leading to broken version 2 patch
+
+    ** No taxon found in worms with this name or id: Biota
+
+The culprit is this:
+
+    a.same(worms.taxon('Biota'), ott.taxon('life'))
+
+The reason for the error is that the new version of the WoRMS import
+scripts assigned the name 'life' to the root of the tree, where
+formerly it has 'Biota'.  Since 'Biota' no longer exists, we get an
+error for `worms.taxon('Biota')`.
+
+I can think of several approaches.
+
+1. Ignore the error.  This would work, but having a `**` message in
+the assembly is distracting and its benign-ness would have to be rechecked
+on each assembly.
+1. Delete or comment out the patch.
+1. Protect the patch by a test for the presence of the taxon:
+
+    if worms.maybeTaxon('Biota') != None:
+        a.same(worms.taxon('Biota'), ott.taxon('life'))
+
+I've chosen the last approach since it seems most robust.  (e.g. in
+the future someone might "fix" the WoRMS import by changing life back
+to Biota.)
+
+### Spelling of Cyrto-hypnum lepidoziaceum
+
+    ** gbif-11 seemed to accept synonym_of(taxon('Cyrto-Hypnum lepidoziaceum'), taxon('Cyrto-hypnum lepidoziaceum'), spelling variant, otc:26), but we couldn't confirm
+
+This comes from a `synonym_of` patch (version 3).  Neither name occurs
+in GBIF, so the patch cannot be effected, but that should be OK.  The
+message indicates an error in the logic (`proclaim` and `.check` in
+sequence ought to return the same value) but I can't find it.  However, the following
+
+    bin/investigate "Cyrto-Hypnum lepidoziaceum"
+
+indicates that the name isn't in GBIF at all, only in IRMNG.  To make
+these _Cyrto-hypnum_ patches a bit more robust, I decided to move them
+to `amendments.py` and perform them on `ott` instead of `gbif`.  This
+fixes the latent problem that the spelling correction was being
+applied to GBIF but not to IRMNG.
+
+### No such taxon: Myrmecia
+
+    ** No such taxon: Myrmecia in Microthamniales (gbif)
+
+This comes from 
+
+    a.same(gbif.taxon('Myrmecia', 'Microthamniales'),
+           ott.taxon('Myrmecia', 'Microthamniales'))
+
+in adjustments.py.  In `r/gbif-HEAD/resource/taxonomy.tsv'` we see
+
+    1317709	|	4342	|	Myrmecia	|	genus	|	
+    2638661	|	6784730	|	Myrmecia	|	genus	|	
+
+    1360	|	332	|	Microthamniales	|	order	|	
+
+so it's strange that the patch doesn't work.  Using the OTT taxonomy
+browser, we find that _Myrmecia_ (genus in order Microthamniales) is
+OTT 739611 with no GBIF link, but it has a species _Myrmecia
+astigmatica_ that connects GBIF and NCBI.  Visiting the GBIF page, we
+find it's in family Trebouxiaceae, order Trebouxiales, class
+Trebouxiophyceae, phylum Chlorophyta.  So we want to replace
+Microthamniales with one of these ancestors, but which one is best?
+NCBI and IRMNG both have Trebouxiophyceae, so I would say that should
+be pretty stable.
+
+Ergo:
+
+    a.same(gbif.taxon('Myrmecia', 'Trebouxiophyceae'),
+           ott.taxon('Myrmecia', 'Trebouxiophyceae'))
+
+It's possible that the patch can be deleted now, since the alignment
+code and/or separation taxonomy might be better now that they were at
+the time the patch was written, but I'm not going to bother to try
+that, since it would take some time (20 minutes for an assembly run)
+to find out.
+
+### No expansum containing Penicillium expansum
+
+    ** No such taxon: Penicillium containing Penicillium expansum (gbif)
+
+    a.same(gbif.taxonThatContains('Penicillium', 'Penicillium expansum'),
+           ott.taxonThatContains('Penicillium', 'Penicillium expansum'))
+
+The intent here seems to be to address some ambiguity over the genus
+name _Penicillium_.
+
+Go to _Penicillium expansum_ in OTT 3.0 browser, find sources
+if:159382 (ncbi:27334, irmng:11314226) - so it's not in GBIF at all.
+This error must have been present in the 3.0 assembly as well.
+Ideally what we want is some species belongs to the appropriate NCBI,
+GBIF, and IRMNG genera.  The genus has 3000 children, and most seem to
+be NCBI only, so using the OTT browser to find such a species isn't
+going to work.  But a specially crafted grep does the trick:
+
+    grep "Penicillium .*species.*ncbi.*gbif.*irmng" r/ott-HEAD/source/taxonomy.tsv
+
+The results are _Penicillium inflatum, Penicillium diversum,_ and
+_Penicillium dupontii_, all with parent _Penicillium_.  So we ought to
+be able to pick any of the three.
+
+
 
 
 ## Testing

@@ -30,7 +30,7 @@ def deal_with_polysemies(ott):
     # Diatom.  Contains e.g. Ctenophora pulchella.
     establish('Ctenophora', ott, ancestor='Bacillariophyta', ott_id='103964')
 
-    # The comb jelly should already be in separation, but include the code for symmetry.
+    # The comb jellies should already be in separation, but include the code for symmetry.
     # Contains e.g. Leucothea multicornis
     establish('Ctenophora', ott, parent='Metazoa', ott_id='641212')
 
@@ -1069,10 +1069,12 @@ def align_gbif(gbif, ott):
     #              ott.taxon('Tetrasphaera', 'Intrasporangiaceae')) # = Tetrasphaera in Protozoa
     
     # Rick Ree 2014-03-28 https://github.com/OpenTreeOfLife/reference-taxonomy/issues/37
-    # CHECK - was ncbi.taxon
+    # ### CHECK - was ncbi.taxon
     # a.same(gbif.taxon('Calothrix', 'Rivulariaceae'), ott.taxon('Calothrix', 'Rivulariaceae'))
-    a.same(gbif.taxon('Chlorella', 'Chlorellaceae'), ott.taxon('Chlorella', 'Chlorellaceae'))
-    a.same(gbif.taxon('Myrmecia', 'Microthamniales'), ott.taxon('Myrmecia', 'Microthamniales'))
+    a.same(gbif.taxon('Chlorella', 'Chlorellaceae'),
+           ott.taxon('Chlorella', 'Chlorellaceae'))
+    a.same(gbif.taxon('Myrmecia', 'Trebouxiophyceae'),
+           ott.taxon('Myrmecia', 'Trebouxiophyceae'))
 
     # JAR 2014-04-18 attempt to resolve ambiguous alignment of
     # Trichosporon in IF and GBIF based on common member
@@ -1090,8 +1092,8 @@ def align_gbif(gbif, ott):
     
     # JAR 2014-04-23 IF update fallout
     # - CHECK - was ncbi.taxon
-    a.same(gbif.taxonThatContains('Penicillium', 'Penicillium expansum'),
-           ott.taxonThatContains('Penicillium', 'Penicillium expansum'))
+    a.same(gbif.taxonThatContains('Penicillium', 'Penicillium inflatum'),
+           ott.taxonThatContains('Penicillium', 'Penicillium inflatum'))
 
     # https://github.com/OpenTreeOfLife/feedback/issues/45
     if False:
@@ -1198,27 +1200,6 @@ def patch_gbif(gbif):
     # gbif.taxon('Chryso-hypnum').absorb(gbif.taxon('Chryso-Hypnum'))
     # gbif.taxon('Complanato-Hypnum').rename('Complanato-hypnum')
     # gbif.taxon('Leptorrhyncho-Hypnum').rename('Leptorrhyncho-hypnum')
-
-    # 2014-04-21 RR
-    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/45
-    for (epithet, qid) in [('cylindraceum', otc(25)),
-                           ('lepidoziaceum', otc(26)),
-                           ('intermedium', otc(27)),
-                           ('espinosae', otc(28)),
-                           ('pseudoinvolvens', otc(29)),
-                           ('arzobispoae', otc(30)),
-                           ('sharpii', otc(31)),
-                           ('frontinoae', otc(32)),
-                           ('atlanticum', otc(33)),
-                           ('stevensii', otc(34)),
-                           ('brachythecium', otc(35)),
-                    ]:
-        prop = synonym_of(taxon('Cyrto-Hypnum ' + epithet),
-                          taxon('Cyrto-hypnum ' + epithet),
-                          'spelling variant',
-                          qid)
-        proclaim(gbif, prop)
-        # was gbif.taxon('Cyrto-hypnum ' + epithet).absorb(gbif.taxon('Cyrto-Hypnum ' + epithet))
 
     # wrong: gbif.taxon('Dinophyta').synonym('Dinophyceae')  # according to NCBI
     # these groups are missing from gbif 2016 anyhow
@@ -1443,7 +1424,8 @@ def align_worms(worms, ott):
     a = ott.alignment(worms)
 
     # First get the divisions right
-    a.same(worms.taxon('Biota'), ott.taxon('life'))
+    if worms.maybeTaxon('Biota') != None:
+        a.same(worms.taxon('Biota'), ott.taxon('life'))
     a.same(worms.taxon('Animalia'), ott.taxon('Metazoa'))
 
     ott.setDivision(worms.taxon('Chromista'), 'Eukaryota')

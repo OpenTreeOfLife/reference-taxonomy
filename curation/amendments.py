@@ -32,7 +32,6 @@ def patch_ott(ott):
     # Stephen email to JAR 2014-01-26
     # ott.taxon("Torricelliaceae").synonym("Toricelliaceae")
 
-
     # Joseph 2014-01-27 https://code.google.com/p/gbif-ecat/issues/detail?id=104
     ott.taxon('Parulidae').take(ott.taxon('Myiothlypis', 'Passeriformes'))
     # I don't get why this one isn't a major_rank_conflict !? - bug. (so to speak.)
@@ -281,6 +280,27 @@ def patch_ott(ott):
 
     # Joseph https://github.com/OpenTreeOfLife/reference-taxonomy/issues/43
     ott.taxon('Lorisiformes').take(ott.taxon('Lorisidae'))
+
+    # 2014-04-21 RR
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/45
+    for (epithet, qid) in [('cylindraceum', otc(25)),
+                           ('lepidoziaceum', otc(26)),
+                           ('intermedium', otc(27)),
+                           ('espinosae', otc(28)),
+                           ('pseudoinvolvens', otc(29)),
+                           ('arzobispoae', otc(30)),
+                           ('sharpii', otc(31)),
+                           ('frontinoae', otc(32)),
+                           ('atlanticum', otc(33)),
+                           ('stevensii', otc(34)),
+                           ('brachythecium', otc(35)),
+                    ]:
+        prop = synonym_of(taxon('Cyrto-Hypnum ' + epithet),
+                          taxon('Cyrto-hypnum ' + epithet),
+                          'spelling variant',
+                          qid)
+        proclaim(ott, prop)
+        # was gbif.taxon('Cyrto-hypnum ' + epithet).absorb(gbif.taxon('Cyrto-Hypnum ' + epithet))
 
     # Romina https://github.com/OpenTreeOfLife/reference-taxonomy/issues/42
     # As of 2014-04-23 IF synonymizes Cyphellopsis to Merismodes

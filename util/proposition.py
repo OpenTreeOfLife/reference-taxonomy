@@ -127,7 +127,7 @@ class _Synonym_of:
         p = self.primary.resolve_in(tax, False)
         # OK this is tricky.  Nodes p and s have have their own names,
         # as do the designators self.primary and self.synonym.
-        # This primary objective is for node p to have self.synonym as a synonym.
+        # The primary objective is for node p to have self.synonym as a synonym.
         if p == None:
             if s == None:
                 if windy:

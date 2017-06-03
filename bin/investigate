@@ -3,7 +3,7 @@
 taxname=$1
 
 function scan {
-    taxname=$1
+    taxname="$1"
     issue=$2
     phase=$3
     dir=r/$issue/$phase

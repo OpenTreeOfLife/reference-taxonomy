@@ -263,8 +263,8 @@ one with almost all of the species, is the one that aligns with GBIF
 in 3.0.  We can pick a descendant pretty much arbitrarily, but
 _Myrmecia irregularis_ looks good since it's in NCBI, GBIF, and IRMNG.  So:
 
-    a.same(gbif.taxon('Myrmecia', descendant='Myrmecia irregularis'),
-           ott.taxon('Myrmecia', descendant='Myrmecia irregularis'))
+    a.same(gbif.taxonThatContains('Myrmecia', 'Myrmecia irregularis'),
+           ott.taxonThatContains('Myrmecia', 'Myrmecia irregularis'))
 
 
 
@@ -339,10 +339,33 @@ overridden by NCBI.
 choices.tsv shows a lot of `noinfo/target-no-children'.  Looking that
 up in AlignmentByName.java to find out what that means:
 
-What changed from 3.0 to 3.1: Maybe it's because I moved these
-family placement directives, in an attempt to tidy up the code,
-thinking they would make no difference.
+What changed from 3.0 to 3.1: Maybe it's because I moved these family
+placement directives, in an attempt to tidy up the code, thinking that
+would make no difference.  I'll try moving the `link_to_h2007` call up
+to just following the IF load.  There are cleaner, more robust ways to
+do this but they are more involved.
 
+### Pulmonata ambiguous
+
+    ** Ambiguous taxon name: Pulmonata (ott)
+    **   Pulmonata (order worms:382238) = (Pulmonata =worms:382238+4) in Mollusca
+    **   Pulmonata (infraclass worms:103) = (Pulmonata =worms:103+5) in Mollusca
+
+Looking at the WoRMS page for Pulmonata we see
+
+>Order [unassigned] Pulmonata (temporary name)
+
+making me wonder if I'm interpreting '[unassigned]' correctly - the
+script currently trims off the '[unassigned]'.  I think I'll disable
+this feature.  There are 35 of these.  Now I guess what it means is
+"members have not yet been assigned to a parent taxon".
+
+Removing the logic in `process_worms.py` to trim "[unassigned]" off
+beginning of names.
+
+The meaning now sounds similar to _incertae sedis_, so adding
+'unassigned' to incertae_sedisRegex in Taxonomy.java as another way to
+express _incertae sedis_.
 
 
 ## Testing

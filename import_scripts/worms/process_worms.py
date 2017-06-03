@@ -136,11 +136,11 @@ def record_to_taxon(row, rank, name):
         others.append(taxon)
     return taxon
 
-unassigned = '[unassigned] '
+#unassigned = '[unassigned] '
 
 def fix_name(name, rank):
-    if name.startswith(unassigned):
-        name = name[len(unassigned):]
+    #if name.startswith(unassigned):
+    #    name = name[len(unassigned):]
     m = sub.match(name)
     if m != None:
         # Four cases:

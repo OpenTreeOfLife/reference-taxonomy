@@ -10,6 +10,8 @@ def patch_ott(ott):
     print '| Flushing %s viruses' % ott.taxon('Viruses').count()
     ott.taxon('Viruses').prune()
 
+    print '-- more patches --'
+
     # Romina 2014-04-09: Hypocrea = Trichoderma.
     # IF and all the other taxonomies have both Hypocrea and Trichoderma.
     # Need to merge them.
@@ -38,8 +40,9 @@ def patch_ott(ott):
     ott.taxon('Blattodea').take(ott.taxon('Phyllodromiidae'))
 
     # See above (occurs in both IF and GBIF).  Also see issue #67
-    chlam = ott.taxonThatContains('Chlamydotomus', 'Chlamydotomus beigelii')
-    if chlam != None: chlam.incertaeSedis()
+    #chlam = ott.taxonThatContains('Chlamydotomus', 'Chlamydotomus beigelii')
+    #if chlam != None: chlam.incertaeSedis()
+    # As of 2017-06-03, Chlamydotomus beigelii doesn't exist.
 
     # Joseph Brown 2014-01-27
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/87
@@ -110,8 +113,6 @@ def patch_ott(ott):
     #   Lituolina,Chromista,Lituolida ,WORMS,,,,
 
 
-    print '-- more patches --'
-
     # From Laura and Dail on 5 Feb 2014
     # https://groups.google.com/d/msg/opentreeoflife/a69fdC-N6pY/y9QLqdqACawJ
     tax = ott.maybeTaxon('Chlamydiae/Verrucomicrobia group')
@@ -181,7 +182,7 @@ def patch_ott(ott):
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/90
     # http://www.sciencedirect.com/science/article/pii/S0034666703000927
     # write this ?? ott.assert(as_said_by('https://github.com/OpenTreeOfLife/reference-taxonomy/issues/90', extinct('Araripia')))
-    ara = ott.taxon('Araripia')
+    ara = ott.maybeTaxon('Araripia')
     if ara != None: ara.extinct()
 
     # Bryan Drew  2014-02-05

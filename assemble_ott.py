@@ -348,7 +348,7 @@ def retain_ids(ott, prev_path, by_qid):
             print '* ncbi:%s not found in OTT - %s' % (ncbi_id, name)
         else:
             if im.name != name:
-                print '** ncbi:%s name is %s, but expected %s' % (ncbi_id, im.name, name)
+                print '* ncbi:%s name is %s, but expected %s' % (ncbi_id, im.name, name)
             im.addId(ott_id)
 
     # Force some id assignments... will try to automate this in the future.

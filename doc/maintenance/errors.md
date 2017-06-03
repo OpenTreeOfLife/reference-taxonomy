@@ -58,16 +58,19 @@ are involved.
 Ideally, over time, undeteced errors will be converted to detectable
 errors by the addition of rows to `inclusions.tsv`.
 
-## Example
-
-The following illustrates the debugging utilities `investigate` and `lineage`.
+## Inclusion test failures
 
 After each assembly run (`make ott`), the transcript
 (`debug/transcript.out`) should be checked for errors.  Errors are
 indicated with two asterisks at the beginning of the line (`**`).
 
+The following illustrates (among other things) the debugging utilities
+`investigate` and `lineage`.
+
 I often check the inclusions tests first.  These show up at the very
 end of `transcript.out`.
+
+### Land snails
 
 When building `ott3.1`, the following showed up:
 
@@ -161,7 +164,7 @@ NCBI Stylommatophora a child of WoRMS Pulmonata:
 See [the section on patch writing](patch.md) for information on
 `proclaim`, `has_parent`, `taxon`, and `otc`.
 
-### Equisetopsida
+### Horsetails
 
 Failed inclusion test:
 
@@ -177,10 +180,7 @@ think we can just delete this.  I've added some notes to
 doc/name-research.txt.
 
 
-
-## More examples
-
-### New rank
+## New rank
 
 While assembling OTT 3.1:
 
@@ -195,6 +195,9 @@ Alternatively, or in addition, we can consult NCBI, where we see that
 33341 Polyneoptera contains Dermaptera (rank order) and is contained
 in Neoptera (rank infraclass).  In either case, cohort ends up in
 between the xxxclass ranks and the xxxorder ranks.
+
+
+## Patch failures
 
 ### Name change leading to broken version 2 patch
 
@@ -428,6 +431,25 @@ record ids and placement.
 
 Skipping for now.
 
+### Quiscalus
+
+    ott.taxon('Icteridae').take(ott.taxon('Quiscalus', 'Fringillidae'))
+    ** No such taxon: Quiscalus in Fringillidae (ott)
+
+The change has been effected in some source.  We can either delete the
+patch or make it more robust.  This might be a good place to use
+`taxonThatContains` instead of `taxon`.
+
+    ott.taxon('Icteridae').take(ott.taxonThatContains('Quiscalus', 'Quiscalus mexicanus'))
+
+### Chlamydotomus
+
+What a headache.  There are extensive comments in adjustments.py.
+
+    ** No such taxon: Chlamydotomus containing Chlamydotomus beigelii (ott)
+
+I think I would just disable the patch.  Too fussy.
+
 
 ### Oxymonadida gone
 
@@ -476,8 +498,8 @@ Working on this, haven't figured it out yet.
     ** ncbi:738 name is [Haemophilus] parasuis, but expected Haemophilus parasuis
     ** ncbi:40520 name is Blautia obeum, but expected [Ruminococcus] obeum
 
-This is just a bit of extra checking in some ad hoc id assignment
-logic.  These are all benign.  The fix is to change these from
+This is due to a bit of extra checking in some ad hoc id assignment
+logic.  These warnings are all benign.  The fix is to change these from
 double-`*` messages to single-`*` messages.
 
 

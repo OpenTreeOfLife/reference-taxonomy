@@ -845,7 +845,7 @@ def patch_ncbi(ncbi):
     ncbi.taxon('Choanoflagellida', 'Opisthokonta').notCalled('Choanozoa')
 
     # https://github.com/OpenTreeOfLife/feedback/issues/281
-    ncbi.taxon('Equisetopsida', 'Moniliformopses').take(ncbi.taxon('Equisetidae', 'Moniliformopses'))
+    # ncbi.taxon('Equisetopsida', 'Moniliformopses').take(ncbi.taxon('Equisetidae', 'Moniliformopses'))
 
     # https://github.com/OpenTreeOfLife/feedback/issues/278
     # NCBI Pinidae = Coniferales = Wikipedia Pinophyta = Coniferophyta
@@ -1390,17 +1390,13 @@ def patch_gbif(gbif):
     # 7996474  parent 1 (! Animalia)
     # 8063968 parent 7475854 = Rotaliidae
     # Let's make them all the same as 8063968.
-    proclaim(gbif, has_parent(taxon('Rotalites', 'Foraminifera'),
-                              taxon('Rotalia', 'Foraminifera'),
-                              otc(49)))
-    proclaim(gbif, synonym_of(taxon(id='8101279'),
-                              taxon('Rotalia', 'Foraminifera'),
-                              'synonym',  # spelling variant?
-                              otc(50)))
-    proclaim(gbif, synonym_of(taxon(id='7996474'),
-                              taxon('Rotalia', 'Foraminifera'),
-                              'synonym',  # ?
-                              otc(51)))
+    rotalia = gbif.taxon('Rotalia', 'Foraminifera')
+    foram = gbif.taxon('Foraminifera')
+    for taxon in gbif.lookup('Rotalites'):
+        if taxon.name == 'Rotalites' and taxon.descendsFrom(foram):
+            rotalia.absorb(node, 'proparte synonym', otc(49))
+    # Blow away distracting synonym
+    foram.notCalled('Rotalites')
 
     # Similar cases (probably): (from Chromista spreadsheet ambiguities)
     # Umbellina, Rotalina

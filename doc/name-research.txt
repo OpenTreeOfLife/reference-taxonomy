@@ -771,6 +771,60 @@ separation taxon.
 So what is 298457 supposed to be?  ncbi:646209 = Heteropora.
 
 
+## Equisetopsida
+
+The names here are kind of a mess.  See the wikipedia article for
+Equisetidae for an explanation.
+
+NCBI has
+ * Tracheophyta (no rank)
+ * subclass(!) 1521258 Equisetidae (= OTT 5662213) with synonyms
+       Equisetopsida and Equisetophyta; monotypic
+ * order 3255 Equisetales in Equisetidae; monotypic
+ * family 3256 Equisetaceae in Equisetales; monotypic
+ * former 3254 Equisetopsida (= OTT 719023), now a synonym
+
+GBIF has
+ * phylum Tracheophyta
+ * class 246 Equisetopsida in Tracheophyta (Equisetales,
+       Calamariaceae, & 6 others; fossils I think; this
+       is a retraction of GBIF's former use of the name)
+ * No subclass Equisetidae (GBIF doesn't have any subclasses)
+ * order Equisetales in Equisetopsida
+ * family Equisetaceae in Equisetales  contains Equisetum, etc.
+
+Trying to line these up.  Tracheophyta is not a problem.  Equisetales
+should be OK.
+
+Wikipedia says: "Equisetidae is a monotypic subclass consisting of a
+single order, Equisetales, single family Equisetaceae and single
+genus, Equisetum."
+
+Looks to me as if we can align the current GBIF Equisetopsida with
+NCBI Equisetidae.  Because NCBI has Equisetopsida as a synonym for
+Equisetidae, this should happen automatically.
+
+### Rotalites
+
+This is a tangle.  All these Rotalites seem to end up being synonyms
+for Rotalia, which I find puzzling since Rotalia is the later name.
+
+The July 2016 GBIF dump has two accepted Rotalites, and a synonym:
+
+* 8101279 Rotalites Lamarck, 1801 genus in Protozoa - accepted
+* 7966169 Rotalites (no authority) genus in Foraminifera - accepted
+* 4897239 Rotalites Lamarck, 1804 - proparte synonym for Foraminifera (!)
+
+GBIF on the web (June 2017) has:
+
+* 8829867 Rotalites (no authority) genus in Formanifera - accepted
+* 7966169 Rotalites Lamarck, 1801 genus in Formanifera - doubtful
+
+The desired situation is that all of the Rotalites foram genera are
+synonyms proparte of Rotalia the foram.  (There is a Rotalites
+homonym, watch out for that.)
+
+
 ## Trichosporon
 
 I think this is just a genus of fungi but I don't know why there end

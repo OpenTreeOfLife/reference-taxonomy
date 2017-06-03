@@ -161,6 +161,22 @@ NCBI Stylommatophora a child of WoRMS Pulmonata:
 See [the section on patch writing](patch.md) for information on
 `proclaim`, `has_parent`, `taxon`, and `otc`.
 
+### Equisetopsida
+
+Failed inclusion test:
+
+    ** A taxon cannot be its own parent: (Equisetidae ncbi:1521258+1) (Equisetidae ncbi:1521258+1)
+
+The offending directive is
+
+    ncbi.taxon('Equisetopsida', 'Moniliformopses').take(ncbi.taxon('Equisetidae', 'Moniliformopses'))
+
+This patch, which did not previously result in an error, adjusted for
+some nonsense previously in NCBI that has since been fixed.  So I
+think we can just delete this.  I've added some notes to
+doc/name-research.txt.
+
+
 
 ## More examples
 
@@ -357,8 +373,9 @@ Looking at the WoRMS page for Pulmonata we see
 
 making me wonder if I'm interpreting '[unassigned]' correctly - the
 script currently trims off the '[unassigned]'.  I think I'll disable
-this feature.  There are 35 of these.  Now I guess what it means is
-"members have not yet been assigned to a parent taxon".
+this feature.  There are 35 of these (`grep "unassigned"
+r/worms-20170513/source/digest/*.csv | wc`).  Now I guess what it
+means is "members have not yet been assigned to a parent taxon".
 
 Removing the logic in `process_worms.py` to trim "[unassigned]" off
 beginning of names.
@@ -366,6 +383,46 @@ beginning of names.
 The meaning now sounds similar to _incertae sedis_, so adding
 'unassigned' to incertae_sedisRegex in Taxonomy.java as another way to
 express _incertae sedis_.
+
+### Bad interaction between id= and synonym_of
+
+    ** gbif-11 seemed to accept synonym_of(taxon('None', id=8101279), taxon('Rotalia', 'Foraminifera'), synonym, otc:50), but we couldn't confirm
+
+Using ids in patches is generally a bad idea.  In this case, there is
+a test following the patch to make sure that the patch got made, and
+it's failing because the taxon can't be found under the name used to
+find it before the patch.
+
+This is definitely a tangle.  The two synonym patches are trying to
+get rid of redundant Rotalites records, converging on a single right
+one.  There is a list of these Rotalites records in the comments, but
+they're obsolete.
+
+As I remember, this patch is important, because without it, these
+records act as magnets for alignments of other sources later on.
+
+I checked id 8101279 (Rotalites Lamarck, 1801) on the GBIF web site,
+and it seems has been removed, but it is still in the dump we're
+using, so we need to deal with it somehow.
+
+GBIF currently has a foram 8829867 with no authority.  Hmm.  See
+name-research.txt for an inventory.
+
+This may be a case where the v3 patch language is not precise enough
+to do the trick.  That's not inherent in v3.  My repair here is to
+revert to the v2 language and do the repair at a low level.
+
+    rotalia = gbif.taxon('Rotalia', 'Foraminifera')
+    foram = gbif.taxon('Foraminifera')
+    for taxon in gbif.lookup('Rotalites'):
+        if taxon.name == 'Rotalites' and taxon.descendsFrom(foram):
+            rotalia.absorb(node, 'proparte synonym', otc(49))
+    # Blow away distracting synonym
+    foram.notCalled('Rotalites')
+
+Ugly, but I don't see how else to do it given that there are multiple
+GBIF records that are difficult to distinguish, and with volatile
+record ids and placement.
 
 
 ## Testing

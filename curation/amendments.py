@@ -119,9 +119,11 @@ def patch_ott(ott):
         tax.rename('Verrucomicrobia group')
     # The following is obviated by algorithm changes
     # ott.taxon('Heterolobosea','Discicristata').absorb(ott.taxon('Heterolobosea','Percolozoa'))
-    tax = ott.taxonThatContains('Excavata', 'Euglena')
-    if tax != None:
-        tax.take(ott.taxon('Oxymonadida','Eukaryota'))
+
+    # There's no more Oxymonadida; it seems to have been replaced by Trimastix.
+    #tax = ott.taxonThatContains('Excavata', 'Euglena')
+    #if tax != None:
+    #    tax.take(ott.taxon('Oxymonadida','Eukaryota'))
 
     # There is no Reptilia in OTT 2.9, so this can probably be deleted
     if ott.maybeTaxon('Reptilia') != None:

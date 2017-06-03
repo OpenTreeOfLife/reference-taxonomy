@@ -424,6 +424,62 @@ Ugly, but I don't see how else to do it given that there are multiple
 GBIF records that are difficult to distinguish, and with volatile
 record ids and placement.
 
+### Problems with edits/ v1 patches
+
+Skipping for now.
+
+
+### Oxymonadida gone
+
+What happened to Oxymonadida ?
+
+    https://groups.google.com/d/msg/opentreeoflife/a69fdC-N6pY/y9QLqdqACawJ
+
+    ** No such taxon: Oxymonadida in Eukaryota (ott)
+
+    tax = ott.taxonThatContains('Excavata', 'Euglena')
+    if tax != None:
+        tax.take(ott.taxon('Oxymonadida','Eukaryota'))
+
+In the OTT 3.0 browser, it shows up as a barren order, deep in Excavata (parent Trimastix).
+So something is already wrong.
+
+Oxymonadidae, a child of Oxymonadida according to Wikipedia, is a
+sister in OTT 3.0.  It looks as if Wikipia Oxymonadidae is pretty much
+the same as Trimastix (which everyone has).
+
+Since Laura and Dail don't give references, and I don't want to do a
+lot of research, and I'm guessing that SILVA and NCBI are in good
+shape now (the email preceds our adoption of SILVA), I think it's best
+to just delete (or comment out) this patch.
+
+### No taxon found in ott with this name or id: Araripia
+
+    ara = ott.taxon('Araripia')
+    ** No taxon found in ott with this name or id: Araripia
+
+This is just a dumb mistake.  That should be maybeTaxon.
+
+    ara = ott.maybeTaxon('Araripia')
+    if ara != None: ara.extinct()
+
+### Couldn't confirm
+
+    ** union seemed to accept synonym_of(taxon('Cyrto-Hypnum lepidoziaceum'), taxon('Cyrto-hypnum lepidoziaceum'), spelling variant, otc:26), but we couldn't confirm
+    ** union seemed to accept synonym_of(taxon('Cyrto-Hypnum brachythecium'), taxon('Cyrto-hypnum brachythecium'), spelling variant, otc:35), but we couldn't confirm
+
+Working on this, haven't figured it out yet.
+
+### Name is x, but expected y
+
+    ** ncbi:730 name is [Haemophilus] ducreyi, but expected Haemophilus ducreyi
+    ** ncbi:738 name is [Haemophilus] parasuis, but expected Haemophilus parasuis
+    ** ncbi:40520 name is Blautia obeum, but expected [Ruminococcus] obeum
+
+This is just a bit of extra checking in some ad hoc id assignment
+logic.  These are all benign.  The fix is to change these from
+double-`*` messages to single-`*` messages.
+
 
 ## Testing
 

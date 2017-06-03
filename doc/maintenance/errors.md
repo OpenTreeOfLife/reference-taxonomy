@@ -256,11 +256,18 @@ Ergo:
     a.same(gbif.taxon('Myrmecia', 'Trebouxiophyceae'),
            ott.taxon('Myrmecia', 'Trebouxiophyceae'))
 
-It's possible that the patch can be deleted now, since the alignment
-code and/or separation taxonomy might be better now that they were at
-the time the patch was written, but I'm not going to bother to try
-that, since it would take some time (20 minutes for an assembly run)
-to find out.
+But this doesn't work.  It seems NCBI has two _Myrmecias_ in
+Trebouxiophyceae.  So disambiguating by membership is probably better
+than by ancestry.  It turns out the "right" one in OTT (via NCBI), the
+one with almost all of the species, is the one that aligns with GBIF
+in 3.0.  We can pick a descendant pretty much arbitrarily, but
+_Myrmecia irregularis_ looks good since it's in NCBI, GBIF, and IRMNG.  So:
+
+    a.same(gbif.taxon('Myrmecia', descendant='Myrmecia irregularis'),
+           ott.taxon('Myrmecia', descendant='Myrmecia irregularis'))
+
+
+
 
 ### No expansum containing Penicillium expansum
 
@@ -284,8 +291,57 @@ going to work.  But a specially crafted grep does the trick:
 
 The results are _Penicillium inflatum, Penicillium diversum,_ and
 _Penicillium dupontii_, all with parent _Penicillium_.  So we ought to
-be able to pick any of the three.
+be able to pick any of the three.  But a new assembly with _inflatum_
+yields
 
+    ** No such taxon: Penicillium containing Penicillium inflatum (gbif)
+
+Unfortunately, none of these species is in genus _Penicillium_ in
+GBIF.  _Penicillium_ has only one species in GBIF, _Penicillium
+salamii_.  That's also in NCBI, so let's use it.
+
+    a.same(gbif.taxonThatContains('Penicillium', 'Penicillium salamii'),
+           ott.taxonThatContains('Penicillium', 'Penicillium salamii'))
+
+### Hibbett 2007 not connected
+
+    ** Barren taxon from h2007 Trichotheliales
+    ** Barren taxon from h2007 Stereopsidales
+    ** Barren taxon from h2007 Symbiotaphrinales
+    ** Barren taxon from h2007 Caliciales
+    ** Barren taxon from h2007 Hymeneliales
+    ** Barren taxon from h2007 Loxosporales        
+
+Well this sure is annoying.  These errors didn't occur in the 3.0
+assembly.
+
+In 3.0, Trichotheliales (5291461) isn't barren - it contains
+Myeloconidiaceae (5343002) and Porinaceae (877952).  But these
+children have moved somehow.  Doing `bin/lineage 5343002
+r/ott-NEW/source/` in the draft shows M's parent as being Ostropales,
+which in h2007 is a sibling of Trichotheliales.  Trichotheliales is
+absent except as a synonym for Ostropales - which makes no sense,
+since h2007 has very high priority, just after SILVA in the assembly
+sequence.  There are no messages about it in transcript.out.  The link
+ought to be set in `link_to_h2007`, which is called at the end of
+assembly, after merging IRMNG:
+
+         ('Myeloconidiaceae', 'Trichotheliales', otc(7)),
+
+Using `bin/investigate Trichotheliales` (after reparing a bug in it)
+one sees that NCBI Taxonomy has Trichotheliales as a proparte
+('includes') synonym for Ostropales.
+
+This still doesn't make sense, since h2007 is higher priority than
+NCBI.  Any taxon in h2007 ought to be a taxon in OTT - never
+overridden by NCBI.
+
+choices.tsv shows a lot of `noinfo/target-no-children'.  Looking that
+up in AlignmentByName.java to find out what that means:
+
+What changed from 3.0 to 3.1: Maybe it's because I moved these
+family placement directives, in an attempt to tidy up the code,
+thinking they would make no difference.
 
 
 

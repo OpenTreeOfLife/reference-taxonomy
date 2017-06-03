@@ -1073,8 +1073,8 @@ def align_gbif(gbif, ott):
     # a.same(gbif.taxon('Calothrix', 'Rivulariaceae'), ott.taxon('Calothrix', 'Rivulariaceae'))
     a.same(gbif.taxon('Chlorella', 'Chlorellaceae'),
            ott.taxon('Chlorella', 'Chlorellaceae'))
-    a.same(gbif.taxon('Myrmecia', 'Trebouxiophyceae'),
-           ott.taxon('Myrmecia', 'Trebouxiophyceae'))
+    a.same(gbif.taxon('Myrmecia', descendant='Myrmecia irregularis'),
+           ott.taxon('Myrmecia', descendant='Myrmecia irregularis'))
 
     # JAR 2014-04-18 attempt to resolve ambiguous alignment of
     # Trichosporon in IF and GBIF based on common member
@@ -1092,8 +1092,8 @@ def align_gbif(gbif, ott):
     
     # JAR 2014-04-23 IF update fallout
     # - CHECK - was ncbi.taxon
-    a.same(gbif.taxonThatContains('Penicillium', 'Penicillium inflatum'),
-           ott.taxonThatContains('Penicillium', 'Penicillium inflatum'))
+    a.same(gbif.taxonThatContains('Penicillium', 'Penicillium salamii'),
+           ott.taxonThatContains('Penicillium', 'Penicillium salamii'))
 
     # https://github.com/OpenTreeOfLife/feedback/issues/45
     if False:

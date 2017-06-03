@@ -112,6 +112,9 @@ def merge_sources(ott):
     (fungi, fungorum_sans_fungi) = split_taxonomy(fungorum, 'Fungi')
     align_and_merge(adjustments.align_fungi(fungi, ott))
 
+    # Connect IF families to Hibbett 2007 orders
+    adjustments.link_to_h2007(ott)
+
     # the non-Fungi from Index Fungorum get absorbed below
 
     lamiales = Taxonomy.getTaxonomy('curation/lamiales/', 'study713')
@@ -183,7 +186,6 @@ def merge_sources(ott):
     align_and_merge(a)
 
     # Misc fixups
-    adjustments.link_to_h2007(ott)
     report_on_h2007(h2007, h2007_to_ott)
 
     get_default_extinct_info_from_gbif(os.path.join(management.resource_path('gbif'), 'paleo.tsv'),

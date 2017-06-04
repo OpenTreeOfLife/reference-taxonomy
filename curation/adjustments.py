@@ -1392,8 +1392,10 @@ def patch_gbif(gbif):
     # Let's make them all the same as 8063968.
     rotalia = gbif.taxon('Rotalia', 'Foraminifera')
     foram = gbif.taxon('Foraminifera')
-    for lites in gbif.lookup('Rotalites'):
-        if lites.name == 'Rotalites' and lites.descendsFrom(foram):
+    for lites in [r for r in gbif.lookup('Rotalites')]:
+        if (lites.name == 'Rotalites' and
+            lites.taxon() == lites and
+            lites.descendsFrom(foram)):
             rotalia.absorb(lites, 'proparte synonym', otc(49))
     # Blow away distracting synonym
     foram.notCalled('Rotalites')

@@ -28,7 +28,9 @@ def patch_ott(ott):
     # 2014-01-27 Joseph: Quiscalus is incorrectly in
     # Fringillidae instead of Icteridae.  NCBI is wrong, GBIF is correct.
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/87
-    ott.taxon('Icteridae').take(ott.taxon('Quiscalus', 'Fringillidae'))
+    proclaim(ott, has_parent(taxon('Quiscalus', descendant='Quiscalus mexicanus'),
+                             taxon('Icteridae', 'Aves'),
+                             otc(60)))
 
     # Misspelling in GBIF... seems to already be known
     # Stephen email to JAR 2014-01-26
@@ -593,7 +595,7 @@ def patch_ott(ott):
                  'Plesiopithecus', 'Suratius', 'Killikaike blakei', 'Rissoina bonneti',
                  # 'Mycosphaeroides'  - gone
              ]:
-        proclaim(ott, is_extinct(taxon(name), otc(53)))
+        proclaim(ott, is_extinct(taxon(name), None))  # was otc(53)
                             # 'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116'
 
     # MTH 2016-01-05 https://github.com/OpenTreeOfLife/reference-taxonomy/issues/182

@@ -97,7 +97,7 @@ class _Has_parent:
             c.changeParent(p)
             return True
     def stringify(self):
-        return ('has_parent(%s, %s, %s, %s)' %
+        return ('has_parent(%s, %s, %s)' %
                 self.child.stringify(),
                 self.parent.stringify(),
                 self.qid)

@@ -98,9 +98,9 @@ class _Has_parent:
             return True
     def stringify(self):
         return ('has_parent(%s, %s, %s)' %
-                self.child.stringify(),
-                self.parent.stringify(),
-                self.qid)
+                (self.child.stringify(),
+                 self.parent.stringify(),
+                 self.qid))
 
 # This is mainly for objective synonyms. proparte and subjective don't really work.
 # Still pretty ugly, but should work for current OTT purposes.

@@ -271,17 +271,19 @@ def get_one_taxon_children(taxon_id):
     offset = 0
     try:
         wsdlChildren = WORMSPROXY.getAphiaChildrenByID(taxon_id,
-                                                       marine_only=False,
-                                                       offset=offset)
+                                                       offset=offset,
+                                                       marine_only=False)
         if wsdlChildren:
             result.extend(wsdlChildren)
             while len(wsdlChildren) == MAXLENGTH:
                 offset += MAXLENGTH
+                # if you put marine_only=False here then it stops working!!
                 wsdlChildren = WORMSPROXY.getAphiaChildrenByID(taxon_id,
-                                                               marine_only=False,
                                                                offset=offset)
                 if wsdlChildren:
                     result.extend(wsdlChildren)
+                else:
+                    break
     except socket.error as e:
         print e
         raise RuntimeException("dummy")

@@ -93,7 +93,7 @@ class _Has_parent:
         else:
             if c.descendsFrom(p) and windy:
                 print ('* Losing information by moving %s to shallower location (%s)' %
-                       c.name, p.name)
+                       (c.name, p.name))
             c.changeParent(p)
             return True
     def stringify(self):

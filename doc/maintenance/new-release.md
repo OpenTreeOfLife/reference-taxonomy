@@ -58,6 +58,7 @@ Software requirements:
   particular version is required.
 * `bash`.
 * GNU `tar`.
+* GNU `date`, available as `gdate`.
 * `wget`.  I've been using GNU `wget` 1.18 and 1.16.
 * python 2.7; I've been using 2.7.10 and 2.7.9.
 * JVM/JRE/javac.  I've been using JRE build 1.8.0_05-b13 on Mac, 

@@ -337,7 +337,7 @@ r/worms-NEW/source/.made: import_scripts/worms/fetch_worms.py r/worms-NEW
 
 r/worms-NEW:
 	bin/new-version worms .tgz public
-	bin/put ott-NEW ott_idspace worms
+	bin/put worms-NEW ott_idspace worms
 
 # --- Source: NCBI Taxonomy
 

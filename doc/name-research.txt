@@ -780,7 +780,7 @@ NCBI has
  * Tracheophyta (no rank)
  * subclass(!) 1521258 Equisetidae (= OTT 5662213) with synonyms
        Equisetopsida and Equisetophyta; monotypic
- * order 3255 Equisetales in Equisetidae; monotypic
+ * order 3255 Equisetales (OTT 719029) in Equisetidae; monotypic
  * family 3256 Equisetaceae in Equisetales; monotypic
  * former 3254 Equisetopsida (= OTT 719023), now a synonym
 

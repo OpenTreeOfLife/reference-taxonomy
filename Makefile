@@ -231,7 +231,7 @@ r/silva-NEW:
 	bin/put silva-NEW ott_idspace "silva"
 	wget -q -O - $(SILVA_ARCHIVE)/ | \
 	  python import_scripts/silva/get_silva_release_info.py | \
-	  (read r d; bin/put silva-NEW version $$r; \
+	  (read r d; bin/put silva-NEW version $$r && \
 		     bin/put silva-NEW date $$d)
 	touch $@
 
@@ -282,7 +282,7 @@ r/genbank-NEW/work/Genbank.pickle: import_scripts/genbank/accessionFromGenbank.p
 	       r/silva-HEAD/source/silva_no_sequences.fasta \
 	       r/genbank-NEW/work/Genbank.pickle
 	d=`python util/modification_date.py r/genbank-NEW/work/Genbank.pickle`; \
-          bin/put genbank-NEW date $$d; \
+          bin/put genbank-NEW date $$d && \
           bin/put genbank-NEW version $$d
 
 r/genbank-NEW:
@@ -332,12 +332,12 @@ r/worms-NEW/source/.made: import_scripts/worms/fetch_worms.py r/worms-NEW
 	mkdir -p r/worms-NEW/work r/worms-NEW/source/digest
 	time python import_scripts/worms/fetch_worms.py --queue r/worms-NEW/work/q.q \
 	       --out r/worms-NEW/source/digest --chunks 5000 --chunksize 500
+	d=`gdate +"%Y%m%d"`; bin/put worms-NEW date $$d && bin/put worms-NEW version $$d
 	touch $@
 
 r/worms-NEW:
 	bin/new-version worms .tgz public
 	bin/put ott-NEW ott_idspace worms
-	(cd r/worms-NEW; rm -f resource; ln -sf source resource)
 
 # --- Source: NCBI Taxonomy
 
@@ -363,7 +363,7 @@ refresh/ncbi: r/ncbi-NEW/source/.made
 r/ncbi-NEW/source/.made: r/ncbi-NEW/archive/.made
 	bin/unpack-archive ncbi-NEW
 	d=`python util/modification_date.py r/ncbi-NEW/source/names.dmp`; \
-          bin/put ncbi-NEW date $$d; \
+          bin/put ncbi-NEW date $$d && \
           bin/put ncbi-NEW version $$d
 
 r/ncbi-NEW/archive/.made: r/ncbi-NEW
@@ -413,7 +413,7 @@ refresh/gbif: r/gbif-NEW/source/.made
 r/gbif-NEW/source/.made: r/gbif-NEW/archive/.made
 	bin/unpack-archive gbif-NEW
 	d=`python util/modification_date.py r/gbif-NEW/source/taxon.txt`; \
-          bin/put gbif-NEW date $$d; \
+          bin/put gbif-NEW date $$d && \
           bin/put gbif-NEW version $$d
 
 r/gbif-NEW/archive/.made: r/gbif-NEW
@@ -452,7 +452,7 @@ refresh/irmng: r/irmng-NEW/source/.made
 r/irmng-NEW/source/.made: r/irmng-NEW/archive/.made
 	bin/unpack-archive irmng-NEW
 	d=`python util/modification_date.py r/irmng-NEW/source/IRMNG_DWC.csv`; \
-          bin/put gbif-NEW date $$d; \
+          bin/put gbif-NEW date $$d && \
           bin/put gbif-NEW version $$d
 	touch $@
 

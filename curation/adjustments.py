@@ -295,6 +295,10 @@ def adjust_h2007(h2007):
     # h2007/if synonym https://github.com/OpenTreeOfLife/reference-taxonomy/issues/40
     h2007.taxon('Urocystales').synonym('Urocystidales')
 
+    for t in h2007.taxa():
+        if t.name != None and t.name.endswith('ales') and t.rank == Rank.NO_RANK:
+            t.setRank('order')
+
     return h2007
 
 # Index Fungorum
@@ -479,22 +483,6 @@ def patch_fung(fung):
 def link_to_h2007(tax):
     print '-- Putting families in Hibbett 2007 orders --'
     # 2014-04-13 Romina #40, #60
-    for (order_name, family_names) in \
-        [('Neozygitales', ['Neozygitaceae']),
-         ('Asterinales', ['Asterinaceae']),
-         ('Savoryellales', ['Savoryella', 'Ascotaiwania', 'Ascothailandia']), 
-         ('Cladochytriales', ['Cladochytriaceae', 'Nowakowskiellaceae', 'Septochytriaceae', 'Endochytriaceae']),
-         ('Jaapiales', ['Jaapiaceae']),
-         ('Coniocybales', ['Coniocybaceae']),
-         ('Hyaloraphidiales', ['Hyaloraphidium']), # was Hyaloraphidiaceae, no such family
-         ('Mytilinidiales', ['Mytilinidiaceae', 'Gloniaceae']),
-        ]:
-        order = tax.maybeTaxon(order_name, 'Fungi')
-        if order != None:
-            for family in family_names:
-                order.take(tax.taxon(family, 'Fungi'))
-        else:
-            print '*** Missing fungal order', order_name
 
     # Stereopsidaceae = Stereopsis + Clavulicium
     s = tax.taxon('Stereopsidaceae', 'Fungi')
@@ -502,29 +490,73 @@ def link_to_h2007(tax):
     s.take(tax.taxon('Clavulicium', 'Agaricomycetes'))
     # Dangling node at this point, but will be attached below
 
+    establish('Moniliellaceae', tax, parent='Moniliellales',
+              division='Fungi', source='ncbi:1538067')
+    establish('Lepidostromataceae', tax, parent='Lepidostromatales',
+              division='Fungi', source='ncbi:579912')
+    # In OTT 3.0 and Index Fungorum, Trichotheliaceae is listed as a
+    # synonym for Porinaceae.  But it seems to be accepted in Mycobank, 
+    # and was given as accepted by Romina.
+    # Not sure how the two relate.
+
+    # To do next: put some genera in these families
+
+    # e.g. according to mycobank, Trichotheliaceae contains
+    # Actiniopsis, Actinopsis, Asteropeltis, Cryptopeltis,
+    # Ophiodictyon, Ophthalmidium, Phragmopeltheca, Phyllophiale,
+    # Polycornum, Sagedia, Segestrella, Sphaeromphale, Stephosia,
+    # Stereochlamydomyces, Stereochlamys, Stereoclamydomyces,
+    # Trichotheliomyces, Zamenhofia
+
     # 2015-07-13 Romina
-    h2007_fam = 'http://figshare.com/articles/Fungal_Classification_2015/1465038'
     for (family, order, sid) in \
-        [('Talbotiomyces calosporus', 'Talbotiomycetales', otc(3)),
+        [
+         ('Neozygitaceae', 'Neozygitales', None),
+         ('Asterinaceae', 'Asterinales', None),
+         ('Savoryella', 'Savoryellales', None), 
+         ('Ascotaiwania', 'Savoryellales', None), 
+         ('Ascothailandia', 'Savoryellales', None), 
+         ('Cladochytriaceae', 'Cladochytriales', None),
+         ('Nowakowskiellaceae', 'Cladochytriales', None),
+         ('Septochytriaceae', 'Cladochytriales', None),
+         ('Endochytriaceae', 'Cladochytriales', None),
+         ('Jaapiaceae', 'Jaapiales', None),
+         ('Coniocybaceae', 'Coniocybales', None),
+         # was Hyaloraphidiaceae, no such family - Hyaloraphidium is genus
+         ('Hyaloraphidium', 'Hyaloraphidiales', None),
+         ('Mytilinidiaceae', 'Mytilinidiales', None),
+         ('Gloniaceae', 'Mytilinidiales', None),
+
+         ('Talbotiomyces calosporus', 'Talbotiomycetales', otc(3)),
+         # Moniliellaceae = ncbi:1538067,gbif:8375337
          ('Moniliellaceae', 'Moniliellales', otc(4)),
          ('Malasseziaceae', 'Malasseziales', otc(5)),   # , 'Malassezia' - redundant
-         ('Trichotheliaceae', 'Trichotheliales', otc(6)),
+         # Trichotheliaceae missing, order barren  mb:81496
+         # Romina had: ('Trichotheliaceae', 'Trichotheliales', otc(6)),
+         ('Porinaceae', 'Trichotheliales', None),
          ('Myeloconidiaceae', 'Trichotheliales', otc(7)),
          ('Sporobolomyces ruberrimus', 'Trichosporonales', otc(8)),
          ('Holtermanniella', 'Holtermanniales', otc(9)),
+         # Lepidostromataceae = ncbi:579912,gbif:8295976
          ('Lepidostromataceae', 'Lepidostromatales', otc(10)),
          ('Atheliaceae', 'Atheliales', otc(11)),
+         # why is Stereopsidales childless?
          ('Stereopsidaceae', 'Stereopsidales', otc(12)),
          ('Septobasidiaceae', 'Septobasidiales', otc(13)),
+         # why is Symbiotaphrinales barren?
          ('Symbiotaphrina', 'Symbiotaphrinales', otc(14)),
+         # why is Caliciales barren?
          ('Sphaerophoraceae', 'Caliciales', otc(15)),
          ('Sarrameanaceae', 'Sarrameanales', otc(16)),
          ('Trapeliaceae', 'Trapeliales', otc(17)),
          ('Halosphaeriaceae', 'Halosphaeriales', otc(18)),
          ('Abrothallus', 'Abrothallales', otc(19)),
          ('Arctomiaceae', 'Arctomiales', otc(20)),
+         # why is Hymeneliales barren?
+         # Possible casualty of changes to merge method?
          ('Hymeneliaceae', 'Hymeneliales', otc(21)),
          ('Leprocaulaceae', 'Leprocaulales', otc(22)),
+         # why is Loxosporales barren?
          ('Loxospora', 'Loxosporales', otc(23)),  #Hodkinson and Lendemer 2011
          ]:
         proclaim(tax, has_parent(taxon(family), taxon(order), sid))

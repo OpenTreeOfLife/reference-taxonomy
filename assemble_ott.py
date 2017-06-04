@@ -521,10 +521,10 @@ def report_on_h2007(h2007, h2007_to_ott):
     for taxon in h2007.taxa():
         im = h2007_to_ott.image(taxon)
         if im != None:
-            if im.children == None:
-                print '** Barren taxon from h2007', taxon.name
+            if not im.hasChildren():
+                print '** Empty taxon from h2007', taxon
         else:
-            print '** Missing taxon from h2007', taxon.name
+            print '** Missing taxon from h2007', taxon
 
 def report(ott):
 

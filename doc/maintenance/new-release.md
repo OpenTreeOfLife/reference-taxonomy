@@ -38,7 +38,7 @@ The 3.1 build should therefore look like the following:
     make refresh/idlist    #make 3.0 idlist from idlist-2.10 and ott3.0
     bin/use-version genbank-20161216
     bin/use-version irmng-20140131
-    bin/use-version worms-20170513
+    bin/use-version worms-20170604
     make refresh/ncbi
     make refresh/amendments
     make ott

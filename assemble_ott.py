@@ -112,6 +112,12 @@ def merge_sources(ott):
     (fungi, fungorum_sans_fungi) = split_taxonomy(fungorum, 'Fungi')
     align_and_merge(adjustments.align_fungi(fungi, ott))
 
+    # Connect IF families to Hibbett 2007 orders
+    adjustments.link_to_h2007(ott)
+
+    # Look for orders that have no children in OTT
+    report_on_h2007(h2007, h2007_to_ott, '#')
+
     # the non-Fungi from Index Fungorum get absorbed below
 
     lamiales = Taxonomy.getTaxonomy('curation/lamiales/', 'study713')
@@ -142,6 +148,9 @@ def merge_sources(ott):
 
     ncbi_to_ott = adjustments.align_ncbi(ncbi, silva, ott)
     align_and_merge(ncbi_to_ott)
+
+    # Look for orders that have no children in OTT
+    report_on_h2007(h2007, h2007_to_ott, '#')
 
     # Reporting
     # Get mapping from NCBI to OTT, derived via SILVA and Genbank.
@@ -183,8 +192,7 @@ def merge_sources(ott):
     align_and_merge(a)
 
     # Misc fixups
-    adjustments.link_to_h2007(ott)
-    report_on_h2007(h2007, h2007_to_ott)
+    report_on_h2007(h2007, h2007_to_ott, '**')
 
     get_default_extinct_info_from_gbif(os.path.join(management.resource_path('gbif'), 'paleo.tsv'),
                                        gbif, gbif_to_ott)
@@ -346,7 +354,7 @@ def retain_ids(ott, prev_path, by_qid):
             print '* ncbi:%s not found in OTT - %s' % (ncbi_id, name)
         else:
             if im.name != name:
-                print '** ncbi:%s name is %s, but expected %s' % (ncbi_id, im.name, name)
+                print '* ncbi:%s name is %s, but expected %s' % (ncbi_id, im.name, name)
             im.addId(ott_id)
 
     # Force some id assignments... will try to automate this in the future.
@@ -513,16 +521,16 @@ def align_and_merge(alignment):
     ott.align(alignment)
     ott.merge(alignment)
 
-def report_on_h2007(h2007, h2007_to_ott):
+def report_on_h2007(h2007, h2007_to_ott, stars):
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/40
     print '-- Checking realization of h2007'
     for taxon in h2007.taxa():
         im = h2007_to_ott.image(taxon)
         if im != None:
-            if im.children == None:
-                print '** Barren taxon from h2007', taxon.name
+            if not im.hasChildren():
+                print stars, 'h2007 taxon is empty', taxon, im
         else:
-            print '** Missing taxon from h2007', taxon.name
+            print stars, 'h2007 taxon not mapped to OTT', taxon
 
 def report(ott):
 

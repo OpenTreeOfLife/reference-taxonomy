@@ -10,6 +10,8 @@ def patch_ott(ott):
     print '| Flushing %s viruses' % ott.taxon('Viruses').count()
     ott.taxon('Viruses').prune()
 
+    print '-- more patches --'
+
     # Romina 2014-04-09: Hypocrea = Trichoderma.
     # IF and all the other taxonomies have both Hypocrea and Trichoderma.
     # Need to merge them.
@@ -26,12 +28,13 @@ def patch_ott(ott):
     # 2014-01-27 Joseph: Quiscalus is incorrectly in
     # Fringillidae instead of Icteridae.  NCBI is wrong, GBIF is correct.
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/87
-    ott.taxon('Icteridae').take(ott.taxon('Quiscalus', 'Fringillidae'))
+    proclaim(ott, has_parent(taxon('Quiscalus', descendant='Quiscalus mexicanus'),
+                             taxon('Icteridae', 'Aves'),
+                             otc(60)))
 
     # Misspelling in GBIF... seems to already be known
     # Stephen email to JAR 2014-01-26
     # ott.taxon("Torricelliaceae").synonym("Toricelliaceae")
-
 
     # Joseph 2014-01-27 https://code.google.com/p/gbif-ecat/issues/detail?id=104
     ott.taxon('Parulidae').take(ott.taxon('Myiothlypis', 'Passeriformes'))
@@ -39,8 +42,9 @@ def patch_ott(ott):
     ott.taxon('Blattodea').take(ott.taxon('Phyllodromiidae'))
 
     # See above (occurs in both IF and GBIF).  Also see issue #67
-    chlam = ott.taxonThatContains('Chlamydotomus', 'Chlamydotomus beigelii')
-    if chlam != None: chlam.incertaeSedis()
+    #chlam = ott.taxonThatContains('Chlamydotomus', 'Chlamydotomus beigelii')
+    #if chlam != None: chlam.incertaeSedis()
+    # As of 2017-06-03, Chlamydotomus beigelii doesn't exist.
 
     # Joseph Brown 2014-01-27
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/87
@@ -111,8 +115,6 @@ def patch_ott(ott):
     #   Lituolina,Chromista,Lituolida ,WORMS,,,,
 
 
-    print '-- more patches --'
-
     # From Laura and Dail on 5 Feb 2014
     # https://groups.google.com/d/msg/opentreeoflife/a69fdC-N6pY/y9QLqdqACawJ
     tax = ott.maybeTaxon('Chlamydiae/Verrucomicrobia group')
@@ -120,9 +122,11 @@ def patch_ott(ott):
         tax.rename('Verrucomicrobia group')
     # The following is obviated by algorithm changes
     # ott.taxon('Heterolobosea','Discicristata').absorb(ott.taxon('Heterolobosea','Percolozoa'))
-    tax = ott.taxonThatContains('Excavata', 'Euglena')
-    if tax != None:
-        tax.take(ott.taxon('Oxymonadida','Eukaryota'))
+
+    # There's no more Oxymonadida; it seems to have been replaced by Trimastix.
+    #tax = ott.taxonThatContains('Excavata', 'Euglena')
+    #if tax != None:
+    #    tax.take(ott.taxon('Oxymonadida','Eukaryota'))
 
     # There is no Reptilia in OTT 2.9, so this can probably be deleted
     if ott.maybeTaxon('Reptilia') != None:
@@ -180,7 +184,7 @@ def patch_ott(ott):
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/90
     # http://www.sciencedirect.com/science/article/pii/S0034666703000927
     # write this ?? ott.assert(as_said_by('https://github.com/OpenTreeOfLife/reference-taxonomy/issues/90', extinct('Araripia')))
-    ara = ott.taxon('Araripia')
+    ara = ott.maybeTaxon('Araripia')
     if ara != None: ara.extinct()
 
     # Bryan Drew  2014-02-05
@@ -281,6 +285,27 @@ def patch_ott(ott):
 
     # Joseph https://github.com/OpenTreeOfLife/reference-taxonomy/issues/43
     ott.taxon('Lorisiformes').take(ott.taxon('Lorisidae'))
+
+    # 2014-04-21 RR
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/45
+    for (epithet, qid) in [('cylindraceum', otc(25)),
+                           # ('lepidoziaceum', otc(26)), vanished
+                           ('intermedium', otc(27)),
+                           ('espinosae', otc(28)),
+                           ('pseudoinvolvens', otc(29)),
+                           ('arzobispoae', otc(30)),
+                           ('sharpii', otc(31)),
+                           ('frontinoae', otc(32)),
+                           ('atlanticum', otc(33)),
+                           ('stevensii', otc(34)),
+                           # ('brachythecium', otc(35)), vanished
+                    ]:
+        prop = synonym_of(taxon('Cyrto-Hypnum ' + epithet),
+                          taxon('Cyrto-hypnum ' + epithet),
+                          'spelling variant',
+                          qid)
+        proclaim(ott, prop)
+        # was gbif.taxon('Cyrto-hypnum ' + epithet).absorb(gbif.taxon('Cyrto-Hypnum ' + epithet))
 
     # Romina https://github.com/OpenTreeOfLife/reference-taxonomy/issues/42
     # As of 2014-04-23 IF synonymizes Cyphellopsis to Merismodes
@@ -570,7 +595,7 @@ def patch_ott(ott):
                  'Plesiopithecus', 'Suratius', 'Killikaike blakei', 'Rissoina bonneti',
                  # 'Mycosphaeroides'  - gone
              ]:
-        proclaim(ott, is_extinct(taxon(name), otc(53)))
+        proclaim(ott, is_extinct(taxon(name), None))  # was otc(53)
                             # 'https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116'
 
     # MTH 2016-01-05 https://github.com/OpenTreeOfLife/reference-taxonomy/issues/182

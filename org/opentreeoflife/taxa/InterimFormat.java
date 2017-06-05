@@ -271,7 +271,8 @@ public class InterimFormat {
         else {
             Rank rank = Rank.getRank(rankname);
             if (rank == null) {
-                System.err.println("** Unrecognized rank: " + rankname + " " + node.id);
+                System.err.println("** Unrecognized rank: " + rankname +
+                                   " for node " + node.id);
                 node.rank = Rank.NO_RANK;
             } else if (rank == Rank.GENUS_RANK && name.endsWith("ae")) {
                 node.markEvent("rank=genus, but name does not look like a genus");

@@ -21,6 +21,7 @@ Many kinds of things can go wrong when making a new OTT version.
 1. A source can change in some incompatible way, perhaps leading to
    separation problems or bad duplications or merges
 1. Separation problems leading to duplication
+1. A source can contain a rank previously unknown to OTT
 
 etc.
 
@@ -57,16 +58,19 @@ are involved.
 Ideally, over time, undeteced errors will be converted to detectable
 errors by the addition of rows to `inclusions.tsv`.
 
-## Example
-
-The following illustrates the debugging utilities `investigate` and `lineage`.
+## Inclusion test failures
 
 After each assembly run (`make ott`), the transcript
 (`debug/transcript.out`) should be checked for errors.  Errors are
 indicated with two asterisks at the beginning of the line (`**`).
 
+The following illustrates (among other things) the debugging utilities
+`investigate` and `lineage`.
+
 I often check the inclusions tests first.  These show up at the very
 end of `transcript.out`.
+
+### Land snails
 
 When building `ott3.1`, the following showed up:
 
@@ -160,6 +164,336 @@ NCBI Stylommatophora a child of WoRMS Pulmonata:
 See [the section on patch writing](patch.md) for information on
 `proclaim`, `has_parent`, `taxon`, and `otc`.
 
+### Horsetails
+
+Failed inclusion test:
+
+    ** A taxon cannot be its own parent: (Equisetidae ncbi:1521258+1) (Equisetidae ncbi:1521258+1)
+
+The offending directive is
+
+    ncbi.taxon('Equisetopsida', 'Moniliformopses').take(ncbi.taxon('Equisetidae', 'Moniliformopses'))
+
+This patch, which did not previously result in an error, adjusted for
+some nonsense previously in NCBI that has since been fixed.  So I
+think we can just delete this.  I've added some notes to
+doc/name-research.txt.
+
+### Latzelia
+
+An inclusion test can fail because of a newly introduced ambiguity.
+
+    ** More than one taxon named Latzelia is in Myriapoda
+       [(Glomeridella 146027=ncbi:1173033+8), (Haplogona 3516350=ncbi:1569519+6)]
+
+This resulted from a WoRMS refresh that included nonmarine taxa as
+well as marine ones.  The test (in inclusions.tsv) is:
+
+    Latzelia,Myriapoda,,"not to be confused with fungus (Epiphloea)"
+
+This one is odd in that there is no OTT id in the test.  Doing
+`bin/investigate Latzelia` gives a twisted story, where the name is a
+synonym for two different diplopod genera.  That suggests it's not
+really a synonym for these genera but rather a paraphyletic group.  In
+any case, rather than analyze this in detail, maybe it will work to
+just pick one of them, say the one in Glomerida, and update the test.
+That would be 146027 (Glomeridella).
+
+    Latzelia,Glomerida,146027,"not to be confused with fungus (Epiphloea)"
+
+
+## New rank
+
+While assembling OTT 3.1:
+
+    ** Unrecognized rank: cohort 33341
+
+Smasher has a fixed set of ranks (Rank.java), so any new rank needs to
+be added as a source code edit.  In this case, first we figure out
+where 'cohort' goes relative to the ranks smasher knows about.  The
+easiest way to do this is by consulting
+[wikipedia](https://en.wikipedia.org/wiki/Taxonomic_rank#Cohort_.28biology.29).
+Alternatively, or in addition, we can consult NCBI, where we see that
+33341 Polyneoptera contains Dermaptera (rank order) and is contained
+in Neoptera (rank infraclass).  In either case, cohort ends up in
+between the xxxclass ranks and the xxxorder ranks.
+
+
+## Patch failures
+
+### Name change leading to broken version 2 patch
+
+    ** No taxon found in worms with this name or id: Biota
+
+The culprit is this:
+
+    a.same(worms.taxon('Biota'), ott.taxon('life'))
+
+The reason for the error is that the new version of the WoRMS import
+scripts assigned the name 'life' to the root of the tree, where
+formerly it has 'Biota'.  Since 'Biota' no longer exists, we get an
+error for `worms.taxon('Biota')`.
+
+I can think of several approaches.
+
+1. Ignore the error.  This would work, but having a `**` message in
+the assembly is distracting and its benign-ness would have to be rechecked
+on each assembly.
+1. Delete or comment out the patch.
+1. Protect the patch by a test for the presence of the taxon:
+
+    if worms.maybeTaxon('Biota') != None:
+        a.same(worms.taxon('Biota'), ott.taxon('life'))
+
+I've chosen the last approach since it seems most robust.  (e.g. in
+the future someone might "fix" the WoRMS import by changing life back
+to Biota.)
+
+### Spelling of Cyrto-hypnum lepidoziaceum
+
+    ** gbif-11 seemed to accept synonym_of(taxon('Cyrto-Hypnum lepidoziaceum'), taxon('Cyrto-hypnum lepidoziaceum'), spelling variant, otc:26), but we couldn't confirm
+
+This comes from a `synonym_of` patch (version 3).  Neither name occurs
+in GBIF, so the patch cannot be effected, but that should be OK.  The
+message indicates an error in the logic (`proclaim` and `.check` in
+sequence ought to return the same value) but I can't find it.  However, the following
+
+    bin/investigate "Cyrto-Hypnum lepidoziaceum"
+
+indicates that the name isn't in GBIF at all, only in IRMNG.  To make
+these _Cyrto-hypnum_ patches a bit more robust, I decided to move them
+to `amendments.py` and perform them on `ott` instead of `gbif`.  This
+fixes the latent problem that the spelling correction was being
+applied to GBIF but not to IRMNG.
+
+### No such taxon: Myrmecia
+
+    ** No such taxon: Myrmecia in Microthamniales (gbif)
+
+This comes from 
+
+    a.same(gbif.taxon('Myrmecia', 'Microthamniales'),
+           ott.taxon('Myrmecia', 'Microthamniales'))
+
+in adjustments.py.  In `r/gbif-HEAD/resource/taxonomy.tsv'` we see
+
+    1317709	|	4342	|	Myrmecia	|	genus	|	
+    2638661	|	6784730	|	Myrmecia	|	genus	|	
+
+    1360	|	332	|	Microthamniales	|	order	|	
+
+so it's strange that the patch doesn't work.  Using the OTT taxonomy
+browser, we find that _Myrmecia_ (genus in order Microthamniales) is
+OTT 739611 with no GBIF link, but it has a species _Myrmecia
+astigmatica_ that connects GBIF and NCBI.  Visiting the GBIF page, we
+find it's in family Trebouxiaceae, order Trebouxiales, class
+Trebouxiophyceae, phylum Chlorophyta.  So we want to replace
+Microthamniales with one of these ancestors, but which one is best?
+NCBI and IRMNG both have Trebouxiophyceae, so I would say that should
+be pretty stable.
+
+Ergo:
+
+    a.same(gbif.taxon('Myrmecia', 'Trebouxiophyceae'),
+           ott.taxon('Myrmecia', 'Trebouxiophyceae'))
+
+But this doesn't work.  It seems NCBI has two _Myrmecias_ in
+Trebouxiophyceae.  So disambiguating by membership is probably better
+than by ancestry.  It turns out the "right" one in OTT (via NCBI), the
+one with almost all of the species, is the one that aligns with GBIF
+in 3.0.  We can pick a descendant pretty much arbitrarily, but
+_Myrmecia irregularis_ looks good since it's in NCBI, GBIF, and IRMNG.  So:
+
+    a.same(gbif.taxonThatContains('Myrmecia', 'Myrmecia irregularis'),
+           ott.taxonThatContains('Myrmecia', 'Myrmecia irregularis'))
+
+
+
+
+### No expansum containing Penicillium expansum
+
+    ** No such taxon: Penicillium containing Penicillium expansum (gbif)
+
+    a.same(gbif.taxonThatContains('Penicillium', 'Penicillium expansum'),
+           ott.taxonThatContains('Penicillium', 'Penicillium expansum'))
+
+The intent here seems to be to address some ambiguity over the genus
+name _Penicillium_.
+
+Go to _Penicillium expansum_ in OTT 3.0 browser, find sources
+if:159382 (ncbi:27334, irmng:11314226) - so it's not in GBIF at all.
+This error must have been present in the 3.0 assembly as well.
+Ideally what we want is some species belongs to the appropriate NCBI,
+GBIF, and IRMNG genera.  The genus has 3000 children, and most seem to
+be NCBI only, so using the OTT browser to find such a species isn't
+going to work.  But a specially crafted grep does the trick:
+
+    grep "Penicillium .*species.*ncbi.*gbif.*irmng" r/ott-HEAD/source/taxonomy.tsv
+
+The results are _Penicillium inflatum, Penicillium diversum,_ and
+_Penicillium dupontii_, all with parent _Penicillium_.  So we ought to
+be able to pick any of the three.  But a new assembly with _inflatum_
+yields
+
+    ** No such taxon: Penicillium containing Penicillium inflatum (gbif)
+
+Unfortunately, none of these species is in genus _Penicillium_ in
+GBIF.  _Penicillium_ has only one species in GBIF, _Penicillium
+salamii_.  That's also in NCBI, so let's use it.
+
+    a.same(gbif.taxonThatContains('Penicillium', 'Penicillium salamii'),
+           ott.taxonThatContains('Penicillium', 'Penicillium salamii'))
+
+### Pulmonata ambiguous
+
+    ** Ambiguous taxon name: Pulmonata (ott)
+    **   Pulmonata (order worms:382238) = (Pulmonata =worms:382238+4) in Mollusca
+    **   Pulmonata (infraclass worms:103) = (Pulmonata =worms:103+5) in Mollusca
+
+Looking at the WoRMS page for Pulmonata we see
+
+>Order [unassigned] Pulmonata (temporary name)
+
+making me wonder if I'm interpreting '[unassigned]' correctly - the
+script currently trims off the '[unassigned]'.  I think I'll disable
+this feature.  There are 35 of these (`grep "unassigned"
+r/worms-20170513/source/digest/*.csv | wc`).  Now I guess what it
+means is "members have not yet been assigned to a parent taxon".
+
+Removing the logic in `process_worms.py` to trim "[unassigned]" off
+beginning of names.
+
+The meaning now sounds similar to _incertae sedis_, so adding
+'unassigned' to incertae_sedisRegex in Taxonomy.java as another way to
+express _incertae sedis_.
+
+### Bad interaction between id= and synonym_of
+
+    ** gbif-11 seemed to accept synonym_of(taxon('None', id=8101279), taxon('Rotalia', 'Foraminifera'), synonym, otc:50), but we couldn't confirm
+
+Using ids in patches is generally a bad idea.  In this case, there is
+a test following the patch to make sure that the patch got made, and
+it's failing because the taxon can't be found under the name used to
+find it before the patch.
+
+This is definitely a tangle.  The two synonym patches are trying to
+get rid of redundant Rotalites records, converging on a single right
+one.  There is a list of these Rotalites records in the comments, but
+they're obsolete.
+
+As I remember, this patch is important, because without it, these
+records act as magnets for alignments of other sources later on.
+
+I checked id 8101279 (Rotalites Lamarck, 1801) on the GBIF web site,
+and it seems has been removed, but it is still in the dump we're
+using, so we need to deal with it somehow.
+
+GBIF currently has a foram 8829867 with no authority.  Hmm.  See
+name-research.txt for an inventory.
+
+This may be a case where the v3 patch language is not precise enough
+to do the trick.  That's not inherent in v3.  My repair here is to
+revert to the v2 language and do the repair at a low level.
+
+    rotalia = gbif.taxon('Rotalia', 'Foraminifera')
+    foram = gbif.taxon('Foraminifera')
+    for lites in gbif.lookup('Rotalites'):
+        if lites.name == 'Rotalites' and lites.descendsFrom(foram):
+            rotalia.absorb(lites, 'proparte synonym', otc(49))
+    # Blow away distracting synonym
+    foram.notCalled('Rotalites')
+
+Ugly, but I don't see how else to do it given that there are multiple
+GBIF records that are difficult to distinguish, and with volatile
+record ids and placement.
+
+### Problems with edits/ v1 patches
+
+Skipping for now.
+
+### Quiscalus
+
+    ott.taxon('Icteridae').take(ott.taxon('Quiscalus', 'Fringillidae'))
+    ** No such taxon: Quiscalus in Fringillidae (ott)
+
+The change has been effected in some source.  We can either delete the
+patch or make it more robust.  This might be a good place to use
+`taxonThatContains` instead of `taxon`.
+
+    ott.taxon('Icteridae').take(ott.taxonThatContains('Quiscalus', 'Quiscalus mexicanus'))
+
+### Chlamydotomus
+
+What a headache.  There are extensive comments in adjustments.py.
+
+    ** No such taxon: Chlamydotomus containing Chlamydotomus beigelii (ott)
+
+I think I would just disable the patch.  Too fussy.
+
+
+### Oxymonadida gone
+
+What happened to Oxymonadida ?
+
+    https://groups.google.com/d/msg/opentreeoflife/a69fdC-N6pY/y9QLqdqACawJ
+
+    ** No such taxon: Oxymonadida in Eukaryota (ott)
+
+    tax = ott.taxonThatContains('Excavata', 'Euglena')
+    if tax != None:
+        tax.take(ott.taxon('Oxymonadida','Eukaryota'))
+
+In the OTT 3.0 browser, it shows up as a barren order, deep in Excavata (parent Trimastix).
+So something is already wrong.
+
+Oxymonadidae, a child of Oxymonadida according to Wikipedia, is a
+sister in OTT 3.0.  It looks as if Wikipia Oxymonadidae is pretty much
+the same as Trimastix (which everyone has).
+
+Since Laura and Dail don't give references, and I don't want to do a
+lot of research, and I'm guessing that SILVA and NCBI are in good
+shape now (the email preceds our adoption of SILVA), I think it's best
+to just delete (or comment out) this patch.
+
+### No taxon found in ott with this name or id: Araripia
+
+    ara = ott.taxon('Araripia')
+    ** No taxon found in ott with this name or id: Araripia
+
+This is just a dumb mistake.  That should be maybeTaxon.
+
+    ara = ott.maybeTaxon('Araripia')
+    if ara != None: ara.extinct()
+
+### Couldn't confirm
+
+    ** union seemed to accept synonym_of(taxon('Cyrto-Hypnum lepidoziaceum'), taxon('Cyrto-hypnum lepidoziaceum'), spelling variant, otc:26), but we couldn't confirm
+    ** union seemed to accept synonym_of(taxon('Cyrto-Hypnum brachythecium'), taxon('Cyrto-hypnum brachythecium'), spelling variant, otc:35), but we couldn't confirm
+
+Working on this, haven't figured it out yet.
+
+### Name is x, but expected y
+
+    ** ncbi:730 name is [Haemophilus] ducreyi, but expected Haemophilus ducreyi
+    ** ncbi:738 name is [Haemophilus] parasuis, but expected Haemophilus parasuis
+    ** ncbi:40520 name is Blautia obeum, but expected [Ruminococcus] obeum
+
+This is due to a bit of extra checking in some ad hoc id assignment
+logic.  These warnings are all benign.  The fix is to change these from
+double-`*` messages to single-`*` messages.
+
+### No taxon found in ott with this name or id
+
+    ** No taxon found in ott with this name or id: Cyrto-Hypnum lepidoziaceum
+    ** No taxon found in ott with this name or id: Cyrto-hypnum lepidoziaceum
+    ** union seemed to enact synonym_of(taxon('Cyrto-Hypnum lepidoziaceum'), taxon('Cyrto-hypnum lepidoziaceum'), spelling variant, otc:26), but we couldn't confirm (None)
+    ** No taxon found in ott with this name or id: Cyrto-Hypnum brachythecium
+    ** No taxon found in ott with this name or id: Cyrto-hypnum brachythecium
+    ** union seemed to enact synonym_of(taxon('Cyrto-Hypnum brachythecium'), taxon('Cyrto-hypnum brachythecium'), spelling variant, otc:35), but we couldn't confirm (None)
+
+These names are gone from the sources and the taxonomy, so they don't
+matter.  To make the errors go away, delete the patches (or comment
+them out - in case the problem returns later on).
 
 ## Testing
 

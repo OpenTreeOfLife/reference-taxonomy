@@ -34,6 +34,7 @@ public class Rank {
 		 "subclass",
 		 "infraclass",
          "subterclass",         // worms Colobognatha
+         "cohort",              // NCBI Polyneoptera
 		 "superorder"},
 		{"order",
 		 "suborder",

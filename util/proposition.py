@@ -1,18 +1,26 @@
 # Propositions about taxonomies - for use as a 'patch language'
 
 from org.opentreeoflife.taxa import Rank
+import sys
 
 # A different false value, used here to mean "I don't know"
 Dunno = None
 
 def proclaim(tax, prop):        # called make_claim in claim.py
     attitude1 = prop.proclaim(tax, True)
-    attitude2 = prop.check(tax, not attitude1)
-    if attitude2:
-        return attitude2
-    elif attitude1:
-        print ('** %s seemed to accept %s, but we couldn\'t confirm' %
-               (tax.getTag(), prop.stringify()))
+    if attitude1:
+        attitude2 = prop.check(tax, True)
+        if not attitude2:
+            print >>sys.stderr, \
+                  ('** %s seemed to enact %s, but we couldn\'t confirm (%s)' %
+                   (tax.getTag(), prop.stringify(), attitude2))
+    else:
+        # errors have already been reported
+        attitude2 = prop.check(tax, False)
+        if attitude2:
+            print >>sys.stderr, \
+                  ('** %s seemed to fail (%s %s), but we couldn\'t confirm' %
+                   (tax.getTag(), prop.stringify(), attitude1))
     return attitude2
 
 def taxon(name=None, ancestor=None, descendant=None, id=None):
@@ -28,7 +36,8 @@ class _Designator:
         if self.id != None:
             result = taxonomy.lookupId(self.id)
             if result == None and windy:
-                print '** id does not resolve' % self.id
+                print >>sys.stderr, \
+                      '** id does not resolve' % self.id
         else:
             result = taxonomy.taxon(self.name, self.ancestor, self.descendant, windy)
         return result
@@ -81,14 +90,17 @@ class _Has_parent:
             return False
         elif c.parent == p:
             return True
-        elif c.descendsFrom(p):
+        else:
+            if c.descendsFrom(p) and windy:
+                print ('* Losing information by moving %s to shallower location (%s)' %
+                       (c.name, p.name))
             c.changeParent(p)
             return True
     def stringify(self):
-        return ('has_parent(%s, %s, %s, %s)' %
-                self.child.stringify(),
-                self.parent.stringify(),
-                self.qid)
+        return ('has_parent(%s, %s, %s)' %
+                (self.child.stringify(),
+                 self.parent.stringify(),
+                 self.qid))
 
 # This is mainly for objective synonyms. proparte and subjective don't really work.
 # Still pretty ugly, but should work for current OTT purposes.
@@ -98,8 +110,8 @@ def synonym_of(syn, pri, kind, qid):
 
 class _Synonym_of:
     def __init__(self, syn, pri, kind, qid):
-        if syn == None: print '** Missing synonym taxon', qid
-        if pri == None: print '** Missing primary taxon', qid
+        if syn == None: print >>sys.stderr, '** Missing synonym taxon', qid
+        if pri == None: print >>sys.stderr, '** Missing primary taxon', qid
         self.synonym = syn
         self.primary = pri
         self.kind = kind
@@ -113,12 +125,13 @@ class _Synonym_of:
             return Dunno
         elif p.name == self.synonym.name:
             if windy:
-                print ('** Warning: %s is primary, not synonym, of %s' %
+                print >>sys.stderr, \
+                      ('** Warning: %s is primary, not synonym, of %s' %
                        (self.synonym.name, p))
             return False
         elif p != s:
             if windy:
-                print '** no synonymy'
+                print >>sys.stderr, '** no synonymy'
             return False
         else: 
             return True
@@ -127,11 +140,12 @@ class _Synonym_of:
         p = self.primary.resolve_in(tax, False)
         # OK this is tricky.  Nodes p and s have have their own names,
         # as do the designators self.primary and self.synonym.
-        # This primary objective is for node p to have self.synonym as a synonym.
+        # The primary objective is for node p to have self.synonym as a synonym.
         if p == None:
             if s == None:
                 if windy:
-                    print ('** Cannot make %s a synonym of %s - neither resolves in %s' %
+                    print >>sys.stderr, \
+                          ('** Cannot make %s a synonym of %s - neither resolves in %s' %
                            (self.synonym.name, self.primary.name, tax.getTag()))
                 return Dunno
             else:
@@ -143,7 +157,7 @@ class _Synonym_of:
             if synname == None and s != None:
                 synname = s.name
             if synname == None:
-                print '** no synonym name supplied'
+                print >>sys.stderr, '** no synonym name supplied'
 
             # We don't care what p's name is, so long as it isn't
             # synonym.name.  First rule out that case.
@@ -186,11 +200,11 @@ class _Alias_of:
             return False
         elif p != s:
             if windy:
-                print '** no alias'
+                print >>sys.stderr, '** no alias'
             return False
         elif p.id != self.primary.id:
             if windy:
-                print '** id of %s is not %s' % (p, self.primary.id)
+                print >>sys.stderr, '** id of %s is not %s' % (p, self.primary.id)
             return False
         else: 
             return True
@@ -214,7 +228,8 @@ class _Alias_of:
             return True
         else:
             if windy:
-                print ('** Cannot claim %s alias of %s - neither resolves in %s' %
+                print >>sys.stderr, \
+                      ('** Cannot claim %s alias of %s - neither resolves in %s' %
                        (self.alias.name, self.primary.name, tax.getTag()))
             return False
     def stringify(self):
@@ -282,7 +297,7 @@ class _Has_rank:
         self.rank = Rank.getRank(rank)
         self.qid = qid
         if self.rank == None:
-            print '** Unrecognized rank:', rank
+            print >>sys.stderr, '** Unrecognized rank:', rank
     def check(self, tax, windy):
         t = self.taxon.resolve_in(tax, windy)
         if t == None:
@@ -290,7 +305,7 @@ class _Has_rank:
         else:
             if t.rank != self.rank:
                 if windy:
-                    print '** Wrong rank'
+                    print >>sys.stderr, '** Wrong rank'
                 return False
             else:
                 return True

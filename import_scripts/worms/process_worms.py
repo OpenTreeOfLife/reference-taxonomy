@@ -41,11 +41,13 @@ def process_worms(digest_path, out_path):
     synpath = os.path.join(out_path, 'synonyms.tsv')
     print 'writing %s synonyms to %s' % (len(synonyms), synpath)
     with open(synpath + '.new', 'w') as synfile:
-        form = '%s\t%s\t%s\n'
-        synfile.write(form % ('uid', 'name', 'sid'))
+        form = '%s\t%s\t%s\t%s\n'
+        synfile.write(form % ('uid', 'name', 'type', 'sid'))
         for synonym in sorted(synonyms.values(), key=lambda synonym: int(synonym[0])):
             synfile.write(form % synonym)
     os.rename(synpath + '.new', synpath)
+	# The reasons are very interesting, but not to the average OTT builder
+    # print 'unaccept_reasons', sorted(unaccept_reasons.values())
 
 def suppress(taxon):
     # (id, parent_id, name, rank, flags) = taxon
@@ -104,7 +106,33 @@ def process_records(inpath):
                 if taxon != None:
                     taxa[id] = taxon
             elif valid_id != '':
-                synonyms[id] = (valid_id, name, id)
+                # synonym, original combination, original rank as subgenus
+                unaccept_reason = row[5].strip()
+                lower = unaccept_reason.lower()
+                if 'invalid' in lower:
+                    typ = 'invalid'
+                elif 'objective synonym' in lower:
+                    typ = 'objective synonym'
+                elif 'transferred' in lower:
+                    typ = 'objective synonym'
+                elif 'subjective synonym' in lower:
+                    typ = 'subjective synonym'
+                elif lower.startswith('type species'):
+                    typ = 'objective synonym'
+                elif 'spelling' in lower:
+                    typ = 'misspelling'
+                elif 'incorrect' in lower:
+                    typ = 'misspelling'
+                elif 'gender' in lower:
+                    typ = 'gender variant'
+                elif len(unaccept_reason) > 20:
+                    typ = 'long story'
+                else:
+                    typ = unaccept_reason
+                    unaccept_reasons[lower] = unaccept_reason
+                synonyms[id] = (valid_id, name, typ, id)
+
+unaccept_reasons = {}
 
 def record_to_taxon(row, rank, name):
     id = row[0]
@@ -136,11 +164,11 @@ def record_to_taxon(row, rank, name):
         others.append(taxon)
     return taxon
 
-unassigned = '[unassigned] '
+#unassigned = '[unassigned] '
 
 def fix_name(name, rank):
-    if name.startswith(unassigned):
-        name = name[len(unassigned):]
+    #if name.startswith(unassigned):
+    #    name = name[len(unassigned):]
     m = sub.match(name)
     if m != None:
         # Four cases:

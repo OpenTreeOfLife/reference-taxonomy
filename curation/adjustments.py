@@ -30,7 +30,7 @@ def deal_with_polysemies(ott):
     # Diatom.  Contains e.g. Ctenophora pulchella.
     establish('Ctenophora', ott, ancestor='Bacillariophyta', ott_id='103964')
 
-    # The comb jelly should already be in separation, but include the code for symmetry.
+    # The comb jellies should already be in separation, but include the code for symmetry.
     # Contains e.g. Leucothea multicornis
     establish('Ctenophora', ott, parent='Metazoa', ott_id='641212')
 
@@ -295,6 +295,10 @@ def adjust_h2007(h2007):
     # h2007/if synonym https://github.com/OpenTreeOfLife/reference-taxonomy/issues/40
     h2007.taxon('Urocystales').synonym('Urocystidales')
 
+    for t in h2007.taxa():
+        if t.name != None and t.name.endswith('ales') and t.rank == Rank.NO_RANK:
+            t.setRank('order')
+
     return h2007
 
 # Index Fungorum
@@ -479,22 +483,6 @@ def patch_fung(fung):
 def link_to_h2007(tax):
     print '-- Putting families in Hibbett 2007 orders --'
     # 2014-04-13 Romina #40, #60
-    for (order_name, family_names) in \
-        [('Neozygitales', ['Neozygitaceae']),
-         ('Asterinales', ['Asterinaceae']),
-         ('Savoryellales', ['Savoryella', 'Ascotaiwania', 'Ascothailandia']), 
-         ('Cladochytriales', ['Cladochytriaceae', 'Nowakowskiellaceae', 'Septochytriaceae', 'Endochytriaceae']),
-         ('Jaapiales', ['Jaapiaceae']),
-         ('Coniocybales', ['Coniocybaceae']),
-         ('Hyaloraphidiales', ['Hyaloraphidium']), # was Hyaloraphidiaceae, no such family
-         ('Mytilinidiales', ['Mytilinidiaceae', 'Gloniaceae']),
-        ]:
-        order = tax.maybeTaxon(order_name, 'Fungi')
-        if order != None:
-            for family in family_names:
-                order.take(tax.taxon(family, 'Fungi'))
-        else:
-            print '*** Missing fungal order', order_name
 
     # Stereopsidaceae = Stereopsis + Clavulicium
     s = tax.taxon('Stereopsidaceae', 'Fungi')
@@ -502,29 +490,73 @@ def link_to_h2007(tax):
     s.take(tax.taxon('Clavulicium', 'Agaricomycetes'))
     # Dangling node at this point, but will be attached below
 
+    establish('Moniliellaceae', tax, parent='Moniliellales',
+              division='Fungi', source='ncbi:1538067')
+    establish('Lepidostromataceae', tax, parent='Lepidostromatales',
+              division='Fungi', source='ncbi:579912')
+    # In OTT 3.0 and Index Fungorum, Trichotheliaceae is listed as a
+    # synonym for Porinaceae.  But it seems to be accepted in Mycobank, 
+    # and was given as accepted by Romina.
+    # Not sure how the two relate.
+
+    # To do next: put some genera in these families
+
+    # e.g. according to mycobank, Trichotheliaceae contains
+    # Actiniopsis, Actinopsis, Asteropeltis, Cryptopeltis,
+    # Ophiodictyon, Ophthalmidium, Phragmopeltheca, Phyllophiale,
+    # Polycornum, Sagedia, Segestrella, Sphaeromphale, Stephosia,
+    # Stereochlamydomyces, Stereochlamys, Stereoclamydomyces,
+    # Trichotheliomyces, Zamenhofia
+
     # 2015-07-13 Romina
-    h2007_fam = 'http://figshare.com/articles/Fungal_Classification_2015/1465038'
     for (family, order, sid) in \
-        [('Talbotiomyces calosporus', 'Talbotiomycetales', otc(3)),
+        [
+         ('Neozygitaceae', 'Neozygitales', None),
+         ('Asterinaceae', 'Asterinales', None),
+         ('Savoryella', 'Savoryellales', None), 
+         ('Ascotaiwania', 'Savoryellales', None), 
+         ('Ascothailandia', 'Savoryellales', None), 
+         ('Cladochytriaceae', 'Cladochytriales', None),
+         ('Nowakowskiellaceae', 'Cladochytriales', None),
+         ('Septochytriaceae', 'Cladochytriales', None),
+         ('Endochytriaceae', 'Cladochytriales', None),
+         ('Jaapiaceae', 'Jaapiales', None),
+         ('Coniocybaceae', 'Coniocybales', None),
+         # was Hyaloraphidiaceae, no such family - Hyaloraphidium is genus
+         ('Hyaloraphidium', 'Hyaloraphidiales', None),
+         ('Mytilinidiaceae', 'Mytilinidiales', None),
+         ('Gloniaceae', 'Mytilinidiales', None),
+
+         ('Talbotiomyces calosporus', 'Talbotiomycetales', otc(3)),
+         # Moniliellaceae = ncbi:1538067,gbif:8375337
          ('Moniliellaceae', 'Moniliellales', otc(4)),
          ('Malasseziaceae', 'Malasseziales', otc(5)),   # , 'Malassezia' - redundant
-         ('Trichotheliaceae', 'Trichotheliales', otc(6)),
+         # Trichotheliaceae missing, order barren  mb:81496
+         # Romina had: ('Trichotheliaceae', 'Trichotheliales', otc(6)),
+         ('Porinaceae', 'Trichotheliales', None),
          ('Myeloconidiaceae', 'Trichotheliales', otc(7)),
          ('Sporobolomyces ruberrimus', 'Trichosporonales', otc(8)),
          ('Holtermanniella', 'Holtermanniales', otc(9)),
+         # Lepidostromataceae = ncbi:579912,gbif:8295976
          ('Lepidostromataceae', 'Lepidostromatales', otc(10)),
          ('Atheliaceae', 'Atheliales', otc(11)),
+         # why is Stereopsidales childless?
          ('Stereopsidaceae', 'Stereopsidales', otc(12)),
          ('Septobasidiaceae', 'Septobasidiales', otc(13)),
+         # why is Symbiotaphrinales barren?
          ('Symbiotaphrina', 'Symbiotaphrinales', otc(14)),
+         # why is Caliciales barren?
          ('Sphaerophoraceae', 'Caliciales', otc(15)),
          ('Sarrameanaceae', 'Sarrameanales', otc(16)),
          ('Trapeliaceae', 'Trapeliales', otc(17)),
          ('Halosphaeriaceae', 'Halosphaeriales', otc(18)),
          ('Abrothallus', 'Abrothallales', otc(19)),
          ('Arctomiaceae', 'Arctomiales', otc(20)),
+         # why is Hymeneliales barren?
+         # Possible casualty of changes to merge method?
          ('Hymeneliaceae', 'Hymeneliales', otc(21)),
          ('Leprocaulaceae', 'Leprocaulales', otc(22)),
+         # why is Loxosporales barren?
          ('Loxospora', 'Loxosporales', otc(23)),  #Hodkinson and Lendemer 2011
          ]:
         proclaim(tax, has_parent(taxon(family), taxon(order), sid))
@@ -845,7 +877,7 @@ def patch_ncbi(ncbi):
     ncbi.taxon('Choanoflagellida', 'Opisthokonta').notCalled('Choanozoa')
 
     # https://github.com/OpenTreeOfLife/feedback/issues/281
-    ncbi.taxon('Equisetopsida', 'Moniliformopses').take(ncbi.taxon('Equisetidae', 'Moniliformopses'))
+    # ncbi.taxon('Equisetopsida', 'Moniliformopses').take(ncbi.taxon('Equisetidae', 'Moniliformopses'))
 
     # https://github.com/OpenTreeOfLife/feedback/issues/278
     # NCBI Pinidae = Coniferales = Wikipedia Pinophyta = Coniferophyta
@@ -1069,10 +1101,12 @@ def align_gbif(gbif, ott):
     #              ott.taxon('Tetrasphaera', 'Intrasporangiaceae')) # = Tetrasphaera in Protozoa
     
     # Rick Ree 2014-03-28 https://github.com/OpenTreeOfLife/reference-taxonomy/issues/37
-    # CHECK - was ncbi.taxon
+    # ### CHECK - was ncbi.taxon
     # a.same(gbif.taxon('Calothrix', 'Rivulariaceae'), ott.taxon('Calothrix', 'Rivulariaceae'))
-    a.same(gbif.taxon('Chlorella', 'Chlorellaceae'), ott.taxon('Chlorella', 'Chlorellaceae'))
-    a.same(gbif.taxon('Myrmecia', 'Microthamniales'), ott.taxon('Myrmecia', 'Microthamniales'))
+    a.same(gbif.taxon('Chlorella', 'Chlorellaceae'),
+           ott.taxon('Chlorella', 'Chlorellaceae'))
+    a.same(gbif.taxonThatContains('Myrmecia', 'Myrmecia irregularis'),
+           ott.taxonThatContains('Myrmecia', 'Myrmecia irregularis'))
 
     # JAR 2014-04-18 attempt to resolve ambiguous alignment of
     # Trichosporon in IF and GBIF based on common member
@@ -1090,8 +1124,8 @@ def align_gbif(gbif, ott):
     
     # JAR 2014-04-23 IF update fallout
     # - CHECK - was ncbi.taxon
-    a.same(gbif.taxonThatContains('Penicillium', 'Penicillium expansum'),
-           ott.taxonThatContains('Penicillium', 'Penicillium expansum'))
+    a.same(gbif.taxonThatContains('Penicillium', 'Penicillium salamii'),
+           ott.taxonThatContains('Penicillium', 'Penicillium salamii'))
 
     # https://github.com/OpenTreeOfLife/feedback/issues/45
     if False:
@@ -1198,27 +1232,6 @@ def patch_gbif(gbif):
     # gbif.taxon('Chryso-hypnum').absorb(gbif.taxon('Chryso-Hypnum'))
     # gbif.taxon('Complanato-Hypnum').rename('Complanato-hypnum')
     # gbif.taxon('Leptorrhyncho-Hypnum').rename('Leptorrhyncho-hypnum')
-
-    # 2014-04-21 RR
-    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/45
-    for (epithet, qid) in [('cylindraceum', otc(25)),
-                           ('lepidoziaceum', otc(26)),
-                           ('intermedium', otc(27)),
-                           ('espinosae', otc(28)),
-                           ('pseudoinvolvens', otc(29)),
-                           ('arzobispoae', otc(30)),
-                           ('sharpii', otc(31)),
-                           ('frontinoae', otc(32)),
-                           ('atlanticum', otc(33)),
-                           ('stevensii', otc(34)),
-                           ('brachythecium', otc(35)),
-                    ]:
-        prop = synonym_of(taxon('Cyrto-Hypnum ' + epithet),
-                          taxon('Cyrto-hypnum ' + epithet),
-                          'spelling variant',
-                          qid)
-        proclaim(gbif, prop)
-        # was gbif.taxon('Cyrto-hypnum ' + epithet).absorb(gbif.taxon('Cyrto-Hypnum ' + epithet))
 
     # wrong: gbif.taxon('Dinophyta').synonym('Dinophyceae')  # according to NCBI
     # these groups are missing from gbif 2016 anyhow
@@ -1393,9 +1406,9 @@ def patch_gbif(gbif):
     # OTT thinks Sarc. is inconsistent.  8 is a child of 
     # Chlamydophryidae -- which is in SAR!  So these two things are
     # actually the same.
-    proclaim(gbif, has_parent(taxon('Diaphoropodon', 'Sarcomastigophora'),
-                              taxon('Diaphoropodon', 'Foraminifera'),
-                              otc(48)))
+    # 2017-06-04 The one in Sarcomastigophora has been removed from GBIF online.
+    if gbif.maybeTaxon('Diaphoropodon', 'Sarcomastigophora') != None:
+        gbif.taxon('Diaphoropodon', 'Sarcomastigophora').prune(otc(48))
 
     # GBIF has two taxa Rotalites and two synonym Rotalites.  That
     # seems excessive.
@@ -1409,17 +1422,15 @@ def patch_gbif(gbif):
     # 7996474  parent 1 (! Animalia)
     # 8063968 parent 7475854 = Rotaliidae
     # Let's make them all the same as 8063968.
-    proclaim(gbif, has_parent(taxon('Rotalites', 'Foraminifera'),
-                              taxon('Rotalia', 'Foraminifera'),
-                              otc(49)))
-    proclaim(gbif, synonym_of(taxon(id='8101279'),
-                              taxon('Rotalia', 'Foraminifera'),
-                              'synonym',  # spelling variant?
-                              otc(50)))
-    proclaim(gbif, synonym_of(taxon(id='7996474'),
-                              taxon('Rotalia', 'Foraminifera'),
-                              'synonym',  # ?
-                              otc(51)))
+    rotalia = gbif.taxon('Rotalia', 'Foraminifera')
+    foram = gbif.taxon('Foraminifera')
+    for lites in [r for r in gbif.lookup('Rotalites')]:
+        if (lites.name == 'Rotalites' and
+            lites.taxon() == lites and
+            lites.descendsFrom(foram)):
+            rotalia.absorb(lites, 'proparte synonym', otc(49))
+    # Blow away distracting synonym
+    foram.notCalled('Rotalites')
 
     # Similar cases (probably): (from Chromista spreadsheet ambiguities)
     # Umbellina, Rotalina
@@ -1443,7 +1454,8 @@ def align_worms(worms, ott):
     a = ott.alignment(worms)
 
     # First get the divisions right
-    a.same(worms.taxon('Biota'), ott.taxon('life'))
+    if worms.maybeTaxon('Biota') != None:
+        a.same(worms.taxon('Biota'), ott.taxon('life'))
     a.same(worms.taxon('Animalia'), ott.taxon('Metazoa'))
 
     ott.setDivision(worms.taxon('Chromista'), 'Eukaryota')

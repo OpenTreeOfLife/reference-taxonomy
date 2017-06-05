@@ -967,6 +967,7 @@ public abstract class Taxonomy {
                         "\\b[Ii]ncertae[Ss]edis\\b|" +
 						"\\b[Uu]nallocated\\b|" +
 						"\\b[Uu]nclassified\\b|" +
+						"\\bunassigned\\b|" +    // WoRMS has 35 of these
                         "\\b[Mm]itosporic\\b");
 
     // ----- SELECTIONS -----

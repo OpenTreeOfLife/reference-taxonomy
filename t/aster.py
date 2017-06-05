@@ -5,7 +5,7 @@ from org.opentreeoflife.taxa import Taxonomy
 from org.opentreeoflife.taxa import TsvEdits, Addition, CSVReader, QualifiedId
 from org.opentreeoflife.smasher import UnionTaxonomy
 from java.io import FileReader
-from claim import Has_child
+from proposition import *
 
 def assemble():
 
@@ -46,12 +46,12 @@ def assemble():
     # "Old" patch system with tab-delimited files
     TsvEdits.edit(tax, 't/edits/')
 
-    claims = [
-        Has_child('Asterales', 'Phellinaceae')
+    props = [
+        has_parent(taxon('Phellinaceae'), taxon('Asterales'), 'test:1')
     ]
 
-    for claim in claims:
-        print claim.check(tax)
+    for prop in props:
+        print proclaim(tax, prop)
 
     gen = tax.newTaxon("Opentreeia", "genus", "data:testing")
     gen.take(tax.newTaxon("Opentreeia sp. C", "species", "data:testing"))

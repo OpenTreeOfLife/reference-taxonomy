@@ -493,7 +493,6 @@ r/eol-HEAD/resource/eol-mappings.csv: r/eol-HEAD/source/.made \
 # some screwy javascript that seems to require manual operation.
 
 refresh/eol: r/eol-NEW/source/.made
-	d=`gdate +"%Y%m%d"`; bin/put eol-NEW date $$d && bin/put eol-NEW version $$d
 	bin/christen eol-NEW
 
 r/eol-NEW/source/.made: r/eol-NEW/source/digest.csv
@@ -503,12 +502,14 @@ r/eol-NEW/source/digest.csv: r/eol-NEW
 	mkdir -p r/eol-NEW/work
 	@([ -e r/eol-NEW/work/identifiers.csv.gz ] || \
 	  (echo "** Please download the EOL identifiers file"; \
-	   echo "** and place it in r/eol-NEW/work/identifiers.csv.gz."; \
+	   echo "** and place it at r/eol-NEW/work/identifiers.csv.gz."; \
 	   echo "** Visit this page: http://opendata.eol.org/dataset/identifiers"; \
 	   exit 1))
 	mkdir -p r/eol-NEW/source
 	gunzip -c r/eol-NEW/work/identifiers.csv.gz | grep ',596,\|,1172,\|,123,\|,1347,\|,800,' \
 	  > r/eol-NEW/source/digest.csv.new
+	d=`python util/modification_date.py r/eol-NEW/work/identifiers.csv.gz`; \
+	  bin/put eol-NEW date $$d && bin/put eol-NEW version $$d
 	mv r/eol-NEW/source/digest.csv.new r/eol-NEW/source/digest.csv
 
 r/eol-NEW:

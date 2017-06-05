@@ -289,7 +289,7 @@ def patch_ott(ott):
     # 2014-04-21 RR
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/45
     for (epithet, qid) in [('cylindraceum', otc(25)),
-                           ('lepidoziaceum', otc(26)),
+                           # ('lepidoziaceum', otc(26)), vanished
                            ('intermedium', otc(27)),
                            ('espinosae', otc(28)),
                            ('pseudoinvolvens', otc(29)),
@@ -298,7 +298,7 @@ def patch_ott(ott):
                            ('frontinoae', otc(32)),
                            ('atlanticum', otc(33)),
                            ('stevensii', otc(34)),
-                           ('brachythecium', otc(35)),
+                           # ('brachythecium', otc(35)), vanished
                     ]:
         prop = synonym_of(taxon('Cyrto-Hypnum ' + epithet),
                           taxon('Cyrto-hypnum ' + epithet),

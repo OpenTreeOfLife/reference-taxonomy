@@ -179,6 +179,28 @@ some nonsense previously in NCBI that has since been fixed.  So I
 think we can just delete this.  I've added some notes to
 doc/name-research.txt.
 
+### Latzelia
+
+An inclusion test can fail because of a newly introduced ambiguity.
+
+    ** More than one taxon named Latzelia is in Myriapoda
+       [(Glomeridella 146027=ncbi:1173033+8), (Haplogona 3516350=ncbi:1569519+6)]
+
+This resulted from a WoRMS refresh that included nonmarine taxa as
+well as marine ones.  The test (in inclusions.tsv) is:
+
+    Latzelia,Myriapoda,,"not to be confused with fungus (Epiphloea)"
+
+This one is odd in that there is no OTT id in the test.  Doing
+`bin/investigate Latzelia` gives a twisted story, where the name is a
+synonym for two different diplopod genera.  That suggests it's not
+really a synonym for these genera but rather a paraphyletic group.  In
+any case, rather than analyze this in detail, maybe it will work to
+just pick one of them, say the one in Glomerida, and update the test.
+That would be 146027 (Glomeridella).
+
+    Latzelia,Glomerida,146027,"not to be confused with fungus (Epiphloea)"
+
 
 ## New rank
 
@@ -322,48 +344,6 @@ salamii_.  That's also in NCBI, so let's use it.
     a.same(gbif.taxonThatContains('Penicillium', 'Penicillium salamii'),
            ott.taxonThatContains('Penicillium', 'Penicillium salamii'))
 
-### Hibbett 2007 not connected
-
-    ** Barren taxon from h2007 Trichotheliales
-    ** Barren taxon from h2007 Stereopsidales
-    ** Barren taxon from h2007 Symbiotaphrinales
-    ** Barren taxon from h2007 Caliciales
-    ** Barren taxon from h2007 Hymeneliales
-    ** Barren taxon from h2007 Loxosporales        
-
-Well this sure is annoying.  These errors didn't occur in the 3.0
-assembly.
-
-In 3.0, Trichotheliales (5291461) isn't barren - it contains
-Myeloconidiaceae (5343002) and Porinaceae (877952).  But these
-children have moved somehow.  Doing `bin/lineage 5343002
-r/ott-NEW/source/` in the draft shows M's parent as being Ostropales,
-which in h2007 is a sibling of Trichotheliales.  Trichotheliales is
-absent except as a synonym for Ostropales - which makes no sense,
-since h2007 has very high priority, just after SILVA in the assembly
-sequence.  There are no messages about it in transcript.out.  The link
-ought to be set in `link_to_h2007`, which is called at the end of
-assembly, after merging IRMNG:
-
-         ('Myeloconidiaceae', 'Trichotheliales', otc(7)),
-
-Using `bin/investigate Trichotheliales` (after reparing a bug in it)
-one sees that NCBI Taxonomy has Trichotheliales as a proparte
-('includes') synonym for Ostropales.
-
-This still doesn't make sense, since h2007 is higher priority than
-NCBI.  Any taxon in h2007 ought to be a taxon in OTT - never
-overridden by NCBI.
-
-choices.tsv shows a lot of `noinfo/target-no-children'.  Looking that
-up in AlignmentByName.java to find out what that means:
-
-What changed from 3.0 to 3.1: Maybe it's because I moved these family
-placement directives, in an attempt to tidy up the code, thinking that
-would make no difference.  I'll try moving the `link_to_h2007` call up
-to just following the IF load.  There are cleaner, more robust ways to
-do this but they are more involved.
-
 ### Pulmonata ambiguous
 
     ** Ambiguous taxon name: Pulmonata (ott)
@@ -502,6 +482,18 @@ This is due to a bit of extra checking in some ad hoc id assignment
 logic.  These warnings are all benign.  The fix is to change these from
 double-`*` messages to single-`*` messages.
 
+### No taxon found in ott with this name or id
+
+    ** No taxon found in ott with this name or id: Cyrto-Hypnum lepidoziaceum
+    ** No taxon found in ott with this name or id: Cyrto-hypnum lepidoziaceum
+    ** union seemed to enact synonym_of(taxon('Cyrto-Hypnum lepidoziaceum'), taxon('Cyrto-hypnum lepidoziaceum'), spelling variant, otc:26), but we couldn't confirm (None)
+    ** No taxon found in ott with this name or id: Cyrto-Hypnum brachythecium
+    ** No taxon found in ott with this name or id: Cyrto-hypnum brachythecium
+    ** union seemed to enact synonym_of(taxon('Cyrto-Hypnum brachythecium'), taxon('Cyrto-hypnum brachythecium'), spelling variant, otc:35), but we couldn't confirm (None)
+
+These names are gone from the sources and the taxonomy, so they don't
+matter.  To make the errors go away, delete the patches (or comment
+them out - in case the problem returns later on).
 
 ## Testing
 

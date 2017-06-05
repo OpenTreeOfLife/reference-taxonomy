@@ -213,20 +213,6 @@
     "filename": "study713-20140118.tsv"
   }, 
   {
-    "===": "Received from Tony Rees, personal communication.", 
-    "_type": "capture", 
-    "name": "irmng-20140131", 
-    "retrieved_from": "http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip", 
-    "bytes": 111780936, 
-    "legal": "handoff", 
-    "filename": "irmng-20140131.zip", 
-    "_archivable": false, 
-    "last_modified": "2014-01-31", 
-    "capture_of": "irmng", 
-    "date": "2014-01-31", 
-    "label": "20140131"
-  }, 
-  {
     "===": "taxonomy.tsv is 12808188 bytes", 
     "_type": "capture", 
     "name": "fung-1", 
@@ -236,6 +222,18 @@
     "capture_of": "fung", 
     "date": "2014-01-30", 
     "filename": "fung-1-ot.tgz"
+  }, 
+  {
+    "_type": "capture", 
+    "name": "irmng-20140131", 
+    "retrieved_from": "http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip", 
+    "bytes": 111780936, 
+    "legal": "public", 
+    "filename": "irmng-20140131.zip", 
+    "last_modified": "2014-01-31", 
+    "capture_of": "irmng", 
+    "date": "2014-01-31", 
+    "label": "20140131"
   }, 
   {
     "===": "Romina Gazis / publication date 2014-02-11 - First use in OTT was version 2 in OTT 2.4 on 2014-03-17 (also 2.5-2.8)", 
@@ -662,6 +660,8 @@
       "irmng": "irmng-ot-20161108", 
       "worms": "worms-1", 
       "if": "fung-9", 
+      "h2007": "h2007-2015-v4", 
+      "study713": "study713-20140721", 
       "idlist": "idlist-20161118",
       "ott": "ott2.10"
     }, 

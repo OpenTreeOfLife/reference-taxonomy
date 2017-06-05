@@ -1406,9 +1406,8 @@ def patch_gbif(gbif):
     # OTT thinks Sarc. is inconsistent.  8 is a child of 
     # Chlamydophryidae -- which is in SAR!  So these two things are
     # actually the same.
-    proclaim(gbif, has_parent(taxon('Diaphoropodon', 'Sarcomastigophora'),
-                              taxon('Diaphoropodon', 'Foraminifera'),
-                              otc(48)))
+    if gbif.maybeTaxon('Diaphoropodon', 'Sarcomastigophora') != None:
+        gbif.taxon('Diaphoropodon', 'Sarcomastigophora').prune(otc(48))
 
     # GBIF has two taxa Rotalites and two synonym Rotalites.  That
     # seems excessive.

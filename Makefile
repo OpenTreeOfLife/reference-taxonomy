@@ -473,6 +473,33 @@ r/irmng-NEW:
 	bin/new-version irmng .zip public
 	bin/put ott-NEW ott_idspace irmng
 
+# --- Source: EOL page ids
+
+# From Yan Wong:
+#  ((('ncbi', 1172), ('if', 596), ('worms', 123), ('irmng', 1347), ('gbif', 800)))
+
+# Haven't figure out how to automate the download yet.  The site uses
+# some screwy javascript that seems to require manual operation.
+
+refresh/eol: r/eol-NEW/source/digest.csv
+	d=`gdate +"%Y%m%d"`; bin/put eol-NEW date $$d && bin/put eol-NEW version $$d
+	bin/christen eol-NEW
+
+r/eol-NEW/source/digest.csv: r/eol-NEW
+	mkdir -p r/eol-NEW/work
+	@([ -e r/eol-NEW/work/identifiers.csv.gz ] || \
+	  (echo "** Please download the EOL identifiers file"; \
+	   echo "** and place it in r/eol-NEW/work/identifiers.csv.gz."; \
+	   echo "** Visit this page: http://opendata.eol.org/dataset/identifiers"; \
+	   exit 1))
+	mkdir -p r/eol-NEW/source
+	gunzip -c r/eol-NEW/work/identifiers.csv.gz | grep ',596,\|,1172,\|,123,\|,1347,\|,800,' \
+	  > r/eol-NEW/source/digest.csv.new
+	mv r/eol-NEW/source/digest.csv.new r/eol-NEW/source/digest.csv
+
+r/eol-NEW:
+	bin/new-version eol .tgz public
+
 # --- Source: Open Tree curated amendments
 
 # Note, no dependence on /source/.

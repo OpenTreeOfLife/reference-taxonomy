@@ -293,8 +293,14 @@ public abstract class Taxonomy {
 	}
 
     public void startQidIndex() {
-        this.qidIndex = new HashMap<QualifiedId, Node>();
-        this.qidAmbiguous = new HashSet<QualifiedId>();
+        if (this.qidIndex == null) {
+            this.qidIndex = new HashMap<QualifiedId, Node>();
+            this.qidAmbiguous = new HashSet<QualifiedId>();
+            for (Taxon node : this.taxa())
+                if (node.sourceIds != null)
+                    for (QualifiedId qid : node.sourceIds)
+                        indexByQid(node, qid);
+        }
     }
 
     public Node lookupQid(QualifiedId qid) {

@@ -113,6 +113,12 @@ r/ott-NEW/source: r/ott-HEAD/resource/.made
 r/ott-HEAD/resource/.made: r/ott-HEAD/source/.made
 	(cd r/ott-HEAD && rm -f resource && ln -s source resource)
 
+# kludge - it's set as a dependency in properties.json, but doesn't live in r/
+# (needed for idlist)
+r/h2007-HEAD/resource/.made:
+
+r/study713-HEAD/resource/.made:
+
 
 # ----- Taxonomy sources
 

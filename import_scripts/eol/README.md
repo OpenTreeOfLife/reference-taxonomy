@@ -34,4 +34,34 @@ propinquity, whatever service is responsible for providing the EOL ids
 to the web application.  This would of course require changes to that
 service.  (And changes to the webapp would be needed regardless.)
 
-Thanks to Yan Wang for help in getting this going.
+## Try it out
+
+Retrieve some OTT version, or make a new one.  To retrieve ott3.0:
+
+    bin/configure ott3.1 ott3.0    #Needed to make 'make' happy
+    bin/use-version ott3.0         #or 3.1, etc.
+
+To build a new OTT, see the [release documentation](../../doc/maintenance/new-release.md).
+
+Then, to make the OTT/EOL mapping:
+
+    bin/use-version eol-20170324
+    make r/eol-HEAD/resource/.made
+    make bin/jython
+    bin/jython util/load_eol_page_ids.py
+    bin/jython util/load_eol_page_ids.py r/ott-HEAD/source/ \ 
+               r/eol-NEW/resource/eol-mappings.csv ott2eol.csv ereport.csv
+
+That would be `ott-NEW` instead of `ott-HEAD` if you did `make ott`.
+
+The above sequence generates two files (call them whatever you like):
+
+1. `ott2eol.csv` has a column for OTT is and a column for EOL page id
+2. `ereport.csv` gives pairs of source records (from worms, irmng, or gbif)
+   that have distinct OTT ids but the same EOL page id.  That is,
+   EOL thinks these things are the same, but OTT
+   thinks they're different.
+
+## Acknowledgment
+
+Thanks to Yan Wang for help in getting this going ([reference-taxonomy issue 114](https://github.com/OpenTreeOfLife/reference-taxonomy/issues/114)).

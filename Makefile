@@ -737,7 +737,7 @@ bin/jython:
 	(echo "#!/bin/bash"; \
 	 echo "export JYTHONPATH=.:$$PWD:$$PWD/util:$$PWD/lib/json-simple-1.1.1.jar"; \
 	 echo '[ "x$$JAVAFLAGS" = x ] && JAVAFLAGS="$(JAVAFLAGS)"'; \
-	 echo exec java '"$$JAVAFLAGS"' -jar $$PWD/lib/jython-standalone-2.7.0.jar '$$*') >$@
+	 echo exec java '$$JAVAFLAGS' -jar $$PWD/lib/jython-standalone-2.7.0.jar '$$*') >$@
 	chmod +x $@
 
 # Script to start up the background daemon

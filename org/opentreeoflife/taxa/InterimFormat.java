@@ -37,16 +37,6 @@ public class InterimFormat {
 
     Taxonomy tax;
 
-    Integer idcolumn = 0;
-    Integer parentcolumn = null;
-    Integer namecolumn = null;
-    Integer rankcolumn = null;
-
-	Integer sourcecolumn = null;
-	Integer sourceidcolumn = null;
-	Integer infocolumn = null;
-	Integer flagscolumn = null;
-
     InterimFormat(Taxonomy tax) {
         this.tax = tax;
     }
@@ -139,107 +129,112 @@ public class InterimFormat {
         Pattern pat = null;
 		String suffix = null;	// Java loses somehow.  I don't get it
 
-		Map<Taxon, String> parentMap = new HashMap<Taxon, String>();
+        boolean headerProcessed = false;
+        int idcolumn = Integer.MAX_VALUE;
+        int parentcolumn = Integer.MAX_VALUE;
+        int namecolumn = Integer.MAX_VALUE;
+        int rankcolumn = Integer.MAX_VALUE;
+        int sourcecolumn = Integer.MAX_VALUE;
+        int sourceidcolumn = Integer.MAX_VALUE;
+        int infocolumn = Integer.MAX_VALUE;
+        int flagscolumn = Integer.MAX_VALUE;
 
 		while ((str = br.readLine()) != null) {
-            if (pat == null) {
-                String[] parts = tabOnly.split(str + "\t!");	 // Java loses
-                if (parts[1].equals("|")) {
-                    pat = tabVbarTab;
-					suffix = "\t|\t!";
-                } else {
-                    pat = tabOnly;
-					suffix = "\t!";
-				}
-            }
-			String[] parts = pat.split(str + suffix);	 // Java loses
-			if (parts.length < 3) {
-				System.out.println("Bad row: " + row + " has only " + parts.length + " parts");
-			} else {
-				if (namecolumn == null) {
-					if (parts[0].equals("uid")) {
-						Map<String, Integer> headerx = new HashMap<String, Integer>();
-						for (int i = 0; i < parts.length; ++i)
-							headerx.put(parts[i], i);
-						// id | parentid | name | rank | ...
-						tax.header = parts; // Stow it just in case...
-                        parentcolumn = headerx.get("parent_uid");
-                        namecolumn = headerx.get("name");
-                        rankcolumn = headerx.get("rank");
-					    sourcecolumn = headerx.get("source");
-						sourceidcolumn = headerx.get("sourceid");
-						infocolumn = headerx.get("sourceinfo");
-						flagscolumn = headerx.get("flags");
-						// preottolcolumn = headerx.get("preottol_id");
-                        if (parentcolumn == null || namecolumn == null)
-                            throw new RuntimeException("taxonomy header row missing parent_uid or name");
-						continue;
-                    } else {
-						System.out.println("! No header row - saw " + parts[0]);
-                        parentcolumn = 1;
-                        namecolumn = 2;
-                        rankcolumn = 3;
-                    }
-				}
-				String id = parts[idcolumn];
-				Taxon oldnode = tax.lookupId(id);
-				if (oldnode != null) {
-					System.err.format("** More than one row for this id: %s %s\n", id, oldnode.name);
-                } else if (parts.length <= 4) {
-                    System.err.format("** Too few columns in row: id = %s\n", id);
-                } else {
-                    String name = parts[namecolumn];
-					Taxon node = new Taxon(tax, name);
-                    initTaxon(node,
-                              id,
-                              name,
-                              (rankcolumn != null ? parts[rankcolumn] : ""),
-                              (flagscolumn != null ? parts[flagscolumn] : ""),
-                              parts);
 
-                    // Delay until after all ids are defined
-                    String parentId = parts[parentcolumn];
-                    if (parentId.equals("null") || parentId.equals("not found"))
-                        parentId = "";
-                    parentMap.put(node, parentId);
+            if (pat == null) {
+                if (str.contains("\t|\t"))
+                    pat = tabVbarTab;
+                else
+                    pat = tabOnly;
+            }
+
+			String[] parts = pat.split(str);
+
+            if (!headerProcessed) {
+                headerProcessed = true;
+                // First row in file.  Test it out as a potential
+                // header row.
+                Map<String, Integer> headerx = new HashMap<String, Integer>();
+                for (int i = 0; i < parts.length; ++i)
+                    headerx.put(parts[i], i);
+                Integer h = headerx.get("uid");
+                if (h == null) {
+                    System.out.println("! No header row - saw " + str);
+                    idcolumn = 0;
+                    parentcolumn = 1;
+                    namecolumn = 2;
+                    rankcolumn = 3;
+                } else {
+                    idcolumn = h;
+                    // uid | parentid | name | rank | ...
+                    h = headerx.get("parent_uid");
+                    if (h != null)
+                        parentcolumn = h;
+                    else
+                        throw new RuntimeException("taxonomy header missing parent_uid");
+                    h = headerx.get("name");
+                    if (h != null)
+                        namecolumn = h;
+                    else
+                        throw new RuntimeException("taxonomy header missing name");
+                    h = headerx.get("rank");
+                    if (h != null) rankcolumn = h;
+                    h = headerx.get("source");
+                    if (h != null) sourcecolumn = h;
+                    h = headerx.get("sourceid");
+                    if (h != null) sourceidcolumn = h;
+                    h = headerx.get("sourceinfo");
+                    if (h != null) infocolumn = h;
+                    h = headerx.get("flags");
+                    if (h != null) flagscolumn = h;
+                    continue;
                 }
             }
+
 			++row;
-			if (row % 500000 == 0)
-				System.out.println(row);
+			if (row % 250000 == 0) System.out.println(row);
+
+            int len = parts.length;
+            if (len < 3) {
+                System.err.format("** Too few columns in row: %s\n", str);
+                continue;
+            }
+
+            String id = parts[idcolumn];
+            if (id.length() == 0) {
+                System.err.format("** No id: %s\n", str);
+                continue;
+            }
+            String parentId = parts[parentcolumn];
+            String name = (namecolumn < len ? parts[namecolumn] : "");
+            String rank = (rankcolumn < len ? parts[rankcolumn] : "");
+            String flags = (flagscolumn < len ? parts[flagscolumn] : "");
+            String info = (infocolumn < len ? parts[infocolumn] : "");
+            String source = (sourcecolumn < len ? parts[sourcecolumn] : "");
+            String sourceid = (sourceidcolumn < len ? parts[sourceidcolumn] : "");
+
+            Taxon node = getTaxon(tax, id);
+
+            if (node.parent != null) {
+                System.err.format("** More than one row for this id: %s %s\n", id, name);
+                continue;
+            } else {
+                initTaxon(node, name, rank,
+                          flags, info, source, sourceid);
+
+                // Delay until after all ids are defined
+                if (parentId.equals("null") ||
+                    parentId.equals("not found") ||
+                    parentId.equals(""))
+                    // root
+                    tax.addRoot(node);
+                else
+                    getTaxon(tax, parentId).addChild(node);
+            }
 		}
 		br.close();
 
-        // Look up all the parent ids and store parent pointers in the nodes
-
-		Set<String> seen = new HashSet<String>();
-        int orphans = 0;
-		for (Taxon node : parentMap.keySet()) {
-			String parentId = parentMap.get(node);
-            if (parentId.length() == 0)
-                tax.addRoot(node);
-            else {
-                Taxon parent = tax.lookupId(parentId);
-                if (parent == null) {
-                    if (!seen.contains(parentId)) {
-                        ++orphans;
-                        seen.add(parentId);
-                    }
-                    tax.addRoot(node);
-                } else if (parent == node) {
-                    System.err.format("** Taxon is its own parent: %s %s\n", node.id, node.name);
-                    tax.addRoot(node);
-                } else if (parent.descendsFrom(node)) {
-                    System.err.format("** Cycle detected in input taxonomy: %s %s\n", node, parent);
-                    tax.addRoot(node);
-                } else {
-                    parent.addChild(node);
-                }
-            }
-		}
-        if (orphans > 0)
-			System.out.format("| %s unrecognized parent ids, %s nodes that have them\n",
-                              seen.size(), orphans);
+        checkForMissingParents(tax);
 
         Taxon life = tax.unique("life");
         if (life != null) life.properFlags = 0;  // not unplaced
@@ -252,13 +247,36 @@ public class InterimFormat {
                                total + " reachable from roots");
 	}
 
+    void checkForMissingParents(Taxonomy tax) {
+        // Look for parents that lack their own records
+        int count = 0;
+		for (String id : tax.allIds()) {
+            Taxon node = tax.lookupId(id);
+            if (node.parent == null) {
+                ++count;
+                if (count <= 10)
+                    System.err.format("** No record for parent %s\n", node);
+                else if (count == 11)
+                    System.err.format("** ...\n");
+                node.setName(tax.getIdspace() + ":" + node.id);
+                tax.addRoot(node);
+            }
+		}
+    }
+
+    Taxon getTaxon(Taxonomy tax, String id) {
+        Taxon node = tax.lookupId(id);
+        if (node == null) {
+            node = new Taxon(tax, null);
+            tax.initId(node, id);
+        }
+        return node;
+    }
+
 	// Populate fields of a Taxon object from fields of row of taxonomy file
 	// parts = fields from row of dump file
-	void initTaxon(Taxon node, String id, String name, String rankname, String flags, String[] parts) {
-        if (id.length() == 0)
-            System.err.format("** Null id: %s\n", name);
-        else
-            node.setId(id);
+	void initTaxon(Taxon node, String name, String rankname, 
+                   String flags, String info, String source, String sourceid) {
         if (name != null)
             node.setName(name);
 
@@ -287,24 +305,11 @@ public class InterimFormat {
                 node.rank = rank;
         }
 
-		if (infocolumn != null) {
-			if (parts.length <= infocolumn)
-				System.err.println("** Missing sourceinfo column: " + node.id);
-			else {
-				String info = parts[infocolumn];
-				if (info != null && info.length() > 0)
-					node.setSourceIds(info);
-			}
-		}
+        if (info != null && info.length() > 0)
+            node.setSourceIds(info);
 
-		else if (sourcecolumn != null &&
-                 sourceidcolumn != null) {
-            // Legacy of OTT 1.0 days
-            String sourceTag = parts[sourcecolumn];
-            String idInSource = parts[sourceidcolumn];
-            if (sourceTag.length() > 0 && idInSource.length() > 0)
-                node.addSourceId(new QualifiedId(sourceTag, idInSource));
-		}
+        if (source.length() > 0 && sourceid.length() > 0)
+            node.addSourceId(new QualifiedId(source, sourceid));
 	}
 
 	public void dumpNodes(Iterable<Taxon> nodes, String outprefix, String sep) throws IOException {

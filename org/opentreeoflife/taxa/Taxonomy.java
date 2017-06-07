@@ -44,7 +44,6 @@ public abstract class Taxonomy {
 	private Map<String, Node> idIndex = new HashMap<String, Node>();
     public Taxon forest = new Taxon(this, null);
 	public String idspace = null; // "ncbi", "ott", etc.
-	String[] header = null;
 
 	public JSONObject properties = new JSONObject();
     public Taxon ingroup = null;    // for trees, not taxonomies
@@ -169,6 +168,13 @@ public abstract class Taxonomy {
             }
         }
     }
+
+    // Promise not to call this when a node with this id exists
+    public void initId(Node node, String id) {
+        node.id = id;
+        this.idIndex.put(id, node);
+    }
+
 
     public void removeFromIdIndex(Node node, String id) {
         // could check that lookupId(id) == node

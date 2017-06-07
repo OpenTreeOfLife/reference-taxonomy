@@ -8,7 +8,7 @@
 
 # Modify as appropriate to your own hardware - I set it one or two Gbyte
 # below physical memory size
-JAVAFLAGS=-Xmx14G
+JAVAFLAGS?=-Xmx14G
 
 all: compile
 
@@ -112,6 +112,12 @@ r/ott-NEW/source: r/ott-HEAD/resource/.made
 
 r/ott-HEAD/resource/.made: r/ott-HEAD/source/.made
 	(cd r/ott-HEAD && rm -f resource && ln -s source resource)
+
+# kludge - it's set as a dependency in properties.json, but doesn't live in r/
+# (needed for idlist)
+r/h2007-HEAD/resource/.made:
+
+r/study713-HEAD/resource/.made:
 
 
 # ----- Taxonomy sources
@@ -730,7 +736,8 @@ bin/jython:
 	mkdir -p bin
 	(echo "#!/bin/bash"; \
 	 echo "export JYTHONPATH=.:$$PWD:$$PWD/util:$$PWD/lib/json-simple-1.1.1.jar"; \
-	 echo exec java "$(JAVAFLAGS)" -jar $$PWD/lib/jython-standalone-2.7.0.jar '$$*') >$@
+	 echo '[ "x$$JAVAFLAGS" = x ] && JAVAFLAGS="$(JAVAFLAGS)"'; \
+	 echo exec java '$$JAVAFLAGS' -jar $$PWD/lib/jython-standalone-2.7.0.jar '$$*') >$@
 	chmod +x $@
 
 # Script to start up the background daemon

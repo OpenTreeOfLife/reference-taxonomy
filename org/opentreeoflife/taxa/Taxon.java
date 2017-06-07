@@ -686,6 +686,11 @@ public class Taxon extends Node implements Comparable<Taxon> {
 
 	// For cycle detection, etc.
 	public boolean descendsFrom(Taxon b) {
+        if (!b.hasChildren())
+            // Cannot descend from something that has no children.
+            // I expected a significant speedup out of this hack, but
+            // didn't measure any change.
+            return this == b;
 		for (Taxon a = this; a != null; a = a.parent)
 			if (a == b)
 				return true;

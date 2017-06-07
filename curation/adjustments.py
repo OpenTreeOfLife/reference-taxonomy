@@ -470,11 +470,17 @@ def patch_fung(fung):
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/301
     # An Ichthyosporean variously misclassified as a fungus or an oomyocote.
     # Fixed by NCBI.
-    if fung.taxon('329819') != None:
+    if fung.maybeTaxon('329819') != None:
         fung.taxon('329819').prune()  # Dermocystidium salmonis
-    if fung.taxon('483212') != None:
+    if fung.maybeTaxon('483212') != None:
         fung.taxon('483212').prune()  # Ostracoblabe salmonis
 
+    # 2017-03-26 Index Fungorum has Chondromyces crocatus Berk. &
+    # M.A. Curtis 1874 incertae sedis in Fungi, but this is wrong;
+    # it's actually in Bacteria (according to GBIF).  Just flush the
+    # IF record.
+    chon = fung.maybeTaxon('Chondromyces', 'Fungi')
+    if chon != None: chon.prune()
 
     print "Fungi in Index Fungorum has %s nodes"%fung.taxon('Fungi').count()
 
@@ -642,6 +648,10 @@ def align_fungi(fungi, ott):
     if False:
         a.same(fungorum.maybeTaxon('Choanoflagellida'),
                ott.maybeTaxon('Choanoflagellida', 'Opisthokonta'))
+
+    # 2017-03-26 http://dx.doi.org/10.1080/01916122.2002.9989566
+    red = fungi.maybeTaxon('Reduviasporonites', 'Fungi')
+    if red != None: ott.setDivision(red, 'Chloroplastida')
 
     return a
 
@@ -1192,6 +1202,15 @@ def align_gbif(gbif, ott):
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/301
     a.same(gbif.taxon('Dermocystidium salmonis'), ott.taxon('Dermocystidium salmonis', 'Ichthyosporea'))
 
+    # 2017-03-26 Noticed this during the EOL id import, see above
+    chon = gbif.maybeTaxon('Chondromyces', 'Fungi')
+    if chon != None: chon.prune()
+
+    # 2017-03-26 This has been moved to Cercozoa - not a fungus.  See e.g. 
+    # the web version of Index Fungorum.
+    plas = gbif.maybeTaxon('Plasmodiophora', 'Fungi')
+    if plas != None: ott.setDivision(plas, 'SAR')
+
     return a
 
 def patch_gbif(gbif):
@@ -1482,6 +1501,10 @@ def align_worms(worms, ott):
     # Annelida is a barrier, need to put Sipuncula inside it
     worms.taxon('Annelida').take(worms.taxon('Sipuncula'))
 
+    # See above
+    plas = worms.maybeTaxon('Plasmodiophora', 'Fungi')
+    if plas != None: ott.setDivision(plas, 'SAR')
+
     return a
 
 # ----- Interim Register of Marine and Nonmarine Genera (IRMNG) -----
@@ -1597,6 +1620,9 @@ def adjust_irmng(irmng):
     luth_girault = irmng.maybeTaxon('1427241')
     if luth_girault != None and luth_girault.hasChildren():
         luth_girault.prune()
+
+    # 2017-03-26 Redundant Cornuta (11647 is better)
+    if irmng.maybeTaxon('1161') != None: irmng.taxon('1161').elide()
 
     return irmng
 
@@ -1735,6 +1761,10 @@ def align_irmng(irmng, ott):
     if irmng.maybeTaxon('Conolophus', 'Mammalia') != None:
         irmng.taxon('Conolophus', 'Mammalia').prune()
 
+    # 2017-03-26 See above
+    plas = irmng.maybeTaxon('Plasmodiophora', 'Fungi')
+    if plas != None: ott.setDivision(plas, 'SAR')
+
     return a
 
 
@@ -1776,6 +1806,12 @@ sar_contains = ['Stramenopiles',
                 'Oomycota',    #GBIF puts it in Chromista
                 'Radiozoa',	   #GBIF puts it in Chromista, acutally Rhizaria
                 'Dinophyta',   #IRMNG puts in in Protista, actually Rhizaria
+                'Dinophyceae', #found while chasing Piscinoodinium dup
+                'Sphaeriparaceae',
+                'Cercozoa',    #found during EOL review
+                'Desmothoracida',   #was in Heliozoa
+                'Apodiniaceae', #since removed from GBIF... protozoan
+                'Actoniphryida',
                 ]
 
 def set_SAR_divisions(taxonomy, ott):
@@ -1783,5 +1819,7 @@ def set_SAR_divisions(taxonomy, ott):
         z = taxonomy.maybeTaxon(name, 'Chromista')
         if z == None:
             z = taxonomy.maybeTaxon(name, 'Protista')
+            if z == None:
+                z = taxonomy.maybeTaxon(name, 'Protozoa')
         if z != None:
             ott.setDivision(z, 'SAR')

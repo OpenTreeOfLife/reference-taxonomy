@@ -24,7 +24,7 @@ novo_prop_path = os.path.join(novo_dir, 'properties.json')
 # Get properties of foo-NEW
 
 if not os.path.exists(novo_prop_path):
-    sys.sterr.write('There is no %s\n' % novo)
+    sys.stderr.write('There is no %s\n' % novo)
     sys.exit(1)
 
 with open(novo_prop_path, 'r') as infile:

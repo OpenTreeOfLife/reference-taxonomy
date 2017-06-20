@@ -248,6 +248,36 @@ Should the need arise you can find out what a source node maps to, using `image(
 
     alignment.image(gbif.taxon('Sample'))
 
+## Separation
+
+Any taxonomy can be used as a separation taxonomy for purposes of homonym
+disambiguation (see the BDJ paper).  The separation taxonomy used for building OTT
+can be found in [`curation/separation/`](../curation/separation/).  It is not
+necessary to specify a separation taxonomy, but doing so makes for fewer false
+alignments (missed true homonyms).
+
+To tell the alignment phase to use a particular separation taxonomy, the separation
+taxonomy needs to be associated with the union (result) taxonomy.  The method that does this is
+currently called `setSkeleton` but really ought to be called `setSeparationTaxonomy`:
+
+    union.setSkeleton(Taxonomy.getTaxonomy('myseparationtaxonomy/', 'name'))
+
+Following is how the separation taxonomy is set for OTT:
+
+    ott.setSkeleton(Taxonomy.getTaxonomy('curation/separation/', 'separation'))
+    
+This call should happen some time before the very first alignment step.
+
+See [`assemble_ott.py`](../assemble_ott.py) to see this in context.
+
+Make sure that taxonomy records align with separation taxonomy records whenever possible.
+This can be accomplished by adding synonyms where necessary.  Where exact alignment is
+impossible, use `setDivision`, e.g.
+
+    red = fungi.maybeTaxon('Reduviasporonites', 'Fungi')
+    if red != None: ott.setDivision(red, 'Chloroplastida')
+
+(example from 
 
 ## Annotation
 

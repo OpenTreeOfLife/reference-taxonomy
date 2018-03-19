@@ -398,10 +398,12 @@ r/gbif-HEAD/resource/.made: r/gbif-HEAD/work/projection.tsv \
 	mv r/gbif-HEAD/resource.new r/gbif-HEAD/resource
 	touch $@
 
-r/gbif-HEAD/work/projection.tsv: r/gbif-HEAD/source/.made \
-			     import_scripts/gbif/project_2016.py
+# The python script wants `pip install python-dwca-reader`
+
+r/gbif-HEAD/work/projection.tsv: r/gbif-HEAD/archive/.made \
+			     import_scripts/gbif/project.py
 	@mkdir -p `dirname $@`
-	python import_scripts/gbif/project_2016.py r/gbif-HEAD/source/taxon.txt $@.new
+	python import_scripts/gbif/project.py r/gbif-HEAD/archive/archive.zip $@.new
 	mv $@.new $@
 
 # Get a new GBIF from the web and store to r/gbif-HEAD/archive/archive.zip
@@ -418,7 +420,7 @@ refresh/gbif: r/gbif-NEW/source/.made
 
 r/gbif-NEW/source/.made: r/gbif-NEW/archive/.made
 	bin/unpack-archive gbif-NEW
-	d=`python util/modification_date.py r/gbif-NEW/source/taxon.txt`; \
+	d=`python util/modification_date.py r/gbif-NEW/source/eml.xml`; \
           bin/put gbif-NEW date $$d && \
           bin/put gbif-NEW version $$d
 

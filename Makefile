@@ -458,15 +458,15 @@ refresh/irmng: r/irmng-NEW/source/.made
 r/irmng-NEW/source/.made: r/irmng-NEW/archive/.made
 	bin/unpack-archive irmng-NEW
 	d=`python util/modification_date.py r/irmng-NEW/source/IRMNG_DWC.csv`; \
-          bin/put gbif-NEW date $$d && \
-          bin/put gbif-NEW version $$d
+          bin/put irmng-NEW date $$d && \
+          bin/put irmng-NEW version $$d
 	touch $@
 
 r/irmng-NEW/archive/.made: r/irmng-NEW
 	@mkdir -p r/irmng-NEW/archive
 	bin/put irmng-NEW origin_url $(IRMNG_ORIGIN_URL)
 	wget -q --output-document=r/irmng-NEW/archive/archive.zip "$(IRMNG_ORIGIN_URL)"
-	bin/put irmng-NEW bytes `wc -c r/gbif-NEW/archive/archive.zip | (read c d && echo $$c)`
+	bin/put irmng-NEW bytes `wc -c r/irmng-NEW/archive/archive.zip | (read c d && echo $$c)`
 	touch $@
 
 r/irmng-NEW:

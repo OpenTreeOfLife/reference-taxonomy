@@ -2,7 +2,34 @@
 
 set -e
 
-[ $# = 1 ] || (echo "fetch-archive: arg count"; exit 1)
+if [ $# = 1 ]; then
+    # command line arg = ncbi-20170425
+    spec=$1
+    # Set name and series
+    if [ -e r/$spec/properties.json ]; then
+        name=`bin/get $spec name`
+        series=`bin/get $spec series`
+    else
+        series=`echo $spec | egrep -o "[^0-9.]+"`
+        if [ "x$series" = "x$spec" ]; then
+            echo "fetch-archive: version specifier has no digits: $spec"
+            exit 1
+        else
+            i=$((${#series} - 1))
+            if [ ${series:i} = '-' ]; then
+                series=${series:0:$i}
+            fi
+        fi
+        name=$spec
+        echo "Series for $spec is $series"
+    fi
+elif [ $# = 2 ]; then
+    # command line args = ncbi 20170425
+    series=$1
+    name=$series-$2
+else
+    echo "fetch-archive: arg count"; exit 1
+fi
 
 # Retrieve one archive file from the files server
 
@@ -10,33 +37,10 @@ if [ x$FILES_URL_PREFIX = x ]; then
     FILES_URL_PREFIX=http://files.opentreeoflife.org
 fi
 
-# command line arg = archive/ncbi-20170425
-
-spec=$1
+dir=r/$name
 
 dryrun=
 if [ x$DRYRUN != x ]; then dryrun=echo; fi
-
-# Set name and series
-if [ -e r/$spec/properties.json ]; then
-    name=`bin/get $spec name`
-    series=`bin/get $spec series`
-else
-    series=`echo $spec | egrep -o "[^0-9.]+"`
-    if [ "x$series" = "x$spec" ]; then
-        echo "fetch-archive: version specifier has no digits: $spec"
-        exit 1
-    else
-        i=$((${#series} - 1))
-        if [ ${series:i} = '-' ]; then
-            series=${series:0:$i}
-        fi
-    fi
-    name=$spec
-    echo "Series for $spec is $series"
-fi
-
-dir=r/$name
 
 # Not sure about this.  Should retrieve unconditionally (e.g. to get
 # new properties file)?

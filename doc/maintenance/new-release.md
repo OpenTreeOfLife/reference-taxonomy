@@ -18,6 +18,8 @@ curation/adjustments.py and curation/amendments.py.
     make refresh/ott
     make store-all
 
+You may get errors like `mv: r/ott3.0/properties.json: set owner/group (was: 501/0): Operation not permitted`.  I think these are innocuous.
+
 ## Special considerations for the OTT 3.1 build
 
 Sometimes you want to use a saved version of a source instead of
@@ -27,7 +29,7 @@ worms.  Once these settings are used for the 3.1 build, they will be
 retained for future builds.
 
 A second 'wart' for building 3.1 is use of a newer OTT 2.10
-all-identifiers list (idlist) rather than the OTT 2.10 identifier list
+all-identifiers list (idlist) rather than the old OTT 2.10 identifier list
 that was using in building OTT 3.0.
 
 The 3.1 build should therefore look like the following:
@@ -39,8 +41,28 @@ The 3.1 build should therefore look like the following:
     bin/use-version genbank-20161216
     bin/use-version irmng-20140131
     bin/use-version worms-20170604
-    make refresh/ncbi
+
+At this point I would make sure that it is possible to build using the
+same sources as ott3.0, and that the results are sensible.  If you
+skip this step, then you won't be able to distinguish errors resulting
+from source refreshes, vs. those resulting from problems with your
+configuration or inherited from ott3.0.  There will be some
+differences (you might compare the transcript.out file between
+r/ott3.0 and r/ott-HEAD) due to changes in smasher since ott3.0 was
+built, so don't expect byte-for-byte identity.
+
+    bin/fetch-archive amendments bcafdea7f2e9231274cae2df2beed7d732ca46c5
+    bin/use-version amendments-bcafdea7f2e9231274cae2df2beed7d732ca46c5
+    make r/amendments-HEAD/resource/.made
+    make ott
+
+Having done this, it is now possible to refresh whatever sources you
+like.  In the following, we update NCBI and the amendments, but it
+should also be possible to update GBIF and WoRMS, and, with some work,
+also SILVA.
+
     make refresh/amendments
+    make refresh/ncbi
     make ott
     #**** Do QC at this point, redo 'make ott' as needed ****
     make refresh/ott

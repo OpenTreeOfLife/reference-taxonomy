@@ -24,7 +24,7 @@ AMENDMENTS_ORIGIN_URL=https://github.com/OpenTreeOfLife/amendments-1.git
 
 # ----- Version selection -----
 
-include config.mk
+-include config.mk
 
 fetch: $(FETCHES)
 

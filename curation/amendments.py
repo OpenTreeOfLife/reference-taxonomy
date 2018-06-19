@@ -663,3 +663,10 @@ def patch_ott(ott):
     proclaim(ott, has_parent(taxon('Stylommatophora', 'Gastropoda'),
                              taxon('Pulmonata', 'Gastropoda'),
                              otc(59)))
+
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/331
+    # http://irmng.org/aphia.php?p=taxdetails&id=1280648
+    proclaim(ott, synonym_of(taxon('Ericodes', 'Ericales'),
+                             taxon('Erica', 'Ericales'),
+                             'synonym',
+                             otc(62)))

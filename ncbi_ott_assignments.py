@@ -70,6 +70,10 @@ ncbi_assignments_list = [
     # JAR 2016-11-18 from deprecated list 'incompatible-use' - fixed differently
     # ('371654', '555513', 'Psammocora nierstraszi'),
     # ('371656', '555511', 'Psammocora explanulata'),
+
+    # JAR 2017-06-09
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/342
+    ('50173', '1015551', 'Ximenia'),
 ]
 
 def checkem():

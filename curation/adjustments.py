@@ -1758,8 +1758,10 @@ def align_irmng(irmng, ott):
 
     # Yan Wong https://github.com/OpenTreeOfLife/feedback/issues/345
     # Conolophus should synonymized with Minchenella... see comments
+    # Minchenella is known to newer GBIF, but not to older IRMNG, so this 
+    # should align now.
     if irmng.maybeTaxon('Conolophus', 'Mammalia') != None:
-        irmng.taxon('Conolophus', 'Mammalia').prune()
+        irmng.taxon('Conolophus', 'Mammalia').clobberName('Minchenella')
 
     # 2017-03-26 See above
     plas = irmng.maybeTaxon('Plasmodiophora', 'Fungi')

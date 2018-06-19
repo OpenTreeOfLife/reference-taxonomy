@@ -60,3 +60,5 @@ archive
 raw
 work
 new_taxa/addition*.json
+config.mk
+r

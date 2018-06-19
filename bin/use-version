@@ -2,7 +2,7 @@
 
 set -e
 
-[ $# = 1 ] || (echo user-version: wna; exit 1)
+[ $# = 1 ] || (echo use-version: wna; exit 1)
 
 spec=$1
 

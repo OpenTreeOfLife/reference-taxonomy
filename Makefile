@@ -478,15 +478,8 @@ r/irmng-NEW:
 # Note, no dependence on /source/.
 # A dependence on /source/ would attempt archive retrieval, which would fail.
 
-r/amendments-HEAD/resource/.made: r/amendments-HEAD/.issue
-	mkdir -p `dirname $@`
-	n=`bin/get amendments-PREVIOUS name` && bin/put amendments-HEAD version $${n:11}
-	(cd tmp/amendments/amendments-1 && \
-	 git fetch && \
-	 git checkout `bin/get amendments-HEAD version`)
-	cp -pr tmp/amendments/amendments-1/amendments \
-	       r/amendments-HEAD/resource/amendments-1/
-	touch $@
+r/amendments-HEAD/resource/.made: r/amendments-HEAD/source/.made
+	(cd r/amendments-HEAD && rm -f resource && ln -s source resource)
 
 # Recursive make is not generally recommended, but don't see what else
 # to do in this case.  We don't want HEAD to depend (in the Makefile

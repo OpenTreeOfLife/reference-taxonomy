@@ -1,0 +1,27 @@
+$ git clone git@github.com:OpenTreeOfLife/reference-taxonomy.git clean-ref-tax
+$ cd clean-ref-tax
+$ git checkout -b mth-dec-2018 origin/mth-dec-2018
+$ bin/configure ott4.0 ott3.0
+
+    Getting http://files.opentreeoflife.org/ott/ott3.0/properties.json
+    r/ott-HEAD := ott3.0
+    r/ott-PREVIOUS := ott3.0
+    Initiating ott4.0 = r/ott-NEW
+
+$ bin/unpack-archive ott-HEAD
+
+    Fetching http://files.opentreeoflife.org/ott/ott3.0/ott3.0.tgz
+    Unpacking r/ott-HEAD/archive/archive.tgz to r/ott-HEAD/source
+    Unpacked r/ott-HEAD/archive/archive.tgz to r/ott-HEAD/source
+$ make refresh/idlist
+
+    bin/set-previous idlist idlist-20161118
+    r/idlist-PREVIOUS := idlist-20161118
+    bin/unpack-archive idlist-PREVIOUS
+    Failed to retrieve http://files.opentreeoflife.org/idlist/idlist-20161118/properties.json
+    make: *** [config.mk:25: r/idlist-PREVIOUS/source/.made] Error 1
+
+$ ssh files; touch files.opentreeoflife.org/idlist/idlist-20161118/properties.json
+<that didn't work, so I tweaked the 2.10 version of idlist>
+
+<that didn't work either, so aborting...>

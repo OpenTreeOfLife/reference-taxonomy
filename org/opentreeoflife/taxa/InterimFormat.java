@@ -490,6 +490,8 @@ public class InterimFormat {
                         continue;
                     if (type.equals("authority")) // NCBI
                         continue;
+                    if (type.equals("common name")) // NCBI
+                        ;
                     if (type.endsWith("common name")) // NCBI
                         continue;
                     if (type.equals("blast name")) // NCBI

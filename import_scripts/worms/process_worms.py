@@ -144,7 +144,7 @@ def record_to_taxon(row, rank, name):
 
     # Determine flags
     flags = []
-    if row[7] != '':
+    if row[7] == '1':
         flags.append('extinct')
     status = row[4]
     if status == 'accepted':
@@ -191,4 +191,3 @@ if __name__ == "__main__":
     parser.add_argument('out')
     args = parser.parse_args()
     process_worms(args.digest, args.out)
-

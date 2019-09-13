@@ -26,9 +26,9 @@ import java.io.OutputStreamWriter;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 
-import org.json.simple.JSONObject; 
-import org.json.simple.JSONArray; 
-import org.json.simple.parser.JSONParser; 
+import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import org.opentreeoflife.taxa.Taxonomy;
@@ -55,10 +55,11 @@ public class Addition {
     }
 
     public static List<File> repoAdditionDocuments(File repo) {
-        List<File> docs1 = listAdditionDocuments(repo);
-        List<File> docs2 = listAdditionDocuments(new File(repo, "amendments"));
+        ArrayList<File> docs1 = new ArrayList<File>(listAdditionDocuments(repo));
+        ArrayList<File> docs2 = new ArrayList<File>(listAdditionDocuments(new File(repo, "amendments")));
         if (docs1 == null) docs1 = new ArrayList<File>();
         if (docs2 == null) docs2 = new ArrayList<File>();
+
         docs1.addAll(docs2);
         docs1.sort(compareFiles);
         return docs1;
@@ -90,7 +91,7 @@ public class Addition {
 	};
 
     // Deal with one additions document.  Get ids for existing nodes, or (if
-    // the taxa are "original" with this document) create 
+    // the taxa are "original" with this document) create
     // new nodes as needed.
 
     public static int processAdditionDocument(File file, Taxonomy tax) throws IOException, ParseException {
@@ -267,7 +268,7 @@ public class Addition {
         }
         return target;
     }
-    
+
     static String toId(Object ottIdObj) {
         if (ottIdObj instanceof Long)
             return Long.toString((Long)ottIdObj);
@@ -411,7 +412,7 @@ public class Addition {
             taxonToTag.put(node, tag);
             tagToTaxon.put(tag, node);
         }
-        // Compose the additions request per 
+        // Compose the additions request per
         // https://github.com/OpenTreeOfLife/germinator/wiki/Taxonomic-service-for-adding-new-taxa
         Map<String, Object> request = generateRequest(nodes, taxonToTag);
         emitJSON(request, requestFile);

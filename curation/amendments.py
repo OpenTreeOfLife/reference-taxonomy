@@ -202,7 +202,8 @@ def patch_ott(ott):
 
     # Bryan Drew 2014-01-30
     # http://dx.doi.org/10.1126/science.282.5394.1692
-    ott.taxon('Magnoliophyta').take(ott.taxon('Archaefructus'))
+    if ott.maybeTaxon('Magnoliophyta') != None:
+        ott.taxon('Magnoliophyta').take(ott.taxon('Archaefructus'))
 
     # Bryan Drew 2014-01-30
     # http://deepblue.lib.umich.edu/bitstream/handle/2027.42/48219/ID058.pdf
@@ -378,7 +379,8 @@ def patch_ott(ott):
 
     # JAR 2014-05-08 while looking at the deprecated ids file.
     # http://www.theplantlist.org/tpl/record/kew-2674785
-    ott.taxon('Berendtiella rugosa').synonym('Berendtia rugosa')
+    if ott.maybeTaxon('Berendtiella rugosa') != None:
+        ott.taxon('Berendtiella rugosa').synonym('Berendtia rugosa')
 
     # JAR 2014-05-13 weird problem
     # NCBI incorrectly has both Cycadidae and Cycadophyta as children of Acrogymnospermae.
@@ -575,10 +577,12 @@ def patch_ott(ott):
         if tax != None: tax.extinct()
 
     # https://github.com/OpenTreeOfLife/feedback/issues/304
-    ott.taxon('Notobalanus', 'Maxillopoda').extant() # IRMNG
+    if ott.maybeTaxon('Notobalanus','Maxillopoda') != None:
+        ott.taxon('Notobalanus', 'Maxillopoda').extant() # IRMNG
 
     # https://github.com/OpenTreeOfLife/feedback/issues/303
-    ott.taxon('Neolepas', 'Maxillopoda').extant() # IRMNG
+    if ott.maybeTaxon('Neolepas','Maxillopoda') != None:
+        ott.taxon('Neolepas', 'Maxillopoda').extant() # IRMNG
 
     # See NCBI
     ott.taxon('Millericrinida').extant() # WoRMS

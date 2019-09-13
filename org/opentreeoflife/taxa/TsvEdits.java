@@ -102,9 +102,11 @@ public class TsvEdits {
             existing.changeParent(parent, 0);
             existing.addFlag(Taxonomy.EDITED);
         } else if (command.equals("fold")) {
-            if (existing.children != null)
-                for (Taxon child: existing.children)
+            if (existing.children != null) {
+                ArrayList<Taxon> children = new ArrayList<Taxon>(existing.children);
+		for (Taxon child: children)
                     child.changeParent(parent, 0);
+	    }
             parent.addSynonym(name, "subsumed_by"); //  ????
             existing.prune("edit/fold");
         } else

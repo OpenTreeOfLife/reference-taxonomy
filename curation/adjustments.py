@@ -1465,6 +1465,13 @@ def patch_gbif(gbif):
     if och != None:
         och.notCalled('Chrysophyceae')
 
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/397
+    # (gbif places a scallop in Cnidaria)
+    # Exists in other taxonomies in correct place, so we simply prune it from gbif
+    # (using the incorrect parent, so that we will get it back in corrected future
+    # updates
+    gbif.taxon("Placopecten","Pectiniidae").prune()
+
     return gbif
 
 # Align low-priority WoRMS

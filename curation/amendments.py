@@ -674,3 +674,10 @@ def patch_ott(ott):
                              taxon('Erica', 'Ericales'),
                              'synonym',
                              otc(62)))
+
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/397
+    # (gbif places a scallop in Cnidaria)
+    proclaim(ott, has_parent(taxon('Placopecten', descendant='Placopecten magellanicus'),
+                             taxon('Pectinidae', 'Bivalvia'),
+                             otc(63)))
+    

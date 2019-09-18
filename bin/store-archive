@@ -5,7 +5,7 @@
 set -e
 
 if [ x$SSH_PATH_PREFIX = x ]; then
-    SSH_PATH_PREFIX=files.opentreeoflife.org:/var/www/html/
+    SSH_PATH_PREFIX=files.opentreeoflife.org:/var/www/html
 fi
 
 host=`echo $SSH_PATH_PREFIX | sed -e s/:.*//`

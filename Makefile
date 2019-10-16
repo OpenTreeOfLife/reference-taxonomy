@@ -83,7 +83,7 @@ r/ott-NEW/source/debug/transcript.out: bin/jython $(CLASS) \
 	bin/put ott-NEW draft $$((1 + `bin/get ott-NEW draft 0`))
 	@echo Writing transcript to r/ott-NEW/source/debug/transcript.out
 	rm -f /tmp/make-ott-completed
-	(time bin/jython make-ott.py ott-NEW 2>&1 \
+	(bin/jython make-ott.py ott-NEW 2>&1 \
 	  && touch /tmp/make-ott-completed) \
 	  | tee r/ott-NEW/source/transcript.out.new
 	[ -e /tmp/make-ott-completed ]
@@ -104,7 +104,6 @@ r/ott-NEW/source/README.html: r/ott-NEW/source/debug/transcript.out util/make_re
 	python util/make_readme.py r/ott-NEW/source/ >$@
 
 r/ott-NEW/source: r/ott-HEAD/resource/.made
-	bin/new-version ott .tgz cc0
 	bin/put ott-NEW minor $$((1 + `bin/get ott-HEAD minor`))
 	bin/put ott-NEW draft 0
 	bin/put ott-NEW ott_idspace ott

@@ -1465,6 +1465,13 @@ def patch_gbif(gbif):
     if och != None:
         och.notCalled('Chrysophyceae')
 
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/397
+    # (gbif places a scallop in Cnidaria)
+    # Exists in other taxonomies in correct place, so we simply prune it from gbif
+    # (using the incorrect parent, so that we will get it back in corrected future
+    # updates
+    gbif.taxon("Placopecten","Pectiniidae").prune()
+
     return gbif
 
 # Align low-priority WoRMS
@@ -1758,8 +1765,10 @@ def align_irmng(irmng, ott):
 
     # Yan Wong https://github.com/OpenTreeOfLife/feedback/issues/345
     # Conolophus should synonymized with Minchenella... see comments
+    # Minchenella is known to newer GBIF, but not to older IRMNG, so this 
+    # should align now.
     if irmng.maybeTaxon('Conolophus', 'Mammalia') != None:
-        irmng.taxon('Conolophus', 'Mammalia').prune()
+        irmng.taxon('Conolophus', 'Mammalia').clobberName('Minchenella')
 
     # 2017-03-26 See above
     plas = irmng.maybeTaxon('Plasmodiophora', 'Fungi')

@@ -24,7 +24,7 @@ AMENDMENTS_ORIGIN_URL=https://github.com/OpenTreeOfLife/amendments-1.git
 
 # ----- Version selection -----
 
-include config.mk
+-include config.mk
 
 fetch: $(FETCHES)
 
@@ -83,7 +83,7 @@ r/ott-NEW/source/debug/transcript.out: bin/jython $(CLASS) \
 	bin/put ott-NEW draft $$((1 + `bin/get ott-NEW draft 0`))
 	@echo Writing transcript to r/ott-NEW/source/debug/transcript.out
 	rm -f /tmp/make-ott-completed
-	(time bin/jython make-ott.py ott-NEW 2>&1 \
+	(bin/jython make-ott.py ott-NEW 2>&1 \
 	  && touch /tmp/make-ott-completed) \
 	  | tee r/ott-NEW/source/transcript.out.new
 	[ -e /tmp/make-ott-completed ]
@@ -104,7 +104,6 @@ r/ott-NEW/source/README.html: r/ott-NEW/source/debug/transcript.out util/make_re
 	python util/make_readme.py r/ott-NEW/source/ >$@
 
 r/ott-NEW/source: r/ott-HEAD/resource/.made
-	bin/new-version ott .tgz cc0
 	bin/put ott-NEW minor $$((1 + `bin/get ott-HEAD minor`))
 	bin/put ott-NEW draft 0
 	bin/put ott-NEW ott_idspace ott
@@ -460,35 +459,70 @@ refresh/irmng: r/irmng-NEW/source/.made
 r/irmng-NEW/source/.made: r/irmng-NEW/archive/.made
 	bin/unpack-archive irmng-NEW
 	d=`python util/modification_date.py r/irmng-NEW/source/IRMNG_DWC.csv`; \
-          bin/put gbif-NEW date $$d && \
-          bin/put gbif-NEW version $$d
+          bin/put irmng-NEW date $$d && \
+          bin/put irmng-NEW version $$d
 	touch $@
 
 r/irmng-NEW/archive/.made: r/irmng-NEW
 	@mkdir -p r/irmng-NEW/archive
 	bin/put irmng-NEW origin_url $(IRMNG_ORIGIN_URL)
 	wget -q --output-document=r/irmng-NEW/archive/archive.zip "$(IRMNG_ORIGIN_URL)"
-	bin/put irmng-NEW bytes `wc -c r/gbif-NEW/archive/archive.zip | (read c d && echo $$c)`
+	bin/put irmng-NEW bytes `wc -c r/irmng-NEW/archive/archive.zip | (read c d && echo $$c)`
 	touch $@
 
 r/irmng-NEW:
 	bin/new-version irmng .zip public
 	bin/put ott-NEW ott_idspace irmng
 
+# --- Source: EOL page ids
+
+r/eol-HEAD/resource/.made: r/eol-HEAD/resource/eol-mappings.csv
+	touch $@
+
+r/eol-HEAD/resource/eol-mappings.csv: r/eol-HEAD/source/.made \
+			   	      import_scripts/eol/process_eol.py
+	mkdir -p r/eol-HEAD/resource
+	python import_scripts/eol/process_eol.py \
+	   < r/eol-HEAD/source/digest.csv \
+	   > $@.new
+	mv $@.new $@
+
+# From Yan Wong:
+#  ((('ncbi', 1172), ('if', 596), ('worms', 123), ('irmng', 1347), ('gbif', 800)))
+
+# Haven't figure out how to automate the download yet.  The site uses
+# some screwy javascript that seems to require manual operation.
+
+refresh/eol: r/eol-NEW/source/.made
+	bin/christen eol-NEW
+
+r/eol-NEW/source/.made: r/eol-NEW/source/digest.csv
+	touch $@
+
+r/eol-NEW/source/digest.csv: r/eol-NEW
+	mkdir -p r/eol-NEW/work
+	@([ -e r/eol-NEW/work/identifiers.csv.gz ] || \
+	  (echo "** Please download the EOL identifiers file"; \
+	   echo "** and place it at r/eol-NEW/work/identifiers.csv.gz."; \
+	   echo "** Visit this page: http://opendata.eol.org/dataset/identifiers"; \
+	   exit 1))
+	mkdir -p r/eol-NEW/source
+	gunzip -c r/eol-NEW/work/identifiers.csv.gz | grep ',596,\|,1172,\|,123,\|,1347,\|,800,' \
+	  > r/eol-NEW/source/digest.csv.new
+	d=`python util/modification_date.py r/eol-NEW/work/identifiers.csv.gz`; \
+	  bin/put eol-NEW date $$d && bin/put eol-NEW version $$d
+	mv r/eol-NEW/source/digest.csv.new r/eol-NEW/source/digest.csv
+
+r/eol-NEW:
+	bin/new-version eol .tgz public
+
 # --- Source: Open Tree curated amendments
 
 # Note, no dependence on /source/.
 # A dependence on /source/ would attempt archive retrieval, which would fail.
 
-r/amendments-HEAD/resource/.made: r/amendments-HEAD/.issue
-	mkdir -p `dirname $@`
-	n=`bin/get amendments-PREVIOUS name` && bin/put amendments-HEAD version $${n:11}
-	(cd tmp/amendments/amendments-1 && \
-	 git fetch && \
-	 git checkout `bin/get amendments-HEAD version`)
-	cp -pr tmp/amendments/amendments-1/amendments \
-	       r/amendments-HEAD/resource/amendments-1/
-	touch $@
+r/amendments-HEAD/resource/.made: r/amendments-HEAD/source/.made
+	(cd r/amendments-HEAD && rm -f resource && ln -s source resource)
 
 # Recursive make is not generally recommended, but don't see what else
 # to do in this case.  We don't want HEAD to depend (in the Makefile

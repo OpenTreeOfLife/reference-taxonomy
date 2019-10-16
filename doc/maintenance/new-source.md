@@ -42,7 +42,7 @@ The `refresh/ioc` rule in the Makefile should invoke
 
 A second script, say `import_scripts/ioc/process.py`, converts the
 digest into a form that's readable by OTT, typically the so-called
-['interim format'](interim-format.md).
+['interim format'](../interim-format.md).
 
 The digest is found in `ioc-HEAD/source/`, and the processed for is put in 
 `ioc-HEAD/resource/`.

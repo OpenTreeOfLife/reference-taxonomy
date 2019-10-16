@@ -18,6 +18,55 @@ used for writing patches.  It would be better if we had a directory
 full of python files containing patches, to facilitate editing by
 multiple authors.  TBD.
 
+### [Issue 397](https://github.com/OpenTreeOfLife/feedback/issues/397) - Scallops in Cnidaria
+
+The issue points to duplicate locations of the "same" taxon, 'Placopecten
+magellanicus', one with ottid 449040 (in Bilatera) and one with ottid 6370755
+(in Cnidaria). This taxa is a scallop, and should be in Bilatera, i.e. the
+Cnidaria one is misplaced. Using `bin/investigate "Placopecten magellanicus"`
+we see that the incorrect placement comes from gbif:
+```
+r/ott-NEW/source/taxonomy.tsv:6370755	|	6370754	|	Placopecten magellanicus	|	species	|	gbif:2285952	|	Placopecten magellanicus (species in phylum Cnidaria)	|		|
+r/ott-NEW/source/taxonomy.tsv:449041	|	449040	|	Placopecten magellanicus	|	species	|	worms:156972,ncbi:6577,irmng:11384074,irmng:10529011	|	Placopecten magellanicus (species in Bilateria)	|	 
+```
+This appears to be [fixed in the current version of gbif](https://www.gbif.org/species/2285952), but we don't have that yet, and updating gbif is going to take some
+time, so we will patch instead.
+
+Compare the lineage of these two ott taxa (only showing output to the point
+where they match). Using `bin/lineage 449041 r/ott-NEW/source`:
+
+```
+449041	449040	Placopecten magellanicus	species	worms:156972,ncbi:6577,irmng:11384074,irmng:10529011	Placopecten magellanicus (species in Bilateria)		
+449040	5692602	Placopecten	genus	worms:156971,ncbi:6576,irmng:1019019	Placopecten (genus in Bilateria)		
+5692602	975312	Palliolinae	subfamily	worms:393793			
+975312	951120	Pectinidae	family	worms:213,ncbi:6566,irmng:115891			
+951120	951119	Pectinoidea	superfamily	worms:151320,ncbi:106219		sibling_higher
+951119	1025543	Pectinida	order	worms:387324,irmng:12740		sibling_higher
+1025543	1025545	Pteriomorphia	subclass	worms:206,ncbi:6545			
+1025545	802117	Bivalvia	class	worms:105,ncbi:6544,gbif:137,irmng:1146		sibling_higher
+802117	155737	Mollusca	phylum	worms:51,ncbi:6447,gbif:52,irmng:175			
+155737	189832	Lophotrochozoa	no rank	ncbi:1206795			
+189832	117569	Protostomia	no rank	ncbi:33317			
+117569	641038	Bilateria	no rank	ncbi:33213			
+641038	691846	Eumetazoa	no rank	ncbi:6072			
+```
+
+and `bin/lineage 6370755 r/ott-NEW/source`:
+
+```
+6370755	6370754	Placopecten magellanicus	species	gbif:2285952	Placopecten magellanicus (species in phylum Cnidaria)		
+6370754	442914	Placopecten	genus	gbif:2285951	Placopecten (genus in phylum Cnidaria)		
+442914	712383	Merulinidae	family	worms:196102,ncbi:46736,ncbi:46733,gbif:3358,gbif:5181,gbif:8219,irmng:104400,irmng:100317,irmng:100502		sibling_higher
+712383	1084485	Scleractinia	order	worms:1363,ncbi:6125,gbif:714,irmng:11376		sibling_higher
+1084485	1084488	Hexacorallia	subclass	worms:1340,ncbi:6102			
+1084488	641033	Anthozoa	class	worms:1292,ncbi:6101,gbif:206,irmng:1134			
+641033	641038	Cnidaria	phylum	worms:1267,ncbi:6073,gbif:43,irmng:151			
+641038	691846	Eumetazoa	no rank	ncbi:6072			
+```
+
+GBIF places the genus Placopecten in Merulinidae, which is definitely in
+Cnidaria, so let's move that to Pectinidae (not to Palliolinae, which is a
+barren subfamily that only exists in worms). 
 
 ### [Issue 345](https://github.com/OpenTreeOfLife/feedback/issues/345) - Conolophus extinct?
 
@@ -46,7 +95,7 @@ sure, one would align the IRMNG genera to OTT:
 Is there an error or not?  I followed the supplied OTT link to Asterales,
 and from there to the second IRMNG record, for Campanulales.  Indeed, equating Campanulales
 with Asterales sounds fishy.  But this is what NCBI does, so it stands.
-The synonymy is pro parte, I believe, so perhaps we should consider these to be distinct 
+The synonymy is pro parte, I believe, so perhaps we should consider these to be distinct
 taxon records.  I think I would leave this one alone for now.
 
 See new [issue 316](https://github.com/OpenTreeOfLife/reference-taxonomy/issues/316) on pro parte synonyms.
@@ -87,7 +136,7 @@ in the first place.  This requires some knowledge of the merge order,
 so is less robust to future taxonomy changes than the `amendments.py`
 method.
 
-    proclaim(ncbi, synonym_of(taxon('Miliaria calandra'), taxon('Emberiza calandra'), 
+    proclaim(ncbi, synonym_of(taxon('Miliaria calandra'), taxon('Emberiza calandra'),
                               'objective synonym', otc(60)))
 
 There will be an empty genus `'Miliaria'` left over.  It's not too
@@ -95,7 +144,7 @@ harmful to leave it in, since it will be flagged `barrent` and
 suppressed from synthesis, but to be tidy one would want to get rid of
 it:
 
-    proclaim(ott, synonym_of(taxon('Miliaria', 'Aves'), taxon('Emberiza', 'Aves'), 
+    proclaim(ott, synonym_of(taxon('Miliaria', 'Aves'), taxon('Emberiza', 'Aves'),
                              'proparte synonym', otc(61)))
 
 I'm specifying an ancestor for the genera because genus names are so
@@ -200,7 +249,7 @@ in `align_gbif`, but one could also modify OTT in `adjustments.py`.
 This time, specifying an ancestor of the genus is essential
 in order to avoid the Fungi ambiguity.
 
-    a.same(gbif.taxon('Syntexix', 'Hymenoptera'), 
+    a.same(gbif.taxon('Syntexix', 'Hymenoptera'),
            ott.taxon('Syntexis', 'Hymenoptera'))
     a.same(gbif.taxon('Syntexix libocedrii', 'Hymenoptera'),
            ott.taxon('Syntexis libocedrii', 'Hymenoptera'))

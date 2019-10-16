@@ -30,6 +30,12 @@ new_taxa_path = 'new_taxa'
 
 def create_ott(ott_spec):
 
+    # Fail fast
+    additions_clone_path = os.path.join(access_head('amendments'), 'amendments-1')
+    if not os.path.isdir(additions_clone_path):
+        print '# cannot find', additions_clone_path
+        sys.exit(1)
+
     with open(os.path.join(access_head('idlist'), 'by_qid.csv'), 'r') as infile:
         print '# can access idlist'
 
@@ -64,7 +70,6 @@ def create_ott(ott_spec):
     # This has to happen *after* ids are assigned, since additions use OTT 
     # ids to identify parents.
     print '-- Processing additions --'
-    additions_clone_path = os.path.join(access_head('amendments'), 'amendments-1')
     Addition.processAdditions(additions_clone_path, ott)
 
     # Mint ids for new nodes

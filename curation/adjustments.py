@@ -1448,7 +1448,9 @@ def patch_gbif(gbif):
     # Exists in other taxonomies in correct place, so we simply prune it from gbif
     # (using the incorrect parent, so that we will get it back in corrected future
     # updates
-    gbif.taxon("Placopecten","Pectiniidae").prune()
+    placo = gbif.maybeTaxon("Placopecten")
+    if placo != None:
+        gbif.taxon("Placopecten","Pectiniidae").prune()
 
     return gbif
 

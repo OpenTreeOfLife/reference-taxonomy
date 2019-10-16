@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# Import script for DwC version of GBIF
+
 # That's pro-ject' with the emphasis on the 2nd syllable.
 
 # Python on my mac is not configured to pick up
@@ -86,7 +88,7 @@ import re
 #  Foo bar Putnam, 4723     no authority
 #  Foo bar Putnam 1972      no authority (in GBIF)
 #  Enterobacteria phage PA-2
-#  Ajuga pyramidalis L.	
+#  Ajuga pyramidalis L.
 
 lower = u"a-záåäàãçëéèïíøöóü'×?"
 upper = u"A-ZÄÁÅÁÁÇČÐĎĐÉÉÎİŁŘŠŚŞȘÔØÖÔÓÜÚŽ"

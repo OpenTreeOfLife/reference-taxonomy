@@ -1194,7 +1194,8 @@ def align_gbif(gbif, ott):
 
     # 2016-12-18 somehow came loose.  4738987 = apusozoan, 570408 = plant
     # Without this, the plant was lumping in with the apusozoan.
-    a.same(gbif.taxon('3236805'), ott.taxon('4738987'))
+    # In gbif-20190916, id 3236805 no longer exists
+    # a.same(gbif.taxon('3236805'), ott.taxon('4738987'))
     a.same(gbif.taxon('3033928'), ott.taxon('570408'))
 
     # 2016-11-20 Showed up as ambiguous in transcript; log says ncbi and gbif records are separated because disjoint.

@@ -763,8 +763,11 @@ def patch_ncbi(ncbi):
     ncbi.taxon('Pechuel-loeschea').synonym('Pechuel-Loeschea', 'spelling variant')
 
     # RR #50
-    ncbi.taxon('Saxofridericia').synonym('Saxo-Fridericia', 'spelling variant')
-    ncbi.taxon('Saxofridericia').synonym('Saxo-fridericia', 'spelling variant')
+    # ncbi.taxon('Saxofridericia').synonym('Saxo-Fridericia', 'spelling variant')
+    # ncbi.taxon('Saxofridericia').synonym('Saxo-fridericia', 'spelling variant')
+    # above reversed by https://github.com/OpenTreeOfLife/reference-taxonomy/issues/50
+    ncbi.taxon('Saxo-fridericia').synonym('Saxo-Fridericia', 'spelling variant')
+    ncbi.taxon('Saxo-fridericia').synonym('Saxofridericia', 'spelling variant')
 
     # RR #57
     ncbi.taxon('Solms-laubachia').synonym('Solms-Laubachia', 'spelling variant')
@@ -1231,8 +1234,8 @@ def patch_gbif(gbif):
     for (synonym, primary, qid) in [
             ('Chryso-Hypnum', 'Chryso-hypnum', otc('24')),  # 2014-04-13 JAR noticed while grepping
             ('Drake-Brockmania', 'Drake-brockmania', otc(2)),  # RR 2014-04-12 #47
-            ('Saxo-Fridericia', 'Saxofridericia',
-             otc(36, evidence='https://github.com/OpenTreeOfLife/feedback/issues/50')),  # RR #50 - this one is in NCBI, see above
+            ('Saxo-Fridericia', 'Saxo-fridericia',
+             otc(36, evidence='https://github.com/OpenTreeOfLife/reference-taxonomy/issues/50')),
             ('Solms-Laubachia', 'Solms-laubachia', otc(37)), # RR #57 - the genus is in NCBI, see above
             ('Solms-Laubachia pulcherrima', 'Solms-laubachia pulcherrima', otc(38)), # RR #57
             ('Cyrto-Hypnum', 'Cyrto-hypnum', otc(39)),
@@ -1517,9 +1520,11 @@ def adjust_irmng(irmng):
     # RR #50
     # irmng.taxon('Saxo-Fridericia').rename('Saxofridericia')
     # irmng.taxon('Saxofridericia').absorb(irmng.taxon('Saxo-fridericia'))
-    saxo = irmng.maybeTaxon('1063899')
-    if saxo != None:
-        saxo.absorb(irmng.taxon('1071613'))
+    # saxo = irmng.maybeTaxon('1063899')
+    # if saxo != None:
+    #     saxo.absorb(irmng.taxon('1071613'))
+    # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/50
+    irmng.taxon('Saxo-fridericia').synonym('Saxo-Fridericia'))
 
     # JAR 2015-06-28
     # The synonym Ochrothallus multipetalus -> Niemeyera multipetala

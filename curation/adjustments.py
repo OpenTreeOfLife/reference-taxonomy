@@ -1581,8 +1581,8 @@ def adjust_irmng(irmng):
     for (id, name) in [('10888189', 'Aricia brunnescens'),
                        ('10095324', 'Aricia deleta'),
                        ('10094174', 'Aricia striata')]:
-        tax = irmng.maybeTaxon(id)
-        if tax != None: tax.prune(this_source)
+                       tax = irmng.maybeTaxon(id)
+                       if tax != None: tax.prune(this_source)
 
     # 2016-07-28 JAR
     # Discovered by ambiguity in an inclusion test.  The IRMNG genus appears to be

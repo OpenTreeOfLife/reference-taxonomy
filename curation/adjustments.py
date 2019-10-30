@@ -1527,7 +1527,7 @@ def adjust_irmng(irmng):
     # if saxo != None:
     #     saxo.absorb(irmng.taxon('1071613'))
     # https://github.com/OpenTreeOfLife/reference-taxonomy/issues/50
-    irmng.taxon('Saxo-fridericia').synonym('Saxo-Fridericia'))
+    irmng.taxon('Saxo-fridericia').synonym('Saxo-Fridericia')
 
     # JAR 2015-06-28
     # The synonym Ochrothallus multipetalus -> Niemeyera multipetala

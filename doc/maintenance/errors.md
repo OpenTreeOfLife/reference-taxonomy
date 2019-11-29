@@ -101,7 +101,7 @@ not something obscure.  To determine where it is in the draft OTT, we
 can use `bin/lineage`:
 
     bin/lineage 591146 r/ott-NEW/source
-    591146	639691	Enidae	family	ncbi:145762,gbif:2297508,irmng:114831		merged,hidden_inherited,barren	
+    591146	639691	Enidae	family	ncbi:145762,gbif:2297508,irmng:114831		merged,hidden_inherited,barren
     639691	329706	Enoidea	superfamily	ncbi:145342		hidden_inherited
     329706	844843	Sigmurethra	no rank	ncbi:216366		hidden_inherited
     844843	379916	Stylommatophora	infraorder	ncbi:6527,gbif:1456,irmng:10595		hidden_inherited
@@ -270,17 +270,17 @@ applied to GBIF but not to IRMNG.
 
     ** No such taxon: Myrmecia in Microthamniales (gbif)
 
-This comes from 
+This comes from
 
     a.same(gbif.taxon('Myrmecia', 'Microthamniales'),
            ott.taxon('Myrmecia', 'Microthamniales'))
 
 in adjustments.py.  In `r/gbif-HEAD/resource/taxonomy.tsv'` we see
 
-    1317709	|	4342	|	Myrmecia	|	genus	|	
-    2638661	|	6784730	|	Myrmecia	|	genus	|	
+    1317709	|	4342	|	Myrmecia	|	genus	|
+    2638661	|	6784730	|	Myrmecia	|	genus	|
 
-    1360	|	332	|	Microthamniales	|	order	|	
+    1360	|	332	|	Microthamniales	|	order	|
 
 so it's strange that the patch doesn't work.  Using the OTT taxonomy
 browser, we find that _Myrmecia_ (genus in order Microthamniales) is
@@ -495,6 +495,30 @@ These names are gone from the sources and the taxonomy, so they don't
 matter.  To make the errors go away, delete the patches (or comment
 them out - in case the problem returns later on).
 
+### Requested name / parent not the same as prior
+
+These errors happen when processing additions from the amendments repository
+(the patches created by users in the web application when curating phylogenies).
+The error comes from the [getAddedTaxon](https://github.com/OpenTreeOfLife/reference-taxonomy/blob/1a9da1ee50b328e1973743647007c2b7d488b773/org/opentreeoflife/taxa/Addition.java#L207) method in Addition.java.
+
+Looking at this error:
+
+`** Requested parent 5807594 not same as prior parent 3344074 for Catopocerus alabamae 6520182`
+
+Investigating this taxon using `bin/investigate "Catopocerus alabamae"`:
+
+```
+r/gbif-HEAD/resource/taxonomy.tsv:9360603	|	4760120	|	Catopocerus alabamae	|	species	|
+r/ott-PREVIOUS/source/taxonomy.tsv:6520182	|	5807594	|	Catopocerus alabamae	|	species	|	additions-6520182-6520186:6520182	|		|	sibling_higher	|
+r/ott-NEW/source/taxonomy.tsv:6520182	|	3344074	|	Catopocerus alabamae	|	species	|	gbif:9360603	|	|
+
+```
+
+Searching the amendments repo for this taxon leads us to [additions-6520182-6520186.json](https://github.com/OpenTreeOfLife/amendments-1/blob/c8c6d4cb29549c7c2fbc75a233d332ccdc129ffd/amendments/additions-6520182-6520186.json), where the author provides a reference that some of the taxa in Catopocerus were transferred to Pinodytes. Because we have Catopocerus as a synonym of Pinodytes, they instead try to move those taxa to subfamily Catopocerinae.
+
+This is a case where our amendments functionality is too limited for what the curator wants to do. 
+
+
 ## Testing
 
 ### Building OTT is a test
@@ -523,7 +547,7 @@ An attempt has been made to provide useful information when a test
 fails.  A taxon can disappear, or its OTT id can change, or the
 relationship may fail to hold, perhaps due to a merge or a split.
 
-    
+
 ## Troubleshooting
 
 Some tools to use
@@ -538,13 +562,13 @@ lineage of the given taxon.
 Tabs are helpful in picking out a genus record (as opposed to all
 species in the genus).  `^` is useful for lookup by id.  E.g.
 
-    grep "Peripatus dominicae" r/ott-NEW/source/taxonomy.tsv 
+    grep "Peripatus dominicae" r/ott-NEW/source/taxonomy.tsv
 
 `log.txt` shows alignment, merge, and other events connected with
 certain names.  To force logging for a name, if it's not already being
 logged, add it to the `names_of_interest` list in assemble_ott.py.
 
-    grep -A 2 Campanella r/ott-NEW/source/choices.tsv 
+    grep -A 2 Campanella r/ott-NEW/source/choices.tsv
 
 `choices.txt` shows alignment choices that were made, whenever there
 were two or more options.

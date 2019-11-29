@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# Import script for txt version of GBIF - use project.py for DwC format
+
 # In principle the column numbers could be extracted programmatically
 # from meta.xml
 
@@ -37,7 +39,7 @@ def project_2016_gbif(inpath, outpath):
 #  Foo bar Putnam, 4723     no authority
 #  Foo bar Putnam 1972      no authority (in GBIF)
 #  Enterobacteria phage PA-2
-#  Ajuga pyramidalis L.	
+#  Ajuga pyramidalis L.
 
 
 lower = u"a-záåäàãçëéèïíøöóü'×?"
@@ -96,5 +98,5 @@ def canonical_name(name):
 
 project_2016_gbif(sys.argv[1], sys.argv[2])
 
-# QC check: 
+# QC check:
 #  grep " [0-9][0-9][0-9][0-9]	" feed/gbif/work/projection_2016.tsv  >tmp.tmp

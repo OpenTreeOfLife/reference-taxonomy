@@ -230,7 +230,7 @@ def patch_ott(ott):
     # (Linnaeus maybe?)
     hss = ott.newTaxon('Homo sapiens sapiens', 'subspecies', 'https://en.wikipedia.org/wiki/Homo_sapiens_sapiens')
     ott.taxon('Homo sapiens').take(hss)
-    hss.hide()
+    # hss.hide()
 
     # Raised by Joseph Brown 2014-03-09, solution proposed by JAR
     # Tribolium is incertae sedis in NCBI but we want it to not be hidden,

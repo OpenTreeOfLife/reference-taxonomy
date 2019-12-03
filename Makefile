@@ -19,7 +19,7 @@ EXCL=--exclude="*~" --exclude=".??*" --exclude="#*" --exclude=debug
 SILVA_ARCHIVE=https://www.arb-silva.de/no_cache/download/archive
 NCBI_ORIGIN_URL=ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz
 GBIF_ORIGIN_URL=http://rs.gbif.org/datasets/backbone/backbone-current.zip
-IRMNG_ORIGIN_URL=http://www.cmar.csiro.au/datacentre/downloads/IRMNG_DWC.zip
+IRMNG_ORIGIN_URL=http://www.irmng.org/export/2019/IRMNG_genera_DwCA_2019-03-02.zip
 AMENDMENTS_ORIGIN_URL=https://github.com/OpenTreeOfLife/amendments-1.git
 
 # ----- Version selection -----
@@ -261,7 +261,7 @@ r/silva-NEW:
 
 # This takes a long time - reads every flat file in genbank
 # Also - be sure to update RANGES in accessionFromGenbank.py, so you
-# don't miss any genbank records!  Manual process now, could be 
+# don't miss any genbank records!  Manual process now, could be
 # automated.
 
 r/genbank-HEAD/resource/.made: r/genbank-HEAD/source/.made
@@ -315,7 +315,7 @@ r/fung-NEW:
 	(cd r/fung-NEW; rm resource; ln -sf source resource)
 
 # How fung-9 was created:
-# import_scripts/fung/cobble_fung.py 
+# import_scripts/fung/cobble_fung.py
 #   which reads fung-4, fung-2, fung-1
 #
 # The earlier versions were created using various versions of the
@@ -602,7 +602,7 @@ r/idlist-NEW:
 r/wikidata-NEW/source/.made: import_scripts/wikidata/get_wikidata.py
 	@echo wikidata/EOL NYI
 
-# Make a digest that we can archive. 
+# Make a digest that we can archive.
 #   source qid, wikidata id, EOL id
 
 # To make resource, look up OTT source ids ... or maybe just use the
@@ -638,7 +638,7 @@ ids_in_synthesis.tsv:
 
 # For publishing OTT drafts or releases.
 # File names beginning with # are emacs lock links.
- 
+
 # Maybe this rule isn't needed now that we have pack/ and store/ targets?
 
 tarball: r/ott-HEAD/archive/.made
@@ -709,17 +709,17 @@ SELECTION?=Asterales
 SELECTION_TAG?=aster
 
 # t/tax/prev/taxonomy.tsv: r/ott-HEAD/resource/taxonomy.tsv   - correct expensive
-t/tax/prev_$(SELECTION_TAG)/taxonomy.tsv: 
+t/tax/prev_$(SELECTION_TAG)/taxonomy.tsv:
 	@mkdir -p `dirname $@`
 	$(SMASH) r/ott-HEAD/resource/ --select2 $(SELECTION) --out t/tax/prev_$(SELECTION_TAG)/
 
 # dependency on r/ncbi-HEAD/resource/taxonomy.tsv - correct expensive
-t/tax/ncbi_$(SELECTION_TAG)/taxonomy.tsv: 
+t/tax/ncbi_$(SELECTION_TAG)/taxonomy.tsv:
 	@mkdir -p `dirname $@`
 	$(SMASH) r/ncbi-HEAD/resource/ --select2 $(SELECTION) --out t/tax/ncbi_$(SELECTION_TAG)/
 
 # dependency on GBIF taxonomy.tsv - correct but expensive
-t/tax/gbif_$(SELECTION_TAG)/taxonomy.tsv: 
+t/tax/gbif_$(SELECTION_TAG)/taxonomy.tsv:
 	@mkdir -p `dirname $@`
 	$(SMASH) r/gbif-HEAD/resource/ --select2 $(SELECTION) --out t/tax/gbif_$(SELECTION_TAG)/
 

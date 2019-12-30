@@ -1,6 +1,3 @@
-* More recent NCBI included
-
-
 # Open Tree of Life reference taxonomy version 3.1
 
 Version 3.1 draft 2 was generated on 16 September, 2019.

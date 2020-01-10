@@ -117,7 +117,7 @@ retrieved.
     We used a version dated 2014-01-31.  Download location:
     [http://purl.org/opentree/ott/ott2.8/inputs/IRMNG\_DWC-2014-01-30.zip](http://purl.org/opentree/ott/ott2.8/inputs/IRMNG_DWC-2014-01-30.zip).
  
-1.  Taxon identifiers are carried over from [OTT 2.10](http://files.opentreeoflife.org/ott/ott2.10/) when possible
+1.  Taxon identifiers are carried over from [OTT 3.0](http://files.opentreeoflife.org/ott/ott3.0/) when possible
  
 It has been requested that we relay the following statement:
 

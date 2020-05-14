@@ -641,8 +641,8 @@ def patch_ott(ott):
 
     # https://github.com/OpenTreeOfLife/feedback/issues/352
     for name in ['Lasioseisus chenpengi', 'Rhynacadicrus asperulus']:
-        if ott.maybeTaxon(name, ' Heliconiaceae') != None:
-            ott.taxon(name, ' Heliconiaceae').hide()
+        if ott.maybeTaxon(name, 'Heliconiaceae') != None:
+            ott.taxon(name, 'Heliconiaceae').hide()
 
     # https://github.com/OpenTreeOfLife/feedback/issues/336
     proclaim(ott, synonym_of(taxon('Emberiza calandra'),

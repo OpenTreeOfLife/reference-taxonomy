@@ -4,7 +4,7 @@ public class Synonym extends Node {
 
     // name inherited from class Node
 
-    String type;                 // synonym, authority, common name, etc.
+    public String type;                 // synonym, authority, common name, etc.
 
     public Synonym(String name, String kind, Taxon taxon) {
         super(name);

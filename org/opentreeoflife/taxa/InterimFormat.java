@@ -488,17 +488,18 @@ public class InterimFormat {
 
                     if (type.equals("type material")) // NCBI
                         continue;
-                    if (type.equals("authority")) // NCBI
+                    else if (type.equals("authority")) // NCBI
                         continue;
-                    if (type.endsWith("common name")) // NCBI
+                    else if (type.endsWith("common name")) { // NCBI
+                        if (!type.equals("common name")) // NCBI
+                            continue;
+                    } else if (type.equals("blast name")) // NCBI
                         continue;
-                    if (type.equals("blast name")) // NCBI
+                    else if (type.equals("in-part")) // NCBI
                         continue;
-                    if (type.equals("in-part")) // NCBI
+                    else if (type.equals("valid")) // IRMNG - redundant - ?
                         continue;
-                    if (type.equals("valid")) // IRMNG - redundant - ?
-                        continue;
-                    if (type.equals("") || type.equals("None"))
+                    else if (type.equals("") || type.equals("None"))
                         type = "synonym";
 
                     Node syn = node.addSynonym(name, type, sid);

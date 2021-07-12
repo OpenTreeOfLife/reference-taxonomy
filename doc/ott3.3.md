@@ -1,4 +1,4 @@
-# Open Tree of Life reference taxonomy version 3.2
+# Open Tree of Life reference taxonomy version 3.3
 
 Version 3.3 draft 1 was generated on 01 June, 2021.
 
@@ -6,7 +6,7 @@ Version 3.3 draft 1 was generated on 01 June, 2021.
 
 [Download](http://files.opentreeoflife.org/ott/ott3.2/ott3.2.tgz)
 
-## Major changes since OTT 3.1
+## Major changes since OTT 3.2
 
 * Incorporated https://github.com/OpenTreeOfLife/edOTTs 
   up to commit [1281c6afa4fa504af4b2f47d9965d16f6e1067d6](https://github.com/OpenTreeOfLife/edOTTs/commit/1281c6afa4fa504af4b2f47d9965d16f6e1067d6)
@@ -16,8 +16,7 @@ Version 3.3 draft 1 was generated on 01 June, 2021.
 * OTT identifiers ('taxa'): 4,528,126 
 * Visible: 3,943,129
 * Synonyms: 2,225,600
-       
-Visible taxon count   
+
 ## Contents of download
 
 All files use UTF-8 character encoding.  For documentation about file formats, see [the documentation in the reference taxonomy

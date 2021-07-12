@@ -4,7 +4,7 @@ Version 3.3 draft 1 was generated on 01 June, 2021.
 
 ## Download
 
-[Download](http://files.opentreeoflife.org/ott/ott3.2/ott3.2.tgz)
+[Download](http://files.opentreeoflife.org/ott/ott3.3/ott3.3.tgz)
 
 ## Major changes since OTT 3.2
 

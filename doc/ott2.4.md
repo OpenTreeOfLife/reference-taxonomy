@@ -7,7 +7,7 @@ Released 17 March 2014.
 
 ## Download
 
-[Download](http://files.opentreeoflife.org/ott/ott2.4/ott2.4.tgz) (gzipped tar file, 84 Mbyte) 
+[Download](https://files.opentreeoflife.org/ott/ott2.4/ott2.4.tgz) (gzipped tar file, 84 Mbyte) 
 
 ## Change log
 

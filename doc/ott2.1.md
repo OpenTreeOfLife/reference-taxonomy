@@ -2,7 +2,7 @@
 
 ## Download
 
-[Download](http://files.opentreeoflife.org/ott/ott2.1/ott2.1.tgz) (gzipped tar file, 120 Mbyte) 
+[Download](https://files.opentreeoflife.org/ott/ott2.1/ott2.1.tgz) (gzipped tar file, 120 Mbyte) 
 
 ## Release notes
 

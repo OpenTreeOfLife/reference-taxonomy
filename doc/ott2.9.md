@@ -4,7 +4,7 @@ Version 2.9 draft 12 was generated on 12 October 2015.  Draft 12 is the final dr
 
 ## Download
 
-[Download](http://files.opentreeoflife.org/ott/ott2.9/ott2.9.tgz) (gzipped tar file, 91 Mbyte) 
+[Download](https://files.opentreeoflife.org/ott/ott2.9/ott2.9.tgz) (gzipped tar file, 91 Mbyte) 
 
 ## Contents
 All files are encoded UTF-8.  For documentation about file formats, see [the documentation in the reference taxonomy

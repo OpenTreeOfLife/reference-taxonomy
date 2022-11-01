@@ -6,7 +6,7 @@ Version 3.3 draft 1 was generated on 01 June, 2021.
 
 [Download](http://files.opentreeoflife.org/ott/ott3.4/ott3.4.tgz)
 
-## Major changes since OTT 3.2
+## Major changes since OTT 3.3
 
 * Incorporated https://github.com/OpenTreeOfLife/edOTTs 
   up to commit [5bff4bc32a91a7c6e0541d94b71a0a9ae2fdda02](https://github.com/OpenTreeOfLife/edOTTs/commit/5bff4bc32a91a7c6e0541d94b71a0a9ae2fdda02)

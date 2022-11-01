@@ -4,7 +4,7 @@ Version 3.3 draft 1 was generated on 01 June, 2021.
 
 ## Download
 
-[Download](http://files.opentreeoflife.org/ott/ott3.2/ott3.2.tgz)
+[Download](http://files.opentreeoflife.org/ott/ott3.3/ott3.3.tgz)
 
 ## Major changes since OTT 3.1
 
@@ -17,7 +17,7 @@ Version 3.3 draft 1 was generated on 01 June, 2021.
 * Visible: 3,943,129
 * Synonyms: 2,225,600
        
-Visible taxon count   
+   
 ## Contents of download
 
 All files use UTF-8 character encoding.  For documentation about file formats, see [the documentation in the reference taxonomy

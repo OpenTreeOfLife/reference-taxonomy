@@ -1,6 +1,6 @@
-# Open Tree of Life reference taxonomy version 3.2
+# Open Tree of Life reference taxonomy version 3.4
 
-Version 3.3 draft 1 was generated on 01 June, 2021.
+Version 3.4 draft 1 was generated on 31 October, 2022.
 
 ## Download
 

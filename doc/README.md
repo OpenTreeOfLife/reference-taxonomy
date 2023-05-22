@@ -1,5 +1,11 @@
 # Versions of the Open Tree Reference Taxonomy (OTT)
 
+* [Version 3.5](ott3.5.md) 2023-05-22
+* [Version 3.4](ott3.4.md) 2022-10-31
+* [Version 3.3](ott3.3.md) 2021-06-01
+* [Version 3.2](ott3.2.md) 2019-10-30
+* [Version 3.1](ott3.1.md) 2019-09-16
+* [Version 3.0](ott3.0.md) 2017-02-26
 * [Version 2.9](ott2.9.md) 2015-07-25
 * [Version 2.8](ott2.8.md) 2014-06-12
 * [Version 2.7](ott2.7.md) 2014-05-08

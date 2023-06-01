@@ -6,7 +6,7 @@ Version 3.5 draft 1 was generated on 22 May, 2023.
 
 [Download](https://files.opentreeoflife.org/ott/ott3.5/ott3.5.tgz)
 
-## Major changes since OTT 3.3
+## Major changes since OTT 3.4
 
 * Incorporated https://github.com/OpenTreeOfLife/edOTTs 
   up to commit [36b7a96a575636e58babd5b9f56ceddfcc55509f](https://github.com/OpenTreeOfLife/edOTTs/commit/36b7a96a575636e58babd5b9f56ceddfcc55509f)

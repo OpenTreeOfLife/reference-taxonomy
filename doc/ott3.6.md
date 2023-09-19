@@ -1,10 +1,10 @@
-# Open Tree of Life reference taxonomy version 3.5
+# Open Tree of Life reference taxonomy version 3.6
 
-Version 3.5 draft 1 was generated on 22 May, 2023.
+Version 3.6 draft 1 was generated on 18 September, 2023.
 
 ## Download
 
-[Download](https://files.opentreeoflife.org/ott/ott3.5/ott3.5.tgz)
+[Download](https://files.opentreeoflife.org/ott/ott3.6/ott3.6.tgz)
 
 ## Major changes since OTT 3.5
 

@@ -5,7 +5,7 @@ OTT 2.7 was created on or shortly before 8 May 2014.
 
 ## Download
 
-[Download](http://files.opentreeoflife.org/ott/ott2.7/ott2.7.tgz) (gzipped tar file, 102 Mbyte) 
+[Download](https://files.opentreeoflife.org/ott/ott2.7/ott2.7.tgz) (gzipped tar file, 102 Mbyte) 
 
 ## Release notes
 

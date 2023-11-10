@@ -4,7 +4,7 @@ Version 3.2 draft 9 was generated on 30 October, 2019.
 
 ## Download
 
-[Download](http://files.opentreeoflife.org/ott/ott3.2/ott3.2.tgz)
+[Download](https://files.opentreeoflife.org/ott/ott3.2/ott3.2.tgz)
 
 ## Major changes since OTT 3.1
 
@@ -78,7 +78,7 @@ retrieved.
     Kirk, 7 April 2014 (personal communication).
     Web site: [http://www.indexfungorum.org/](http://www.indexfungorum.org/).
     <br />
-    Download location (converted to OTT format): [http://files.opentreeoflife.org/fung/fung-9/fung-9-ot.tgz](http://files.opentreeoflife.org/fung/fung-9/fung-9-ot.tgz).
+    Download location (converted to OTT format): [https://files.opentreeoflife.org/fung/fung-9/fung-9-ot.tgz](https://files.opentreeoflife.org/fung/fung-9/fung-9-ot.tgz).
 
 1.  Taxonomy from:
     Sch&auml;ferhoff, B., Fleischmann, A., Fischer, E., Albach, D. C., Borsch,
@@ -91,14 +91,14 @@ retrieved.
     Download location: [http://purl.org/opentree/ott/ott2.8/inputs/lamiales-20140118.tsv](http://purl.org/opentree/ott/ott2.8/inputs/lamiales-20140118.tsv)
 
 1.  [World Register of Marine Species (WoRMS)](http://www.marinespecies.org/aphia.php) - harvested from web site using web API over several days ending around 1 October 2015.
-    Download location: [http://files.opentreeoflife.org/worms/worms-1/worms-1-ot.tgz](http://files.opentreeoflife.org/worms/worms-1/worms-1-ot.tgz)
+    Download location: [https://files.opentreeoflife.org/worms/worms-1/worms-1-ot.tgz](https://files.opentreeoflife.org/worms/worms-1/worms-1-ot.tgz)
 
 1.  NCBI Taxonomy, from the 
     [US National Center on Biotechnology Information](http://www.ncbi.nlm.nih.gov/).
     Web site: [http://www.ncbi.nlm.nih.gov/Taxonomy/](http://www.ncbi.nlm.nih.gov/Taxonomy/).
     <br />
     We used a version dated 16 September, 2019.
-    Archived location: [http://files.opentreeoflife.org/ncbi/ncbi-20190916/ncbi-20190916.tgz](http://files.opentreeoflife.org/ncbi/ncbi-20190916/ncbi-20190916.tgz).
+    Archived location: [https://files.opentreeoflife.org/ncbi/ncbi-20190916/ncbi-20190916.tgz](https://files.opentreeoflife.org/ncbi/ncbi-20190916/ncbi-20190916.tgz).
     <br />
     Current version download location:
     [ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz](ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz)

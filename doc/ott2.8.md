@@ -4,7 +4,7 @@ Version 2.8 (also known as version 2.8 draft 5) was generated on 11 June 2014.
 
 ## Download
 
-[Download](http://purl.org/opentree/ott/ott2.8/ott2.8.tgz) (gzipped tar file, 119 Mbyte) 
+[Download](https://purl.org/opentree/ott/ott2.8/ott2.8.tgz) (gzipped tar file, 119 Mbyte) 
 
 ## Contents
 All files are encoded UTF-8.  For detailed documentation about file formats, see [documentation in the reference taxonomy
@@ -86,7 +86,7 @@ retrieved.
     Kirk, April 2014 (personal communication).
     Web site: [http://www.indexfungorum.org/](http://www.indexfungorum.org/).
     <br />
-    Download location (converted to OTT format): [http://purl.org/opentree/ott/ott2.8/inputs/if-20140514.tgz](http://purl.org/opentree/ott/ott2.8/inputs/if-20140514.tgz).
+    Download location (converted to OTT format): [https://purl.org/opentree/ott/ott2.8/inputs/if-20140514.tgz](https://purl.org/opentree/ott/ott2.8/inputs/if-20140514.tgz).
 
 1.  Taxonomy from:
     Sch&auml;ferhoff, B., Fleischmann, A., Fischer, E., Albach, D. C., Borsch,
@@ -105,7 +105,7 @@ retrieved.
     [ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz](ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz)
     <br />
     For OTT 2.8 we used a version dated circa 11 June 2014.
-    Download location: [http://purl.org/opentree/ott/ott2.8/inputs/taxdump-20140611.tgz](http://purl.org/opentree/ott/ott2.8/inputs/taxdump-20140611.tgz).
+    Download location: [https://purl.org/opentree/ott/ott2.8/inputs/taxdump-20140611.tgz](https://purl.org/opentree/ott/ott2.8/inputs/taxdump-20140611.tgz).
   </li>
 
 1.  GBIF Backbone Taxonomy, from the 

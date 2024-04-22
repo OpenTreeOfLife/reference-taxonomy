@@ -239,7 +239,8 @@ public class AlignmentByName extends Alignment {
         Map<Taxon, String> candidateMap = new HashMap<Taxon, String>();
         getCandidatesViaName(node, "C", candidateMap); // canonical
         for (Synonym syn : node.getSynonyms())
-            getCandidatesViaName(syn, "S", candidateMap);
+            if (!syn.type.equals("common name"))
+                getCandidatesViaName(syn, "S", candidateMap);
         if (candidateMap.size() == 0)
             getCandidatesViaGender(node, candidateMap);
         return candidateMap;

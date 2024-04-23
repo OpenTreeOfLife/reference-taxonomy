@@ -10,10 +10,10 @@
 * [Version 2.8](ott2.8.md) 2014-06-12
 * [Version 2.7](ott2.7.md) 2014-05-08
 * [Version 2.6](ott2.6.md) 2014-04-11
-* Version 2.5 2014-03-28 (no release notes) [gzipped tar file, 83 Mbyte](http://files.opentreeoflife.org/ott/ott2.5/ott2.5.tgz)
+* Version 2.5 2014-03-28 (no release notes) [gzipped tar file, 83 Mbyte](https://files.opentreeoflife.org/ott/ott2.5/ott2.5.tgz)
 * [Version 2.4](ott2.4.md) 2014-03-17
 * [Version 2.3](ott2.3.md) 2013-12-04
-* Version 2.2 2013-09-15 (no release notes) [gzipped tar file, 123 Mbyte](http://files.opentreeoflife.org/ott/ott2.2/ott2.2.tgz)
+* Version 2.2 2013-09-15 (no release notes) [gzipped tar file, 123 Mbyte](https://files.opentreeoflife.org/ott/ott2.2/ott2.2.tgz)
 * [Version 2.1](ott2.1.md) 2013-07-16
 * [Version 2.0](ott2.0.md) 2013-05-31
 * [Version 1.0](ott1.0.md) 2013-03-16

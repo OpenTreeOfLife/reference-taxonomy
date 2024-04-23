@@ -7,7 +7,7 @@ f624223f31](https://github.com/OpenTreeOfLife/reference-taxonomy/commit/f624223f
 
 ## Download
 
-[Download](http://files.opentreeoflife.org/ott/ott2.6/ott2.6.tgz) (gzipped tar file, 94 Mbyte) 
+[Download](https://files.opentreeoflife.org/ott/ott2.6/ott2.6.tgz) (gzipped tar file, 94 Mbyte) 
 
 ## Files in this package
 
@@ -116,4 +116,4 @@ f624223f31](https://github.com/OpenTreeOfLife/reference-taxonomy/commit/f624223f
 *  OTT version 2.5:
     The previous version of OTT is used only for the purpose of ensuring
     identifier choice consistency from one version of OTT to the next.
-      [http://purl.org/opentree/ott/ott2.5.tgz](http://purl.org/opentree/ott/ott2.5.tgz)
+      [https://purl.org/opentree/ott/ott2.5.tgz](https://purl.org/opentree/ott/ott2.5.tgz)

@@ -1,20 +1,21 @@
 # Open Tree of Life reference taxonomy version 3.7
 
-Version 3.7 draft 1 was generated on 19 April, 2024.
+Version 3.7 draft 2 was generated on 30 May, 2024.
 
 ## Download
 
-[Download](https://files.opentreeoflife.org/ott/ott3.7/ott3.7.tgz)
+[Download](https://files.opentreeoflife.org/ott/ott3.7/ott3.7.2.tgz)
 
 ## Major changes since OTT 3.6
 
 * Restored genus *Erica* from a previous version of OTT (v 3.1) using manual text edits followed by correction of repurposed IDs
+* Many changes addressing issues reported by users in [our feedback](https://github.com/OpenTreeOfLife/feedback/issues?q=is%3Aissue+is%3Aopen+sort%3Acreated-asc) repository
 
 ## Statistics
 
-* OTT identifiers ('taxa'): 4,529,332
-* Visible: 3,677,755
-* Synonyms: 2,226,272
+* OTT identifiers ('taxa'): 4,529,129
+* Visible: 3,677,565
+* Synonyms: 2,226,395
        
   
 ## Contents of download
@@ -34,10 +35,15 @@ on github.
 **version.txt**: The version of OTT.
 
 
-
 ## Build script
 
-NA email MTH for this one...
+    otc-taxonomy-patcher \
+      --demand-all-applied \
+      --edits "${OTROOT}/edOTTs/edott-000013.json" \
+      --edits "${OTROOT}/edOTTs/edott-000014.json" \
+      "${OTROOT}/ott/ott3.7" \
+      --write-taxonomy \
+      "${OTROOT}/ott/ott3.7.2" 2>&1 | tee patch3.7.2.log
 
 ## Sources
 
@@ -50,7 +56,7 @@ OTT 3.0.  For new work, current versions of these sources should be
 retrieved.
 
 1.  Curated additions from the Open Tree amendments-1 repository as processed into https://github.com/OpenTreeOfLife/edOTTs 
-  up to commit [064758e77d688ca6da937db2bc42666648a3a580](https://github.com/OpenTreeOfLife/edOTTs/commit/064758e77d688ca6da937db2bc42666648a3a580) These taxa are added during OTU mapping using the curator application.
+  up to commit [02070353fdba3a717a1a4faf3ff2640c29086a9d](https://github.com/OpenTreeOfLife/edOTTs/commit/02070353fdba3a717a1a4faf3ff2640c29086a9d) These taxa are added during OTU mapping using the curator application.
 
 1.  Taxonomy from: 
     DS Hibbett, M Binder, JF Bischoff, M Blackwell, et al. 

@@ -257,8 +257,8 @@ and stores them on the files server:
     make store-all
 
 Find the tarballs as
-`http://files.openetreeoflife.org/ott/ott3.1/ott3.1.tgz`,
-`http://files.openetreeoflife.org/ncbi/ncbi-20170523/ncbi-20170523.tgz`,
+`https://files.openetreeoflife.org/ott/ott3.1/ott3.1.tgz`,
+`https://files.openetreeoflife.org/ncbi/ncbi-20170523/ncbi-20170523.tgz`,
 and so on.
 
 

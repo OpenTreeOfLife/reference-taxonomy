@@ -14,9 +14,9 @@ Version 3.7 draft 3 was generated on 20 June, 2025.
 
 ## Statistics
 
-* OTT identifiers ('taxa'): 4,529,466
-* Visible: 3,677,886
-* Synonyms: 2,226,376
+* OTT identifiers ('taxa'): 4,529,570
+* Visible: 3,677,854
+* Synonyms: 2,226,375
        
   
 ## Contents of download
@@ -57,7 +57,7 @@ OTT 3.0.  For new work, current versions of these sources should be
 retrieved.
 
 1.  Curated additions from the Open Tree amendments-1 repository as processed into https://github.com/OpenTreeOfLife/edOTTs 
-  up to commit [a39246273ba3bfeea4984e3f4905b15a08b83897](https://github.com/OpenTreeOfLife/edOTTs/commit/a39246273ba3bfeea4984e3f4905b15a08b83897) These taxa are added during OTU mapping using the curator application.
+  up to commit [c590dfd8b2287cdd06efda64292a735e63d42089](https://github.com/OpenTreeOfLife/edOTTs/commit/c590dfd8b2287cdd06efda64292a735e63d42089) These taxa are added during OTU mapping using the curator application.
 
 1.  Taxonomy from: 
     DS Hibbett, M Binder, JF Bischoff, M Blackwell, et al. 
